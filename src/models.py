@@ -822,3 +822,66 @@ if __name__ == "__main__":
     print(f"Module: {module.name} ({module.module_id})")
     print(f"File: {file.file_path} ({file.file_id})")
     print(f"Test: {test.test_type.value} ({test.test_id})")
+
+"""What src/models.py Provides:
+📊 4 Core Data Models:
+
+Project - Basic info + specs + generated code
+
+Project details, team collaboration, specifications
+Technical specs, conversation history, progress tracking
+Generated codebase linking, risk assessment
+
+
+Module - Simple task breakdown
+
+Module organization within projects
+Task management, dependencies, assigned roles
+Progress tracking, quality metrics
+
+
+GeneratedFile - Path + content + status
+
+Individual file tracking with full metadata
+Content management, dependency relationships
+Quality metrics, testing status, version control
+
+
+TestResult - Pass/fail + basic metrics
+
+Comprehensive test execution results
+Coverage analysis, performance metrics
+Security scanning, quality assessment
+
+
+
+🔧 Supporting Features:
+
+Complete enum definitions for all status values, types, phases
+User and collaboration models for team management
+Conversation tracking for Socratic sessions
+Technical specifications for detailed project specs
+Model validation utilities with error checking
+Model factory for easy instance creation
+Proper typing throughout with dataclass support
+
+✅ Key Benefits:
+
+Uses DateTimeHelper - No deprecated datetime functions
+Validation integration - Uses core ValidationHelper
+Thread-safe UUID generation for all IDs
+Comprehensive but manageable - Full functionality without over-complexity
+Method helpers - Common operations built-in (add_collaborator, update_progress, etc.)
+
+Usage Example:
+from src.models import ModelFactory, ProjectPhase, ModuleType, FileType
+
+# Create project
+project = ModelFactory.create_project("My App", "john_doe", "A web application")
+
+# Create module  
+module = ModelFactory.create_module(project.project_id, "Backend API", ModuleType.BACKEND)
+
+# Create generated file
+file = ModelFactory.create_generated_file(project.project_id, "backend/api.py", FileType.PYTHON)
+"""
