@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="database.py">
-      <change afterPath="$PROJECT_DIR$/src/agents.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="agents.py">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -132,7 +130,15 @@
       <option name="project" value="LOCAL" />
       <updated>1758781480654</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="agents.py">
+      <option name="closed" value="true" />
+      <created>1758809959182</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1758809959182</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -140,6 +146,7 @@
     <MESSAGE value="core" />
     <MESSAGE value="models.py" />
     <MESSAGE value="database.py" />
-    <option name="LAST_COMMIT_MESSAGE" value="database.py" />
+    <MESSAGE value="agents.py" />
+    <option name="LAST_COMMIT_MESSAGE" value="agents.py" />
   </component>
 </project>
