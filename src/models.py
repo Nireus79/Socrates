@@ -1,75 +1,118 @@
 #!/usr/bin/env python3
 """
 Socratic RAG Enhanced - Data Models
-===================================
+==================================
 
-Core data models for the Socratic RAG Enhanced system.
-Simplified approach with 4 core models: Project, Module, GeneratedFile, TestResult.
+Complete data model definitions for the Socratic RAG Enhanced system.
+Defines all entities, relationships, and data structures used throughout the system.
 
-All models use dataclasses for simplicity and include proper typing.
+This module establishes the core data foundation that all other components depend on.
 """
 
 import datetime
+import json
 import uuid
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any
-from enum import Enum
+from dataclasses import dataclass, field, asdict
+from enum import Enum, auto
+from typing import Dict, List, Optional, Any, Union
+from pathlib import Path
 
-from src.core import DateTimeHelper, ValidationHelper
+# Import from core system
+from .core import (
+    SocraticException, ValidationError, DateTimeHelper,
+    ValidationHelper, get_logger
+)
+
+# Get logger for this module
+logger = get_logger('models')
 
 
 # ============================================================================
-# ENUMS AND CONSTANTS
+# ENUMS & CONSTANTS
 # ============================================================================
+
+class UserRole(Enum):
+    """User roles in the system"""
+    ADMIN = "admin"
+    PROJECT_MANAGER = "project_manager"
+    DEVELOPER = "developer"
+    DESIGNER = "designer"
+    TESTER = "tester"
+    BUSINESS_ANALYST = "business_analyst"
+    DEVOPS = "devops"
+    VIEWER = "viewer"
+
+
+class UserStatus(Enum):
+    """User account status"""
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    SUSPENDED = "suspended"
+    PENDING = "pending"
+
 
 class ProjectPhase(Enum):
     """Project development phases"""
-    DISCOVERY = "discovery"
-    ANALYSIS = "analysis"
+    PLANNING = "planning"
+    REQUIREMENTS = "requirements"
     DESIGN = "design"
-    IMPLEMENTATION = "implementation"
+    DEVELOPMENT = "development"
+    TESTING = "testing"
+    DEPLOYMENT = "deployment"
+    MAINTENANCE = "maintenance"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
 
 
 class ProjectStatus(Enum):
-    """Project status options"""
+    """Project status"""
+    DRAFT = "draft"
     ACTIVE = "active"
-    ARCHIVED = "archived"
-    COMPLETED = "completed"
     ON_HOLD = "on_hold"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+    ARCHIVED = "archived"
 
 
-class ModuleStatus(Enum):
-    """Module status options"""
-    NOT_STARTED = "not_started"
+class TaskStatus(Enum):
+    """Task completion status"""
+    PENDING = "pending"
     IN_PROGRESS = "in_progress"
-    TESTING = "testing"
+    REVIEW = "review"
     COMPLETED = "completed"
     BLOCKED = "blocked"
+    CANCELLED = "cancelled"
 
 
-class ModuleType(Enum):
-    """Module type categories"""
-    FRONTEND = "frontend"
-    BACKEND = "backend"
-    DATABASE = "database"
-    TESTING = "testing"
-    DEPLOYMENT = "deployment"
-    DOCUMENTATION = "documentation"
-
-
-class Priority(Enum):
-    """Priority levels"""
+class TaskPriority(Enum):
+    """Task priority levels"""
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
 
 
-class RiskLevel(Enum):
-    """Risk assessment levels"""
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
+class ModuleType(Enum):
+    """Types of project modules"""
+    BACKEND = "backend"
+    FRONTEND = "frontend"
+    DATABASE = "database"
+    API = "api"
+    TESTING = "testing"
+    DOCUMENTATION = "documentation"
+    DEPLOYMENT = "deployment"
+    INTEGRATION = "integration"
+
+
+class TechnicalRole(Enum):
+    """Technical roles for Socratic questioning"""
+    PROJECT_MANAGER = "project_manager"
+    TECHNICAL_LEAD = "technical_lead"
+    DEVELOPER = "developer"
+    DESIGNER = "designer"
+    QA_TESTER = "qa_tester"
+    BUSINESS_ANALYST = "business_analyst"
+    DEVOPS_ENGINEER = "devops_engineer"
 
 
 class FileType(Enum):
@@ -80,8 +123,8 @@ class FileType(Enum):
     HTML = "html"
     CSS = "css"
     SQL = "sql"
-    JSON = "json"
     YAML = "yaml"
+    JSON = "json"
     MARKDOWN = "markdown"
     DOCKERFILE = "dockerfile"
     CONFIG = "config"
@@ -89,799 +132,851 @@ class FileType(Enum):
     DOCUMENTATION = "documentation"
 
 
-class FileStatus(Enum):
-    """Generated file status"""
-    GENERATING = "generating"
-    GENERATED = "generated"
-    TESTED = "tested"
-    FAILED = "failed"
-    DEPLOYED = "deployed"
-
-
 class TestType(Enum):
-    """Test types"""
+    """Types of tests"""
     UNIT = "unit"
     INTEGRATION = "integration"
-    E2E = "e2e"
+    END_TO_END = "end_to_end"
     PERFORMANCE = "performance"
     SECURITY = "security"
-    QUALITY = "quality"
+    ACCEPTANCE = "acceptance"
 
 
-class TestStatus(Enum):
-    """Test execution status"""
-    PENDING = "pending"
-    RUNNING = "running"
-    PASSED = "passed"
-    FAILED = "failed"
-    SKIPPED = "skipped"
-    ERROR = "error"
+class ConversationStatus(Enum):
+    """Status of Socratic conversations"""
+    ACTIVE = "active"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    CONFLICTED = "conflicted"
+    ARCHIVED = "archived"
 
 
-class UserRole(Enum):
-    """User roles in the system"""
-    PROJECT_MANAGER = "project_manager"
-    TECHNICAL_LEAD = "technical_lead"
-    DEVELOPER = "developer"
-    DESIGNER = "designer"
-    QA_TESTER = "qa_tester"
-    BUSINESS_ANALYST = "business_analyst"
-    DEVOPS_ENGINEER = "devops_engineer"
+class ConflictType(Enum):
+    """Types of specification conflicts"""
+    TECHNICAL = "technical"
+    BUSINESS = "business"
+    RESOURCE = "resource"
+    TIMELINE = "timeline"
+    STAKEHOLDER = "stakeholder"
+
+
+class CodeQualityLevel(Enum):
+    """Code quality assessment levels"""
+    EXCELLENT = "excellent"
+    GOOD = "good"
+    ACCEPTABLE = "acceptable"
+    NEEDS_IMPROVEMENT = "needs_improvement"
+    POOR = "poor"
 
 
 # ============================================================================
-# SUPPORTING DATA MODELS
+# BASE MODELS
 # ============================================================================
 
 @dataclass
-class User:
-    """System user model"""
-    username: str
-    email: Optional[str] = None
-    full_name: Optional[str] = None
-    passcode_hash: str = ""
-    roles: List[UserRole] = field(default_factory=list)
-    projects: List[str] = field(default_factory=list)  # Project IDs
-    preferences: Dict[str, Any] = field(default_factory=dict)
+class BaseModel:
+    """Base class for all data models"""
+
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
     updated_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
+
+    def update_timestamp(self) -> None:
+        """Update the last modified timestamp"""
+        self.updated_at = DateTimeHelper.now()
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert model to dictionary"""
+        return asdict(self)
+
+    def to_json(self) -> str:
+        """Convert model to JSON string"""
+
+        def json_serializer(obj):
+            if isinstance(obj, datetime.datetime):
+                return DateTimeHelper.to_iso_string(obj)
+            elif isinstance(obj, Enum):
+                return obj.value
+            return str(obj)
+
+        return json.dumps(self.to_dict(), default=json_serializer, indent=2)
+
+
+# ============================================================================
+# USER MANAGEMENT MODELS
+# ============================================================================
+
+@dataclass
+class User(BaseModel):
+    """User account model"""
+
+    username: str = ""
+    email: str = ""
+    password_hash: str = ""
+    first_name: str = ""
+    last_name: str = ""
+    role: UserRole = UserRole.VIEWER
+    status: UserStatus = UserStatus.PENDING
+
+    # Profile information
+    avatar_url: Optional[str] = None
+    bio: str = ""
+    skills: List[str] = field(default_factory=list)
+    preferences: Dict[str, Any] = field(default_factory=dict)
+
+    # Authentication
     last_login: Optional[datetime.datetime] = None
-    is_active: bool = True
-    is_archived: bool = False
-    archived_at: Optional[datetime.datetime] = None
+    login_attempts: int = 0
+    locked_until: Optional[datetime.datetime] = None
+    api_key: Optional[str] = None
+
+    # Statistics
+    projects_created: int = 0
+    sessions_completed: int = 0
+    code_generated_lines: int = 0
 
     def __post_init__(self):
-        self.username = ValidationHelper.sanitize_input(self.username)
-        if self.email:
-            self.email = ValidationHelper.sanitize_input(self.email)
-        if self.full_name:
-            self.full_name = ValidationHelper.sanitize_input(self.full_name)
+        """Validate user data after initialization"""
+        self.validate()
+
+    def validate(self) -> None:
+        """Validate user data"""
+        if not self.username or len(self.username.strip()) < 3:
+            raise ValidationError("Username must be at least 3 characters long")
+
+        if not ValidationHelper.validate_email(self.email):
+            raise ValidationError("Invalid email address")
+
+        if not self.password_hash and self.status == UserStatus.ACTIVE:
+            raise ValidationError("Active users must have a password")
+
+    @property
+    def full_name(self) -> str:
+        """Get user's full name"""
+        return f"{self.first_name} {self.last_name}".strip()
+
+    @property
+    def is_active(self) -> bool:
+        """Check if user is active"""
+        return self.status == UserStatus.ACTIVE
+
+    @property
+    def is_locked(self) -> bool:
+        """Check if user account is locked"""
+        return (self.locked_until is not None and
+                self.locked_until > DateTimeHelper.now())
 
 
 @dataclass
-class Collaborator:
-    """Project collaborator information"""
-    username: str
-    role: UserRole
-    permissions: List[str] = field(default_factory=list)  # Specific permissions
-    joined_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
+class UserSession(BaseModel):
+    """User session tracking"""
+
+    user_id: str = ""
+    session_token: str = ""
+    ip_address: str = ""
+    user_agent: str = ""
+    expires_at: datetime.datetime = field(default_factory=lambda:
+    DateTimeHelper.now() + datetime.timedelta(hours=1))
     is_active: bool = True
+    last_activity: datetime.datetime = field(default_factory=DateTimeHelper.now)
 
-
-@dataclass
-class ConversationMessage:
-    """Socratic conversation message"""
-    message_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime.datetime = field(default_factory=DateTimeHelper.now)
-    type: str = "user"  # "user" or "assistant"
-    content: str = ""
-    phase: ProjectPhase = ProjectPhase.DISCOVERY
-    role: Optional[UserRole] = None
-    author: Optional[str] = None  # Username
-    question_number: Optional[int] = None
-    insights_extracted: Dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class TechnicalSpecification:
-    """Project technical specifications"""
-    project_id: str
-    database_schema: Dict[str, Any] = field(default_factory=dict)
-    api_design: Dict[str, Any] = field(default_factory=dict)
-    file_structure: Dict[str, Any] = field(default_factory=dict)
-    component_architecture: Dict[str, Any] = field(default_factory=dict)
-    implementation_plan: List[Dict[str, Any]] = field(default_factory=list)
-    test_requirements: List[str] = field(default_factory=list)
-    deployment_config: Dict[str, Any] = field(default_factory=dict)
-    dependencies: List[str] = field(default_factory=list)
-    environment_variables: Dict[str, str] = field(default_factory=dict)
-    security_requirements: List[str] = field(default_factory=list)
-    performance_requirements: Dict[str, Any] = field(default_factory=dict)
-    architecture_pattern: str = ""  # MVC, microservices, layered, etc.
-    code_style_guide: Dict[str, Any] = field(default_factory=dict)
-    created_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
-    updated_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
-    version: str = "1.0"
+    @property
+    def is_expired(self) -> bool:
+        """Check if session is expired"""
+        return DateTimeHelper.now() > self.expires_at
 
 
 # ============================================================================
-# CORE DATA MODEL 1: PROJECT
+# PROJECT HIERARCHY MODELS
 # ============================================================================
 
 @dataclass
-class Project:
-    """Core project model - basic info + specs + generated code"""
+class Project(BaseModel):
+    """Main project entity"""
 
-    # Basic Information
-    project_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     name: str = ""
     description: str = ""
-    owner: str = ""
-    collaborators: List[Collaborator] = field(default_factory=list)
+    owner_id: str = ""
+    status: ProjectStatus = ProjectStatus.DRAFT
+    phase: ProjectPhase = ProjectPhase.PLANNING
 
-    # Project Configuration
-    phase: ProjectPhase = ProjectPhase.DISCOVERY
-    status: ProjectStatus = ProjectStatus.ACTIVE
-    priority: Priority = Priority.MEDIUM
-
-    # Specifications
-    goals: str = ""
+    # Technical specifications
+    technology_stack: Dict[str, str] = field(default_factory=dict)
     requirements: List[str] = field(default_factory=list)
     constraints: List[str] = field(default_factory=list)
-    tech_stack: List[str] = field(default_factory=list)
-    language_preferences: List[str] = field(default_factory=list)
-    deployment_target: str = "local"
-    architecture_pattern: str = ""
+    success_criteria: List[str] = field(default_factory=list)
 
-    # Technical Details
-    technical_specification: Optional[TechnicalSpecification] = None
+    # Timeline and resources
+    start_date: Optional[datetime.datetime] = None
+    end_date: Optional[datetime.datetime] = None
+    estimated_hours: Optional[int] = None
+    budget: Optional[float] = None
 
-    # Conversation & Context
-    conversation_history: List[ConversationMessage] = field(default_factory=list)
-    context_summary: Dict[str, Any] = field(default_factory=dict)
+    # Team and collaboration
+    team_members: List[str] = field(default_factory=list)  # User IDs
+    stakeholders: List[str] = field(default_factory=list)
 
-    # Generated Code
-    generated_codebase_id: Optional[str] = None  # Links to generated files
-    file_structure: Dict[str, Any] = field(default_factory=dict)
-
-    # Progress & Metrics
+    # Progress tracking
     progress_percentage: float = 0.0
-    quality_score: float = 0.0
-    estimated_hours: int = 0
-    actual_hours: int = 0
+    completed_modules: int = 0
+    total_modules: int = 0
 
-    # Risk & Issues
-    risk_level: RiskLevel = RiskLevel.LOW
-    risk_indicators: List[Dict[str, Any]] = field(default_factory=list)
-    issues: List[Dict[str, Any]] = field(default_factory=list)
+    # Generated content
+    generated_codebase_id: Optional[str] = None
+    repository_url: Optional[str] = None
+    deployment_url: Optional[str] = None
 
-    # Timestamps
-    created_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
-    updated_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
-    completed_at: Optional[datetime.datetime] = None
-    archived_at: Optional[datetime.datetime] = None
-
-    # Status Flags
-    is_archived: bool = False
+    # Metadata
+    tags: List[str] = field(default_factory=list)
+    priority: TaskPriority = TaskPriority.MEDIUM
 
     def __post_init__(self):
-        """Validate and clean project data"""
-        self.name = ValidationHelper.sanitize_input(self.name)
-        self.description = ValidationHelper.sanitize_input(self.description)
+        """Validate project data after initialization"""
+        self.validate()
 
-        # Validate project name
-        if self.name and not ValidationHelper.validate_project_name(self.name):
-            raise ValueError(f"Invalid project name: {self.name}")
+    def validate(self) -> None:
+        """Validate project data"""
+        if not ValidationHelper.validate_project_name(self.name):
+            raise ValidationError("Invalid project name")
 
-    def add_collaborator(self, username: str, role: UserRole, permissions: List[str] = None) -> bool:
-        """Add a collaborator to the project"""
-        if username == self.owner:
-            return False  # Owner is not a collaborator
+        if self.end_date and self.start_date and self.end_date < self.start_date:
+            raise ValidationError("End date cannot be before start date")
 
-        # Check if already exists
-        if any(c.username == username for c in self.collaborators):
-            return False
+        if self.progress_percentage < 0 or self.progress_percentage > 100:
+            raise ValidationError("Progress percentage must be between 0 and 100")
 
-        collaborator = Collaborator(
-            username=username,
-            role=role,
-            permissions=permissions or []
-        )
-        self.collaborators.append(collaborator)
-        self.updated_at = DateTimeHelper.now()
-        return True
+    @property
+    def is_active(self) -> bool:
+        """Check if project is active"""
+        return self.status == ProjectStatus.ACTIVE
 
-    def remove_collaborator(self, username: str) -> bool:
-        """Remove a collaborator from the project"""
-        initial_count = len(self.collaborators)
-        self.collaborators = [c for c in self.collaborators if c.username != username]
+    @property
+    def duration_days(self) -> Optional[int]:
+        """Get project duration in days"""
+        if self.start_date and self.end_date:
+            return (self.end_date - self.start_date).days
+        return None
 
-        if len(self.collaborators) < initial_count:
-            self.updated_at = DateTimeHelper.now()
-            return True
-        return False
-
-    def get_all_team_members(self) -> List[str]:
-        """Get all team members (owner + collaborators)"""
-        return [self.owner] + [c.username for c in self.collaborators if c.is_active]
-
-    def update_progress(self, percentage: float) -> None:
-        """Update project progress"""
-        self.progress_percentage = max(0.0, min(100.0, percentage))
-        self.updated_at = DateTimeHelper.now()
-
-        if self.progress_percentage >= 100.0 and self.status == ProjectStatus.ACTIVE:
-            self.status = ProjectStatus.COMPLETED
-            self.completed_at = DateTimeHelper.now()
-
-
-# ============================================================================
-# CORE DATA MODEL 2: MODULE
-# ============================================================================
 
 @dataclass
-class Module:
-    """Module model - simple task breakdown within projects"""
+class Module(BaseModel):
+    """Project module/component"""
 
-    # Basic Information
-    module_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     project_id: str = ""
     name: str = ""
     description: str = ""
-
-    # Module Configuration
     module_type: ModuleType = ModuleType.BACKEND
-    phase: ProjectPhase = ProjectPhase.DISCOVERY
-    status: ModuleStatus = ModuleStatus.NOT_STARTED
-    priority: Priority = Priority.MEDIUM
 
-    # Task Management
-    tasks: List[str] = field(default_factory=list)  # Simple task descriptions
-    assigned_roles: List[UserRole] = field(default_factory=list)
-    assigned_users: List[str] = field(default_factory=list)  # Usernames
+    # Hierarchy
+    parent_module_id: Optional[str] = None
+    order: int = 0
 
-    # Dependencies
+    # Technical specifications
     dependencies: List[str] = field(default_factory=list)  # Other module IDs
-    blocks: List[str] = field(default_factory=list)  # Modules this blocks
+    technologies: List[str] = field(default_factory=list)
+    apis_provided: List[str] = field(default_factory=list)
+    apis_consumed: List[str] = field(default_factory=list)
 
-    # Generated Files
+    # Progress tracking
+    status: TaskStatus = TaskStatus.PENDING
+    progress_percentage: float = 0.0
+    estimated_hours: Optional[int] = None
+    actual_hours: Optional[int] = None
+
+    # Assignment
+    assigned_to: Optional[str] = None  # User ID
+    reviewer: Optional[str] = None  # User ID
+
+    # Generated content
     generated_files: List[str] = field(default_factory=list)  # File IDs
 
-    # Progress & Metrics
-    progress_percentage: float = 0.0
-    estimated_hours: int = 0
-    actual_hours: int = 0
+    def __post_init__(self):
+        """Validate module data after initialization"""
+        self.validate()
 
-    # Quality & Risk
-    risk_level: RiskLevel = RiskLevel.LOW
+    def validate(self) -> None:
+        """Validate module data"""
+        if not self.name or len(self.name.strip()) < 2:
+            raise ValidationError("Module name must be at least 2 characters long")
+
+        if self.progress_percentage < 0 or self.progress_percentage > 100:
+            raise ValidationError("Progress percentage must be between 0 and 100")
+
+
+@dataclass
+class Task(BaseModel):
+    """Individual task within a module"""
+
+    module_id: str = ""
+    project_id: str = ""
+    title: str = ""
+    description: str = ""
+
+    # Task properties
+    status: TaskStatus = TaskStatus.PENDING
+    priority: TaskPriority = TaskPriority.MEDIUM
+    task_type: str = ""  # development, testing, review, etc.
+
+    # Assignment and timing
+    assigned_to: Optional[str] = None  # User ID
+    estimated_hours: Optional[int] = None
+    actual_hours: Optional[int] = None
+    due_date: Optional[datetime.datetime] = None
+    completed_date: Optional[datetime.datetime] = None
+
+    # Task relationships
+    depends_on: List[str] = field(default_factory=list)  # Other task IDs
+    blocks: List[str] = field(default_factory=list)  # Other task IDs
+
+    # Progress tracking
+    progress_percentage: float = 0.0
+    notes: str = ""
+
+    # Generated content
+    related_files: List[str] = field(default_factory=list)  # Generated file IDs
+
+    def __post_init__(self):
+        """Validate task data after initialization"""
+        self.validate()
+
+    def validate(self) -> None:
+        """Validate task data"""
+        if not self.title or len(self.title.strip()) < 3:
+            raise ValidationError("Task title must be at least 3 characters long")
+
+        if self.progress_percentage < 0 or self.progress_percentage > 100:
+            raise ValidationError("Progress percentage must be between 0 and 100")
+
+    @property
+    def is_overdue(self) -> bool:
+        """Check if task is overdue"""
+        return (self.due_date is not None and
+                self.status != TaskStatus.COMPLETED and
+                DateTimeHelper.now() > self.due_date)
+
+
+# ============================================================================
+# SOCRATIC CONVERSATION MODELS
+# ============================================================================
+
+@dataclass
+class SocraticSession(BaseModel):
+    """Socratic questioning session"""
+
+    project_id: str = ""
+    user_id: str = ""
+    current_role: TechnicalRole = TechnicalRole.PROJECT_MANAGER
+    status: ConversationStatus = ConversationStatus.ACTIVE
+
+    # Session configuration
+    roles_to_cover: List[TechnicalRole] = field(default_factory=list)
+    completed_roles: List[TechnicalRole] = field(default_factory=list)
+
+    # Progress tracking
+    total_questions: int = 0
+    questions_answered: int = 0
+    insights_generated: int = 0
+    conflicts_detected: int = 0
+
+    # Session metadata
+    session_notes: str = ""
+    quality_score: float = 0.0
+    completion_percentage: float = 0.0
+
+    def __post_init__(self):
+        """Initialize default roles if not provided"""
+        if not self.roles_to_cover:
+            self.roles_to_cover = list(TechnicalRole)
+
+    @property
+    def remaining_roles(self) -> List[TechnicalRole]:
+        """Get roles that haven't been covered yet"""
+        return [role for role in self.roles_to_cover if role not in self.completed_roles]
+
+    @property
+    def is_complete(self) -> bool:
+        """Check if session is complete"""
+        return len(self.remaining_roles) == 0
+
+
+@dataclass
+class Question(BaseModel):
+    """Individual Socratic question"""
+
+    session_id: str = ""
+    role: TechnicalRole = TechnicalRole.PROJECT_MANAGER
+    question_text: str = ""
+    context: str = ""
+
+    # Question properties
+    is_follow_up: bool = False
+    parent_question_id: Optional[str] = None
+    importance_score: float = 0.5
+
+    # Response tracking
+    is_answered: bool = False
+    answer_text: str = ""
+    answer_quality_score: float = 0.0
+
+    # Analysis results
+    generated_insights: List[str] = field(default_factory=list)
+    detected_conflicts: List[str] = field(default_factory=list)
+    recommended_follow_ups: List[str] = field(default_factory=list)
+
+
+@dataclass
+class Conflict(BaseModel):
+    """Detected specification conflict"""
+
+    project_id: str = ""
+    session_id: str = ""
+    conflict_type: ConflictType = ConflictType.TECHNICAL
+
+    # Conflict details
+    description: str = ""
+    severity: str = "medium"  # low, medium, high, critical
+
+    # Conflicting elements
+    first_requirement: str = ""
+    second_requirement: str = ""
+    conflicting_roles: List[TechnicalRole] = field(default_factory=list)
+
+    # Resolution
+    is_resolved: bool = False
+    resolution_strategy: str = ""
+    resolution_notes: str = ""
+    resolved_by: Optional[str] = None  # User ID
+    resolved_at: Optional[datetime.datetime] = None
+
+    # Impact analysis
+    affected_modules: List[str] = field(default_factory=list)
+    estimated_impact_hours: Optional[int] = None
+
+
+# ============================================================================
+# TECHNICAL SPECIFICATION MODELS
+# ============================================================================
+
+@dataclass
+class TechnicalSpec(BaseModel):
+    """Complete technical specification for a project"""
+
+    project_id: str = ""
+    version: str = "1.0.0"
+
+    # Architecture specification
+    architecture_type: str = ""  # MVC, microservices, layered, etc.
+    technology_stack: Dict[str, str] = field(default_factory=dict)
+
+    # Functional requirements
+    functional_requirements: List[str] = field(default_factory=list)
+    non_functional_requirements: List[str] = field(default_factory=list)
+
+    # System design
+    system_components: List[str] = field(default_factory=list)
+    data_models: List[str] = field(default_factory=list)
+    api_specifications: List[str] = field(default_factory=list)
+
+    # Quality requirements
+    performance_requirements: Dict[str, Any] = field(default_factory=dict)
+    security_requirements: List[str] = field(default_factory=list)
+    scalability_requirements: Dict[str, Any] = field(default_factory=dict)
+
+    # Deployment and operations
+    deployment_strategy: str = ""
+    infrastructure_requirements: Dict[str, Any] = field(default_factory=dict)
+    monitoring_requirements: List[str] = field(default_factory=list)
+
+    # Testing strategy
+    testing_strategy: Dict[str, Any] = field(default_factory=dict)
+    acceptance_criteria: List[str] = field(default_factory=list)
+
+    # Documentation requirements
+    documentation_requirements: List[str] = field(default_factory=list)
+
+    # Approval and validation
+    is_approved: bool = False
+    approved_by: Optional[str] = None  # User ID
+    approved_at: Optional[datetime.datetime] = None
+    approval_notes: str = ""
+
+
+# ============================================================================
+# CODE GENERATION MODELS
+# ============================================================================
+
+@dataclass
+class GeneratedCodebase(BaseModel):
+    """Complete generated codebase"""
+
+    project_id: str = ""
+    spec_id: str = ""
+    version: str = "1.0.0"
+
+    # Architecture information
+    architecture_type: str = ""
+    technology_stack: Dict[str, str] = field(default_factory=dict)
+
+    # File structure
+    file_structure: Dict[str, Any] = field(default_factory=dict)
+    generated_files: List[str] = field(default_factory=list)  # GeneratedFile IDs
+
+    # Quality metrics
+    total_lines_of_code: int = 0
+    total_files: int = 0
     code_quality_score: float = 0.0
     test_coverage: float = 0.0
 
-    # Timestamps
-    created_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
-    updated_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
-    started_at: Optional[datetime.datetime] = None
-    completed_at: Optional[datetime.datetime] = None
+    # Performance metrics
+    generation_time_seconds: float = 0.0
+    compilation_successful: bool = False
+    tests_passing: bool = False
 
-    def __post_init__(self):
-        """Validate module data"""
-        self.name = ValidationHelper.sanitize_input(self.name)
-        self.description = ValidationHelper.sanitize_input(self.description)
+    # Security analysis
+    security_scan_results: Dict[str, Any] = field(default_factory=dict)
+    security_issues_count: int = 0
+    critical_issues_count: int = 0
 
-    def add_task(self, task_description: str) -> None:
-        """Add a task to the module"""
-        task = ValidationHelper.sanitize_input(task_description)
-        if task and task not in self.tasks:
-            self.tasks.append(task)
-            self.updated_at = DateTimeHelper.now()
+    # Deployment information
+    deployment_config: Dict[str, Any] = field(default_factory=dict)
+    deployment_status: str = "not_deployed"  # not_deployed, staging, production
 
-    def mark_started(self) -> None:
-        """Mark module as started"""
-        if self.status == ModuleStatus.NOT_STARTED:
-            self.status = ModuleStatus.IN_PROGRESS
-            self.started_at = DateTimeHelper.now()
-            self.updated_at = DateTimeHelper.now()
+    # Validation results
+    validation_results: List[str] = field(default_factory=list)  # TestResult IDs
+    error_count: int = 0
+    warning_count: int = 0
 
-    def mark_completed(self) -> None:
-        """Mark module as completed"""
-        self.status = ModuleStatus.COMPLETED
-        self.completed_at = DateTimeHelper.now()
-        self.updated_at = DateTimeHelper.now()
-        self.progress_percentage = 100.0
-
-    def update_progress(self, percentage: float) -> None:
-        """Update module progress"""
-        self.progress_percentage = max(0.0, min(100.0, percentage))
-        self.updated_at = DateTimeHelper.now()
-
-        # Auto-update status based on progress
-        if percentage > 0 and self.status == ModuleStatus.NOT_STARTED:
-            self.mark_started()
-        elif percentage >= 100.0:
-            self.mark_completed()
-
-
-# ============================================================================
-# CORE DATA MODEL 3: GENERATED FILE
-# ============================================================================
 
 @dataclass
-class GeneratedFile:
-    """Generated file model - path + content + status"""
+class GeneratedFile(BaseModel):
+    """Individual generated file"""
 
-    # Basic Information
-    file_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    codebase_id: str = ""
     project_id: str = ""
-    module_id: Optional[str] = None
-    codebase_id: Optional[str] = None
 
-    # File Details
-    file_path: str = ""  # Relative path within project
+    # File information
+    file_path: str = ""
     file_name: str = ""
     file_type: FileType = FileType.PYTHON
     file_purpose: str = ""  # model, controller, view, test, config, etc.
 
     # Content
     content: str = ""
-    content_hash: str = ""  # For change detection
     size_bytes: int = 0
+    lines_of_code: int = 0
 
-    # Generation Details
-    generated_by_agent: str = ""
-    generation_prompt: str = ""
-    generation_context: Dict[str, Any] = field(default_factory=dict)
-
-    # Dependencies & Relationships
-    dependencies: List[str] = field(default_factory=list)  # Other file IDs this depends on
-    dependents: List[str] = field(default_factory=list)  # Files that depend on this
-    related_files: List[str] = field(default_factory=list)  # Associated files (tests, etc.)
-
-    # Status & Quality
-    status: FileStatus = FileStatus.GENERATING
-    has_errors: bool = False
-    error_messages: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
-
-    # Metrics
+    # Quality metrics
     complexity_score: float = 0.0
     maintainability_score: float = 0.0
     test_coverage: float = 0.0
-    lines_of_code: int = 0
 
-    # Documentation
-    documentation: str = ""
-    comments_ratio: float = 0.0
+    # Dependencies
+    dependencies: List[str] = field(default_factory=list)
+    imports: List[str] = field(default_factory=list)
 
-    # Timestamps
-    created_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
-    updated_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
-    last_generated: datetime.datetime = field(default_factory=DateTimeHelper.now)
-    last_tested: Optional[datetime.datetime] = None
-    deployed_at: Optional[datetime.datetime] = None
+    # Generation metadata
+    generated_by_agent: str = ""
+    generation_time_seconds: float = 0.0
+    template_used: Optional[str] = None
 
-    # Version Control
-    version: str = "1.0"
-    git_hash: Optional[str] = None
+    # Validation
+    syntax_valid: bool = True
+    linting_issues: List[str] = field(default_factory=list)
+    security_issues: List[str] = field(default_factory=list)
 
     def __post_init__(self):
-        """Validate and process file data"""
-        self.file_path = ValidationHelper.sanitize_input(self.file_path)
-        self.file_name = ValidationHelper.sanitize_input(self.file_name)
-
+        """Calculate derived fields after initialization"""
         if self.content:
             self.size_bytes = len(self.content.encode('utf-8'))
-            self.lines_of_code = len([line for line in self.content.split('\n') if line.strip()])
+            self.lines_of_code = len([line for line in self.content.split('\n')
+                                      if line.strip() and not line.strip().startswith('#')])
 
-            # Generate content hash for change detection
-            import hashlib
-            self.content_hash = hashlib.sha256(self.content.encode('utf-8')).hexdigest()
-
-    def update_content(self, new_content: str, generated_by: str = "") -> bool:
-        """Update file content and related metadata"""
-        old_hash = self.content_hash
-
-        self.content = new_content
-        self.generated_by_agent = generated_by
-        self.last_generated = DateTimeHelper.now()
-        self.updated_at = DateTimeHelper.now()
-        self.status = FileStatus.GENERATED
-
-        # Update computed fields
-        self.__post_init__()
-
-        # Return True if content actually changed
-        return self.content_hash != old_hash
-
-    def mark_tested(self, coverage: float = 0.0) -> None:
-        """Mark file as tested"""
-        self.status = FileStatus.TESTED
-        self.test_coverage = max(0.0, min(100.0, coverage))
-        self.last_tested = DateTimeHelper.now()
-        self.updated_at = DateTimeHelper.now()
-
-    def mark_failed(self, error_messages: List[str]) -> None:
-        """Mark file as failed with error messages"""
-        self.status = FileStatus.FAILED
-        self.has_errors = True
-        self.error_messages.extend(error_messages)
-        self.updated_at = DateTimeHelper.now()
-
-    def add_dependency(self, file_id: str) -> None:
-        """Add a file dependency"""
-        if file_id not in self.dependencies:
-            self.dependencies.append(file_id)
-            self.updated_at = DateTimeHelper.now()
-
-    def get_relative_path(self) -> str:
-        """Get the relative file path for IDE integration"""
-        return self.file_path.replace('\\', '/').lstrip('/')
-
-
-# ============================================================================
-# CORE DATA MODEL 4: TEST RESULT
-# ============================================================================
 
 @dataclass
-class TestResult:
-    """Test result model - pass/fail + basic metrics"""
+class TestResult(BaseModel):
+    """Test execution result"""
 
-    # Basic Information
-    test_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    codebase_id: str = ""
     project_id: str = ""
-    module_id: Optional[str] = None
-    codebase_id: Optional[str] = None
 
-    # Test Configuration
+    # Test information
     test_type: TestType = TestType.UNIT
     test_suite: str = ""
-    test_framework: str = "pytest"  # pytest, jest, cypress, etc.
+    test_name: str = ""
 
-    # Files Under Test
-    files_tested: List[str] = field(default_factory=list)  # File IDs
-    test_files: List[str] = field(default_factory=list)  # Test file IDs
-
-    # Test Results
-    status: TestStatus = TestStatus.PENDING
+    # Execution results
     passed: bool = False
+    execution_time_seconds: float = 0.0
+
+    # Test metrics
     total_tests: int = 0
     passed_tests: int = 0
     failed_tests: int = 0
     skipped_tests: int = 0
-    error_tests: int = 0
 
-    # Coverage Metrics
+    # Coverage information
     coverage_percentage: float = 0.0
-    line_coverage: float = 0.0
-    branch_coverage: float = 0.0
-    function_coverage: float = 0.0
+    files_tested: List[str] = field(default_factory=list)
 
-    # Performance Metrics
-    execution_time_seconds: float = 0.0
+    # Failure details
+    failure_messages: List[str] = field(default_factory=list)
+    stack_traces: List[str] = field(default_factory=list)
+
+    # Performance metrics
     memory_usage_mb: float = 0.0
-    cpu_usage_percent: float = 0.0
+    cpu_usage_percentage: float = 0.0
 
-    # Detailed Results
-    test_cases: List[Dict[str, Any]] = field(default_factory=list)
-    failure_details: List[Dict[str, Any]] = field(default_factory=list)
-    error_details: List[Dict[str, Any]] = field(default_factory=list)
+    # Test environment
+    test_environment: Dict[str, str] = field(default_factory=dict)
 
-    # Quality Metrics
-    code_quality_score: float = 0.0
-    maintainability_score: float = 0.0
-    complexity_warnings: List[str] = field(default_factory=list)
-
-    # Security & Performance
-    security_issues: List[Dict[str, Any]] = field(default_factory=list)
-    performance_issues: List[Dict[str, Any]] = field(default_factory=list)
-    optimization_suggestions: List[str] = field(default_factory=list)
-
-    # Environment
-    test_environment: Dict[str, Any] = field(default_factory=dict)
-    python_version: str = ""
-    node_version: str = ""
-    browser_info: Dict[str, str] = field(default_factory=dict)
-
-    # Timestamps
-    created_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
-    started_at: Optional[datetime.datetime] = None
-    completed_at: Optional[datetime.datetime] = None
-
-    # Execution Details
-    exit_code: int = 0
-    stdout: str = ""
-    stderr: str = ""
-    command_line: str = ""
-
-    def mark_started(self) -> None:
-        """Mark test as started"""
-        self.status = TestStatus.RUNNING
-        self.started_at = DateTimeHelper.now()
-
-    def mark_completed(self, success: bool, execution_time: float = 0.0) -> None:
-        """Mark test as completed"""
-        self.status = TestStatus.PASSED if success else TestStatus.FAILED
-        self.passed = success
-        self.execution_time_seconds = execution_time
-        self.completed_at = DateTimeHelper.now()
-
-        # Calculate pass rate
-        if self.total_tests > 0:
-            self.passed_tests = self.total_tests - self.failed_tests - self.skipped_tests - self.error_tests
-
-    def add_test_case(self, name: str, status: str, duration: float = 0.0,
-                      error_message: str = "") -> None:
-        """Add a test case result"""
-        test_case = {
-            'name': name,
-            'status': status,
-            'duration': duration,
-            'error_message': error_message,
-            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-        }
-        self.test_cases.append(test_case)
-
-        # Update counters
-        self.total_tests += 1
-        if status == 'passed':
-            self.passed_tests += 1
-        elif status == 'failed':
-            self.failed_tests += 1
-        elif status == 'skipped':
-            self.skipped_tests += 1
-        elif status == 'error':
-            self.error_tests += 1
-
-    def add_failure(self, test_name: str, message: str, traceback: str = "") -> None:
-        """Add a test failure"""
-        failure = {
-            'test_name': test_name,
-            'message': message,
-            'traceback': traceback,
-            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-        }
-        self.failure_details.append(failure)
-
-    def get_success_rate(self) -> float:
-        """Get test success rate as percentage"""
+    @property
+    def success_rate(self) -> float:
+        """Calculate test success rate"""
         if self.total_tests == 0:
             return 0.0
-        return (self.passed_tests / self.total_tests) * 100.0
-
-    def get_summary(self) -> Dict[str, Any]:
-        """Get test result summary"""
-        return {
-            'test_id': self.test_id,
-            'test_type': self.test_type.value,
-            'status': self.status.value,
-            'passed': self.passed,
-            'total_tests': self.total_tests,
-            'success_rate': self.get_success_rate(),
-            'coverage': self.coverage_percentage,
-            'execution_time': self.execution_time_seconds,
-            'has_failures': len(self.failure_details) > 0,
-            'has_security_issues': len(self.security_issues) > 0,
-            'completed_at': DateTimeHelper.to_iso_string(self.completed_at) if self.completed_at else None
-        }
+        return (self.passed_tests / self.total_tests) * 100
 
 
 # ============================================================================
-# MODEL UTILITIES
+# ANALYTICS AND REPORTING MODELS
 # ============================================================================
 
-class ModelValidator:
-    """Utility class for model validation"""
+@dataclass
+class ProjectMetrics(BaseModel):
+    """Project analytics and metrics"""
 
-    @staticmethod
-    def validate_project(project: Project) -> List[str]:
-        """Validate project model and return list of errors"""
-        errors = []
+    project_id: str = ""
 
-        if not project.name:
-            errors.append("Project name is required")
-        elif not ValidationHelper.validate_project_name(project.name):
-            errors.append("Invalid project name format")
+    # Development metrics
+    total_development_hours: float = 0.0
+    code_generation_time: float = 0.0
+    testing_time: float = 0.0
+    review_time: float = 0.0
 
-        if not project.owner:
-            errors.append("Project owner is required")
+    # Quality metrics
+    average_code_quality: float = 0.0
+    test_coverage: float = 0.0
+    bug_count: int = 0
+    security_issues: int = 0
 
-        if project.progress_percentage < 0 or project.progress_percentage > 100:
-            errors.append("Progress percentage must be between 0 and 100")
+    # Productivity metrics
+    lines_of_code_generated: int = 0
+    files_generated: int = 0
+    tests_generated: int = 0
+    documentation_pages: int = 0
 
-        return errors
+    # Collaboration metrics
+    team_members_active: int = 0
+    sessions_completed: int = 0
+    conflicts_resolved: int = 0
+    insights_generated: int = 0
 
-    @staticmethod
-    def validate_module(module: Module) -> List[str]:
-        """Validate module model and return list of errors"""
-        errors = []
+    # Timeline metrics
+    planned_duration_days: Optional[int] = None
+    actual_duration_days: Optional[int] = None
+    delays_count: int = 0
 
-        if not module.name:
-            errors.append("Module name is required")
-
-        if not module.project_id:
-            errors.append("Module must belong to a project")
-
-        if module.progress_percentage < 0 or module.progress_percentage > 100:
-            errors.append("Progress percentage must be between 0 and 100")
-
-        return errors
-
-    @staticmethod
-    def validate_generated_file(file: GeneratedFile) -> List[str]:
-        """Validate generated file model and return list of errors"""
-        errors = []
-
-        if not file.file_path:
-            errors.append("File path is required")
-
-        if not file.project_id:
-            errors.append("File must belong to a project")
-
-        if not file.content and file.status not in [FileStatus.GENERATING]:
-            errors.append("File content is required for generated files")
-
-        return errors
+    # Success metrics
+    client_satisfaction: float = 0.0
+    deployment_success: bool = False
+    post_deployment_issues: int = 0
 
 
-# ============================================================================
-# MODEL FACTORY
-# ============================================================================
+@dataclass
+class UserActivity(BaseModel):
+    """User activity tracking"""
 
-class ModelFactory:
-    """Factory class for creating model instances"""
+    user_id: str = ""
 
-    @staticmethod
-    def create_project(name: str, owner: str, description: str = "") -> Project:
-        """Create a new project instance"""
-        project = Project(
-            name=name,
-            owner=owner,
-            description=description
-        )
-        return project
+    # Activity metrics
+    sessions_started: int = 0
+    sessions_completed: int = 0
+    questions_answered: int = 0
+    projects_created: int = 0
 
-    @staticmethod
-    def create_module(project_id: str, name: str, module_type: ModuleType = ModuleType.BACKEND) -> Module:
-        """Create a new module instance"""
-        module = Module(
-            project_id=project_id,
-            name=name,
-            module_type=module_type
-        )
-        return module
+    # Time tracking
+    total_active_time_hours: float = 0.0
+    last_activity: datetime.datetime = field(default_factory=DateTimeHelper.now)
 
-    @staticmethod
-    def create_generated_file(project_id: str, file_path: str, file_type: FileType) -> GeneratedFile:
-        """Create a new generated file instance"""
-        file_name = file_path.split('/')[-1] if '/' in file_path else file_path
+    # Productivity metrics
+    code_lines_generated: int = 0
+    tests_created: int = 0
+    bugs_found: int = 0
+    insights_provided: int = 0
 
-        generated_file = GeneratedFile(
-            project_id=project_id,
-            file_path=file_path,
-            file_name=file_name,
-            file_type=file_type
-        )
-        return generated_file
-
-    @staticmethod
-    def create_test_result(project_id: str, test_type: TestType = TestType.UNIT) -> TestResult:
-        """Create a new test result instance"""
-        test_result = TestResult(
-            project_id=project_id,
-            test_type=test_type
-        )
-        return test_result
+    # Collaboration metrics
+    conflicts_mediated: int = 0
+    reviews_completed: int = 0
+    mentoring_sessions: int = 0
 
 
 # ============================================================================
-# EXPORT FUNCTIONS
+# MODEL COLLECTIONS AND UTILITIES
 # ============================================================================
 
-def export_models():
-    """Export all model classes for easy importing"""
-    return {
-        # Enums
-        'ProjectPhase': ProjectPhase,
-        'ProjectStatus': ProjectStatus,
-        'ModuleStatus': ModuleStatus,
-        'ModuleType': ModuleType,
-        'Priority': Priority,
-        'RiskLevel': RiskLevel,
-        'FileType': FileType,
-        'FileStatus': FileStatus,
-        'TestType': TestType,
-        'TestStatus': TestStatus,
-        'UserRole': UserRole,
+class ModelRegistry:
+    """Registry for all model types"""
 
-        # Core Models
-        'Project': Project,
-        'Module': Module,
-        'GeneratedFile': GeneratedFile,
-        'TestResult': TestResult,
-
-        # Supporting Models
-        'User': User,
-        'Collaborator': Collaborator,
-        'ConversationMessage': ConversationMessage,
-        'TechnicalSpecification': TechnicalSpecification,
-
-        # Utilities
-        'ModelValidator': ModelValidator,
-        'ModelFactory': ModelFactory,
+    MODELS = {
+        'user': User,
+        'user_session': UserSession,
+        'project': Project,
+        'module': Module,
+        'task': Task,
+        'socratic_session': SocraticSession,
+        'question': Question,
+        'conflict': Conflict,
+        'technical_spec': TechnicalSpec,
+        'generated_codebase': GeneratedCodebase,
+        'generated_file': GeneratedFile,
+        'test_result': TestResult,
+        'project_metrics': ProjectMetrics,
+        'user_activity': UserActivity,
     }
 
+    @classmethod
+    def get_model_class(cls, model_name: str) -> type:
+        """Get model class by name"""
+        return cls.MODELS.get(model_name)
+
+    @classmethod
+    def get_all_models(cls) -> Dict[str, type]:
+        """Get all registered models"""
+        return cls.MODELS.copy()
+
+    @classmethod
+    def create_instance(cls, model_name: str, **kwargs) -> BaseModel:
+        """Create model instance by name"""
+        model_class = cls.get_model_class(model_name)
+        if not model_class:
+            raise ValidationError(f"Unknown model type: {model_name}")
+        return model_class(**kwargs)
+
+
+def validate_model_data(model: BaseModel) -> List[str]:
+    """Validate model data and return list of issues"""
+    issues = []
+
+    try:
+        if hasattr(model, 'validate'):
+            model.validate()
+    except ValidationError as e:
+        issues.append(str(e))
+    except Exception as e:
+        issues.append(f"Validation error: {str(e)}")
+
+    return issues
+
+
+def serialize_model(model: BaseModel) -> str:
+    """Serialize model to JSON string"""
+    try:
+        return model.to_json()
+    except Exception as e:
+        logger.error(f"Failed to serialize model {type(model).__name__}: {e}")
+        raise ValidationError(f"Serialization failed: {e}")
+
+
+def deserialize_model(model_name: str, json_data: str) -> BaseModel:
+    """Deserialize JSON string to model instance"""
+    try:
+        model_class = ModelRegistry.get_model_class(model_name)
+        if not model_class:
+            raise ValidationError(f"Unknown model type: {model_name}")
+
+        data = json.loads(json_data)
+
+        # Convert datetime strings back to datetime objects
+        for key, value in data.items():
+            if key.endswith('_at') or key.endswith('_date'):
+                if isinstance(value, str):
+                    try:
+                        data[key] = DateTimeHelper.from_iso_string(value)
+                    except (ValueError, AttributeError):
+                        pass
+
+        return model_class(**data)
+
+    except Exception as e:
+        logger.error(f"Failed to deserialize model {model_name}: {e}")
+        raise ValidationError(f"Deserialization failed: {e}")
+
+
+# ============================================================================
+# MODULE INITIALIZATION
+# ============================================================================
+
+# Log successful module initialization
+logger.info("Data models module initialized successfully")
+
+# Export model registry for easy access
+__all__ = [
+    # Enums
+    'UserRole', 'UserStatus', 'ProjectPhase', 'ProjectStatus', 'TaskStatus',
+    'TaskPriority', 'ModuleType', 'TechnicalRole', 'FileType', 'TestType',
+    'ConversationStatus', 'ConflictType', 'CodeQualityLevel',
+
+    # Base models
+    'BaseModel',
+
+    # User models
+    'User', 'UserSession',
+
+    # Project hierarchy models
+    'Project', 'Module', 'Task',
+
+    # Socratic conversation models
+    'SocraticSession', 'Question', 'Conflict',
+
+    # Technical specification models
+    'TechnicalSpec',
+
+    # Code generation models
+    'GeneratedCodebase', 'GeneratedFile', 'TestResult',
+
+    # Analytics models
+    'ProjectMetrics', 'UserActivity',
+
+    # Utilities
+    'ModelRegistry', 'validate_model_data', 'serialize_model', 'deserialize_model'
+]
 
 if __name__ == "__main__":
-    # Test the models
-    project = ModelFactory.create_project("Test Project", "testuser", "A test project")
-    module = ModelFactory.create_module(project.project_id, "Backend API", ModuleType.BACKEND)
-    file = ModelFactory.create_generated_file(project.project_id, "backend/api.py", FileType.PYTHON)
-    test = ModelFactory.create_test_result(project.project_id, TestType.UNIT)
+    # Test model creation and validation
+    logger.info("Testing data models...")
 
-    print("✅ All models created successfully!")
-    print(f"Project: {project.name} ({project.project_id})")
-    print(f"Module: {module.name} ({module.module_id})")
-    print(f"File: {file.file_path} ({file.file_id})")
-    print(f"Test: {test.test_type.value} ({test.test_id})")
+    # Test user model
+    try:
+        user = User(
+            username="test_user",
+            email="test@example.com",
+            first_name="Test",
+            last_name="User",
+            role=UserRole.DEVELOPER
+        )
+        logger.info(f"Created user: {user.full_name}")
 
-"""What src/models.py Provides:
-📊 4 Core Data Models:
+        # Test project model
+        project = Project(
+            name="Test Project",
+            description="A test project for validation",
+            owner_id=user.id,
+            technology_stack={"backend": "Python", "frontend": "React"},
+            requirements=["Feature A", "Feature B"]
+        )
+        logger.info(f"Created project: {project.name}")
 
-Project - Basic info + specs + generated code
+        # Test serialization
+        json_data = serialize_model(project)
+        logger.info("Model serialization successful")
 
-Project details, team collaboration, specifications
-Technical specs, conversation history, progress tracking
-Generated codebase linking, risk assessment
+        # Test deserialization
+        restored_project = deserialize_model('project', json_data)
+        logger.info("Model deserialization successful")
 
+        logger.info("All model tests passed!")
 
-Module - Simple task breakdown
+    except Exception as e:
+        logger.error(f"Model test failed: {e}")
+        raise
 
-Module organization within projects
-Task management, dependencies, assigned roles
-Progress tracking, quality metrics
-
-
-GeneratedFile - Path + content + status
-
-Individual file tracking with full metadata
-Content management, dependency relationships
-Quality metrics, testing status, version control
-
-
-TestResult - Pass/fail + basic metrics
-
-Comprehensive test execution results
-Coverage analysis, performance metrics
-Security scanning, quality assessment
-
-
-
-🔧 Supporting Features:
-
-Complete enum definitions for all status values, types, phases
-User and collaboration models for team management
-Conversation tracking for Socratic sessions
-Technical specifications for detailed project specs
-Model validation utilities with error checking
-Model factory for easy instance creation
-Proper typing throughout with dataclass support
-
-✅ Key Benefits:
-
-Uses DateTimeHelper - No deprecated datetime functions
-Validation integration - Uses core ValidationHelper
-Thread-safe UUID generation for all IDs
-Comprehensive but manageable - Full functionality without over-complexity
-Method helpers - Common operations built-in (add_collaborator, update_progress, etc.)
-
-Usage Example:
-from src.models import ModelFactory, ProjectPhase, ModuleType, FileType
-
-# Create project
-project = ModelFactory.create_project("My App", "john_doe", "A web application")
-
-# Create module  
-module = ModelFactory.create_module(project.project_id, "Backend API", ModuleType.BACKEND)
-
-# Create generated file
-file = ModelFactory.create_generated_file(project.project_id, "backend/api.py", FileType.PYTHON)
-"""
