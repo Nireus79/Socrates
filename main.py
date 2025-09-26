@@ -49,12 +49,8 @@
 # │   │
 # │   └── 📁 static/
 # │       ├── 📁 css/
-# │       │   ├── bootstrap.min.css
 # │       │   └── main.css             # All custom styles
 # │       ├── 📁 js/
-# │       │   ├── bootstrap.bundle.min.js
-# │       │   ├── chart.min.js
-# │       │   ├── htmx.min.js
 # │       │   └── main.js              # All custom JavaScript
 # │       └── 📁 img/
 # │           └── logo.png
