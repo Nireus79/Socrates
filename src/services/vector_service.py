@@ -26,39 +26,28 @@ import uuid
 try:
     import chromadb
     from chromadb.config import Settings
+    from chromadb.api.types import Collection, EmbeddingFunction
+    from typing import List
 
+    # Handle different ChromaDB versions for Documents and Embeddings
     try:
-        from chromadb.api.types import Collection, EmbeddingFunction, Embeddings
-        from typing import List
-
-        # Handle different ChromaDB versions
-        try:
-            from chromadb.api.types import Documents
-        except ImportError:
-            Documents = List[str]
-        from typing import List
-
-        # Define Documents type if not available in this ChromaDB version
-        try:
-            from chromadb.api.types import Documents
-        except ImportError:
-            Documents = List[str]
-        from chromadb.api.types import Documents
+        from chromadb.api.types import Documents, Embeddings
     except ImportError:
-        # Fallback for different ChromaDB versions
-        from chromadb.api.types import Collection, EmbeddingFunction, Embeddings
-        from typing import List
+        # Fallback type definitions for older ChromaDB versions
+        Documents = List[str]
+        Embeddings = List[List[float]]
 
-        Documents = List[str]  # Fallback type definition
     CHROMADB_AVAILABLE = True
+
 except ImportError:
     CHROMADB_AVAILABLE = False
     chromadb = None
     Collection = None
+    Documents = List[str]
+    Embeddings = List[List[float]]
 
 try:
     from sentence_transformers import SentenceTransformer
-
     SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
     SENTENCE_TRANSFORMERS_AVAILABLE = False
@@ -679,4 +668,3 @@ class VectorService:
                 "sentence_transformers_available": SENTENCE_TRANSFORMERS_AVAILABLE,
                 "last_check": datetime.now().isoformat()
             }
-        

@@ -169,14 +169,20 @@ class CodeQualityLevel(Enum):
     POOR = "poor"
 
 
-class FileStatus(Enum):
-    """Generated file status"""
-    GENERATING = "generating"
-    GENERATED = "generated"
-    TESTED = "tested"
-    DEPLOYED = "deployed"
-    ERROR = "error"
-    OUTDATED = "outdated"
+class RiskLevel(Enum):
+    """Risk assessment levels"""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class Priority(Enum):
+    """Priority levels"""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
 
 
 class ModuleStatus(Enum):
@@ -188,12 +194,25 @@ class ModuleStatus(Enum):
     ON_HOLD = "on_hold"
 
 
-class Priority(Enum):
-    """Priority levels"""
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
+class FileStatus(Enum):
+    """Generated file status"""
+    GENERATING = "generating"
+    GENERATED = "generated"
+    TESTED = "tested"
+    DEPLOYED = "deployed"
+    ERROR = "error"
+    OUTDATED = "outdated"
+
+
+class TestStatus(Enum):
+    """Test execution status"""
+    PENDING = "pending"
+    RUNNING = "running"
+    PASSED = "passed"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+    ERROR = "error"
+
 
 # ============================================================================
 # BASE MODELS
@@ -405,23 +424,6 @@ class Project(BaseModel):
 
 
 @dataclass
-class ProjectContext(BaseModel):
-    """Project context information"""
-
-    project_id: str = ""
-    summary: Dict[str, Any] = field(default_factory=dict)
-    insights: List[str] = field(default_factory=list)
-    conflicts: List[str] = field(default_factory=list)
-    decisions: List[str] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-    def __post_init__(self):
-        """Validate context data"""
-        if not self.project_id:
-            raise ValidationError("Project ID is required for context")
-
-@dataclass
 class Module(BaseModel):
     """Project module/component"""
 
@@ -516,6 +518,63 @@ class Task(BaseModel):
         return (self.due_date is not None and
                 self.status != TaskStatus.COMPLETED and
                 DateTimeHelper.now() > self.due_date)
+
+
+@dataclass
+class ProjectContext(BaseModel):
+    """Project context information"""
+
+    project_id: str = ""
+    summary: Dict[str, Any] = field(default_factory=dict)
+    insights: List[str] = field(default_factory=list)
+    conflicts: List[str] = field(default_factory=list)
+    decisions: List[str] = field(default_factory=list)
+    recommendations: List[str] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        """Validate context data"""
+        if not self.project_id:
+            raise ValidationError("Project ID is required for context")
+
+
+@dataclass
+class ModuleContext(BaseModel):
+    """Module context information"""
+
+    module_id: str = ""
+    project_id: str = ""
+    summary: Dict[str, Any] = field(default_factory=dict)
+    dependencies_analysis: List[str] = field(default_factory=list)
+    risk_factors: List[str] = field(default_factory=list)
+    recommendations: List[str] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        """Validate context data"""
+        if not self.module_id:
+            raise ValidationError("Module ID is required for context")
+
+
+@dataclass
+class TaskContext(BaseModel):
+    """Task context information"""
+
+    task_id: str = ""
+    project_id: str = ""
+    module_id: str = ""
+    summary: Dict[str, Any] = field(default_factory=dict)
+    dependencies_analysis: List[str] = field(default_factory=list)
+    risk_factors: List[str] = field(default_factory=list)
+    recommendations: List[str] = field(default_factory=list)
+    estimated_effort: Optional[int] = None
+    actual_effort: Optional[int] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        """Validate context data"""
+        if not self.task_id:
+            raise ValidationError("Task ID is required for context")
 
 
 # ============================================================================
@@ -684,9 +743,6 @@ class TechnicalSpec(BaseModel):
     approval_notes: str = ""
 
 
-TechnicalSpecification = TechnicalSpec
-
-
 # ============================================================================
 # CODE GENERATION MODELS
 # ============================================================================
@@ -742,40 +798,20 @@ class GeneratedFile(BaseModel):
 
     # File information
     file_path: str = ""
-    file_name: str = ""
     file_type: FileType = FileType.PYTHON
     file_purpose: str = ""  # model, controller, view, test, config, etc.
 
     # Content
     content: str = ""
-    size_bytes: int = 0
-    lines_of_code: int = 0
-
-    # Quality metrics
-    complexity_score: float = 0.0
-    maintainability_score: float = 0.0
-    test_coverage: float = 0.0
-
-    # Dependencies
     dependencies: List[str] = field(default_factory=list)
-    imports: List[str] = field(default_factory=list)
+    documentation: str = ""
 
     # Generation metadata
     generated_by_agent: str = ""
-    generation_time_seconds: float = 0.0
-    template_used: Optional[str] = None
-
-    # Validation
-    syntax_valid: bool = True
-    linting_issues: List[str] = field(default_factory=list)
-    security_issues: List[str] = field(default_factory=list)
-
-    def __post_init__(self):
-        """Calculate derived fields after initialization"""
-        if self.content:
-            self.size_bytes = len(self.content.encode('utf-8'))
-            self.lines_of_code = len([line for line in self.content.split('\n')
-                                      if line.strip() and not line.strip().startswith('#')])
+    version: str = "1.0.0"
+    size_bytes: int = 0
+    complexity_score: float = 0.0
+    test_coverage: float = 0.0
 
 
 @dataclass
@@ -788,13 +824,10 @@ class TestResult(BaseModel):
     # Test information
     test_type: TestType = TestType.UNIT
     test_suite: str = ""
-    test_name: str = ""
+    files_tested: List[str] = field(default_factory=list)
 
     # Execution results
     passed: bool = False
-    execution_time_seconds: float = 0.0
-
-    # Test metrics
     total_tests: int = 0
     passed_tests: int = 0
     failed_tests: int = 0
@@ -802,10 +835,7 @@ class TestResult(BaseModel):
 
     # Coverage information
     coverage_percentage: float = 0.0
-    files_tested: List[str] = field(default_factory=list)
-
-    # Failure details
-    failure_messages: List[str] = field(default_factory=list)
+    failure_details: List[Dict] = field(default_factory=list)
     stack_traces: List[str] = field(default_factory=list)
 
     # Performance metrics
@@ -896,50 +926,6 @@ class UserActivity(BaseModel):
     mentoring_sessions: int = 0
 
 
-@dataclass
-class ModuleContext(BaseModel):
-    """Module context information"""
-
-    module_id: str = ""
-    project_id: str = ""
-    summary: Dict[str, Any] = field(default_factory=dict)
-    dependencies_analysis: List[str] = field(default_factory=list)
-    risk_factors: List[str] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class ProjectContext(BaseModel):
-    """Project context information"""
-
-    project_id: str = ""
-    summary: Dict[str, Any] = field(default_factory=dict)
-    insights: List[str] = field(default_factory=list)
-    conflicts: List[str] = field(default_factory=list)
-    decisions: List[str] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class ConversationMessage(BaseModel):
-    """Individual conversation message"""
-
-    project_id: str = ""
-    timestamp: datetime.datetime = field(default_factory=DateTimeHelper.now)
-    message_type: str = "user"  # user, agent, system
-    content: str = ""
-    phase: str = "discovery"
-    role: Optional[str] = None
-    author: Optional[str] = None
-    question_number: Optional[int] = None
-    insights_extracted: Dict[str, Any] = field(default_factory=dict)
-
-
-# Legacy aliases
-TechnicalSpecification = TechnicalSpec
-
 # ============================================================================
 # MODEL COLLECTIONS AND UTILITIES
 # ============================================================================
@@ -950,11 +936,15 @@ class ModelRegistry:
     MODELS = {
         'user': User,
         'user_session': UserSession,
+        'collaborator': Collaborator,
         'project': Project,
         'module': Module,
         'task': Task,
+        'project_context': ProjectContext,
+        'module_context': ModuleContext,
         'socratic_session': SocraticSession,
         'question': Question,
+        'conversation_message': ConversationMessage,
         'conflict': Conflict,
         'technical_spec': TechnicalSpec,
         'generated_codebase': GeneratedCodebase,
@@ -1034,31 +1024,29 @@ def deserialize_model(model_name: str, json_data: str) -> BaseModel:
 
 # Legacy aliases for backwards compatibility
 TechnicalSpecification = TechnicalSpec
+
 # ============================================================================
-# MODULE INITIALIZATION
+# MODULE EXPORTS
 # ============================================================================
 
-# Log successful module initialization
-logger.info("Data models module initialized successfully")
-
-# Export model registry for easy access
 __all__ = [
     # Enums
     'UserRole', 'UserStatus', 'ProjectPhase', 'ProjectStatus', 'TaskStatus',
     'TaskPriority', 'ModuleType', 'TechnicalRole', 'FileType', 'TestType',
-    'ConversationStatus', 'ConflictType', 'CodeQualityLevel', 'ModuleStatus', 'Priority',  # ← ADD Priority
+    'ConversationStatus', 'ConflictType', 'CodeQualityLevel', 'ModuleStatus',
+    'Priority', 'RiskLevel', 'FileStatus', 'TestStatus',
 
     # Base models
     'BaseModel',
 
     # User models
-    'User', 'UserSession',
+    'User', 'UserSession', 'Collaborator',
 
     # Project hierarchy models
-    'Project', 'Module', 'Task', 'ProjectContext',  # ← ADD ProjectContext
+    'Project', 'Module', 'Task', 'ProjectContext', 'ModuleContext', 'TaskContext',
 
     # Socratic conversation models
-    'SocraticSession', 'Question', 'Conflict',
+    'SocraticSession', 'Question', 'Conflict', 'ConversationMessage',
 
     # Technical specification models
     'TechnicalSpec', 'TechnicalSpecification',
@@ -1072,6 +1060,13 @@ __all__ = [
     # Utilities
     'ModelRegistry', 'validate_model_data', 'serialize_model', 'deserialize_model'
 ]
+
+# ============================================================================
+# MODULE INITIALIZATION
+# ============================================================================
+
+# Log successful module initialization
+logger.info("Data models module initialized successfully")
 
 if __name__ == "__main__":
     # Test model creation and validation

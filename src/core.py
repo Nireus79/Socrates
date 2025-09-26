@@ -74,6 +74,11 @@ class ServiceError(SocraticException):
     pass
 
 
+class APIError(SocraticException):
+    """API operation errors"""
+    pass
+
+
 # ============================================================================
 # CONFIGURATION MANAGEMENT
 # ============================================================================
@@ -880,87 +885,32 @@ def get_db_manager() -> DatabaseManager:
     return DatabaseManager()
 
 
-# Legacy class aliases
-SocraticSystem = SystemConfig  # Alias for backwards compatibility
+def get_system() -> SystemConfig:
+    """Get system instance (alias for get_config)"""
+    return SystemConfig()
 
+
+def get_event_bus() -> EventSystem:
+    """Get the global event system instance"""
+    return EventSystem()
+
+
+# Legacy class aliases and constants
+SocraticSystem = SystemConfig  # Alias for backwards compatibility
+ConfigManager = SystemConfig  # Alias for backwards compatibility
+LogManager = SystemLogger  # Alias for backwards compatibility
+
+# Constants for service availability
+ANTHROPIC_AVAILABLE = True  # Assume available, will be checked at runtime
 
 # ============================================================================
 # MODULE EXPORTS
 # ============================================================================
-def get_config() -> SystemConfig:
-    """Get the global configuration instance"""
-    return SystemConfig()
-
-
-def get_db_manager() -> DatabaseManager:
-    """Get the global database manager instance"""
-    return DatabaseManager()
-
-
-def get_system() -> SystemConfig:
-    """Get system instance (alias for get_config)"""
-    return SystemConfig()
-
-
-def get_event_bus() -> EventSystem:
-    """Get the global event system instance"""
-    return EventSystem()
-
-
-# Legacy class aliases
-SocraticSystem = SystemConfig  # Alias for backwards compatibility
-# Legacy class aliases and constants
-SocraticSystem = SystemConfig  # Alias for backwards compatibility
-ConfigManager = SystemConfig   # Alias for backwards compatibility
-
-# Constants for service availability
-ANTHROPIC_AVAILABLE = True  # Assume available, will be checked at runtime
-
-def get_config() -> SystemConfig:
-    """Get the global configuration instance"""
-    return SystemConfig()
-
-def get_db_manager() -> DatabaseManager:
-    """Get the global database manager instance"""
-    return DatabaseManager()
-
-def get_system() -> SystemConfig:
-    """Get system instance (alias for get_config)"""
-    return SystemConfig()
-
-def get_event_bus() -> EventSystem:
-    """Get the global event system instance"""
-    return EventSystem()
-
-# Legacy class aliases and constants
-SocraticSystem = SystemConfig  # Alias for backwards compatibility
-ConfigManager = SystemConfig   # Alias for backwards compatibility
-LogManager = SystemLogger      # Alias for backwards compatibility
-
-# Constants for service availability
-ANTHROPIC_AVAILABLE = True  # Assume available, will be checked at runtime
-
-def get_config() -> SystemConfig:
-    """Get the global configuration instance"""
-    return SystemConfig()
-
-def get_db_manager() -> DatabaseManager:
-    """Get the global database manager instance"""
-    return DatabaseManager()
-
-def get_system() -> SystemConfig:
-    """Get system instance (alias for get_config)"""
-    return SystemConfig()
-
-def get_event_bus() -> EventSystem:
-    """Get the global event system instance"""
-    return EventSystem()
-
 
 __all__ = [
     # Exceptions
     'SocraticException', 'ConfigurationError', 'ValidationError',
-    'DatabaseError', 'AgentError', 'ServiceError',
+    'DatabaseError', 'AgentError', 'ServiceError', 'APIError',
 
     # Core Infrastructure
     'SystemConfig', 'SystemLogger', 'EventSystem', 'DatabaseManager',
