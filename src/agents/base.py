@@ -299,16 +299,3 @@ def log_agent_action(func):
             raise
 
     return wrapper
-
-# src/agents/
-# ├── __init__.py          # ~50 lines  - Exports & initialization
-# ├── base.py             # ~200 lines - BaseAgent + utilities + decorators
-# ├── orchestrator.py     # ~150 lines - AgentOrchestrator only
-# ├── socratic.py         # ~300 lines - SocraticCounselorAgent
-# ├── code.py             # ~400 lines - CodeGeneratorAgent (biggest)
-# ├── project.py          # ~300 lines - ProjectManagerAgent
-# ├── user.py             # ~200 lines - UserManagerAgent (simplest)
-# ├── context.py          # ~300 lines - ContextAnalyzerAgent
-# ├── document.py         # ~200 lines - DocumentProcessorAgent
-# ├── monitor.py          # ~250 lines - SystemMonitorAgent
-# └── services.py         # ~300 lines - ServicesAgent

@@ -872,7 +872,7 @@ class ContextAnalyzerAgent(BaseAgent):
                 project.conversation_history)
             complexity += min(avg_msg_length / 10, 15.0)
 
-        return min(complexity, 100.0)
+        return min(complexity, 100)
 
     def _identify_improvements(self, project: Project) -> List[str]:
         """Identify improvement opportunities"""

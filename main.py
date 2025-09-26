@@ -8,13 +8,30 @@
 # ├── 📁 src/
 # │   ├── __init__.py
 # │   │
-# │   ├── 🔧 core.py                   # Config, exceptions, logging, database, events
-# │   ├── 📊 models.py                 # User, Project, Module, Task, Role, TechnicalSpec
-# │   ├── 🤖 agents.py                 # All 12+ agents (BaseAgent → Enhanced → New)
-# │   ├── 🛠️  services.py              # Summary, Git, Testing, Export, Claude, VectorDB
-# │   ├── ❓ questioning.py            # Role adapters (7) + Phase generators (4)
-# │   ├── 🗄️  database.py              # SQLite manager + All repositories
-# │   └── 🔨 utils.py                  # File processor, Document parser, Validation
+# │   ├── 🔧 core.py                   # Config, exceptions, logging, database, events ✅
+# │   ├── 📊 models.py                 # User, Project, Module, Task, Role, TechnicalSpec ✅
+# │   ├── 🗄️  database.py              # SQLite manager + All repositories ✅
+# │   ├── 🔨 utils.py                  # File processor, Document parser, Validation
+# │   │
+# │   ├── 📁 agents/                   # ✨ NEW MODULAR AGENT ARCHITECTURE
+# │   │   ├── __init__.py              # ~50 lines  - Exports & initialization ✅
+# │   │   ├── base.py                  # ~200 lines - BaseAgent + utilities + decorators ✅
+# │   │   ├── orchestrator.py          # ~150 lines - AgentOrchestrator only ✅
+# │   │   ├── socratic.py              # ~300 lines - SocraticCounselorAgent ✅
+# │   │   ├── code.py                  # ~400 lines - CodeGeneratorAgent ✅
+# │   │   ├── project.py               # ~300 lines - ProjectManagerAgent ✅
+# │   │   ├── user.py                  # ~200 lines - UserManagerAgent ✅
+# │   │   ├── context.py               # ~300 lines - ContextAnalyzerAgent ✅
+# │   │   ├── document.py              # ~200 lines - DocumentProcessorAgent ✅
+# │   │   ├── monitor.py               # ~250 lines - SystemMonitorAgent ✅
+# │   │   └── services.py              # ~300 lines - ServicesAgent ✅
+# │   │
+# │   └── 📁 services/                 # Service layer for external integrations
+# │       ├── __init__.py
+# │       ├── claude_service.py        # Claude API integration
+# │       ├── vector_service.py        # ChromaDB integration
+# │       ├── git_service.py           # Git operations
+# │       └── ide_service.py           # IDE integration
 # │
 # ├── 📁 web/
 # │   ├── __init__.py
@@ -45,8 +62,19 @@
 # ├── 📁 tests/
 # │   ├── __init__.py
 # │   ├── 🔬 test_core.py              # Core system tests
-# │   ├── 🤖 test_agents.py            # All agent tests
-# │   ├── 🛠️  test_services.py         # All service tests
+# │   ├── 📁 test_agents/              # ✨ NEW - Modular agent tests
+# │   │   ├── __init__.py
+# │   │   ├── test_base.py             # BaseAgent tests
+# │   │   ├── test_orchestrator.py     # Orchestrator tests
+# │   │   ├── test_socratic.py         # SocraticCounselorAgent tests
+# │   │   ├── test_code.py             # CodeGeneratorAgent tests
+# │   │   ├── test_project.py          # ProjectManagerAgent tests
+# │   │   ├── test_user.py             # UserManagerAgent tests
+# │   │   ├── test_context.py          # ContextAnalyzerAgent tests
+# │   │   ├── test_document.py         # DocumentProcessorAgent tests
+# │   │   ├── test_monitor.py          # SystemMonitorAgent tests
+# │   │   └── test_services.py         # ServicesAgent tests
+# │   ├── 🛠️  test_services.py         # External service tests
 # │   ├── 🌐 test_web.py               # Web interface tests
 # │   └── 🔗 test_integration.py       # End-to-end tests
 # │
@@ -61,4 +89,9 @@
 # └── 📁 docs/
 #     ├── 📖 README.md                 # Installation & getting started
 #     ├── 👤 user_guide.md             # User documentation
-#     └── 👩‍💻 developer_guide.md        # Expansion guidelines
+#     ├── 👩‍💻 developer_guide.md        # Expansion guidelines
+#     └── 📁 agents/                   # ✨ NEW - Agent-specific documentation
+#         ├── agent_overview.md        # Agent architecture overview
+#         ├── base_agent.md           # BaseAgent documentation
+#         ├── orchestrator.md         # Orchestrator documentation
+#         └── [agent_name].md         # Individual agent documentation

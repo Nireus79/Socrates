@@ -426,7 +426,7 @@ class SocraticCounselorAgent(BaseAgent):
 
         # Simple engagement based on message length and frequency
         avg_length = sum(len(msg.content) for msg in user_messages) / len(user_messages)
-        engagement_score = min(100, avg_length / 5000)  # Normalize to 0-100
+        engagement_score = min(100.0, avg_length / 50.0)
 
         return {
             'score': engagement_score,
