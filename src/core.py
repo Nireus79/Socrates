@@ -867,8 +867,95 @@ def cleanup_system():
 
 
 # ============================================================================
+# CONVENIENCE FUNCTIONS FOR BACKWARDS COMPATIBILITY
+# ============================================================================
+
+def get_config() -> SystemConfig:
+    """Get the global configuration instance"""
+    return SystemConfig()
+
+
+def get_db_manager() -> DatabaseManager:
+    """Get the global database manager instance"""
+    return DatabaseManager()
+
+
+# Legacy class aliases
+SocraticSystem = SystemConfig  # Alias for backwards compatibility
+
+
+# ============================================================================
 # MODULE EXPORTS
 # ============================================================================
+def get_config() -> SystemConfig:
+    """Get the global configuration instance"""
+    return SystemConfig()
+
+
+def get_db_manager() -> DatabaseManager:
+    """Get the global database manager instance"""
+    return DatabaseManager()
+
+
+def get_system() -> SystemConfig:
+    """Get system instance (alias for get_config)"""
+    return SystemConfig()
+
+
+def get_event_bus() -> EventSystem:
+    """Get the global event system instance"""
+    return EventSystem()
+
+
+# Legacy class aliases
+SocraticSystem = SystemConfig  # Alias for backwards compatibility
+# Legacy class aliases and constants
+SocraticSystem = SystemConfig  # Alias for backwards compatibility
+ConfigManager = SystemConfig   # Alias for backwards compatibility
+
+# Constants for service availability
+ANTHROPIC_AVAILABLE = True  # Assume available, will be checked at runtime
+
+def get_config() -> SystemConfig:
+    """Get the global configuration instance"""
+    return SystemConfig()
+
+def get_db_manager() -> DatabaseManager:
+    """Get the global database manager instance"""
+    return DatabaseManager()
+
+def get_system() -> SystemConfig:
+    """Get system instance (alias for get_config)"""
+    return SystemConfig()
+
+def get_event_bus() -> EventSystem:
+    """Get the global event system instance"""
+    return EventSystem()
+
+# Legacy class aliases and constants
+SocraticSystem = SystemConfig  # Alias for backwards compatibility
+ConfigManager = SystemConfig   # Alias for backwards compatibility
+LogManager = SystemLogger      # Alias for backwards compatibility
+
+# Constants for service availability
+ANTHROPIC_AVAILABLE = True  # Assume available, will be checked at runtime
+
+def get_config() -> SystemConfig:
+    """Get the global configuration instance"""
+    return SystemConfig()
+
+def get_db_manager() -> DatabaseManager:
+    """Get the global database manager instance"""
+    return DatabaseManager()
+
+def get_system() -> SystemConfig:
+    """Get system instance (alias for get_config)"""
+    return SystemConfig()
+
+def get_event_bus() -> EventSystem:
+    """Get the global event system instance"""
+    return EventSystem()
+
 
 __all__ = [
     # Exceptions
@@ -877,13 +964,17 @@ __all__ = [
 
     # Core Infrastructure
     'SystemConfig', 'SystemLogger', 'EventSystem', 'DatabaseManager',
-    'Event',
+    'Event', 'SocraticSystem', 'ConfigManager', 'LogManager',
 
     # Helpers
     'DateTimeHelper', 'FileHelper', 'ValidationHelper',
 
+    # Constants
+    'ANTHROPIC_AVAILABLE',
+
     # System Functions
-    'initialize_system', 'cleanup_system', 'get_logger'
+    'initialize_system', 'cleanup_system', 'get_logger',
+    'get_config', 'get_db_manager', 'get_system', 'get_event_bus'
 ]
 
 # ============================================================================
@@ -958,4 +1049,3 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ Core system test failed: {e}")
         raise
-

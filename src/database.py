@@ -496,6 +496,21 @@ class DatabaseSchema:
             )
         ''')
 
+        # Project collaborators table (simple version)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS project_collaborators (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id TEXT NOT NULL,
+                username TEXT NOT NULL,
+                role TEXT NOT NULL,
+                joined_at TEXT NOT NULL,
+                is_active BOOLEAN DEFAULT 1,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY (username) REFERENCES users(username),
+                UNIQUE(project_id, username)
+            )
+        ''')
+
     def _create_indexes(self, cursor: sqlite3.Cursor):
         """Create database indexes for performance"""
         indexes = [
@@ -538,6 +553,10 @@ class DatabaseSchema:
             'CREATE INDEX IF NOT EXISTS idx_tests_codebase ON test_results(codebase_id)',
             'CREATE INDEX IF NOT EXISTS idx_tests_project ON test_results(project_id)',
             'CREATE INDEX IF NOT EXISTS idx_tests_type ON test_results(test_type)',
+
+            # Project collaborators
+            'CREATE INDEX IF NOT EXISTS idx_collaborators_project ON project_collaborators(project_id)',
+            'CREATE INDEX IF NOT EXISTS idx_collaborators_user ON project_collaborators(username)',
         ]
 
         for index_sql in indexes:
@@ -1028,6 +1047,225 @@ class GeneratedCodebaseRepository(BaseRepository):
         )
 
 
+class GeneratedFileRepository(BaseRepository):
+    """Repository for GeneratedFile model"""
+
+    def __init__(self):
+        super().__init__('generated_files', GeneratedFile)
+
+    def get_codebase_files(self, codebase_id: str) -> List[GeneratedFile]:
+        """Get all files for a codebase"""
+        try:
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT * FROM generated_files 
+                    WHERE codebase_id = ? 
+                    ORDER BY file_path
+                ''', (codebase_id,))
+
+                return [self._convert_row_to_model(row) for row in cursor.fetchall()]
+
+        except Exception as e:
+            self.logger.error(f"Failed to get files for codebase {codebase_id}: {e}")
+            return []
+
+    def get_project_files(self, project_id: str) -> List[GeneratedFile]:
+        """Get all files for a project"""
+        try:
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT * FROM generated_files 
+                    WHERE project_id = ? 
+                    ORDER BY file_path
+                ''', (project_id,))
+
+                return [self._convert_row_to_model(row) for row in cursor.fetchall()]
+
+        except Exception as e:
+            self.logger.error(f"Failed to get files for project {project_id}: {e}")
+            return []
+
+    def get_by_path(self, project_id: str, file_path: str) -> Optional[GeneratedFile]:
+        """Get file by path within a project"""
+        try:
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT * FROM generated_files 
+                    WHERE project_id = ? AND file_path = ?
+                ''', (project_id, file_path))
+
+                row = cursor.fetchone()
+                if row:
+                    return self._convert_row_to_model(row)
+                return None
+
+        except Exception as e:
+            self.logger.error(f"Failed to get file {file_path} for project {project_id}: {e}")
+            return None
+
+    def _convert_row_to_model(self, row: sqlite3.Row) -> GeneratedFile:
+        """Convert database row to GeneratedFile model"""
+        return GeneratedFile(
+            id=row['id'],
+            codebase_id=row['codebase_id'],
+            project_id=row['project_id'],
+            file_path=row['file_path'],
+            file_type=FileType(row['file_type']),
+            file_purpose=row['file_purpose'] or '',
+            content=row['content'] or '',
+            dependencies=self._deserialize_json_field(row['dependencies'], list),
+            documentation=row['documentation'] or '',
+            generated_by_agent=row['generated_by_agent'] or '',
+            version=row['version'] or '1.0.0',
+            size_bytes=row['size_bytes'] or 0,
+            complexity_score=row['complexity_score'] or 0.0,
+            test_coverage=row['test_coverage'] or 0.0,
+            created_at=DateTimeHelper.from_iso_string(row['created_at']),
+            updated_at=DateTimeHelper.from_iso_string(row['updated_at'])
+        )
+
+
+class TestResultRepository(BaseRepository):
+    """Repository for TestResult model"""
+
+    def __init__(self):
+        super().__init__('test_results', TestResult)
+
+    def get_codebase_tests(self, codebase_id: str) -> List[TestResult]:
+        """Get all test results for a codebase"""
+        try:
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT * FROM test_results 
+                    WHERE codebase_id = ? 
+                    ORDER BY created_at DESC
+                ''', (codebase_id,))
+
+                return [self._convert_row_to_model(row) for row in cursor.fetchall()]
+
+        except Exception as e:
+            self.logger.error(f"Failed to get tests for codebase {codebase_id}: {e}")
+            return []
+
+    def get_project_tests(self, project_id: str) -> List[TestResult]:
+        """Get all test results for a project"""
+        try:
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT * FROM test_results 
+                    WHERE project_id = ? 
+                    ORDER BY created_at DESC
+                ''', (project_id,))
+
+                return [self._convert_row_to_model(row) for row in cursor.fetchall()]
+
+        except Exception as e:
+            self.logger.error(f"Failed to get tests for project {project_id}: {e}")
+            return []
+
+    def _convert_row_to_model(self, row: sqlite3.Row) -> TestResult:
+        """Convert database row to TestResult model"""
+        return TestResult(
+            id=row['id'],
+            codebase_id=row['codebase_id'],
+            project_id=row['project_id'],
+            test_type=TestType(row['test_type']),
+            test_suite=row['test_suite'] or '',
+            files_tested=self._deserialize_json_field(row['files_tested'], list),
+            passed=bool(row['passed']),
+            total_tests=row['total_tests'] or 0,
+            passed_tests=row['passed_tests'] or 0,
+            failed_tests=row['failed_tests'] or 0,
+            skipped_tests=row['skipped_tests'] or 0,
+            coverage_percentage=row['coverage_percentage'] or 0.0,
+            failure_details=self._deserialize_json_field(row['failure_details'], list),
+            stack_traces=self._deserialize_json_field(row['stack_traces'], list),
+            memory_usage_mb=row['memory_usage_mb'] or 0.0,
+            cpu_usage_percentage=row['cpu_usage_percentage'] or 0.0,
+            test_environment=self._deserialize_json_field(row['test_environment']),
+            created_at=DateTimeHelper.from_iso_string(row['created_at']),
+            updated_at=DateTimeHelper.from_iso_string(row['updated_at'])
+        )
+
+
+class ProjectCollaboratorRepository(BaseRepository):
+    """Repository for project collaborators"""
+
+    def __init__(self):
+        super().__init__('project_collaborators', BaseModel)  # Using BaseModel since we don't have a specific model
+
+    def add_collaborator(self, project_id: str, username: str, role: str) -> bool:
+        """Add collaborator to project"""
+        try:
+            with self.db_manager.transaction() as conn:
+                cursor = conn.execute('''
+                    INSERT OR REPLACE INTO project_collaborators 
+                    (project_id, username, role, joined_at, is_active)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (
+                    project_id, username, role,
+                    DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                    True
+                ))
+
+                return cursor.rowcount > 0
+
+        except Exception as e:
+            self.logger.error(f"Failed to add collaborator {username} to {project_id}: {e}")
+            return False
+
+    def get_project_collaborators(self, project_id: str) -> List[Dict[str, Any]]:
+        """Get all collaborators for a project"""
+        try:
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT * FROM project_collaborators 
+                    WHERE project_id = ? AND is_active = 1
+                    ORDER BY joined_at
+                ''', (project_id,))
+
+                collaborators = []
+                for row in cursor.fetchall():
+                    collaborators.append({
+                        'username': row['username'],
+                        'role': row['role'],
+                        'joined_at': row['joined_at'],
+                        'is_active': bool(row['is_active'])
+                    })
+
+                return collaborators
+
+        except Exception as e:
+            self.logger.error(f"Failed to get collaborators for project {project_id}: {e}")
+            return []
+
+    def remove_collaborator(self, project_id: str, username: str) -> bool:
+        """Remove collaborator from project"""
+        try:
+            with self.db_manager.transaction() as conn:
+                cursor = conn.execute('''
+                    UPDATE project_collaborators 
+                    SET is_active = 0 
+                    WHERE project_id = ? AND username = ?
+                ''', (project_id, username))
+
+                return cursor.rowcount > 0
+
+        except Exception as e:
+            self.logger.error(f"Failed to remove collaborator {username} from {project_id}: {e}")
+            return False
+
+    def _convert_row_to_model(self, row: sqlite3.Row):
+        """Convert database row to dict (no specific model)"""
+        return {
+            'project_id': row['project_id'],
+            'username': row['username'],
+            'role': row['role'],
+            'joined_at': row['joined_at'],
+            'is_active': bool(row['is_active'])
+        }
+
+
 # ============================================================================
 # DATABASE SERVICE (MAIN INTERFACE)
 # ============================================================================
@@ -1045,13 +1283,14 @@ class DatabaseService:
         self.tasks = TaskRepository()
         self.socratic_sessions = SocraticSessionRepository()
         self.generated_codebases = GeneratedCodebaseRepository()
+        self.generated_files = GeneratedFileRepository()
+        self.test_results = TestResultRepository()
+        self.project_collaborators = ProjectCollaboratorRepository()  # Add this line
 
         # Note: Add other repositories as needed
         # self.questions = QuestionRepository()
         # self.conflicts = ConflictRepository()
         # self.technical_specs = TechnicalSpecRepository()
-        # self.generated_files = GeneratedFileRepository()
-        # self.test_results = TestResultRepository()
         # self.project_metrics = ProjectMetricsRepository()
         # self.user_activity = UserActivityRepository()
 
@@ -1139,7 +1378,8 @@ __all__ = [
     # Repository classes
     'BaseRepository', 'UserRepository', 'ProjectRepository',
     'ModuleRepository', 'TaskRepository', 'SocraticSessionRepository',
-    'GeneratedCodebaseRepository',
+    'GeneratedCodebaseRepository', 'GeneratedFileRepository', 'TestResultRepository',
+    'ProjectCollaboratorRepository',
 
     # Service classes
     'DatabaseService',

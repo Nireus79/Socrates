@@ -169,6 +169,32 @@ class CodeQualityLevel(Enum):
     POOR = "poor"
 
 
+class FileStatus(Enum):
+    """Generated file status"""
+    GENERATING = "generating"
+    GENERATED = "generated"
+    TESTED = "tested"
+    DEPLOYED = "deployed"
+    ERROR = "error"
+    OUTDATED = "outdated"
+
+
+class ModuleStatus(Enum):
+    """Module status"""
+    NOT_STARTED = "not_started"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    BLOCKED = "blocked"
+    ON_HOLD = "on_hold"
+
+
+class Priority(Enum):
+    """Priority levels"""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
 # ============================================================================
 # BASE MODELS
 # ============================================================================
@@ -268,6 +294,26 @@ class User(BaseModel):
 
 
 @dataclass
+class Collaborator(BaseModel):
+    """Project collaborator model"""
+
+    username: str = ""
+    role: UserRole = UserRole.DEVELOPER
+    permissions: List[str] = field(default_factory=list)
+    joined_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
+    is_active: bool = True
+
+    def __post_init__(self):
+        """Validate collaborator data after initialization"""
+        self.validate()
+
+    def validate(self) -> None:
+        """Validate collaborator data"""
+        if not self.username or len(self.username.strip()) < 3:
+            raise ValidationError("Username must be at least 3 characters long")
+
+
+@dataclass
 class UserSession(BaseModel):
     """User session tracking"""
 
@@ -357,6 +403,23 @@ class Project(BaseModel):
             return (self.end_date - self.start_date).days
         return None
 
+
+@dataclass
+class ProjectContext(BaseModel):
+    """Project context information"""
+
+    project_id: str = ""
+    summary: Dict[str, Any] = field(default_factory=dict)
+    insights: List[str] = field(default_factory=list)
+    conflicts: List[str] = field(default_factory=list)
+    decisions: List[str] = field(default_factory=list)
+    recommendations: List[str] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        """Validate context data"""
+        if not self.project_id:
+            raise ValidationError("Project ID is required for context")
 
 @dataclass
 class Module(BaseModel):
@@ -525,6 +588,26 @@ class Question(BaseModel):
 
 
 @dataclass
+class ConversationMessage(BaseModel):
+    """Individual conversation message"""
+
+    project_id: str = ""
+    timestamp: datetime.datetime = field(default_factory=DateTimeHelper.now)
+    message_type: str = "user"  # user, agent, system
+    content: str = ""
+    phase: str = "discovery"
+    role: Optional[str] = None
+    author: Optional[str] = None
+    question_number: Optional[int] = None
+    insights_extracted: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        """Validate message data"""
+        if not self.content.strip():
+            raise ValidationError("Message content cannot be empty")
+
+
+@dataclass
 class Conflict(BaseModel):
     """Detected specification conflict"""
 
@@ -599,6 +682,9 @@ class TechnicalSpec(BaseModel):
     approved_by: Optional[str] = None  # User ID
     approved_at: Optional[datetime.datetime] = None
     approval_notes: str = ""
+
+
+TechnicalSpecification = TechnicalSpec
 
 
 # ============================================================================
@@ -810,6 +896,50 @@ class UserActivity(BaseModel):
     mentoring_sessions: int = 0
 
 
+@dataclass
+class ModuleContext(BaseModel):
+    """Module context information"""
+
+    module_id: str = ""
+    project_id: str = ""
+    summary: Dict[str, Any] = field(default_factory=dict)
+    dependencies_analysis: List[str] = field(default_factory=list)
+    risk_factors: List[str] = field(default_factory=list)
+    recommendations: List[str] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class ProjectContext(BaseModel):
+    """Project context information"""
+
+    project_id: str = ""
+    summary: Dict[str, Any] = field(default_factory=dict)
+    insights: List[str] = field(default_factory=list)
+    conflicts: List[str] = field(default_factory=list)
+    decisions: List[str] = field(default_factory=list)
+    recommendations: List[str] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class ConversationMessage(BaseModel):
+    """Individual conversation message"""
+
+    project_id: str = ""
+    timestamp: datetime.datetime = field(default_factory=DateTimeHelper.now)
+    message_type: str = "user"  # user, agent, system
+    content: str = ""
+    phase: str = "discovery"
+    role: Optional[str] = None
+    author: Optional[str] = None
+    question_number: Optional[int] = None
+    insights_extracted: Dict[str, Any] = field(default_factory=dict)
+
+
+# Legacy aliases
+TechnicalSpecification = TechnicalSpec
+
 # ============================================================================
 # MODEL COLLECTIONS AND UTILITIES
 # ============================================================================
@@ -902,6 +1032,8 @@ def deserialize_model(model_name: str, json_data: str) -> BaseModel:
         raise ValidationError(f"Deserialization failed: {e}")
 
 
+# Legacy aliases for backwards compatibility
+TechnicalSpecification = TechnicalSpec
 # ============================================================================
 # MODULE INITIALIZATION
 # ============================================================================
@@ -914,7 +1046,7 @@ __all__ = [
     # Enums
     'UserRole', 'UserStatus', 'ProjectPhase', 'ProjectStatus', 'TaskStatus',
     'TaskPriority', 'ModuleType', 'TechnicalRole', 'FileType', 'TestType',
-    'ConversationStatus', 'ConflictType', 'CodeQualityLevel',
+    'ConversationStatus', 'ConflictType', 'CodeQualityLevel', 'ModuleStatus', 'Priority',  # ← ADD Priority
 
     # Base models
     'BaseModel',
@@ -923,13 +1055,13 @@ __all__ = [
     'User', 'UserSession',
 
     # Project hierarchy models
-    'Project', 'Module', 'Task',
+    'Project', 'Module', 'Task', 'ProjectContext',  # ← ADD ProjectContext
 
     # Socratic conversation models
     'SocraticSession', 'Question', 'Conflict',
 
     # Technical specification models
-    'TechnicalSpec',
+    'TechnicalSpec', 'TechnicalSpecification',
 
     # Code generation models
     'GeneratedCodebase', 'GeneratedFile', 'TestResult',

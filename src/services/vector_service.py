@@ -26,8 +26,30 @@ import uuid
 try:
     import chromadb
     from chromadb.config import Settings
-    from chromadb.api.types import Collection, Documents, EmbeddingFunction, Embeddings
 
+    try:
+        from chromadb.api.types import Collection, EmbeddingFunction, Embeddings
+        from typing import List
+
+        # Handle different ChromaDB versions
+        try:
+            from chromadb.api.types import Documents
+        except ImportError:
+            Documents = List[str]
+        from typing import List
+
+        # Define Documents type if not available in this ChromaDB version
+        try:
+            from chromadb.api.types import Documents
+        except ImportError:
+            Documents = List[str]
+        from chromadb.api.types import Documents
+    except ImportError:
+        # Fallback for different ChromaDB versions
+        from chromadb.api.types import Collection, EmbeddingFunction, Embeddings
+        from typing import List
+
+        Documents = List[str]  # Fallback type definition
     CHROMADB_AVAILABLE = True
 except ImportError:
     CHROMADB_AVAILABLE = False
