@@ -4,17 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="web">
-      <change afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/web/templates/admin.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/web/templates/auth.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/web/templates/base.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/web/templates/code.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/web/templates/dashboard.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/web/templates/projects.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/web/templates/reports.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/web/templates/sessions.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="templates">
+      <change afterPath="$PROJECT_DIR$/docs/socratic_rag_complete_specs_expansion.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -54,15 +45,15 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultHtmlFileTemplate": "HTML File",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="Socrates" />
@@ -207,7 +198,15 @@
       <option name="project" value="LOCAL" />
       <updated>1758882733044</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="templates">
+      <option name="closed" value="true" />
+      <created>1758883729829</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1758883729829</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -220,6 +219,7 @@
     <MESSAGE value="new" />
     <MESSAGE value="req" />
     <MESSAGE value="web" />
-    <option name="LAST_COMMIT_MESSAGE" value="web" />
+    <MESSAGE value="templates" />
+    <option name="LAST_COMMIT_MESSAGE" value="templates" />
   </component>
 </project>
