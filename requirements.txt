@@ -50,7 +50,7 @@ ast-tools==0.1.8                    # Python AST manipulation
 black==24.8.0                       # Code formatting
 pylint==3.3.1                       # Code analysis
 bandit==1.7.10                      # Security analysis
-autopep8==2.3.4                     # Code formatting
+autopep8==2.3.2                     # Code formatting
 isort==5.13.2                       # Import sorting
 mypy==1.11.2                        # Type checking
 
@@ -73,10 +73,10 @@ watchdog==5.0.0                     # File system monitoring
 # =============================================================================
 # HTTP & API CLIENTS
 # =============================================================================
-requests==2.32.3                    # HTTP client
-urllib3==2.2.3                      # HTTP client library
+requests==2.32.4                    # HTTP client
+urllib3==2.5.0                      # HTTP client library
 httpx==0.27.2                       # Async HTTP client
-aiohttp==3.10.10                    # Async HTTP server/client
+aiohttp==3.12.14                    # Async HTTP server/client
 
 # =============================================================================
 # DATA VALIDATION & SERIALIZATION
@@ -111,7 +111,7 @@ memory-profiler==0.61.0             # Memory profiling
 # =============================================================================
 bcrypt==4.2.0                       # Password hashing
 PyJWT==2.9.0                        # JWT tokens
-cryptography==43.0.1                # Cryptographic operations
+cryptography==44.0.1                # Cryptographic operations
 passlib==1.7.4                      # Password hashing utilities
 python-jose==3.4.0                  # JWT and JWS implementation
 
@@ -143,7 +143,7 @@ pytz==2024.2                        # Timezone handling
 # =============================================================================
 # PACKAGING & DEPLOYMENT
 # =============================================================================
-setuptools==75.1.0                  # Package building
+setuptools==78.1.1                  # Package building
 wheel==0.44.0                       # Wheel package format
 build==1.2.2                        # Build tool
 twine==5.1.1                        # Package uploading
