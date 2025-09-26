@@ -1,0 +1,364 @@
+# Socratic RAG System - Configuration v7++ (Modular)
+# Complete system configuration for all agents and services
+
+# =============================================================================
+# APPLICATION SETTINGS
+# =============================================================================
+app:
+  name: "Socratic RAG Enhanced"
+  version: "7.1.0"
+  environment: "development"  # development, testing, production
+  debug: true
+  secret_key: "your-secret-key-change-in-production"
+  timezone: "UTC"
+
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+database:
+  # Primary SQLite Database
+  sqlite:
+    path: "data/projects.db"
+    echo: false  # Set to true for SQL query logging
+    pool_size: 10
+    max_overflow: 20
+
+  # Vector Database (ChromaDB)
+  vector:
+    type: "chromadb"
+    path: "data/vector_db"
+    collection_name: "socratic_knowledge"
+    embedding_dimension: 1536
+
+  # Future upgrade path
+  postgresql:
+    enabled: false
+    host: "localhost"
+    port: 5432
+    database: "socratic_rag"
+    username: "postgres"
+    password: "password"
+
+# =============================================================================
+# AGENT SYSTEM CONFIGURATION
+# =============================================================================
+agents:
+  # Global agent settings
+  global:
+    max_concurrent: 5
+    timeout_seconds: 300
+    retry_attempts: 3
+    health_check_interval: 30
+
+  # Individual agent configurations
+  orchestrator:
+    enabled: true
+    max_queue_size: 100
+    load_balancing: true
+
+  socratic_counselor:
+    enabled: true
+    max_context_length: 8000
+    role_switching_enabled: true
+    conflict_detection: true
+    question_cache_size: 1000
+
+  code_generator:
+    enabled: true
+    max_file_size: 50000  # characters
+    testing_enabled: true
+    security_scanning: true
+    performance_analysis: true
+    max_files_per_project: 500
+
+  project_manager:
+    enabled: true
+    max_projects_per_user: 50
+    module_depth_limit: 5
+    task_auto_assignment: true
+
+  user_manager:
+    enabled: true
+    session_timeout: 3600  # seconds
+    max_concurrent_sessions: 10
+    password_reset_expiry: 1800
+
+  context_analyzer:
+    enabled: true
+    conflict_threshold: 0.8
+    insight_generation: true
+    pattern_learning: true
+
+  document_processor:
+    enabled: true
+    max_file_size_mb: 100
+    supported_formats: ["pdf", "docx", "txt", "md", "py", "js", "html", "css"]
+    chunk_size: 1000
+    chunk_overlap: 200
+
+  system_monitor:
+    enabled: true
+    metrics_retention_days: 30
+    alert_thresholds:
+      cpu_percent: 80
+      memory_percent: 85
+      disk_percent: 90
+
+  services:
+    enabled: true
+    git_timeout: 120
+    export_formats: ["zip", "json", "docker"]
+    backup_retention_days: 7
+
+# =============================================================================
+# EXTERNAL SERVICES
+# =============================================================================
+services:
+  # Claude API Configuration
+  claude:
+    api_key: "your-anthropic-api-key"  # Set via environment variable: ANTHROPIC_API_KEY
+    model: "claude-3-5-sonnet-20241022"
+    max_tokens: 8192
+    temperature: 0.7
+    timeout: 60
+    rate_limit:
+      requests_per_minute: 50
+      requests_per_hour: 1000
+
+  # Git Service Configuration
+  git:
+    default_branch: "main"
+    commit_author_name: "Socratic RAG System"
+    commit_author_email: "noreply@socratic-rag.com"
+    auto_commit: true
+    push_on_generation: false  # Set to true for automatic pushes
+
+  # IDE Integration
+  ide:
+    vscode:
+      enabled: true
+      extension_port: 8765
+      auto_open_files: true
+      sync_on_generation: true
+
+  # File Storage
+  storage:
+    uploads_path: "data/uploads"
+    exports_path: "data/exports"
+    generated_projects_path: "data/generated_projects"
+    max_upload_size_mb: 100
+    allowed_extensions: ["pdf", "docx", "txt", "md", "py", "js", "html", "css", "json", "xml"]
+
+# =============================================================================
+# WEB APPLICATION
+# =============================================================================
+web:
+  host: "127.0.0.1"
+  port: 5000
+  threaded: true
+
+  # Session configuration
+  session:
+    permanent: false
+    lifetime: 3600  # seconds
+
+  # CORS settings
+  cors:
+    enabled: true
+    origins: ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+  # File upload settings
+  upload:
+    max_content_length: 104857600  # 100MB
+    upload_folder: "data/uploads"
+
+  # Template settings
+  templates:
+    auto_reload: true
+    cache_size: 100
+
+# =============================================================================
+# SECURITY
+# =============================================================================
+security:
+  # Authentication
+  auth:
+    require_login: true
+    password_min_length: 8
+    password_require_special: true
+    max_login_attempts: 5
+    lockout_duration: 300  # seconds
+
+  # API Security
+  api:
+    rate_limiting: true
+    require_api_key: false  # Set to true in production
+    cors_enabled: true
+
+  # Code Generation Security
+  code_security:
+    scan_generated_code: true
+    block_dangerous_patterns: true
+    sanitize_user_input: true
+    allowed_imports: ["os", "sys", "json", "requests", "sqlite3"]
+    blocked_imports: ["subprocess", "eval", "exec"]
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+  # File logging
+  file:
+    enabled: true
+    path: "data/logs"
+    max_size_mb: 50
+    backup_count: 5
+    rotation: "daily"
+
+  # Console logging
+  console:
+    enabled: true
+    level: "INFO"
+
+  # Agent-specific logging
+  agents:
+    log_requests: true
+    log_responses: true
+    log_performance: true
+
+# =============================================================================
+# TESTING
+# =============================================================================
+testing:
+  # Test environment settings
+  environment: "test"
+  database_path: ":memory:"  # In-memory SQLite for tests
+
+  # Test execution
+  coverage:
+    enabled: true
+    minimum_threshold: 80
+
+  # Mock services for testing
+  mocks:
+    claude_api: true
+    git_operations: true
+    file_system: false
+
+# =============================================================================
+# DEVELOPMENT
+# =============================================================================
+development:
+  # Hot reload settings
+  hot_reload: true
+  auto_restart: true
+
+  # Debug settings
+  sql_echo: false
+  template_debug: true
+
+  # Development tools
+  profiling: false
+  memory_tracking: false
+
+# =============================================================================
+# DEPLOYMENT
+# =============================================================================
+deployment:
+  # Production settings
+  production:
+    debug: false
+    testing: false
+    secret_key_required: true
+
+  # Docker settings
+  docker:
+    enabled: false
+    compose_file: "docker-compose.yml"
+
+  # Environment variables mapping
+  env_vars:
+    - "ANTHROPIC_API_KEY"
+    - "SECRET_KEY"
+    - "DATABASE_URL"
+    - "FLASK_ENV"
+
+# =============================================================================
+# MONITORING & ANALYTICS
+# =============================================================================
+monitoring:
+  # System metrics
+  metrics:
+    enabled: true
+    collection_interval: 60  # seconds
+    retention_days: 30
+
+  # Health checks
+  health:
+    enabled: true
+    check_interval: 30
+    endpoints: ["/health", "/agents/health"]
+
+  # Performance monitoring
+  performance:
+    enabled: true
+    slow_query_threshold: 1.0  # seconds
+    memory_alerts: true
+
+  # User analytics
+  analytics:
+    track_usage: true
+    track_performance: true
+    anonymize_data: true
+
+# =============================================================================
+# FEATURE FLAGS
+# =============================================================================
+features:
+  # Core features
+  socratic_questioning: true
+  code_generation: true
+  multi_file_projects: true
+
+  # Advanced features
+  conflict_detection: true
+  auto_correction: true
+  performance_analysis: true
+  security_scanning: true
+
+  # Experimental features
+  ai_insights: true
+  predictive_analysis: false
+  advanced_collaboration: false
+
+  # Integration features
+  git_integration: true
+  ide_integration: true
+  export_features: true
+
+# =============================================================================
+# CUSTOMIZATION
+# =============================================================================
+customization:
+  # UI customization
+  ui:
+    theme: "default"
+    custom_css: false
+    branding:
+      logo: "static/img/logo.png"
+      title: "Socratic RAG Enhanced"
+
+  # Workflow customization
+  workflows:
+    custom_roles: true
+    role_templates: true
+    question_templates: true
+
+  # Code generation customization
+  code_gen:
+    custom_templates: true
+    framework_presets: true
+    style_guides: true

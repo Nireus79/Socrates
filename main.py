@@ -1,8 +1,8 @@
 # socratic-rag-enhanced/
 # │
 # ├── 📋 README.md
-# ├── 📋 requirements.txt
-# ├── ⚙️  config.yaml
+# ├── 📋 requirements.txt ✅
+# ├── ⚙️  config.yaml ✅
 # ├── 🚀 run.py                        # Main application entry point
 # │
 # ├── 📁 src/

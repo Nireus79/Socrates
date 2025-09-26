@@ -5,12 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="agents">
+      <change afterPath="$PROJECT_DIR$/config.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/base.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/context.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/context.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/monitor.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/monitor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -159,7 +158,15 @@
       <option name="project" value="LOCAL" />
       <updated>1758827697474</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="agents">
+      <option name="closed" value="true" />
+      <created>1758867101485</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1758867101485</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">

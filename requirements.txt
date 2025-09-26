@@ -1,0 +1,201 @@
+# Socratic RAG System v7++ - Python Dependencies
+# Complete dependency list for all agents and services
+
+# =============================================================================
+# CORE WEB FRAMEWORK
+# =============================================================================
+Flask==3.0.0
+Flask-CORS==4.0.0
+Flask-Session==0.5.0
+Jinja2==3.1.2
+Werkzeug==3.0.1
+
+# =============================================================================
+# AI & MACHINE LEARNING
+# =============================================================================
+anthropic==0.7.8                    # Claude API integration
+openai==1.3.7                       # Alternative AI provider
+tiktoken==0.5.2                     # Token counting for AI models
+
+# =============================================================================
+# VECTOR DATABASE & EMBEDDINGS
+# =============================================================================
+chromadb==0.4.18                    # Vector database for knowledge storage
+sentence-transformers==2.2.2        # Text embeddings
+numpy==1.24.3                       # Numerical operations
+faiss-cpu==1.7.4                    # Alternative vector search (optional)
+
+# =============================================================================
+# DATABASE & ORM
+# =============================================================================
+SQLAlchemy==2.0.23                  # Database ORM
+sqlite3                             # Built-in SQLite support
+psycopg2-binary==2.9.9             # PostgreSQL driver (upgrade path)
+alembic==1.13.1                     # Database migrations
+
+# =============================================================================
+# DOCUMENT PROCESSING
+# =============================================================================
+PyPDF2==3.0.1                       # PDF processing
+python-docx==1.1.0                  # Word document processing
+python-pptx==0.6.23                 # PowerPoint processing
+openpyxl==3.1.2                     # Excel processing
+markdown==3.5.1                     # Markdown processing
+beautifulsoup4==4.12.2              # HTML/XML parsing
+lxml==4.9.3                         # XML parser
+textract==1.6.5                     # General text extraction
+
+# =============================================================================
+# CODE ANALYSIS & GENERATION
+# =============================================================================
+ast-tools==0.1.1                    # Python AST manipulation
+black==23.11.0                      # Code formatting
+pylint==3.0.3                       # Code analysis
+bandit==1.7.5                       # Security analysis
+autopep8==2.0.4                     # Code formatting
+isort==5.12.0                       # Import sorting
+mypy==1.7.1                         # Type checking
+
+# =============================================================================
+# GIT & VERSION CONTROL
+# =============================================================================
+GitPython==3.1.40                   # Git operations
+pygit2==1.13.3                      # Alternative Git library
+dulwich==0.21.7                     # Pure Python Git implementation
+
+# =============================================================================
+# FILE & DATA PROCESSING
+# =============================================================================
+PyYAML==6.0.1                       # YAML configuration files
+python-dotenv==1.0.0                # Environment variable management
+configparser==6.0.0                 # Configuration file parsing
+pathlib2==2.3.7                     # Path manipulation (legacy support)
+glob2==0.7                          # Advanced file matching
+watchdog==3.0.0                     # File system monitoring
+
+# =============================================================================
+# HTTP & API CLIENTS
+# =============================================================================
+requests==2.31.0                    # HTTP client
+urllib3==2.1.0                      # HTTP client library
+httpx==0.25.2                       # Async HTTP client
+aiohttp==3.9.1                      # Async HTTP server/client
+
+# =============================================================================
+# DATA VALIDATION & SERIALIZATION
+# =============================================================================
+pydantic==2.5.1                     # Data validation
+marshmallow==3.20.1                 # Object serialization
+cerberus==1.3.5                     # Data validation
+jsonschema==4.20.0                  # JSON schema validation
+
+# =============================================================================
+# TESTING FRAMEWORK
+# =============================================================================
+pytest==7.4.3                       # Testing framework
+pytest-cov==4.1.0                   # Coverage reporting
+pytest-mock==3.12.0                 # Mocking utilities
+pytest-asyncio==0.21.1              # Async testing
+unittest-xml-reporting==3.2.0       # XML test reports
+factory-boy==3.3.0                  # Test data generation
+faker==20.1.0                       # Fake data generation
+
+# =============================================================================
+# LOGGING & MONITORING
+# =============================================================================
+structlog==23.2.0                   # Structured logging
+python-json-logger==2.0.7           # JSON logging formatter
+prometheus-client==0.19.0           # Metrics collection
+psutil==5.9.6                       # System monitoring
+memory-profiler==0.61.0             # Memory profiling
+
+# =============================================================================
+# SECURITY & AUTHENTICATION
+# =============================================================================
+bcrypt==4.1.2                       # Password hashing
+PyJWT==2.8.0                        # JWT tokens
+cryptography==41.0.7                # Cryptographic operations
+passlib==1.7.4                      # Password hashing utilities
+python-jose==3.3.0                  # JWT and JWS implementation
+
+# =============================================================================
+# ASYNC & CONCURRENCY
+# =============================================================================
+asyncio                             # Built-in async support
+concurrent.futures                  # Built-in concurrency
+threading                           # Built-in threading
+multiprocessing                     # Built-in multiprocessing
+celery==5.3.4                       # Distributed task queue (optional)
+redis==5.0.1                        # Redis client (for Celery)
+
+# =============================================================================
+# DEVELOPMENT TOOLS
+# =============================================================================
+ipython==8.18.1                     # Interactive Python shell
+jupyter==1.0.0                      # Jupyter notebooks (development)
+notebook==7.0.6                     # Jupyter notebook server
+debugpy==1.8.0                      # Python debugger
+python-dotenv==1.0.0                # Environment variables
+
+# =============================================================================
+# UTILITIES & HELPERS
+# =============================================================================
+click==8.1.7                        # Command line interface
+rich==13.7.0                        # Rich text and beautiful formatting
+tqdm==4.66.1                        # Progress bars
+python-magic==0.4.27                # File type detection
+pillow==10.1.0                      # Image processing
+dateutil==2.8.2                     # Date/time utilities
+pytz==2023.3                        # Timezone handling
+
+# =============================================================================
+# PACKAGING & DEPLOYMENT
+# =============================================================================
+setuptools==69.0.2                  # Package building
+wheel==0.42.0                       # Wheel package format
+build==1.0.3                        # Build tool
+twine==4.0.2                        # Package uploading
+docker==6.1.3                       # Docker API client
+gunicorn==21.2.0                     # WSGI server for production
+
+# =============================================================================
+# DATA SCIENCE & ANALYTICS (Optional)
+# =============================================================================
+pandas==2.1.4                       # Data analysis
+matplotlib==3.8.2                   # Plotting
+seaborn==0.13.0                     # Statistical plotting
+plotly==5.17.0                      # Interactive plots
+scikit-learn==1.3.2                 # Machine learning
+
+# =============================================================================
+# EXPORT & FORMAT CONVERSION
+# =============================================================================
+fpdf2==2.7.6                        # PDF generation
+reportlab==4.0.7                    # Advanced PDF generation
+xlsxwriter==3.1.9                   # Excel file writing
+python-docx-template==0.16.7        # DOCX templating
+jinja2-cli==0.8.2                   # Command-line Jinja2
+
+# =============================================================================
+# IDE INTEGRATION
+# =============================================================================
+python-language-server==0.36.2      # Language server protocol (optional)
+pylsp-mypy==0.6.7                   # MyPy integration for LSP
+websockets==12.0                    # WebSocket support for IDE integration
+
+# =============================================================================
+# SPECIALIZED LIBRARIES
+# =============================================================================
+fuzzywuzzy==0.18.0                  # Fuzzy string matching
+python-levenshtein==0.23.0          # Fast string distance calculations
+regex==2023.10.3                    # Advanced regex support
+chardet==5.2.0                      # Character encoding detection
+
+# =============================================================================
+# OPTIONAL DEPENDENCIES (commented out - install as needed)
+# =============================================================================
+# tensorflow==2.15.0                # Deep learning (heavy dependency)
+# torch==2.1.1                      # PyTorch (alternative to TensorFlow)
+# spacy==3.7.2                      # NLP library (large models)
+# transformers==4.36.0              # Hugging Face transformers
+# langchain==0.0.350                # LLM application framework
