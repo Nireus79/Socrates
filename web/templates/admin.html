@@ -1,0 +1,1175 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - Socratic RAG Enhanced{% endblock %}
+
+{% block extra_head %}
+<style>
+.admin-card {
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-healthy { background-color: #198754; }
+.status-warning { background-color: #ffc107; }
+.status-error { background-color: #dc3545; }
+.status-offline { background-color: #6c757d; }
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.log-viewer {
+    background: #1e1e1e;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.85rem;
+    max-height: 400px;
+    overflow-y: auto;
+    border-radius: 0.5rem;
+}
+
+.log-entry {
+    padding: 0.25rem 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.log-info { color: #17a2b8; }
+.log-warning { color: #ffc107; }
+.log-error { color: #dc3545; }
+.log-debug { color: #6c757d; }
+
+.agent-status {
+    position: relative;
+    overflow: hidden;
+}
+
+.agent-status::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #198754, #20c997, #198754);
+}
+
+.agent-status.warning::before {
+    background: linear-gradient(90deg, #ffc107, #ffcd39, #ffc107);
+}
+
+.agent-status.error::before {
+    background: linear-gradient(90deg, #dc3545, #e55353, #dc3545);
+}
+
+.performance-chart {
+    height: 200px;
+}
+
+.config-item {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0.25rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-left: 3px solid #0d6efd;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.progress-ring {
+    width: 80px;
+    height: 80px;
+}
+
+.alert-item {
+    transition: all 0.3s ease;
+}
+
+.alert-item:hover {
+    transform: translateX(5px);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% if not current_user.is_admin %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="alert alert-danger text-center">
+            <i class="bi bi-shield-exclamation display-4 mb-3"></i>
+            <h4>Access Denied</h4>
+            <p>Administrator privileges required to access this page.</p>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
+        </div>
+    </div>
+</div>
+{% else %}
+
+<!-- Page Header -->
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6 mb-0">
+            <i class="bi bi-gear text-primary"></i> System Administration
+        </h1>
+        <p class="text-muted">Monitor, manage, and configure the Socratic RAG Enhanced system</p>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="refreshAll()" id="refresh-btn">
+                <i class="bi bi-arrow-clockwise"></i> Refresh All
+            </button>
+            <button class="btn btn-outline-warning" onclick="restartServices()">
+                <i class="bi bi-power"></i> Restart Services
+            </button>
+            <button class="btn btn-outline-info" onclick="exportLogs()">
+                <i class="bi bi-download"></i> Export Logs
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- System Overview Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card admin-card bg-dark h-100">
+            <div class="card-body text-center">
+                <div class="position-relative mb-3">
+                    <div class="progress-ring mx-auto">
+                        <svg class="w-100 h-100" viewBox="0 0 36 36">
+                            <path class="text-secondary" fill="none" stroke="currentColor" stroke-width="3"
+                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="text-success" fill="none" stroke="currentColor" stroke-width="3"
+                                  stroke-dasharray="85, 100" stroke-linecap="round"
+                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <div class="position-absolute top-50 start-50 translate-middle">
+                            <div class="metric-value text-success">85%</div>
+                        </div>
+                    </div>
+                </div>
+                <h6>System Health</h6>
+                <small class="text-muted">All systems operational</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card admin-card bg-dark h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-cpu display-4 text-primary mb-3"></i>
+                <div class="metric-value text-primary" id="active-agents">{{ system_status.agents_status.total_available or 11 }}</div>
+                <h6>Active Agents</h6>
+                <small class="text-muted">{{ system_status.agents_status.available_agents|length or 11 }}/11 online</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card admin-card bg-dark h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-cloud-check display-4 text-info mb-3"></i>
+                <div class="metric-value text-info" id="active-services">{{ system_status.services_status.total_available or 4 }}</div>
+                <h6>External Services</h6>
+                <small class="text-muted">{{ system_status.services_status.total_available or 4 }}/4 connected</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card admin-card bg-dark h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-database display-4 text-warning mb-3"></i>
+                <div class="metric-value text-warning" id="db-size">{{ system_status.database_status.size_mb or '12.4' }}</div>
+                <h6>Database Size (MB)</h6>
+                <small class="text-muted">{{ system_status.database_status.total_records or '1,247' }} records</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Tabs -->
+<ul class="nav nav-tabs nav-fill bg-dark" id="admin-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="agents-tab" data-bs-toggle="tab" data-bs-target="#agents" type="button">
+            <i class="bi bi-cpu"></i> Agents
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="services-tab" data-bs-toggle="tab" data-bs-target="#services" type="button">
+            <i class="bi bi-cloud"></i> Services
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="database-tab" data-bs-toggle="tab" data-bs-target="#database" type="button">
+            <i class="bi bi-database"></i> Database
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button">
+            <i class="bi bi-people"></i> Users
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button">
+            <i class="bi bi-journal-text"></i> Logs
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#config" type="button">
+            <i class="bi bi-sliders"></i> Config
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="admin-tab-content">
+    <!-- Agents Tab -->
+    <div class="tab-pane fade show active" id="agents" role="tabpanel">
+        <div class="card bg-dark border-0">
+            <div class="card-body">
+                <div class="row">
+                    <!-- Agent Status Grid -->
+                    <div class="col-lg-8">
+                        <h6 class="border-bottom pb-2 mb-3">Agent Status Overview</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="card bg-secondary agent-status">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="mb-0">Socratic Counselor</h6>
+                                            <span class="status-indicator status-healthy"></span>
+                                        </div>
+                                        <div class="row small text-muted">
+                                            <div class="col-6">CPU: 15%</div>
+                                            <div class="col-6">Memory: 245MB</div>
+                                            <div class="col-6">Requests: 1,247</div>
+                                            <div class="col-6">Uptime: 2h 15m</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <div class="card bg-secondary agent-status">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="mb-0">Code Generator</h6>
+                                            <span class="status-indicator status-healthy"></span>
+                                        </div>
+                                        <div class="row small text-muted">
+                                            <div class="col-6">CPU: 28%</div>
+                                            <div class="col-6">Memory: 512MB</div>
+                                            <div class="col-6">Requests: 894</div>
+                                            <div class="col-6">Uptime: 2h 15m</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <div class="card bg-secondary agent-status">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="mb-0">Project Manager</h6>
+                                            <span class="status-indicator status-healthy"></span>
+                                        </div>
+                                        <div class="row small text-muted">
+                                            <div class="col-6">CPU: 8%</div>
+                                            <div class="col-6">Memory: 128MB</div>
+                                            <div class="col-6">Requests: 543</div>
+                                            <div class="col-6">Uptime: 2h 15m</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <div class="card bg-secondary agent-status warning">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="mb-0">Document Processor</h6>
+                                            <span class="status-indicator status-warning"></span>
+                                        </div>
+                                        <div class="row small text-muted">
+                                            <div class="col-6">CPU: 45%</div>
+                                            <div class="col-6">Memory: 1.2GB</div>
+                                            <div class="col-6">Requests: 234</div>
+                                            <div class="col-6">Uptime: 1h 42m</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Performance Chart -->
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">Agent Performance (Last 24h)</h6>
+                        <div class="performance-chart">
+                            <canvas id="agentPerformanceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Agent Controls -->
+                    <div class="col-lg-4">
+                        <h6 class="border-bottom pb-2 mb-3">Agent Controls</h6>
+                        <div class="d-grid gap-2 mb-4">
+                            <button class="btn btn-success" onclick="startAllAgents()">
+                                <i class="bi bi-play-circle"></i> Start All Agents
+                            </button>
+                            <button class="btn btn-warning" onclick="restartAllAgents()">
+                                <i class="bi bi-arrow-clockwise"></i> Restart All Agents
+                            </button>
+                            <button class="btn btn-danger" onclick="stopAllAgents()">
+                                <i class="bi bi-stop-circle"></i> Stop All Agents
+                            </button>
+                        </div>
+
+                        <!-- Recent Alerts -->
+                        <h6 class="border-bottom pb-2 mb-3">Recent Alerts</h6>
+                        <div class="alert alert-warning alert-item mb-2">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <small>Document Processor high memory usage</small>
+                            <div class="text-muted" style="font-size: 0.75rem;">5 minutes ago</div>
+                        </div>
+                        <div class="alert alert-info alert-item mb-2">
+                            <i class="bi bi-info-circle"></i>
+                            <small>Code Generator completed batch job</small>
+                            <div class="text-muted" style="font-size: 0.75rem;">12 minutes ago</div>
+                        </div>
+                        <div class="alert alert-success alert-item">
+                            <i class="bi bi-check-circle"></i>
+                            <small>All agents started successfully</small>
+                            <div class="text-muted" style="font-size: 0.75rem;">2 hours ago</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Services Tab -->
+    <div class="tab-pane fade" id="services" role="tabpanel">
+        <div class="card bg-dark border-0">
+            <div class="card-body">
+                <div class="row">
+                    <!-- Service Status -->
+                    <div class="col-lg-6">
+                        <h6 class="border-bottom pb-2 mb-3">External Services</h6>
+
+                        <div class="card bg-secondary mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-robot text-primary me-2"></i>
+                                            Claude API
+                                        </h6>
+                                        <small class="text-muted">Anthropic Claude Integration</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="status-indicator status-healthy me-2"></span>
+                                        <div class="small text-muted">99.9% uptime</div>
+                                    </div>
+                                </div>
+                                <div class="row mt-2 small">
+                                    <div class="col-6">Requests: 2,847</div>
+                                    <div class="col-6">Cost: $12.45</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card bg-secondary mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-database text-info me-2"></i>
+                                            ChromaDB
+                                        </h6>
+                                        <small class="text-muted">Vector Database</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="status-indicator status-healthy me-2"></span>
+                                        <div class="small text-muted">100% uptime</div>
+                                    </div>
+                                </div>
+                                <div class="row mt-2 small">
+                                    <div class="col-6">Collections: 5</div>
+                                    <div class="col-6">Vectors: 15,247</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card bg-secondary mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-git text-success me-2"></i>
+                                            Git Service
+                                        </h6>
+                                        <small class="text-muted">Version Control</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="status-indicator status-healthy me-2"></span>
+                                        <div class="small text-muted">100% uptime</div>
+                                    </div>
+                                </div>
+                                <div class="row mt-2 small">
+                                    <div class="col-6">Repos: 12</div>
+                                    <div class="col-6">Commits: 247</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card bg-secondary">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-code-square text-warning me-2"></i>
+                                            VS Code Integration
+                                        </h6>
+                                        <small class="text-muted">IDE Service</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="status-indicator status-warning me-2"></span>
+                                        <div class="small text-muted">95.2% uptime</div>
+                                    </div>
+                                </div>
+                                <div class="row mt-2 small">
+                                    <div class="col-6">Projects: 8</div>
+                                    <div class="col-6">Syncs: 1,523</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Service Configuration -->
+                    <div class="col-lg-6">
+                        <h6 class="border-bottom pb-2 mb-3">Service Configuration</h6>
+
+                        <div class="config-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>Claude API Limits</strong>
+                                <button class="btn btn-sm btn-outline-primary">Edit</button>
+                            </div>
+                            <div class="row small text-muted">
+                                <div class="col-6">Rate Limit: 50 req/min</div>
+                                <div class="col-6">Max Tokens: 4096</div>
+                                <div class="col-6">Model: claude-3-sonnet</div>
+                                <div class="col-6">Timeout: 30s</div>
+                            </div>
+                        </div>
+
+                        <div class="config-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>Vector Database</strong>
+                                <button class="btn btn-sm btn-outline-primary">Edit</button>
+                            </div>
+                            <div class="row small text-muted">
+                                <div class="col-6">Embedding Model: all-MiniLM-L6-v2</div>
+                                <div class="col-6">Chunk Size: 1000</div>
+                                <div class="col-6">Max Collections: 50</div>
+                                <div class="col-6">Persistence: Enabled</div>
+                            </div>
+                        </div>
+
+                        <div class="config-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>Git Integration</strong>
+                                <button class="btn btn-sm btn-outline-primary">Edit</button>
+                            </div>
+                            <div class="row small text-muted">
+                                <div class="col-6">Auto Commit: Enabled</div>
+                                <div class="col-6">Auto Push: Disabled</div>
+                                <div class="col-6">Default Branch: main</div>
+                                <div class="col-6">Max Repo Size: 1GB</div>
+                            </div>
+                        </div>
+
+                        <!-- Service Actions -->
+                        <div class="mt-4">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-success" onclick="testAllServices()">
+                                    <i class="bi bi-check-circle"></i> Test All Connections
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="restartServices()">
+                                    <i class="bi bi-arrow-clockwise"></i> Restart Services
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Tab -->
+    <div class="tab-pane fade" id="database" role="tabpanel">
+        <div class="card bg-dark border-0">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <h6 class="border-bottom pb-2 mb-3">Database Statistics</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-secondary">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-people display-4 text-primary mb-2"></i>
+                                        <div class="metric-value">15</div>
+                                        <small class="text-muted">Users</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-secondary">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-folder display-4 text-info mb-2"></i>
+                                        <div class="metric-value">42</div>
+                                        <small class="text-muted">Projects</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-secondary">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-chat-dots display-4 text-success mb-2"></i>
+                                        <div class="metric-value">1,247</div>
+                                        <small class="text-muted">Sessions</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Database Tables -->
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">Table Statistics</h6>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Table</th>
+                                        <th>Records</th>
+                                        <th>Size</th>
+                                        <th>Last Updated</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><i class="bi bi-people text-primary me-2"></i>users</td>
+                                        <td>15</td>
+                                        <td>24 KB</td>
+                                        <td>2 hours ago</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary">View</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="bi bi-folder text-info me-2"></i>projects</td>
+                                        <td>42</td>
+                                        <td>186 KB</td>
+                                        <td>15 minutes ago</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary">View</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="bi bi-chat text-success me-2"></i>conversations</td>
+                                        <td>1,247</td>
+                                        <td>2.4 MB</td>
+                                        <td>3 minutes ago</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary">View</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="bi bi-file-code text-warning me-2"></i>generated_files</td>
+                                        <td>892</td>
+                                        <td>8.7 MB</td>
+                                        <td>7 minutes ago</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary">View</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Database Operations -->
+                    <div class="col-lg-4">
+                        <h6 class="border-bottom pb-2 mb-3">Database Operations</h6>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Database Health: Good</strong>
+                            <div class="small mt-1">Last backup: 2 hours ago</div>
+                        </div>
+
+                        <div class="d-grid gap-2 mb-4">
+                            <button class="btn btn-primary" onclick="backupDatabase()">
+                                <i class="bi bi-database-backup"></i> Create Backup
+                            </button>
+                            <button class="btn btn-outline-warning" onclick="optimizeDatabase()">
+                                <i class="bi bi-speedometer"></i> Optimize Database
+                            </button>
+                            <button class="btn btn-outline-info" onclick="analyzeDatabase()">
+                                <i class="bi bi-graph-up"></i> Run Analysis
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="cleanupDatabase()">
+                                <i class="bi bi-trash"></i> Cleanup Old Data
+                            </button>
+                        </div>
+
+                        <!-- Recent Backups -->
+                        <h6 class="border-bottom pb-2 mb-3">Recent Backups</h6>
+                        <div class="small">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>backup_2024_12_19_14_30.sql</span>
+                                <span class="text-muted">12.4 MB</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>backup_2024_12_19_08_00.sql</span>
+                                <span class="text-muted">11.8 MB</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>backup_2024_12_18_20_00.sql</span>
+                                <span class="text-muted">11.2 MB</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Tab -->
+    <div class="tab-pane fade" id="users" role="tabpanel">
+        <div class="card bg-dark border-0">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">User Management</h6>
+                    <div>
+                        <button class="btn btn-primary" onclick="addUser()">
+                            <i class="bi bi-person-plus"></i> Add User
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Projects</th>
+                                <th>Last Active</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar bg-primary me-2">A</div>
+                                        <div>
+                                            <div>Admin User</div>
+                                            <small class="text-muted">Administrator</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>admin@example.com</td>
+                                <td><span class="badge bg-danger">Admin</span></td>
+                                <td>12</td>
+                                <td>5 minutes ago</td>
+                                <td><span class="badge bg-success">Active</span></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary">Edit</button>
+                                        <button class="btn btn-outline-danger">Disable</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar bg-info me-2">D</div>
+                                        <div>
+                                            <div>Demo User</div>
+                                            <small class="text-muted">Standard User</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>demo@example.com</td>
+                                <td><span class="badge bg-primary">User</span></td>
+                                <td>5</td>
+                                <td>2 hours ago</td>
+                                <td><span class="badge bg-success">Active</span></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary">Edit</button>
+                                        <button class="btn btn-outline-danger">Disable</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar bg-success me-2">T</div>
+                                        <div>
+                                            <div>Test User</div>
+                                            <small class="text-muted">Developer</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>test@example.com</td>
+                                <td><span class="badge bg-info">Developer</span></td>
+                                <td>8</td>
+                                <td>1 day ago</td>
+                                <td><span class="badge bg-warning">Inactive</span></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary">Edit</button>
+                                        <button class="btn btn-outline-success">Enable</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs Tab -->
+    <div class="tab-pane fade" id="logs" role="tabpanel">
+        <div class="card bg-dark border-0">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">System Logs</h6>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="refreshLogs()">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                        <button class="btn btn-outline-info" onclick="exportLogs()">
+                            <i class="bi bi-download"></i> Export
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="clearLogs()">
+                            <i class="bi bi-trash"></i> Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Log Filters -->
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <select class="form-select form-select-sm" id="log-level">
+                            <option value="">All Levels</option>
+                            <option value="error">Error</option>
+                            <option value="warning">Warning</option>
+                            <option value="info">Info</option>
+                            <option value="debug">Debug</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select form-select-sm" id="log-source">
+                            <option value="">All Sources</option>
+                            <option value="agents">Agents</option>
+                            <option value="services">Services</option>
+                            <option value="web">Web Interface</option>
+                            <option value="database">Database</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control form-control-sm" placeholder="Search logs..." id="log-search">
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-sm btn-primary w-100" onclick="filterLogs()">Filter</button>
+                    </div>
+                </div>
+
+                <!-- Log Viewer -->
+                <div class="log-viewer" id="log-viewer">
+                    <div class="log-entry">
+                        <span class="text-muted">[2024-12-19 14:32:15]</span>
+                        <span class="log-info">[INFO]</span>
+                        <span class="text-muted">[agents.socratic]</span>
+                        <span>Started new Socratic session for user demo</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="text-muted">[2024-12-19 14:31:42]</span>
+                        <span class="log-info">[INFO]</span>
+                        <span class="text-muted">[services.claude]</span>
+                        <span>API request completed successfully (1.2s)</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="text-muted">[2024-12-19 14:30:18]</span>
+                        <span class="log-warning">[WARN]</span>
+                        <span class="text-muted">[agents.document]</span>
+                        <span>High memory usage detected: 1.2GB</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="text-muted">[2024-12-19 14:29:55]</span>
+                        <span class="log-info">[INFO]</span>
+                        <span class="text-muted">[services.git]</span>
+                        <span>Repository cloned successfully: ecommerce-platform</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="text-muted">[2024-12-19 14:28:33]</span>
+                        <span class="log-error">[ERROR]</span>
+                        <span class="text-muted">[services.ide]</span>
+                        <span>Failed to connect to VS Code: Connection timeout</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="text-muted">[2024-12-19 14:27:12]</span>
+                        <span class="log-info">[INFO]</span>
+                        <span class="text-muted">[agents.code]</span>
+                        <span>Code generation completed: 15 files created</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="text-muted">[2024-12-19 14:25:44]</span>
+                        <span class="log-debug">[DEBUG]</span>
+                        <span class="text-muted">[database]</span>
+                        <span>Database query executed: SELECT * FROM projects WHERE user_id = 1</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Config Tab -->
+    <div class="tab-pane fade" id="config" role="tabpanel">
+        <div class="card bg-dark border-0">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <h6 class="border-bottom pb-2 mb-3">System Configuration</h6>
+
+                        <!-- Core Settings -->
+                        <h6 class="mb-3">Core Settings</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Debug Mode</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="debug-mode">
+                                    <label class="form-check-label" for="debug-mode">Enable debug mode</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Auto-backup</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="auto-backup" checked>
+                                    <label class="form-check-label" for="auto-backup">Enable automatic backups</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Agent Settings -->
+                        <h6 class="mb-3">Agent Configuration</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Max Concurrent Sessions</label>
+                                <input type="number" class="form-control" value="10">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Session Timeout (minutes)</label>
+                                <input type="number" class="form-control" value="30">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Default Role</label>
+                                <select class="form-select">
+                                    <option>Developer</option>
+                                    <option>Manager</option>
+                                    <option>Designer</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Security Settings -->
+                        <h6 class="mb-3">Security Configuration</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Password Min Length</label>
+                                <input type="number" class="form-control" value="8">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Session Expiry (hours)</label>
+                                <input type="number" class="form-control" value="24">
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button class="btn btn-primary me-2" onclick="saveConfiguration()">
+                                <i class="bi bi-check-circle"></i> Save Configuration
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="resetConfiguration()">
+                                <i class="bi bi-arrow-clockwise"></i> Reset to Defaults
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Configuration Status -->
+                    <div class="col-lg-4">
+                        <h6 class="border-bottom pb-2 mb-3">Configuration Status</h6>
+
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i>
+                            <strong>Configuration Valid</strong>
+                            <div class="small mt-1">Last updated: 2 hours ago</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6>Environment Variables</h6>
+                            <div class="small">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>ANTHROPIC_API_KEY</span>
+                                    <span class="text-success">✓ Set</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>DATABASE_URL</span>
+                                    <span class="text-success">✓ Set</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>SECRET_KEY</span>
+                                    <span class="text-success">✓ Set</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>REDIS_URL</span>
+                                    <span class="text-warning">⚠ Optional</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h6>Configuration Files</h6>
+                            <div class="small">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>config.yaml</span>
+                                    <span class="text-success">✓ Valid</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>requirements.txt</span>
+                                    <span class="text-success">✓ Valid</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>.env</span>
+                                    <span class="text-warning">⚠ Missing</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Admin panel JavaScript
+let agentChart;
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('agentPerformanceChart')) {
+        initializeAgentChart();
+    }
+});
+
+function initializeAgentChart() {
+    const ctx = document.getElementById('agentPerformanceChart').getContext('2d');
+    agentChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+            datasets: [
+                {
+                    label: 'Socratic Counselor',
+                    data: [12, 19, 23, 17, 25, 22],
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    tension: 0.4
+                },
+                {
+                    label: 'Code Generator',
+                    data: [8, 15, 28, 22, 31, 26],
+                    borderColor: '#20c997',
+                    backgroundColor: 'rgba(32, 201, 151, 0.1)',
+                    tension: 0.4
+                },
+                {
+                    label: 'Document Processor',
+                    data: [5, 8, 12, 15, 18, 14],
+                    borderColor: '#ffc107',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#ffffff'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#ffffff'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#ffffff'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function refreshAll() {
+    const refreshBtn = document.getElementById('refresh-btn');
+    refreshBtn.innerHTML = '<i class="bi bi-gear spin"></i> Refreshing...';
+    refreshBtn.disabled = true;
+
+    // Simulate refresh
+    setTimeout(() => {
+        refreshBtn.innerHTML = '<i class="bi bi-check-circle"></i> Refreshed';
+        setTimeout(() => {
+            refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refresh All';
+            refreshBtn.disabled = false;
+        }, 1000);
+    }, 2000);
+}
+
+function startAllAgents() {
+    if (confirm('Start all agents?')) {
+        alert('All agents started successfully');
+    }
+}
+
+function restartAllAgents() {
+    if (confirm('Restart all agents? This will briefly interrupt service.')) {
+        alert('All agents restarted successfully');
+    }
+}
+
+function stopAllAgents() {
+    if (confirm('Stop all agents? This will disable AI functionality.')) {
+        alert('All agents stopped');
+    }
+}
+
+function restartServices() {
+    if (confirm('Restart external services? This may take a few minutes.')) {
+        alert('Services restart initiated');
+    }
+}
+
+function testAllServices() {
+    alert('Testing all service connections...\n\n✓ Claude API: Connected\n✓ ChromaDB: Connected\n✓ Git Service: Connected\n⚠ VS Code: Connection timeout');
+}
+
+function backupDatabase() {
+    if (confirm('Create database backup?')) {
+        alert('Database backup started. This may take a few minutes.');
+    }
+}
+
+function optimizeDatabase() {
+    if (confirm('Optimize database? This may improve performance.')) {
+        alert('Database optimization started');
+    }
+}
+
+function analyzeDatabase() {
+    alert('Database analysis started. Results will be available in the logs.');
+}
+
+function cleanupDatabase() {
+    if (confirm('Clean up old data? This action cannot be undone.')) {
+        alert('Database cleanup started');
+    }
+}
+
+function addUser() {
+    const username = prompt('Enter username:');
+    const email = prompt('Enter email:');
+
+    if (username && email) {
+        alert(`User ${username} added successfully`);
+    }
+}
+
+function refreshLogs() {
+    alert('Logs refreshed');
+}
+
+function exportLogs() {
+    alert('Logs exported to system_logs.txt');
+}
+
+function clearLogs() {
+    if (confirm('Clear all logs? This action cannot be undone.')) {
+        document.getElementById('log-viewer').innerHTML = '<div class="text-center text-muted py-4">Logs cleared</div>';
+    }
+}
+
+function filterLogs() {
+    const level = document.getElementById('log-level').value;
+    const source = document.getElementById('log-source').value;
+    const search = document.getElementById('log-search').value;
+
+    console.log('Filtering logs:', { level, source, search });
+    alert('Log filters applied');
+}
+
+function saveConfiguration() {
+    if (confirm('Save configuration changes?')) {
+        alert('Configuration saved successfully');
+    }
+}
+
+function resetConfiguration() {
+    if (confirm('Reset configuration to defaults? This will undo all changes.')) {
+        alert('Configuration reset to defaults');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,1259 @@
+{% extends "base.html" %}
+
+{% block title %}Code Generation - Socratic RAG Enhanced{% endblock %}
+
+{% block extra_head %}
+<style>
+.code-editor {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    border-radius: 0.5rem;
+    overflow: auto;
+}
+
+.file-tree {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 0.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.file-item {
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.file-item:hover {
+    background: rgba(13, 110, 253, 0.1);
+}
+
+.file-item.active {
+    background: rgba(13, 110, 253, 0.2);
+    border-left-color: #0d6efd;
+}
+
+.file-icon {
+    width: 16px;
+    margin-right: 0.5rem;
+}
+
+.generation-progress {
+    display: none;
+}
+
+.generation-progress.active {
+    display: block;
+}
+
+.progress-step {
+    padding: 0.75rem;
+    border-left: 3px solid #6c757d;
+    margin-bottom: 0.5rem;
+    background: rgba(108, 117, 125, 0.1);
+    border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.progress-step.active {
+    border-left-color: #0d6efd;
+    background: rgba(13, 110, 253, 0.1);
+}
+
+.progress-step.completed {
+    border-left-color: #198754;
+    background: rgba(25, 135, 84, 0.1);
+}
+
+.progress-step.error {
+    border-left-color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.test-result {
+    font-family: monospace;
+    font-size: 0.9rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.test-passed {
+    color: #198754;
+}
+
+.test-failed {
+    color: #dc3545;
+}
+
+.test-skipped {
+    color: #ffc107;
+}
+
+.metric-card {
+    transition: all 0.2s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+}
+
+.code-preview {
+    max-height: 400px;
+    overflow: auto;
+    background: #1e1e1e;
+    border-radius: 0.5rem;
+}
+
+.deployment-status {
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.status-pending {
+    background: rgba(108, 117, 125, 0.2);
+    color: #6c757d;
+}
+
+.status-running {
+    background: rgba(13, 110, 253, 0.2);
+    color: #0d6efd;
+}
+
+.status-success {
+    background: rgba(25, 135, 84, 0.2);
+    color: #198754;
+}
+
+.status-error {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+}
+
+@keyframes pulse-glow {
+    0% { box-shadow: 0 0 5px rgba(13, 110, 253, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(13, 110, 253, 0.8); }
+    100% { box-shadow: 0 0 5px rgba(13, 110, 253, 0.5); }
+}
+
+.generating {
+    animation: pulse-glow 2s infinite;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6 mb-0">
+            <i class="bi bi-code-slash text-primary"></i> Code Generation
+        </h1>
+        <p class="text-muted">AI-powered multi-file code generation and testing</p>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group">
+            <button class="btn btn-success" onclick="startGeneration()" id="generate-btn">
+                <i class="bi bi-play-circle"></i> Generate Code
+            </button>
+            <button class="btn btn-outline-primary" onclick="runTests()" disabled id="test-btn">
+                <i class="bi bi-bug"></i> Run Tests
+            </button>
+            <button class="btn btn-outline-info" onclick="deployToIDE()" disabled id="deploy-btn">
+                <i class="bi bi-cloud-upload"></i> Deploy to IDE
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Configuration Panel -->
+    <div class="col-lg-4 mb-4">
+        <div class="card bg-dark border">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear"></i> Generation Settings
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="generation-config">
+                    <!-- Project Selection -->
+                    <div class="form-floating mb-3">
+                        <select class="form-select" id="project_select" required onchange="loadProjectSpecs()">
+                            <option value="">Select Project</option>
+                            <option value="project-1" selected>E-commerce Platform</option>
+                            <option value="project-2">Mobile App MVP</option>
+                            <option value="project-3">API Integration</option>
+                        </select>
+                        <label>Project</label>
+                    </div>
+
+                    <!-- Generation Type -->
+                    <div class="form-floating mb-3">
+                        <select class="form-select" id="generation_type" onchange="updateGenerationOptions()">
+                            <option value="full_application">Full Application</option>
+                            <option value="backend_only">Backend Only</option>
+                            <option value="frontend_only">Frontend Only</option>
+                            <option value="api_only">API Only</option>
+                            <option value="tests_only">Tests Only</option>
+                            <option value="documentation">Documentation</option>
+                        </select>
+                        <label>Generation Type</label>
+                    </div>
+
+                    <!-- Technology Stack Preview -->
+                    <div class="mb-3">
+                        <label class="form-label">Technology Stack:</label>
+                        <div id="tech-stack-preview">
+                            <span class="badge bg-primary me-1">Python</span>
+                            <span class="badge bg-info me-1">Flask</span>
+                            <span class="badge bg-success me-1">PostgreSQL</span>
+                            <span class="badge bg-warning me-1">React</span>
+                            <span class="badge bg-secondary">Docker</span>
+                        </div>
+                    </div>
+
+                    <!-- Code Quality Options -->
+                    <div class="mb-3">
+                        <h6 class="border-bottom pb-2">Code Quality</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include_tests" checked>
+                            <label class="form-check-label" for="include_tests">
+                                Include Unit Tests
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include_docs" checked>
+                            <label class="form-check-label" for="include_docs">
+                                Include Documentation
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="security_scan" checked>
+                            <label class="form-check-label" for="security_scan">
+                                Security Analysis
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="performance_optimize">
+                            <label class="form-check-label" for="performance_optimize">
+                                Performance Optimization
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Options -->
+                    <div class="mb-3">
+                        <h6 class="border-bottom pb-2">Advanced</h6>
+                        <div class="form-floating mb-2">
+                            <select class="form-select form-select-sm" id="code_style">
+                                <option value="standard">Standard</option>
+                                <option value="google">Google Style</option>
+                                <option value="pep8">PEP 8</option>
+                                <option value="airbnb">Airbnb Style</option>
+                            </select>
+                            <label>Code Style</label>
+                        </div>
+                        <div class="form-floating">
+                            <select class="form-select form-select-sm" id="complexity_level">
+                                <option value="simple">Simple</option>
+                                <option value="moderate" selected>Moderate</option>
+                                <option value="advanced">Advanced</option>
+                            </select>
+                            <label>Complexity Level</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Generation Progress -->
+        <div class="card bg-dark border mt-4 generation-progress" id="generation-progress">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-gear spin"></i> Generation Progress
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="progress-step" id="step-analyze">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Analyzing specifications</span>
+                        <i class="bi bi-check-circle d-none"></i>
+                    </div>
+                </div>
+                <div class="progress-step" id="step-architecture">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Designing architecture</span>
+                        <i class="bi bi-check-circle d-none"></i>
+                    </div>
+                </div>
+                <div class="progress-step" id="step-backend">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Generating backend code</span>
+                        <i class="bi bi-check-circle d-none"></i>
+                    </div>
+                </div>
+                <div class="progress-step" id="step-frontend">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Generating frontend code</span>
+                        <i class="bi bi-check-circle d-none"></i>
+                    </div>
+                </div>
+                <div class="progress-step" id="step-tests">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Creating tests</span>
+                        <i class="bi bi-check-circle d-none"></i>
+                    </div>
+                </div>
+                <div class="progress-step" id="step-docs">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Generating documentation</span>
+                        <i class="bi bi-check-circle d-none"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="col-lg-8">
+        <!-- File Explorer and Code Viewer -->
+        <div class="card bg-dark border mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">
+                        <i class="bi bi-folder-open"></i> Generated Files
+                    </h5>
+                    <small class="text-muted" id="files-summary">No files generated yet</small>
+                </div>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="downloadAll()" disabled id="download-btn">
+                        <i class="bi bi-download"></i> Download
+                    </button>
+                    <button class="btn btn-outline-success" onclick="previewApp()" disabled id="preview-btn">
+                        <i class="bi bi-eye"></i> Preview
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="row g-0">
+                    <!-- File Tree -->
+                    <div class="col-md-4 border-end">
+                        <div class="file-tree p-2" id="file-tree">
+                            <div class="text-center text-muted py-4" id="file-tree-empty">
+                                <i class="bi bi-folder display-4 mb-3"></i>
+                                <p class="mb-0">Generate code to see file structure</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Code Viewer -->
+                    <div class="col-md-8">
+                        <div class="code-preview p-3" id="code-viewer">
+                            <div class="text-center text-muted py-5" id="code-viewer-empty">
+                                <i class="bi bi-code-slash display-4 mb-3"></i>
+                                <p class="mb-0">Select a file to view its contents</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs for different views -->
+        <ul class="nav nav-tabs nav-fill bg-dark" id="code-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button">
+                    <i class="bi bi-info-circle"></i> Overview
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tests-tab" data-bs-toggle="tab" data-bs-target="#tests" type="button">
+                    <i class="bi bi-bug"></i> Tests
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="quality-tab" data-bs-toggle="tab" data-bs-target="#quality" type="button">
+                    <i class="bi bi-shield-check"></i> Quality
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="deployment-tab" data-bs-toggle="tab" data-bs-target="#deployment" type="button">
+                    <i class="bi bi-cloud-upload"></i> Deploy
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="code-tab-content">
+            <!-- Overview Tab -->
+            <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                <div class="card bg-dark border-0">
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <!-- Metrics Cards -->
+                            <div class="col-md-3">
+                                <div class="card bg-secondary metric-card">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-files display-4 text-primary mb-2"></i>
+                                        <h4 class="mb-0" id="total-files">0</h4>
+                                        <small class="text-muted">Files Generated</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-secondary metric-card">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-code-square display-4 text-info mb-2"></i>
+                                        <h4 class="mb-0" id="total-lines">0</h4>
+                                        <small class="text-muted">Lines of Code</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-secondary metric-card">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-check-circle display-4 text-success mb-2"></i>
+                                        <h4 class="mb-0" id="test-coverage">0%</h4>
+                                        <small class="text-muted">Test Coverage</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-secondary metric-card">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-shield-check display-4 text-warning mb-2"></i>
+                                        <h4 class="mb-0" id="quality-score">0</h4>
+                                        <small class="text-muted">Quality Score</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Architecture Diagram -->
+                        <h6 class="border-bottom pb-2 mb-3">Architecture Overview</h6>
+                        <div class="text-center py-4" id="architecture-diagram">
+                            <i class="bi bi-diagram-3 display-1 text-muted mb-3"></i>
+                            <p class="text-muted">Architecture diagram will appear here after generation</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tests Tab -->
+            <div class="tab-pane fade" id="tests" role="tabpanel">
+                <div class="card bg-dark border-0">
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h6 class="border-bottom pb-2 mb-3">Test Results</h6>
+                                <div class="test-result" id="test-output">
+                                    <div class="text-center text-muted py-4">
+                                        <i class="bi bi-play-circle display-4 mb-3"></i>
+                                        <p class="mb-0">Click "Run Tests" to execute test suite</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="border-bottom pb-2 mb-3">Test Summary</h6>
+                                <div id="test-summary">
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <div class="h4 test-passed mb-0" id="tests-passed">0</div>
+                                            <small class="text-muted">Passed</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="h4 test-failed mb-0" id="tests-failed">0</div>
+                                            <small class="text-muted">Failed</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="h4 test-skipped mb-0" id="tests-skipped">0</div>
+                                            <small class="text-muted">Skipped</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quality Tab -->
+            <div class="tab-pane fade" id="quality" role="tabpanel">
+                <div class="card bg-dark border-0">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="border-bottom pb-2 mb-3">Code Quality Metrics</h6>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small>Maintainability</small>
+                                        <small>85%</small>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-success" style="width: 85%"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small>Code Complexity</small>
+                                        <small>Low</small>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-success" style="width: 90%"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small>Documentation</small>
+                                        <small>78%</small>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-warning" style="width: 78%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="border-bottom pb-2 mb-3">Security Analysis</h6>
+                                <div class="alert alert-success">
+                                    <i class="bi bi-shield-check"></i>
+                                    <strong>No critical security issues found</strong>
+                                </div>
+                                <div class="small">
+                                    <div class="text-success mb-1">
+                                        <i class="bi bi-check-circle"></i> Input validation implemented
+                                    </div>
+                                    <div class="text-success mb-1">
+                                        <i class="bi bi-check-circle"></i> SQL injection protection
+                                    </div>
+                                    <div class="text-warning mb-1">
+                                        <i class="bi bi-exclamation-triangle"></i> Consider rate limiting
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deployment Tab -->
+            <div class="tab-pane fade" id="deployment" role="tabpanel">
+                <div class="card bg-dark border-0">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6 class="border-bottom pb-2 mb-3">Deployment Options</h6>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="deployTarget" id="vscode" checked>
+                                        <label class="form-check-label" for="vscode">
+                                            <i class="bi bi-code-square text-primary"></i> VS Code Workspace
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="deployTarget" id="github">
+                                        <label class="form-check-label" for="github">
+                                            <i class="bi bi-github text-info"></i> GitHub Repository
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="deployTarget" id="docker">
+                                        <label class="form-check-label" for="docker">
+                                            <i class="bi bi-box text-success"></i> Docker Container
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Deployment Path</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" value="~/Projects/ecommerce-platform" id="deploy-path">
+                                        <button class="btn btn-outline-secondary" type="button">
+                                            <i class="bi bi-folder"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="border-bottom pb-2 mb-3">Status</h6>
+                                <div class="deployment-status status-pending" id="deploy-status">
+                                    <i class="bi bi-clock"></i> Ready to deploy
+                                </div>
+                                <div class="mt-3">
+                                    <button class="btn btn-primary w-100" onclick="deployToIDE()" id="deploy-action">
+                                        <i class="bi bi-cloud-upload"></i> Deploy Now
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Code generation JavaScript
+let generationInProgress = false;
+let currentFiles = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadProjectSpecs();
+    updateGenerationOptions();
+});
+
+function loadProjectSpecs() {
+    const projectSelect = document.getElementById('project_select');
+    const selectedProject = projectSelect.value;
+
+    if (selectedProject) {
+        // Load project specifications and update tech stack preview
+        // In real implementation, this would fetch from API
+        updateTechStackPreview();
+    }
+}
+
+function updateTechStackPreview() {
+    // Update technology stack display based on selected project
+    const techStackDiv = document.getElementById('tech-stack-preview');
+
+    // Sample tech stack - would be loaded from project data
+    techStackDiv.innerHTML = `
+        <span class="badge bg-primary me-1">Python</span>
+        <span class="badge bg-info me-1">Flask</span>
+        <span class="badge bg-success me-1">PostgreSQL</span>
+        <span class="badge bg-warning me-1">React</span>
+        <span class="badge bg-secondary">Docker</span>
+    `;
+}
+
+function updateGenerationOptions() {
+    const generationType = document.getElementById('generation_type').value;
+
+    // Enable/disable options based on generation type
+    const includeTests = document.getElementById('include_tests');
+    const includeDocs = document.getElementById('include_docs');
+
+    if (generationType === 'tests_only') {
+        includeTests.checked = true;
+        includeTests.disabled = true;
+        includeDocs.disabled = true;
+    } else if (generationType === 'documentation') {
+        includeDocs.checked = true;
+        includeDocs.disabled = true;
+        includeTests.disabled = true;
+    } else {
+        includeTests.disabled = false;
+        includeDocs.disabled = false;
+    }
+}
+
+function startGeneration() {
+    if (generationInProgress) return;
+
+    const projectSelect = document.getElementById('project_select');
+    if (!projectSelect.value) {
+        alert('Please select a project first');
+        return;
+    }
+
+    generationInProgress = true;
+
+    // Update UI
+    const generateBtn = document.getElementById('generate-btn');
+    generateBtn.innerHTML = '<i class="bi bi-gear spin"></i> Generating...';
+    generateBtn.disabled = true;
+    generateBtn.classList.add('generating');
+
+    // Show progress panel
+    const progressPanel = document.getElementById('generation-progress');
+    progressPanel.classList.add('active');
+
+    // Start progress simulation
+    simulateGeneration();
+}
+
+function simulateGeneration() {
+    const steps = [
+        'step-analyze',
+        'step-architecture',
+        'step-backend',
+        'step-frontend',
+        'step-tests',
+        'step-docs'
+    ];
+
+    let currentStep = 0;
+
+    function processNextStep() {
+        if (currentStep < steps.length) {
+            const stepId = steps[currentStep];
+            const stepElement = document.getElementById(stepId);
+
+            // Mark as active
+            stepElement.classList.add('active');
+
+            // Simulate processing time
+            setTimeout(() => {
+                // Mark as completed
+                stepElement.classList.remove('active');
+                stepElement.classList.add('completed');
+                stepElement.querySelector('i').classList.remove('d-none');
+
+                currentStep++;
+                processNextStep();
+            }, 1000 + Math.random() * 2000);
+        } else {
+            // Generation complete
+            completeGeneration();
+        }
+    }
+
+    processNextStep();
+}
+
+function completeGeneration() {
+    generationInProgress = false;
+
+    // Update UI
+    const generateBtn = document.getElementById('generate-btn');
+    generateBtn.innerHTML = '<i class="bi bi-check-circle"></i> Generation Complete';
+    generateBtn.classList.remove('generating');
+    generateBtn.classList.add('btn-success');
+    generateBtn.classList.remove('btn-success'); // Will be overridden by btn-success class
+
+    // Enable action buttons
+    document.getElementById('test-btn').disabled = false;
+    document.getElementById('deploy-btn').disabled = false;
+    document.getElementById('download-btn').disabled = false;
+    document.getElementById('preview-btn').disabled = false;
+
+    // Hide progress panel after delay
+    setTimeout(() => {
+        document.getElementById('generation-progress').classList.remove('active');
+
+        // Reset generate button
+        generateBtn.innerHTML = '<i class="bi bi-play-circle"></i> Generate Code';
+        generateBtn.disabled = false;
+        generateBtn.classList.remove('btn-success');
+        generateBtn.classList.add('btn-success');
+        generateBtn.classList.remove('btn-success'); // Reset to default
+    }, 2000);
+
+    // Load generated files
+    loadGeneratedFiles();
+
+    // Update metrics
+    updateMetrics();
+}
+
+function loadGeneratedFiles() {
+    // Sample generated file structure
+    const sampleFiles = [
+        {
+            name: 'backend',
+            type: 'folder',
+            children: [
+                { name: 'app.py', type: 'file', icon: 'bi-filetype-py', content: samplePythonCode() },
+                { name: 'models.py', type: 'file', icon: 'bi-filetype-py', content: sampleModelsCode() },
+                { name: 'routes.py', type: 'file', icon: 'bi-filetype-py', content: sampleRoutesCode() },
+                { name: 'requirements.txt', type: 'file', icon: 'bi-file-text', content: sampleRequirements() }
+            ]
+        },
+        {
+            name: 'frontend',
+            type: 'folder',
+            children: [
+                { name: 'src', type: 'folder', children: [
+                    { name: 'App.js', type: 'file', icon: 'bi-filetype-js', content: sampleReactCode() },
+                    { name: 'index.js', type: 'file', icon: 'bi-filetype-js', content: sampleIndexCode() }
+                ]},
+                { name: 'package.json', type: 'file', icon: 'bi-filetype-json', content: samplePackageJson() }
+            ]
+        },
+        {
+            name: 'tests',
+            type: 'folder',
+            children: [
+                { name: 'test_app.py', type: 'file', icon: 'bi-bug', content: sampleTestCode() },
+                { name: 'test_models.py', type: 'file', icon: 'bi-bug', content: sampleModelTests() }
+            ]
+        },
+        {
+            name: 'docker-compose.yml',
+            type: 'file',
+            icon: 'bi-box',
+            content: sampleDockerCompose()
+        },
+        {
+            name: 'README.md',
+            type: 'file',
+            icon: 'bi-file-text',
+            content: sampleReadme()
+        }
+    ];
+
+    currentFiles = sampleFiles;
+    renderFileTree(sampleFiles);
+    updateFilesSummary();
+}
+
+function renderFileTree(files, container = null, level = 0) {
+    if (!container) {
+        container = document.getElementById('file-tree');
+        container.innerHTML = '';
+        document.getElementById('file-tree-empty').classList.add('d-none');
+    }
+
+    files.forEach(file => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        fileItem.style.paddingLeft = `${0.5 + level * 1}rem`;
+
+        const icon = file.type === 'folder' ? 'bi-folder' : (file.icon || 'bi-file');
+        const iconColor = file.type === 'folder' ? 'text-warning' : 'text-info';
+
+        fileItem.innerHTML = `
+            <i class="bi ${icon} ${iconColor} file-icon"></i>
+            <span>${file.name}</span>
+        `;
+
+        if (file.type === 'file' && file.content) {
+            fileItem.style.cursor = 'pointer';
+            fileItem.onclick = () => showFileContent(file.name, file.content, file.icon);
+        }
+
+        container.appendChild(fileItem);
+
+        if (file.children) {
+            renderFileTree(file.children, container, level + 1);
+        }
+    });
+}
+
+function showFileContent(filename, content, icon) {
+    // Remove active class from all file items
+    document.querySelectorAll('.file-item').forEach(item => {
+        item.classList.remove('active');
+    });
+
+    // Add active class to clicked item
+    event.target.closest('.file-item').classList.add('active');
+
+    // Show content in code viewer
+    const codeViewer = document.getElementById('code-viewer');
+    const codeViewerEmpty = document.getElementById('code-viewer-empty');
+
+    codeViewerEmpty.classList.add('d-none');
+
+    const iconClass = icon || 'bi-file';
+    codeViewer.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+            <h6 class="mb-0">
+                <i class="bi ${iconClass} text-info me-2"></i>
+                ${filename}
+            </h6>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary btn-sm" onclick="copyToClipboard('${filename}')">
+                    <i class="bi bi-clipboard"></i>
+                </button>
+                <button class="btn btn-outline-success btn-sm" onclick="downloadFile('${filename}')">
+                    <i class="bi bi-download"></i>
+                </button>
+            </div>
+        </div>
+        <pre class="mb-0"><code>${escapeHtml(content)}</code></pre>
+    `;
+}
+
+function updateFilesSummary() {
+    const totalFiles = countFiles(currentFiles);
+    document.getElementById('files-summary').textContent = `${totalFiles} files generated`;
+}
+
+function countFiles(files) {
+    let count = 0;
+    files.forEach(file => {
+        if (file.type === 'file') {
+            count++;
+        } else if (file.children) {
+            count += countFiles(file.children);
+        }
+    });
+    return count;
+}
+
+function updateMetrics() {
+    // Update overview metrics
+    document.getElementById('total-files').textContent = countFiles(currentFiles);
+    document.getElementById('total-lines').textContent = '1,247';
+    document.getElementById('test-coverage').textContent = '87%';
+    document.getElementById('quality-score').textContent = '8.5';
+}
+
+function runTests() {
+    const testOutput = document.getElementById('test-output');
+    const testBtn = document.getElementById('test-btn');
+
+    testBtn.innerHTML = '<i class="bi bi-gear spin"></i> Running...';
+    testBtn.disabled = true;
+
+    // Simulate test execution
+    testOutput.innerHTML = `
+        <div class="font-monospace small">
+        <div class="text-info">Running test suite...</div>
+        <div class="test-passed">✓ test_user_registration - PASSED</div>
+        <div class="test-passed">✓ test_user_login - PASSED</div>
+        <div class="test-passed">✓ test_product_creation - PASSED</div>
+        <div class="test-failed">✗ test_payment_processing - FAILED</div>
+        <div class="test-passed">✓ test_order_management - PASSED</div>
+        <div class="test-skipped">- test_email_notifications - SKIPPED</div>
+        <br>
+        <div class="text-info">Test Summary: 4 passed, 1 failed, 1 skipped</div>
+        </div>
+    `;
+
+    // Update test summary
+    document.getElementById('tests-passed').textContent = '4';
+    document.getElementById('tests-failed').textContent = '1';
+    document.getElementById('tests-skipped').textContent = '1';
+
+    setTimeout(() => {
+        testBtn.innerHTML = '<i class="bi bi-bug"></i> Run Tests';
+        testBtn.disabled = false;
+    }, 3000);
+}
+
+function deployToIDE() {
+    const deployStatus = document.getElementById('deploy-status');
+    const deployBtn = document.getElementById('deploy-action');
+
+    deployStatus.className = 'deployment-status status-running';
+    deployStatus.innerHTML = '<i class="bi bi-gear spin"></i> Deploying to VS Code...';
+
+    deployBtn.innerHTML = '<i class="bi bi-gear spin"></i> Deploying...';
+    deployBtn.disabled = true;
+
+    // Simulate deployment
+    setTimeout(() => {
+        deployStatus.className = 'deployment-status status-success';
+        deployStatus.innerHTML = '<i class="bi bi-check-circle"></i> Successfully deployed to VS Code';
+
+        deployBtn.innerHTML = '<i class="bi bi-check-circle"></i> Deployed';
+        deployBtn.classList.remove('btn-primary');
+        deployBtn.classList.add('btn-success');
+
+        setTimeout(() => {
+            deployBtn.innerHTML = '<i class="bi bi-cloud-upload"></i> Deploy Again';
+            deployBtn.classList.remove('btn-success');
+            deployBtn.classList.add('btn-primary');
+            deployBtn.disabled = false;
+
+            deployStatus.className = 'deployment-status status-pending';
+            deployStatus.innerHTML = '<i class="bi bi-check-circle"></i> Ready to deploy';
+        }, 3000);
+    }, 2000);
+}
+
+function downloadAll() {
+    // Simulate download
+    alert('Downloading complete project as ZIP file...');
+}
+
+function previewApp() {
+    // Open preview in new tab
+    window.open('about:blank', '_blank');
+    alert('App preview would open in a new tab');
+}
+
+function copyToClipboard(filename) {
+    // Copy file content to clipboard
+    alert(`Copied ${filename} to clipboard`);
+}
+
+function downloadFile(filename) {
+    // Download individual file
+    alert(`Downloading ${filename}...`);
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Sample code content functions
+function samplePythonCode() {
+    return `from flask import Flask, render_template, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://user:pass@localhost/ecommerce'
+app.config['SECRET_KEY'] = 'your-secret-key'
+
+db = SQLAlchemy(app)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/api/products')
+def get_products():
+    products = Product.query.all()
+    return jsonify([p.to_dict() for p in products])
+
+if __name__ == '__main__':
+    app.run(debug=True)`;
+}
+
+function sampleModelsCode() {
+    return `from app import db
+from datetime import datetime
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Product(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    price = db.Column(db.Numeric(10, 2), nullable=False)
+    description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'price': float(self.price),
+            'description': self.description
+        }`;
+}
+
+function sampleRoutesCode() {
+    return `from flask import Blueprint, request, jsonify
+from models import User, Product, db
+
+api = Blueprint('api', __name__)
+
+@api.route('/users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    return jsonify([{'id': u.id, 'username': u.username} for u in users])
+
+@api.route('/users', methods=['POST'])
+def create_user():
+    data = request.get_json()
+    user = User(username=data['username'], email=data['email'])
+    db.session.add(user)
+    db.session.commit()
+    return jsonify({'id': user.id, 'username': user.username}), 201`;
+}
+
+function sampleRequirements() {
+    return `Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+PostgreSQL==15.0
+Werkzeug==2.3.7
+Jinja2==3.1.2
+Click==8.1.7
+itsdangerous==2.1.2
+MarkupSafe==2.1.3`;
+}
+
+function sampleReactCode() {
+    return `import React, { useState, useEffect } from 'react';
+import './App.css';
+
+function App() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/products')
+      .then(response => response.json())
+      .then(data => {
+        setProducts(data);
+        setLoading(false);
+      });
+  }, []);
+
+  return (
+    <div className="App">
+      <header className="App-header">
+        <h1>E-commerce Platform</h1>
+      </header>
+      <main>
+        {loading ? (
+          <div>Loading products...</div>
+        ) : (
+          <div className="products-grid">
+            {products.map(product => (
+              <div key={product.id} className="product-card">
+                <h3>{product.name}</h3>
+                <p>{product.description}</p>
+                <span className="price">${product.price}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export default App;`;
+}
+
+function sampleIndexCode() {
+    return `import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css';
+import App from './App';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);`;
+}
+
+function samplePackageJson() {
+    return `{
+  "name": "ecommerce-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/react": "^13.3.0",
+    "@testing-library/user-event": "^13.5.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  }
+}`;
+}
+
+function sampleTestCode() {
+    return `import unittest
+from app import app, db
+from models import User, Product
+
+class TestUserAPI(unittest.TestCase):
+    def setUp(self):
+        app.config['TESTING'] = True
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        self.app = app.test_client()
+        with app.app_context():
+            db.create_all()
+
+    def test_user_registration(self):
+        response = self.app.post('/api/users',
+            json={'username': 'testuser', 'email': 'test@example.com'})
+        self.assertEqual(response.status_code, 201)
+
+    def test_get_users(self):
+        response = self.app.get('/api/users')
+        self.assertEqual(response.status_code, 200)
+
+if __name__ == '__main__':
+    unittest.main()`;
+}
+
+function sampleModelTests() {
+    return `import unittest
+from models import User, Product
+
+class TestModels(unittest.TestCase):
+    def test_user_creation(self):
+        user = User(username='test', email='test@example.com')
+        self.assertEqual(user.username, 'test')
+        self.assertEqual(user.email, 'test@example.com')
+
+    def test_product_to_dict(self):
+        product = Product(name='Test Product', price=19.99, description='Test')
+        product_dict = product.to_dict()
+        self.assertIn('name', product_dict)
+        self.assertEqual(product_dict['name'], 'Test Product')`;
+}
+
+function sampleDockerCompose() {
+    return `version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=ecommerce
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"`;
+}
+
+function sampleReadme() {
+    return `# E-commerce Platform
+
+A modern e-commerce platform built with Flask and React.
+
+## Features
+
+- User authentication and registration
+- Product catalog management
+- Shopping cart functionality
+- Order processing
+- Admin dashboard
+
+## Setup
+
+### Backend
+1. Install dependencies: \`pip install -r requirements.txt\`
+2. Set up database: \`flask db upgrade\`
+3. Run the application: \`python app.py\`
+
+### Frontend
+1. Install dependencies: \`npm install\`
+2. Start development server: \`npm start\`
+
+## Testing
+
+Run tests with: \`python -m pytest\`
+
+## Deployment
+
+Use Docker Compose: \`docker-compose up\``;
+}
+</script>
+{% endblock %}

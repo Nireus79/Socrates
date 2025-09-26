@@ -1,0 +1,542 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if page == 'login' %}Login - Socratic RAG Enhanced
+{% elif page == 'register' %}Register - Socratic RAG Enhanced
+{% elif page == 'profile' %}Profile - Socratic RAG Enhanced
+{% else %}Authentication - Socratic RAG Enhanced
+{% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.auth-container {
+    min-height: calc(100vh - 200px);
+}
+.auth-card {
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+.auth-header {
+    background: linear-gradient(135deg, #0d6efd, #6610f2);
+    border-radius: 0.75rem 0.75rem 0 0;
+}
+.form-floating input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+.demo-info {
+    background: rgba(13, 110, 253, 0.1);
+    border: 1px solid rgba(13, 110, 253, 0.3);
+    border-radius: 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container d-flex align-items-center justify-content-center">
+    <div class="row w-100 justify-content-center">
+        <div class="col-md-6 col-lg-4">
+
+            {% if page == 'login' or not page %}
+            <!-- Login Form -->
+            <div class="card auth-card">
+                <div class="auth-header text-white text-center py-4">
+                    <i class="bi bi-box-arrow-in-right display-4 mb-2"></i>
+                    <h3 class="mb-0">Welcome Back</h3>
+                    <p class="mb-0 opacity-75">Sign in to your account</p>
+                </div>
+                <div class="card-body p-4">
+
+                    <!-- Demo Info Banner -->
+                    <div class="demo-info p-3 mb-4 text-center">
+                        <h6 class="mb-2">
+                            <i class="bi bi-info-circle"></i> Demo Access
+                        </h6>
+                        <p class="mb-1 small">
+                            <strong>Username:</strong> demo<br>
+                            <strong>Password:</strong> demo123
+                        </p>
+                        <small class="text-muted">Use these credentials to explore the system</small>
+                    </div>
+
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <!-- Username Field -->
+                        <div class="form-floating mb-3">
+                            {{ form.username(class="form-control", placeholder="Username") }}
+                            <label>
+                                <i class="bi bi-person"></i> Username
+                            </label>
+                            {% if form.username.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.username.errors %}
+                                <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Password Field -->
+                        <div class="form-floating mb-3">
+                            {{ form.password(class="form-control", type="password", placeholder="Password") }}
+                            <label>
+                                <i class="bi bi-lock"></i> Password
+                            </label>
+                            {% if form.password.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.password.errors %}
+                                <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Remember Me -->
+                        <div class="form-check mb-4">
+                            {{ form.remember_me(class="form-check-input") }}
+                            <label class="form-check-label" for="{{ form.remember_me.id }}">
+                                Remember me
+                            </label>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid mb-3">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+
+                        <!-- Additional Links -->
+                        <div class="text-center">
+                            <a href="#" class="text-muted text-decoration-none small me-3" onclick="showForgotPassword()">
+                                Forgot Password?
+                            </a>
+                            <a href="{{ url_for('register') }}" class="text-primary text-decoration-none small">
+                                Create Account
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% elif page == 'register' %}
+            <!-- Registration Form -->
+            <div class="card auth-card">
+                <div class="auth-header text-white text-center py-4">
+                    <i class="bi bi-person-plus display-4 mb-2"></i>
+                    <h3 class="mb-0">Create Account</h3>
+                    <p class="mb-0 opacity-75">Join Socratic RAG Enhanced</p>
+                </div>
+                <div class="card-body p-4">
+
+                    <!-- Demo Notice -->
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Demo Version:</strong> Registration is currently disabled.
+                        Use the demo account to explore the system.
+                    </div>
+
+                    <form id="registerForm" novalidate>
+                        <!-- Username Field -->
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="reg_username" placeholder="Username" required disabled>
+                            <label>
+                                <i class="bi bi-person"></i> Username
+                            </label>
+                        </div>
+
+                        <!-- Email Field -->
+                        <div class="form-floating mb-3">
+                            <input type="email" class="form-control" id="reg_email" placeholder="Email" required disabled>
+                            <label>
+                                <i class="bi bi-envelope"></i> Email Address
+                            </label>
+                        </div>
+
+                        <!-- Password Field -->
+                        <div class="form-floating mb-3">
+                            <input type="password" class="form-control" id="reg_password" placeholder="Password" required disabled>
+                            <label>
+                                <i class="bi bi-lock"></i> Password
+                            </label>
+                            <div class="form-text">
+                                Password must be at least 8 characters long
+                            </div>
+                        </div>
+
+                        <!-- Confirm Password Field -->
+                        <div class="form-floating mb-4">
+                            <input type="password" class="form-control" id="reg_confirm_password" placeholder="Confirm Password" required disabled>
+                            <label>
+                                <i class="bi bi-lock-fill"></i> Confirm Password
+                            </label>
+                        </div>
+
+                        <!-- Terms & Conditions -->
+                        <div class="form-check mb-4">
+                            <input type="checkbox" class="form-check-input" id="terms" required disabled>
+                            <label class="form-check-label small" for="terms">
+                                I agree to the <a href="#" class="text-primary">Terms of Service</a>
+                                and <a href="#" class="text-primary">Privacy Policy</a>
+                            </label>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-success btn-lg" disabled>
+                                <i class="bi bi-person-plus"></i> Create Account
+                            </button>
+                        </div>
+
+                        <!-- Back to Login -->
+                        <div class="text-center">
+                            <span class="text-muted small">Already have an account? </span>
+                            <a href="{{ url_for('login') }}" class="text-primary text-decoration-none small">
+                                Sign In
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% elif page == 'profile' %}
+            <!-- User Profile -->
+            <div class="card auth-card">
+                <div class="auth-header text-white text-center py-4">
+                    <i class="bi bi-person-circle display-4 mb-2"></i>
+                    <h3 class="mb-0">User Profile</h3>
+                    <p class="mb-0 opacity-75">Manage your account settings</p>
+                </div>
+                <div class="card-body p-4">
+
+                    {% if current_user.is_authenticated %}
+                    <!-- Profile Info -->
+                    <div class="row mb-4">
+                        <div class="col-12 text-center">
+                            <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 80px; height: 80px;">
+                                <i class="bi bi-person-fill display-6 text-white"></i>
+                            </div>
+                            <h4>{{ current_user.username }}</h4>
+                            <p class="text-muted">{{ current_user.email }}</p>
+                            {% if current_user.is_admin %}
+                            <span class="badge bg-warning">Administrator</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Account Stats -->
+                    <div class="row text-center mb-4">
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <div class="h5 mb-0">0</div>
+                                <small class="text-muted">Projects</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <div class="h5 mb-0">0</div>
+                                <small class="text-muted">Sessions</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <div class="h5 mb-0">0</div>
+                                <small class="text-muted">Files</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Form -->
+                    <form id="profileForm">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="profile_username"
+                                   value="{{ current_user.username }}" readonly>
+                            <label>Username</label>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input type="email" class="form-control" id="profile_email"
+                                   value="{{ current_user.email }}" readonly>
+                            <label>Email Address</label>
+                        </div>
+
+                        <!-- Preferences -->
+                        <h6 class="border-bottom pb-2 mb-3">Preferences</h6>
+
+                        <div class="form-check form-switch mb-3">
+                            <input type="checkbox" class="form-check-input" id="email_notifications" checked>
+                            <label class="form-check-label" for="email_notifications">
+                                Email notifications
+                            </label>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input type="checkbox" class="form-check-input" id="auto_save" checked>
+                            <label class="form-check-label" for="auto_save">
+                                Auto-save projects
+                            </label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Default Role</label>
+                            <select class="form-select" id="default_role">
+                                <option value="developer">Developer</option>
+                                <option value="manager">Project Manager</option>
+                                <option value="designer">UI/UX Designer</option>
+                                <option value="tester">QA Tester</option>
+                            </select>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Save Changes
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="showChangePassword()">
+                                <i class="bi bi-key"></i> Change Password
+                            </button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- System Status Footer -->
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    System Status:
+                    {% if system_available %}
+                    <span class="text-success"><i class="bi bi-circle-fill"></i> Online</span>
+                    {% else %}
+                    <span class="text-warning"><i class="bi bi-circle-fill"></i> Limited Mode</span>
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-key"></i> Reset Password
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    Password reset is not available in demo mode. Use the demo credentials to access the system.
+                </div>
+                <form id="forgotPasswordForm">
+                    <div class="form-floating mb-3">
+                        <input type="email" class="form-control" id="reset_email" placeholder="Email" disabled>
+                        <label>Email Address</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" disabled>
+                    <i class="bi bi-envelope"></i> Send Reset Link
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-key"></i> Change Password
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" id="current_password" placeholder="Current Password" required>
+                        <label>Current Password</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" id="new_password" placeholder="New Password" required>
+                        <label>New Password</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" id="confirm_new_password" placeholder="Confirm New Password" required>
+                        <label>Confirm New Password</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitPasswordChange()">
+                    <i class="bi bi-check-circle"></i> Update Password
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Authentication page JavaScript
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize form validation
+    initializeValidation();
+
+    // Auto-focus first input
+    const firstInput = document.querySelector('input:not([disabled]):not([readonly])');
+    if (firstInput) {
+        firstInput.focus();
+    }
+});
+
+function initializeValidation() {
+    // Add real-time validation for forms
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            validateForm(form);
+        });
+    });
+
+    // Password strength indicator
+    const passwordInput = document.getElementById('reg_password');
+    if (passwordInput) {
+        passwordInput.addEventListener('input', checkPasswordStrength);
+    }
+
+    // Confirm password matching
+    const confirmPasswordInput = document.getElementById('reg_confirm_password');
+    if (confirmPasswordInput) {
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+    }
+}
+
+function validateForm(form) {
+    const formData = new FormData(form);
+    let isValid = true;
+
+    // Clear previous errors
+    form.querySelectorAll('.is-invalid').forEach(el => {
+        el.classList.remove('is-invalid');
+    });
+
+    // Validate required fields
+    form.querySelectorAll('[required]').forEach(field => {
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            isValid = false;
+        }
+    });
+
+    if (isValid) {
+        // Submit form (in demo, just show success)
+        showSuccessMessage('Form submitted successfully!');
+    }
+}
+
+function checkPasswordStrength(e) {
+    const password = e.target.value;
+    const strengthBar = document.getElementById('password-strength');
+
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+    if (password.match(/\d/)) strength++;
+    if (password.match(/[^a-zA-Z\d]/)) strength++;
+
+    // Update visual indicator (would be implemented with actual strength bar)
+    console.log('Password strength:', strength);
+}
+
+function checkPasswordMatch() {
+    const password = document.getElementById('reg_password');
+    const confirmPassword = document.getElementById('reg_confirm_password');
+
+    if (password && confirmPassword) {
+        if (password.value !== confirmPassword.value) {
+            confirmPassword.classList.add('is-invalid');
+        } else {
+            confirmPassword.classList.remove('is-invalid');
+        }
+    }
+}
+
+function showForgotPassword() {
+    const modal = new bootstrap.Modal(document.getElementById('forgotPasswordModal'));
+    modal.show();
+}
+
+function showChangePassword() {
+    const modal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
+    modal.show();
+}
+
+function submitPasswordChange() {
+    const form = document.getElementById('changePasswordForm');
+    const formData = new FormData(form);
+
+    // Validate passwords
+    const newPassword = formData.get('new_password');
+    const confirmPassword = formData.get('confirm_new_password');
+
+    if (newPassword !== confirmPassword) {
+        alert('Passwords do not match');
+        return;
+    }
+
+    if (newPassword.length < 8) {
+        alert('Password must be at least 8 characters long');
+        return;
+    }
+
+    // In demo mode, just show success
+    alert('Password change is not available in demo mode');
+    bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
+}
+
+function showSuccessMessage(message) {
+    // Create temporary alert
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    alertDiv.style.top = '20px';
+    alertDiv.style.right = '20px';
+    alertDiv.style.zIndex = '9999';
+    alertDiv.innerHTML = `
+        <i class="bi bi-check-circle"></i> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(alertDiv);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 5000);
+}
+
+// Handle profile form submission
+document.getElementById('profileForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    // Show success message
+    showSuccessMessage('Profile updated successfully!');
+});
+</script>
+{% endblock %}

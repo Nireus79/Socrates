@@ -1,0 +1,856 @@
+{% extends "base.html" %}
+
+{% block title %}Socratic Sessions - Socratic RAG Enhanced{% endblock %}
+
+{% block extra_head %}
+<style>
+.chat-container {
+    height: 500px;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.message {
+    margin-bottom: 1rem;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message-user {
+    text-align: right;
+}
+
+.message-user .message-content {
+    background: linear-gradient(135deg, #0d6efd, #6610f2);
+    color: white;
+    display: inline-block;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem 1rem 0.25rem 1rem;
+    max-width: 80%;
+}
+
+.message-assistant {
+    text-align: left;
+}
+
+.message-assistant .message-content {
+    background: rgba(108, 117, 125, 0.3);
+    color: #f8f9fa;
+    display: inline-block;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem 1rem 1rem 0.25rem;
+    max-width: 80%;
+    border-left: 4px solid #0d6efd;
+}
+
+.typing-indicator {
+    display: none;
+}
+
+.typing-indicator.active {
+    display: block;
+}
+
+.typing-dots {
+    display: inline-block;
+}
+
+.typing-dots span {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #6c757d;
+    margin: 0 2px;
+    animation: typing 1.4s infinite;
+}
+
+.typing-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+    0%, 60%, 100% { transform: scale(0.8); opacity: 0.5; }
+    30% { transform: scale(1.2); opacity: 1; }
+}
+
+.role-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+}
+
+.session-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.session-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.session-card.active {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+
+.insights-panel {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.quick-response {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.quick-response:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+    border-color: #0d6efd;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6 mb-0">
+            <i class="bi bi-chat-quote text-primary"></i> Socratic Sessions
+        </h1>
+        <p class="text-muted">AI-powered questioning sessions for project development</p>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="startNewSession()">
+                <i class="bi bi-plus-circle"></i> New Session
+            </button>
+            <button class="btn btn-outline-secondary" onclick="refreshSessions()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Sessions List -->
+    <div class="col-lg-4 mb-4">
+        <div class="card bg-dark border h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-list"></i> Active Sessions
+                </h5>
+                <small class="text-muted" id="session-count">3 sessions</small>
+            </div>
+            <div class="card-body p-0">
+                <div id="sessions-list">
+                    <!-- Sample sessions -->
+                    <div class="session-card p-3 border-bottom active" onclick="loadSession('session-1')">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-1">E-commerce Platform</h6>
+                            <span class="badge bg-success role-badge">Developer</span>
+                        </div>
+                        <p class="text-muted small mb-2">
+                            Discussing architecture and database design for online store...
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center small">
+                            <span class="text-muted">
+                                <i class="bi bi-clock"></i> 15 min ago
+                            </span>
+                            <span class="badge bg-info">12 messages</span>
+                        </div>
+                    </div>
+
+                    <div class="session-card p-3 border-bottom" onclick="loadSession('session-2')">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-1">Mobile App MVP</h6>
+                            <span class="badge bg-warning role-badge">Manager</span>
+                        </div>
+                        <p class="text-muted small mb-2">
+                            Planning project scope and timeline requirements...
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center small">
+                            <span class="text-muted">
+                                <i class="bi bi-clock"></i> 1 hour ago
+                            </span>
+                            <span class="badge bg-info">8 messages</span>
+                        </div>
+                    </div>
+
+                    <div class="session-card p-3" onclick="loadSession('session-3')">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-1">API Integration</h6>
+                            <span class="badge bg-info role-badge">Designer</span>
+                        </div>
+                        <p class="text-muted small mb-2">
+                            Exploring user experience and interface patterns...
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center small">
+                            <span class="text-muted">
+                                <i class="bi bi-clock"></i> 2 hours ago
+                            </span>
+                            <span class="badge bg-info">5 messages</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div class="text-center py-4 d-none" id="sessions-empty">
+                    <i class="bi bi-chat-dots display-4 text-muted mb-3"></i>
+                    <h6>No Active Sessions</h6>
+                    <p class="text-muted">Start a new Socratic session to begin.</p>
+                    <button class="btn btn-primary" onclick="startNewSession()">
+                        <i class="bi bi-plus-circle"></i> Start Session
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Chat Area -->
+    <div class="col-lg-8">
+        <div class="card bg-dark border h-100">
+            <!-- Chat Header -->
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h5 class="mb-0" id="session-title">E-commerce Platform Discussion</h5>
+                        <div class="d-flex align-items-center mt-1">
+                            <span class="badge bg-success role-badge me-2">Developer Role</span>
+                            <small class="text-muted">Session started 45 minutes ago</small>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="exportSession()" title="Export Session">
+                                <i class="bi bi-download"></i>
+                            </button>
+                            <button class="btn btn-outline-info" onclick="generateFromSession()" title="Generate Code">
+                                <i class="bi bi-code-slash"></i>
+                            </button>
+                            <button class="btn btn-outline-warning" onclick="pauseSession()" title="Pause Session">
+                                <i class="bi bi-pause"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="endSession()" title="End Session">
+                                <i class="bi bi-stop"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="card-body d-flex flex-column">
+                <div class="chat-container p-3 mb-3" id="chat-messages">
+                    <!-- Sample conversation -->
+                    <div class="message message-assistant">
+                        <div class="mb-1">
+                            <small class="text-muted">
+                                <i class="bi bi-robot"></i> AI Assistant • 15:30
+                            </small>
+                        </div>
+                        <div class="message-content">
+                            Hello! I'm here to help you develop your e-commerce platform through strategic questioning. As a developer, let's start by exploring your technical requirements.
+                            <br><br>
+                            <strong>What type of products will your e-commerce platform sell, and do you anticipate any special requirements like digital downloads, subscriptions, or complex inventory tracking?</strong>
+                        </div>
+                    </div>
+
+                    <div class="message message-user">
+                        <div class="mb-1 text-end">
+                            <small class="text-muted">
+                                You • 15:32
+                            </small>
+                        </div>
+                        <div class="message-content">
+                            We're planning to sell both physical and digital products. Physical items like electronics and books, plus digital courses and software licenses. We'll need inventory tracking for physical items and license management for digital products.
+                        </div>
+                    </div>
+
+                    <div class="message message-assistant">
+                        <div class="mb-1">
+                            <small class="text-muted">
+                                <i class="bi bi-robot"></i> AI Assistant • 15:33
+                            </small>
+                        </div>
+                        <div class="message-content">
+                            Excellent! A hybrid physical-digital product model adds complexity but also great potential. This tells me we'll need sophisticated inventory and license management systems.
+                            <br><br>
+                            <strong>Given the complexity of managing both physical inventory and digital licenses, what's your expected scale? Are we talking hundreds of products or thousands? And what's your projected user base in the first year?</strong>
+                        </div>
+                    </div>
+
+                    <div class="message message-user">
+                        <div class="mb-1 text-end">
+                            <small class="text-muted">
+                                You • 15:35
+                            </small>
+                        </div>
+                        <div class="message-content">
+                            We're starting with about 500 physical products and 50 digital products. Expecting around 1,000 users in the first 3 months, growing to 10,000 in the first year.
+                        </div>
+                    </div>
+
+                    <!-- Typing Indicator -->
+                    <div class="message message-assistant typing-indicator" id="typing-indicator">
+                        <div class="mb-1">
+                            <small class="text-muted">
+                                <i class="bi bi-robot"></i> AI Assistant is typing...
+                            </small>
+                        </div>
+                        <div class="message-content">
+                            <div class="typing-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Response Suggestions -->
+                <div class="mb-3" id="quick-responses">
+                    <small class="text-muted d-block mb-2">
+                        <i class="bi bi-lightbulb"></i> Quick responses:
+                    </small>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-sm btn-outline-secondary quick-response"
+                                onclick="useQuickResponse('We need mobile-responsive design')">
+                            Mobile-responsive design
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary quick-response"
+                                onclick="useQuickResponse('Payment integration is crucial')">
+                            Payment integration
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary quick-response"
+                                onclick="useQuickResponse('Need admin dashboard')">
+                            Admin dashboard
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary quick-response"
+                                onclick="useQuickResponse('Security is a top priority')">
+                            Security priority
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Message Input -->
+                <div class="mt-auto">
+                    <form id="message-form" onsubmit="sendMessage(event)">
+                        <div class="input-group">
+                            <textarea class="form-control"
+                                    id="message-input"
+                                    placeholder="Type your response..."
+                                    rows="2"
+                                    onkeydown="handleEnterKey(event)"
+                                    maxlength="2000"></textarea>
+                            <button class="btn btn-primary" type="submit" id="send-button">
+                                <i class="bi bi-send"></i>
+                            </button>
+                        </div>
+                        <div class="form-text text-end mt-1">
+                            <span id="char-count">0</span>/2000 characters
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session Insights Panel (Collapsible) -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card bg-dark border">
+            <div class="card-header" data-bs-toggle="collapse" data-bs-target="#insights-panel" style="cursor: pointer;">
+                <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="bi bi-lightbulb"></i> Session Insights & Analysis
+                    </span>
+                    <i class="bi bi-chevron-down"></i>
+                </h5>
+            </div>
+            <div class="collapse show" id="insights-panel">
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Key Insights -->
+                        <div class="col-lg-4">
+                            <h6 class="border-bottom pb-2 mb-3">Key Insights</h6>
+                            <div class="insights-panel">
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-check-circle text-success me-2 mt-1"></i>
+                                        <div>
+                                            <strong>Hybrid Product Model</strong>
+                                            <p class="small text-muted mb-0">
+                                                Mixed physical and digital products require specialized inventory management
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-exclamation-triangle text-warning me-2 mt-1"></i>
+                                        <div>
+                                            <strong>Scalability Concerns</strong>
+                                            <p class="small text-muted mb-0">
+                                                Growth from 1K to 10K users requires careful architecture planning
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-start">
+                                        <i class="bi bi-info-circle text-info me-2 mt-1"></i>
+                                        <div>
+                                            <strong>Technical Requirements</strong>
+                                            <p class="small text-muted mb-0">
+                                                Need for license management and inventory tracking systems
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Technology Recommendations -->
+                        <div class="col-lg-4">
+                            <h6 class="border-bottom pb-2 mb-3">Tech Recommendations</h6>
+                            <div class="insights-panel">
+                                <div class="mb-2">
+                                    <span class="badge bg-primary me-2">Backend</span>
+                                    <span class="text-light">Python + Django/FastAPI</span>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="badge bg-info me-2">Database</span>
+                                    <span class="text-light">PostgreSQL + Redis</span>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="badge bg-success me-2">Frontend</span>
+                                    <span class="text-light">React + TypeScript</span>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="badge bg-warning me-2">Payments</span>
+                                    <span class="text-light">Stripe + PayPal</span>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="badge bg-secondary me-2">Hosting</span>
+                                    <span class="text-light">AWS/Docker</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Items -->
+                        <div class="col-lg-4">
+                            <h6 class="border-bottom pb-2 mb-3">Next Steps</h6>
+                            <div class="insights-panel">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="action1">
+                                    <label class="form-check-label small" for="action1">
+                                        Define user authentication requirements
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="action2">
+                                    <label class="form-check-label small" for="action2">
+                                        Plan payment processing integration
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="action3">
+                                    <label class="form-check-label small" for="action3">
+                                        Design database schema for products
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="action4">
+                                    <label class="form-check-label small" for="action4">
+                                        Research license management solutions
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="action5">
+                                    <label class="form-check-label small" for="action5">
+                                        Plan mobile-responsive UI design
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Session Modal -->
+<div class="modal fade" id="newSessionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle"></i> Start New Socratic Session
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newSessionForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="session_name" placeholder="Session Name" required>
+                                <label>Session Name</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <select class="form-select" id="session_role" required>
+                                    <option value="">Select Role Perspective</option>
+                                    <option value="developer">Software Developer</option>
+                                    <option value="manager">Project Manager</option>
+                                    <option value="designer">UI/UX Designer</option>
+                                    <option value="tester">QA Tester</option>
+                                    <option value="business_analyst">Business Analyst</option>
+                                    <option value="devops">DevOps Engineer</option>
+                                    <option value="architect">Solution Architect</option>
+                                </select>
+                                <label>Role Perspective</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <select class="form-select" id="existing_project">
+                            <option value="">Create New Project</option>
+                            <option value="project1">E-commerce Platform</option>
+                            <option value="project2">Mobile App MVP</option>
+                            <option value="project3">API Integration</option>
+                        </select>
+                        <label>Link to Existing Project (Optional)</label>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <textarea class="form-control" id="initial_idea" placeholder="Initial Idea" rows="3"></textarea>
+                        <label>Initial Project Idea or Question</label>
+                        <div class="form-text">
+                            Describe your project idea or ask a specific question to get started
+                        </div>
+                    </div>
+
+                    <!-- Role-specific guidance -->
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Role Guidance:</strong>
+                        <div id="role-guidance">
+                            Select a role perspective to see specialized questioning focus.
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createNewSession()">
+                    <i class="bi bi-chat-dots"></i> Start Session
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Sessions page JavaScript
+let currentSessionId = 'session-1';
+let isTyping = false;
+
+// Role guidance text
+const roleGuidance = {
+    'developer': 'Focus on technical architecture, implementation details, code quality, and development best practices.',
+    'manager': 'Emphasize project planning, resource allocation, timeline management, and stakeholder coordination.',
+    'designer': 'Explore user experience, interface design, usability, accessibility, and design systems.',
+    'tester': 'Investigate quality assurance, testing strategies, edge cases, and validation scenarios.',
+    'business_analyst': 'Examine business requirements, processes, stakeholder needs, and compliance considerations.',
+    'devops': 'Consider infrastructure, deployment, monitoring, security, and operational requirements.',
+    'architect': 'Address system design, scalability, integration patterns, and technical decision-making.'
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize character counter
+    updateCharCount();
+
+    // Set up message input listeners
+    const messageInput = document.getElementById('message-input');
+    messageInput.addEventListener('input', updateCharCount);
+
+    // Set up role guidance
+    const roleSelect = document.getElementById('session_role');
+    if (roleSelect) {
+        roleSelect.addEventListener('change', updateRoleGuidance);
+    }
+
+    // Auto-scroll chat to bottom
+    scrollChatToBottom();
+});
+
+function updateCharCount() {
+    const input = document.getElementById('message-input');
+    const counter = document.getElementById('char-count');
+    if (input && counter) {
+        counter.textContent = input.value.length;
+    }
+}
+
+function updateRoleGuidance() {
+    const roleSelect = document.getElementById('session_role');
+    const guidanceDiv = document.getElementById('role-guidance');
+
+    if (roleSelect && guidanceDiv) {
+        const selectedRole = roleSelect.value;
+        guidanceDiv.textContent = roleGuidance[selectedRole] || 'Select a role perspective to see specialized questioning focus.';
+    }
+}
+
+function handleEnterKey(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+    }
+}
+
+function sendMessage(event) {
+    if (event) event.preventDefault();
+
+    const input = document.getElementById('message-input');
+    const message = input.value.trim();
+
+    if (!message || isTyping) return;
+
+    // Add user message to chat
+    addMessageToChat(message, 'user');
+
+    // Clear input
+    input.value = '';
+    updateCharCount();
+
+    // Show typing indicator
+    showTypingIndicator();
+
+    // Simulate AI response (in real implementation, this would be an API call)
+    setTimeout(() => {
+        hideTypingIndicator();
+        const aiResponse = generateAIResponse(message);
+        addMessageToChat(aiResponse, 'assistant');
+        updateQuickResponses();
+    }, 2000 + Math.random() * 2000);
+}
+
+function addMessageToChat(message, sender) {
+    const chatContainer = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+    messageDiv.className = `message message-${sender}`;
+    messageDiv.innerHTML = `
+        <div class="mb-1 ${sender === 'user' ? 'text-end' : ''}">
+            <small class="text-muted">
+                ${sender === 'assistant' ? '<i class="bi bi-robot"></i> AI Assistant' : 'You'} • ${timestamp}
+            </small>
+        </div>
+        <div class="message-content">
+            ${message.replace(/\n/g, '<br>')}
+        </div>
+    `;
+
+    // Insert before typing indicator
+    const typingIndicator = document.getElementById('typing-indicator');
+    chatContainer.insertBefore(messageDiv, typingIndicator);
+
+    scrollChatToBottom();
+}
+
+function generateAIResponse(userMessage) {
+    // Sample AI responses - in real implementation, this would be from the Claude API
+    const responses = [
+        "That's a great point about scalability. Let me explore this further: <strong>How do you plan to handle peak traffic loads, especially during sales events or product launches?</strong>",
+        "I understand your concern about security. <strong>What specific user data will you be collecting, and what compliance requirements (like GDPR, CCPA) do you need to consider?</strong>",
+        "Interesting approach to the user interface. <strong>Have you considered the different user types (buyers vs. sellers vs. admins) and their varying needs? What would be the primary workflow for each?</strong>",
+        "Your technology choices make sense for this scale. <strong>What's your team's current expertise level with these technologies, and do you have plans for knowledge transfer or training?</strong>",
+        "That timeline seems ambitious but achievable. <strong>What are the potential bottlenecks or dependencies that could impact your delivery schedule, and how might we mitigate them?</strong>"
+    ];
+
+    return responses[Math.floor(Math.random() * responses.length)];
+}
+
+function showTypingIndicator() {
+    isTyping = true;
+    const indicator = document.getElementById('typing-indicator');
+    const sendButton = document.getElementById('send-button');
+
+    indicator.classList.add('active');
+    sendButton.disabled = true;
+    sendButton.innerHTML = '<i class="bi bi-three-dots"></i>';
+
+    scrollChatToBottom();
+}
+
+function hideTypingIndicator() {
+    isTyping = false;
+    const indicator = document.getElementById('typing-indicator');
+    const sendButton = document.getElementById('send-button');
+
+    indicator.classList.remove('active');
+    sendButton.disabled = false;
+    sendButton.innerHTML = '<i class="bi bi-send"></i>';
+}
+
+function updateQuickResponses() {
+    // Update quick response suggestions based on conversation context
+    const quickResponses = [
+        'Can you elaborate on that?',
+        'What are the alternatives?',
+        'How would this scale?',
+        'What about security considerations?',
+        'That makes sense, continue.',
+        'I need more details on implementation.'
+    ];
+
+    const container = document.querySelector('#quick-responses .d-flex');
+    container.innerHTML = '';
+
+    // Show 3-4 random suggestions
+    const shuffled = quickResponses.sort(() => 0.5 - Math.random()).slice(0, 4);
+    shuffled.forEach(response => {
+        const button = document.createElement('button');
+        button.className = 'btn btn-sm btn-outline-secondary quick-response';
+        button.textContent = response;
+        button.onclick = () => useQuickResponse(response);
+        container.appendChild(button);
+    });
+}
+
+function useQuickResponse(response) {
+    const input = document.getElementById('message-input');
+    input.value = response;
+    input.focus();
+    updateCharCount();
+}
+
+function scrollChatToBottom() {
+    const chatContainer = document.getElementById('chat-messages');
+    setTimeout(() => {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }, 100);
+}
+
+function loadSession(sessionId) {
+    // Remove active class from all sessions
+    document.querySelectorAll('.session-card').forEach(card => {
+        card.classList.remove('active');
+    });
+
+    // Add active class to selected session
+    event.target.closest('.session-card').classList.add('active');
+
+    currentSessionId = sessionId;
+
+    // Load session data (in real implementation, this would fetch from API)
+    console.log(`Loading session: ${sessionId}`);
+
+    // Update session title and info
+    // This would be populated with real session data
+}
+
+function startNewSession() {
+    const modal = new bootstrap.Modal(document.getElementById('newSessionModal'));
+    modal.show();
+}
+
+function createNewSession() {
+    const form = document.getElementById('newSessionForm');
+    const formData = new FormData(form);
+
+    const sessionData = {
+        name: document.getElementById('session_name').value,
+        role: document.getElementById('session_role').value,
+        project: document.getElementById('existing_project').value,
+        initial_idea: document.getElementById('initial_idea').value
+    };
+
+    if (!sessionData.name || !sessionData.role) {
+        alert('Please fill in the required fields');
+        return;
+    }
+
+    // In real implementation, this would call the API
+    fetch('{{ url_for("start_socratic_session") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sessionData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('newSessionModal')).hide();
+            // Reload or update sessions list
+            location.reload();
+        } else {
+            alert('Failed to create session: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Session creation error:', error);
+        alert('Failed to create session');
+    });
+}
+
+function refreshSessions() {
+    // Refresh sessions list
+    location.reload();
+}
+
+function exportSession() {
+    // Export current session as PDF or JSON
+    alert('Session export feature would generate a downloadable file with conversation history and insights');
+}
+
+function generateFromSession() {
+    // Generate code from current session insights
+    window.location.href = `{{ url_for('code_generation') }}?session_id=${currentSessionId}`;
+}
+
+function pauseSession() {
+    // Pause current session
+    alert('Session paused. You can resume anytime.');
+}
+
+function endSession() {
+    if (confirm('Are you sure you want to end this session? All progress will be saved.')) {
+        // End session logic
+        alert('Session ended successfully');
+    }
+}
+
+// Auto-save session state periodically
+setInterval(() => {
+    if (currentSessionId) {
+        // Auto-save logic would go here
+        console.log('Auto-saving session state...');
+    }
+}, 30000); // Every 30 seconds
+</script>
+{% endblock %}

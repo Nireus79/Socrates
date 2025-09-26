@@ -4,12 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="req">
-      <change afterPath="$PROJECT_DIR$/src/services/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/services/claude_service.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/services/git_service.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/services/ide_service.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/services/vector_service.py" afterDir="false" />
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="web">
+      <change afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/web/templates/admin.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/web/templates/auth.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/web/templates/base.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/web/templates/code.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/web/templates/dashboard.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/web/templates/projects.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/web/templates/reports.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/web/templates/sessions.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -21,6 +26,7 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Python Script" />
+        <option value="HTML File" />
       </list>
     </option>
   </component>
@@ -50,6 +56,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "DefaultHtmlFileTemplate": "HTML File",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "master",
     "ignore.virus.scanning.warn.message": "true",
@@ -192,7 +199,15 @@
       <option name="project" value="LOCAL" />
       <updated>1758881662665</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="web">
+      <option name="closed" value="true" />
+      <created>1758882733044</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1758882733044</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -204,6 +219,7 @@
     <MESSAGE value="agents" />
     <MESSAGE value="new" />
     <MESSAGE value="req" />
-    <option name="LAST_COMMIT_MESSAGE" value="req" />
+    <MESSAGE value="web" />
+    <option name="LAST_COMMIT_MESSAGE" value="web" />
   </component>
 </project>

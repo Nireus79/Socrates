@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Socratic RAG Enhanced - AI-powered project development through intelligent questioning">
+    <title>{% block title %}Socratic RAG Enhanced{% endblock %}</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+
+    <!-- HTMX for real-time updates -->
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+        <div class="container-fluid">
+            <!-- Brand -->
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('dashboard') }}">
+                <i class="bi bi-chat-dots-fill me-2 text-primary"></i>
+                <span class="fw-bold">Socratic RAG</span>
+                <span class="badge bg-primary ms-2">v{{ app_version }}</span>
+            </a>
+
+            <!-- Mobile toggle -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navigation items -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                {% if current_user.is_authenticated %}
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('projects') }}">
+                            <i class="bi bi-folder"></i> Projects
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('socratic_sessions') }}">
+                            <i class="bi bi-chat-quote"></i> Sessions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('code_generation') }}">
+                            <i class="bi bi-code-slash"></i> Code Gen
+                        </a>
+                    </li>
+                    {% if current_user.is_admin %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_panel') }}">
+                            <i class="bi bi-gear"></i> Admin
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <!-- System status indicators -->
+                <div class="navbar-nav me-3">
+                    <div class="nav-item d-flex align-items-center">
+                        <!-- Agents status -->
+                        <span class="badge me-2" id="agents-status">
+                            {% if agents_available %}
+                                <i class="bi bi-cpu text-success"></i> Agents
+                            {% else %}
+                                <i class="bi bi-cpu text-warning"></i> Limited
+                            {% endif %}
+                        </span>
+
+                        <!-- Services status -->
+                        <span class="badge me-2" id="services-status">
+                            {% if system_available %}
+                                <i class="bi bi-cloud-check text-success"></i> Services
+                            {% else %}
+                                <i class="bi bi-cloud-slash text-danger"></i> Offline
+                            {% endif %}
+                        </span>
+
+                        <!-- Real-time status update -->
+                        <button class="btn btn-sm btn-outline-secondary"
+                                hx-get="{{ url_for('api_system_status') }}"
+                                hx-trigger="every 30s"
+                                hx-target="#status-indicators"
+                                title="Auto-refresh system status">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- User menu -->
+                <div class="navbar-nav">
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> {{ current_user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><h6 class="dropdown-header">Account</h6></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-person"></i> Profile</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-gear"></i> Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="container-fluid mt-3">
+            {% for category, message in messages %}
+            <div class="alert alert-{% if category == 'error' %}danger{% elif category == 'success' %}success{% elif category == 'info' %}info{% else %}warning{% endif %} alert-dismissible fade show" role="alert">
+                <i class="bi bi-{% if category == 'error' %}exclamation-triangle{% elif category == 'success' %}check-circle{% elif category == 'info' %}info-circle{% else %}exclamation-circle{% endif %}"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main content -->
+    <main class="container-fluid py-4">
+        {% block content %}
+        <!-- Default content for when no specific template is loaded -->
+        <div class="text-center py-5">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    {% if error %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <h4>Error</h4>
+                        <p>{{ error }}</p>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
+                    </div>
+                    {% else %}
+                    <i class="bi bi-chat-dots display-1 text-primary mb-3"></i>
+                    <h1 class="mb-3">Socratic RAG Enhanced</h1>
+                    <p class="lead text-muted mb-4">Transform your ideas into working applications through intelligent AI-powered questioning and automated code generation.</p>
+
+                    {% if not current_user.is_authenticated %}
+                    <div class="d-grid gap-2 d-md-block">
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-box-arrow-in-right"></i> Get Started
+                        </a>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark border-top mt-auto">
+        <div class="container-fluid py-3">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        © 2024 Socratic RAG Enhanced
+                        <span class="badge bg-secondary ms-1">{{ app_version }}</span>
+                        {% if system_available %}
+                        <i class="bi bi-circle-fill text-success ms-2" title="System Online"></i>
+                        {% else %}
+                        <i class="bi bi-circle-fill text-warning ms-2" title="Limited Mode"></i>
+                        {% endif %}
+                    </small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">
+                        <span id="current-time">{{ current_time[:19] }}</span>
+                        <!-- Live time update -->
+                        <script>
+                            setInterval(function() {
+                                document.getElementById('current-time').textContent =
+                                    new Date().toISOString().substr(0, 19).replace('T', ' ');
+                            }, 1000);
+                        </script>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Loading indicator for HTMX requests -->
+    <div id="loading-indicator" class="position-fixed bottom-0 end-0 m-3" style="z-index: 9999; display: none;">
+        <div class="badge bg-primary">
+            <i class="bi bi-arrow-clockwise spin"></i> Processing...
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <!-- HTMX configuration -->
+    <script>
+        // Show loading indicator for HTMX requests
+        document.body.addEventListener('htmx:beforeRequest', function() {
+            document.getElementById('loading-indicator').style.display = 'block';
+        });
+
+        document.body.addEventListener('htmx:afterRequest', function() {
+            document.getElementById('loading-indicator').style.display = 'none';
+        });
+
+        // Auto-refresh system status
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.target.id === 'status-indicators') {
+                // Update status badges based on response
+                console.log('System status updated');
+            }
+        });
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
