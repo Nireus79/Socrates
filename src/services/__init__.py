@@ -141,12 +141,38 @@ def get_services_status() -> Dict[str, Any]:
     return status
 
 
+def initialize_all_services() -> Dict[str, Any]:
+    """Initialize all available services (alias for initialize_services)"""
+    try:
+        success = initialize_services()
+        status = get_services_status()
+
+        return {
+            'initialized': status['total_available'],
+            'total': status['total_services'],
+            'services': get_available_services(),
+            'status': 'success' if success else 'partial',
+            'details': status
+        }
+
+    except Exception as e:
+        logger.error(f"Service initialization failed: {e}")
+        return {
+            'initialized': 0,
+            'total': 0,
+            'services': [],
+            'status': 'failed',
+            'error': str(e)
+        }
+
+
 # Convenience exports (will be available when services are implemented)
 __all__ = [
     'check_service_availability',
     'get_service',
     'get_available_services',
     'initialize_services',
+    'initialize_all_services',  # ← ADD THIS
     'get_services_status'
 ]
 

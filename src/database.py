@@ -3,27 +3,53 @@
 Socratic RAG Enhanced - Database Layer
 ======================================
 
-Database management with SQLite backend, repositories for all models,
-and migration system. Provides clean abstraction over database operations.
+Complete database management system using repository pattern.
+Integrates with core.py DatabaseManager and models.py data structures.
 
-Uses repository pattern for each core model with proper transaction support.
+Provides:
+- Schema management and migrations
+- Repository pattern for all models
+- Transaction support
+- Proper integration with core infrastructure
 """
 
-import sqlite3
 import json
-from typing import Dict, List, Optional, Any
-from contextlib import contextmanager
+import sqlite3
+from typing import Dict, List, Optional, Any, Type
 from dataclasses import asdict
+from pathlib import Path
 
-from src.core import (
-    get_logger, get_db_manager, DateTimeHelper,
-    DatabaseError, ValidationError
+# Core system imports
+from .core import (
+    DatabaseManager, get_logger, DateTimeHelper,
+    DatabaseError, ValidationError, FileHelper
 )
-from src.models import (
-    Project, Module, GeneratedFile, TestResult, User,
-    Collaborator, ProjectPhase, ProjectStatus,
-    ModuleStatus, ModuleType, FileStatus, FileType, TestStatus, TestType,
-    UserRole, Priority, RiskLevel
+
+# Model imports
+from .models import (
+    # Base
+    BaseModel, ModelRegistry,
+
+    # User models
+    User, UserSession, UserRole, UserStatus,
+
+    # Project hierarchy
+    Project, Module, Task,
+    ProjectPhase, ProjectStatus, TaskStatus, TaskPriority, ModuleType,
+
+    # Socratic conversation
+    SocraticSession, Question, Conflict,
+    TechnicalRole, ConversationStatus, ConflictType,
+
+    # Technical specifications
+    TechnicalSpec,
+
+    # Code generation
+    GeneratedCodebase, GeneratedFile, TestResult,
+    FileType, TestType,
+
+    # Analytics
+    ProjectMetrics, UserActivity
 )
 
 
@@ -38,295 +64,480 @@ class DatabaseSchema:
         self.logger = get_logger('database.schema')
         self.current_version = 1
 
-    def initialize_schema(self, conn: sqlite3.Connection) -> None:
-        """Initialize database schema with all tables"""
-        cursor = conn.cursor()
-
+    def initialize_schema(self) -> bool:
+        """Initialize complete database schema"""
         try:
-            # Create schema version table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS schema_version (
-                    version INTEGER PRIMARY KEY,
-                    applied_at TEXT NOT NULL,
-                    description TEXT
-                )
-            ''')
+            db_manager = DatabaseManager()
 
-            # Check current schema version
-            cursor.execute('SELECT MAX(version) FROM schema_version')
-            current_version = cursor.fetchone()[0] or 0
+            with db_manager.transaction() as conn:
+                cursor = conn.cursor()
 
-            if current_version < self.current_version:
-                self._create_initial_schema(cursor)
-
-                # Record schema version
+                # Create schema version table
                 cursor.execute('''
-                    INSERT OR REPLACE INTO schema_version (version, applied_at, description)
-                    VALUES (?, ?, ?)
-                ''', (self.current_version, DateTimeHelper.to_iso_string(DateTimeHelper.now()),
-                      "Initial schema"))
+                    CREATE TABLE IF NOT EXISTS schema_version (
+                        version INTEGER PRIMARY KEY,
+                        applied_at TEXT NOT NULL,
+                        description TEXT
+                    )
+                ''')
 
-                conn.commit()
-                self.logger.info(f"Database schema initialized to version {self.current_version}")
+                # Check current schema version
+                cursor.execute('SELECT MAX(version) FROM schema_version')
+                result = cursor.fetchone()
+                current_version = result[0] if result and result[0] else 0
+
+                if current_version < self.current_version:
+                    self._create_all_tables(cursor)
+                    self._create_indexes(cursor)
+
+                    # Record schema version
+                    cursor.execute('''
+                        INSERT OR REPLACE INTO schema_version (version, applied_at, description)
+                        VALUES (?, ?, ?)
+                    ''', (
+                        self.current_version,
+                        DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                        "Initial schema with all models"
+                    ))
+
+                    self.logger.info(f"Database schema initialized to version {self.current_version}")
+
+                return True
 
         except Exception as e:
-            conn.rollback()
-            self.logger.error(f"Failed to initialize schema: {e}")
-            raise DatabaseError(f"Schema initialization failed: {e}")
+            self.logger.error(f"Schema initialization failed: {e}")
+            raise DatabaseError(f"Failed to initialize database schema: {e}")
 
-    def _create_initial_schema(self, cursor: sqlite3.Cursor) -> None:
-        """Create all initial database tables"""
+    def _create_all_tables(self, cursor: sqlite3.Cursor):
+        """Create all database tables"""
 
         # Users table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
-                username TEXT PRIMARY KEY,
-                email TEXT UNIQUE,
-                full_name TEXT,
-                passcode_hash TEXT NOT NULL,
-                roles TEXT NOT NULL, -- JSON array
-                projects TEXT NOT NULL DEFAULT '[]', -- JSON array of project IDs
-                preferences TEXT NOT NULL DEFAULT '{}', -- JSON object
+                id TEXT PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                first_name TEXT DEFAULT '',
+                last_name TEXT DEFAULT '',
+                role TEXT NOT NULL,
+                status TEXT NOT NULL,
+                avatar_url TEXT,
+                bio TEXT DEFAULT '',
+                skills TEXT DEFAULT '[]',
+                preferences TEXT DEFAULT '{}',
+                last_login TEXT,
+                login_attempts INTEGER DEFAULT 0,
+                locked_until TEXT,
+                api_key TEXT,
+                projects_created INTEGER DEFAULT 0,
+                sessions_completed INTEGER DEFAULT 0,
+                code_generated_lines INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        ''')
+
+        # User sessions table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_sessions (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                session_token TEXT UNIQUE NOT NULL,
+                ip_address TEXT DEFAULT '',
+                user_agent TEXT DEFAULT '',
+                expires_at TEXT NOT NULL,
+                is_active BOOLEAN DEFAULT 1,
+                last_activity TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
-                last_login TEXT,
-                is_active BOOLEAN DEFAULT 1,
-                is_archived BOOLEAN DEFAULT 0,
-                archived_at TEXT
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         ''')
 
         # Projects table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS projects (
-                project_id TEXT PRIMARY KEY,
+                id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 description TEXT DEFAULT '',
-                owner TEXT NOT NULL,
-                phase TEXT NOT NULL DEFAULT 'discovery',
-                status TEXT NOT NULL DEFAULT 'active',
-                priority TEXT NOT NULL DEFAULT 'medium',
-                goals TEXT DEFAULT '',
-                requirements TEXT DEFAULT '[]', -- JSON array
-                constraints TEXT DEFAULT '[]', -- JSON array
-                tech_stack TEXT DEFAULT '[]', -- JSON array
-                language_preferences TEXT DEFAULT '[]', -- JSON array
-                deployment_target TEXT DEFAULT 'local',
-                architecture_pattern TEXT DEFAULT '',
-                generated_codebase_id TEXT,
-                file_structure TEXT DEFAULT '{}', -- JSON object
+                owner_id TEXT NOT NULL,
+                status TEXT NOT NULL,
+                phase TEXT NOT NULL,
+                technology_stack TEXT DEFAULT '{}',
+                requirements TEXT DEFAULT '[]',
+                constraints TEXT DEFAULT '[]',
+                success_criteria TEXT DEFAULT '[]',
+                start_date TEXT,
+                end_date TEXT,
+                estimated_hours INTEGER,
+                budget REAL,
+                team_members TEXT DEFAULT '[]',
+                stakeholders TEXT DEFAULT '[]',
                 progress_percentage REAL DEFAULT 0.0,
-                quality_score REAL DEFAULT 0.0,
-                estimated_hours INTEGER DEFAULT 0,
-                actual_hours INTEGER DEFAULT 0,
-                risk_level TEXT DEFAULT 'low',
-                risk_indicators TEXT DEFAULT '[]', -- JSON array
-                issues TEXT DEFAULT '[]', -- JSON array
-                context_summary TEXT DEFAULT '{}', -- JSON object
+                completed_modules INTEGER DEFAULT 0,
+                total_modules INTEGER DEFAULT 0,
+                generated_codebase_id TEXT,
+                repository_url TEXT,
+                deployment_url TEXT,
+                tags TEXT DEFAULT '[]',
+                priority TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
-                completed_at TEXT,
-                archived_at TEXT,
-                is_archived BOOLEAN DEFAULT 0,
-                FOREIGN KEY (owner) REFERENCES users(username)
-            )
-        ''')
-
-        # Project collaborators table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS project_collaborators (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                project_id TEXT NOT NULL,
-                username TEXT NOT NULL,
-                role TEXT NOT NULL,
-                permissions TEXT DEFAULT '[]', -- JSON array
-                joined_at TEXT NOT NULL,
-                is_active BOOLEAN DEFAULT 1,
-                FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
-                FOREIGN KEY (username) REFERENCES users(username),
-                UNIQUE(project_id, username)
+                FOREIGN KEY (owner_id) REFERENCES users(id)
             )
         ''')
 
         # Modules table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS modules (
-                module_id TEXT PRIMARY KEY,
+                id TEXT PRIMARY KEY,
                 project_id TEXT NOT NULL,
                 name TEXT NOT NULL,
                 description TEXT DEFAULT '',
-                module_type TEXT NOT NULL DEFAULT 'backend',
-                phase TEXT NOT NULL DEFAULT 'discovery',
-                status TEXT NOT NULL DEFAULT 'not_started',
-                priority TEXT NOT NULL DEFAULT 'medium',
-                tasks TEXT DEFAULT '[]', -- JSON array
-                assigned_roles TEXT DEFAULT '[]', -- JSON array
-                assigned_users TEXT DEFAULT '[]', -- JSON array
-                dependencies TEXT DEFAULT '[]', -- JSON array
-                blocks TEXT DEFAULT '[]', -- JSON array
-                generated_files TEXT DEFAULT '[]', -- JSON array of file IDs
+                module_type TEXT NOT NULL,
+                parent_module_id TEXT,
+                order_index INTEGER DEFAULT 0,
+                dependencies TEXT DEFAULT '[]',
+                technologies TEXT DEFAULT '[]',
+                apis_provided TEXT DEFAULT '[]',
+                apis_consumed TEXT DEFAULT '[]',
+                status TEXT NOT NULL,
                 progress_percentage REAL DEFAULT 0.0,
-                estimated_hours INTEGER DEFAULT 0,
-                actual_hours INTEGER DEFAULT 0,
-                risk_level TEXT DEFAULT 'low',
-                code_quality_score REAL DEFAULT 0.0,
-                test_coverage REAL DEFAULT 0.0,
+                estimated_hours INTEGER,
+                actual_hours INTEGER,
+                assigned_to TEXT,
+                reviewer TEXT,
+                generated_files TEXT DEFAULT '[]',
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
-                started_at TEXT,
-                completed_at TEXT,
-                FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY (parent_module_id) REFERENCES modules(id),
+                FOREIGN KEY (assigned_to) REFERENCES users(id),
+                FOREIGN KEY (reviewer) REFERENCES users(id)
+            )
+        ''')
+
+        # Tasks table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tasks (
+                id TEXT PRIMARY KEY,
+                module_id TEXT NOT NULL,
+                project_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT DEFAULT '',
+                status TEXT NOT NULL,
+                priority TEXT NOT NULL,
+                task_type TEXT DEFAULT '',
+                assigned_to TEXT,
+                estimated_hours INTEGER,
+                actual_hours INTEGER,
+                due_date TEXT,
+                completed_date TEXT,
+                depends_on TEXT DEFAULT '[]',
+                blocks TEXT DEFAULT '[]',
+                progress_percentage REAL DEFAULT 0.0,
+                notes TEXT DEFAULT '',
+                related_files TEXT DEFAULT '[]',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY (assigned_to) REFERENCES users(id)
+            )
+        ''')
+
+        # Socratic sessions table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS socratic_sessions (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                current_role TEXT NOT NULL,
+                status TEXT NOT NULL,
+                roles_to_cover TEXT DEFAULT '[]',
+                completed_roles TEXT DEFAULT '[]',
+                total_questions INTEGER DEFAULT 0,
+                questions_answered INTEGER DEFAULT 0,
+                insights_generated INTEGER DEFAULT 0,
+                conflicts_detected INTEGER DEFAULT 0,
+                session_notes TEXT DEFAULT '',
+                quality_score REAL DEFAULT 0.0,
+                completion_percentage REAL DEFAULT 0.0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        ''')
+
+        # Questions table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS questions (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                question_text TEXT NOT NULL,
+                context TEXT DEFAULT '',
+                is_follow_up BOOLEAN DEFAULT 0,
+                parent_question_id TEXT,
+                importance_score REAL DEFAULT 0.5,
+                is_answered BOOLEAN DEFAULT 0,
+                answer_text TEXT DEFAULT '',
+                answer_quality_score REAL DEFAULT 0.0,
+                generated_insights TEXT DEFAULT '[]',
+                detected_conflicts TEXT DEFAULT '[]',
+                recommended_follow_ups TEXT DEFAULT '[]',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (session_id) REFERENCES socratic_sessions(id) ON DELETE CASCADE,
+                FOREIGN KEY (parent_question_id) REFERENCES questions(id)
+            )
+        ''')
+
+        # Conflicts table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS conflicts (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                session_id TEXT NOT NULL,
+                conflict_type TEXT NOT NULL,
+                description TEXT NOT NULL,
+                severity TEXT DEFAULT 'medium',
+                first_requirement TEXT NOT NULL,
+                second_requirement TEXT NOT NULL,
+                conflicting_roles TEXT DEFAULT '[]',
+                is_resolved BOOLEAN DEFAULT 0,
+                resolution_strategy TEXT DEFAULT '',
+                resolution_notes TEXT DEFAULT '',
+                resolved_by TEXT,
+                resolved_at TEXT,
+                affected_modules TEXT DEFAULT '[]',
+                estimated_impact_hours INTEGER,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY (session_id) REFERENCES socratic_sessions(id) ON DELETE CASCADE,
+                FOREIGN KEY (resolved_by) REFERENCES users(id)
+            )
+        ''')
+
+        # Technical specifications table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS technical_specs (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                version TEXT DEFAULT '1.0.0',
+                architecture_type TEXT DEFAULT '',
+                technology_stack TEXT DEFAULT '{}',
+                functional_requirements TEXT DEFAULT '[]',
+                non_functional_requirements TEXT DEFAULT '[]',
+                system_components TEXT DEFAULT '[]',
+                data_models TEXT DEFAULT '[]',
+                api_specifications TEXT DEFAULT '[]',
+                performance_requirements TEXT DEFAULT '{}',
+                security_requirements TEXT DEFAULT '[]',
+                scalability_requirements TEXT DEFAULT '{}',
+                deployment_strategy TEXT DEFAULT '',
+                infrastructure_requirements TEXT DEFAULT '{}',
+                monitoring_requirements TEXT DEFAULT '[]',
+                testing_strategy TEXT DEFAULT '{}',
+                acceptance_criteria TEXT DEFAULT '[]',
+                documentation_requirements TEXT DEFAULT '[]',
+                is_approved BOOLEAN DEFAULT 0,
+                approved_by TEXT,
+                approved_at TEXT,
+                approval_notes TEXT DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY (approved_by) REFERENCES users(id)
+            )
+        ''')
+
+        # Generated codebases table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS generated_codebases (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                spec_id TEXT,
+                version TEXT DEFAULT '1.0.0',
+                architecture_type TEXT DEFAULT '',
+                technology_stack TEXT DEFAULT '{}',
+                file_structure TEXT DEFAULT '{}',
+                generated_files TEXT DEFAULT '[]',
+                total_lines_of_code INTEGER DEFAULT 0,
+                total_files INTEGER DEFAULT 0,
+                code_quality_score REAL DEFAULT 0.0,
+                test_coverage REAL DEFAULT 0.0,
+                generation_time_seconds REAL DEFAULT 0.0,
+                compilation_successful BOOLEAN DEFAULT 0,
+                tests_passing BOOLEAN DEFAULT 0,
+                security_scan_results TEXT DEFAULT '{}',
+                security_issues_count INTEGER DEFAULT 0,
+                critical_issues_count INTEGER DEFAULT 0,
+                deployment_config TEXT DEFAULT '{}',
+                deployment_status TEXT DEFAULT 'not_deployed',
+                validation_results TEXT DEFAULT '[]',
+                error_count INTEGER DEFAULT 0,
+                warning_count INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY (spec_id) REFERENCES technical_specs(id)
             )
         ''')
 
         # Generated files table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS generated_files (
-                file_id TEXT PRIMARY KEY,
+                id TEXT PRIMARY KEY,
+                codebase_id TEXT NOT NULL,
                 project_id TEXT NOT NULL,
-                module_id TEXT,
-                codebase_id TEXT,
                 file_path TEXT NOT NULL,
-                file_name TEXT NOT NULL,
                 file_type TEXT NOT NULL,
                 file_purpose TEXT DEFAULT '',
                 content TEXT DEFAULT '',
-                content_hash TEXT DEFAULT '',
-                size_bytes INTEGER DEFAULT 0,
-                generated_by_agent TEXT DEFAULT '',
-                generation_prompt TEXT DEFAULT '',
-                generation_context TEXT DEFAULT '{}', -- JSON object
-                dependencies TEXT DEFAULT '[]', -- JSON array
-                dependents TEXT DEFAULT '[]', -- JSON array
-                related_files TEXT DEFAULT '[]', -- JSON array
-                status TEXT NOT NULL DEFAULT 'generating',
-                has_errors BOOLEAN DEFAULT 0,
-                error_messages TEXT DEFAULT '[]', -- JSON array
-                warnings TEXT DEFAULT '[]', -- JSON array
-                complexity_score REAL DEFAULT 0.0,
-                maintainability_score REAL DEFAULT 0.0,
-                test_coverage REAL DEFAULT 0.0,
-                lines_of_code INTEGER DEFAULT 0,
+                dependencies TEXT DEFAULT '[]',
                 documentation TEXT DEFAULT '',
-                comments_ratio REAL DEFAULT 0.0,
+                generated_by_agent TEXT DEFAULT '',
+                version TEXT DEFAULT '1.0.0',
+                size_bytes INTEGER DEFAULT 0,
+                complexity_score REAL DEFAULT 0.0,
+                test_coverage REAL DEFAULT 0.0,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
-                last_generated TEXT NOT NULL,
-                last_tested TEXT,
-                deployed_at TEXT,
-                version TEXT DEFAULT '1.0',
-                git_hash TEXT,
-                FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
-                FOREIGN KEY (module_id) REFERENCES modules(module_id) ON DELETE SET NULL
+                FOREIGN KEY (codebase_id) REFERENCES generated_codebases(id) ON DELETE CASCADE,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
             )
         ''')
 
         # Test results table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS test_results (
-                test_id TEXT PRIMARY KEY,
+                id TEXT PRIMARY KEY,
+                codebase_id TEXT NOT NULL,
                 project_id TEXT NOT NULL,
-                module_id TEXT,
-                codebase_id TEXT,
-                test_type TEXT NOT NULL DEFAULT 'unit',
+                test_type TEXT NOT NULL,
                 test_suite TEXT DEFAULT '',
-                test_framework TEXT DEFAULT 'pytest',
-                files_tested TEXT DEFAULT '[]', -- JSON array
-                test_files TEXT DEFAULT '[]', -- JSON array
-                status TEXT NOT NULL DEFAULT 'pending',
+                files_tested TEXT DEFAULT '[]',
                 passed BOOLEAN DEFAULT 0,
                 total_tests INTEGER DEFAULT 0,
                 passed_tests INTEGER DEFAULT 0,
                 failed_tests INTEGER DEFAULT 0,
                 skipped_tests INTEGER DEFAULT 0,
-                error_tests INTEGER DEFAULT 0,
                 coverage_percentage REAL DEFAULT 0.0,
-                line_coverage REAL DEFAULT 0.0,
-                branch_coverage REAL DEFAULT 0.0,
-                function_coverage REAL DEFAULT 0.0,
-                execution_time_seconds REAL DEFAULT 0.0,
+                failure_details TEXT DEFAULT '[]',
+                stack_traces TEXT DEFAULT '[]',
                 memory_usage_mb REAL DEFAULT 0.0,
-                cpu_usage_percent REAL DEFAULT 0.0,
-                test_cases TEXT DEFAULT '[]', -- JSON array
-                failure_details TEXT DEFAULT '[]', -- JSON array
-                error_details TEXT DEFAULT '[]', -- JSON array
-                code_quality_score REAL DEFAULT 0.0,
-                maintainability_score REAL DEFAULT 0.0,
-                complexity_warnings TEXT DEFAULT '[]', -- JSON array
-                security_issues TEXT DEFAULT '[]', -- JSON array
-                performance_issues TEXT DEFAULT '[]', -- JSON array
-                optimization_suggestions TEXT DEFAULT '[]', -- JSON array
-                test_environment TEXT DEFAULT '{}', -- JSON object
-                python_version TEXT DEFAULT '',
-                node_version TEXT DEFAULT '',
-                browser_info TEXT DEFAULT '{}', -- JSON object
-                created_at TEXT NOT NULL,
-                started_at TEXT,
-                completed_at TEXT,
-                exit_code INTEGER DEFAULT 0,
-                stdout TEXT DEFAULT '',
-                stderr TEXT DEFAULT '',
-                command_line TEXT DEFAULT '',
-                FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
-                FOREIGN KEY (module_id) REFERENCES modules(module_id) ON DELETE SET NULL
-            )
-        ''')
-
-        # Conversation messages table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS conversation_messages (
-                message_id TEXT PRIMARY KEY,
-                project_id TEXT NOT NULL,
-                timestamp TEXT NOT NULL,
-                type TEXT NOT NULL DEFAULT 'user',
-                content TEXT NOT NULL,
-                phase TEXT NOT NULL DEFAULT 'discovery',
-                role TEXT,
-                author TEXT,
-                question_number INTEGER,
-                insights_extracted TEXT DEFAULT '{}', -- JSON object
-                FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
-            )
-        ''')
-
-        # Technical specifications table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS technical_specifications (
-                project_id TEXT PRIMARY KEY,
-                database_schema TEXT DEFAULT '{}', -- JSON object
-                api_design TEXT DEFAULT '{}', -- JSON object
-                file_structure TEXT DEFAULT '{}', -- JSON object
-                component_architecture TEXT DEFAULT '{}', -- JSON object
-                implementation_plan TEXT DEFAULT '[]', -- JSON array
-                test_requirements TEXT DEFAULT '[]', -- JSON array
-                deployment_config TEXT DEFAULT '{}', -- JSON object
-                dependencies TEXT DEFAULT '[]', -- JSON array
-                environment_variables TEXT DEFAULT '{}', -- JSON object
-                security_requirements TEXT DEFAULT '[]', -- JSON array
-                performance_requirements TEXT DEFAULT '{}', -- JSON object
-                architecture_pattern TEXT DEFAULT '',
-                code_style_guide TEXT DEFAULT '{}', -- JSON object
+                cpu_usage_percentage REAL DEFAULT 0.0,
+                test_environment TEXT DEFAULT '{}',
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
-                version TEXT DEFAULT '1.0',
-                FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
+                FOREIGN KEY (codebase_id) REFERENCES generated_codebases(id) ON DELETE CASCADE,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
             )
         ''')
 
-        # Create indexes for performance
+        # Project metrics table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS project_metrics (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                total_development_hours REAL DEFAULT 0.0,
+                code_generation_time REAL DEFAULT 0.0,
+                testing_time REAL DEFAULT 0.0,
+                review_time REAL DEFAULT 0.0,
+                average_code_quality REAL DEFAULT 0.0,
+                test_coverage REAL DEFAULT 0.0,
+                bug_count INTEGER DEFAULT 0,
+                security_issues INTEGER DEFAULT 0,
+                lines_of_code_generated INTEGER DEFAULT 0,
+                files_generated INTEGER DEFAULT 0,
+                tests_generated INTEGER DEFAULT 0,
+                documentation_pages INTEGER DEFAULT 0,
+                team_members_active INTEGER DEFAULT 0,
+                sessions_completed INTEGER DEFAULT 0,
+                conflicts_resolved INTEGER DEFAULT 0,
+                insights_generated INTEGER DEFAULT 0,
+                planned_duration_days INTEGER,
+                actual_duration_days INTEGER,
+                delays_count INTEGER DEFAULT 0,
+                client_satisfaction REAL DEFAULT 0.0,
+                deployment_success BOOLEAN DEFAULT 0,
+                post_deployment_issues INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+            )
+        ''')
+
+        # User activity table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_activity (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                sessions_started INTEGER DEFAULT 0,
+                sessions_completed INTEGER DEFAULT 0,
+                questions_answered INTEGER DEFAULT 0,
+                projects_created INTEGER DEFAULT 0,
+                total_active_time_hours REAL DEFAULT 0.0,
+                last_activity TEXT NOT NULL,
+                code_lines_generated INTEGER DEFAULT 0,
+                tests_created INTEGER DEFAULT 0,
+                bugs_found INTEGER DEFAULT 0,
+                insights_provided INTEGER DEFAULT 0,
+                conflicts_mediated INTEGER DEFAULT 0,
+                reviews_completed INTEGER DEFAULT 0,
+                mentoring_sessions INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ''')
+
+    def _create_indexes(self, cursor: sqlite3.Cursor):
+        """Create database indexes for performance"""
         indexes = [
-            'CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner)',
+            # Users
+            'CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)',
+            'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
+            'CREATE INDEX IF NOT EXISTS idx_users_status ON users(status)',
+
+            # Projects
+            'CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner_id)',
             'CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status)',
+            'CREATE INDEX IF NOT EXISTS idx_projects_phase ON projects(phase)',
+
+            # Modules
             'CREATE INDEX IF NOT EXISTS idx_modules_project ON modules(project_id)',
             'CREATE INDEX IF NOT EXISTS idx_modules_status ON modules(status)',
+            'CREATE INDEX IF NOT EXISTS idx_modules_assigned ON modules(assigned_to)',
+
+            # Tasks
+            'CREATE INDEX IF NOT EXISTS idx_tasks_module ON tasks(module_id)',
+            'CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id)',
+            'CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)',
+            'CREATE INDEX IF NOT EXISTS idx_tasks_assigned ON tasks(assigned_to)',
+
+            # Socratic sessions
+            'CREATE INDEX IF NOT EXISTS idx_sessions_project ON socratic_sessions(project_id)',
+            'CREATE INDEX IF NOT EXISTS idx_sessions_user ON socratic_sessions(user_id)',
+            'CREATE INDEX IF NOT EXISTS idx_sessions_status ON socratic_sessions(status)',
+
+            # Questions
+            'CREATE INDEX IF NOT EXISTS idx_questions_session ON questions(session_id)',
+            'CREATE INDEX IF NOT EXISTS idx_questions_role ON questions(role)',
+
+            # Generated files
+            'CREATE INDEX IF NOT EXISTS idx_files_codebase ON generated_files(codebase_id)',
             'CREATE INDEX IF NOT EXISTS idx_files_project ON generated_files(project_id)',
-            'CREATE INDEX IF NOT EXISTS idx_files_module ON generated_files(module_id)',
-            'CREATE INDEX IF NOT EXISTS idx_files_status ON generated_files(status)',
+            'CREATE INDEX IF NOT EXISTS idx_files_type ON generated_files(file_type)',
+
+            # Test results
+            'CREATE INDEX IF NOT EXISTS idx_tests_codebase ON test_results(codebase_id)',
             'CREATE INDEX IF NOT EXISTS idx_tests_project ON test_results(project_id)',
-            'CREATE INDEX IF NOT EXISTS idx_tests_status ON test_results(status)',
-            'CREATE INDEX IF NOT EXISTS idx_messages_project ON conversation_messages(project_id)',
-            'CREATE INDEX IF NOT EXISTS idx_collaborators_project ON project_collaborators(project_id)',
-            'CREATE INDEX IF NOT EXISTS idx_collaborators_user ON project_collaborators(username)',
+            'CREATE INDEX IF NOT EXISTS idx_tests_type ON test_results(test_type)',
         ]
 
         for index_sql in indexes:
@@ -338,21 +549,16 @@ class DatabaseSchema:
 # ============================================================================
 
 class BaseRepository:
-    """Base repository class with common database operations"""
+    """Base repository with common database operations"""
 
-    def __init__(self, table_name: str):
+    def __init__(self, table_name: str, model_class: Type[BaseModel]):
         self.table_name = table_name
+        self.model_class = model_class
         self.logger = get_logger(f'db.{table_name}')
-        self.db_manager = get_db_manager()
-
-    @contextmanager
-    def get_connection(self):
-        """Get database connection with automatic cleanup"""
-        with self.db_manager.get_db_session() as conn:
-            yield conn
+        self.db_manager = DatabaseManager()
 
     def _serialize_json_field(self, value: Any) -> str:
-        """Serialize Python object to JSON string"""
+        """Serialize value to JSON string"""
         if value is None:
             return '[]' if isinstance(value, list) else '{}'
         return json.dumps(value, default=str, ensure_ascii=False)
@@ -366,998 +572,459 @@ class BaseRepository:
         except (json.JSONDecodeError, TypeError):
             return [] if default_type == list else {}
 
-    def _convert_datetime_fields(self, data: Dict[str, Any], datetime_fields: List[str]) -> None:
-        """Convert datetime objects to ISO strings for database storage"""
+    def _convert_model_to_dict(self, model: BaseModel) -> Dict[str, Any]:
+        """Convert model to dictionary with proper serialization"""
+        data = asdict(model)
+
+        # Convert datetime fields to ISO strings
+        datetime_fields = ['created_at', 'updated_at', 'last_login', 'expires_at',
+                           'last_activity', 'start_date', 'end_date', 'due_date',
+                           'completed_date', 'resolved_at', 'approved_at']
+
         for field in datetime_fields:
             if field in data and data[field] is not None:
                 if hasattr(data[field], 'isoformat'):
                     data[field] = DateTimeHelper.to_iso_string(data[field])
 
+        # Convert enum fields to strings
+        for key, value in data.items():
+            if hasattr(value, 'value'):  # Enum
+                data[key] = value.value
+            elif isinstance(value, list) and value and hasattr(value[0], 'value'):  # List of enums
+                data[key] = [item.value for item in value]
+
+        return data
+
+    def _convert_row_to_model(self, row: sqlite3.Row) -> BaseModel:
+        """Convert database row to model instance (to be overridden)"""
+        raise NotImplementedError("Subclasses must implement _convert_row_to_model")
+
+    def create(self, model: BaseModel) -> bool:
+        """Create new record"""
+        try:
+            with self.db_manager.transaction() as conn:
+                data = self._convert_model_to_dict(model)
+
+                # Build INSERT query
+                columns = list(data.keys())
+                placeholders = ', '.join(['?' for _ in columns])
+                values = [data[col] for col in columns]
+
+                query = f'INSERT INTO {self.table_name} ({", ".join(columns)}) VALUES ({placeholders})'
+
+                cursor = conn.execute(query, values)
+                success = cursor.rowcount > 0
+
+                if success:
+                    self.logger.info(f"Created {self.model_class.__name__}: {model.id}")
+
+                return success
+
+        except sqlite3.IntegrityError as e:
+            self.logger.error(f"Integrity error creating {self.model_class.__name__}: {e}")
+            raise ValidationError(f"Record already exists or violates constraints")
+        except Exception as e:
+            self.logger.error(f"Failed to create {self.model_class.__name__}: {e}")
+            raise DatabaseError(f"Creation failed: {e}")
+
+    def get_by_id(self, record_id: str) -> Optional[BaseModel]:
+        """Get record by ID"""
+        try:
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.execute(f'SELECT * FROM {self.table_name} WHERE id = ?', (record_id,))
+                row = cursor.fetchone()
+
+                if row:
+                    return self._convert_row_to_model(row)
+                return None
+
+        except Exception as e:
+            self.logger.error(f"Failed to get {self.model_class.__name__} {record_id}: {e}")
+            raise DatabaseError(f"Lookup failed: {e}")
+
+    def update(self, model: BaseModel) -> bool:
+        """Update existing record"""
+        try:
+            with self.db_manager.transaction() as conn:
+                data = self._convert_model_to_dict(model)
+                data['updated_at'] = DateTimeHelper.to_iso_string(DateTimeHelper.now())
+
+                # Build UPDATE query
+                set_clause = ', '.join([f'{col} = ?' for col in data.keys() if col != 'id'])
+                values = [data[col] for col in data.keys() if col != 'id']
+                values.append(model.id)
+
+                query = f'UPDATE {self.table_name} SET {set_clause} WHERE id = ?'
+
+                cursor = conn.execute(query, values)
+                return cursor.rowcount > 0
+
+        except Exception as e:
+            self.logger.error(f"Failed to update {self.model_class.__name__} {model.id}: {e}")
+            raise DatabaseError(f"Update failed: {e}")
+
+    def delete(self, record_id: str) -> bool:
+        """Delete record by ID"""
+        try:
+            with self.db_manager.transaction() as conn:
+                cursor = conn.execute(f'DELETE FROM {self.table_name} WHERE id = ?', (record_id,))
+                return cursor.rowcount > 0
+
+        except Exception as e:
+            self.logger.error(f"Failed to delete {self.model_class.__name__} {record_id}: {e}")
+            raise DatabaseError(f"Deletion failed: {e}")
+
+    def list_all(self, limit: Optional[int] = None, offset: int = 0) -> List[BaseModel]:
+        """List all records with optional pagination"""
+        try:
+            with self.db_manager.get_connection() as conn:
+                query = f'SELECT * FROM {self.table_name} ORDER BY created_at DESC'
+                params = []
+
+                if limit is not None:
+                    query += ' LIMIT ? OFFSET ?'
+                    params.extend([limit, offset])
+
+                cursor = conn.execute(query, params)
+                return [self._convert_row_to_model(row) for row in cursor.fetchall()]
+
+        except Exception as e:
+            self.logger.error(f"Failed to list {self.model_class.__name__} records: {e}")
+            return []
+
 
 # ============================================================================
-# USER REPOSITORY
+# MODEL-SPECIFIC REPOSITORIES
 # ============================================================================
 
 class UserRepository(BaseRepository):
-    """Repository for user management"""
+    """Repository for User model"""
 
     def __init__(self):
-        super().__init__('users')
-
-    def create(self, user: User) -> bool:
-        """Create a new user"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-
-                user_data = asdict(user)
-                self._convert_datetime_fields(user_data, ['created_at', 'updated_at', 'last_login', 'archived_at'])
-
-                cursor.execute('''
-                    INSERT INTO users (username, email, full_name, passcode_hash, roles, projects,
-                                     preferences, created_at, updated_at, last_login, is_active, 
-                                     is_archived, archived_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    user_data['username'], user_data['email'], user_data['full_name'],
-                    user_data['passcode_hash'], self._serialize_json_field([role.value for role in user.roles]),
-                    self._serialize_json_field(user_data['projects']),
-                    self._serialize_json_field(user_data['preferences']),
-                    user_data['created_at'], user_data['updated_at'], user_data['last_login'],
-                    user_data['is_active'], user_data['is_archived'], user_data['archived_at']
-                ))
-
-                self.logger.info(f"Created user: {user.username}")
-                return True
-
-        except sqlite3.IntegrityError as e:
-            self.logger.error(f"User creation failed - integrity error: {e}")
-            raise ValidationError(f"User {user.username} already exists")
-        except Exception as e:
-            self.logger.error(f"Failed to create user {user.username}: {e}")
-            raise DatabaseError(f"User creation failed: {e}")
+        super().__init__('users', User)
 
     def get_by_username(self, username: str) -> Optional[User]:
         """Get user by username"""
         try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.execute('SELECT * FROM users WHERE username = ?', (username,))
                 row = cursor.fetchone()
 
                 if row:
-                    return self._row_to_user(row)
+                    return self._convert_row_to_model(row)
                 return None
 
         except Exception as e:
-            self.logger.error(f"Failed to get user {username}: {e}")
-            raise DatabaseError(f"User lookup failed: {e}")
+            self.logger.error(f"Failed to get user by username {username}: {e}")
+            return None
 
-    def update(self, user: User) -> bool:
-        """Update existing user"""
+    def get_by_email(self, email: str) -> Optional[User]:
+        """Get user by email"""
         try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.execute('SELECT * FROM users WHERE email = ?', (email,))
+                row = cursor.fetchone()
 
-                user_data = asdict(user)
-                user_data['updated_at'] = DateTimeHelper.to_iso_string(DateTimeHelper.now())
-                self._convert_datetime_fields(user_data, ['created_at', 'updated_at', 'last_login', 'archived_at'])
-
-                cursor.execute('''
-                    UPDATE users SET email=?, full_name=?, passcode_hash=?, roles=?, projects=?,
-                                    preferences=?, updated_at=?, last_login=?, is_active=?, 
-                                    is_archived=?, archived_at=?
-                    WHERE username=?
-                ''', (
-                    user_data['email'], user_data['full_name'], user_data['passcode_hash'],
-                    self._serialize_json_field([role.value for role in user.roles]),
-                    self._serialize_json_field(user_data['projects']),
-                    self._serialize_json_field(user_data['preferences']),
-                    user_data['updated_at'], user_data['last_login'], user_data['is_active'],
-                    user_data['is_archived'], user_data['archived_at'], user_data['username']
-                ))
-
-                return cursor.rowcount > 0
+                if row:
+                    return self._convert_row_to_model(row)
+                return None
 
         except Exception as e:
-            self.logger.error(f"Failed to update user {user.username}: {e}")
-            raise DatabaseError(f"User update failed: {e}")
+            self.logger.error(f"Failed to get user by email {email}: {e}")
+            return None
 
-    def delete(self, username: str) -> bool:
-        """Delete user (hard delete)"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('DELETE FROM users WHERE username = ?', (username,))
-                return cursor.rowcount > 0
-
-        except Exception as e:
-            self.logger.error(f"Failed to delete user {username}: {e}")
-            raise DatabaseError(f"User deletion failed: {e}")
-
-    def exists(self, username: str) -> bool:
-        """Check if user exists"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT 1 FROM users WHERE username = ?', (username,))
-                return cursor.fetchone() is not None
-
-        except Exception as e:
-            self.logger.error(f"Failed to check user existence {username}: {e}")
-            return False
-
-    def _row_to_user(self, row: sqlite3.Row) -> User:
-        """Convert database row to User object"""
-        roles = [UserRole(role) for role in self._deserialize_json_field(row['roles'], list)]
-
+    def _convert_row_to_model(self, row: sqlite3.Row) -> User:
+        """Convert database row to User model"""
         return User(
+            id=row['id'],
             username=row['username'],
             email=row['email'],
-            full_name=row['full_name'],
-            passcode_hash=row['passcode_hash'],
-            roles=roles,
-            projects=self._deserialize_json_field(row['projects'], list),
+            password_hash=row['password_hash'],
+            first_name=row['first_name'] or '',
+            last_name=row['last_name'] or '',
+            role=UserRole(row['role']),
+            status=UserStatus(row['status']),
+            avatar_url=row['avatar_url'],
+            bio=row['bio'] or '',
+            skills=self._deserialize_json_field(row['skills'], list),
             preferences=self._deserialize_json_field(row['preferences']),
-            created_at=DateTimeHelper.from_iso_string(row['created_at']) if row['created_at'] else DateTimeHelper.now(),
-            updated_at=DateTimeHelper.from_iso_string(row['updated_at']) if row['updated_at'] else DateTimeHelper.now(),
             last_login=DateTimeHelper.from_iso_string(row['last_login']) if row['last_login'] else None,
-            is_active=bool(row['is_active']),
-            is_archived=bool(row['is_archived']),
-            archived_at=DateTimeHelper.from_iso_string(row['archived_at']) if row['archived_at'] else None
+            login_attempts=row['login_attempts'] or 0,
+            locked_until=DateTimeHelper.from_iso_string(row['locked_until']) if row['locked_until'] else None,
+            api_key=row['api_key'],
+            projects_created=row['projects_created'] or 0,
+            sessions_completed=row['sessions_completed'] or 0,
+            code_generated_lines=row['code_generated_lines'] or 0,
+            created_at=DateTimeHelper.from_iso_string(row['created_at']),
+            updated_at=DateTimeHelper.from_iso_string(row['updated_at'])
         )
 
-
-# ============================================================================
-# PROJECT REPOSITORY
-# ============================================================================
 
 class ProjectRepository(BaseRepository):
-    """Repository for project management"""
+    """Repository for Project model"""
 
     def __init__(self):
-        super().__init__('projects')
-        self.collaborator_repo = ProjectCollaboratorRepository()
+        super().__init__('projects', Project)
 
-    def create(self, project: Project) -> bool:
-        """Create a new project"""
+    def get_user_projects(self, user_id: str) -> List[Project]:
+        """Get all projects for a user (owner or team member)"""
         try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT * FROM projects 
+                    WHERE owner_id = ? OR team_members LIKE ?
+                    ORDER BY updated_at DESC
+                ''', (user_id, f'%"{user_id}"%'))
 
-                project_data = asdict(project)
-                self._convert_datetime_fields(project_data,
-                                              ['created_at', 'updated_at', 'completed_at', 'archived_at'])
-
-                cursor.execute('''
-                    INSERT INTO projects (project_id, name, description, owner, phase, status, priority,
-                                        goals, requirements, constraints, tech_stack, language_preferences,
-                                        deployment_target, architecture_pattern, generated_codebase_id,
-                                        file_structure, progress_percentage, quality_score, estimated_hours,
-                                        actual_hours, risk_level, risk_indicators, issues, context_summary,
-                                        created_at, updated_at, completed_at, archived_at, is_archived)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    project_data['project_id'], project_data['name'], project_data['description'],
-                    project_data['owner'], project.phase.value, project.status.value, project.priority.value,
-                    project_data['goals'], self._serialize_json_field(project_data['requirements']),
-                    self._serialize_json_field(project_data['constraints']),
-                    self._serialize_json_field(project_data['tech_stack']),
-                    self._serialize_json_field(project_data['language_preferences']), project_data['deployment_target'],
-                    project_data['architecture_pattern'], project_data['generated_codebase_id'],
-                    self._serialize_json_field(project_data['file_structure']), project_data['progress_percentage'],
-                    project_data['quality_score'], project_data['estimated_hours'], project_data['actual_hours'],
-                    project.risk_level.value, self._serialize_json_field(project_data['risk_indicators']),
-                    self._serialize_json_field(project_data['issues']),
-                    self._serialize_json_field(project_data['context_summary']),
-                    project_data['created_at'], project_data['updated_at'], project_data['completed_at'],
-                    project_data['archived_at'], project_data['is_archived']
-                ))
-
-                # Create collaborator entries
-                for collaborator in project.collaborators:
-                    self.collaborator_repo.add_collaborator(project.project_id, collaborator)
-
-                self.logger.info(f"Created project: {project.name} ({project.project_id})")
-                return True
+                return [self._convert_row_to_model(row) for row in cursor.fetchall()]
 
         except Exception as e:
-            self.logger.error(f"Failed to create project {project.name}: {e}")
-            raise DatabaseError(f"Project creation failed: {e}")
+            self.logger.error(f"Failed to get projects for user {user_id}: {e}")
+            return []
 
-    def get_by_id(self, project_id: str) -> Optional[Project]:
-        """Get project by ID"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT * FROM projects WHERE project_id = ?', (project_id,))
-                row = cursor.fetchone()
-
-                if row:
-                    project = self._row_to_project(row)
-                    # Load collaborators
-                    project.collaborators = self.collaborator_repo.get_project_collaborators(project_id)
-                    return project
-                return None
-
-        except Exception as e:
-            self.logger.error(f"Failed to get project {project_id}: {e}")
-            raise DatabaseError(f"Project lookup failed: {e}")
-
-    def get_user_projects(self, username: str, include_archived: bool = False) -> List[Dict[str, Any]]:
-        """Get projects where user is owner or collaborator"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-
-                # Build WHERE clause
-                where_clause = "WHERE (p.owner = ? OR pc.username = ?)"
-                params = [username, username]
-
-                if not include_archived:
-                    where_clause += " AND p.is_archived = 0"
-
-                cursor.execute(f'''
-                    SELECT DISTINCT p.project_id, p.name, p.phase, p.status, p.updated_at, p.is_archived
-                    FROM projects p
-                    LEFT JOIN project_collaborators pc ON p.project_id = pc.project_id
-                    {where_clause}
-                    ORDER BY p.updated_at DESC
-                ''', params)
-
-                projects = []
-                for row in cursor.fetchall():
-                    projects.append({
-                        'project_id': row['project_id'],
-                        'name': row['name'],
-                        'phase': row['phase'],
-                        'status': 'archived' if row['is_archived'] else row['status'],
-                        'updated_at': row['updated_at']
-                    })
-
-                return projects
-
-        except Exception as e:
-            self.logger.error(f"Failed to get user projects for {username}: {e}")
-            raise DatabaseError(f"User projects lookup failed: {e}")
-
-    def update(self, project: Project) -> bool:
-        """Update existing project"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-
-                project_data = asdict(project)
-                project_data['updated_at'] = DateTimeHelper.to_iso_string(DateTimeHelper.now())
-                self._convert_datetime_fields(project_data,
-                                              ['created_at', 'updated_at', 'completed_at', 'archived_at'])
-
-                cursor.execute('''
-                    UPDATE projects SET name=?, description=?, owner=?, phase=?, status=?, priority=?,
-                                      goals=?, requirements=?, constraints=?, tech_stack=?, language_preferences=?,
-                                      deployment_target=?, architecture_pattern=?, generated_codebase_id=?,
-                                      file_structure=?, progress_percentage=?, quality_score=?, estimated_hours=?,
-                                      actual_hours=?, risk_level=?, risk_indicators=?, issues=?, context_summary=?,
-                                      updated_at=?, completed_at=?, archived_at=?, is_archived=?
-                    WHERE project_id=?
-                ''', (
-                    project_data['name'], project_data['description'], project_data['owner'],
-                    project.phase.value, project.status.value, project.priority.value,
-                    project_data['goals'], self._serialize_json_field(project_data['requirements']),
-                    self._serialize_json_field(project_data['constraints']),
-                    self._serialize_json_field(project_data['tech_stack']),
-                    self._serialize_json_field(project_data['language_preferences']), project_data['deployment_target'],
-                    project_data['architecture_pattern'], project_data['generated_codebase_id'],
-                    self._serialize_json_field(project_data['file_structure']), project_data['progress_percentage'],
-                    project_data['quality_score'], project_data['estimated_hours'], project_data['actual_hours'],
-                    project.risk_level.value, self._serialize_json_field(project_data['risk_indicators']),
-                    self._serialize_json_field(project_data['issues']),
-                    self._serialize_json_field(project_data['context_summary']),
-                    project_data['updated_at'], project_data['completed_at'], project_data['archived_at'],
-                    project_data['is_archived'], project_data['project_id']
-                ))
-
-                # Update collaborators
-                self.collaborator_repo.update_project_collaborators(project.project_id, project.collaborators)
-
-                return cursor.rowcount > 0
-
-        except Exception as e:
-            self.logger.error(f"Failed to update project {project.project_id}: {e}")
-            raise DatabaseError(f"Project update failed: {e}")
-
-    def delete(self, project_id: str) -> bool:
-        """Delete project (cascades to related records)"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('DELETE FROM projects WHERE project_id = ?', (project_id,))
-                return cursor.rowcount > 0
-
-        except Exception as e:
-            self.logger.error(f"Failed to delete project {project_id}: {e}")
-            raise DatabaseError(f"Project deletion failed: {e}")
-
-    def _row_to_project(self, row: sqlite3.Row) -> Project:
-        """Convert database row to Project object"""
+    def _convert_row_to_model(self, row: sqlite3.Row) -> Project:
+        """Convert database row to Project model"""
         return Project(
-            project_id=row['project_id'],
+            id=row['id'],
             name=row['name'],
             description=row['description'] or '',
-            owner=row['owner'],
-            collaborators=[],  # Loaded separately
-            phase=ProjectPhase(row['phase']),
+            owner_id=row['owner_id'],
             status=ProjectStatus(row['status']),
-            priority=Priority(row['priority']),
-            goals=row['goals'] or '',
+            phase=ProjectPhase(row['phase']),
+            technology_stack=self._deserialize_json_field(row['technology_stack']),
             requirements=self._deserialize_json_field(row['requirements'], list),
             constraints=self._deserialize_json_field(row['constraints'], list),
-            tech_stack=self._deserialize_json_field(row['tech_stack'], list),
-            language_preferences=self._deserialize_json_field(row['language_preferences'], list),
-            deployment_target=row['deployment_target'] or 'local',
-            architecture_pattern=row['architecture_pattern'] or '',
-            technical_specification=None,  # Loaded separately if needed
-            conversation_history=[],  # Loaded separately if needed
-            context_summary=self._deserialize_json_field(row['context_summary']),
-            generated_codebase_id=row['generated_codebase_id'],
-            file_structure=self._deserialize_json_field(row['file_structure']),
+            success_criteria=self._deserialize_json_field(row['success_criteria'], list),
+            start_date=DateTimeHelper.from_iso_string(row['start_date']) if row['start_date'] else None,
+            end_date=DateTimeHelper.from_iso_string(row['end_date']) if row['end_date'] else None,
+            estimated_hours=row['estimated_hours'],
+            budget=row['budget'],
+            team_members=self._deserialize_json_field(row['team_members'], list),
+            stakeholders=self._deserialize_json_field(row['stakeholders'], list),
             progress_percentage=row['progress_percentage'] or 0.0,
-            quality_score=row['quality_score'] or 0.0,
-            estimated_hours=row['estimated_hours'] or 0,
-            actual_hours=row['actual_hours'] or 0,
-            risk_level=RiskLevel(row['risk_level']),
-            risk_indicators=self._deserialize_json_field(row['risk_indicators'], list),
-            issues=self._deserialize_json_field(row['issues'], list),
-            created_at=DateTimeHelper.from_iso_string(row['created_at']) if row['created_at'] else DateTimeHelper.now(),
-            updated_at=DateTimeHelper.from_iso_string(row['updated_at']) if row['updated_at'] else DateTimeHelper.now(),
-            completed_at=DateTimeHelper.from_iso_string(row['completed_at']) if row['completed_at'] else None,
-            archived_at=DateTimeHelper.from_iso_string(row['archived_at']) if row['archived_at'] else None,
-            is_archived=bool(row['is_archived'])
+            completed_modules=row['completed_modules'] or 0,
+            total_modules=row['total_modules'] or 0,
+            generated_codebase_id=row['generated_codebase_id'],
+            repository_url=row['repository_url'],
+            deployment_url=row['deployment_url'],
+            tags=self._deserialize_json_field(row['tags'], list),
+            priority=TaskPriority(row['priority']),
+            created_at=DateTimeHelper.from_iso_string(row['created_at']),
+            updated_at=DateTimeHelper.from_iso_string(row['updated_at'])
         )
 
 
-# ============================================================================
-# PROJECT COLLABORATOR REPOSITORY
-# ============================================================================
-
-class ProjectCollaboratorRepository(BaseRepository):
-    """Repository for project collaborator management"""
-
-    def __init__(self):
-        super().__init__('project_collaborators')
-
-    def add_collaborator(self, project_id: str, collaborator: Collaborator) -> bool:
-        """Add collaborator to project"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-
-                cursor.execute('''
-                    INSERT OR REPLACE INTO project_collaborators 
-                    (project_id, username, role, permissions, joined_at, is_active)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ''', (
-                    project_id, collaborator.username, collaborator.role.value,
-                    self._serialize_json_field(collaborator.permissions),
-                    DateTimeHelper.to_iso_string(collaborator.joined_at),
-                    collaborator.is_active
-                ))
-
-                return True
-
-        except Exception as e:
-            self.logger.error(f"Failed to add collaborator {collaborator.username} to {project_id}: {e}")
-            return False
-
-    def get_project_collaborators(self, project_id: str) -> List[Collaborator]:
-        """Get all collaborators for a project"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT * FROM project_collaborators 
-                    WHERE project_id = ? AND is_active = 1
-                    ORDER BY joined_at
-                ''', (project_id,))
-
-                collaborators = []
-                for row in cursor.fetchall():
-                    collaborators.append(Collaborator(
-                        username=row['username'],
-                        role=UserRole(row['role']),
-                        permissions=self._deserialize_json_field(row['permissions'], list),
-                        joined_at=DateTimeHelper.from_iso_string(row['joined_at']) if row[
-                            'joined_at'] else DateTimeHelper.now(),
-                        is_active=bool(row['is_active'])
-                    ))
-
-                return collaborators
-
-        except Exception as e:
-            self.logger.error(f"Failed to get collaborators for project {project_id}: {e}")
-            return []
-
-    def update_project_collaborators(self, project_id: str, collaborators: List[Collaborator]) -> bool:
-        """Update all collaborators for a project"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-
-                # Remove existing collaborators
-                cursor.execute('DELETE FROM project_collaborators WHERE project_id = ?', (project_id,))
-
-                # Add new collaborators
-                for collaborator in collaborators:
-                    self.add_collaborator(project_id, collaborator)
-
-                return True
-
-        except Exception as e:
-            self.logger.error(f"Failed to update collaborators for project {project_id}: {e}")
-            return False
-
-
-# ============================================================================
-# MODULE REPOSITORY
-# ============================================================================
-
 class ModuleRepository(BaseRepository):
-    """Repository for module management"""
+    """Repository for Module model"""
 
     def __init__(self):
-        super().__init__('modules')
-
-    def create(self, module: Module) -> bool:
-        """Create a new module"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-
-                module_data = asdict(module)
-                self._convert_datetime_fields(module_data,
-                                              ['created_at', 'updated_at', 'started_at', 'completed_at'])
-
-                cursor.execute('''
-                    INSERT INTO modules (module_id, project_id, name, description, module_type, phase,
-                                       status, priority, tasks, assigned_roles, assigned_users, dependencies,
-                                       blocks, generated_files, progress_percentage, estimated_hours,
-                                       actual_hours, risk_level, code_quality_score, test_coverage,
-                                       created_at, updated_at, started_at, completed_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    module_data['module_id'], module_data['project_id'], module_data['name'],
-                    module_data['description'], module.module_type.value, module.phase.value,
-                    module.status.value, module.priority.value, self._serialize_json_field(module_data['tasks']),
-                    self._serialize_json_field([role.value for role in module.assigned_roles]),
-                    self._serialize_json_field(module_data['assigned_users']),
-                    self._serialize_json_field(module_data['dependencies']),
-                    self._serialize_json_field(module_data['blocks']),
-                    self._serialize_json_field(module_data['generated_files']),
-                    module_data['progress_percentage'], module_data['estimated_hours'], module_data['actual_hours'],
-                    module.risk_level.value, module_data['code_quality_score'], module_data['test_coverage'],
-                    module_data['created_at'], module_data['updated_at'], module_data['started_at'],
-                    module_data['completed_at']
-                ))
-
-                self.logger.info(f"Created module: {module.name} ({module.module_id})")
-                return True
-
-        except Exception as e:
-            self.logger.error(f"Failed to create module {module.name}: {e}")
-            raise DatabaseError(f"Module creation failed: {e}")
-
-    def get_by_id(self, module_id: str) -> Optional[Module]:
-        """Get module by ID"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT * FROM modules WHERE module_id = ?', (module_id,))
-                row = cursor.fetchone()
-
-                if row:
-                    return self._row_to_module(row)
-                return None
-
-        except Exception as e:
-            self.logger.error(f"Failed to get module {module_id}: {e}")
-            raise DatabaseError(f"Module lookup failed: {e}")
+        super().__init__('modules', Module)
 
     def get_project_modules(self, project_id: str) -> List[Module]:
         """Get all modules for a project"""
         try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT * FROM modules WHERE project_id = ? 
-                    ORDER BY created_at
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT * FROM modules 
+                    WHERE project_id = ? 
+                    ORDER BY order_index, created_at
                 ''', (project_id,))
 
-                modules = []
-                for row in cursor.fetchall():
-                    modules.append(self._row_to_module(row))
-
-                return modules
+                return [self._convert_row_to_model(row) for row in cursor.fetchall()]
 
         except Exception as e:
             self.logger.error(f"Failed to get modules for project {project_id}: {e}")
             return []
 
-    def update(self, module: Module) -> bool:
-        """Update existing module"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-
-                module_data = asdict(module)
-                module_data['updated_at'] = DateTimeHelper.to_iso_string(DateTimeHelper.now())
-                self._convert_datetime_fields(module_data,
-                                              ['created_at', 'updated_at', 'started_at', 'completed_at'])
-
-                cursor.execute('''
-                    UPDATE modules SET name=?, description=?, module_type=?, phase=?, status=?, priority=?,
-                                     tasks=?, assigned_roles=?, assigned_users=?, dependencies=?, blocks=?,
-                                     generated_files=?, progress_percentage=?, estimated_hours=?, actual_hours=?,
-                                     risk_level=?, code_quality_score=?, test_coverage=?, updated_at=?,
-                                     started_at=?, completed_at=?
-                    WHERE module_id=?
-                ''', (
-                    module_data['name'], module_data['description'], module.module_type.value,
-                    module.phase.value, module.status.value, module.priority.value,
-                    self._serialize_json_field(module_data['tasks']),
-                    self._serialize_json_field([role.value for role in module.assigned_roles]),
-                    self._serialize_json_field(module_data['assigned_users']),
-                    self._serialize_json_field(module_data['dependencies']),
-                    self._serialize_json_field(module_data['blocks']),
-                    self._serialize_json_field(module_data['generated_files']),
-                    module_data['progress_percentage'], module_data['estimated_hours'], module_data['actual_hours'],
-                    module.risk_level.value, module_data['code_quality_score'], module_data['test_coverage'],
-                    module_data['updated_at'], module_data['started_at'], module_data['completed_at'],
-                    module_data['module_id']
-                ))
-
-                return cursor.rowcount > 0
-
-        except Exception as e:
-            self.logger.error(f"Failed to update module {module.module_id}: {e}")
-            raise DatabaseError(f"Module update failed: {e}")
-
-    def delete(self, module_id: str) -> bool:
-        """Delete module"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('DELETE FROM modules WHERE module_id = ?', (module_id,))
-                return cursor.rowcount > 0
-
-        except Exception as e:
-            self.logger.error(f"Failed to delete module {module_id}: {e}")
-            raise DatabaseError(f"Module deletion failed: {e}")
-
-    def _row_to_module(self, row: sqlite3.Row) -> Module:
-        """Convert database row to Module object"""
-        assigned_roles = [UserRole(role) for role in self._deserialize_json_field(row['assigned_roles'], list)]
-
+    def _convert_row_to_model(self, row: sqlite3.Row) -> Module:
+        """Convert database row to Module model"""
         return Module(
-            module_id=row['module_id'],
+            id=row['id'],
             project_id=row['project_id'],
             name=row['name'],
             description=row['description'] or '',
             module_type=ModuleType(row['module_type']),
-            phase=ProjectPhase(row['phase']),
-            status=ModuleStatus(row['status']),
-            priority=Priority(row['priority']),
-            tasks=self._deserialize_json_field(row['tasks'], list),
-            assigned_roles=assigned_roles,
-            assigned_users=self._deserialize_json_field(row['assigned_users'], list),
+            parent_module_id=row['parent_module_id'],
+            order=row['order_index'] or 0,
             dependencies=self._deserialize_json_field(row['dependencies'], list),
-            blocks=self._deserialize_json_field(row['blocks'], list),
-            generated_files=self._deserialize_json_field(row['generated_files'], list),
+            technologies=self._deserialize_json_field(row['technologies'], list),
+            apis_provided=self._deserialize_json_field(row['apis_provided'], list),
+            apis_consumed=self._deserialize_json_field(row['apis_consumed'], list),
+            status=TaskStatus(row['status']),
             progress_percentage=row['progress_percentage'] or 0.0,
-            estimated_hours=row['estimated_hours'] or 0,
-            actual_hours=row['actual_hours'] or 0,
-            risk_level=RiskLevel(row['risk_level']),
-            code_quality_score=row['code_quality_score'] or 0.0,
-            test_coverage=row['test_coverage'] or 0.0,
-            created_at=DateTimeHelper.from_iso_string(row['created_at']) if row['created_at'] else DateTimeHelper.now(),
-            updated_at=DateTimeHelper.from_iso_string(row['updated_at']) if row['updated_at'] else DateTimeHelper.now(),
-            started_at=DateTimeHelper.from_iso_string(row['started_at']) if row['started_at'] else None,
-            completed_at=DateTimeHelper.from_iso_string(row['completed_at']) if row['completed_at'] else None
+            estimated_hours=row['estimated_hours'],
+            actual_hours=row['actual_hours'],
+            assigned_to=row['assigned_to'],
+            reviewer=row['reviewer'],
+            generated_files=self._deserialize_json_field(row['generated_files'], list),
+            created_at=DateTimeHelper.from_iso_string(row['created_at']),
+            updated_at=DateTimeHelper.from_iso_string(row['updated_at'])
         )
 
 
-# ============================================================================
-# GENERATED FILE REPOSITORY
-# ============================================================================
-
-class GeneratedFileRepository(BaseRepository):
-    """Repository for generated file management"""
+class TaskRepository(BaseRepository):
+    """Repository for Task model"""
 
     def __init__(self):
-        super().__init__('generated_files')
+        super().__init__('tasks', Task)
 
-    def create(self, file: GeneratedFile) -> bool:
-        """Create a new generated file"""
+    def get_module_tasks(self, module_id: str) -> List[Task]:
+        """Get all tasks for a module"""
         try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT * FROM tasks 
+                    WHERE module_id = ? 
+                    ORDER BY priority DESC, created_at
+                ''', (module_id,))
 
-                file_data = asdict(file)
-                self._convert_datetime_fields(file_data,
-                                              ['created_at', 'updated_at', 'last_generated', 'last_tested',
-                                               'deployed_at'])
-
-                cursor.execute('''
-                    INSERT INTO generated_files (file_id, project_id, module_id, codebase_id, file_path,
-                                               file_name, file_type, file_purpose, content, content_hash,
-                                               size_bytes, generated_by_agent, generation_prompt, generation_context,
-                                               dependencies, dependents, related_files, status, has_errors,
-                                               error_messages, warnings, complexity_score, maintainability_score,
-                                               test_coverage, lines_of_code, documentation, comments_ratio,
-                                               created_at, updated_at, last_generated, last_tested, deployed_at,
-                                               version, git_hash)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    file_data['file_id'], file_data['project_id'], file_data['module_id'], file_data['codebase_id'],
-                    file_data['file_path'], file_data['file_name'], file.file_type.value, file_data['file_purpose'],
-                    file_data['content'], file_data['content_hash'], file_data['size_bytes'],
-                    file_data['generated_by_agent'], file_data['generation_prompt'],
-                    self._serialize_json_field(file_data['generation_context']),
-                    self._serialize_json_field(file_data['dependencies']),
-                    self._serialize_json_field(file_data['dependents']),
-                    self._serialize_json_field(file_data['related_files']), file.status.value, file_data['has_errors'],
-                    self._serialize_json_field(file_data['error_messages']),
-                    self._serialize_json_field(file_data['warnings']),
-                    file_data['complexity_score'], file_data['maintainability_score'], file_data['test_coverage'],
-                    file_data['lines_of_code'], file_data['documentation'], file_data['comments_ratio'],
-                    file_data['created_at'], file_data['updated_at'], file_data['last_generated'],
-                    file_data['last_tested'], file_data['deployed_at'], file_data['version'], file_data['git_hash']
-                ))
-
-                self.logger.info(f"Created generated file: {file.file_path} ({file.file_id})")
-                return True
+                return [self._convert_row_to_model(row) for row in cursor.fetchall()]
 
         except Exception as e:
-            self.logger.error(f"Failed to create generated file {file.file_path}: {e}")
-            raise DatabaseError(f"Generated file creation failed: {e}")
-
-    def get_by_id(self, file_id: str) -> Optional[GeneratedFile]:
-        """Get generated file by ID"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT * FROM generated_files WHERE file_id = ?', (file_id,))
-                row = cursor.fetchone()
-
-                if row:
-                    return self._row_to_generated_file(row)
-                return None
-
-        except Exception as e:
-            self.logger.error(f"Failed to get generated file {file_id}: {e}")
-            raise DatabaseError(f"Generated file lookup failed: {e}")
-
-    def get_project_files(self, project_id: str) -> List[GeneratedFile]:
-        """Get all generated files for a project"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT * FROM generated_files WHERE project_id = ? 
-                    ORDER BY file_path
-                ''', (project_id,))
-
-                files = []
-                for row in cursor.fetchall():
-                    files.append(self._row_to_generated_file(row))
-
-                return files
-
-        except Exception as e:
-            self.logger.error(f"Failed to get files for project {project_id}: {e}")
+            self.logger.error(f"Failed to get tasks for module {module_id}: {e}")
             return []
 
-    def update(self, file: GeneratedFile) -> bool:
-        """Update existing generated file"""
+    def get_user_tasks(self, user_id: str) -> List[Task]:
+        """Get all tasks assigned to a user"""
         try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT * FROM tasks 
+                    WHERE assigned_to = ? 
+                    ORDER BY priority DESC, due_date
+                ''', (user_id,))
 
-                file_data = asdict(file)
-                file_data['updated_at'] = DateTimeHelper.to_iso_string(DateTimeHelper.now())
-                self._convert_datetime_fields(file_data,
-                                              ['created_at', 'updated_at', 'last_generated', 'last_tested',
-                                               'deployed_at'])
-
-                cursor.execute('''
-                    UPDATE generated_files SET project_id=?, module_id=?, codebase_id=?, file_path=?,
-                                             file_name=?, file_type=?, file_purpose=?, content=?, content_hash=?,
-                                             size_bytes=?, generated_by_agent=?, generation_prompt=?, generation_context=?,
-                                             dependencies=?, dependents=?, related_files=?, status=?, has_errors=?,
-                                             error_messages=?, warnings=?, complexity_score=?, maintainability_score=?,
-                                             test_coverage=?, lines_of_code=?, documentation=?, comments_ratio=?,
-                                             updated_at=?, last_generated=?, last_tested=?, deployed_at=?,
-                                             version=?, git_hash=?
-                    WHERE file_id=?
-                ''', (
-                    file_data['project_id'], file_data['module_id'], file_data['codebase_id'],
-                    file_data['file_path'], file_data['file_name'], file.file_type.value, file_data['file_purpose'],
-                    file_data['content'], file_data['content_hash'], file_data['size_bytes'],
-                    file_data['generated_by_agent'], file_data['generation_prompt'],
-                    self._serialize_json_field(file_data['generation_context']),
-                    self._serialize_json_field(file_data['dependencies']),
-                    self._serialize_json_field(file_data['dependents']),
-                    self._serialize_json_field(file_data['related_files']), file.status.value, file_data['has_errors'],
-                    self._serialize_json_field(file_data['error_messages']),
-                    self._serialize_json_field(file_data['warnings']),
-                    file_data['complexity_score'], file_data['maintainability_score'], file_data['test_coverage'],
-                    file_data['lines_of_code'], file_data['documentation'], file_data['comments_ratio'],
-                    file_data['updated_at'], file_data['last_generated'], file_data['last_tested'],
-                    file_data['deployed_at'],
-                    file_data['version'], file_data['git_hash'], file_data['file_id']
-                ))
-
-                return cursor.rowcount > 0
+                return [self._convert_row_to_model(row) for row in cursor.fetchall()]
 
         except Exception as e:
-            self.logger.error(f"Failed to update generated file {file.file_id}: {e}")
-            raise DatabaseError(f"Generated file update failed: {e}")
+            self.logger.error(f"Failed to get tasks for user {user_id}: {e}")
+            return []
 
-    def delete(self, file_id: str) -> bool:
-        """Delete generated file"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('DELETE FROM generated_files WHERE file_id = ?', (file_id,))
-                return cursor.rowcount > 0
-
-        except Exception as e:
-            self.logger.error(f"Failed to delete generated file {file_id}: {e}")
-            raise DatabaseError(f"Generated file deletion failed: {e}")
-
-    def _row_to_generated_file(self, row: sqlite3.Row) -> GeneratedFile:
-        """Convert database row to GeneratedFile object"""
-        return GeneratedFile(
-            file_id=row['file_id'],
-            project_id=row['project_id'],
+    def _convert_row_to_model(self, row: sqlite3.Row) -> Task:
+        """Convert database row to Task model"""
+        return Task(
+            id=row['id'],
             module_id=row['module_id'],
-            codebase_id=row['codebase_id'],
-            file_path=row['file_path'],
-            file_name=row['file_name'],
-            file_type=FileType(row['file_type']),
-            file_purpose=row['file_purpose'] or '',
-            content=row['content'] or '',
-            content_hash=row['content_hash'] or '',
-            size_bytes=row['size_bytes'] or 0,
-            generated_by_agent=row['generated_by_agent'] or '',
-            generation_prompt=row['generation_prompt'] or '',
-            generation_context=self._deserialize_json_field(row['generation_context']),
-            dependencies=self._deserialize_json_field(row['dependencies'], list),
-            dependents=self._deserialize_json_field(row['dependents'], list),
+            project_id=row['project_id'],
+            title=row['title'],
+            description=row['description'] or '',
+            status=TaskStatus(row['status']),
+            priority=TaskPriority(row['priority']),
+            task_type=row['task_type'] or '',
+            assigned_to=row['assigned_to'],
+            estimated_hours=row['estimated_hours'],
+            actual_hours=row['actual_hours'],
+            due_date=DateTimeHelper.from_iso_string(row['due_date']) if row['due_date'] else None,
+            completed_date=DateTimeHelper.from_iso_string(row['completed_date']) if row['completed_date'] else None,
+            depends_on=self._deserialize_json_field(row['depends_on'], list),
+            blocks=self._deserialize_json_field(row['blocks'], list),
+            progress_percentage=row['progress_percentage'] or 0.0,
+            notes=row['notes'] or '',
             related_files=self._deserialize_json_field(row['related_files'], list),
-            status=FileStatus(row['status']),
-            has_errors=bool(row['has_errors']),
-            error_messages=self._deserialize_json_field(row['error_messages'], list),
-            warnings=self._deserialize_json_field(row['warnings'], list),
-            complexity_score=row['complexity_score'] or 0.0,
-            maintainability_score=row['maintainability_score'] or 0.0,
-            test_coverage=row['test_coverage'] or 0.0,
-            lines_of_code=row['lines_of_code'] or 0,
-            documentation=row['documentation'] or '',
-            comments_ratio=row['comments_ratio'] or 0.0,
-            created_at=DateTimeHelper.from_iso_string(row['created_at']) if row['created_at'] else DateTimeHelper.now(),
-            updated_at=DateTimeHelper.from_iso_string(row['updated_at']) if row['updated_at'] else DateTimeHelper.now(),
-            last_generated=DateTimeHelper.from_iso_string(row['last_generated']) if row[
-                'last_generated'] else DateTimeHelper.now(),
-            last_tested=DateTimeHelper.from_iso_string(row['last_tested']) if row['last_tested'] else None,
-            deployed_at=DateTimeHelper.from_iso_string(row['deployed_at']) if row['deployed_at'] else None,
-            version=row['version'] or '1.0',
-            git_hash=row['git_hash']
+            created_at=DateTimeHelper.from_iso_string(row['created_at']),
+            updated_at=DateTimeHelper.from_iso_string(row['updated_at'])
         )
 
 
-# ============================================================================
-# TEST RESULT REPOSITORY
-# ============================================================================
-
-class TestResultRepository(BaseRepository):
-    """Repository for test result management"""
+class SocraticSessionRepository(BaseRepository):
+    """Repository for SocraticSession model"""
 
     def __init__(self):
-        super().__init__('test_results')
+        super().__init__('socratic_sessions', SocraticSession)
 
-    def create(self, test_result: TestResult) -> bool:
-        """Create a new test result"""
+    def get_project_sessions(self, project_id: str) -> List[SocraticSession]:
+        """Get all sessions for a project"""
         try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-
-                test_data = asdict(test_result)
-                self._convert_datetime_fields(test_data, ['created_at', 'started_at', 'completed_at'])
-
-                cursor.execute('''
-                    INSERT INTO test_results (test_id, project_id, module_id, codebase_id, test_type, test_suite,
-                                            test_framework, files_tested, test_files, status, passed, total_tests,
-                                            passed_tests, failed_tests, skipped_tests, error_tests, coverage_percentage,
-                                            line_coverage, branch_coverage, function_coverage, execution_time_seconds,
-                                            memory_usage_mb, cpu_usage_percent, test_cases, failure_details,
-                                            error_details, code_quality_score, maintainability_score, complexity_warnings,
-                                            security_issues, performance_issues, optimization_suggestions, test_environment,
-                                            python_version, node_version, browser_info, created_at, started_at,
-                                            completed_at, exit_code, stdout, stderr, command_line)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    test_data['test_id'], test_data['project_id'], test_data['module_id'], test_data['codebase_id'],
-                    test_result.test_type.value, test_data['test_suite'], test_data['test_framework'],
-                    self._serialize_json_field(test_data['files_tested']),
-                    self._serialize_json_field(test_data['test_files']),
-                    test_result.status.value, test_data['passed'], test_data['total_tests'], test_data['passed_tests'],
-                    test_data['failed_tests'], test_data['skipped_tests'], test_data['error_tests'],
-                    test_data['coverage_percentage'], test_data['line_coverage'], test_data['branch_coverage'],
-                    test_data['function_coverage'], test_data['execution_time_seconds'], test_data['memory_usage_mb'],
-                    test_data['cpu_usage_percent'], self._serialize_json_field(test_data['test_cases']),
-                    self._serialize_json_field(test_data['failure_details']),
-                    self._serialize_json_field(test_data['error_details']),
-                    test_data['code_quality_score'], test_data['maintainability_score'],
-                    self._serialize_json_field(test_data['complexity_warnings']),
-                    self._serialize_json_field(test_data['security_issues']),
-                    self._serialize_json_field(test_data['performance_issues']),
-                    self._serialize_json_field(test_data['optimization_suggestions']),
-                    self._serialize_json_field(test_data['test_environment']), test_data['python_version'],
-                    test_data['node_version'], self._serialize_json_field(test_data['browser_info']),
-                    test_data['created_at'], test_data['started_at'], test_data['completed_at'],
-                    test_data['exit_code'], test_data['stdout'], test_data['stderr'], test_data['command_line']
-                ))
-
-                self.logger.info(f"Created test result: {test_result.test_type.value} ({test_result.test_id})")
-                return True
-
-        except Exception as e:
-            self.logger.error(f"Failed to create test result {test_result.test_id}: {e}")
-            raise DatabaseError(f"Test result creation failed: {e}")
-
-    def get_by_id(self, test_id: str) -> Optional[TestResult]:
-        """Get test result by ID"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT * FROM test_results WHERE test_id = ?', (test_id,))
-                row = cursor.fetchone()
-
-                if row:
-                    return self._row_to_test_result(row)
-                return None
-
-        except Exception as e:
-            self.logger.error(f"Failed to get test result {test_id}: {e}")
-            raise DatabaseError(f"Test result lookup failed: {e}")
-
-    def get_project_test_results(self, project_id: str) -> List[TestResult]:
-        """Get all test results for a project"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT * FROM test_results WHERE project_id = ? 
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT * FROM socratic_sessions 
+                    WHERE project_id = ? 
                     ORDER BY created_at DESC
                 ''', (project_id,))
 
-                results = []
-                for row in cursor.fetchall():
-                    results.append(self._row_to_test_result(row))
-
-                return results
+                return [self._convert_row_to_model(row) for row in cursor.fetchall()]
 
         except Exception as e:
-            self.logger.error(f"Failed to get test results for project {project_id}: {e}")
+            self.logger.error(f"Failed to get sessions for project {project_id}: {e}")
             return []
 
-    def update(self, test_result: TestResult) -> bool:
-        """Update existing test result"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-
-                test_data = asdict(test_result)
-                self._convert_datetime_fields(test_data, ['created_at', 'started_at', 'completed_at'])
-
-                cursor.execute('''
-                    UPDATE test_results SET project_id=?, module_id=?, codebase_id=?, test_type=?, test_suite=?,
-                                          test_framework=?, files_tested=?, test_files=?, status=?, passed=?, total_tests=?,
-                                          passed_tests=?, failed_tests=?, skipped_tests=?, error_tests=?, coverage_percentage=?,
-                                          line_coverage=?, branch_coverage=?, function_coverage=?, execution_time_seconds=?,
-                                          memory_usage_mb=?, cpu_usage_percent=?, test_cases=?, failure_details=?,
-                                          error_details=?, code_quality_score=?, maintainability_score=?, complexity_warnings=?,
-                                          security_issues=?, performance_issues=?, optimization_suggestions=?, test_environment=?,
-                                          python_version=?, node_version=?, browser_info=?, started_at=?, completed_at=?,
-                                          exit_code=?, stdout=?, stderr=?, command_line=?
-                    WHERE test_id=?
-                ''', (
-                    test_data['project_id'], test_data['module_id'], test_data['codebase_id'],
-                    test_result.test_type.value, test_data['test_suite'], test_data['test_framework'],
-                    self._serialize_json_field(test_data['files_tested']),
-                    self._serialize_json_field(test_data['test_files']),
-                    test_result.status.value, test_data['passed'], test_data['total_tests'], test_data['passed_tests'],
-                    test_data['failed_tests'], test_data['skipped_tests'], test_data['error_tests'],
-                    test_data['coverage_percentage'], test_data['line_coverage'], test_data['branch_coverage'],
-                    test_data['function_coverage'], test_data['execution_time_seconds'], test_data['memory_usage_mb'],
-                    test_data['cpu_usage_percent'], self._serialize_json_field(test_data['test_cases']),
-                    self._serialize_json_field(test_data['failure_details']),
-                    self._serialize_json_field(test_data['error_details']),
-                    test_data['code_quality_score'], test_data['maintainability_score'],
-                    self._serialize_json_field(test_data['complexity_warnings']),
-                    self._serialize_json_field(test_data['security_issues']),
-                    self._serialize_json_field(test_data['performance_issues']),
-                    self._serialize_json_field(test_data['optimization_suggestions']),
-                    self._serialize_json_field(test_data['test_environment']), test_data['python_version'],
-                    test_data['node_version'], self._serialize_json_field(test_data['browser_info']),
-                    test_data['started_at'], test_data['completed_at'], test_data['exit_code'],
-                    test_data['stdout'], test_data['stderr'], test_data['command_line'], test_data['test_id']
-                ))
-
-                return cursor.rowcount > 0
-
-        except Exception as e:
-            self.logger.error(f"Failed to update test result {test_result.test_id}: {e}")
-            raise DatabaseError(f"Test result update failed: {e}")
-
-    def delete(self, test_id: str) -> bool:
-        """Delete test result"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('DELETE FROM test_results WHERE test_id = ?', (test_id,))
-                return cursor.rowcount > 0
-
-        except Exception as e:
-            self.logger.error(f"Failed to delete test result {test_id}: {e}")
-            raise DatabaseError(f"Test result deletion failed: {e}")
-
-    def _row_to_test_result(self, row: sqlite3.Row) -> TestResult:
-        """Convert database row to TestResult object"""
-        return TestResult(
-            test_id=row['test_id'],
+    def _convert_row_to_model(self, row: sqlite3.Row) -> SocraticSession:
+        """Convert database row to SocraticSession model"""
+        return SocraticSession(
+            id=row['id'],
             project_id=row['project_id'],
-            module_id=row['module_id'],
-            codebase_id=row['codebase_id'],
-            test_type=TestType(row['test_type']),
-            test_suite=row['test_suite'] or '',
-            test_framework=row['test_framework'] or 'pytest',
-            files_tested=self._deserialize_json_field(row['files_tested'], list),
-            test_files=self._deserialize_json_field(row['test_files'], list),
-            status=TestStatus(row['status']),
-            passed=bool(row['passed']),
-            total_tests=row['total_tests'] or 0,
-            passed_tests=row['passed_tests'] or 0,
-            failed_tests=row['failed_tests'] or 0,
-            skipped_tests=row['skipped_tests'] or 0,
-            error_tests=row['error_tests'] or 0,
-            coverage_percentage=row['coverage_percentage'] or 0.0,
-            line_coverage=row['line_coverage'] or 0.0,
-            branch_coverage=row['branch_coverage'] or 0.0,
-            function_coverage=row['function_coverage'] or 0.0,
-            execution_time_seconds=row['execution_time_seconds'] or 0.0,
-            memory_usage_mb=row['memory_usage_mb'] or 0.0,
-            cpu_usage_percent=row['cpu_usage_percent'] or 0.0,
-            test_cases=self._deserialize_json_field(row['test_cases'], list),
-            failure_details=self._deserialize_json_field(row['failure_details'], list),
-            error_details=self._deserialize_json_field(row['error_details'], list),
+            user_id=row['user_id'],
+            current_role=TechnicalRole(row['current_role']),
+            status=ConversationStatus(row['status']),
+            roles_to_cover=[TechnicalRole(role) for role in self._deserialize_json_field(row['roles_to_cover'], list)],
+            completed_roles=[TechnicalRole(role) for role in
+                             self._deserialize_json_field(row['completed_roles'], list)],
+            total_questions=row['total_questions'] or 0,
+            questions_answered=row['questions_answered'] or 0,
+            insights_generated=row['insights_generated'] or 0,
+            conflicts_detected=row['conflicts_detected'] or 0,
+            session_notes=row['session_notes'] or '',
+            quality_score=row['quality_score'] or 0.0,
+            completion_percentage=row['completion_percentage'] or 0.0,
+            created_at=DateTimeHelper.from_iso_string(row['created_at']),
+            updated_at=DateTimeHelper.from_iso_string(row['updated_at'])
+        )
+
+
+class GeneratedCodebaseRepository(BaseRepository):
+    """Repository for GeneratedCodebase model"""
+
+    def __init__(self):
+        super().__init__('generated_codebases', GeneratedCodebase)
+
+    def get_project_codebase(self, project_id: str) -> Optional[GeneratedCodebase]:
+        """Get codebase for a project"""
+        try:
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.execute('''
+                    SELECT * FROM generated_codebases 
+                    WHERE project_id = ? 
+                    ORDER BY created_at DESC 
+                    LIMIT 1
+                ''', (project_id,))
+
+                row = cursor.fetchone()
+                if row:
+                    return self._convert_row_to_model(row)
+                return None
+
+        except Exception as e:
+            self.logger.error(f"Failed to get codebase for project {project_id}: {e}")
+            return None
+
+    def _convert_row_to_model(self, row: sqlite3.Row) -> GeneratedCodebase:
+        """Convert database row to GeneratedCodebase model"""
+        return GeneratedCodebase(
+            id=row['id'],
+            project_id=row['project_id'],
+            spec_id=row['spec_id'],
+            version=row['version'] or '1.0.0',
+            architecture_type=row['architecture_type'] or '',
+            technology_stack=self._deserialize_json_field(row['technology_stack']),
+            file_structure=self._deserialize_json_field(row['file_structure']),
+            generated_files=self._deserialize_json_field(row['generated_files'], list),
+            total_lines_of_code=row['total_lines_of_code'] or 0,
+            total_files=row['total_files'] or 0,
             code_quality_score=row['code_quality_score'] or 0.0,
-            maintainability_score=row['maintainability_score'] or 0.0,
-            complexity_warnings=self._deserialize_json_field(row['complexity_warnings'], list),
-            security_issues=self._deserialize_json_field(row['security_issues'], list),
-            performance_issues=self._deserialize_json_field(row['performance_issues'], list),
-            optimization_suggestions=self._deserialize_json_field(row['optimization_suggestions'], list),
-            test_environment=self._deserialize_json_field(row['test_environment']),
-            python_version=row['python_version'] or '',
-            node_version=row['node_version'] or '',
-            browser_info=self._deserialize_json_field(row['browser_info']),
-            created_at=DateTimeHelper.from_iso_string(row['created_at']) if row['created_at'] else DateTimeHelper.now(),
-            started_at=DateTimeHelper.from_iso_string(row['started_at']) if row['started_at'] else None,
-            completed_at=DateTimeHelper.from_iso_string(row['completed_at']) if row['completed_at'] else None,
-            exit_code=row['exit_code'] or 0,
-            stdout=row['stdout'] or '',
-            stderr=row['stderr'] or '',
-            command_line=row['command_line'] or ''
+            test_coverage=row['test_coverage'] or 0.0,
+            generation_time_seconds=row['generation_time_seconds'] or 0.0,
+            compilation_successful=bool(row['compilation_successful']),
+            tests_passing=bool(row['tests_passing']),
+            security_scan_results=self._deserialize_json_field(row['security_scan_results']),
+            security_issues_count=row['security_issues_count'] or 0,
+            critical_issues_count=row['critical_issues_count'] or 0,
+            deployment_config=self._deserialize_json_field(row['deployment_config']),
+            deployment_status=row['deployment_status'] or 'not_deployed',
+            validation_results=self._deserialize_json_field(row['validation_results'], list),
+            error_count=row['error_count'] or 0,
+            warning_count=row['warning_count'] or 0,
+            created_at=DateTimeHelper.from_iso_string(row['created_at']),
+            updated_at=DateTimeHelper.from_iso_string(row['updated_at'])
         )
 
 
@@ -1370,50 +1037,41 @@ class DatabaseService:
 
     def __init__(self):
         self.logger = get_logger('database.service')
-        self.schema = DatabaseSchema()
 
         # Initialize repositories
         self.users = UserRepository()
         self.projects = ProjectRepository()
         self.modules = ModuleRepository()
-        self.files = GeneratedFileRepository()
-        self.tests = TestResultRepository()
+        self.tasks = TaskRepository()
+        self.socratic_sessions = SocraticSessionRepository()
+        self.generated_codebases = GeneratedCodebaseRepository()
 
-        # Initialize database schema
-        self._initialize_database()
-
-    def _initialize_database(self) -> None:
-        """Initialize database schema"""
-        try:
-            with get_db_manager().get_db_session() as conn:
-                self.schema.initialize_schema(conn)
-
-        except Exception as e:
-            self.logger.error(f"Failed to initialize database: {e}")
-            raise DatabaseError(f"Database initialization failed: {e}")
+        # Note: Add other repositories as needed
+        # self.questions = QuestionRepository()
+        # self.conflicts = ConflictRepository()
+        # self.technical_specs = TechnicalSpecRepository()
+        # self.generated_files = GeneratedFileRepository()
+        # self.test_results = TestResultRepository()
+        # self.project_metrics = ProjectMetricsRepository()
+        # self.user_activity = UserActivityRepository()
 
     def health_check(self) -> Dict[str, Any]:
-        """Check database health and connectivity"""
+        """Check database health"""
         try:
-            with get_db_manager().get_db_session() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT COUNT(*) FROM projects')
-                project_count = cursor.fetchone()[0]
-
-                cursor.execute('SELECT COUNT(*) FROM users')
-                user_count = cursor.fetchone()[0]
-
-                cursor.execute('SELECT version FROM schema_version ORDER BY version DESC LIMIT 1')
-                schema_version = cursor.fetchone()
-
+            db_manager = DatabaseManager()
+            if db_manager.health_check():
+                stats = db_manager.get_stats()
                 return {
                     'status': 'healthy',
-                    'project_count': project_count,
-                    'user_count': user_count,
-                    'schema_version': schema_version[0] if schema_version else 0,
+                    'database_stats': stats,
                     'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
                 }
-
+            else:
+                return {
+                    'status': 'unhealthy',
+                    'error': 'Database connection failed',
+                    'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                }
         except Exception as e:
             self.logger.error(f"Database health check failed: {e}")
             return {
@@ -1422,39 +1080,36 @@ class DatabaseService:
                 'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
             }
 
-    def get_statistics(self) -> Dict[str, Any]:
-        """Get database statistics"""
-        try:
-            with get_db_manager().get_db_session() as conn:
-                cursor = conn.cursor()
 
-                stats = {}
+# ============================================================================
+# DATABASE INITIALIZATION
+# ============================================================================
 
-                # Count all entities
-                tables = ['users', 'projects', 'modules', 'generated_files', 'test_results']
-                for table in tables:
-                    cursor.execute(f'SELECT COUNT(*) FROM {table}')
-                    stats[f'{table}_count'] = cursor.fetchone()[0]
+def init_database() -> bool:
+    """Initialize database schema and verify connectivity"""
+    try:
+        logger = get_logger('database.init')
+        logger.info("Initializing database...")
 
-                # Active vs archived projects
-                cursor.execute('SELECT COUNT(*) FROM projects WHERE is_archived = 0')
-                stats['active_projects'] = cursor.fetchone()[0]
+        # Create schema
+        schema = DatabaseSchema()
+        schema.initialize_schema()
 
-                cursor.execute('SELECT COUNT(*) FROM projects WHERE is_archived = 1')
-                stats['archived_projects'] = cursor.fetchone()[0]
+        # Verify database service
+        db_service = DatabaseService()
+        health = db_service.health_check()
 
-                # Recent activity
-                cursor.execute('''
-                    SELECT COUNT(*) FROM projects 
-                    WHERE updated_at > datetime('now', '-7 days')
-                ''')
-                stats['projects_updated_last_week'] = cursor.fetchone()[0]
+        if health['status'] == 'healthy':
+            logger.info("Database initialization completed successfully")
+            return True
+        else:
+            logger.error(f"Database health check failed: {health}")
+            return False
 
-                return stats
-
-        except Exception as e:
-            self.logger.error(f"Failed to get statistics: {e}")
-            return {}
+    except Exception as e:
+        logger = get_logger('database.init')
+        logger.error(f"Database initialization failed: {e}")
+        return False
 
 
 # ============================================================================
@@ -1473,82 +1128,48 @@ def get_database() -> DatabaseService:
     return _database_service
 
 
+# ============================================================================
+# MODULE EXPORTS
+# ============================================================================
+
+__all__ = [
+    # Schema management
+    'DatabaseSchema',
+
+    # Repository classes
+    'BaseRepository', 'UserRepository', 'ProjectRepository',
+    'ModuleRepository', 'TaskRepository', 'SocraticSessionRepository',
+    'GeneratedCodebaseRepository',
+
+    # Service classes
+    'DatabaseService',
+
+    # Functions
+    'init_database', 'get_database'
+]
+
 if __name__ == "__main__":
-    # Test the database system
-    db = get_database()
+    # Test database functionality
+    print("Testing database functionality...")
 
-    # Health check
-    health = db.health_check()
-    print(f"✅ Database health: {health}")
+    try:
+        # Initialize database
+        if init_database():
+            print("✅ Database initialization successful")
+        else:
+            print("❌ Database initialization failed")
+            exit(1)
 
-    # Statistics
-    stats = db.get_statistics()
-    print(f"📊 Database stats: {stats}")
+        # Test database service
+        db = get_database()
+        health = db.health_check()
+        print(f"📊 Database health: {health['status']}")
 
-"""What src/database.py Provides:
-🗄️ Complete Database Schema:
+        if health['status'] == 'healthy':
+            print("🎉 Database system is ready!")
+        else:
+            print("⚠️ Database system has issues")
 
-7 main tables with proper relationships and foreign keys
-Indexes for performance optimization
-JSON fields for complex data (arrays, objects)
-Migration system for future schema changes
-
-📊 Repository Pattern:
-Database Repositories:
-├── UserRepository - User management & authentication
-├── ProjectRepository - Project lifecycle & collaboration
-├── ModuleRepository - Module organization & tracking  
-├── GeneratedFileRepository - File content & metadata
-├── TestResultRepository - Test execution & results
-└── ProjectCollaboratorRepository - Team management
-🔧 Key Features:
-Transaction Support:
-
-Context managers for safe database operations
-Automatic rollback on errors
-Connection pooling through core DatabaseManager
-
-Data Handling:
-
-JSON serialization for complex fields (arrays, objects)
-DateTime conversion using DateTimeHelper (no deprecated functions)
-Type-safe enum conversions
-Validation integration
-
-Performance:
-
-Indexed queries for common operations
-Optimized SQLite settings (WAL mode, foreign keys)
-Efficient connection reuse
-
-Schema Management:
-sqlTables Created:
-├── users (authentication, roles, preferences)
-├── projects (full project data with JSON fields) 
-├── project_collaborators (team relationships)
-├── modules (hierarchical organization)
-├── generated_files (complete file tracking)
-├── test_results (comprehensive testing data)
-├── conversation_messages (Socratic sessions)
-└── technical_specifications (detailed specs)
-🎯 Usage Examples:
-pythonfrom src.database import get_database
-
-db = get_database()
-
-# Create project
-project = ModelFactory.create_project("My App", "john_doe")
-db.projects.create(project)
-
-# Get user's projects
-projects = db.projects.get_user_projects("john_doe")
-
-# Create and track generated file
-file = ModelFactory.create_generated_file(project.project_id, "app.py", FileType.PYTHON)
-db.files.create(file)
-✅ Integration:
-
-Uses core.py DatabaseManager for connections
-Uses models.py data structures directly
-Uses core.py logging and exception system
-Thread-safe operations where needed"""
+    except Exception as e:
+        print(f"❌ Database test failed: {e}")
+        raise

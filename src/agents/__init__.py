@@ -185,6 +185,38 @@ def shutdown_agents():
         logger.info("No active orchestrator to shutdown")
 
 
+def initialize_all_agents() -> Dict[str, Any]:
+    """Initialize all available agents"""
+    try:
+        available_agents = get_available_agents()
+        orchestrator = get_orchestrator()
+
+        if orchestrator is None:
+            logger.warning("Orchestrator not available - agents running independently")
+
+        result = {
+            'initialized': len(available_agents),
+            'total': len(available_agents),
+            'agents': list(available_agents.keys()),
+            'orchestrator_available': orchestrator is not None,
+            'status': 'success'
+        }
+
+        logger.info(f"Initialized {result['initialized']} agents: {result['agents']}")
+        return result
+
+    except Exception as e:
+        logger.error(f"Agent initialization failed: {e}")
+        return {
+            'initialized': 0,
+            'total': 0,
+            'agents': [],
+            'orchestrator_available': False,
+            'status': 'failed',
+            'error': str(e)
+        }
+
+
 # Export public API
 __all__ = [
     # Base classes
@@ -195,11 +227,11 @@ __all__ = [
     'CodeGeneratorAgent',
     'DocumentProcessorAgent',
     'ServicesAgent',
-    'SocraticCounselorAgent',  # May be None if not implemented
-    'UserManagerAgent',        # May be None if not implemented
-    'ContextAnalyzerAgent',    # May be None if not implemented
-    'SystemMonitorAgent',      # May be None if not implemented
-    'AgentOrchestrator',       # May be None if not implemented
+    'SocraticCounselorAgent',
+    'UserManagerAgent',
+    'ContextAnalyzerAgent',
+    'SystemMonitorAgent',
+    'AgentOrchestrator',
 
     # Utility functions
     'get_orchestrator',
@@ -209,6 +241,7 @@ __all__ = [
     'create_agent',
     'get_agent_status',
     'shutdown_agents',
+    'initialize_all_agents',  # ← ADD THIS
 
     # Module metadata
     '__version__',

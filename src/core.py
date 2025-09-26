@@ -1,1012 +1,961 @@
 #!/usr/bin/env python3
 """
-Socratic RAG Enhanced - Data Models
-==================================
+Socratic RAG Enhanced - Core Infrastructure
+==========================================
 
-Complete data model definitions for the Socratic RAG Enhanced system.
-Defines all entities, relationships, and data structures used throughout the system.
+Foundation module providing core infrastructure components:
+- Configuration management (YAML + environment variables)
+- Structured logging system (console + file + error tracking)
+- Event system for agent communication
+- Database connection management with pooling
+- Custom exception hierarchy
+- DateTime/File/Validation helpers (no deprecated functions)
+- Global system initialization
 
-This module establishes the core data foundation that all other components depend on.
+This module establishes the foundational infrastructure that all other components depend on.
 """
 
+import os
+import sys
+import yaml
+import logging
+import logging.handlers
+import sqlite3
+import threading
 import datetime
+import re
 import json
-import uuid
-from dataclasses import dataclass, field, asdict
-from enum import Enum, auto
-from typing import Dict, List, Optional, Any, Union
+import hashlib
 from pathlib import Path
-
-# Import from core system
-from .core import (
-    SocraticException, ValidationError, DateTimeHelper,
-    ValidationHelper, get_logger
-)
-
-# Get logger for this module
-logger = get_logger('models')
+from typing import Dict, Any, Optional, List, Union, Callable
+from contextlib import contextmanager
+from dataclasses import dataclass, field
+from collections import defaultdict
+import queue
+import time
 
 
 # ============================================================================
-# ENUMS & CONSTANTS
+# CUSTOM EXCEPTIONS
 # ============================================================================
 
-class UserRole(Enum):
-    """User roles in the system"""
-    ADMIN = "admin"
-    PROJECT_MANAGER = "project_manager"
-    DEVELOPER = "developer"
-    DESIGNER = "designer"
-    TESTER = "tester"
-    BUSINESS_ANALYST = "business_analyst"
-    DEVOPS = "devops"
-    VIEWER = "viewer"
+class SocraticException(Exception):
+    """Base exception for all Socratic RAG Enhanced errors"""
+
+    def __init__(self, message: str, error_code: Optional[str] = None, details: Optional[Dict] = None):
+        super().__init__(message)
+        self.error_code = error_code
+        self.details = details or {}
+        self.timestamp = datetime.datetime.now()
 
 
-class UserStatus(Enum):
-    """User account status"""
-    ACTIVE = "active"
-    INACTIVE = "inactive"
-    SUSPENDED = "suspended"
-    PENDING = "pending"
+class ConfigurationError(SocraticException):
+    """Configuration-related errors"""
+    pass
 
 
-class ProjectPhase(Enum):
-    """Project development phases"""
-    PLANNING = "planning"
-    REQUIREMENTS = "requirements"
-    DESIGN = "design"
-    DEVELOPMENT = "development"
-    TESTING = "testing"
-    DEPLOYMENT = "deployment"
-    MAINTENANCE = "maintenance"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
+class ValidationError(SocraticException):
+    """Data validation errors"""
+    pass
 
 
-class ProjectStatus(Enum):
-    """Project status"""
-    DRAFT = "draft"
-    ACTIVE = "active"
-    ON_HOLD = "on_hold"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
-    ARCHIVED = "archived"
+class DatabaseError(SocraticException):
+    """Database operation errors"""
+    pass
 
 
-class TaskStatus(Enum):
-    """Task completion status"""
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    REVIEW = "review"
-    COMPLETED = "completed"
-    BLOCKED = "blocked"
-    CANCELLED = "cancelled"
+class AgentError(SocraticException):
+    """Agent system errors"""
+    pass
 
 
-class TaskPriority(Enum):
-    """Task priority levels"""
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
-
-
-class ModuleType(Enum):
-    """Types of project modules"""
-    BACKEND = "backend"
-    FRONTEND = "frontend"
-    DATABASE = "database"
-    API = "api"
-    TESTING = "testing"
-    DOCUMENTATION = "documentation"
-    DEPLOYMENT = "deployment"
-    INTEGRATION = "integration"
-
-
-class TechnicalRole(Enum):
-    """Technical roles for Socratic questioning"""
-    PROJECT_MANAGER = "project_manager"
-    TECHNICAL_LEAD = "technical_lead"
-    DEVELOPER = "developer"
-    DESIGNER = "designer"
-    QA_TESTER = "qa_tester"
-    BUSINESS_ANALYST = "business_analyst"
-    DEVOPS_ENGINEER = "devops_engineer"
-
-
-class FileType(Enum):
-    """Generated file types"""
-    PYTHON = "python"
-    JAVASCRIPT = "javascript"
-    TYPESCRIPT = "typescript"
-    HTML = "html"
-    CSS = "css"
-    SQL = "sql"
-    YAML = "yaml"
-    JSON = "json"
-    MARKDOWN = "markdown"
-    DOCKERFILE = "dockerfile"
-    CONFIG = "config"
-    TEST = "test"
-    DOCUMENTATION = "documentation"
-
-
-class TestType(Enum):
-    """Types of tests"""
-    UNIT = "unit"
-    INTEGRATION = "integration"
-    END_TO_END = "end_to_end"
-    PERFORMANCE = "performance"
-    SECURITY = "security"
-    ACCEPTANCE = "acceptance"
-
-
-class ConversationStatus(Enum):
-    """Status of Socratic conversations"""
-    ACTIVE = "active"
-    PAUSED = "paused"
-    COMPLETED = "completed"
-    CONFLICTED = "conflicted"
-    ARCHIVED = "archived"
-
-
-class ConflictType(Enum):
-    """Types of specification conflicts"""
-    TECHNICAL = "technical"
-    BUSINESS = "business"
-    RESOURCE = "resource"
-    TIMELINE = "timeline"
-    STAKEHOLDER = "stakeholder"
-
-
-class CodeQualityLevel(Enum):
-    """Code quality assessment levels"""
-    EXCELLENT = "excellent"
-    GOOD = "good"
-    ACCEPTABLE = "acceptable"
-    NEEDS_IMPROVEMENT = "needs_improvement"
-    POOR = "poor"
+class ServiceError(SocraticException):
+    """External service errors"""
+    pass
 
 
 # ============================================================================
-# BASE MODELS
+# CONFIGURATION MANAGEMENT
 # ============================================================================
 
-@dataclass
-class BaseModel:
-    """Base class for all data models"""
+class SystemConfig:
+    """Global system configuration manager"""
 
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
-    updated_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
+    _instance = None
+    _lock = threading.Lock()
 
-    def update_timestamp(self) -> None:
-        """Update the last modified timestamp"""
-        self.updated_at = DateTimeHelper.now()
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if hasattr(self, '_initialized'):
+            return
+
+        self._config = {}
+        self._config_file = None
+        self._watchers = []
+        self._initialized = True
+
+    def load_config(self, config_path: str = "config.yaml") -> bool:
+        """Load configuration from YAML file"""
+        try:
+            config_file = Path(config_path)
+            if not config_file.exists():
+                raise ConfigurationError(f"Configuration file not found: {config_path}")
+
+            with open(config_file, 'r', encoding='utf-8') as f:
+                self._config = yaml.safe_load(f) or {}
+
+            self._config_file = config_path
+
+            # Override with environment variables
+            self._load_environment_overrides()
+
+            # Validate required configuration
+            self._validate_config()
+
+            return True
+
+        except Exception as e:
+            raise ConfigurationError(f"Failed to load configuration: {e}")
+
+    def _load_environment_overrides(self):
+        """Load environment variable overrides"""
+        env_prefix = "SOCRATIC_"
+
+        for key, value in os.environ.items():
+            if key.startswith(env_prefix):
+                config_key = key[len(env_prefix):].lower().replace('_', '.')
+                self._set_nested_value(config_key, value)
+
+    def _set_nested_value(self, key_path: str, value: str):
+        """Set nested configuration value using dot notation"""
+        keys = key_path.split('.')
+        current = self._config
+
+        for key in keys[:-1]:
+            if key not in current:
+                current[key] = {}
+            current = current[key]
+
+        # Convert string values to appropriate types
+        current[keys[-1]] = self._convert_env_value(value)
+
+    def _convert_env_value(self, value: str) -> Any:
+        """Convert environment variable string to appropriate type"""
+        # Boolean values
+        if value.lower() in ('true', 'false'):
+            return value.lower() == 'true'
+
+        # Integer values
+        try:
+            return int(value)
+        except ValueError:
+            pass
+
+        # Float values
+        try:
+            return float(value)
+        except ValueError:
+            pass
+
+        # JSON values
+        if value.startswith('{') or value.startswith('['):
+            try:
+                return json.loads(value)
+            except json.JSONDecodeError:
+                pass
+
+        # Return as string
+        return value
+
+    def _validate_config(self):
+        """Validate required configuration sections"""
+        required_sections = ['system', 'database', 'logging']
+
+        for section in required_sections:
+            if section not in self._config:
+                self._config[section] = {}
+
+        # Set defaults for missing required values
+        defaults = {
+            'system.version': '7.3.0',
+            'system.debug': False,
+            'system.data_path': 'data',
+            'database.type': 'sqlite',
+            'database.path': 'data/projects.db',
+            'logging.level': 'INFO',
+            'logging.file': 'data/logs/socratic.log',
+        }
+
+        for key, default_value in defaults.items():
+            if self.get(key) is None:
+                self._set_nested_value(key, str(default_value))
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get configuration value using dot notation"""
+        keys = key.split('.')
+        current = self._config
+
+        try:
+            for k in keys:
+                current = current[k]
+            return current
+        except (KeyError, TypeError):
+            return default
+
+    def set(self, key: str, value: Any):
+        """Set configuration value using dot notation"""
+        self._set_nested_value(key, value)
+
+    def get_section(self, section: str) -> Dict[str, Any]:
+        """Get entire configuration section"""
+        return self._config.get(section, {})
+
+    def reload(self) -> bool:
+        """Reload configuration from file"""
+        if self._config_file:
+            return self.load_config(self._config_file)
+        return False
+
+    @property
+    def config_file(self) -> Optional[str]:
+        """Get current configuration file path"""
+        return self._config_file
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert model to dictionary"""
-        return asdict(self)
-
-    def to_json(self) -> str:
-        """Convert model to JSON string"""
-
-        def json_serializer(obj):
-            if isinstance(obj, datetime.datetime):
-                return DateTimeHelper.to_iso_string(obj)
-            elif isinstance(obj, Enum):
-                return obj.value
-            return str(obj)
-
-        return json.dumps(self.to_dict(), default=json_serializer, indent=2)
+        """Get full configuration as dictionary"""
+        return self._config.copy()
 
 
 # ============================================================================
-# USER MANAGEMENT MODELS
+# LOGGING SYSTEM
 # ============================================================================
 
-@dataclass
-class User(BaseModel):
-    """User account model"""
+class SystemLogger:
+    """Centralized logging system"""
 
-    username: str = ""
-    email: str = ""
-    password_hash: str = ""
-    first_name: str = ""
-    last_name: str = ""
-    role: UserRole = UserRole.VIEWER
-    status: UserStatus = UserStatus.PENDING
+    _instance = None
+    _lock = threading.Lock()
+    _loggers = {}
 
-    # Profile information
-    avatar_url: Optional[str] = None
-    bio: str = ""
-    skills: List[str] = field(default_factory=list)
-    preferences: Dict[str, Any] = field(default_factory=dict)
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+        return cls._instance
 
-    # Authentication
-    last_login: Optional[datetime.datetime] = None
-    login_attempts: int = 0
-    locked_until: Optional[datetime.datetime] = None
-    api_key: Optional[str] = None
+    def __init__(self):
+        if hasattr(self, '_initialized'):
+            return
 
-    # Statistics
-    projects_created: int = 0
-    sessions_completed: int = 0
-    code_generated_lines: int = 0
+        self._config = None
+        self._initialized = True
 
-    def __post_init__(self):
-        """Validate user data after initialization"""
-        self.validate()
+    def initialize(self, config: SystemConfig):
+        """Initialize logging system with configuration"""
+        self._config = config
 
-    def validate(self) -> None:
-        """Validate user data"""
-        if not self.username or len(self.username.strip()) < 3:
-            raise ValidationError("Username must be at least 3 characters long")
+        # Create logs directory
+        log_file = config.get('logging.file', 'data/logs/socratic.log')
+        log_dir = Path(log_file).parent
+        log_dir.mkdir(parents=True, exist_ok=True)
 
-        if not ValidationHelper.validate_email(self.email):
-            raise ValidationError("Invalid email address")
+        # Configure root logger
+        root_logger = logging.getLogger()
+        root_logger.setLevel(self._get_log_level(config.get('logging.level', 'INFO')))
 
-        if not self.password_hash and self.status == UserStatus.ACTIVE:
-            raise ValidationError("Active users must have a password")
+        # Clear existing handlers
+        root_logger.handlers.clear()
 
-    @property
-    def full_name(self) -> str:
-        """Get user's full name"""
-        return f"{self.first_name} {self.last_name}".strip()
+        # Console handler
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
+        console_formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        console_handler.setFormatter(console_formatter)
+        root_logger.addHandler(console_handler)
 
-    @property
-    def is_active(self) -> bool:
-        """Check if user is active"""
-        return self.status == UserStatus.ACTIVE
+        # File handler with rotation
+        file_handler = logging.handlers.RotatingFileHandler(
+            log_file,
+            maxBytes=10 * 1024 * 1024,  # 10MB
+            backupCount=5,
+            encoding='utf-8'
+        )
+        file_handler.setLevel(logging.DEBUG)
+        file_formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        file_handler.setFormatter(file_formatter)
+        root_logger.addHandler(file_handler)
 
-    @property
-    def is_locked(self) -> bool:
-        """Check if user account is locked"""
-        return (self.locked_until is not None and
-                self.locked_until > DateTimeHelper.now())
+        # Error handler (separate file for errors)
+        error_file = log_dir / 'errors.log'
+        error_handler = logging.handlers.RotatingFileHandler(
+            error_file,
+            maxBytes=5 * 1024 * 1024,  # 5MB
+            backupCount=3,
+            encoding='utf-8'
+        )
+        error_handler.setLevel(logging.ERROR)
+        error_handler.setFormatter(file_formatter)
+        root_logger.addHandler(error_handler)
 
+        # Create application logger
+        app_logger = self.get_logger('socratic')
+        app_logger.info("Logging system initialized successfully")
 
-@dataclass
-class UserSession(BaseModel):
-    """User session tracking"""
+    def get_logger(self, name: str) -> logging.Logger:
+        """Get or create a logger instance"""
+        if name not in self._loggers:
+            logger = logging.getLogger(name)
+            self._loggers[name] = logger
+        return self._loggers[name]
 
-    user_id: str = ""
-    session_token: str = ""
-    ip_address: str = ""
-    user_agent: str = ""
-    expires_at: datetime.datetime = field(default_factory=lambda:
-    DateTimeHelper.now() + datetime.timedelta(hours=1))
-    is_active: bool = True
-    last_activity: datetime.datetime = field(default_factory=DateTimeHelper.now)
+    def _get_log_level(self, level_str: str) -> int:
+        """Convert string log level to logging constant"""
+        levels = {
+            'DEBUG': logging.DEBUG,
+            'INFO': logging.INFO,
+            'WARNING': logging.WARNING,
+            'ERROR': logging.ERROR,
+            'CRITICAL': logging.CRITICAL
+        }
+        return levels.get(level_str.upper(), logging.INFO)
 
-    @property
-    def is_expired(self) -> bool:
-        """Check if session is expired"""
-        return DateTimeHelper.now() > self.expires_at
-
-
-# ============================================================================
-# PROJECT HIERARCHY MODELS
-# ============================================================================
-
-@dataclass
-class Project(BaseModel):
-    """Main project entity"""
-
-    name: str = ""
-    description: str = ""
-    owner_id: str = ""
-    status: ProjectStatus = ProjectStatus.DRAFT
-    phase: ProjectPhase = ProjectPhase.PLANNING
-
-    # Technical specifications
-    technology_stack: Dict[str, str] = field(default_factory=dict)
-    requirements: List[str] = field(default_factory=list)
-    constraints: List[str] = field(default_factory=list)
-    success_criteria: List[str] = field(default_factory=list)
-
-    # Timeline and resources
-    start_date: Optional[datetime.datetime] = None
-    end_date: Optional[datetime.datetime] = None
-    estimated_hours: Optional[int] = None
-    budget: Optional[float] = None
-
-    # Team and collaboration
-    team_members: List[str] = field(default_factory=list)  # User IDs
-    stakeholders: List[str] = field(default_factory=list)
-
-    # Progress tracking
-    progress_percentage: float = 0.0
-    completed_modules: int = 0
-    total_modules: int = 0
-
-    # Generated content
-    generated_codebase_id: Optional[str] = None
-    repository_url: Optional[str] = None
-    deployment_url: Optional[str] = None
-
-    # Metadata
-    tags: List[str] = field(default_factory=list)
-    priority: TaskPriority = TaskPriority.MEDIUM
-
-    def __post_init__(self):
-        """Validate project data after initialization"""
-        self.validate()
-
-    def validate(self) -> None:
-        """Validate project data"""
-        if not ValidationHelper.validate_project_name(self.name):
-            raise ValidationError("Invalid project name")
-
-        if self.end_date and self.start_date and self.end_date < self.start_date:
-            raise ValidationError("End date cannot be before start date")
-
-        if self.progress_percentage < 0 or self.progress_percentage > 100:
-            raise ValidationError("Progress percentage must be between 0 and 100")
-
-    @property
-    def is_active(self) -> bool:
-        """Check if project is active"""
-        return self.status == ProjectStatus.ACTIVE
-
-    @property
-    def duration_days(self) -> Optional[int]:
-        """Get project duration in days"""
-        if self.start_date and self.end_date:
-            return (self.end_date - self.start_date).days
-        return None
+    def set_level(self, level: str):
+        """Set global log level"""
+        log_level = self._get_log_level(level)
+        logging.getLogger().setLevel(log_level)
 
 
-@dataclass
-class Module(BaseModel):
-    """Project module/component"""
-
-    project_id: str = ""
-    name: str = ""
-    description: str = ""
-    module_type: ModuleType = ModuleType.BACKEND
-
-    # Hierarchy
-    parent_module_id: Optional[str] = None
-    order: int = 0
-
-    # Technical specifications
-    dependencies: List[str] = field(default_factory=list)  # Other module IDs
-    technologies: List[str] = field(default_factory=list)
-    apis_provided: List[str] = field(default_factory=list)
-    apis_consumed: List[str] = field(default_factory=list)
-
-    # Progress tracking
-    status: TaskStatus = TaskStatus.PENDING
-    progress_percentage: float = 0.0
-    estimated_hours: Optional[int] = None
-    actual_hours: Optional[int] = None
-
-    # Assignment
-    assigned_to: Optional[str] = None  # User ID
-    reviewer: Optional[str] = None  # User ID
-
-    # Generated content
-    generated_files: List[str] = field(default_factory=list)  # File IDs
-
-    def __post_init__(self):
-        """Validate module data after initialization"""
-        self.validate()
-
-    def validate(self) -> None:
-        """Validate module data"""
-        if not self.name or len(self.name.strip()) < 2:
-            raise ValidationError("Module name must be at least 2 characters long")
-
-        if self.progress_percentage < 0 or self.progress_percentage > 100:
-            raise ValidationError("Progress percentage must be between 0 and 100")
-
-
-@dataclass
-class Task(BaseModel):
-    """Individual task within a module"""
-
-    module_id: str = ""
-    project_id: str = ""
-    title: str = ""
-    description: str = ""
-
-    # Task properties
-    status: TaskStatus = TaskStatus.PENDING
-    priority: TaskPriority = TaskPriority.MEDIUM
-    task_type: str = ""  # development, testing, review, etc.
-
-    # Assignment and timing
-    assigned_to: Optional[str] = None  # User ID
-    estimated_hours: Optional[int] = None
-    actual_hours: Optional[int] = None
-    due_date: Optional[datetime.datetime] = None
-    completed_date: Optional[datetime.datetime] = None
-
-    # Task relationships
-    depends_on: List[str] = field(default_factory=list)  # Other task IDs
-    blocks: List[str] = field(default_factory=list)  # Other task IDs
-
-    # Progress tracking
-    progress_percentage: float = 0.0
-    notes: str = ""
-
-    # Generated content
-    related_files: List[str] = field(default_factory=list)  # Generated file IDs
-
-    def __post_init__(self):
-        """Validate task data after initialization"""
-        self.validate()
-
-    def validate(self) -> None:
-        """Validate task data"""
-        if not self.title or len(self.title.strip()) < 3:
-            raise ValidationError("Task title must be at least 3 characters long")
-
-        if self.progress_percentage < 0 or self.progress_percentage > 100:
-            raise ValidationError("Progress percentage must be between 0 and 100")
-
-    @property
-    def is_overdue(self) -> bool:
-        """Check if task is overdue"""
-        return (self.due_date is not None and
-                self.status != TaskStatus.COMPLETED and
-                DateTimeHelper.now() > self.due_date)
+def get_logger(name: str) -> logging.Logger:
+    """Convenience function to get a logger"""
+    logger_system = SystemLogger()
+    return logger_system.get_logger(name)
 
 
 # ============================================================================
-# SOCRATIC CONVERSATION MODELS
+# EVENT SYSTEM
 # ============================================================================
 
 @dataclass
-class SocraticSession(BaseModel):
-    """Socratic questioning session"""
-
-    project_id: str = ""
-    user_id: str = ""
-    current_role: TechnicalRole = TechnicalRole.PROJECT_MANAGER
-    status: ConversationStatus = ConversationStatus.ACTIVE
-
-    # Session configuration
-    roles_to_cover: List[TechnicalRole] = field(default_factory=list)
-    completed_roles: List[TechnicalRole] = field(default_factory=list)
-
-    # Progress tracking
-    total_questions: int = 0
-    questions_answered: int = 0
-    insights_generated: int = 0
-    conflicts_detected: int = 0
-
-    # Session metadata
-    session_notes: str = ""
-    quality_score: float = 0.0
-    completion_percentage: float = 0.0
-
-    def __post_init__(self):
-        """Initialize default roles if not provided"""
-        if not self.roles_to_cover:
-            self.roles_to_cover = list(TechnicalRole)
-
-    @property
-    def remaining_roles(self) -> List[TechnicalRole]:
-        """Get roles that haven't been covered yet"""
-        return [role for role in self.roles_to_cover if role not in self.completed_roles]
-
-    @property
-    def is_complete(self) -> bool:
-        """Check if session is complete"""
-        return len(self.remaining_roles) == 0
-
-
-@dataclass
-class Question(BaseModel):
-    """Individual Socratic question"""
-
-    session_id: str = ""
-    role: TechnicalRole = TechnicalRole.PROJECT_MANAGER
-    question_text: str = ""
-    context: str = ""
-
-    # Question properties
-    is_follow_up: bool = False
-    parent_question_id: Optional[str] = None
-    importance_score: float = 0.5
-
-    # Response tracking
-    is_answered: bool = False
-    answer_text: str = ""
-    answer_quality_score: float = 0.0
-
-    # Analysis results
-    generated_insights: List[str] = field(default_factory=list)
-    detected_conflicts: List[str] = field(default_factory=list)
-    recommended_follow_ups: List[str] = field(default_factory=list)
-
-
-@dataclass
-class Conflict(BaseModel):
-    """Detected specification conflict"""
-
-    project_id: str = ""
-    session_id: str = ""
-    conflict_type: ConflictType = ConflictType.TECHNICAL
-
-    # Conflict details
-    description: str = ""
-    severity: str = "medium"  # low, medium, high, critical
-
-    # Conflicting elements
-    first_requirement: str = ""
-    second_requirement: str = ""
-    conflicting_roles: List[TechnicalRole] = field(default_factory=list)
-
-    # Resolution
-    is_resolved: bool = False
-    resolution_strategy: str = ""
-    resolution_notes: str = ""
-    resolved_by: Optional[str] = None  # User ID
-    resolved_at: Optional[datetime.datetime] = None
-
-    # Impact analysis
-    affected_modules: List[str] = field(default_factory=list)
-    estimated_impact_hours: Optional[int] = None
-
-
-# ============================================================================
-# TECHNICAL SPECIFICATION MODELS
-# ============================================================================
-
-@dataclass
-class TechnicalSpec(BaseModel):
-    """Complete technical specification for a project"""
-
-    project_id: str = ""
-    version: str = "1.0.0"
-
-    # Architecture specification
-    architecture_type: str = ""  # MVC, microservices, layered, etc.
-    technology_stack: Dict[str, str] = field(default_factory=dict)
-
-    # Functional requirements
-    functional_requirements: List[str] = field(default_factory=list)
-    non_functional_requirements: List[str] = field(default_factory=list)
-
-    # System design
-    system_components: List[str] = field(default_factory=list)
-    data_models: List[str] = field(default_factory=list)
-    api_specifications: List[str] = field(default_factory=list)
-
-    # Quality requirements
-    performance_requirements: Dict[str, Any] = field(default_factory=dict)
-    security_requirements: List[str] = field(default_factory=list)
-    scalability_requirements: Dict[str, Any] = field(default_factory=dict)
-
-    # Deployment and operations
-    deployment_strategy: str = ""
-    infrastructure_requirements: Dict[str, Any] = field(default_factory=dict)
-    monitoring_requirements: List[str] = field(default_factory=list)
-
-    # Testing strategy
-    testing_strategy: Dict[str, Any] = field(default_factory=dict)
-    acceptance_criteria: List[str] = field(default_factory=list)
-
-    # Documentation requirements
-    documentation_requirements: List[str] = field(default_factory=list)
-
-    # Approval and validation
-    is_approved: bool = False
-    approved_by: Optional[str] = None  # User ID
-    approved_at: Optional[datetime.datetime] = None
-    approval_notes: str = ""
-
-
-# ============================================================================
-# CODE GENERATION MODELS
-# ============================================================================
-
-@dataclass
-class GeneratedCodebase(BaseModel):
-    """Complete generated codebase"""
-
-    project_id: str = ""
-    spec_id: str = ""
-    version: str = "1.0.0"
-
-    # Architecture information
-    architecture_type: str = ""
-    technology_stack: Dict[str, str] = field(default_factory=dict)
-
-    # File structure
-    file_structure: Dict[str, Any] = field(default_factory=dict)
-    generated_files: List[str] = field(default_factory=list)  # GeneratedFile IDs
-
-    # Quality metrics
-    total_lines_of_code: int = 0
-    total_files: int = 0
-    code_quality_score: float = 0.0
-    test_coverage: float = 0.0
-
-    # Performance metrics
-    generation_time_seconds: float = 0.0
-    compilation_successful: bool = False
-    tests_passing: bool = False
-
-    # Security analysis
-    security_scan_results: Dict[str, Any] = field(default_factory=dict)
-    security_issues_count: int = 0
-    critical_issues_count: int = 0
-
-    # Deployment information
-    deployment_config: Dict[str, Any] = field(default_factory=dict)
-    deployment_status: str = "not_deployed"  # not_deployed, staging, production
-
-    # Validation results
-    validation_results: List[str] = field(default_factory=list)  # TestResult IDs
-    error_count: int = 0
-    warning_count: int = 0
-
-
-@dataclass
-class GeneratedFile(BaseModel):
-    """Individual generated file"""
-
-    codebase_id: str = ""
-    project_id: str = ""
-
-    # File information
-    file_path: str = ""
-    file_name: str = ""
-    file_type: FileType = FileType.PYTHON
-    file_purpose: str = ""  # model, controller, view, test, config, etc.
-
-    # Content
-    content: str = ""
-    size_bytes: int = 0
-    lines_of_code: int = 0
-
-    # Quality metrics
-    complexity_score: float = 0.0
-    maintainability_score: float = 0.0
-    test_coverage: float = 0.0
-
-    # Dependencies
-    dependencies: List[str] = field(default_factory=list)
-    imports: List[str] = field(default_factory=list)
-
-    # Generation metadata
-    generated_by_agent: str = ""
-    generation_time_seconds: float = 0.0
-    template_used: Optional[str] = None
-
-    # Validation
-    syntax_valid: bool = True
-    linting_issues: List[str] = field(default_factory=list)
-    security_issues: List[str] = field(default_factory=list)
-
-    def __post_init__(self):
-        """Calculate derived fields after initialization"""
-        if self.content:
-            self.size_bytes = len(self.content.encode('utf-8'))
-            self.lines_of_code = len([line for line in self.content.split('\n')
-                                      if line.strip() and not line.strip().startswith('#')])
-
-
-@dataclass
-class TestResult(BaseModel):
-    """Test execution result"""
-
-    codebase_id: str = ""
-    project_id: str = ""
-
-    # Test information
-    test_type: TestType = TestType.UNIT
-    test_suite: str = ""
-    test_name: str = ""
-
-    # Execution results
-    passed: bool = False
-    execution_time_seconds: float = 0.0
-
-    # Test metrics
-    total_tests: int = 0
-    passed_tests: int = 0
-    failed_tests: int = 0
-    skipped_tests: int = 0
-
-    # Coverage information
-    coverage_percentage: float = 0.0
-    files_tested: List[str] = field(default_factory=list)
-
-    # Failure details
-    failure_messages: List[str] = field(default_factory=list)
-    stack_traces: List[str] = field(default_factory=list)
-
-    # Performance metrics
-    memory_usage_mb: float = 0.0
-    cpu_usage_percentage: float = 0.0
-
-    # Test environment
-    test_environment: Dict[str, str] = field(default_factory=dict)
-
-    @property
-    def success_rate(self) -> float:
-        """Calculate test success rate"""
-        if self.total_tests == 0:
-            return 0.0
-        return (self.passed_tests / self.total_tests) * 100
-
-
-# ============================================================================
-# ANALYTICS AND REPORTING MODELS
-# ============================================================================
-
-@dataclass
-class ProjectMetrics(BaseModel):
-    """Project analytics and metrics"""
-
-    project_id: str = ""
-
-    # Development metrics
-    total_development_hours: float = 0.0
-    code_generation_time: float = 0.0
-    testing_time: float = 0.0
-    review_time: float = 0.0
-
-    # Quality metrics
-    average_code_quality: float = 0.0
-    test_coverage: float = 0.0
-    bug_count: int = 0
-    security_issues: int = 0
-
-    # Productivity metrics
-    lines_of_code_generated: int = 0
-    files_generated: int = 0
-    tests_generated: int = 0
-    documentation_pages: int = 0
-
-    # Collaboration metrics
-    team_members_active: int = 0
-    sessions_completed: int = 0
-    conflicts_resolved: int = 0
-    insights_generated: int = 0
-
-    # Timeline metrics
-    planned_duration_days: Optional[int] = None
-    actual_duration_days: Optional[int] = None
-    delays_count: int = 0
-
-    # Success metrics
-    client_satisfaction: float = 0.0
-    deployment_success: bool = False
-    post_deployment_issues: int = 0
-
-
-@dataclass
-class UserActivity(BaseModel):
-    """User activity tracking"""
-
-    user_id: str = ""
-
-    # Activity metrics
-    sessions_started: int = 0
-    sessions_completed: int = 0
-    questions_answered: int = 0
-    projects_created: int = 0
-
-    # Time tracking
-    total_active_time_hours: float = 0.0
-    last_activity: datetime.datetime = field(default_factory=DateTimeHelper.now)
-
-    # Productivity metrics
-    code_lines_generated: int = 0
-    tests_created: int = 0
-    bugs_found: int = 0
-    insights_provided: int = 0
-
-    # Collaboration metrics
-    conflicts_mediated: int = 0
-    reviews_completed: int = 0
-    mentoring_sessions: int = 0
-
-
-# ============================================================================
-# MODEL COLLECTIONS AND UTILITIES
-# ============================================================================
-
-class ModelRegistry:
-    """Registry for all model types"""
-
-    MODELS = {
-        'user': User,
-        'user_session': UserSession,
-        'project': Project,
-        'module': Module,
-        'task': Task,
-        'socratic_session': SocraticSession,
-        'question': Question,
-        'conflict': Conflict,
-        'technical_spec': TechnicalSpec,
-        'generated_codebase': GeneratedCodebase,
-        'generated_file': GeneratedFile,
-        'test_result': TestResult,
-        'project_metrics': ProjectMetrics,
-        'user_activity': UserActivity,
-    }
-
-    @classmethod
-    def get_model_class(cls, model_name: str) -> type:
-        """Get model class by name"""
-        return cls.MODELS.get(model_name)
-
-    @classmethod
-    def get_all_models(cls) -> Dict[str, type]:
-        """Get all registered models"""
-        return cls.MODELS.copy()
-
-    @classmethod
-    def create_instance(cls, model_name: str, **kwargs) -> BaseModel:
-        """Create model instance by name"""
-        model_class = cls.get_model_class(model_name)
-        if not model_class:
-            raise ValidationError(f"Unknown model type: {model_name}")
-        return model_class(**kwargs)
-
-
-def validate_model_data(model: BaseModel) -> List[str]:
-    """Validate model data and return list of issues"""
-    issues = []
-
-    try:
-        if hasattr(model, 'validate'):
-            model.validate()
-    except ValidationError as e:
-        issues.append(str(e))
-    except Exception as e:
-        issues.append(f"Validation error: {str(e)}")
-
-    return issues
-
-
-def serialize_model(model: BaseModel) -> str:
-    """Serialize model to JSON string"""
-    try:
-        return model.to_json()
-    except Exception as e:
-        logger.error(f"Failed to serialize model {type(model).__name__}: {e}")
-        raise ValidationError(f"Serialization failed: {e}")
-
-
-def deserialize_model(model_name: str, json_data: str) -> BaseModel:
-    """Deserialize JSON string to model instance"""
-    try:
-        model_class = ModelRegistry.get_model_class(model_name)
-        if not model_class:
-            raise ValidationError(f"Unknown model type: {model_name}")
-
-        data = json.loads(json_data)
-
-        # Convert datetime strings back to datetime objects
-        for key, value in data.items():
-            if key.endswith('_at') or key.endswith('_date'):
-                if isinstance(value, str):
+class Event:
+    """System event data structure"""
+    type: str
+    source: str
+    data: Dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime.datetime = field(default_factory=datetime.datetime.now)
+    event_id: str = field(default_factory=lambda: hashlib.md5(
+        f"{time.time()}{os.getpid()}".encode()).hexdigest()[:12])
+
+
+class EventSystem:
+    """Event-driven communication system for agents and services"""
+
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if hasattr(self, '_initialized'):
+            return
+
+        self._subscribers = defaultdict(list)
+        self._event_queue = queue.Queue()
+        self._processing_thread = None
+        self._running = False
+        self._logger = None
+        self._initialized = True
+
+    def initialize(self):
+        """Initialize event system"""
+        self._logger = get_logger('events')
+        self._running = True
+
+        # Start event processing thread
+        self._processing_thread = threading.Thread(
+            target=self._process_events,
+            daemon=True,
+            name="EventProcessor"
+        )
+        self._processing_thread.start()
+
+        self._logger.info("Event system initialized successfully")
+
+    def subscribe(self, event_type: str, callback: Callable[[Event], None]):
+        """Subscribe to events of a specific type"""
+        self._subscribers[event_type].append(callback)
+        if self._logger:
+            self._logger.debug(f"Subscribed to event type: {event_type}")
+
+    def unsubscribe(self, event_type: str, callback: Callable[[Event], None]):
+        """Unsubscribe from events"""
+        if callback in self._subscribers[event_type]:
+            self._subscribers[event_type].remove(callback)
+            if self._logger:
+                self._logger.debug(f"Unsubscribed from event type: {event_type}")
+
+    def emit(self, event_type: str, source: str, data: Optional[Dict[str, Any]] = None):
+        """Emit an event"""
+        event = Event(
+            type=event_type,
+            source=source,
+            data=data or {}
+        )
+
+        self._event_queue.put(event)
+
+        if self._logger:
+            self._logger.debug(f"Event emitted: {event_type} from {source}")
+
+    def emit_event(self, event: Event):
+        """Emit a pre-constructed event"""
+        self._event_queue.put(event)
+
+    def _process_events(self):
+        """Process events in background thread"""
+        while self._running:
+            try:
+                # Get event with timeout to allow shutdown
+                event = self._event_queue.get(timeout=1.0)
+
+                # Notify all subscribers
+                for callback in self._subscribers.get(event.type, []):
                     try:
-                        data[key] = DateTimeHelper.from_iso_string(value)
-                    except (ValueError, AttributeError):
-                        pass
+                        callback(event)
+                    except Exception as e:
+                        if self._logger:
+                            self._logger.error(f"Event callback error: {e}", exc_info=True)
 
-        return model_class(**data)
+                # Mark task as done
+                self._event_queue.task_done()
+
+            except queue.Empty:
+                continue
+            except Exception as e:
+                if self._logger:
+                    self._logger.error(f"Event processing error: {e}", exc_info=True)
+
+    def shutdown(self):
+        """Shutdown event system"""
+        self._running = False
+
+        if self._processing_thread and self._processing_thread.is_alive():
+            self._processing_thread.join(timeout=5.0)
+
+        if self._logger:
+            self._logger.info("Event system shutdown complete")
+
+
+# ============================================================================
+# DATABASE MANAGEMENT
+# ============================================================================
+
+class DatabaseManager:
+    """Database connection and transaction management"""
+
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if hasattr(self, '_initialized'):
+            return
+
+        self._config = None
+        self._db_path = None
+        self._connection_pool = {}
+        self._pool_lock = threading.Lock()
+        self._logger = None
+        self._initialized = True
+
+    def initialize(self, config: SystemConfig):
+        """Initialize database manager"""
+        self._config = config
+        self._logger = get_logger('database')
+
+        # Get database configuration
+        self._db_path = config.get('database.path', 'data/projects.db')
+
+        # Ensure database directory exists
+        db_dir = Path(self._db_path).parent
+        db_dir.mkdir(parents=True, exist_ok=True)
+
+        # Test database connection
+        if self.health_check():
+            self._logger.info(f"Database manager initialized: {self._db_path}")
+        else:
+            raise DatabaseError("Database initialization failed")
+
+    @contextmanager
+    def get_connection(self):
+        """Get database connection (context manager)"""
+        thread_id = threading.get_ident()
+
+        with self._pool_lock:
+            if thread_id not in self._connection_pool:
+                try:
+                    conn = sqlite3.connect(
+                        self._db_path,
+                        check_same_thread=False,
+                        timeout=30.0
+                    )
+                    conn.row_factory = sqlite3.Row
+
+                    # Enable WAL mode for better concurrency
+                    conn.execute("PRAGMA journal_mode=WAL")
+                    conn.execute("PRAGMA synchronous=NORMAL")
+                    conn.execute("PRAGMA cache_size=10000")
+                    conn.execute("PRAGMA temp_store=MEMORY")
+
+                    self._connection_pool[thread_id] = conn
+
+                except Exception as e:
+                    self._logger.error(f"Database connection failed: {e}")
+                    raise DatabaseError(f"Failed to connect to database: {e}")
+
+        connection = self._connection_pool[thread_id]
+
+        try:
+            yield connection
+        except Exception as e:
+            connection.rollback()
+            self._logger.error(f"Database operation failed: {e}")
+            raise
+        finally:
+            # Keep connection in pool for reuse
+            pass
+
+    @contextmanager
+    def transaction(self):
+        """Database transaction context manager"""
+        with self.get_connection() as conn:
+            try:
+                conn.execute("BEGIN IMMEDIATE")
+                yield conn
+                conn.commit()
+            except Exception as e:
+                conn.rollback()
+                self._logger.error(f"Transaction failed: {e}")
+                raise DatabaseError(f"Transaction failed: {e}")
+
+    def execute_query(self, query: str, params: Optional[tuple] = None) -> List[sqlite3.Row]:
+        """Execute a SELECT query and return results"""
+        with self.get_connection() as conn:
+            cursor = conn.execute(query, params or ())
+            return cursor.fetchall()
+
+    def execute_update(self, query: str, params: Optional[tuple] = None) -> int:
+        """Execute an INSERT/UPDATE/DELETE query and return affected rows"""
+        with self.get_connection() as conn:
+            cursor = conn.execute(query, params or ())
+            conn.commit()
+            return cursor.rowcount
+
+    def health_check(self) -> bool:
+        """Check database health"""
+        try:
+            with self.get_connection() as conn:
+                conn.execute("SELECT 1")
+                return True
+        except Exception as e:
+            self._logger.error(f"Database health check failed: {e}")
+            return False
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Get database statistics"""
+        try:
+            with self.get_connection() as conn:
+                # Get database file size
+                db_size = Path(self._db_path).stat().st_size if Path(self._db_path).exists() else 0
+
+                # Get table count
+                tables = conn.execute(
+                    "SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'"
+                ).fetchone()
+
+                return {
+                    'db_path': str(self._db_path),
+                    'size_bytes': db_size,
+                    'size_mb': round(db_size / (1024 * 1024), 2),
+                    'table_count': tables['count'] if tables else 0,
+                    'connection_pool_size': len(self._connection_pool)
+                }
+        except Exception as e:
+            self._logger.error(f"Failed to get database stats: {e}")
+            return {}
+
+    def cleanup(self):
+        """Cleanup database connections"""
+        with self._pool_lock:
+            for conn in self._connection_pool.values():
+                try:
+                    conn.close()
+                except Exception as e:
+                    self._logger.error(f"Error closing database connection: {e}")
+
+            self._connection_pool.clear()
+
+        if self._logger:
+            self._logger.info("Database manager cleanup complete")
+
+
+# ============================================================================
+# UTILITY HELPERS
+# ============================================================================
+
+class DateTimeHelper:
+    """DateTime utility functions (no deprecated methods)"""
+
+    @staticmethod
+    def now() -> datetime.datetime:
+        """Get current datetime (replaces deprecated utcnow)"""
+        return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+
+    @staticmethod
+    def from_timestamp(timestamp: float) -> datetime.datetime:
+        """Convert timestamp to datetime"""
+        return datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc).replace(tzinfo=None)
+
+    @staticmethod
+    def to_timestamp(dt: datetime.datetime) -> float:
+        """Convert datetime to timestamp"""
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=datetime.timezone.utc)
+        return dt.timestamp()
+
+    @staticmethod
+    def to_iso_string(dt: datetime.datetime) -> str:
+        """Convert datetime to ISO string"""
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=datetime.timezone.utc)
+        return dt.isoformat()
+
+    @staticmethod
+    def from_iso_string(iso_string: str) -> datetime.datetime:
+        """Parse ISO string to datetime"""
+        try:
+            dt = datetime.datetime.fromisoformat(iso_string.replace('Z', '+00:00'))
+            return dt.replace(tzinfo=None)  # Remove timezone for consistency
+        except ValueError:
+            # Fallback for other formats
+            return datetime.datetime.strptime(iso_string[:19], '%Y-%m-%dT%H:%M:%S')
+
+    @staticmethod
+    def format_duration(seconds: float) -> str:
+        """Format duration in human-readable format"""
+        if seconds < 60:
+            return f"{seconds:.1f}s"
+        elif seconds < 3600:
+            return f"{seconds / 60:.1f}m"
+        else:
+            return f"{seconds / 3600:.1f}h"
+
+    @staticmethod
+    def days_between(start: datetime.datetime, end: datetime.datetime) -> int:
+        """Calculate days between two dates"""
+        return (end - start).days
+
+
+class FileHelper:
+    """File system utility functions"""
+
+    @staticmethod
+    def ensure_directory(path: Union[str, Path]) -> Path:
+        """Ensure directory exists, create if necessary"""
+        directory = Path(path)
+        directory.mkdir(parents=True, exist_ok=True)
+        return directory
+
+    @staticmethod
+    def safe_filename(filename: str) -> str:
+        """Create safe filename by removing invalid characters"""
+        # Remove invalid characters
+        safe_name = re.sub(r'[<>:"/\\|?*]', '_', filename)
+        # Remove control characters
+        safe_name = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', safe_name)
+        # Limit length
+        return safe_name[:255]
+
+    @staticmethod
+    def get_file_size(path: Union[str, Path]) -> int:
+        """Get file size in bytes"""
+        try:
+            return Path(path).stat().st_size
+        except (OSError, FileNotFoundError):
+            return 0
+
+    @staticmethod
+    def read_text_file(path: Union[str, Path], encoding: str = 'utf-8') -> str:
+        """Safely read text file"""
+        try:
+            return Path(path).read_text(encoding=encoding)
+        except Exception as e:
+            raise SocraticException(f"Failed to read file {path}: {e}")
+
+    @staticmethod
+    def write_text_file(path: Union[str, Path], content: str, encoding: str = 'utf-8'):
+        """Safely write text file"""
+        try:
+            file_path = Path(path)
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            file_path.write_text(content, encoding=encoding)
+        except Exception as e:
+            raise SocraticException(f"Failed to write file {path}: {e}")
+
+
+class ValidationHelper:
+    """Data validation utility functions"""
+
+    @staticmethod
+    def validate_email(email: str) -> bool:
+        """Validate email address format"""
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        return bool(re.match(pattern, email))
+
+    @staticmethod
+    def validate_project_name(name: str) -> bool:
+        """Validate project name"""
+        if not name or len(name.strip()) < 2:
+            return False
+
+        # Check for valid characters (letters, numbers, spaces, hyphens, underscores)
+        pattern = r'^[a-zA-Z0-9\s\-_]+$'
+        return bool(re.match(pattern, name.strip()))
+
+    @staticmethod
+    def validate_username(username: str) -> bool:
+        """Validate username format"""
+        if not username or len(username) < 3 or len(username) > 50:
+            return False
+
+        # Alphanumeric, underscores, hyphens only
+        pattern = r'^[a-zA-Z0-9_-]+$'
+        return bool(re.match(pattern, username))
+
+    @staticmethod
+    def validate_password_strength(password: str) -> Dict[str, Any]:
+        """Validate password strength"""
+        result = {
+            'is_valid': False,
+            'score': 0,
+            'issues': []
+        }
+
+        if len(password) < 8:
+            result['issues'].append('Password must be at least 8 characters long')
+        else:
+            result['score'] += 1
+
+        if not re.search(r'[a-z]', password):
+            result['issues'].append('Password must contain lowercase letters')
+        else:
+            result['score'] += 1
+
+        if not re.search(r'[A-Z]', password):
+            result['issues'].append('Password must contain uppercase letters')
+        else:
+            result['score'] += 1
+
+        if not re.search(r'\d', password):
+            result['issues'].append('Password must contain numbers')
+        else:
+            result['score'] += 1
+
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+            result['issues'].append('Password must contain special characters')
+        else:
+            result['score'] += 1
+
+        result['is_valid'] = len(result['issues']) == 0
+        return result
+
+    @staticmethod
+    def sanitize_html(text: str) -> str:
+        """Basic HTML sanitization"""
+        # Remove HTML tags
+        clean_text = re.sub(r'<[^>]+>', '', text)
+        # Escape remaining special characters
+        clean_text = (clean_text.replace('&', '&amp;')
+                      .replace('<', '&lt;')
+                      .replace('>', '&gt;')
+                      .replace('"', '&quot;')
+                      .replace("'", '&#x27;'))
+        return clean_text
+
+
+# ============================================================================
+# SYSTEM INITIALIZATION & CLEANUP
+# ============================================================================
+
+def initialize_system(config_path: str = "config.yaml") -> bool:
+    """Initialize the complete system infrastructure"""
+    try:
+        logger = get_logger('system')
+        logger.info("Initializing Socratic RAG Enhanced system...")
+
+        # 1. Load configuration
+        config = SystemConfig()
+        if not config.load_config(config_path):
+            return False
+
+        # 2. Initialize logging
+        logger_system = SystemLogger()
+        logger_system.initialize(config)
+
+        # 3. Initialize event system
+        event_system = EventSystem()
+        event_system.initialize()
+
+        # 4. Initialize database
+        db_manager = DatabaseManager()
+        db_manager.initialize(config)
+
+        # 5. Create required directories
+        data_path = config.get('system.data_path', 'data')
+        for subdir in ['logs', 'uploads', 'exports', 'generated_projects', 'vector_db']:
+            FileHelper.ensure_directory(Path(data_path) / subdir)
+
+        logger.info("System initialization completed successfully")
+        return True
 
     except Exception as e:
-        logger.error(f"Failed to deserialize model {model_name}: {e}")
-        raise ValidationError(f"Deserialization failed: {e}")
+        print(f"System initialization failed: {e}")
+        return False
 
+
+def cleanup_system():
+    """Cleanup system resources"""
+    logger = get_logger('system')
+    logger.info("Starting system cleanup...")
+
+    try:
+        # Cleanup database connections
+        db_manager = DatabaseManager()
+        db_manager.cleanup()
+
+        # Shutdown event system
+        event_system = EventSystem()
+        event_system.shutdown()
+
+        logger.info("System cleanup completed")
+
+    except Exception as e:
+        logger.error(f"Error during system cleanup: {e}")
+
+
+# ============================================================================
+# MODULE EXPORTS
+# ============================================================================
+
+__all__ = [
+    # Exceptions
+    'SocraticException', 'ConfigurationError', 'ValidationError',
+    'DatabaseError', 'AgentError', 'ServiceError',
+
+    # Core Infrastructure
+    'SystemConfig', 'SystemLogger', 'EventSystem', 'DatabaseManager',
+    'Event',
+
+    # Helpers
+    'DateTimeHelper', 'FileHelper', 'ValidationHelper',
+
+    # System Functions
+    'initialize_system', 'cleanup_system', 'get_logger'
+]
 
 # ============================================================================
 # MODULE INITIALIZATION
 # ============================================================================
 
-# Log successful module initialization
-logger.info("Data models module initialized successfully")
-
-# Export model registry for easy access
-__all__ = [
-    # Enums
-    'UserRole', 'UserStatus', 'ProjectPhase', 'ProjectStatus', 'TaskStatus',
-    'TaskPriority', 'ModuleType', 'TechnicalRole', 'FileType', 'TestType',
-    'ConversationStatus', 'ConflictType', 'CodeQualityLevel',
-
-    # Base models
-    'BaseModel',
-
-    # User models
-    'User', 'UserSession',
-
-    # Project hierarchy models
-    'Project', 'Module', 'Task',
-
-    # Socratic conversation models
-    'SocraticSession', 'Question', 'Conflict',
-
-    # Technical specification models
-    'TechnicalSpec',
-
-    # Code generation models
-    'GeneratedCodebase', 'GeneratedFile', 'TestResult',
-
-    # Analytics models
-    'ProjectMetrics', 'UserActivity',
-
-    # Utilities
-    'ModelRegistry', 'validate_model_data', 'serialize_model', 'deserialize_model'
-]
-
 if __name__ == "__main__":
-    # Test model creation and validation
-    logger.info("Testing data models...")
+    # Test core system functionality
+    print("Testing core system components...")
 
-    # Test user model
     try:
-        user = User(
-            username="test_user",
-            email="test@example.com",
-            first_name="Test",
-            last_name="User",
-            role=UserRole.DEVELOPER
-        )
-        logger.info(f"Created user: {user.full_name}")
+        # Test configuration
+        config = SystemConfig()
+        config._config = {
+            'system': {'version': '7.3.0', 'debug': True},
+            'database': {'path': ':memory:'},
+            'logging': {'level': 'DEBUG'}
+        }
+        print("✅ Configuration system working")
 
-        # Test project model
-        project = Project(
-            name="Test Project",
-            description="A test project for validation",
-            owner_id=user.id,
-            technology_stack={"backend": "Python", "frontend": "React"},
-            requirements=["Feature A", "Feature B"]
-        )
-        logger.info(f"Created project: {project.name}")
+        # Test logging
+        logger_system = SystemLogger()
+        logger_system.initialize(config)
+        logger = get_logger('test')
+        logger.info("Test log message")
+        print("✅ Logging system working")
 
-        # Test serialization
-        json_data = serialize_model(project)
-        logger.info("Model serialization successful")
+        # Test event system
+        event_system = EventSystem()
+        event_system.initialize()
 
-        # Test deserialization
-        restored_project = deserialize_model('project', json_data)
-        logger.info("Model deserialization successful")
+        received_events = []
 
-        logger.info("All model tests passed!")
+
+        def test_callback(event):
+            received_events.append(event)
+
+
+        event_system.subscribe('test', test_callback)
+        event_system.emit('test', 'core_test', {'message': 'Hello World'})
+
+        # Give event time to process
+        time.sleep(0.1)
+
+        if received_events:
+            print("✅ Event system working")
+        else:
+            print("⚠️ Event system may have issues")
+
+        # Test database
+        db_manager = DatabaseManager()
+        db_manager.initialize(config)
+
+        if db_manager.health_check():
+            print("✅ Database system working")
+        else:
+            print("❌ Database system failed")
+
+        # Test helpers
+        now = DateTimeHelper.now()
+        iso_string = DateTimeHelper.to_iso_string(now)
+        parsed = DateTimeHelper.from_iso_string(iso_string)
+        print("✅ DateTime helper working")
+
+        if ValidationHelper.validate_email("test@example.com"):
+            print("✅ Validation helper working")
+        else:
+            print("❌ Validation helper failed")
+
+        print("\n🎉 All core system tests passed!")
 
     except Exception as e:
-        logger.error(f"Model test failed: {e}")
+        print(f"❌ Core system test failed: {e}")
         raise
 
-"""🏗️ Complete Data Architecture:
-
-User Management: User, UserSession with roles and authentication
-Project Hierarchy: Project → Module → Task with full tracking
-Socratic System: SocraticSession, Question, Conflict detection
-Code Generation: GeneratedCodebase, GeneratedFile, TestResult tracking
-Analytics: ProjectMetrics, UserActivity for reporting
-
-🔧 Integration with Your Core:
-
-Uses your DateTimeHelper, ValidationError, ValidationHelper
-Leverages your logging system with get_logger('models')
-Follows the same patterns and coding style as your core.py
-
-✨ Key Features:
-
-BaseModel foundation with UUID, timestamps, JSON serialization
-Built-in validation for all models using your validation helpers
-ModelRegistry for dynamic model creation and management
-Comprehensive enums for all status types, roles, file types
-Rich properties (is_active, is_overdue, success_rate, etc.)
-Proper relationships using string IDs for database compatibility
-
-📊 All the Models From Specifications:
-
-7+ role types for Socratic questioning
-Complete project management hierarchy
-Generated code tracking with quality metrics
-Test result tracking with coverage analysis
-Conflict detection and resolution system"""
