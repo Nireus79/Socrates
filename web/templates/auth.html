@@ -95,9 +95,10 @@
                         </div>
 
                         <!-- Remember Me -->
+                        <!-- Remember Me -->
                         <div class="form-check mb-4">
-                            {{ form.remember_me(class="form-check-input") }}
-                            <label class="form-check-label" for="{{ form.remember_me.id }}">
+                            <input class="form-check-input" type="checkbox" id="remember_me" name="remember_me">
+                            <label class="form-check-label" for="remember_me">
                                 Remember me
                             </label>
                         </div>
@@ -406,12 +407,16 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeValidation() {
     // Add real-time validation for forms
     const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
-        form.addEventListener('submit', function(e) {
+forms.forEach(form => {
+    form.addEventListener('submit', function(e) {
+        // Only prevent default for non-login forms
+        if (form.id === 'registerForm' || form.id === 'profileForm') {
             e.preventDefault();
             validateForm(form);
-        });
+        }
+        // Let login form submit normally to Flask
     });
+});
 
     // Password strength indicator
     const passwordInput = document.getElementById('reg_password');
@@ -443,10 +448,8 @@ function validateForm(form) {
         }
     });
 
-    if (isValid) {
-        // Submit form (in demo, just show success)
-        showSuccessMessage('Form submitted successfully!');
-    }
+    // Return validation result - let form submit naturally if valid
+    return isValid;
 }
 
 function checkPasswordStrength(e) {

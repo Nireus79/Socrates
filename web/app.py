@@ -23,6 +23,9 @@ from typing import Dict, Any, List, Optional, Union
 from pathlib import Path
 import asyncio
 from functools import wraps
+import webbrowser
+import threading
+import time
 
 try:
     from flask import (
@@ -69,7 +72,16 @@ class WebUser(UserMixin):
         self.username = username
         self.email = email
         self.is_admin = is_admin
-        self.is_active = True
+        # Don't set is_active here - UserMixin provides it as a property that returns True by default
+
+    @property
+    def is_active(self):
+        """Override UserMixin's is_active property if needed."""
+        return True  # Always return True for our demo users
+
+    def get_id(self):
+        """Return the user ID as required by Flask-Login."""
+        return str(self.id)
 
 
 # Forms for web interface
@@ -163,16 +175,21 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
     # Initialize login manager
     login_manager = LoginManager()
     login_manager.init_app(app)
-    login_manager.login_view = 'auth.login'
+    login_manager.login_view = 'login'
     login_manager.login_message = 'Please log in to access this page.'
 
     @login_manager.user_loader
     def load_user(user_id):
         """Load user for Flask-Login."""
         try:
+            # Handle demo user
+            if user_id == 'demo-user':
+                return WebUser('demo-user', 'demo', 'demo@example.com', True)
+
+            # Handle real users from database
             if SYSTEM_AVAILABLE:
-                repo_manager = get_repository_manager()
-                user_repo = repo_manager.get_repository('user')
+                r_manager = get_repository_manager()
+                user_repo = r_manager.get_repository('user')
                 user_data = user_repo.get_by_id(user_id)
                 if user_data:
                     return WebUser(user_data.id, user_data.username, user_data.email)

@@ -12,6 +12,9 @@ import sys
 import signal
 import logging
 import argparse
+import webbrowser
+import threading
+import time
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -401,5 +404,12 @@ def main():
         sys.exit(1)
 
 
+def open_browser():
+    """Open browser after a short delay to ensure server is running"""
+    time.sleep(1.5)  # Wait for server to start
+    webbrowser.open('http://127.0.0.1:5000')
+
+
 if __name__ == "__main__":
+    threading.Thread(target=open_browser, daemon=True).start()
     main()
