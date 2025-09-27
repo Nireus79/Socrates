@@ -78,6 +78,9 @@ class APIError(SocraticException):
     """API operation errors"""
     pass
 
+class CodeGenerationError(SocraticException):
+    """Code generation and compilation errors"""
+    pass
 
 # ============================================================================
 # CONFIGURATION MANAGEMENT
@@ -910,7 +913,7 @@ ANTHROPIC_AVAILABLE = True  # Assume available, will be checked at runtime
 __all__ = [
     # Exceptions
     'SocraticException', 'ConfigurationError', 'ValidationError',
-    'DatabaseError', 'AgentError', 'ServiceError', 'APIError',
+    'DatabaseError', 'AgentError', 'ServiceError', 'APIError', 'CodeGenerationError',
 
     # Core Infrastructure
     'SystemConfig', 'SystemLogger', 'EventSystem', 'DatabaseManager',

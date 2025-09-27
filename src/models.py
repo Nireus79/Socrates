@@ -577,6 +577,47 @@ class TaskContext(BaseModel):
             raise ValidationError("Task ID is required for context")
 
 
+@dataclass
+class KnowledgeEntry(BaseModel):
+    """Knowledge base entry for document processing"""
+
+    project_id: str = ""
+    document_id: str = ""
+    title: str = ""
+    content: str = ""
+    document_type: str = ""  # pdf, docx, txt, markdown, etc.
+    source_file: str = ""
+
+    # Content analysis
+    summary: str = ""
+    keywords: List[str] = field(default_factory=list)
+    topics: List[str] = field(default_factory=list)
+    entities: List[str] = field(default_factory=list)
+
+    # Processing metadata
+    chunk_index: int = 0
+    total_chunks: int = 1
+    confidence_score: float = 0.0
+    processing_status: str = "processed"  # pending, processing, processed, failed
+
+    # Vector embeddings
+    embedding: Optional[List[float]] = None
+    embedding_model: str = ""
+
+    # Relationships
+    related_entries: List[str] = field(default_factory=list)
+    tags: List[str] = field(default_factory=list)
+
+    # Usage tracking
+    access_count: int = 0
+    last_accessed: Optional[datetime.datetime] = None
+
+    def __post_init__(self):
+        """Validate knowledge entry data"""
+        if not self.title and not self.content:
+            raise ValidationError("Knowledge entry must have either title or content")
+
+
 # ============================================================================
 # SOCRATIC CONVERSATION MODELS
 # ============================================================================
@@ -973,6 +1014,144 @@ class ModelRegistry:
         return model_class(**kwargs)
 
 
+class ModelValidator:
+    """Advanced model validation utilities"""
+
+    @staticmethod
+    def validate_project_data(project_data: Dict[str, Any]) -> List[str]:
+        """Validate project data dictionary"""
+        issues = []
+
+        # Required fields
+        required_fields = ['name', 'owner_id']
+        for field in required_fields:
+            if field not in project_data or not project_data[field]:
+                issues.append(f"Required field '{field}' is missing or empty")
+
+        # Name validation
+        if 'name' in project_data:
+            name = project_data['name']
+            if not ValidationHelper.validate_project_name(name):
+                issues.append(f"Invalid project name: '{name}'")
+
+        # Technology stack validation
+        if 'technology_stack' in project_data:
+            tech_stack = project_data['technology_stack']
+            if not isinstance(tech_stack, dict):
+                issues.append("Technology stack must be a dictionary")
+
+        # Status validation
+        if 'status' in project_data:
+            status = project_data['status']
+            valid_statuses = [s.value for s in ProjectStatus]
+            if status not in valid_statuses:
+                issues.append(f"Invalid status: '{status}'. Must be one of: {valid_statuses}")
+
+        # Phase validation
+        if 'phase' in project_data:
+            phase = project_data['phase']
+            valid_phases = [p.value for p in ProjectPhase]
+            if phase not in valid_phases:
+                issues.append(f"Invalid phase: '{phase}'. Must be one of: {valid_phases}")
+
+        return issues
+
+    @staticmethod
+    def validate_module_data(module_data: Dict[str, Any]) -> List[str]:
+        """Validate module data dictionary"""
+        issues = []
+
+        # Required fields
+        required_fields = ['name', 'project_id']
+        for field in required_fields:
+            if field not in module_data or not module_data[field]:
+                issues.append(f"Required field '{field}' is missing or empty")
+
+        # Module type validation
+        if 'module_type' in module_data:
+            module_type = module_data['module_type']
+            valid_types = [t.value for t in ModuleType]
+            if module_type not in valid_types:
+                issues.append(f"Invalid module type: '{module_type}'. Must be one of: {valid_types}")
+
+        return issues
+
+    @staticmethod
+    def validate_user_data(user_data: Dict[str, Any]) -> List[str]:
+        """Validate user data dictionary"""
+        issues = []
+
+        # Required fields
+        required_fields = ['username', 'email']
+        for field in required_fields:
+            if field not in user_data or not user_data[field]:
+                issues.append(f"Required field '{field}' is missing or empty")
+
+        # Email validation
+        if 'email' in user_data:
+            email = user_data['email']
+            if not ValidationHelper.validate_email(email):
+                issues.append(f"Invalid email format: '{email}'")
+
+        # Username validation
+        if 'username' in user_data:
+            username = user_data['username']
+            if not ValidationHelper.validate_username(username):
+                issues.append(f"Invalid username format: '{username}'")
+
+        # Role validation
+        if 'role' in user_data:
+            role = user_data['role']
+            valid_roles = [r.value for r in UserRole]
+            if role not in valid_roles:
+                issues.append(f"Invalid role: '{role}'. Must be one of: {valid_roles}")
+
+        return issues
+
+    @staticmethod
+    def validate_generated_file_data(file_data: Dict[str, Any]) -> List[str]:
+        """Validate generated file data dictionary"""
+        issues = []
+
+        # Required fields
+        required_fields = ['file_path', 'content', 'file_type']
+        for field in required_fields:
+            if field not in file_data or not file_data[field]:
+                issues.append(f"Required field '{field}' is missing or empty")
+
+        # File type validation
+        if 'file_type' in file_data:
+            file_type = file_data['file_type']
+            valid_types = [t.value for t in FileType]
+            if file_type not in valid_types:
+                issues.append(f"Invalid file type: '{file_type}'. Must be one of: {valid_types}")
+
+        # File path validation
+        if 'file_path' in file_data:
+            file_path = file_data['file_path']
+            # Basic path validation
+            if '..' in file_path or file_path.startswith('/'):
+                issues.append(f"Invalid file path: '{file_path}' (security concern)")
+
+        return issues
+
+    @classmethod
+    def validate_model_by_type(cls, model_type: str, data: Dict[str, Any]) -> List[str]:
+        """Validate data based on model type"""
+        validation_methods = {
+            'project': cls.validate_project_data,
+            'module': cls.validate_module_data,
+            'user': cls.validate_user_data,
+            'generated_file': cls.validate_generated_file_data,
+        }
+
+        validator = validation_methods.get(model_type)
+        if validator:
+            return validator(data)
+        else:
+            return [f"No validator available for model type: '{model_type}'"]
+
+
 def validate_model_data(model: BaseModel) -> List[str]:
     """Validate model data and return list of issues"""
     issues = []
@@ -1058,7 +1237,7 @@ __all__ = [
     'ProjectMetrics', 'UserActivity',
 
     # Utilities
-    'ModelRegistry', 'validate_model_data', 'serialize_model', 'deserialize_model'
+    'ModelRegistry', 'ModelValidator', 'validate_model_data', 'serialize_model', 'deserialize_model'
 ]
 
 # ============================================================================
