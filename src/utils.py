@@ -1,942 +1,1417 @@
 #!/usr/bin/env python3
 """
-Socratic RAG Enhanced - Utility Classes
-======================================
+Socratic RAG Enhanced - Utilities Module
+========================================
 
-Comprehensive utility classes for file processing, document parsing, and system operations.
-Provides support for multiple file formats and advanced text processing capabilities.
+File processing, document parsing, validation utilities, and text analysis
+for the Socratic RAG Enhanced system.
+
+Provides comprehensive utilities for:
+- Document parsing (PDF, DOCX, TXT, MD, code files)
+- Text processing and analysis for Socratic conversations
+- Code analysis and quality assessment
+- Knowledge extraction and chunking
+- Extended validation utilities
 """
 
 import os
 import re
+import ast
 import json
-import logging
 import hashlib
-import datetime
+import mimetypes
+import subprocess
+import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Union, Tuple
+from typing import Dict, List, Optional, Any, Tuple, Union
+from dataclasses import dataclass, field
+import datetime
+import uuid
 
-# Import for document processing
+# Import core functionality
+from src.core import (
+    get_logger, get_config,
+    SocraticException, ValidationError, DatabaseError,
+    DateTimeHelper, FileHelper, ValidationHelper
+)
+
+# Import models for type hints and validation
+from src.models import (
+    GeneratedFile, FileType, FileStatus, ProjectPhase, UserRole,
+    TestResult, TestType, Project, Module
+)
+
+# Third-party imports with graceful fallbacks
+logger = get_logger('utils')
+
+# Document processing imports
 try:
     import PyPDF2
 
     PDF_AVAILABLE = True
 except ImportError:
     PDF_AVAILABLE = False
+    logger.warning("PyPDF2 not available - PDF processing disabled")
 
 try:
-    import docx
+    from docx import Document
 
     DOCX_AVAILABLE = True
 except ImportError:
     DOCX_AVAILABLE = False
+    logger.warning("python-docx not available - DOCX processing disabled")
 
 try:
-    import pandas as pd
+    import markdown
 
-    PANDAS_AVAILABLE = True
+    MARKDOWN_AVAILABLE = True
 except ImportError:
-    PANDAS_AVAILABLE = False
+    MARKDOWN_AVAILABLE = False
+    logger.warning("markdown not available - Markdown processing disabled")
 
-# Core imports
-from .core import get_logger, SocraticException, ValidationError
+try:
+    from bs4 import BeautifulSoup
 
-logger = get_logger('utils')
+    BS4_AVAILABLE = True
+except ImportError:
+    BS4_AVAILABLE = False
+    logger.warning("BeautifulSoup not available - HTML parsing disabled")
+
+try:
+    import openpyxl
+
+    EXCEL_AVAILABLE = True
+except ImportError:
+    EXCEL_AVAILABLE = False
+    logger.warning("openpyxl not available - Excel processing disabled")
+
+# Text processing and embeddings
+try:
+    from sentence_transformers import SentenceTransformer
+
+    EMBEDDINGS_AVAILABLE = True
+except ImportError:
+    EMBEDDINGS_AVAILABLE = False
+    logger.warning("sentence-transformers not available - embeddings disabled")
+
+# Code analysis imports
+try:
+    import black
+
+    BLACK_AVAILABLE = True
+except ImportError:
+    BLACK_AVAILABLE = False
+    logger.warning("black not available - code formatting disabled")
+
+try:
+    import pylint.lint
+    from pylint.reporters import JSONReporter
+    from io import StringIO
+
+    PYLINT_AVAILABLE = True
+except ImportError:
+    PYLINT_AVAILABLE = False
+    logger.warning("pylint not available - code analysis disabled")
 
 
 # ============================================================================
-# FILE PROCESSOR CLASS
+# DATA STRUCTURES
+# ============================================================================
+
+@dataclass
+class DocumentInfo:
+    """Information extracted from a document"""
+    file_path: str
+    file_name: str
+    file_type: str
+    mime_type: str
+    size_bytes: int
+    encoding: Optional[str] = None
+    language: Optional[str] = None
+    creation_date: Optional[datetime.datetime] = None
+    modification_date: Optional[datetime.datetime] = None
+
+    # Content information
+    content: str = ""
+    content_hash: str = ""
+    page_count: int = 0
+    word_count: int = 0
+    character_count: int = 0
+
+    # Metadata
+    title: Optional[str] = None
+    author: Optional[str] = None
+    subject: Optional[str] = None
+    keywords: List[str] = field(default_factory=list)
+
+    # Processing information
+    extraction_method: str = ""
+    processing_time: float = 0.0
+    errors: List[str] = field(default_factory=list)
+    warnings: List[str] = field(default_factory=list)
+
+
+@dataclass
+class TextChunk:
+    """A chunk of text with metadata for knowledge processing"""
+    chunk_id: str
+    content: str
+    source_file: str
+    source_type: str
+    chunk_index: int
+    start_position: int
+    end_position: int
+
+    # Content analysis
+    word_count: int = 0
+    character_count: int = 0
+    sentence_count: int = 0
+
+    # Context information
+    section_title: Optional[str] = None
+    page_number: Optional[int] = None
+    line_number: Optional[int] = None
+
+    # Processing metadata
+    embedding_vector: Optional[List[float]] = None
+    keywords: List[str] = field(default_factory=list)
+    topics: List[str] = field(default_factory=list)
+    importance_score: float = 0.0
+
+    # Timestamps
+    created_at: datetime.datetime = field(default_factory=DateTimeHelper.now)
+
+
+@dataclass
+class CodeAnalysisResult:
+    """Result of code analysis"""
+    file_path: str
+    file_type: FileType
+    analysis_timestamp: datetime.datetime = field(default_factory=DateTimeHelper.now)
+
+    # Basic metrics
+    lines_of_code: int = 0
+    blank_lines: int = 0
+    comment_lines: int = 0
+    total_lines: int = 0
+
+    # Complexity metrics
+    cyclomatic_complexity: float = 0.0
+    maintainability_index: float = 0.0
+    technical_debt_ratio: float = 0.0
+
+    # Quality indicators
+    code_style_score: float = 0.0
+    documentation_coverage: float = 0.0
+    test_coverage: float = 0.0
+
+    # Issues and suggestions
+    syntax_errors: List[Dict[str, Any]] = field(default_factory=list)
+    style_issues: List[Dict[str, Any]] = field(default_factory=list)
+    security_issues: List[Dict[str, Any]] = field(default_factory=list)
+    performance_issues: List[Dict[str, Any]] = field(default_factory=list)
+    suggestions: List[str] = field(default_factory=list)
+
+    # Dependencies
+    imports: List[str] = field(default_factory=list)
+    functions: List[str] = field(default_factory=list)
+    classes: List[str] = field(default_factory=list)
+
+
+# ============================================================================
+# FILE PROCESSING UTILITIES
 # ============================================================================
 
 class FileProcessor:
-    """File processing utilities for various operations"""
+    """File processing and content extraction utilities"""
 
     def __init__(self):
-        self.logger = get_logger('file_processor')
-        self.temp_dir = Path("data/temp")
-        self.temp_dir.mkdir(parents=True, exist_ok=True)
+        self.logger = get_logger('utils.file_processor')
+        self.config = get_config()
 
-    def process_upload(self, file_path: Union[str, Path], project_id: str = None) -> Dict[str, Any]:
-        """Process uploaded file and return metadata"""
-        file_path = Path(file_path)
+        # Initialize embeddings model if available
+        self.embeddings_model = None
+        if EMBEDDINGS_AVAILABLE:
+            try:
+                model_name = getattr(self.config, 'embedding_model', 'all-MiniLM-L6-v2')
+                self.embeddings_model = SentenceTransformer(model_name)
+                self.logger.info(f"Loaded embeddings model: {model_name}")
+            except Exception as e:
+                self.logger.warning(f"Failed to load embeddings model: {e}")
 
-        if not file_path.exists():
-            raise FileNotFoundError(f"File not found: {file_path}")
+    def process_file(self, file_path: str) -> DocumentInfo:
+        """Process a file and extract all available information"""
+        start_time = DateTimeHelper.now()
 
-        # Get file info
-        file_info = {
-            'original_name': file_path.name,
-            'file_size': file_path.stat().st_size,
-            'file_type': file_path.suffix.lower(),
-            'mime_type': self._get_mime_type(file_path),
-            'upload_time': datetime.datetime.now().isoformat(),
-            'project_id': project_id
-        }
-
-        # Validate file
-        validation = self.validate_file(file_path)
-        file_info.update(validation)
-
-        return file_info
-
-    def validate_file(self, file_path: Union[str, Path]) -> Dict[str, Any]:
-        """Validate uploaded file"""
-        file_path = Path(file_path)
-
-        # Size limits (in bytes)
-        MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
-
-        validation = {
-            'is_valid': True,
-            'errors': [],
-            'warnings': []
-        }
-
-        # Check file size
-        file_size = file_path.stat().st_size
-        if file_size > MAX_FILE_SIZE:
-            validation['is_valid'] = False
-            validation['errors'].append(f"File too large: {file_size / (1024 * 1024):.1f}MB (max: 50MB)")
-
-        # Check file type
-        allowed_extensions = {'.pdf', '.docx', '.doc', '.txt', '.md', '.json', '.csv', '.xlsx', '.xls'}
-        if file_path.suffix.lower() not in allowed_extensions:
-            validation['warnings'].append(f"File type {file_path.suffix} may not be fully supported")
-
-        # Check if file is readable
         try:
-            with open(file_path, 'rb') as f:
-                f.read(1024)  # Try to read first 1KB
-        except Exception as e:
-            validation['is_valid'] = False
-            validation['errors'].append(f"File is not readable: {e}")
+            # Basic file information
+            file_path = Path(file_path)
+            if not file_path.exists():
+                raise ValidationError(f"File not found: {file_path}")
 
-        return validation
+            # Get file stats
+            stat_info = file_path.stat()
+            mime_type, _ = mimetypes.guess_type(str(file_path))
 
-    def _get_mime_type(self, file_path: Path) -> str:
-        """Get MIME type based on file extension"""
-        mime_types = {
-            '.pdf': 'application/pdf',
-            '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            '.doc': 'application/msword',
-            '.txt': 'text/plain',
-            '.md': 'text/markdown',
-            '.json': 'application/json',
-            '.csv': 'text/csv',
-            '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            '.xls': 'application/vnd.ms-excel'
-        }
-        return mime_types.get(file_path.suffix.lower(), 'application/octet-stream')
+            doc_info = DocumentInfo(
+                file_path=str(file_path),
+                file_name=file_path.name,
+                file_type=file_path.suffix.lower(),
+                mime_type=mime_type or 'application/octet-stream',
+                size_bytes=stat_info.st_size,
+                creation_date=datetime.datetime.fromtimestamp(stat_info.st_ctime, datetime.timezone.utc),
+                modification_date=datetime.datetime.fromtimestamp(stat_info.st_mtime, datetime.timezone.utc)
+            )
 
-    def save_processed_file(self, content: str, filename: str, project_id: str = None) -> Path:
-        """Save processed content to file"""
-        if project_id:
-            save_dir = self.temp_dir / project_id
-        else:
-            save_dir = self.temp_dir
+            # Extract content based on file type
+            self._extract_content(doc_info)
 
-        save_dir.mkdir(parents=True, exist_ok=True)
+            # Generate content hash
+            doc_info.content_hash = hashlib.sha256(doc_info.content.encode('utf-8')).hexdigest()
 
-        # Create safe filename
-        safe_filename = re.sub(r'[^\w\-_\.]', '_', filename)
-        file_path = save_dir / safe_filename
+            # Calculate processing time
+            end_time = DateTimeHelper.now()
+            doc_info.processing_time = (end_time - start_time).total_seconds()
 
-        # Write content
-        try:
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-
-            self.logger.info(f"Saved processed file: {file_path}")
-            return file_path
+            self.logger.info(f"Processed file: {file_path.name} ({doc_info.word_count} words)")
+            return doc_info
 
         except Exception as e:
-            self.logger.error(f"Failed to save file: {e}")
-            raise SocraticException(f"Failed to save processed file: {e}")
+            self.logger.error(f"Failed to process file {file_path}: {e}")
+            raise ValidationError(f"File processing failed: {e}")
 
-    def cleanup_temp_files(self, project_id: str = None, older_than_hours: int = 24):
-        """Clean up old temporary files"""
-        if project_id:
-            cleanup_dir = self.temp_dir / project_id
+    def _extract_content(self, doc_info: DocumentInfo) -> None:
+        """Extract content based on file type"""
+        file_ext = doc_info.file_type.lower()
+
+        if file_ext == '.txt':
+            self._extract_text_content(doc_info)
+        elif file_ext == '.md':
+            self._extract_markdown_content(doc_info)
+        elif file_ext == '.pdf':
+            self._extract_pdf_content(doc_info)
+        elif file_ext in ['.docx', '.doc']:
+            self._extract_docx_content(doc_info)
+        elif file_ext in ['.html', '.htm']:
+            self._extract_html_content(doc_info)
+        elif file_ext in ['.py', '.js', '.ts', '.css', '.sql', '.yaml', '.yml', '.json']:
+            self._extract_code_content(doc_info)
+        elif file_ext in ['.xlsx', '.xls']:
+            self._extract_excel_content(doc_info)
         else:
-            cleanup_dir = self.temp_dir
+            # Try to read as text
+            try:
+                self._extract_text_content(doc_info)
+            except:
+                doc_info.errors.append(f"Unsupported file type: {file_ext}")
 
-        if not cleanup_dir.exists():
+        # Calculate word and character counts
+        if doc_info.content:
+            doc_info.word_count = len(doc_info.content.split())
+            doc_info.character_count = len(doc_info.content)
+
+    def _extract_text_content(self, doc_info: DocumentInfo) -> None:
+        """Extract content from plain text files"""
+        try:
+            # Try different encodings
+            encodings = ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']
+
+            for encoding in encodings:
+                try:
+                    with open(doc_info.file_path, 'r', encoding=encoding) as f:
+                        doc_info.content = f.read()
+                        doc_info.encoding = encoding
+                        doc_info.extraction_method = f"text_reader_{encoding}"
+                        break
+                except UnicodeDecodeError:
+                    continue
+
+            if not doc_info.content:
+                raise ValidationError("Could not decode text file with any encoding")
+
+        except Exception as e:
+            doc_info.errors.append(f"Text extraction failed: {e}")
+
+    def _extract_markdown_content(self, doc_info: DocumentInfo) -> None:
+        """Extract content from Markdown files"""
+        try:
+            # First extract as text
+            self._extract_text_content(doc_info)
+
+            if MARKDOWN_AVAILABLE and doc_info.content:
+                # Convert markdown to HTML for better parsing
+                html_content = markdown.markdown(doc_info.content)
+
+                if BS4_AVAILABLE:
+                    # Extract plain text from HTML
+                    soup = BeautifulSoup(html_content, 'html.parser')
+                    doc_info.content = soup.get_text(separator='\n')
+
+                doc_info.extraction_method = "markdown_parser"
+            else:
+                doc_info.warnings.append("Markdown parsing not available, using text extraction")
+
+        except Exception as e:
+            doc_info.errors.append(f"Markdown extraction failed: {e}")
+
+    def _extract_pdf_content(self, doc_info: DocumentInfo) -> None:
+        """Extract content from PDF files"""
+        if not PDF_AVAILABLE:
+            doc_info.errors.append("PDF processing not available - PyPDF2 not installed")
             return
 
-        cutoff_time = datetime.datetime.now() - datetime.timedelta(hours=older_than_hours)
-        deleted_count = 0
-
         try:
-            for file_path in cleanup_dir.rglob('*'):
-                if file_path.is_file():
-                    file_time = datetime.datetime.fromtimestamp(file_path.stat().st_mtime)
-                    if file_time < cutoff_time:
-                        file_path.unlink()
-                        deleted_count += 1
-
-            self.logger.info(f"Cleaned up {deleted_count} temporary files")
-
-        except Exception as e:
-            self.logger.error(f"Error during cleanup: {e}")
-
-    def extract_text_preview(self, file_path: Union[str, Path], max_length: int = 500) -> str:
-        """Extract a text preview from file"""
-        try:
-            parser = DocumentParser()
-            result = parser.parse_document(file_path)
-
-            content = result.get('content', '')
-            if len(content) <= max_length:
-                return content
-
-            # Truncate at word boundary
-            truncated = content[:max_length]
-            last_space = truncated.rfind(' ')
-            if last_space > max_length * 0.8:  # If we can find a space in the last 20%
-                truncated = truncated[:last_space]
-
-            return truncated + "..."
-
-        except Exception as e:
-            self.logger.error(f"Failed to extract preview: {e}")
-            return f"[Preview unavailable: {e}]"
-
-
-# ============================================================================
-# DOCUMENT PARSER CLASS
-# ============================================================================
-
-class DocumentParser:
-    """Advanced document parser for multiple file formats"""
-
-    def __init__(self):
-        self.logger = get_logger('document_parser')
-        self.supported_formats = self._get_supported_formats()
-
-    def _get_supported_formats(self) -> List[str]:
-        """Get list of supported file formats"""
-        formats = ['.txt', '.md', '.json', '.csv']
-
-        if PDF_AVAILABLE:
-            formats.append('.pdf')
-        if DOCX_AVAILABLE:
-            formats.extend(['.docx', '.doc'])
-        if PANDAS_AVAILABLE:
-            formats.extend(['.xlsx', '.xls'])
-
-        return formats
-
-    def can_parse(self, file_path: Union[str, Path]) -> bool:
-        """Check if file format is supported"""
-        file_path = Path(file_path)
-        return file_path.suffix.lower() in self.supported_formats
-
-    def parse_document(self, file_path: Union[str, Path]) -> Dict[str, Any]:
-        """Parse document and extract content and metadata"""
-        file_path = Path(file_path)
-
-        if not file_path.exists():
-            raise FileNotFoundError(f"File not found: {file_path}")
-
-        if not self.can_parse(file_path):
-            raise ValueError(f"Unsupported file format: {file_path.suffix}")
-
-        try:
-            # Get file info
-            file_info = self._get_file_info(file_path)
-
-            # Parse content based on file type
-            content_data = self._parse_by_type(file_path)
-
-            # Combine results
-            result = {
-                **file_info,
-                **content_data,
-                'parsing_success': True,
-                'parsed_at': datetime.datetime.now().isoformat()
-            }
-
-            self.logger.info(f"Successfully parsed: {file_path}")
-            return result
-
-        except Exception as e:
-            self.logger.error(f"Failed to parse {file_path}: {e}")
-            return {
-                'file_path': str(file_path),
-                'parsing_success': False,
-                'error': str(e),
-                'content': '',
-                'metadata': {}
-            }
-
-    def _get_file_info(self, file_path: Path) -> Dict[str, Any]:
-        """Get basic file information"""
-        stat = file_path.stat()
-
-        return {
-            'file_path': str(file_path),
-            'filename': file_path.name,
-            'file_type': file_path.suffix.lower(),
-            'file_size': stat.st_size,
-            'created_at': datetime.datetime.fromtimestamp(stat.st_ctime).isoformat(),
-            'modified_at': datetime.datetime.fromtimestamp(stat.st_mtime).isoformat(),
-            'file_hash': self._calculate_file_hash(file_path)
-        }
-
-    def _calculate_file_hash(self, file_path: Path) -> str:
-        """Calculate MD5 hash of file"""
-        hash_md5 = hashlib.md5()
-        with open(file_path, "rb") as f:
-            for chunk in iter(lambda: f.read(4096), b""):
-                hash_md5.update(chunk)
-        return hash_md5.hexdigest()
-
-    def _parse_by_type(self, file_path: Path) -> Dict[str, Any]:
-        """Parse content based on file type"""
-        extension = file_path.suffix.lower()
-
-        if extension == '.pdf':
-            return self._parse_pdf(file_path)
-        elif extension in ['.docx', '.doc']:
-            return self._parse_docx(file_path)
-        elif extension in ['.txt', '.md']:
-            return self._parse_text(file_path)
-        elif extension == '.json':
-            return self._parse_json(file_path)
-        elif extension == '.csv':
-            return self._parse_csv(file_path)
-        elif extension in ['.xlsx', '.xls']:
-            return self._parse_excel(file_path)
-        else:
-            return self._parse_text(file_path)  # Fallback to text
-
-    def _parse_pdf(self, file_path: Path) -> Dict[str, Any]:
-        """Parse PDF document"""
-        if not PDF_AVAILABLE:
-            raise ImportError("PyPDF2 not available. Install with: pip install PyPDF2")
-
-        content = ""
-        metadata = {}
-
-        try:
-            with open(file_path, 'rb') as file:
+            with open(doc_info.file_path, 'rb') as file:
                 pdf_reader = PyPDF2.PdfReader(file)
 
                 # Extract metadata
                 if pdf_reader.metadata:
-                    metadata = {
-                        'title': pdf_reader.metadata.get('/Title', ''),
-                        'author': pdf_reader.metadata.get('/Author', ''),
-                        'subject': pdf_reader.metadata.get('/Subject', ''),
-                        'creator': pdf_reader.metadata.get('/Creator', ''),
-                        'producer': pdf_reader.metadata.get('/Producer', ''),
-                        'creation_date': str(pdf_reader.metadata.get('/CreationDate', '')),
-                        'modification_date': str(pdf_reader.metadata.get('/ModDate', ''))
-                    }
+                    doc_info.title = pdf_reader.metadata.get('/Title', '')
+                    doc_info.author = pdf_reader.metadata.get('/Author', '')
+                    doc_info.subject = pdf_reader.metadata.get('/Subject', '')
 
                 # Extract text from all pages
+                doc_info.page_count = len(pdf_reader.pages)
+                text_content = []
+
                 for page_num, page in enumerate(pdf_reader.pages):
                     try:
                         page_text = page.extract_text()
-                        content += f"\n--- Page {page_num + 1} ---\n{page_text}\n"
+                        if page_text.strip():
+                            text_content.append(f"--- Page {page_num + 1} ---\n{page_text}")
                     except Exception as e:
-                        self.logger.warning(f"Could not extract text from page {page_num + 1}: {e}")
+                        doc_info.warnings.append(f"Failed to extract page {page_num + 1}: {e}")
 
-                metadata['page_count'] = len(pdf_reader.pages)
+                doc_info.content = '\n\n'.join(text_content)
+                doc_info.extraction_method = "pypdf2"
 
         except Exception as e:
-            raise SocraticException(f"Failed to parse PDF: {e}")
+            doc_info.errors.append(f"PDF extraction failed: {e}")
 
-        return {
-            'content': content.strip(),
-            'metadata': metadata,
-            'word_count': len(content.split()) if content else 0,
-            'char_count': len(content) if content else 0
-        }
-
-    def _parse_docx(self, file_path: Path) -> Dict[str, Any]:
-        """Parse DOCX document"""
+    def _extract_docx_content(self, doc_info: DocumentInfo) -> None:
+        """Extract content from Word documents"""
         if not DOCX_AVAILABLE:
-            raise ImportError("python-docx not available. Install with: pip install python-docx")
+            doc_info.errors.append("DOCX processing not available - python-docx not installed")
+            return
 
         try:
-            doc = docx.Document(file_path)
-
-            # Extract text
-            content = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+            document = Document(doc_info.file_path)
 
             # Extract metadata
-            metadata = {
-                'title': doc.core_properties.title or '',
-                'author': doc.core_properties.author or '',
-                'subject': doc.core_properties.subject or '',
-                'comments': doc.core_properties.comments or '',
-                'created': str(doc.core_properties.created) if doc.core_properties.created else '',
-                'modified': str(doc.core_properties.modified) if doc.core_properties.modified else '',
-                'paragraph_count': len(doc.paragraphs)
-            }
+            if document.core_properties:
+                doc_info.title = document.core_properties.title or ''
+                doc_info.author = document.core_properties.author or ''
+                doc_info.subject = document.core_properties.subject or ''
+                doc_info.keywords = (document.core_properties.keywords or '').split(',')
 
-            return {
-                'content': content,
-                'metadata': metadata,
-                'word_count': len(content.split()) if content else 0,
-                'char_count': len(content) if content else 0
-            }
+            # Extract text from paragraphs
+            paragraphs = []
+            for paragraph in document.paragraphs:
+                if paragraph.text.strip():
+                    paragraphs.append(paragraph.text)
+
+            doc_info.content = '\n\n'.join(paragraphs)
+            doc_info.extraction_method = "python_docx"
 
         except Exception as e:
-            raise SocraticException(f"Failed to parse DOCX: {e}")
+            doc_info.errors.append(f"DOCX extraction failed: {e}")
 
-    def _parse_text(self, file_path: Path) -> Dict[str, Any]:
-        """Parse plain text file"""
+    def _extract_html_content(self, doc_info: DocumentInfo) -> None:
+        """Extract content from HTML files"""
         try:
-            with open(file_path, 'r', encoding='utf-8') as file:
-                content = file.read()
+            with open(doc_info.file_path, 'r', encoding='utf-8') as file:
+                html_content = file.read()
 
-            # Basic text analysis
-            lines = content.split('\n')
-            words = content.split()
+            if BS4_AVAILABLE:
+                soup = BeautifulSoup(html_content, 'html.parser')
 
-            metadata = {
-                'line_count': len(lines),
-                'paragraph_count': len([line for line in lines if line.strip()]),
-                'encoding': 'utf-8'
-            }
+                # Extract metadata
+                title_tag = soup.find('title')
+                if title_tag:
+                    doc_info.title = title_tag.get_text().strip()
 
-            return {
-                'content': content,
-                'metadata': metadata,
-                'word_count': len(words),
-                'char_count': len(content)
-            }
+                meta_description = soup.find('meta', attrs={'name': 'description'})
+                if meta_description:
+                    doc_info.subject = meta_description.get('content', '')
 
-        except UnicodeDecodeError:
-            # Try different encodings
-            for encoding in ['latin-1', 'cp1252', 'iso-8859-1']:
-                try:
-                    with open(file_path, 'r', encoding=encoding) as file:
-                        content = file.read()
-
-                    metadata = {'encoding': encoding, 'line_count': len(content.split('\n'))}
-                    return {
-                        'content': content,
-                        'metadata': metadata,
-                        'word_count': len(content.split()),
-                        'char_count': len(content)
-                    }
-                except UnicodeDecodeError:
-                    continue
-
-            raise SocraticException(f"Could not decode text file: {file_path}")
-
-    def _parse_json(self, file_path: Path) -> Dict[str, Any]:
-        """Parse JSON file"""
-        try:
-            with open(file_path, 'r', encoding='utf-8') as file:
-                data = json.load(file)
-
-            # Convert to string for content
-            content = json.dumps(data, indent=2, ensure_ascii=False)
-
-            metadata = {
-                'json_type': type(data).__name__,
-                'top_level_keys': list(data.keys()) if isinstance(data, dict) else [],
-                'item_count': len(data) if isinstance(data, (list, dict)) else 1
-            }
-
-            return {
-                'content': content,
-                'metadata': metadata,
-                'structured_data': data,
-                'word_count': len(content.split()),
-                'char_count': len(content)
-            }
+                # Extract text content
+                doc_info.content = soup.get_text(separator='\n')
+                doc_info.extraction_method = "beautifulsoup"
+            else:
+                # Fallback: basic HTML tag removal
+                doc_info.content = re.sub(r'<[^>]+>', '', html_content)
+                doc_info.extraction_method = "regex_html_strip"
+                doc_info.warnings.append("BeautifulSoup not available, using basic HTML parsing")
 
         except Exception as e:
-            raise SocraticException(f"Failed to parse JSON: {e}")
+            doc_info.errors.append(f"HTML extraction failed: {e}")
 
-    def _parse_csv(self, file_path: Path) -> Dict[str, Any]:
-        """Parse CSV file"""
-        if not PANDAS_AVAILABLE:
-            # Fallback to basic CSV parsing
-            import csv
-            try:
-                with open(file_path, 'r', encoding='utf-8') as file:
-                    reader = csv.reader(file)
-                    rows = list(reader)
-
-                content = '\n'.join([','.join(row) for row in rows])
-                metadata = {
-                    'row_count': len(rows),
-                    'column_count': len(rows[0]) if rows else 0,
-                    'headers': rows[0] if rows else []
-                }
-
-                return {
-                    'content': content,
-                    'metadata': metadata,
-                    'structured_data': rows,
-                    'word_count': len(content.split()),
-                    'char_count': len(content)
-                }
-            except Exception as e:
-                raise SocraticException(f"Failed to parse CSV: {e}")
-
+    def _extract_code_content(self, doc_info: DocumentInfo) -> None:
+        """Extract content from code files"""
         try:
-            df = pd.read_csv(file_path)
-
-            # Convert to string representation
-            content = df.to_string()
-
-            metadata = {
-                'row_count': len(df),
-                'column_count': len(df.columns),
-                'columns': df.columns.tolist(),
-                'dtypes': {col: str(dtype) for col, dtype in df.dtypes.items()},
-                'null_counts': df.isnull().sum().to_dict()
-            }
-
-            return {
-                'content': content,
-                'metadata': metadata,
-                'structured_data': df.to_dict('records'),
-                'word_count': len(content.split()),
-                'char_count': len(content)
-            }
+            self._extract_text_content(doc_info)
+            doc_info.extraction_method = f"code_reader_{doc_info.file_type}"
 
         except Exception as e:
-            raise SocraticException(f"Failed to parse CSV: {e}")
+            doc_info.errors.append(f"Code extraction failed: {e}")
 
-    def _parse_excel(self, file_path: Path) -> Dict[str, Any]:
-        """Parse Excel file"""
-        if not PANDAS_AVAILABLE:
-            raise ImportError("pandas not available. Install with: pip install pandas openpyxl")
+    def _extract_excel_content(self, doc_info: DocumentInfo) -> None:
+        """Extract content from Excel files"""
+        if not EXCEL_AVAILABLE:
+            doc_info.errors.append("Excel processing not available - openpyxl not installed")
+            return
 
         try:
-            # Read all sheets
-            excel_file = pd.ExcelFile(file_path)
-            all_content = ""
-            all_data = {}
-            total_rows = 0
+            workbook = openpyxl.load_workbook(doc_info.file_path, data_only=True)
 
-            for sheet_name in excel_file.sheet_names:
-                df = pd.read_excel(file_path, sheet_name=sheet_name)
-                sheet_content = f"\n--- Sheet: {sheet_name} ---\n{df.to_string()}\n"
-                all_content += sheet_content
-                all_data[sheet_name] = df.to_dict('records')
-                total_rows += len(df)
+            # Extract content from all worksheets
+            sheet_contents = []
+            for sheet_name in workbook.sheetnames:
+                sheet = workbook[sheet_name]
+                sheet_content = [f"--- Sheet: {sheet_name} ---"]
 
-            metadata = {
-                'sheet_names': excel_file.sheet_names,
-                'sheet_count': len(excel_file.sheet_names),
-                'total_rows': total_rows
-            }
+                for row in sheet.iter_rows(values_only=True):
+                    if any(cell is not None for cell in row):
+                        row_text = '\t'.join(str(cell) if cell is not None else '' for cell in row)
+                        sheet_content.append(row_text)
 
-            return {
-                'content': all_content,
-                'metadata': metadata,
-                'structured_data': all_data,
-                'word_count': len(all_content.split()),
-                'char_count': len(all_content)
-            }
+                sheet_contents.append('\n'.join(sheet_content))
+
+            doc_info.content = '\n\n'.join(sheet_contents)
+            doc_info.extraction_method = "openpyxl"
 
         except Exception as e:
-            raise SocraticException(f"Failed to parse Excel: {e}")
-
-    def extract_keywords(self, content: str, max_keywords: int = 20) -> List[str]:
-        """Extract keywords from content"""
-        if not content:
-            return []
-
-        # Simple keyword extraction (can be enhanced with NLP libraries)
-        words = re.findall(r'\b\w{3,}\b', content.lower())
-
-        # Filter out common stop words
-        stop_words = {
-            'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our',
-            'out', 'day', 'get', 'has', 'him', 'his', 'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two',
-            'who', 'boy', 'did', 'she', 'use', 'way', 'what', 'said', 'each', 'which', 'their', 'time', 'will',
-            'about', 'after', 'back', 'other', 'many', 'than', 'then', 'them', 'these', 'some', 'would', 'like'
-        }
-
-        # Count word frequency
-        word_freq = {}
-        for word in words:
-            if word not in stop_words and len(word) > 3:
-                word_freq[word] = word_freq.get(word, 0) + 1
-
-        # Sort by frequency and return top keywords
-        sorted_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
-        return [word for word, freq in sorted_words[:max_keywords]]
-
-    def chunk_content(self, content: str, chunk_size: int = 1000, overlap: int = 200) -> List[Dict[str, Any]]:
-        """Split content into overlapping chunks"""
-        if not content or len(content) <= chunk_size:
-            return [{
-                'chunk_index': 0,
-                'content': content,
-                'start_pos': 0,
-                'end_pos': len(content),
-                'word_count': len(content.split()) if content else 0
-            }]
-
-        chunks = []
-        start = 0
-        chunk_index = 0
-
-        while start < len(content):
-            end = start + chunk_size
-
-            # Try to break at sentence boundary
-            if end < len(content):
-                for i in range(end, max(start + chunk_size - 200, start + 1), -1):
-                    if content[i - 1] in '.!?':
-                        end = i
-                        break
-                else:
-                    # Break at word boundary
-                    for i in range(end, max(start + chunk_size - 100, start + 1), -1):
-                        if content[i].isspace():
-                            end = i
-                            break
-
-            chunk_content = content[start:end].strip()
-            if chunk_content:
-                chunks.append({
-                    'chunk_index': chunk_index,
-                    'content': chunk_content,
-                    'start_pos': start,
-                    'end_pos': end,
-                    'word_count': len(chunk_content.split())
-                })
-                chunk_index += 1
-
-            start = end - overlap
-            if start <= 0:
-                start = end
-
-        return chunks
+            doc_info.errors.append(f"Excel extraction failed: {e}")
 
 
 # ============================================================================
-# TEXT PROCESSOR CLASS
+# TEXT PROCESSING AND ANALYSIS
 # ============================================================================
 
 class TextProcessor:
-    """Advanced text processing utilities"""
+    """Text processing utilities for Socratic conversations and analysis"""
 
     def __init__(self):
-        self.logger = get_logger('text_processor')
+        self.logger = get_logger('utils.text_processor')
+        self.config = get_config()
 
-    def clean_text(self, text: str) -> str:
-        """Clean and normalize text"""
-        if not text:
-            return ""
+        # Initialize embeddings model if available
+        self.embeddings_model = None
+        if EMBEDDINGS_AVAILABLE:
+            try:
+                model_name = getattr(self.config, 'embedding_model', 'all-MiniLM-L6-v2')
+                self.embeddings_model = SentenceTransformer(model_name)
+                self.logger.info(f"Loaded embeddings model: {model_name}")
+            except Exception as e:
+                self.logger.warning(f"Failed to load embeddings model: {e}")
 
-        # Remove extra whitespace
-        text = re.sub(r'\s+', ' ', text)
-
-        # Remove special characters but keep punctuation
-        text = re.sub(r'[^\w\s\.\,\!\?\;\:\-\(\)]', '', text)
-
-        # Normalize quotes
-        text = text.replace('"', '"').replace('"', '"')
-        text = text.replace(''', "'").replace(''', "'")
-
-        return text.strip()
-
-    def extract_sentences(self, text: str) -> List[str]:
-        """Extract sentences from text"""
-        if not text:
+    def chunk_text(self, text: str, source_file: str, source_type: str,
+                   chunk_size: int = 1000, overlap: int = 200) -> List[TextChunk]:
+        """Split text into chunks with overlap for processing"""
+        if not text.strip():
             return []
 
-        # Simple sentence splitting
-        sentences = re.split(r'[.!?]+', text)
-        return [s.strip() for s in sentences if s.strip()]
+        chunks = []
+        text_length = len(text)
+        start = 0
+        chunk_index = 0
 
-    def get_text_stats(self, text: str) -> Dict[str, Any]:
-        """Get comprehensive text statistics"""
-        if not text:
-            return {
-                'char_count': 0,
-                'word_count': 0,
-                'sentence_count': 0,
-                'paragraph_count': 0,
-                'avg_words_per_sentence': 0,
-                'reading_time_minutes': 0
+        while start < text_length:
+            end = min(start + chunk_size, text_length)
+
+            # Try to break at sentence boundaries
+            if end < text_length:
+                # Look for sentence endings within overlap distance
+                for i in range(end - overlap, end):
+                    if i > start and text[i] in '.!?':
+                        end = i + 1
+                        break
+
+            chunk_content = text[start:end].strip()
+            if chunk_content:
+                chunk = TextChunk(
+                    chunk_id=str(uuid.uuid4()),
+                    content=chunk_content,
+                    source_file=source_file,
+                    source_type=source_type,
+                    chunk_index=chunk_index,
+                    start_position=start,
+                    end_position=end,
+                    word_count=len(chunk_content.split()),
+                    character_count=len(chunk_content),
+                    sentence_count=len(re.findall(r'[.!?]+', chunk_content))
+                )
+
+                # Extract keywords
+                chunk.keywords = self.extract_keywords(chunk_content)
+
+                chunks.append(chunk)
+                chunk_index += 1
+
+            start = max(start + 1, end - overlap)
+
+        self.logger.info(f"Created {len(chunks)} chunks from {source_file}")
+        return chunks
+
+    def extract_keywords(self, text: str, max_keywords: int = 10) -> List[str]:
+        """Extract keywords from text using simple frequency analysis"""
+        if not text.strip():
+            return []
+
+        try:
+            # Simple keyword extraction
+            words = re.findall(r'\b[a-zA-Z]{3,}\b', text.lower())
+
+            # Filter out common stop words
+            stop_words = {
+                'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had',
+                'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his',
+                'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'who', 'boy',
+                'did', 'use', 'way', 'she', 'man', 'say', 'her', 'you', 'him', 'been',
+                'than', 'were', 'said', 'from', 'have', 'they', 'know', 'want', 'been',
+                'good', 'much', 'some', 'time', 'very', 'when', 'come', 'here', 'just',
+                'like', 'long', 'make', 'many', 'over', 'such', 'take', 'will', 'well'
             }
 
-        words = text.split()
-        sentences = self.extract_sentences(text)
-        paragraphs = [p for p in text.split('\n\n') if p.strip()]
+            filtered_words = [word for word in words if word not in stop_words and len(word) > 3]
 
-        return {
-            'char_count': len(text),
-            'word_count': len(words),
-            'sentence_count': len(sentences),
-            'paragraph_count': len(paragraphs),
-            'avg_words_per_sentence': len(words) / len(sentences) if sentences else 0,
-            'reading_time_minutes': len(words) / 200  # Assume 200 WPM reading speed
-        }
+            # Count frequency
+            word_freq = {}
+            for word in filtered_words:
+                word_freq[word] = word_freq.get(word, 0) + 1
+
+            # Return top keywords
+            keywords = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
+            return [word for word, freq in keywords[:max_keywords]]
+
+        except Exception as e:
+            self.logger.warning(f"Keyword extraction failed: {e}")
+            return []
+
+    def analyze_sentiment(self, text: str) -> Dict[str, float]:
+        """Basic sentiment analysis using keyword matching"""
+        if not text.strip():
+            return {'positive': 0.0, 'negative': 0.0, 'neutral': 1.0}
+
+        try:
+            # Simple sentiment keywords
+            positive_words = {
+                'good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic', 'love',
+                'like', 'enjoy', 'happy', 'pleased', 'satisfied', 'perfect', 'awesome',
+                'brilliant', 'outstanding', 'impressive', 'remarkable', 'superb'
+            }
+
+            negative_words = {
+                'bad', 'terrible', 'awful', 'horrible', 'hate', 'dislike', 'angry',
+                'frustrated', 'disappointed', 'upset', 'sad', 'worried', 'concerned',
+                'problem', 'issue', 'error', 'wrong', 'fail', 'broken', 'difficult'
+            }
+
+            words = re.findall(r'\b[a-zA-Z]+\b', text.lower())
+
+            positive_count = sum(1 for word in words if word in positive_words)
+            negative_count = sum(1 for word in words if word in negative_words)
+            total_words = len(words)
+
+            if total_words == 0:
+                return {'positive': 0.0, 'negative': 0.0, 'neutral': 1.0}
+
+            positive_score = positive_count / total_words
+            negative_score = negative_count / total_words
+            neutral_score = 1.0 - (positive_score + negative_score)
+
+            return {
+                'positive': positive_score,
+                'negative': negative_score,
+                'neutral': max(0.0, neutral_score)
+            }
+
+        except Exception as e:
+            self.logger.warning(f"Sentiment analysis failed: {e}")
+            return {'positive': 0.0, 'negative': 0.0, 'neutral': 1.0}
+
+    def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Generate embeddings for text chunks"""
+        if not EMBEDDINGS_AVAILABLE or not self.embeddings_model:
+            self.logger.warning("Embeddings not available")
+            return []
+
+        try:
+            embeddings = self.embeddings_model.encode(texts, convert_to_tensor=False)
+            return embeddings.tolist()
+
+        except Exception as e:
+            self.logger.error(f"Embedding generation failed: {e}")
+            return []
 
 
 # ============================================================================
-# CODE ANALYZER CLASS
+# CODE ANALYSIS UTILITIES
 # ============================================================================
 
 class CodeAnalyzer:
     """Code analysis and quality assessment utilities"""
 
     def __init__(self):
-        self.logger = get_logger('code_analyzer')
+        self.logger = get_logger('utils.code_analyzer')
+        self.config = get_config()
 
-    def analyze_code_quality(self, code: str, language: str = 'python') -> Dict[str, Any]:
-        """Analyze code quality metrics"""
-        if not code:
-            return {'quality_score': 0, 'issues': ['No code provided']}
+    def analyze_code_file(self, file_path: str, content: Optional[str] = None) -> CodeAnalysisResult:
+        """Analyze a code file and return quality metrics"""
+        try:
+            # Determine file type
+            file_path = Path(file_path)
+            file_ext = file_path.suffix.lower()
+            file_type = self._get_file_type_from_extension(file_ext)
 
-        lines = code.split('\n')
-        non_empty_lines = [line for line in lines if line.strip()]
+            # Read content if not provided
+            if content is None:
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                except Exception as e:
+                    raise ValidationError(f"Could not read file {file_path}: {e}")
 
-        analysis = {
-            'total_lines': len(lines),
-            'code_lines': len(non_empty_lines),
-            'complexity_score': self._calculate_complexity(code, language),
-            'maintainability_score': 0,
-            'issues': [],
-            'suggestions': []
+            result = CodeAnalysisResult(
+                file_path=str(file_path),
+                file_type=file_type
+            )
+
+            # Basic line counting
+            self._count_lines(content, result)
+
+            # Language-specific analysis
+            if file_ext == '.py':
+                self._analyze_python_code(content, result)
+            elif file_ext in ['.js', '.ts']:
+                self._analyze_javascript_code(content, result)
+            elif file_ext == '.sql':
+                self._analyze_sql_code(content, result)
+            else:
+                self._analyze_generic_code(content, result)
+
+            # Common analysis for all file types
+            self._analyze_documentation(content, result)
+            self._check_code_style(content, result, file_ext)
+
+            self.logger.info(f"Analyzed code file: {file_path.name}")
+            return result
+
+        except Exception as e:
+            self.logger.error(f"Code analysis failed for {file_path}: {e}")
+            raise ValidationError(f"Code analysis failed: {e}")
+
+    def _get_file_type_from_extension(self, ext: str) -> FileType:
+        """Map file extension to FileType enum"""
+        mapping = {
+            '.py': FileType.PYTHON,
+            '.js': FileType.JAVASCRIPT,
+            '.ts': FileType.TYPESCRIPT,
+            '.html': FileType.HTML,
+            '.css': FileType.CSS,
+            '.sql': FileType.SQL,
+            '.json': FileType.JSON,
+            '.yaml': FileType.YAML,
+            '.yml': FileType.YAML,
+            '.md': FileType.MARKDOWN,
+            'dockerfile': FileType.DOCKERFILE
         }
+        return mapping.get(ext.lower(), FileType.CONFIG)
 
-        # Check for common issues
-        analysis['issues'].extend(self._check_code_issues(code, language))
+    def _count_lines(self, content: str, result: CodeAnalysisResult) -> None:
+        """Count different types of lines in code"""
+        lines = content.split('\n')
+        result.total_lines = len(lines)
 
-        # Calculate maintainability
-        analysis['maintainability_score'] = max(0, 100 - (analysis['complexity_score'] * 10))
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                result.blank_lines += 1
+            elif stripped.startswith('#') or stripped.startswith('//') or stripped.startswith('/*'):
+                result.comment_lines += 1
+            else:
+                result.lines_of_code += 1
 
-        return analysis
+    def _analyze_python_code(self, content: str, result: CodeAnalysisResult) -> None:
+        """Python-specific code analysis"""
+        try:
+            # Parse AST
+            tree = ast.parse(content)
 
-    def _calculate_complexity(self, code: str, language: str) -> float:
-        """Calculate cyclomatic complexity"""
-        complexity_keywords = {
-            'python': ['if', 'elif', 'else', 'for', 'while', 'try', 'except', 'with'],
-            'javascript': ['if', 'else', 'for', 'while', 'switch', 'case', 'try', 'catch'],
-            'java': ['if', 'else', 'for', 'while', 'switch', 'case', 'try', 'catch']
-        }
+            # Extract functions and classes
+            for node in ast.walk(tree):
+                if isinstance(node, ast.FunctionDef):
+                    result.functions.append(node.name)
+                elif isinstance(node, ast.ClassDef):
+                    result.classes.append(node.name)
+                elif isinstance(node, ast.Import):
+                    for alias in node.names:
+                        result.imports.append(alias.name)
+                elif isinstance(node, ast.ImportFrom):
+                    if node.module:
+                        for alias in node.names:
+                            result.imports.append(f"{node.module}.{alias.name}")
 
-        keywords = complexity_keywords.get(language.lower(), complexity_keywords['python'])
-        complexity = 0
+            # Calculate cyclomatic complexity (simplified)
+            result.cyclomatic_complexity = self._calculate_python_complexity(tree)
 
-        for line in code.split('\n'):
-            line = line.strip().lower()
-            for keyword in keywords:
-                if keyword in line:
-                    complexity += 1
+            # Check for common issues
+            self._check_python_issues(content, result)
 
-        return min(complexity / max(len(code.split('\n')), 1) * 10, 10.0)
+        except SyntaxError as e:
+            result.syntax_errors.append({
+                'line': e.lineno or 0,
+                'message': str(e),
+                'type': 'syntax_error'
+            })
+        except Exception as e:
+            result.suggestions.append(f"Python analysis failed: {e}")
 
-    def _check_code_issues(self, code: str, language: str) -> List[str]:
-        """Check for common code issues"""
+    def _calculate_python_complexity(self, tree: ast.AST) -> float:
+        """Calculate simplified cyclomatic complexity"""
+        complexity = 1  # Base complexity
+
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.If, ast.While, ast.For, ast.With,
+                                 ast.Try, ast.ExceptHandler)):
+                complexity += 1
+            elif isinstance(node, ast.BoolOp):
+                complexity += len(node.values) - 1
+
+        return float(complexity)
+
+    def _check_python_issues(self, content: str, result: CodeAnalysisResult) -> None:
+        """Check for common Python issues"""
+        lines = content.split('\n')
+
+        for i, line in enumerate(lines, 1):
+            # Line length check
+            if len(line) > 120:
+                result.style_issues.append({
+                    'line': i,
+                    'message': f'Line too long ({len(line)} characters)',
+                    'type': 'line_length'
+                })
+
+            # Check for dangerous functions
+            dangerous_patterns = [
+                (r'\beval\s*\(', 'Use of eval() is dangerous'),
+                (r'\bexec\s*\(', 'Use of exec() is dangerous'),
+                (r'\b__import__\s*\(', 'Direct use of __import__ is discouraged'),
+            ]
+
+            for pattern, message in dangerous_patterns:
+                if re.search(pattern, line):
+                    result.security_issues.append({
+                        'line': i,
+                        'message': message,
+                        'type': 'security'
+                    })
+
+    def _analyze_javascript_code(self, content: str, result: CodeAnalysisResult) -> None:
+        """JavaScript-specific code analysis"""
+        try:
+            # Extract functions (simple regex-based)
+            function_pattern = r'function\s+(\w+)\s*\('
+            result.functions.extend(re.findall(function_pattern, content))
+
+            # Extract classes
+            class_pattern = r'class\s+(\w+)\s*[{|extends]'
+            result.classes.extend(re.findall(class_pattern, content))
+
+            # Extract imports
+            import_patterns = [
+                r'import\s+.*\s+from\s+["\']([^"\']+)["\']',
+                r'require\s*\(\s*["\']([^"\']+)["\']\s*\)'
+            ]
+
+            for pattern in import_patterns:
+                result.imports.extend(re.findall(pattern, content))
+
+            # Simple complexity estimation
+            result.cyclomatic_complexity = self._calculate_js_complexity(content)
+
+        except Exception as e:
+            result.suggestions.append(f"JavaScript analysis failed: {e}")
+
+    def _calculate_js_complexity(self, content: str) -> float:
+        """Calculate simplified JavaScript complexity"""
+        # Count decision points
+        complexity_keywords = ['if', 'else', 'while', 'for', 'switch', 'case', '?', '&&', '||']
+        complexity = 1
+
+        for keyword in complexity_keywords:
+            complexity += len(re.findall(rf'\b{keyword}\b', content))
+
+        return float(complexity)
+
+    def _analyze_sql_code(self, content: str, result: CodeAnalysisResult) -> None:
+        """SQL-specific code analysis"""
+        try:
+            # Count different statement types
+            statements = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER']
+
+            for statement in statements:
+                count = len(re.findall(rf'\b{statement}\b', content, re.IGNORECASE))
+                if count > 0:
+                    result.functions.append(f"{statement}: {count}")
+
+            # Check for potential issues
+            if re.search(r'SELECT\s+\*', content, re.IGNORECASE):
+                result.performance_issues.append({
+                    'message': 'SELECT * can impact performance',
+                    'type': 'performance'
+                })
+
+            if not re.search(r'\bWHERE\b', content, re.IGNORECASE) and \
+                    re.search(r'\b(UPDATE|DELETE)\b', content, re.IGNORECASE):
+                result.security_issues.append({
+                    'message': 'UPDATE/DELETE without WHERE clause is dangerous',
+                    'type': 'security'
+                })
+
+        except Exception as e:
+            result.suggestions.append(f"SQL analysis failed: {e}")
+
+    def _analyze_generic_code(self, content: str, result: CodeAnalysisResult) -> None:
+        """Generic code analysis for unknown file types"""
+        # Basic pattern matching for functions and classes
+        function_patterns = [
+            r'function\s+(\w+)',
+            r'def\s+(\w+)',
+            r'(\w+)\s*\(',
+        ]
+
+        for pattern in function_patterns:
+            matches = re.findall(pattern, content)
+            result.functions.extend(matches[:10])  # Limit to avoid noise
+
+        # Simple complexity based on nesting
+        nesting_chars = content.count('{') + content.count('(') + content.count('[')
+        result.cyclomatic_complexity = float(nesting_chars / 10)  # Normalized
+
+    def _analyze_documentation(self, content: str, result: CodeAnalysisResult) -> None:
+        """Analyze documentation coverage"""
+        total_lines = result.lines_of_code
+        if total_lines == 0:
+            result.documentation_coverage = 0.0
+            return
+
+        # Count documentation patterns
+        doc_patterns = [
+            r'""".*?"""',  # Python docstrings
+            r"'''.*?'''",
+            r'/\*\*.*?\*/',  # JSDoc
+            r'//.*$',  # Single line comments
+            r'#.*$',  # Python/shell comments
+        ]
+
+        doc_lines = 0
+        for pattern in doc_patterns:
+            matches = re.findall(pattern, content, re.DOTALL | re.MULTILINE)
+            for match in matches:
+                doc_lines += len(match.split('\n'))
+
+        result.documentation_coverage = min(100.0, (doc_lines / total_lines) * 100)
+
+    def _check_code_style(self, content: str, result: CodeAnalysisResult, file_ext: str) -> None:
+        """Check code style and formatting"""
+        lines = content.split('\n')
+        style_score = 100.0
+
+        for i, line in enumerate(lines, 1):
+            # Trailing whitespace
+            if line.endswith(' ') or line.endswith('\t'):
+                result.style_issues.append({
+                    'line': i,
+                    'message': 'Trailing whitespace',
+                    'type': 'whitespace'
+                })
+                style_score -= 1
+
+            # Mixed tabs and spaces (Python specific)
+            if file_ext == '.py' and '\t' in line and ' ' in line:
+                result.style_issues.append({
+                    'line': i,
+                    'message': 'Mixed tabs and spaces',
+                    'type': 'indentation'
+                })
+                style_score -= 5
+
+        result.code_style_score = max(0.0, style_score)
+
+
+# ============================================================================
+# VALIDATION UTILITIES
+# ============================================================================
+
+class ExtendedValidator:
+    """Extended validation utilities beyond core ValidationHelper"""
+
+    def __init__(self):
+        self.logger = get_logger('utils.validator')
+
+    def validate_project_specifications(self, project: Project) -> List[str]:
+        """Validate project specifications for completeness"""
         issues = []
 
-        if language.lower() == 'python':
-            # Check for Python-specific issues
-            if 'eval(' in code:
-                issues.append('Use of eval() function (security risk)')
-            if 'exec(' in code:
-                issues.append('Use of exec() function (security risk)')
-            if len([line for line in code.split('\n') if len(line) > 100]) > 0:
-                issues.append('Lines longer than 100 characters detected')
+        # Basic validation
+        if not project.name.strip():
+            issues.append("Project name is required")
+
+        if not project.owner_id.strip():
+            issues.append("Project owner is required")
+
+        # Technical specifications
+        if project.phase != ProjectPhase.PLANNING:
+            if not project.technology_stack:
+                issues.append("Technology stack should be defined after planning phase")
+
+            if not project.requirements:
+                issues.append("Requirements should be defined after planning phase")
+
+        # Architecture validation
+        if hasattr(project, 'architecture_pattern') and project.architecture_pattern:
+            valid_patterns = ['mvc', 'microservices', 'layered', 'hexagonal', 'clean']
+            if project.architecture_pattern.lower() not in valid_patterns:
+                issues.append(f"Architecture pattern '{project.architecture_pattern}' not recognized")
+
+        # Technology stack validation
+        for tech in project.technology_stack.values():
+            if not self.validate_technology_name(tech):
+                issues.append(f"Technology '{tech}' format not recognized")
+
+        return issues
+
+    def validate_technology_name(self, tech: str) -> bool:
+        """Validate technology name format"""
+        if not tech or not tech.strip():
+            return False
+
+        # Allow alphanumeric, dots, hyphens, and spaces
+        pattern = r'^[a-zA-Z0-9\s\.\-_+]+$'
+        return bool(re.match(pattern, tech.strip()))
+
+    def validate_generated_file(self, generated_file: GeneratedFile) -> List[str]:
+        """Validate generated file content and structure"""
+        issues = []
+
+        if not generated_file.file_path.strip():
+            issues.append("File path is required")
+
+        if not generated_file.content and generated_file.file_type != FileStatus.GENERATING:
+            issues.append("Content is required for generated files")
+
+        # File path validation
+        if not self.validate_file_path(generated_file.file_path):
+            issues.append("Invalid file path format")
+
+        # Content validation by file type
+        if generated_file.content:
+            content_issues = self.validate_code_content(
+                generated_file.content,
+                generated_file.file_type
+            )
+            issues.extend(content_issues)
+
+        return issues
+
+    def validate_file_path(self, file_path: str) -> bool:
+        """Validate file path format"""
+        if not file_path:
+            return False
+
+        # Check for invalid characters
+        invalid_chars = ['<', '>', ':', '"', '|', '?', '*']
+        if any(char in file_path for char in invalid_chars):
+            return False
+
+        # Check for relative path attempts
+        if '..' in file_path:
+            return False
+
+        return True
+
+    def validate_code_content(self, content: str, file_type: FileType) -> List[str]:
+        """Validate code content based on file type"""
+        issues = []
+
+        if file_type == FileType.PYTHON:
+            issues.extend(self._validate_python_content(content))
+        elif file_type == FileType.JAVASCRIPT:
+            issues.extend(self._validate_javascript_content(content))
+        elif file_type == FileType.JSON:
+            issues.extend(self._validate_json_content(content))
+        elif file_type == FileType.SQL:
+            issues.extend(self._validate_sql_content(content))
+
+        return issues
+
+    def _validate_python_content(self, content: str) -> List[str]:
+        """Validate Python code content"""
+        issues = []
+
+        try:
+            ast.parse(content)
+        except SyntaxError as e:
+            issues.append(f"Python syntax error: {e}")
+
+        # Check for dangerous patterns
+        dangerous_patterns = [
+            (r'\beval\s*\(', 'eval() usage detected'),
+            (r'\bexec\s*\(', 'exec() usage detected'),
+            (r'\b__import__\s*\(', 'Direct __import__ usage detected'),
+        ]
+
+        for pattern, message in dangerous_patterns:
+            if re.search(pattern, content):
+                issues.append(message)
+
+        return issues
+
+    def _validate_javascript_content(self, content: str) -> List[str]:
+        """Validate JavaScript code content"""
+        issues = []
+
+        # Basic syntax checks
+        if content.count('{') != content.count('}'):
+            issues.append("Mismatched braces in JavaScript code")
+
+        if content.count('(') != content.count(')'):
+            issues.append("Mismatched parentheses in JavaScript code")
+
+        # Check for dangerous patterns
+        dangerous_patterns = [
+            (r'\beval\s*\(', 'eval() usage detected'),
+            (r'innerHTML\s*=', 'innerHTML usage can be unsafe'),
+        ]
+
+        for pattern, message in dangerous_patterns:
+            if re.search(pattern, content):
+                issues.append(message)
+
+        return issues
+
+    def _validate_json_content(self, content: str) -> List[str]:
+        """Validate JSON content"""
+        issues = []
+
+        try:
+            json.loads(content)
+        except json.JSONDecodeError as e:
+            issues.append(f"Invalid JSON: {e}")
+
+        return issues
+
+    def _validate_sql_content(self, content: str) -> List[str]:
+        """Validate SQL content"""
+        issues = []
+
+        # Check for potentially dangerous patterns
+        dangerous_patterns = [
+            (r'DROP\s+TABLE', 'DROP TABLE statement detected'),
+            (r'DELETE\s+FROM.*(?!WHERE)', 'DELETE without WHERE clause detected'),
+            (r'UPDATE\s+.*(?!WHERE)', 'UPDATE without WHERE clause detected'),
+        ]
+
+        for pattern, message in dangerous_patterns:
+            if re.search(pattern, content, re.IGNORECASE):
+                issues.append(message)
 
         return issues
 
 
 # ============================================================================
-# EXTENDED VALIDATOR CLASS
-# ============================================================================
-
-class ExtendedValidator:
-    """Extended validation utilities beyond core validation"""
-
-    def __init__(self):
-        self.logger = get_logger('extended_validator')
-
-    def validate_project_spec(self, spec: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate project specification"""
-        validation = {
-            'is_valid': True,
-            'errors': [],
-            'warnings': []
-        }
-
-        required_fields = ['name', 'description', 'requirements']
-        for field in required_fields:
-            if not spec.get(field):
-                validation['is_valid'] = False
-                validation['errors'].append(f"Missing required field: {field}")
-
-        # Validate requirements format
-        requirements = spec.get('requirements', [])
-        if not isinstance(requirements, list):
-            validation['warnings'].append("Requirements should be a list")
-
-        return validation
-
-    def validate_file_content(self, content: str, file_type: str) -> Dict[str, Any]:
-        """Validate file content based on type"""
-        validation = {
-            'is_valid': True,
-            'errors': [],
-            'warnings': []
-        }
-
-        if file_type == 'json':
-            try:
-                json.loads(content)
-            except json.JSONDecodeError as e:
-                validation['is_valid'] = False
-                validation['errors'].append(f"Invalid JSON: {e}")
-
-        elif file_type == 'python':
-            try:
-                compile(content, '<string>', 'exec')
-            except SyntaxError as e:
-                validation['is_valid'] = False
-                validation['errors'].append(f"Python syntax error: {e}")
-
-        return validation
-
-
-# ============================================================================
-# KNOWLEDGE EXTRACTOR CLASS
+# KNOWLEDGE EXTRACTION UTILITIES
 # ============================================================================
 
 class KnowledgeExtractor:
-    """Extract knowledge and insights from conversations and documents"""
+    """Knowledge extraction and processing utilities"""
 
     def __init__(self):
-        self.logger = get_logger('knowledge_extractor')
+        self.logger = get_logger('utils.knowledge')
+        self.file_processor = FileProcessor()
+        self.text_processor = TextProcessor()
 
-    def extract_insights(self, conversation: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def extract_project_insights(self, conversation_messages: List[Any]) -> Dict[str, Any]:
         """Extract insights from Socratic conversation"""
         insights = {
             'key_requirements': [],
-            'technical_decisions': [],
-            'user_preferences': [],
-            'potential_conflicts': [],
-            'recommended_actions': []
+            'technical_preferences': [],
+            'constraints': [],
+            'risks': [],
+            'stakeholder_concerns': [],
+            'role_perspectives': {}
         }
 
-        for message in conversation:
-            content = message.get('content', '').lower()
+        try:
+            for message in conversation_messages:
+                if not hasattr(message, 'content') or not message.content:
+                    continue
 
-            # Simple pattern matching for insights
-            if any(word in content for word in ['must', 'required', 'need']):
-                insights['key_requirements'].append(message.get('content', ''))
+                # Analyze content based on role
+                role = getattr(message, 'role', None)
+                if role:
+                    role_insights = self._extract_role_insights(message.content, role)
+                    if role.value not in insights['role_perspectives']:
+                        insights['role_perspectives'][role.value] = []
+                    insights['role_perspectives'][role.value].extend(role_insights)
 
-            if any(word in content for word in ['prefer', 'like', 'want']):
-                insights['user_preferences'].append(message.get('content', ''))
+                # Extract different types of insights
+                insights['key_requirements'].extend(self._extract_requirements(message.content))
+                insights['technical_preferences'].extend(self._extract_tech_preferences(message.content))
+                insights['constraints'].extend(self._extract_constraints(message.content))
+                insights['risks'].extend(self._extract_risks(message.content))
 
-            if any(word in content for word in ['conflict', 'issue', 'problem']):
-                insights['potential_conflicts'].append(message.get('content', ''))
+            # Remove duplicates and clean up
+            for key in insights:
+                if isinstance(insights[key], list):
+                    insights[key] = list(set(insights[key]))
 
-        return insights
+            self.logger.info(f"Extracted insights: {len(insights['key_requirements'])} requirements, "
+                             f"{len(insights['technical_preferences'])} tech preferences")
 
-    def extract_entities(self, text: str) -> List[str]:
-        """Extract named entities from text"""
-        # Simple entity extraction using regex patterns
-        entities = []
+            return insights
 
-        # Extract potential technology names
-        tech_pattern = r'\b(React|Angular|Vue|Django|Flask|Node|Python|Java|JavaScript)\b'
-        entities.extend(re.findall(tech_pattern, text, re.IGNORECASE))
+        except Exception as e:
+            self.logger.error(f"Insight extraction failed: {e}")
+            return insights
 
-        # Extract potential database names
-        db_pattern = r'\b(MySQL|PostgreSQL|MongoDB|SQLite|Redis|Oracle)\b'
-        entities.extend(re.findall(db_pattern, text, re.IGNORECASE))
+    def _extract_role_insights(self, content: str, role: UserRole) -> List[str]:
+        """Extract insights specific to a role"""
+        insights = []
 
-        return list(set(entities))
+        role_keywords = {
+            UserRole.PROJECT_MANAGER: ['timeline', 'budget', 'resource', 'stakeholder', 'deadline'],
+            UserRole.DEVELOPER: ['implementation', 'code', 'algorithm', 'library', 'API'],
+            UserRole.DESIGNER: ['user experience', 'interface', 'usability', 'design', 'visual'],
+            UserRole.TESTER: ['testing', 'quality', 'bug', 'validation', 'edge case'],
+            UserRole.BUSINESS_ANALYST: ['requirement', 'business rule', 'compliance', 'workflow'],
+            UserRole.DEVOPS: ['deployment', 'infrastructure', 'monitoring', 'security', 'CI/CD']
+        }
 
+        keywords = role_keywords.get(role, [])
+        sentences = re.split(r'[.!?]+', content)
+
+        for sentence in sentences:
+            if any(keyword in sentence.lower() for keyword in keywords):
+                clean_sentence = sentence.strip()
+                if len(clean_sentence) > 10:  # Filter out very short sentences
+                    insights.append(clean_sentence)
+
+        return insights[:5]  # Limit to top 5 insights per role
+
+    def _extract_requirements(self, content: str) -> List[str]:
+        """Extract requirements from text"""
+        requirements = []
+
+        requirement_patterns = [
+            r'(?:must|should|need to|required to|have to)\s+([^.!?]+)',
+            r'(?:requirement|feature):\s*([^.!?]+)',
+            r'(?:user|system|application)\s+(?:should|must|needs?)\s+([^.!?]+)',
+        ]
+
+        for pattern in requirement_patterns:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            for match in matches:
+                clean_req = match.strip()
+                if len(clean_req) > 10:
+                    requirements.append(clean_req)
+
+        return requirements
+
+    def _extract_tech_preferences(self, content: str) -> List[str]:
+        """Extract technology preferences from text"""
+        preferences = []
+
+        # Common technology names
+        tech_pattern = r'\b(?:Python|JavaScript|React|Node|Django|Flask|PostgreSQL|MySQL|MongoDB|Docker|Kubernetes|AWS|Azure|GCP)\b'
+        matches = re.findall(tech_pattern, content, re.IGNORECASE)
+        preferences.extend(matches)
+
+        # Framework/library mentions
+        framework_pattern = r'(?:using|with|prefer)\s+([A-Za-z][A-Za-z0-9_-]+)'
+        matches = re.findall(framework_pattern, content, re.IGNORECASE)
+        preferences.extend(matches)
+
+        return preferences
+
+    def _extract_constraints(self, content: str) -> List[str]:
+        """Extract constraints from text"""
+        constraints = []
+
+        constraint_patterns = [
+            r'(?:cannot|can\'t|unable to|restricted|limited|constraint)(?:[^.!?]+)([^.!?]+)',
+            r'(?:budget|time|resource)\s+(?:constraint|limitation):\s*([^.!?]+)',
+            r'(?:must not|should not|cannot have)\s+([^.!?]+)',
+        ]
+
+        for pattern in constraint_patterns:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            for match in matches:
+                clean_constraint = match.strip()
+                if len(clean_constraint) > 10:
+                    constraints.append(clean_constraint)
+
+        return constraints
+
+    def _extract_risks(self, content: str) -> List[str]:
+        """Extract risks from text"""
+        risks = []
+
+        risk_patterns = [
+            r'(?:risk|concern|worry|problem|issue|challenge):\s*([^.!?]+)',
+            r'(?:might|could|may)\s+(?:fail|break|cause problems?)\s+([^.!?]+)',
+            r'(?:potential|possible)\s+(?:issue|problem|risk)\s+([^.!?]+)',
+        ]
+
+        for pattern in risk_patterns:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            for match in matches:
+                clean_risk = match.strip()
+                if len(clean_risk) > 10:
+                    risks.append(clean_risk)
+
+        return risks
+
+
+# ============================================================================
+# UTILITY FACTORY AND MAIN INTERFACE
+# ============================================================================
+
+class UtilityFactory:
+    """Factory for creating utility instances"""
+
+    _instances = {}
+
+    @classmethod
+    def get_file_processor(cls) -> FileProcessor:
+        """Get FileProcessor instance (singleton)"""
+        if 'file_processor' not in cls._instances:
+            cls._instances['file_processor'] = FileProcessor()
+        return cls._instances['file_processor']
+
+    @classmethod
+    def get_text_processor(cls) -> TextProcessor:
+        """Get TextProcessor instance (singleton)"""
+        if 'text_processor' not in cls._instances:
+            cls._instances['text_processor'] = TextProcessor()
+        return cls._instances['text_processor']
+
+    @classmethod
+    def get_code_analyzer(cls) -> CodeAnalyzer:
+        """Get CodeAnalyzer instance (singleton)"""
+        if 'code_analyzer' not in cls._instances:
+            cls._instances['code_analyzer'] = CodeAnalyzer()
+        return cls._instances['code_analyzer']
+
+    @classmethod
+    def get_validator(cls) -> ExtendedValidator:
+        """Get ExtendedValidator instance (singleton)"""
+        if 'validator' not in cls._instances:
+            cls._instances['validator'] = ExtendedValidator()
+        return cls._instances['validator']
+
+    @classmethod
+    def get_knowledge_extractor(cls) -> KnowledgeExtractor:
+        """Get KnowledgeExtractor instance (singleton)"""
+        if 'knowledge_extractor' not in cls._instances:
+            cls._instances['knowledge_extractor'] = KnowledgeExtractor()
+        return cls._instances['knowledge_extractor']
+
+
+# ============================================================================
+# MAIN EXPORTS
+# ============================================================================
+
+def get_file_processor() -> FileProcessor:
+    """Get file processor instance"""
+    return UtilityFactory.get_file_processor()
+
+
+def get_text_processor() -> TextProcessor:
+    """Get text processor instance"""
+    return UtilityFactory.get_text_processor()
+
+
+def get_code_analyzer() -> CodeAnalyzer:
+    """Get code analyzer instance"""
+    return UtilityFactory.get_code_analyzer()
+
+
+def get_validator() -> ExtendedValidator:
+    """Get extended validator instance"""
+    return UtilityFactory.get_validator()
+
+
+def get_knowledge_extractor() -> KnowledgeExtractor:
+    """Get knowledge extractor instance"""
+    return UtilityFactory.get_knowledge_extractor()
+
+
+# ============================================================================
+# VALIDATION FUNCTIONS
+# ============================================================================
 
 def validate_project_data(project_data: Dict[str, Any]) -> List[str]:
-    """Validate project data dictionary"""
-    issues = []
-
-    if not isinstance(project_data, dict):
-        return ["Project data must be a dictionary"]
-
-    # Required fields
-    required_fields = ['name', 'owner_id']
-    for field in required_fields:
-        if field not in project_data or not project_data[field]:
-            issues.append(f"Required field '{field}' is missing or empty")
-
-    # Basic validation
-    if 'name' in project_data:
-        name = project_data['name']
-        if not name or len(name.strip()) < 2:
-            issues.append("Project name must be at least 2 characters long")
-
-    return issues
-
-
-def validate_file_upload(file_info: Dict[str, Any]) -> List[str]:
-    """Validate uploaded file information"""
+    """Validate project data dictionary - standalone validation function"""
     issues = []
 
     try:
-        # Required fields
-        required_fields = ['filename', 'content_type', 'size']
+        # Required fields validation
+        required_fields = ['name', 'owner_id']
         for field in required_fields:
-            if field not in file_info:
-                issues.append(f"Missing required field: {field}")
+            if field not in project_data or not project_data[field]:
+                issues.append(f"Required field '{field}' is missing or empty")
 
-        # File size validation (10MB limit)
-        if 'size' in file_info:
-            size = file_info['size']
-            if not isinstance(size, (int, float)):
-                issues.append("File size must be a number")
-            elif size > 10 * 1024 * 1024:  # 10MB
-                issues.append(f"File too large: {size} bytes (max 10MB)")
-            elif size <= 0:
-                issues.append("File is empty")
+        # Name validation
+        if 'name' in project_data:
+            name = project_data['name']
+            if not name or len(name.strip()) < 2:
+                issues.append("Project name must be at least 2 characters long")
 
-        # Filename validation
-        if 'filename' in file_info:
-            filename = file_info['filename']
-            if not filename or len(filename.strip()) == 0:
-                issues.append("Filename cannot be empty")
-            elif len(filename) > 255:
-                issues.append("Filename too long (max 255 characters)")
+            # Check for valid characters (letters, numbers, spaces, hyphens, underscores)
+            if not re.match(r'^[a-zA-Z0-9\s\-_]+$', name.strip()):
+                issues.append("Project name contains invalid characters")
 
-            # Check for dangerous file extensions
-            dangerous_extensions = ['.exe', '.bat', '.cmd', '.scr', '.vbs']
-            ext = Path(filename).suffix.lower()
-            if ext in dangerous_extensions:
-                issues.append(f"Potentially dangerous file type: {ext}")
+        # Owner ID validation
+        if 'owner_id' in project_data:
+            owner_id = project_data['owner_id']
+            if not owner_id or len(owner_id.strip()) == 0:
+                issues.append("Owner ID cannot be empty")
 
-        # Content type validation
-        if 'content_type' in file_info:
-            content_type = file_info['content_type']
-            allowed_types = [
-                'text/plain', 'text/markdown', 'application/pdf',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'application/json', 'text/html', 'text/css', 'application/javascript',
-                'text/x-python', 'application/x-python-code'
-            ]
+        # Technology stack validation
+        if 'technology_stack' in project_data:
+            tech_stack = project_data['technology_stack']
+            if not isinstance(tech_stack, dict):
+                issues.append("Technology stack must be a dictionary")
 
-            if content_type not in allowed_types and not content_type.startswith('text/'):
-                issues.append(f"Unsupported file type: {content_type}")
+        # Status validation
+        if 'status' in project_data:
+            status = project_data['status']
+            valid_statuses = ['draft', 'active', 'on_hold', 'completed', 'cancelled', 'archived']
+            if status not in valid_statuses:
+                issues.append(f"Invalid status: '{status}'. Must be one of: {valid_statuses}")
+
+        # Phase validation
+        if 'phase' in project_data:
+            phase = project_data['phase']
+            valid_phases = ['planning', 'requirements', 'design', 'development', 'testing', 'deployment', 'maintenance',
+                            'completed', 'cancelled']
+            if phase not in valid_phases:
+                issues.append(f"Invalid phase: '{phase}'. Must be one of: {valid_phases}")
 
         return issues
 
     except Exception as e:
-        logger.error(f"File upload validation failed: {e}")
+        logger.error(f"Project data validation failed: {e}")
         return [f"Validation error: {str(e)}"]
+
+
 # ============================================================================
 # MODULE EXPORTS
 # ============================================================================
 
-# Export main classes and functions
 __all__ = [
     # Data structures
     'DocumentInfo', 'TextChunk', 'CodeAnalysisResult',
@@ -955,30 +1430,56 @@ __all__ = [
 ]
 
 # ============================================================================
-# MODULE INITIALIZATION
+# MODULE INITIALIZATION AND TESTING
 # ============================================================================
 
 if __name__ == "__main__":
-    # Test utilities
-    print("Testing utility classes...")
+    # Test the utilities
+    logger.info("Testing utilities module...")
 
     try:
-        # Test DocumentParser
-        parser = DocumentParser()
-        print(f"✅ DocumentParser initialized - Supported formats: {parser.supported_formats}")
+        # Test file processor
+        file_proc = get_file_processor()
+        logger.info("✅ FileProcessor created")
 
-        # Test FileProcessor
-        processor = FileProcessor()
-        print("✅ FileProcessor initialized")
+        # Test text processor
+        text_proc = get_text_processor()
+        test_text = "This is a test document with important information about Python development."
+        keywords = text_proc.extract_keywords(test_text)
+        logger.info(f"✅ TextProcessor test - Keywords: {keywords}")
 
-        # Test TextProcessor
-        text_proc = TextProcessor()
-        sample_text = "This is a test. It has multiple sentences! How exciting?"
-        stats = text_proc.get_text_stats(sample_text)
-        print(f"✅ TextProcessor working - Sample stats: {stats}")
+        # Test code analyzer
+        code_analyzer = get_code_analyzer()
+        test_python_code = """
+def hello_world():
+    '''Simple test function'''
+    print("Hello, World!")
+    return True
+        """
+        # Note: We can't test file analysis without an actual file, but we can test the class creation
+        logger.info("✅ CodeAnalyzer created")
 
-        print("🎉 All utility classes working!")
+        # Test validator
+        validator = get_validator()
+        test_tech = "Python 3.9"
+        is_valid = validator.validate_technology_name(test_tech)
+        logger.info(f"✅ Validator test - '{test_tech}' is valid: {is_valid}")
+
+        # Test knowledge extractor
+        knowledge = get_knowledge_extractor()
+        logger.info("✅ KnowledgeExtractor created")
+
+        # Test validate_project_data function
+        test_project_data = {
+            'name': 'Test Project',
+            'owner_id': 'user123',
+            'status': 'active'
+        }
+        validation_issues = validate_project_data(test_project_data)
+        logger.info(f"✅ validate_project_data test - Issues: {validation_issues}")
+
+        logger.info("🎉 All utilities tests passed!")
 
     except Exception as e:
-        print(f"❌ Utility test failed: {e}")
+        logger.error(f"❌ Utilities test failed: {e}")
         raise

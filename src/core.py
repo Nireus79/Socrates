@@ -78,9 +78,11 @@ class APIError(SocraticException):
     """API operation errors"""
     pass
 
+
 class CodeGenerationError(SocraticException):
     """Code generation and compilation errors"""
     pass
+
 
 # ============================================================================
 # CONFIGURATION MANAGEMENT

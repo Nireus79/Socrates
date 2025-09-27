@@ -577,47 +577,6 @@ class TaskContext(BaseModel):
             raise ValidationError("Task ID is required for context")
 
 
-@dataclass
-class KnowledgeEntry(BaseModel):
-    """Knowledge base entry for document processing"""
-
-    project_id: str = ""
-    document_id: str = ""
-    title: str = ""
-    content: str = ""
-    document_type: str = ""  # pdf, docx, txt, markdown, etc.
-    source_file: str = ""
-
-    # Content analysis
-    summary: str = ""
-    keywords: List[str] = field(default_factory=list)
-    topics: List[str] = field(default_factory=list)
-    entities: List[str] = field(default_factory=list)
-
-    # Processing metadata
-    chunk_index: int = 0
-    total_chunks: int = 1
-    confidence_score: float = 0.0
-    processing_status: str = "processed"  # pending, processing, processed, failed
-
-    # Vector embeddings
-    embedding: Optional[List[float]] = None
-    embedding_model: str = ""
-
-    # Relationships
-    related_entries: List[str] = field(default_factory=list)
-    tags: List[str] = field(default_factory=list)
-
-    # Usage tracking
-    access_count: int = 0
-    last_accessed: Optional[datetime.datetime] = None
-
-    def __post_init__(self):
-        """Validate knowledge entry data"""
-        if not self.title and not self.content:
-            raise ValidationError("Knowledge entry must have either title or content")
-
-
 # ============================================================================
 # SOCRATIC CONVERSATION MODELS
 # ============================================================================
@@ -983,6 +942,7 @@ class ModelRegistry:
         'task': Task,
         'project_context': ProjectContext,
         'module_context': ModuleContext,
+        'task_context': TaskContext,
         'socratic_session': SocraticSession,
         'question': Question,
         'conversation_message': ConversationMessage,
