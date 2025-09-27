@@ -86,7 +86,7 @@ class ClaudeService:
             raise ClaudeServiceError("Anthropic package not available. Install with: pip install anthropic")
 
         # Initialize API client
-        api_key = self.claude_config.get('api_key') or self.config.get('ANTHROPIC_API_KEY')
+        api_key = self.claude_config.get('api_key') or self.config.get('API_KEY_CLAUDE')
         if not api_key:
             raise ClaudeServiceError("Claude API key not found in configuration")
 
