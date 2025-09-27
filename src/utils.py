@@ -484,6 +484,37 @@ class FileProcessor:
             doc_info.errors.append(f"Excel extraction failed: {e}")
 
 
+class DocumentParser:
+    """Document parsing utilities (alias for FileProcessor for backward compatibility)"""
+
+    def __init__(self):
+        self.logger = get_logger('utils.document_parser')
+        self.file_processor = FileProcessor()
+
+    def parse_document(self, file_path: str) -> DocumentInfo:
+        """Parse a document and return extracted information"""
+        return self.file_processor.process_file(file_path)
+
+    def extract_text(self, file_path: str) -> str:
+        """Extract text content from a document"""
+        doc_info = self.file_processor.process_file(file_path)
+        return doc_info.content
+
+    def get_document_metadata(self, file_path: str) -> Dict[str, Any]:
+        """Get document metadata"""
+        doc_info = self.file_processor.process_file(file_path)
+        return {
+            'title': doc_info.title,
+            'author': doc_info.author,
+            'subject': doc_info.subject,
+            'keywords': doc_info.keywords,
+            'word_count': doc_info.word_count,
+            'page_count': doc_info.page_count,
+            'file_type': doc_info.file_type,
+            'size_bytes': doc_info.size_bytes
+        }
+
+
 # ============================================================================
 # TEXT PROCESSING AND ANALYSIS
 # ============================================================================
@@ -1417,7 +1448,7 @@ __all__ = [
     'DocumentInfo', 'TextChunk', 'CodeAnalysisResult',
 
     # Main utility classes
-    'FileProcessor', 'TextProcessor', 'CodeAnalyzer',
+    'FileProcessor', 'DocumentParser', 'TextProcessor', 'CodeAnalyzer',
     'ExtendedValidator', 'KnowledgeExtractor',
 
     # Factory and convenience functions

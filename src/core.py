@@ -84,6 +84,16 @@ class CodeGenerationError(SocraticException):
     pass
 
 
+class TestingError(SocraticException):
+    """Testing and validation errors"""
+    pass
+
+
+class IDEIntegrationError(SocraticException):
+    """IDE integration errors"""
+    pass
+
+
 # ============================================================================
 # CONFIGURATION MANAGEMENT
 # ============================================================================
@@ -915,7 +925,8 @@ ANTHROPIC_AVAILABLE = True  # Assume available, will be checked at runtime
 __all__ = [
     # Exceptions
     'SocraticException', 'ConfigurationError', 'ValidationError',
-    'DatabaseError', 'AgentError', 'ServiceError', 'APIError', 'CodeGenerationError',
+    'DatabaseError', 'AgentError', 'ServiceError', 'APIError', 'CodeGenerationError', 'TestingError',
+    'IDEIntegrationError',
 
     # Core Infrastructure
     'SystemConfig', 'SystemLogger', 'EventSystem', 'DatabaseManager',

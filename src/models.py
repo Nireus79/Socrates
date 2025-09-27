@@ -927,6 +927,44 @@ class UserActivity(BaseModel):
 
 
 # ============================================================================
+# KNOWLEDGE MANAGEMENT MODELS
+# ============================================================================
+
+@dataclass
+class KnowledgeEntry(BaseModel):
+    """Knowledge base entry for extracted information"""
+
+    source_id: str = ""
+    source_type: str = ""  # conversation, document, file, etc.
+    content: str = ""
+    keywords: List[str] = field(default_factory=list)
+
+    # Categorization
+    category: str = ""  # requirement, constraint, preference, risk, etc.
+    confidence_score: float = 0.0
+    importance_level: str = "medium"  # low, medium, high, critical
+
+    # Context
+    project_id: Optional[str] = None
+    session_id: Optional[str] = None
+    user_id: Optional[str] = None
+
+    # Relationships
+    related_entries: List[str] = field(default_factory=list)
+    tags: List[str] = field(default_factory=list)
+
+    # Processing metadata
+    extracted_by: str = ""  # agent or process that extracted this
+    extraction_method: str = ""
+    last_validated: Optional[datetime.datetime] = None
+
+    def __post_init__(self):
+        """Validate knowledge entry data"""
+        if not self.content.strip():
+            raise ValidationError("Knowledge entry content cannot be empty")
+
+
+# ============================================================================
 # MODEL COLLECTIONS AND UTILITIES
 # ============================================================================
 
@@ -953,6 +991,7 @@ class ModelRegistry:
         'test_result': TestResult,
         'project_metrics': ProjectMetrics,
         'user_activity': UserActivity,
+        'knowledge_entry': KnowledgeEntry,
     }
 
     @classmethod
@@ -1112,6 +1151,127 @@ class ModelValidator:
             return [f"No validator available for model type: '{model_type}'"]
 
 
+class ModelFactory:
+    """Factory for creating model instances with validation"""
+
+    @staticmethod
+    def create_user(username: str, email: str, **kwargs) -> User:
+        """Create a new user with validation"""
+        user_data = {
+            'username': username,
+            'email': email,
+            **kwargs
+        }
+
+        # Validate before creation
+        issues = ModelValidator.validate_user_data(user_data)
+        if issues:
+            raise ValidationError(f"User validation failed: {'; '.join(issues)}")
+
+        return User(**user_data)
+
+    @staticmethod
+    def create_project(name: str, owner_id: str, **kwargs) -> Project:
+        """Create a new project with validation"""
+        project_data = {
+            'name': name,
+            'owner_id': owner_id,
+            **kwargs
+        }
+
+        # Validate before creation
+        issues = ModelValidator.validate_project_data(project_data)
+        if issues:
+            raise ValidationError(f"Project validation failed: {'; '.join(issues)}")
+
+        return Project(**project_data)
+
+    @staticmethod
+    def create_module(name: str, project_id: str, **kwargs) -> Module:
+        """Create a new module with validation"""
+        module_data = {
+            'name': name,
+            'project_id': project_id,
+            **kwargs
+        }
+
+        # Validate before creation
+        issues = ModelValidator.validate_module_data(module_data)
+        if issues:
+            raise ValidationError(f"Module validation failed: {'; '.join(issues)}")
+
+        return Module(**module_data)
+
+    @staticmethod
+    def create_generated_file(file_path: str, content: str, file_type: FileType, **kwargs) -> GeneratedFile:
+        """Create a new generated file with validation"""
+        file_data = {
+            'file_path': file_path,
+            'content': content,
+            'file_type': file_type.value if isinstance(file_type, FileType) else file_type,
+            **kwargs
+        }
+
+        # Validate before creation
+        issues = ModelValidator.validate_generated_file_data(file_data)
+        if issues:
+            raise ValidationError(f"Generated file validation failed: {'; '.join(issues)}")
+
+        return GeneratedFile(**file_data)
+
+    @staticmethod
+    def create_knowledge_entry(content: str, source_type: str, **kwargs) -> KnowledgeEntry:
+        """Create a new knowledge entry with validation"""
+        if not content.strip():
+            raise ValidationError("Knowledge entry content cannot be empty")
+
+        if not source_type.strip():
+            raise ValidationError("Knowledge entry source type cannot be empty")
+
+        return KnowledgeEntry(
+            content=content,
+            source_type=source_type,
+            **kwargs
+        )
+
+    @classmethod
+    def create_from_dict(cls, model_type: str, data: Dict[str, Any]) -> BaseModel:
+        """Create model instance from dictionary data"""
+        creation_methods = {
+            'user': cls.create_user,
+            'project': cls.create_project,
+            'module': cls.create_module,
+            'generated_file': cls.create_generated_file,
+            'knowledge_entry': cls.create_knowledge_entry,
+        }
+
+        if model_type in creation_methods:
+            method = creation_methods[model_type]
+            # Extract required parameters based on model type
+            if model_type == 'user':
+                return method(data.get('username', ''), data.get('email', ''),
+                              **{k: v for k, v in data.items() if k not in ['username', 'email']})
+            elif model_type == 'project':
+                return method(data.get('name', ''), data.get('owner_id', ''),
+                              **{k: v for k, v in data.items() if k not in ['name', 'owner_id']})
+            elif model_type == 'module':
+                return method(data.get('name', ''), data.get('project_id', ''),
+                              **{k: v for k, v in data.items() if k not in ['name', 'project_id']})
+            elif model_type == 'generated_file':
+                file_type = data.get('file_type', FileType.CONFIG)
+                if isinstance(file_type, str):
+                    # Convert string to FileType enum
+                    file_type = getattr(FileType, file_type.upper(), FileType.CONFIG)
+                return method(data.get('file_path', ''), data.get('content', ''), file_type,
+                              **{k: v for k, v in data.items() if k not in ['file_path', 'content', 'file_type']})
+            elif model_type == 'knowledge_entry':
+                return method(data.get('content', ''), data.get('source_type', ''),
+                              **{k: v for k, v in data.items() if k not in ['content', 'source_type']})
+        else:
+            # Fallback to ModelRegistry
+            return ModelRegistry.create_instance(model_type, **data)
+
+
 def validate_model_data(model: BaseModel) -> List[str]:
     """Validate model data and return list of issues"""
     issues = []
@@ -1196,8 +1356,11 @@ __all__ = [
     # Analytics models
     'ProjectMetrics', 'UserActivity',
 
+    # Knowledge models
+    'KnowledgeEntry',
+
     # Utilities
-    'ModelRegistry', 'ModelValidator', 'validate_model_data', 'serialize_model', 'deserialize_model'
+    'ModelRegistry', 'ModelValidator', 'ModelFactory', 'validate_model_data', 'serialize_model', 'deserialize_model'
 ]
 
 # ============================================================================
@@ -1239,6 +1402,18 @@ if __name__ == "__main__":
         # Test deserialization
         restored_project = deserialize_model('project', json_data)
         logger.info("Model deserialization successful")
+
+        # Test ModelFactory
+        factory_user = ModelFactory.create_user("factory_test", "factory@test.com")
+        logger.info(f"Created user via factory: {factory_user.username}")
+
+        # Test KnowledgeEntry
+        knowledge = KnowledgeEntry(
+            content="Test knowledge content",
+            source_type="test",
+            category="requirement"
+        )
+        logger.info(f"Created knowledge entry: {knowledge.category}")
 
         logger.info("All model tests passed!")
 
