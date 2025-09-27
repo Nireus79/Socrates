@@ -406,7 +406,7 @@ def main():
 
 def open_browser():
     """Open browser after a short delay to ensure server is running"""
-    time.sleep(1.5)  # Wait for server to start
+    time.sleep(2)  # Wait for server to start
     webbrowser.open('http://127.0.0.1:5000')
 
 
