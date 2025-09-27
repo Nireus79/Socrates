@@ -134,9 +134,12 @@ class SystemConfig:
         """Load configuration from YAML file"""
         try:
             config_file = Path(config_path)
+            print(f"DEBUG: load_config received: {config_path}")
+            print(f"DEBUG: type of config_path: {type(config_path)}")
             if not config_file.exists():
+                print(f"DEBUG: File does not exist: {config_path}")
                 raise ConfigurationError(f"Configuration file not found: {config_path}")
-
+            print(f"DEBUG: About to open file: {config_file}")
             with open(config_file, 'r', encoding='utf-8') as f:
                 self._config = yaml.safe_load(f) or {}
 
@@ -292,7 +295,7 @@ class SystemLogger:
         self._config = config
 
         # Create logs directory
-        log_file = config.get('logging.file', 'data/logs/socratic.log')
+        log_file = config.get('logging.file.path', 'data/logs') + '/socratic.log'
         log_dir = Path(log_file).parent
         log_dir.mkdir(parents=True, exist_ok=True)
 
@@ -524,14 +527,15 @@ class DatabaseManager:
         self._logger = None
         self._initialized = True
 
-    def initialize(self, config: SystemConfig):
+    def initialize(self, system_config: SystemConfig):
         """Initialize database manager"""
-        self._config = config
+        self._config = system_config
         self._logger = get_logger('database')
 
         # Get database configuration
-        self._db_path = config.get('database.path', 'data/projects.db')
-
+        self._db_path = system_config.get('database.path', 'data/projects.db')
+        print(f"DEBUG: _db_path = {self._db_path}")
+        print(f"DEBUG: _db_path type = {type(self._db_path)}")
         # Ensure database directory exists
         db_dir = Path(self._db_path).parent
         db_dir.mkdir(parents=True, exist_ok=True)
@@ -868,7 +872,10 @@ def initialize_system(config_path: str = "config.yaml") -> bool:
 
         # 5. Create required directories
         data_path = config.get('system.data_path', 'data')
+        print(f"DEBUG: data_path = {data_path}")
+        print(f"DEBUG: data_path type = {type(data_path)}")
         for subdir in ['logs', 'uploads', 'exports', 'generated_projects', 'vector_db']:
+            print(f"DEBUG: About to create directory: {data_path} / {subdir}")
             FileHelper.ensure_directory(Path(data_path) / subdir)
 
         logger.info("System initialization completed successfully")

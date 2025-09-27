@@ -242,7 +242,7 @@ class SocraticRAGApplication:
 
         # Agent status
         if self.orchestrator:
-            agent_count = len(self.orchestrator.get_available_agents())
+            agent_count = len(self.orchestrator.list_available_agents())
             print(f"🤖 Active Agents: {agent_count}")
 
         # Database status

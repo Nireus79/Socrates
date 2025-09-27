@@ -8,18 +8,20 @@ Provides common functionality like Claude API integration, logging, events.
 
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-# Import our actual core system
+# Import core system components
 from src.core import (
-    get_logger, get_config, get_event_bus,
-    DateTimeHelper, ANTHROPIC_AVAILABLE
+    get_logger, get_config, get_event_bus, get_db_manager,
+    DateTimeHelper, ANTHROPIC_AVAILABLE, AgentError
 )
-from src.database import get_database
 
 # Anthropic client import with fallback
 if ANTHROPIC_AVAILABLE:
-    from anthropic import Anthropic
+    try:
+        from anthropic import Anthropic
+    except ImportError:
+        ANTHROPIC_AVAILABLE = False
 
 
 class BaseAgent(ABC):
@@ -30,17 +32,23 @@ class BaseAgent(ABC):
         self.name = name
         self.config = get_config()
         self.logger = get_logger(f"agent.{agent_id}")
-        self.db = get_database()
+        self.db_manager = get_db_manager()
         self.events = get_event_bus()
 
         # Initialize Claude client if API key available
         self.claude_client = None
-        if ANTHROPIC_AVAILABLE and self.config.claude_api_key:
-            try:
-                self.claude_client = Anthropic(api_key=self.config.claude_api_key)
-                self.logger.info(f"Claude client initialized for {self.name}")
-            except Exception as e:
-                self.logger.warning(f"Claude client initialization failed: {e}")
+        if ANTHROPIC_AVAILABLE:
+            api_key = self.config.get('claude.api_key') or self.config.get('anthropic.api_key')
+            if api_key:
+                try:
+                    self.claude_client = Anthropic(api_key=api_key)
+                    self.logger.info(f"Claude client initialized for {self.name}")
+                except Exception as e:
+                    self.logger.warning(f"Claude client initialization failed: {e}")
+            else:
+                self.logger.warning("Claude API key not configured")
+
+        self.logger.info(f"Agent {self.name} ({self.agent_id}) initialized")
 
     @abstractmethod
     def get_capabilities(self) -> List[str]:
@@ -63,7 +71,7 @@ class BaseAgent(ABC):
                 result = method(data)
 
                 # Emit event for successful processing
-                self.events.publish_async('agent_action_completed', self.agent_id, {
+                self._emit_event('agent_action_completed', {
                     'agent_id': self.agent_id,
                     'action': action,
                     'success': True,
@@ -76,7 +84,7 @@ class BaseAgent(ABC):
 
         except Exception as e:
             self.logger.error(f"Error processing {action}: {str(e)}")
-            self.events.publish_async('agent_error', self.agent_id, {
+            self._emit_event('agent_error', {
                 'agent_id': self.agent_id,
                 'action': action,
                 'error': str(e),
@@ -106,14 +114,21 @@ class BaseAgent(ABC):
             'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
         }
 
+    def _emit_event(self, event_type: str, data: Dict[str, Any]):
+        """Emit event using the event system"""
+        try:
+            self.events.emit(event_type, self.agent_id, data)
+        except Exception as e:
+            self.logger.error(f"Failed to emit event {event_type}: {e}")
+
     def call_claude(self, prompt: str, model: str = None, max_tokens: int = None) -> str:
         """Make Claude API call with error handling"""
         if not self.claude_client:
             return "Claude API not available"
 
         try:
-            model = model or self.config.claude_model
-            max_tokens = max_tokens or 4000
+            model = model or self.config.get('claude.model', 'claude-3-sonnet-20240229')
+            max_tokens = max_tokens or self.config.get('claude.max_tokens', 4000)
 
             response = self.claude_client.messages.create(
                 model=model,
@@ -122,7 +137,7 @@ class BaseAgent(ABC):
             )
 
             # Log API usage
-            self.events.publish_async('claude_api_usage', self.agent_id, {
+            self._emit_event('claude_api_usage', {
                 'agent_id': self.agent_id,
                 'model': model,
                 'tokens_used': max_tokens,
@@ -135,6 +150,26 @@ class BaseAgent(ABC):
             self.logger.error(f"Claude API error: {e}")
             return f"Error: {str(e)}"
 
+    def get_database_connection(self):
+        """Get database connection using the database manager"""
+        return self.db_manager.get_connection()
+
+    def execute_query(self, query: str, params: Optional[tuple] = None) -> List[Any]:
+        """Execute a database query safely"""
+        try:
+            return self.db_manager.execute_query(query, params)
+        except Exception as e:
+            self.logger.error(f"Database query error: {e}")
+            raise AgentError(f"Database operation failed: {e}")
+
+    def execute_update(self, query: str, params: Optional[tuple] = None) -> int:
+        """Execute a database update safely"""
+        try:
+            return self.db_manager.execute_update(query, params)
+        except Exception as e:
+            self.logger.error(f"Database update error: {e}")
+            raise AgentError(f"Database operation failed: {e}")
+
 
 class AgentUtils:
     """Utility functions for agent operations"""
@@ -143,17 +178,29 @@ class AgentUtils:
     def validate_project_access(project_id: str, username: str) -> bool:
         """Validate if user has access to project"""
         try:
-            db = get_database()
-            project = db.projects.get_by_id(project_id)
+            db_manager = get_db_manager()
 
-            if not project:
+            # Query project and check access
+            query = """
+                SELECT p.owner, c.username, c.is_active
+                FROM projects p
+                LEFT JOIN collaborators c ON p.project_id = c.project_id
+                WHERE p.project_id = ?
+            """
+
+            results = db_manager.execute_query(query, (project_id,))
+
+            if not results:
                 return False
 
-            # Check if user is owner or collaborator
-            if project.owner == username:
-                return True
+            # Check if user is owner or active collaborator
+            for row in results:
+                if row['owner'] == username:
+                    return True
+                if row['username'] == username and row['is_active']:
+                    return True
 
-            return any(c.username == username and c.is_active for c in project.collaborators)
+            return False
 
         except Exception as e:
             logger = get_logger('agent.utils')
@@ -164,20 +211,24 @@ class AgentUtils:
     def get_user_role_in_project(project_id: str, username: str) -> str:
         """Get user's role in a specific project"""
         try:
-            db = get_database()
-            project = db.projects.get_by_id(project_id)
-
-            if not project:
-                return "None"
+            db_manager = get_db_manager()
 
             # Check if owner
-            if project.owner == username:
+            owner_query = "SELECT owner FROM projects WHERE project_id = ?"
+            owner_result = db_manager.execute_query(owner_query, (project_id,))
+
+            if owner_result and owner_result[0]['owner'] == username:
                 return 'owner'
 
-            # Check collaborators
-            for collaborator in project.collaborators:
-                if collaborator.username == username and collaborator.is_active:
-                    return collaborator.role.value
+            # Check collaborator role
+            collab_query = """
+                SELECT role FROM collaborators 
+                WHERE project_id = ? AND username = ? AND is_active = 1
+            """
+            collab_result = db_manager.execute_query(collab_query, (project_id, username))
+
+            if collab_result:
+                return collab_result[0]['role']
 
             return 'None'
 
@@ -190,9 +241,7 @@ class AgentUtils:
     def create_agent_context(project_id: str, username: str) -> Dict[str, Any]:
         """Create context object for agent requests"""
         try:
-            db = get_database()
-            project = db.projects.get_by_id(project_id)
-            user = db.users.get_by_username(username)
+            db_manager = get_db_manager()
 
             context = {
                 'project_id': project_id,
@@ -202,17 +251,27 @@ class AgentUtils:
                 'user_role': AgentUtils.get_user_role_in_project(project_id, username)
             }
 
-            if project:
+            # Get project details
+            project_query = "SELECT name, phase, status FROM projects WHERE project_id = ?"
+            project_result = db_manager.execute_query(project_query, (project_id,))
+
+            if project_result:
+                project = project_result[0]
                 context.update({
-                    'project_name': project.name,
-                    'project_phase': project.phase.value,
-                    'project_status': project.status.value
+                    'project_name': project['name'],
+                    'project_phase': project['phase'],
+                    'project_status': project['status']
                 })
 
-            if user:
+            # Get user details
+            user_query = "SELECT email, roles FROM users WHERE username = ?"
+            user_result = db_manager.execute_query(user_query, (username,))
+
+            if user_result:
+                user = user_result[0]
                 context.update({
-                    'user_roles': [role.value for role in user.roles],
-                    'user_email': user.email
+                    'user_email': user['email'],
+                    'user_roles': user['roles'] if user['roles'] else []
                 })
 
             return context
@@ -259,10 +318,13 @@ def require_authentication(func):
             return self._error_response("Authentication required: Username is required")
 
         try:
-            db = get_database()
-            user = db.users.get_by_username(username)
+            db_manager = get_db_manager()
 
-            if not user or not user.is_active:
+            # Check if user exists and is active
+            user_query = "SELECT is_active FROM users WHERE username = ?"
+            user_result = db_manager.execute_query(user_query, (username,))
+
+            if not user_result or not user_result[0]['is_active']:
                 return self._error_response("Authentication failed: Invalid or inactive user")
 
             return func(self, data)
