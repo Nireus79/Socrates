@@ -94,6 +94,16 @@ class IDEIntegrationError(SocraticException):
     pass
 
 
+class AuthenticationError(SocraticException):
+    """Authentication and authorization errors"""
+    pass
+
+
+class ConflictError(SocraticException):
+    """Conflict detection and resolution errors"""
+    pass
+
+
 # ============================================================================
 # CONFIGURATION MANAGEMENT
 # ============================================================================
@@ -926,7 +936,7 @@ __all__ = [
     # Exceptions
     'SocraticException', 'ConfigurationError', 'ValidationError',
     'DatabaseError', 'AgentError', 'ServiceError', 'APIError', 'CodeGenerationError', 'TestingError',
-    'IDEIntegrationError',
+    'IDEIntegrationError', 'AuthenticationError', 'ConflictError',
 
     # Core Infrastructure
     'SystemConfig', 'SystemLogger', 'EventSystem', 'DatabaseManager',
