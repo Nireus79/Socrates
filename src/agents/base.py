@@ -9,12 +9,25 @@ Provides common functionality like Claude API integration, logging, events.
 import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
+from functools import wraps
 
 # Import core system components
-from src.core import (
-    get_logger, get_config, get_event_bus, get_db_manager,
-    DateTimeHelper, ANTHROPIC_AVAILABLE, AgentError
-)
+try:
+    from src.core import (
+        get_logger, get_config, get_event_bus, DatabaseManager,
+        DateTimeHelper, ANTHROPIC_AVAILABLE, AgentError
+    )
+    from src.database import get_database
+    CORE_AVAILABLE = True
+except ImportError:
+    CORE_AVAILABLE = False
+    get_logger = lambda x: None
+    get_config = lambda: {}
+    get_event_bus = lambda: None
+    get_database = lambda: None
+    DateTimeHelper = None
+    ANTHROPIC_AVAILABLE = False
+    AgentError = Exception
 
 # Anthropic client import with fallback
 if ANTHROPIC_AVAILABLE:
@@ -30,25 +43,29 @@ class BaseAgent(ABC):
     def __init__(self, agent_id: str, name: str):
         self.agent_id = agent_id
         self.name = name
-        self.config = get_config()
-        self.logger = get_logger(f"agent.{agent_id}")
-        self.db_manager = get_db_manager()
-        self.events = get_event_bus()
+        self.config = get_config() if CORE_AVAILABLE else {}
+        self.logger = get_logger(f"agent.{agent_id}") if CORE_AVAILABLE else None
+        self.db = get_database() if CORE_AVAILABLE else None
+        self.events = get_event_bus() if CORE_AVAILABLE else None
 
         # Initialize Claude client if API key available
         self.claude_client = None
-        if ANTHROPIC_AVAILABLE:
-            api_key = self.config.get('claude.api_key') or self.config.get('anthropic.api_key')
+        if ANTHROPIC_AVAILABLE and self.config:
+            api_key = self.config.get('services.claude.api_key') or self.config.get('claude.api_key')
             if api_key:
                 try:
                     self.claude_client = Anthropic(api_key=api_key)
-                    self.logger.info(f"Claude client initialized for {self.name}")
+                    if self.logger:
+                        self.logger.info(f"Claude client initialized for {self.name}")
                 except Exception as e:
-                    self.logger.warning(f"Claude client initialization failed: {e}")
+                    if self.logger:
+                        self.logger.warning(f"Claude client initialization failed: {e}")
             else:
-                self.logger.warning("Claude API key not configured")
+                if self.logger:
+                    self.logger.warning("Claude API key not configured")
 
-        self.logger.info(f"Agent {self.name} ({self.agent_id}) initialized")
+        if self.logger:
+            self.logger.info(f"Agent {self.name} ({self.agent_id}) initialized")
 
     @abstractmethod
     def get_capabilities(self) -> List[str]:
@@ -58,7 +75,8 @@ class BaseAgent(ABC):
     def process_request(self, action: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Process agent request with error handling"""
         try:
-            self.logger.info(f"Processing {action} request")
+            if self.logger:
+                self.logger.info(f"Processing {action} request")
 
             # Validate input data
             if not self._validate_request(action, data):
@@ -75,7 +93,7 @@ class BaseAgent(ABC):
                     'agent_id': self.agent_id,
                     'action': action,
                     'success': True,
-                    'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                    'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
                 })
 
                 return self._success_response(result)
@@ -83,12 +101,13 @@ class BaseAgent(ABC):
                 return self._error_response(f"Action '{action}' not supported")
 
         except Exception as e:
-            self.logger.error(f"Error processing {action}: {str(e)}")
+            if self.logger:
+                self.logger.error(f"Error processing {action}: {str(e)}")
             self._emit_event('agent_error', {
                 'agent_id': self.agent_id,
                 'action': action,
                 'error': str(e),
-                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
             })
             return self._error_response(str(e))
 
@@ -102,7 +121,7 @@ class BaseAgent(ABC):
             'success': True,
             'data': data,
             'agent_id': self.agent_id,
-            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
         }
 
     def _error_response(self, message: str) -> Dict[str, Any]:
@@ -111,15 +130,19 @@ class BaseAgent(ABC):
             'success': False,
             'error': message,
             'agent_id': self.agent_id,
-            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
         }
 
     def _emit_event(self, event_type: str, data: Dict[str, Any]):
         """Emit event using the event system"""
         try:
-            self.events.emit(event_type, self.agent_id, data)
+            if self.events and hasattr(self.events, 'emit'):
+                self.events.emit(event_type, self.agent_id, data)
+            elif self.events and hasattr(self.events, 'publish_async'):
+                self.events.publish_async(event_type, self.agent_id, data)
         except Exception as e:
-            self.logger.error(f"Failed to emit event {event_type}: {e}")
+            if self.logger:
+                self.logger.error(f"Failed to emit event {event_type}: {e}")
 
     def call_claude(self, prompt: str, model: str = None, max_tokens: int = None) -> str:
         """Make Claude API call with error handling"""
@@ -127,8 +150,8 @@ class BaseAgent(ABC):
             return "Claude API not available"
 
         try:
-            model = model or self.config.get('claude.model', 'claude-3-sonnet-20240229')
-            max_tokens = max_tokens or self.config.get('claude.max_tokens', 4000)
+            model = model or (self.config.get('services.claude.model') if self.config else 'claude-3-5-sonnet-20241022')
+            max_tokens = max_tokens or (self.config.get('services.claude.max_tokens') if self.config else 4000)
 
             response = self.claude_client.messages.create(
                 model=model,
@@ -141,34 +164,15 @@ class BaseAgent(ABC):
                 'agent_id': self.agent_id,
                 'model': model,
                 'tokens_used': max_tokens,
-                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
             })
 
             return response.content[0].text
 
         except Exception as e:
-            self.logger.error(f"Claude API error: {e}")
+            if self.logger:
+                self.logger.error(f"Claude API error: {e}")
             return f"Error: {str(e)}"
-
-    def get_database_connection(self):
-        """Get database connection using the database manager"""
-        return self.db_manager.get_connection()
-
-    def execute_query(self, query: str, params: Optional[tuple] = None) -> List[Any]:
-        """Execute a database query safely"""
-        try:
-            return self.db_manager.execute_query(query, params)
-        except Exception as e:
-            self.logger.error(f"Database query error: {e}")
-            raise AgentError(f"Database operation failed: {e}")
-
-    def execute_update(self, query: str, params: Optional[tuple] = None) -> int:
-        """Execute a database update safely"""
-        try:
-            return self.db_manager.execute_update(query, params)
-        except Exception as e:
-            self.logger.error(f"Database update error: {e}")
-            raise AgentError(f"Database operation failed: {e}")
 
 
 class AgentUtils:
@@ -178,107 +182,125 @@ class AgentUtils:
     def validate_project_access(project_id: str, username: str) -> bool:
         """Validate if user has access to project"""
         try:
-            db_manager = get_db_manager()
-
-            # Query project and check access
-            query = """
-                SELECT p.owner, c.username, c.is_active
-                FROM projects p
-                LEFT JOIN collaborators c ON p.project_id = c.project_id
-                WHERE p.project_id = ?
-            """
-
-            results = db_manager.execute_query(query, (project_id,))
-
-            if not results:
+            db = get_database()
+            if not db:
                 return False
 
-            # Check if user is owner or active collaborator
-            for row in results:
-                if row['owner'] == username:
-                    return True
-                if row['username'] == username and row['is_active']:
-                    return True
+            # Get project
+            project = db.projects.get_by_id(project_id)
+            if not project:
+                return False
+
+            # Check if user is owner
+            if project.owner_id == username:
+                return True
+
+            # Check if user is in team members
+            if hasattr(project, 'team_members') and username in project.team_members:
+                return True
+
+            # Check collaborators table if it exists
+            try:
+                collaborators = db.project_collaborators.get_project_collaborators(project_id)
+                for collab in collaborators:
+                    if collab.get('username') == username and collab.get('is_active'):
+                        return True
+            except:
+                pass
 
             return False
 
         except Exception as e:
-            logger = get_logger('agent.utils')
-            logger.error(f"Error validating project access: {e}")
+            logger = get_logger('agent.utils') if CORE_AVAILABLE else None
+            if logger:
+                logger.error(f"Error validating project access: {e}")
             return False
 
     @staticmethod
     def get_user_role_in_project(project_id: str, username: str) -> str:
         """Get user's role in a specific project"""
         try:
-            db_manager = get_db_manager()
+            db = get_database()
+            if not db:
+                return 'none'
+
+            # Get project
+            project = db.projects.get_by_id(project_id)
+            if not project:
+                return 'none'
 
             # Check if owner
-            owner_query = "SELECT owner FROM projects WHERE project_id = ?"
-            owner_result = db_manager.execute_query(owner_query, (project_id,))
-
-            if owner_result and owner_result[0]['owner'] == username:
+            if project.owner_id == username:
                 return 'owner'
 
             # Check collaborator role
-            collab_query = """
-                SELECT role FROM collaborators 
-                WHERE project_id = ? AND username = ? AND is_active = 1
-            """
-            collab_result = db_manager.execute_query(collab_query, (project_id, username))
+            try:
+                collaborators = db.project_collaborators.get_project_collaborators(project_id)
+                for collab in collaborators:
+                    if collab.get('username') == username and collab.get('is_active'):
+                        return collab.get('role', 'member')
+            except:
+                pass
 
-            if collab_result:
-                return collab_result[0]['role']
+            # Check if in team members (default role)
+            if hasattr(project, 'team_members') and username in project.team_members:
+                return 'member'
 
-            return 'None'
+            return 'none'
 
         except Exception as e:
-            logger = get_logger('agent.utils')
-            logger.error(f"Error getting user role: {e}")
-            return 'None'
+            logger = get_logger('agent.utils') if CORE_AVAILABLE else None
+            if logger:
+                logger.error(f"Error getting user role: {e}")
+            return 'none'
 
     @staticmethod
     def create_agent_context(project_id: str, username: str) -> Dict[str, Any]:
         """Create context object for agent requests"""
         try:
-            db_manager = get_db_manager()
+            db = get_database()
 
             context = {
                 'project_id': project_id,
                 'username': username,
-                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None,
                 'has_access': AgentUtils.validate_project_access(project_id, username),
                 'user_role': AgentUtils.get_user_role_in_project(project_id, username)
             }
 
-            # Get project details
-            project_query = "SELECT name, phase, status FROM projects WHERE project_id = ?"
-            project_result = db_manager.execute_query(project_query, (project_id,))
+            if not db:
+                context['error'] = 'Database not available'
+                return context
 
-            if project_result:
-                project = project_result[0]
-                context.update({
-                    'project_name': project['name'],
-                    'project_phase': project['phase'],
-                    'project_status': project['status']
-                })
+            # Get project details
+            try:
+                project = db.projects.get_by_id(project_id)
+                if project:
+                    context.update({
+                        'project_name': project.name,
+                        'project_phase': project.phase.value if hasattr(project.phase, 'value') else str(project.phase),
+                        'project_status': project.status.value if hasattr(project.status, 'value') else str(project.status)
+                    })
+            except Exception as e:
+                context['project_error'] = str(e)
 
             # Get user details
-            user_query = "SELECT email, roles FROM users WHERE username = ?"
-            user_result = db_manager.execute_query(user_query, (username,))
-
-            if user_result:
-                user = user_result[0]
-                context.update({
-                    'user_email': user['email'],
-                    'user_roles': user['roles'] if user['roles'] else []
-                })
+            try:
+                user = db.users.get_by_username(username)
+                if user:
+                    context.update({
+                        'user_email': user.email,
+                        'user_role_global': user.role.value if hasattr(user.role, 'value') else str(user.role)
+                    })
+            except Exception as e:
+                context['user_error'] = str(e)
 
             return context
 
         except Exception as e:
-            logger = get_logger('agent.utils')
-            logger.error(f"Error creating agent context: {e}")
+            logger = get_logger('agent.utils') if CORE_AVAILABLE else None
+            if logger:
+                logger.error(f"Error creating agent context: {e}")
             return {
                 'project_id': project_id,
                 'username': username,
@@ -289,7 +311,7 @@ class AgentUtils:
 
 def require_project_access(func):
     """Decorator to require project access for agent methods"""
-
+    @wraps(func)
     def wrapper(self, data: Dict[str, Any]) -> Dict[str, Any]:
         project_id = data.get('project_id')
         username = data.get('username')
@@ -310,7 +332,7 @@ def require_project_access(func):
 
 def require_authentication(func):
     """Decorator to require user authentication for agent methods"""
-
+    @wraps(func)
     def wrapper(self, data: Dict[str, Any]) -> Dict[str, Any]:
         username = data.get('username')
 
@@ -318,14 +340,17 @@ def require_authentication(func):
             return self._error_response("Authentication required: Username is required")
 
         try:
-            db_manager = get_db_manager()
+            db = get_database()
+            if not db:
+                return self._error_response("Authentication error: Database not available")
 
             # Check if user exists and is active
-            user_query = "SELECT is_active FROM users WHERE username = ?"
-            user_result = db_manager.execute_query(user_query, (username,))
+            user = db.users.get_by_username(username)
+            if not user:
+                return self._error_response("Authentication failed: User not found")
 
-            if not user_result or not user_result[0]['is_active']:
-                return self._error_response("Authentication failed: Invalid or inactive user")
+            if not user.is_active:
+                return self._error_response("Authentication failed: User account is inactive")
 
             return func(self, data)
 
@@ -337,13 +362,14 @@ def require_authentication(func):
 
 def log_agent_action(func):
     """Decorator to log agent actions"""
-
+    @wraps(func)
     def wrapper(self, data: Dict[str, Any]) -> Dict[str, Any]:
         action_name = func.__name__
         project_id = data.get('project_id', 'unknown')
         username = data.get('username', 'unknown')
 
-        self.logger.info(f"Agent action started: {action_name} for project {project_id} by user {username}")
+        if self.logger:
+            self.logger.info(f"Agent action started: {action_name} for project {project_id} by user {username}")
 
         start_time = time.time()
         try:
@@ -351,13 +377,40 @@ def log_agent_action(func):
             execution_time = time.time() - start_time
 
             success = result.get('success', False) if isinstance(result, dict) else True
-            self.logger.info(f"Agent action completed: {action_name} (success: {success}, time: {execution_time:.2f}s)")
+            if self.logger:
+                self.logger.info(f"Agent action completed: {action_name} (success: {success}, time: {execution_time:.2f}s)")
 
             return result
 
         except Exception as e:
             execution_time = time.time() - start_time
-            self.logger.error(f"Agent action failed: {action_name} (time: {execution_time:.2f}s, error: {str(e)})")
+            if self.logger:
+                self.logger.error(f"Agent action failed: {action_name} (time: {execution_time:.2f}s, error: {str(e)})")
             raise
 
     return wrapper
+
+
+def rate_limit(calls_per_minute: int = 60):
+    """Decorator to rate limit agent methods"""
+    def decorator(func):
+        func._last_calls = []
+
+        @wraps(func)
+        def wrapper(self, data: Dict[str, Any]) -> Dict[str, Any]:
+            current_time = time.time()
+
+            # Clean old calls
+            func._last_calls = [t for t in func._last_calls if current_time - t < 60]
+
+            # Check rate limit
+            if len(func._last_calls) >= calls_per_minute:
+                return self._error_response(f"Rate limit exceeded: {calls_per_minute} calls per minute")
+
+            # Record this call
+            func._last_calls.append(current_time)
+
+            return func(self, data)
+
+        return wrapper
+    return decorator

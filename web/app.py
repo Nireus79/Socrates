@@ -49,17 +49,34 @@ except ImportError:
 
 # Import our system components
 try:
-    from ..core import get_config, SocraticException, get_event_manager, ValidationHelper, DateTimeHelper
+    from ..core import get_config, SocraticException, get_event_bus, ValidationHelper, DateTimeHelper
     from ..models import Project, User, TechnicalSpec, ConversationMessage, UserRole
     from ..database import get_repository_manager
-    from ..agents import get_orchestrator, AgentOrchestrator
-    from ..services import get_service, get_services_status
+    from ..agents import get_orchestrator, initialize_all_agents
+    from ..services import get_services_status
 
     SYSTEM_AVAILABLE = True
 except ImportError as e:
     SYSTEM_AVAILABLE = False
     logger = logging.getLogger(__name__)
     logger.error(f"System components not available: {e}")
+
+
+    # Define fallback functions
+    def get_orchestrator():
+        return None
+
+
+    def get_repository_manager():
+        return None
+
+
+    def initialize_all_agents():
+        return {'initialized': 0, 'status': 'failed', 'error': 'System not available'}
+
+
+    def get_services_status():
+        return {}
 
 logger = logging.getLogger(__name__)
 
