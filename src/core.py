@@ -493,6 +493,9 @@ class EventSystem:
             self._logger.info("Event system shutdown complete")
 
 
+EventBus = EventSystem
+
+
 # ============================================================================
 # DATABASE MANAGEMENT
 # ============================================================================
@@ -936,7 +939,7 @@ __all__ = [
     # Exceptions
     'SocraticException', 'ConfigurationError', 'ValidationError',
     'DatabaseError', 'AgentError', 'ServiceError', 'APIError', 'CodeGenerationError', 'TestingError',
-    'IDEIntegrationError', 'AuthenticationError', 'ConflictError',
+    'IDEIntegrationError', 'AuthenticationError', 'ConflictError', 'EventBus',
 
     # Core Infrastructure
     'SystemConfig', 'SystemLogger', 'EventSystem', 'DatabaseManager',
