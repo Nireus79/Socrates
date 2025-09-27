@@ -1321,6 +1321,49 @@ class DatabaseService:
 
 
 # ============================================================================
+# REPOSITORY MANAGER (COMPATIBILITY LAYER)
+# ============================================================================
+
+class RepositoryManager:
+    """Repository manager providing unified access to all repositories"""
+
+    def __init__(self):
+        self.logger = get_logger('database.repo_manager')
+        self._db_service = None
+
+    @property
+    def db_service(self):
+        """Get database service instance"""
+        if self._db_service is None:
+            self._db_service = get_database()
+        return self._db_service
+
+    def get_repository(self, repository_name: str):
+        """Get repository by name"""
+        repository_map = {
+            'user': self.db_service.users,
+            'project': self.db_service.projects,
+            'module': self.db_service.modules,
+            'task': self.db_service.tasks,
+            'socratic_session': self.db_service.socratic_sessions,
+            'generated_codebase': self.db_service.generated_codebases,
+            'generated_file': self.db_service.generated_files,
+            'test_result': self.db_service.test_results,
+            'project_collaborator': self.db_service.project_collaborators,
+        }
+
+        repository = repository_map.get(repository_name)
+        if not repository:
+            raise ValueError(f"Unknown repository: {repository_name}")
+
+        return repository
+
+    def health_check(self) -> Dict[str, Any]:
+        """Check repository manager health"""
+        return self.db_service.health_check()
+
+
+# ============================================================================
 # DATABASE INITIALIZATION
 # ============================================================================
 
@@ -1367,6 +1410,18 @@ def get_database() -> DatabaseService:
     return _database_service
 
 
+# Global repository manager instance
+_repository_manager: Optional[RepositoryManager] = None
+
+
+def get_repository_manager() -> RepositoryManager:
+    """Get the global repository manager instance"""
+    global _repository_manager
+    if _repository_manager is None:
+        _repository_manager = RepositoryManager()
+    return _repository_manager
+
+
 # ============================================================================
 # MODULE EXPORTS
 # ============================================================================
@@ -1382,10 +1437,10 @@ __all__ = [
     'ProjectCollaboratorRepository',
 
     # Service classes
-    'DatabaseService',
+    'DatabaseService', 'RepositoryManager',
 
     # Functions
-    'init_database', 'get_database'
+    'init_database', 'get_database', 'get_repository_manager'
 ]
 
 if __name__ == "__main__":

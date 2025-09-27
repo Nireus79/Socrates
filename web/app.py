@@ -49,8 +49,8 @@ except ImportError:
 
 # Import our system components
 try:
-    from ..core import get_config, SocraticException, get_event_manager
-    from ..models import Project, User, TechnicalSpec, ConversationMessage
+    from ..core import get_config, SocraticException, get_event_manager, ValidationHelper, DateTimeHelper
+    from ..models import Project, User, TechnicalSpec, ConversationMessage, UserRole
     from ..database import get_repository_manager
     from ..agents import get_orchestrator, AgentOrchestrator
     from ..services import get_service, get_services_status
@@ -232,27 +232,122 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
 
         return decorated_function
 
+    # Authentication helper functions
+    def hash_password(password: str) -> str:
+        """Hash password using Werkzeug's secure method"""
+        return generate_password_hash(password)
+
+    def verify_password(password: str, password_hash: str) -> bool:
+        """Verify password against hash"""
+        return check_password_hash(password_hash, password)
+
+    def validate_registration_data(form_data: Dict[str, str]) -> List[str]:
+        """Validate registration form data"""
+        errors = []
+
+        username = form_data.get('username', '').strip()
+        email = form_data.get('email', '').strip()
+        password = form_data.get('password', '')
+        confirm_password = form_data.get('confirm_password', '')
+
+        # Username validation
+        if not username:
+            errors.append('Username is required')
+        elif len(username) < 3:
+            errors.append('Username must be at least 3 characters long')
+        elif not username.replace('_', '').replace('-', '').isalnum():
+            errors.append('Username can only contain letters, numbers, hyphens, and underscores')
+
+        # Email validation
+        if not email:
+            errors.append('Email is required')
+        elif not ValidationHelper.validate_email(email):
+            errors.append('Invalid email format')
+
+        # Password validation
+        if not password:
+            errors.append('Password is required')
+        elif len(password) < 8:
+            errors.append('Password must be at least 8 characters long')
+        elif password != confirm_password:
+            errors.append('Passwords do not match')
+
+        return errors
+
     # =================================================================
     # AUTHENTICATION ROUTES
     # =================================================================
 
     @app.route('/login', methods=['GET', 'POST'])
     def login():
-        """User login page."""
+        """User login page with real authentication."""
         form = LoginForm()
 
         if form.validate_on_submit():
-            username = form.username.data
+            username = form.username.data.strip()
             password = form.password.data
 
-            # For development, create a demo user
-            if username == 'demo' and password == 'demo123':
-                user = WebUser('demo-user', 'demo', 'demo@example.com', True)
-                login_user(user, remember=form.remember_me.data)
-                flash('Successfully logged in!', 'success')
-                return redirect(url_for('dashboard'))
-            else:
-                flash('Invalid username or password', 'error')
+            try:
+                # Demo user fallback
+                if username == 'demo' and password == 'demo123':
+                    user = WebUser('demo-user', 'demo', 'demo@example.com', True)
+                    login_user(user, remember=form.remember_me.data)
+                    flash('Demo user logged in successfully!', 'success')
+                    return redirect(url_for('dashboard'))
+
+                if not orchestrator:
+                    flash('Authentication system unavailable. Please try again later.', 'error')
+                    return render_template('auth.html', form=form, page='login')
+
+                # Get user from database first to check if user exists
+                if repo_manager:
+                    user_repo = repo_manager.get_repository('user')
+                    user_data = user_repo.get_by_username(username)
+
+                    if not user_data:
+                        flash('Invalid username or password', 'error')
+                        return render_template('auth.html', form=form, page='login')
+
+                    # Verify password
+                    if not verify_password(password, user_data.password_hash):
+                        flash('Invalid username or password', 'error')
+                        return render_template('auth.html', form=form, page='login')
+
+                    # Check if user is active
+                    if not user_data.is_active:
+                        flash('Account is deactivated. Please contact support.', 'error')
+                        return render_template('auth.html', form=form, page='login')
+
+                    # Authenticate with UserManagerAgent
+                    auth_result = orchestrator.route_request('user_manager', 'authenticate_user', {
+                        'username': username,
+                        'passcode_hash': user_data.password_hash  # Pass the stored hash for verification
+                    })
+
+                    if auth_result and auth_result.get('authenticated'):
+                        # Create Flask-Login user object
+                        web_user = WebUser(
+                            user_id=user_data.id,
+                            username=user_data.username,
+                            email=user_data.email,
+                            is_admin=(UserRole.ADMIN in user_data.role if hasattr(user_data, 'role') else False)
+                        )
+
+                        # Log user in
+                        login_user(web_user, remember=form.remember_me.data)
+                        flash(f'Welcome back, {username}!', 'success')
+
+                        # Redirect to dashboard
+                        next_page = request.args.get('next')
+                        return redirect(next_page) if next_page else redirect(url_for('dashboard'))
+                    else:
+                        flash('Authentication failed. Please try again.', 'error')
+                else:
+                    flash('Database unavailable. Please try again later.', 'error')
+
+            except Exception as e:
+                logger.error(f"Login error for user {username}: {e}")
+                flash('An error occurred during login. Please try again.', 'error')
 
         return render_template('auth.html', form=form, page='login')
 
@@ -266,8 +361,220 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
 
     @app.route('/register', methods=['GET', 'POST'])
     def register():
-        """User registration (demo version)."""
+        """User registration with real user creation."""
+        if request.method == 'POST':
+            try:
+                # Get form data
+                form_data = {
+                    'username': request.form.get('username', '').strip(),
+                    'email': request.form.get('email', '').strip(),
+                    'password': request.form.get('password', ''),
+                    'confirm_password': request.form.get('confirm_password', ''),
+                    'first_name': request.form.get('first_name', '').strip(),
+                    'last_name': request.form.get('last_name', '').strip(),
+                    'terms': request.form.get('terms') == 'on'
+                }
+
+                # Validate form data
+                validation_errors = validate_registration_data(form_data)
+
+                # Check terms acceptance
+                if not form_data['terms']:
+                    validation_errors.append('You must accept the Terms of Service')
+
+                if validation_errors:
+                    for error in validation_errors:
+                        flash(error, 'error')
+                    return render_template('auth.html', page='register')
+
+                # Check if system is available
+                if not orchestrator or not repo_manager:
+                    flash('Registration system unavailable. Please try again later.', 'error')
+                    return render_template('auth.html', page='register')
+
+                # Check if username already exists
+                user_repo = repo_manager.get_repository('user')
+                existing_user = user_repo.get_by_username(form_data['username'])
+                if existing_user:
+                    flash('Username already exists. Please choose a different username.', 'error')
+                    return render_template('auth.html', page='register')
+
+                # Check if email already exists
+                existing_email = user_repo.get_by_email(form_data['email'])
+                if existing_email:
+                    flash('Email already registered. Please use a different email or try logging in.', 'error')
+                    return render_template('auth.html', page='register')
+
+                # Hash the password
+                password_hash = hash_password(form_data['password'])
+
+                # Create user via UserManagerAgent
+                user_data = {
+                    'username': form_data['username'],
+                    'email': form_data['email'],
+                    'passcode_hash': password_hash,
+                    'full_name': f"{form_data['first_name']} {form_data['last_name']}".strip(),
+                    'role': 'developer',  # Default role
+                    'preferences': {
+                        'email_notifications': True,
+                        'auto_save': True,
+                        'default_role': 'developer'
+                    }
+                }
+
+                # Create user through agent
+                result = orchestrator.route_request('user_manager', 'create_user', user_data)
+
+                if result and result.get('status') == 'created':
+                    flash('Account created successfully! You can now log in.', 'success')
+                    return redirect(url_for('login'))
+                else:
+                    flash('Failed to create account. Please try again.', 'error')
+                    return render_template('auth.html', page='register')
+
+            except Exception as e:
+                logger.error(f"Registration error: {e}")
+                flash('An error occurred during registration. Please try again.', 'error')
+                return render_template('auth.html', page='register')
+
+        # GET request - show registration form
         return render_template('auth.html', page='register')
+
+    @app.route('/profile', methods=['GET', 'POST'])
+    @login_required
+    def profile():
+        """Enhanced user profile management."""
+        if request.method == 'POST':
+            try:
+                # Get current user data
+                if not repo_manager:
+                    flash('Profile system unavailable.', 'error')
+                    return render_template('auth.html', page='profile')
+
+                user_repo = repo_manager.get_repository('user')
+                user_data = user_repo.get_by_username(current_user.username)
+
+                if not user_data:
+                    flash('User not found.', 'error')
+                    return redirect(url_for('logout'))
+
+                # Get form data
+                updates = {}
+                if request.form.get('email') and request.form.get('email') != user_data.email:
+                    new_email = request.form.get('email').strip()
+                    if not ValidationHelper.validate_email(new_email):
+                        flash('Invalid email format.', 'error')
+                        return render_template('auth.html', page='profile')
+                    updates['email'] = new_email
+
+                if request.form.get('first_name') or request.form.get('last_name'):
+                    first_name = request.form.get('first_name', '').strip()
+                    last_name = request.form.get('last_name', '').strip()
+                    updates['full_name'] = f"{first_name} {last_name}".strip()
+
+                # Update preferences
+                preferences = user_data.preferences.copy() if hasattr(user_data, 'preferences') else {}
+                preferences.update({
+                    'email_notifications': request.form.get('email_notifications') == 'on',
+                    'auto_save': request.form.get('auto_save') == 'on',
+                    'default_role': request.form.get('default_role', 'developer')
+                })
+                updates['preferences'] = preferences
+
+                # Update via UserManagerAgent if there are changes
+                if updates and orchestrator:
+                    updates['username'] = current_user.username
+                    result = orchestrator.route_request('user_manager', 'update_profile', updates)
+
+                    if result and result.get('success'):
+                        flash('Profile updated successfully!', 'success')
+                    else:
+                        flash('Failed to update profile.', 'error')
+                else:
+                    flash('No changes detected.', 'info')
+
+            except Exception as e:
+                logger.error(f"Profile update error for {current_user.username}: {e}")
+                flash('An error occurred while updating profile.', 'error')
+
+        # GET request or after POST - show profile page
+        try:
+            # Get user stats
+            user_stats = {
+                'projects': 0,
+                'sessions': 0,
+                'files': 0
+            }
+
+            if repo_manager:
+                # Get actual user data for display
+                user_repo = repo_manager.get_repository('user')
+                user_data = user_repo.get_by_username(current_user.username)
+
+                # In a real implementation, you'd get actual project/session counts
+                # user_stats = get_user_activity_stats(current_user.username)
+
+            return render_template('auth.html', page='profile', user_stats=user_stats)
+
+        except Exception as e:
+            logger.error(f"Profile display error for {current_user.username}: {e}")
+            return render_template('auth.html', page='profile', user_stats={'projects': 0, 'sessions': 0, 'files': 0})
+
+    @app.route('/change-password', methods=['POST'])
+    @login_required
+    def change_password():
+        """Change user password."""
+        try:
+            current_password = request.form.get('current_password', '')
+            new_password = request.form.get('new_password', '')
+            confirm_password = request.form.get('confirm_password', '')
+
+            # Validation
+            if not current_password or not new_password or not confirm_password:
+                return jsonify({'success': False, 'message': 'All fields are required'})
+
+            if new_password != confirm_password:
+                return jsonify({'success': False, 'message': 'New passwords do not match'})
+
+            if len(new_password) < 8:
+                return jsonify({'success': False, 'message': 'New password must be at least 8 characters long'})
+
+            if not repo_manager:
+                return jsonify({'success': False, 'message': 'System unavailable'})
+
+            # Get current user
+            user_repo = repo_manager.get_repository('user')
+            user_data = user_repo.get_by_username(current_user.username)
+
+            if not user_data:
+                return jsonify({'success': False, 'message': 'User not found'})
+
+            # Verify current password
+            if not verify_password(current_password, user_data.password_hash):
+                return jsonify({'success': False, 'message': 'Current password is incorrect'})
+
+            # Update password
+            new_password_hash = hash_password(new_password)
+            user_data.password_hash = new_password_hash
+            user_data.updated_at = DateTimeHelper.now()
+
+            success = user_repo.update(user_data)
+
+            if success:
+                # Log password change event
+                if orchestrator:
+                    orchestrator.route_request('user_manager', 'track_activity', {
+                        'username': current_user.username,
+                        'activity': 'password_changed'
+                    })
+
+                return jsonify({'success': True, 'message': 'Password changed successfully'})
+            else:
+                return jsonify({'success': False, 'message': 'Failed to update password'})
+
+        except Exception as e:
+            logger.error(f"Password change error for {current_user.username}: {e}")
+            return jsonify({'success': False, 'message': 'An error occurred while changing password'})
 
     # =================================================================
     # MAIN DASHBOARD

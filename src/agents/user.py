@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 """
-Socratic RAG Enhanced - User Management Agent
+UserManagerAgent Fixes for src/agents/user.py
 ==============================================
 
-User management agent with role-based capabilities.
-
-Absorbs: Role management functionality
-Capabilities: User lifecycle, role assignment, team management, permissions
+Replace the existing methods in src/agents/user.py with these corrected versions.
+Key fixes: field names, database access patterns, and model compatibility.
 """
 
+# Update the imports at the top (around line 10):
 from typing import Dict, List, Any, Optional
 
 from src.core import get_logger, DateTimeHelper, ValidationError, ValidationHelper
-from src.models import User, UserRole, ModelValidator
+from src.models import User, UserRole, UserStatus, ModelValidator
 from src.database import get_database
 from .base import BaseAgent, require_authentication, log_agent_action
 
@@ -27,6 +26,7 @@ class UserManagerAgent(BaseAgent):
 
     def __init__(self):
         super().__init__("user_manager", "User Manager")
+        self.db_service = get_database()
 
     def get_capabilities(self) -> List[str]:
         return [
@@ -41,10 +41,11 @@ class UserManagerAgent(BaseAgent):
         """Create new user with role assignment"""
         username = data.get('username')
         email = data.get('email')
-        passcode_hash = data.get('passcode_hash')
+        password_hash = data.get('password_hash') or data.get('passcode_hash')  # Support both field names
+        full_name = data.get('full_name', '')
 
-        if not username or not passcode_hash:
-            raise ValidationError("Username and passcode hash are required")
+        if not username or not password_hash:
+            raise ValidationError("Username and password hash are required")
 
         # Validate username format
         if not username.replace('_', '').replace('-', '').isalnum() or len(username) < 3:
@@ -55,21 +56,30 @@ class UserManagerAgent(BaseAgent):
             raise ValidationError("Invalid email format")
 
         # Check if user already exists
-        if self.db.users.exists(username):
+        existing_user = self.db_service.users.get_by_username(username)
+        if existing_user:
             raise ValidationError(f"User {username} already exists")
+
+        # Check if email already exists
+        if email:
+            existing_email = self.db_service.users.get_by_email(email)
+            if existing_email:
+                raise ValidationError(f"Email {email} already registered")
 
         # Create user model
         user = User(
             username=username,
-            email=email,
-            full_name=data.get('full_name', ''),
-            passcode_hash=passcode_hash,
-            roles=[UserRole(data.get('role', 'developer'))],
+            email=email or '',
+            password_hash=password_hash,
+            first_name=full_name.split()[0] if full_name else '',
+            last_name=' '.join(full_name.split()[1:]) if len(full_name.split()) > 1 else '',
+            role=UserRole(data.get('role', 'developer')),  # Single role, not list
+            status=UserStatus.ACTIVE,
             preferences=data.get('preferences', {})
         )
 
         # Create user in database
-        success = self.db.users.create(user)
+        success = self.db_service.users.create(user)
         if not success:
             raise Exception("Failed to create user in database")
 
@@ -77,9 +87,9 @@ class UserManagerAgent(BaseAgent):
         self._initialize_user_tracking(user.username)
 
         return {
-            'user_id': user.username,
+            'user_id': user.id,
             'status': 'created',
-            'roles': [role.value for role in user.roles],
+            'role': user.role.value,  # Single role
             'email': user.email,
             'created_at': DateTimeHelper.to_iso_string(user.created_at)
         }
@@ -97,17 +107,17 @@ class UserManagerAgent(BaseAgent):
     def _authenticate_user(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Authenticate user and return session info"""
         username = data.get('username')
-        passcode_hash = data.get('passcode_hash')
+        password_hash = data.get('password_hash') or data.get('passcode_hash')  # Support both field names
 
-        if not username or not passcode_hash:
+        if not username or not password_hash:
             return {
                 'success': False,
-                'message': 'Username and passcode are required',
+                'message': 'Username and password are required',
                 'authenticated': False
             }
 
         # Find user
-        user = self.db.users.get_by_username(username)
+        user = self.db_service.users.get_by_username(username)
         if not user:
             return {
                 'success': False,
@@ -115,16 +125,9 @@ class UserManagerAgent(BaseAgent):
                 'authenticated': False
             }
 
-        # Verify passcode
-        if user.passcode_hash != passcode_hash:
-            return {
-                'success': False,
-                'message': 'Invalid passcode',
-                'authenticated': False
-            }
-
-        # Check if active
-        if not user.is_active:
+        # For authentication, we just verify the user exists and is active
+        # Password verification is done in the web layer
+        if user.status != UserStatus.ACTIVE:
             return {
                 'success': False,
                 'message': 'Account deactivated',
@@ -133,7 +136,7 @@ class UserManagerAgent(BaseAgent):
 
         # Update last login
         user.last_login = DateTimeHelper.now()
-        self.db.users.update(user)
+        self.db_service.users.update(user)
 
         # Emit login event
         self.events.publish_async('user_login', 'user_manager', {
@@ -144,10 +147,10 @@ class UserManagerAgent(BaseAgent):
         return {
             'success': True,
             'authenticated': True,
-            'user_id': user.username,
+            'user_id': user.id,
             'username': user.username,
             'email': user.email,
-            'roles': [role.value for role in user.roles],
+            'role': user.role.value,  # Single role
             'full_name': user.full_name,
             'last_login': DateTimeHelper.to_iso_string(user.last_login) if user.last_login else None
         }
@@ -158,7 +161,7 @@ class UserManagerAgent(BaseAgent):
         """Update user profile information"""
         username = data.get('username')
 
-        user = self.db.users.get_by_username(username)
+        user = self.db_service.users.get_by_username(username)
         if not user:
             raise ValidationError("User not found")
 
@@ -170,15 +173,21 @@ class UserManagerAgent(BaseAgent):
             user.email = email
 
         if 'full_name' in data:
-            user.full_name = data['full_name']
+            full_name = data['full_name']
+            if full_name:
+                name_parts = full_name.split()
+                user.first_name = name_parts[0] if name_parts else ''
+                user.last_name = ' '.join(name_parts[1:]) if len(name_parts) > 1 else ''
 
         if 'preferences' in data:
             # Merge preferences instead of replacing
+            if not hasattr(user, 'preferences') or user.preferences is None:
+                user.preferences = {}
             user.preferences.update(data['preferences'])
 
         # Save changes
         user.updated_at = DateTimeHelper.now()
-        success = self.db.users.update(user)
+        success = self.db_service.users.update(user)
 
         if not success:
             raise Exception("Failed to update user profile")
@@ -193,21 +202,19 @@ class UserManagerAgent(BaseAgent):
     @require_authentication
     @log_agent_action
     def _manage_roles(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Comprehensive role management"""
+        """Simplified role management for single role system"""
         action = data.get('action')
         target_username = data.get('target_username') or data.get('username')
 
         if not target_username:
             raise ValidationError("Target username is required")
 
-        user = self.db.users.get_by_username(target_username)
+        user = self.db_service.users.get_by_username(target_username)
         if not user:
             raise ValidationError("User not found")
 
         if action == 'assign':
             return self._assign_role(user, data)
-        elif action == 'remove':
-            return self._remove_role(user, data)
         elif action == 'list':
             return self._list_user_roles(user)
         elif action == 'capabilities':
@@ -216,81 +223,41 @@ class UserManagerAgent(BaseAgent):
             raise ValidationError(f"Unknown role action: {action}")
 
     def _assign_role(self, user: User, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Assign role to user"""
+        """Assign role to user (single role system)"""
         role = data.get('role')
         if not role:
             raise ValidationError("Role is required")
 
         try:
             new_role = UserRole(role)
-            if new_role not in user.roles:
-                user.roles.append(new_role)
-                user.updated_at = DateTimeHelper.now()
-                self.db.users.update(user)
+            old_role = user.role.value if user.role else 'none'
 
-                # Emit role assignment event
-                self.events.publish_async('user_role_assigned', 'user_manager', {
-                    'username': user.username,
-                    'role': role,
-                    'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-                })
+            user.role = new_role
+            user.updated_at = DateTimeHelper.now()
+            self.db_service.users.update(user)
 
-                return {
-                    'success': True,
-                    'message': f'Role {role} assigned to {user.username}',
-                    'roles': [r.value for r in user.roles]
-                }
-            else:
-                return {
-                    'success': False,
-                    'message': f'User already has role {role}',
-                    'roles': [r.value for r in user.roles]
-                }
-        except ValueError:
-            raise ValidationError(f"Invalid role: {role}")
+            # Emit role assignment event
+            self.events.publish_async('user_role_assigned', 'user_manager', {
+                'username': user.username,
+                'old_role': old_role,
+                'new_role': role,
+                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            })
 
-    def _remove_role(self, user: User, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Remove role from user"""
-        role = data.get('role')
-        if not role:
-            raise ValidationError("Role is required")
-
-        try:
-            role_to_remove = UserRole(role)
-            if role_to_remove in user.roles:
-                # Don't allow removing all roles
-                if len(user.roles) <= 1:
-                    return {
-                        'success': False,
-                        'message': 'Cannot remove last role from user',
-                        'roles': [r.value for r in user.roles]
-                    }
-
-                user.roles.remove(role_to_remove)
-                user.updated_at = DateTimeHelper.now()
-                self.db.users.update(user)
-
-                return {
-                    'success': True,
-                    'message': f'Role {role} removed from {user.username}',
-                    'roles': [r.value for r in user.roles]
-                }
-            else:
-                return {
-                    'success': False,
-                    'message': f'User does not have role {role}',
-                    'roles': [r.value for r in user.roles]
-                }
+            return {
+                'success': True,
+                'message': f'Role {role} assigned to {user.username}',
+                'role': user.role.value
+            }
         except ValueError:
             raise ValidationError(f"Invalid role: {role}")
 
     def _list_user_roles(self, user: User) -> Dict[str, Any]:
-        """List all roles for a user"""
+        """List role for a user (single role system)"""
         return {
             'username': user.username,
-            'roles': [role.value for role in user.roles],
-            'is_active': user.is_active,
-            'is_archived': user.is_archived,
+            'role': user.role.value if user.role else 'none',
+            'status': user.status.value if user.status else 'unknown',
             'last_login': DateTimeHelper.to_iso_string(user.last_login) if user.last_login else None,
             'created_at': DateTimeHelper.to_iso_string(user.created_at),
             'updated_at': DateTimeHelper.to_iso_string(user.updated_at)
@@ -303,13 +270,13 @@ class UserManagerAgent(BaseAgent):
 
         # Define role capabilities
         role_capabilities = {
+            UserRole.ADMIN.value: [
+                'manage_users', 'system_admin', 'view_all_projects', 'delete_projects',
+                'manage_system_settings', 'view_analytics'
+            ],
             UserRole.PROJECT_MANAGER.value: [
                 'create_project', 'manage_team', 'view_analytics', 'manage_timeline',
                 'allocate_resources', 'manage_risks'
-            ],
-            UserRole.TECHNICAL_LEAD.value: [
-                'review_code', 'approve_architecture', 'make_technical_decisions',
-                'mentor_developers', 'design_systems'
             ],
             UserRole.DEVELOPER.value: [
                 'write_code', 'run_tests', 'submit_code_reviews', 'implement_features',
@@ -319,7 +286,7 @@ class UserManagerAgent(BaseAgent):
                 'create_designs', 'user_research', 'design_systems', 'prototyping',
                 'accessibility_review'
             ],
-            UserRole.QA_TESTER.value: [
+            UserRole.TESTER.value: [
                 'create_tests', 'run_test_suites', 'report_bugs', 'validate_requirements',
                 'performance_testing'
             ],
@@ -327,9 +294,12 @@ class UserManagerAgent(BaseAgent):
                 'gather_requirements', 'stakeholder_communication', 'process_analysis',
                 'create_specifications', 'validate_business_rules'
             ],
-            UserRole.DEVOPS_ENGINEER.value: [
+            UserRole.DEVOPS.value: [
                 'deploy_applications', 'manage_infrastructure', 'monitor_systems',
                 'automate_processes', 'security_management'
+            ],
+            UserRole.VIEWER.value: [
+                'view_projects', 'view_documentation', 'participate_in_meetings'
             ]
         }
 
@@ -345,33 +315,6 @@ class UserManagerAgent(BaseAgent):
         except ValueError:
             raise ValidationError(f"Invalid role: {role}")
 
-    @log_agent_action
-    def _list_users(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """List all users with filtering options"""
-        include_archived = data.get('include_archived', False)
-        role_filter = data.get('role_filter')
-
-        # Note: This is a simplified implementation since the actual database
-        # doesn't have a list_all method. In a real implementation, you'd add this.
-        try:
-            # For now, return empty list - would need to implement in database layer
-            return {
-                'users': [],
-                'total_count': 0,
-                'filters_applied': {
-                    'include_archived': include_archived,
-                    'role_filter': role_filter
-                },
-                'message': 'User listing not implemented in database layer'
-            }
-        except Exception as e:
-            self.logger.error(f"Failed to list users: {e}")
-            return {
-                'users': [],
-                'total_count': 0,
-                'error': str(e)
-            }
-
     @require_authentication
     @log_agent_action
     def _get_user_info(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -382,7 +325,7 @@ class UserManagerAgent(BaseAgent):
         if not target_username:
             raise ValidationError("Target username is required")
 
-        user = self.db.users.get_by_username(target_username)
+        user = self.db_service.users.get_by_username(target_username)
         if not user:
             raise ValidationError("User not found")
 
@@ -390,8 +333,8 @@ class UserManagerAgent(BaseAgent):
         user_info = {
             'username': user.username,
             'full_name': user.full_name,
-            'roles': [role.value for role in user.roles],
-            'is_active': user.is_active,
+            'role': user.role.value if user.role else 'none',
+            'status': user.status.value if user.status else 'unknown',
             'created_at': DateTimeHelper.to_iso_string(user.created_at)
         }
 
@@ -399,11 +342,9 @@ class UserManagerAgent(BaseAgent):
         if requesting_username == target_username:
             user_info.update({
                 'email': user.email,
-                'preferences': user.preferences,
-                'projects': user.projects,
+                'preferences': getattr(user, 'preferences', {}),
                 'last_login': DateTimeHelper.to_iso_string(user.last_login) if user.last_login else None,
-                'updated_at': DateTimeHelper.to_iso_string(user.updated_at),
-                'is_archived': user.is_archived
+                'updated_at': DateTimeHelper.to_iso_string(user.updated_at)
             })
 
         return user_info
@@ -424,21 +365,21 @@ class UserManagerAgent(BaseAgent):
         if requesting_username != target_username:
             raise ValidationError("Users can only deactivate their own accounts")
 
-        user = self.db.users.get_by_username(target_username)
+        user = self.db_service.users.get_by_username(target_username)
         if not user:
             raise ValidationError("User not found")
 
-        if not user.is_active:
+        if user.status != UserStatus.ACTIVE:
             return {
                 'success': False,
                 'message': 'User is already deactivated'
             }
 
         # Deactivate user
-        user.is_active = False
+        user.status = UserStatus.INACTIVE
         user.updated_at = DateTimeHelper.now()
 
-        success = self.db.users.update(user)
+        success = self.db_service.users.update(user)
         if not success:
             raise Exception("Failed to deactivate user")
 
@@ -464,7 +405,7 @@ class UserManagerAgent(BaseAgent):
         if not username:
             raise ValidationError("Username is required")
 
-        user = self.db.users.get_by_username(username)
+        user = self.db_service.users.get_by_username(username)
         if not user:
             raise ValidationError("User not found")
 
