@@ -26,10 +26,10 @@ try:
     # Core infrastructure
     from .core import (
         # System management
-        SocraticSystem, get_system, get_config, get_logger, get_event_bus, get_db_manager,
+        SystemConfig, get_config, get_logger, get_event_bus, DatabaseManager,
 
         # Configuration and utilities
-        SystemConfig, ConfigManager, LogManager, DateTimeHelper, FileHelper, ValidationHelper,
+        DateTimeHelper, FileHelper, ValidationHelper,
 
         # Exceptions
         SocraticException, ConfigurationError, ValidationError, APIError,
@@ -37,7 +37,7 @@ try:
         AuthenticationError, ConflictError,
 
         # Event system
-        Event, EventBus, DatabaseManager
+        Event, EventSystem, initialize_system as init_core_system
     )
 
     CORE_AVAILABLE = True
@@ -54,7 +54,7 @@ try:
     from .models import (
         # Main entities
         Project, Module, GeneratedFile, TestResult, User, Collaborator,
-        ConversationMessage, TechnicalSpecification,
+        ConversationMessage, TechnicalSpec,
 
         # Enums
         ProjectPhase, ProjectStatus, ModuleStatus, ModuleType, Priority, RiskLevel,
@@ -77,7 +77,7 @@ try:
     # Database layer
     from .database import (
         # Main service
-        DatabaseService, get_database,
+        DatabaseService, get_database, get_repository_manager,
 
         # Repositories
         UserRepository, ProjectRepository, ModuleRepository,
@@ -126,13 +126,22 @@ except ImportError as e:
 SERVICES_AVAILABLE = False
 try:
     from . import services
+    # Import specific service functions for web app access
+    from .services import get_services_status, initialize_all_services
 
-    # This will be expanded as we add service modules:
-    # from .services import claude_service, vector_service, git_service, ide_service
     SERVICES_AVAILABLE = True
 except ImportError:
     # Services not yet implemented - this is expected during development
-    pass
+    SERVICES_AVAILABLE = False
+
+
+    # Define fallback functions
+    def get_services_status():
+        return {'available_services': {}, 'total_available': 0, 'status': 'unavailable'}
+
+
+    def initialize_all_services():
+        return {'initialized': 0, 'status': 'failed', 'error': 'Services not available'}
 
 # ============================================================================
 # AGENTS IMPORTS (Dynamic - will expand as agents are added)
@@ -141,19 +150,28 @@ except ImportError:
 AGENTS_AVAILABLE = False
 try:
     from . import agents
+    # Import specific agent functions for web app access
+    from .agents import get_orchestrator, initialize_all_agents
 
-    # This will be expanded as we add agent modules:
-    # from .agents import get_orchestrator, SocraticCounselorAgent, CodeGeneratorAgent, etc.
     AGENTS_AVAILABLE = True
 except ImportError:
     # Agents not yet implemented - this is expected during development
-    pass
+    AGENTS_AVAILABLE = False
+
+
+    # Define fallback functions
+    def get_orchestrator():
+        return None
+
+
+    def initialize_all_agents():
+        return {'initialized': 0, 'status': 'failed', 'error': 'Agents not available'}
 
 # ============================================================================
 # PACKAGE INFORMATION
 # ============================================================================
 
-__version__ = "7.2.0"
+__version__ = "7.3.0"
 __title__ = "Socratic RAG Enhanced"
 __description__ = "Complete Socratic questioning system with modular agent architecture"
 __author__ = "Socratic RAG Development Team"
@@ -256,32 +274,50 @@ def _check_optional_dependencies() -> Dict[str, bool]:
     return dependencies
 
 
-def initialize_system(config_path: Optional[str] = None,
-                      auto_initialize: bool = True) -> Optional['SocraticSystem']:
+def initialize_system(config_path: Optional[str] = None) -> Optional[SystemConfig]:
     """Initialize the complete Socratic system"""
     if not CORE_AVAILABLE:
         print("Error: Core system not available - cannot initialize")
         return None
 
     try:
-        if auto_initialize:
-            # Get the global system instance (initializes automatically)
-            system = get_system()
+        # Initialize core system
+        if init_core_system:
+            success = init_core_system(config_path or "config.yaml")
+            if not success:
+                print("Error: Core system initialization failed")
+                return None
 
-            # Initialize database if available
-            if DATABASE_AVAILABLE:
+        # Get the global system instance
+        system = get_config()
+
+        # Initialize database if available
+        if DATABASE_AVAILABLE:
+            try:
                 get_database()
+            except Exception as e:
+                print(f"Warning: Database initialization failed: {e}")
 
+        # Initialize services if available
+        if SERVICES_AVAILABLE:
+            try:
+                initialize_all_services()
+            except Exception as e:
+                print(f"Warning: Services initialization failed: {e}")
+
+        # Initialize agents if available
+        if AGENTS_AVAILABLE:
+            try:
+                initialize_all_agents()
+            except Exception as e:
+                print(f"Warning: Agents initialization failed: {e}")
+
+        if CORE_AVAILABLE:
             logger = get_logger('package')
             logger.info(f"Socratic RAG Enhanced v{__version__} initialized successfully")
             logger.info(f"Components available: {list(k for k, v in AVAILABILITY_STATUS.items() if v)}")
 
-            return system
-        else:
-            # Manual initialization
-            system = SocraticSystem(config_path)
-            system.initialize()
-            return system
+        return system
 
     except Exception as e:
         print(f"Error: System initialization failed: {e}")
@@ -292,18 +328,11 @@ def get_system_status() -> Dict[str, Any]:
     """Get comprehensive system status"""
     status = {
         'package_info': get_package_info(),
-        'system_initialized': False,
+        'system_initialized': CORE_AVAILABLE,
         'database_healthy': False,
         'services_available': {},
         'agents_available': {}
     }
-
-    if CORE_AVAILABLE:
-        try:
-            system = get_system()
-            status['system_initialized'] = system.is_initialized
-        except:
-            pass
 
     if DATABASE_AVAILABLE:
         try:
@@ -311,17 +340,26 @@ def get_system_status() -> Dict[str, Any]:
             health = db.health_check()
             status['database_healthy'] = health.get('status') == 'healthy'
             status['database_info'] = health
-        except:
-            pass
+        except Exception as e:
+            status['database_error'] = str(e)
 
-    # Add service and agent status as they become available
+    # Add service status
     if SERVICES_AVAILABLE:
-        # This will be expanded as services are implemented
-        status['services_available'] = {}
+        try:
+            status['services_available'] = get_services_status()
+        except Exception as e:
+            status['services_error'] = str(e)
 
+    # Add agent status
     if AGENTS_AVAILABLE:
-        # This will be expanded as agents are implemented
-        status['agents_available'] = {}
+        try:
+            orchestrator = get_orchestrator()
+            if orchestrator:
+                status['agents_available'] = orchestrator.get_agent_status()
+            else:
+                status['agents_available'] = {'status': 'no_orchestrator'}
+        except Exception as e:
+            status['agents_error'] = str(e)
 
     return status
 
@@ -333,7 +371,7 @@ def get_system_status() -> Dict[str, Any]:
 # Make the most commonly used items available at package level
 if CORE_AVAILABLE:
     # Most common core imports
-    from .core import get_system, get_config, get_logger, SocraticException
+    from .core import get_config, get_logger, SocraticException
 
 if MODELS_AVAILABLE:
     # Most common model imports
@@ -368,8 +406,8 @@ __all__ = [
 # Conditionally add exports based on what's available
 if CORE_AVAILABLE:
     __all__.extend([
-        'SocraticSystem', 'get_system', 'get_config', 'get_logger', 'get_event_bus', 'get_db_manager',
-        'SystemConfig', 'ConfigManager', 'DateTimeHelper', 'FileHelper', 'ValidationHelper',
+        'SystemConfig', 'get_config', 'get_logger', 'get_event_bus',
+        'DateTimeHelper', 'FileHelper', 'ValidationHelper',
         'SocraticException', 'ValidationError', 'DatabaseError', 'APIError'
     ])
 
@@ -382,7 +420,8 @@ if MODELS_AVAILABLE:
 
 if DATABASE_AVAILABLE:
     __all__.extend([
-        'get_database', 'DatabaseService', 'UserRepository', 'ProjectRepository'
+        'get_database', 'get_repository_manager', 'DatabaseService',
+        'UserRepository', 'ProjectRepository'
     ])
 
 if UTILS_AVAILABLE:
@@ -392,34 +431,47 @@ if UTILS_AVAILABLE:
         'DocumentInfo', 'TextChunk', 'CodeAnalysisResult'
     ])
 
+if SERVICES_AVAILABLE:
+    __all__.extend([
+        'get_services_status', 'initialize_all_services'
+    ])
+
+if AGENTS_AVAILABLE:
+    __all__.extend([
+        'get_orchestrator', 'initialize_all_agents'
+    ])
+
 # ============================================================================
 # PACKAGE INITIALIZATION
 # ============================================================================
 
 # Create package-level logger if core is available
 if CORE_AVAILABLE:
-    _package_logger = get_logger('package')
-    _package_logger.info(f"Socratic RAG Enhanced v{__version__} package loaded")
+    try:
+        _package_logger = get_logger('package')
+        _package_logger.info(f"Socratic RAG Enhanced v{__version__} package loaded")
 
-    # Log component availability
-    available_components = [name for name, status in AVAILABILITY_STATUS.items() if status]
-    unavailable_components = [name for name, status in AVAILABILITY_STATUS.items() if not status]
+        # Log component availability
+        available_components = [name for name, status in AVAILABILITY_STATUS.items() if status]
+        unavailable_components = [name for name, status in AVAILABILITY_STATUS.items() if not status]
 
-    if available_components:
-        _package_logger.info(f"Available components: {', '.join(available_components)}")
+        if available_components:
+            _package_logger.info(f"Available components: {', '.join(available_components)}")
 
-    if unavailable_components:
-        _package_logger.info(f"Pending components: {', '.join(unavailable_components)}")
+        if unavailable_components:
+            _package_logger.info(f"Pending components: {', '.join(unavailable_components)}")
 
-    # Check for missing critical dependencies
-    deps = _check_optional_dependencies()
-    missing_critical = []
+        # Check for missing critical dependencies
+        deps = _check_optional_dependencies()
+        missing_critical = []
 
-    if not deps.get('anthropic', False):
-        missing_critical.append('anthropic (Claude API)')
+        if not deps.get('anthropic', False):
+            missing_critical.append('anthropic (Claude API)')
 
-    if missing_critical:
-        _package_logger.warning(f"Missing critical dependencies: {', '.join(missing_critical)}")
+        if missing_critical:
+            _package_logger.warning(f"Missing critical dependencies: {', '.join(missing_critical)}")
+    except Exception as e:
+        print(f"Warning: Package logging failed: {e}")
 
 else:
     print(f"Socratic RAG Enhanced v{__version__} package loaded (core system unavailable)")
@@ -440,7 +492,10 @@ def _print_debug_info():
         print(f"  {status} {component}")
 
     if CORE_AVAILABLE:
-        print(f"\n⚙️  System Config Available: {get_config() is not None}")
+        try:
+            print(f"\n⚙️  System Config Available: {get_config() is not None}")
+        except:
+            print(f"\n⚙️  System Config Available: Error accessing config")
 
     print(f"\n🐍 Python Version: {sys.version}")
 
@@ -460,58 +515,3 @@ def _print_debug_info():
 # Show debug info if run directly or in debug mode
 if __name__ == "__main__" or getattr(sys, '_called_from_test', False):
     _print_debug_info()
-
-"""
-What src/__init__.py Provides:
-
-📦 **Package Organization**:
-- Makes `src/` a proper Python package
-- Clean imports for all major components
-- Graceful handling of missing/pending components
-
-🔧 **System Management**:
-- `initialize_system()` - Complete system setup
-- `get_system_status()` - Comprehensive status checking
-- `get_package_info()` - Version and component information
-
-📊 **Component Availability Tracking**:
-- Tracks which components are loaded successfully
-- Handles missing dependencies gracefully
-- Reports on optional dependency status
-
-🚀 **Convenience Imports**:
-- Most common items available at package level
-- `from src import get_logger, Project, get_database`
-- Easy access without deep imports
-
-🔍 **Development Support**:
-- Debug information printing
-- Dependency status checking
-- Component availability reporting
-
-Usage Examples:
-```python
-# Package-level usage
-from src import initialize_system, get_package_info
-system = initialize_system()
-info = get_package_info()
-
-# Component usage
-from src import get_logger, Project, get_database
-logger = get_logger('my_module')
-db = get_database()
-project = Project(name="My Project", owner="user")
-
-# Status checking
-from src import get_system_status
-status = get_system_status()
-print(f"System healthy: {status['database_healthy']}")
-```
-
-🎯 **Benefits**:
-- Clean package structure
-- Easy imports for external code
-- Graceful degradation during development
-- Comprehensive status tracking
-- Ready for services/ and agents/ subdirectories
-"""

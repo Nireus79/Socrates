@@ -4,18 +4,24 @@ Socratic RAG Enhanced - Agent Orchestrator
 ==========================================
 
 Central orchestrator for all agents with intelligent request routing.
-
-Manages all 8 agents and provides unified interface for agent operations.
+Manages all agents and provides unified interface for agent operations.
 """
 
 from typing import Dict, List, Any, Optional
+import logging
 
-from src.core import get_logger, get_event_bus, DateTimeHelper
+# Import core system components with fallbacks
+try:
+    from src.core import get_logger, get_event_bus, DateTimeHelper
+
+    CORE_AVAILABLE = True
+except ImportError:
+    CORE_AVAILABLE = False
+    get_logger = lambda x: logging.getLogger(x)
+    get_event_bus = lambda: None
+    DateTimeHelper = None
+
 from .base import BaseAgent
-
-# Import all agent classes (will be available when other files are created)
-from .user import UserManagerAgent
-from .monitor import SystemMonitorAgent
 
 
 class AgentOrchestrator:
@@ -24,10 +30,10 @@ class AgentOrchestrator:
     """
 
     def __init__(self):
-        self.logger = get_logger("orchestrator")
-        self.events = get_event_bus()
+        self.logger = get_logger("orchestrator") if CORE_AVAILABLE else logging.getLogger("orchestrator")
+        self.events = get_event_bus() if CORE_AVAILABLE else None
 
-        # Initialize agents (some imports will be available after files are created)
+        # Initialize agents dictionary
         self.agents = {}
         self._initialize_agents()
 
@@ -37,61 +43,39 @@ class AgentOrchestrator:
         self.logger.info(f"Agent orchestrator initialized with {len(self.agents)} agents")
 
     def _initialize_agents(self) -> None:
-        """Initialize all available agents"""
-        # Initialize agents that are available
+        """Initialize all available agents with graceful fallbacks"""
+
+        # Initialize UserManagerAgent (priority for authentication)
         try:
+            from .user import UserManagerAgent
             self.agents['user_manager'] = UserManagerAgent()
             self.logger.info("UserManagerAgent initialized")
         except Exception as e:
             self.logger.error(f"Failed to initialize UserManagerAgent: {e}")
 
-        try:
-            self.agents['system_monitor'] = SystemMonitorAgent()
-            self.logger.info("SystemMonitorAgent initialized")
-        except Exception as e:
-            self.logger.error(f"Failed to initialize SystemMonitorAgent: {e}")
+        # Initialize other agents with individual try/catch blocks
+        agent_configs = [
+            ('socratic_counselor', 'socratic', 'SocraticCounselorAgent'),
+            ('code_generator', 'code', 'CodeGeneratorAgent'),
+            ('project_manager', 'project', 'ProjectManagerAgent'),
+            ('context_analyzer', 'context', 'ContextAnalyzerAgent'),
+            ('document_processor', 'document', 'DocumentProcessorAgent'),
+            ('services_agent', 'services', 'ServicesAgent'),
+            ('system_monitor', 'monitor', 'SystemMonitorAgent'),
+        ]
 
-        try:
-            from .socratic import SocraticCounselorAgent
-            self.agents['socratic_counselor'] = SocraticCounselorAgent()
-            self.logger.info("SocraticCounselorAgent initialized")
-        except Exception as e:
-            self.logger.error(f"Failed to initialize SocraticCounselorAgent: {e}")
-
-        try:
-            from .code import CodeGeneratorAgent
-            self.agents['code_generator'] = CodeGeneratorAgent()
-            self.logger.info("CodeGeneratorAgent initialized")
-        except Exception as e:
-            self.logger.error(f"Failed to initialize CodeGeneratorAgent: {e}")
-
-        try:
-            from .project import ProjectManagerAgent
-            self.agents['project_manager'] = ProjectManagerAgent()
-            self.logger.info("ProjectManagerAgent initialized")
-        except Exception as e:
-            self.logger.error(f"Failed to initialize ProjectManagerAgent: {e}")
-
-        try:
-            from .context import ContextAnalyzerAgent
-            self.agents['context_analyzer'] = ContextAnalyzerAgent()
-            self.logger.info("ContextAnalyzerAgent initialized")
-        except Exception as e:
-            self.logger.error(f"Failed to initialize ContextAnalyzerAgent: {e}")
-
-        try:
-            from .document import DocumentProcessorAgent
-            self.agents['document_processor'] = DocumentProcessorAgent()
-            self.logger.info("DocumentProcessorAgent initialized")
-        except Exception as e:
-            self.logger.error(f"Failed to initialize DocumentProcessorAgent: {e}")
-
-        try:
-            from .services import ServicesAgent
-            self.agents['services_agent'] = ServicesAgent()
-            self.logger.info("ServicesAgent initialized")
-        except Exception as e:
-            self.logger.error(f"Failed to initialize ServicesAgent: {e}")
+        for agent_id, module_name, class_name in agent_configs:
+            try:
+                module = __import__(f'.{module_name}', package='src.agents', level=0)
+                agent_class = getattr(module, class_name)
+                self.agents[agent_id] = agent_class()
+                self.logger.info(f"{class_name} initialized")
+            except ImportError as e:
+                self.logger.warning(f"Module {module_name} not available: {e}")
+            except AttributeError as e:
+                self.logger.warning(f"Class {class_name} not found in module {module_name}: {e}")
+            except Exception as e:
+                self.logger.error(f"Failed to initialize {class_name}: {e}")
 
     def _build_capability_map(self) -> Dict[str, str]:
         """Build mapping of capabilities to agents"""
@@ -99,7 +83,8 @@ class AgentOrchestrator:
 
         for agent_id, agent in self.agents.items():
             try:
-                for capability in agent.get_capabilities():
+                capabilities = agent.get_capabilities()
+                for capability in capabilities:
                     if capability in capability_map:
                         self.logger.warning(
                             f"Capability '{capability}' is provided by multiple agents: "
@@ -114,60 +99,68 @@ class AgentOrchestrator:
 
     def route_request(self, agent_id: str, action: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Route request to appropriate agent"""
-        # Validate agent exists
-        if agent_id not in self.agents:
-            available_agents = list(self.agents.keys())
-            self.logger.warning(f"Request for unknown agent: {agent_id}")
-            return {
-                'success': False,
-                'error': f"Unknown agent: {agent_id}",
-                'available_agents': available_agents,
-                'agent_count': len(available_agents)
-            }
-
-        agent = self.agents[agent_id]
-
-        # Validate agent supports the action
         try:
-            supported_capabilities = agent.get_capabilities()
-            if action not in supported_capabilities:
-                self.logger.warning(f"Agent {agent_id} does not support action: {action}")
+            # Validate agent exists
+            if agent_id not in self.agents:
+                available_agents = list(self.agents.keys())
+                self.logger.warning(f"Request for unknown agent: {agent_id}")
                 return {
                     'success': False,
-                    'error': f"Agent {agent_id} does not support action: {action}",
-                    'supported_actions': supported_capabilities,
-                    'requested_action': action
+                    'error': f"Unknown agent: {agent_id}",
+                    'available_agents': available_agents,
+                    'agent_count': len(available_agents)
                 }
-        except Exception as e:
-            self.logger.error(f"Failed to get capabilities from agent {agent_id}: {e}")
-            return {
-                'success': False,
-                'error': f"Failed to validate agent capabilities: {str(e)}"
-            }
 
-        # Process request through agent
-        try:
+            agent = self.agents[agent_id]
+
+            # Validate agent supports the action
+            try:
+                supported_capabilities = agent.get_capabilities()
+                if action not in supported_capabilities:
+                    self.logger.warning(f"Agent {agent_id} does not support action: {action}")
+                    return {
+                        'success': False,
+                        'error': f"Agent {agent_id} does not support action: {action}",
+                        'supported_actions': supported_capabilities,
+                        'requested_action': action
+                    }
+            except Exception as e:
+                self.logger.error(f"Failed to get capabilities from agent {agent_id}: {e}")
+                # Continue anyway - agent might support the action
+
+            # Process request through agent
             self.logger.debug(f"Routing {action} request to {agent_id}")
             result = agent.process_request(action, data)
 
-            # Emit routing event
-            self.events.publish_async('request_routed', 'orchestrator', {
-                'agent_id': agent_id,
-                'action': action,
-                'success': result.get('success', False),
-                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-            })
+            # Emit routing event if events are available
+            if self.events:
+                try:
+                    timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
+                    event_data = {
+                        'agent_id': agent_id,
+                        'action': action,
+                        'success': result.get('success', False),
+                        'timestamp': timestamp
+                    }
+
+                    if hasattr(self.events, 'publish_async'):
+                        self.events.publish_async('request_routed', 'orchestrator', event_data)
+                    elif hasattr(self.events, 'emit'):
+                        self.events.emit('request_routed', 'orchestrator', event_data)
+                except Exception as e:
+                    self.logger.warning(f"Failed to emit routing event: {e}")
 
             return result
 
         except Exception as e:
             self.logger.error(f"Error routing request to {agent_id}.{action}: {e}")
+            timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
             return {
                 'success': False,
                 'error': f"Agent request failed: {str(e)}",
                 'agent_id': agent_id,
                 'action': action,
-                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                'timestamp': timestamp
             }
 
     def route_by_capability(self, capability: str, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -187,34 +180,67 @@ class AgentOrchestrator:
 
         return self.route_request(agent_id, capability, data)
 
-    def get_agent_status(self) -> Dict[str, Any]:
-        """Get status of all agents"""
+    def get_agent_status(self, agent_id: Optional[str] = None) -> Dict[str, Any]:
+        """Get status of specific agent or all agents"""
+        timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
+
+        if agent_id:
+            # Get status of specific agent
+            if agent_id not in self.agents:
+                return {
+                    'success': False,
+                    'error': f"Unknown agent: {agent_id}",
+                    'available_agents': list(self.agents.keys()),
+                    'timestamp': timestamp
+                }
+
+            agent = self.agents[agent_id]
+            try:
+                return {
+                    'agent_id': agent_id,
+                    'name': getattr(agent, 'name', 'Unknown'),
+                    'status': 'active',
+                    'capabilities': agent.get_capabilities(),
+                    'capability_count': len(agent.get_capabilities()),
+                    'has_claude': hasattr(agent, 'claude_client') and agent.claude_client is not None,
+                    'timestamp': timestamp
+                }
+            except Exception as e:
+                return {
+                    'agent_id': agent_id,
+                    'name': getattr(agent, 'name', 'Unknown'),
+                    'status': 'error',
+                    'error': str(e),
+                    'timestamp': timestamp
+                }
+
+        # Get status of all agents
         status = {
             'total_agents': len(self.agents),
             'total_capabilities': len(self.capability_map),
             'agents': {},
             'system_health': 'healthy',
-            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            'timestamp': timestamp
         }
 
         healthy_agents = 0
 
-        for agent_id, agent in self.agents.items():
+        for aid, agent in self.agents.items():
             try:
                 agent_info = {
-                    'name': agent.name,
+                    'name': getattr(agent, 'name', 'Unknown'),
                     'status': 'active',
                     'capabilities': agent.get_capabilities(),
                     'capability_count': len(agent.get_capabilities()),
                     'has_claude': hasattr(agent, 'claude_client') and agent.claude_client is not None
                 }
 
-                status['agents'][agent_id] = agent_info
+                status['agents'][aid] = agent_info
                 healthy_agents += 1
 
             except Exception as e:
-                self.logger.error(f"Failed to get status from agent {agent_id}: {e}")
-                status['agents'][agent_id] = {
+                self.logger.error(f"Failed to get status from agent {aid}: {e}")
+                status['agents'][aid] = {
                     'name': getattr(agent, 'name', 'Unknown'),
                     'status': 'error',
                     'error': str(e),
@@ -274,6 +300,8 @@ class AgentOrchestrator:
         # Calculate totals
         total_capabilities = sum(len(caps) for caps in capabilities_by_category.values())
 
+        timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
+
         return {
             'total_capabilities': total_capabilities,
             'capabilities_by_category': capabilities_by_category,
@@ -284,7 +312,7 @@ class AgentOrchestrator:
                 if caps  # Only include non-empty categories
             },
             'most_capable_agent': self._get_most_capable_agent(),
-            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            'timestamp': timestamp
         }
 
     def _get_most_capable_agent(self) -> Optional[Dict[str, Any]]:
@@ -299,7 +327,7 @@ class AgentOrchestrator:
                     max_capabilities = capability_count
                     most_capable = {
                         'agent_id': agent_id,
-                        'name': agent.name,
+                        'name': getattr(agent, 'name', 'Unknown'),
                         'capability_count': capability_count
                     }
             except Exception as e:
@@ -314,7 +342,7 @@ class AgentOrchestrator:
         for agent_id, agent in self.agents.items():
             try:
                 agents_info[agent_id] = {
-                    'name': agent.name,
+                    'name': getattr(agent, 'name', 'Unknown'),
                     'capabilities': agent.get_capabilities(),
                     'status': 'active'
                 }
@@ -326,41 +354,58 @@ class AgentOrchestrator:
                     'error': str(e)
                 }
 
+        timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
+
         return {
             'agents': agents_info,
             'total_count': len(agents_info),
-            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            'timestamp': timestamp
         }
 
     def broadcast_event(self, event_type: str, data: Dict[str, Any]) -> None:
         """Broadcast event to all agents that might be interested"""
-        self.events.publish_async(event_type, 'orchestrator', data)
-        self.logger.info(f"Broadcasted event: {event_type} to {len(self.agents)} agents")
+        if self.events:
+            try:
+                if hasattr(self.events, 'publish_async'):
+                    self.events.publish_async(event_type, 'orchestrator', data)
+                elif hasattr(self.events, 'emit'):
+                    self.events.emit(event_type, 'orchestrator', data)
+                self.logger.info(f"Broadcasted event: {event_type} to {len(self.agents)} agents")
+            except Exception as e:
+                self.logger.error(f"Failed to broadcast event {event_type}: {e}")
 
     def health_check(self) -> Dict[str, Any]:
         """Perform comprehensive health check of orchestrator and agents"""
+        timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
+
         health = {
             'orchestrator_status': 'healthy',
             'agents_initialized': len(self.agents),
             'capabilities_mapped': len(self.capability_map),
             'agent_health': {},
-            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            'timestamp': timestamp
         }
 
         # Check health of agents that support health checking
         for agent_id, agent in self.agents.items():
-            if hasattr(agent, 'get_capabilities') and 'check_health' in agent.get_capabilities():
-                try:
-                    agent_health = agent.process_request('check_health', {})
+            try:
+                if hasattr(agent, 'get_capabilities') and 'health_check' in agent.get_capabilities():
+                    agent_health = agent.process_request('health_check', {})
                     health['agent_health'][agent_id] = {
                         'status': 'healthy' if agent_health.get('success') else 'unhealthy',
                         'details': agent_health.get('data', {})
                     }
-                except Exception as e:
+                else:
+                    # Agent doesn't support health check, assume healthy if it responds
                     health['agent_health'][agent_id] = {
-                        'status': 'error',
-                        'error': str(e)
+                        'status': 'healthy',
+                        'details': {'note': 'No health check capability'}
                     }
+            except Exception as e:
+                health['agent_health'][agent_id] = {
+                    'status': 'error',
+                    'error': str(e)
+                }
 
         # Determine overall orchestrator health
         unhealthy_count = sum(
@@ -377,7 +422,7 @@ class AgentOrchestrator:
 
         return health
 
-    def shutdown(self) -> None:
+    def shutdown_all(self) -> None:
         """Shutdown all agents gracefully"""
         self.logger.info("Shutting down agent orchestrator...")
 
@@ -398,28 +443,57 @@ class AgentOrchestrator:
                 self.logger.error(f"Error shutting down agent {agent_id}: {e}")
 
         # Emit shutdown event
-        self.events.publish_async('orchestrator_shutdown', 'orchestrator', {
-            'shutdown_results': shutdown_results,
-            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-        })
+        if self.events:
+            try:
+                timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
+                event_data = {
+                    'shutdown_results': shutdown_results,
+                    'timestamp': timestamp
+                }
+
+                if hasattr(self.events, 'publish_async'):
+                    self.events.publish_async('orchestrator_shutdown', 'orchestrator', event_data)
+                elif hasattr(self.events, 'emit'):
+                    self.events.emit('orchestrator_shutdown', 'orchestrator', event_data)
+            except Exception as e:
+                self.logger.error(f"Failed to emit shutdown event: {e}")
 
         self.logger.info(f"Agent orchestrator shutdown complete. Results: {shutdown_results}")
 
     def get_routing_statistics(self) -> Dict[str, Any]:
         """Get statistics about request routing"""
-        return {
-            'total_agents': len(self.agents),
-            'total_capabilities': len(self.capability_map),
-            'agents_with_capabilities': len([
-                agent_id for agent_id, agent in self.agents.items()
-                if len(agent.get_capabilities()) > 0
-            ]),
-            'capability_distribution': {
-                agent_id: len(agent.get_capabilities())
-                for agent_id, agent in self.agents.items()
-            },
-            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-        }
+        timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
+
+        try:
+            capability_distribution = {}
+            for agent_id, agent in self.agents.items():
+                try:
+                    capability_distribution[agent_id] = len(agent.get_capabilities())
+                except Exception:
+                    capability_distribution[agent_id] = 0
+
+            agents_with_capabilities = len([
+                agent_id for agent_id, count in capability_distribution.items()
+                if count > 0
+            ])
+
+            return {
+                'total_agents': len(self.agents),
+                'total_capabilities': len(self.capability_map),
+                'agents_with_capabilities': agents_with_capabilities,
+                'capability_distribution': capability_distribution,
+                'timestamp': timestamp
+            }
+        except Exception as e:
+            self.logger.error(f"Error getting routing statistics: {e}")
+            return {
+                'total_agents': len(self.agents),
+                'total_capabilities': 0,
+                'agents_with_capabilities': 0,
+                'capability_distribution': {},
+                'error': str(e),
+                'timestamp': timestamp
+            }
 
 
 # ============================================================================
@@ -441,5 +515,5 @@ def shutdown_orchestrator() -> None:
     """Shutdown global orchestrator"""
     global _orchestrator
     if _orchestrator:
-        _orchestrator.shutdown()
+        _orchestrator.shutdown_all()
         _orchestrator = None
