@@ -4,17 +4,28 @@ Socratic RAG Enhanced - System Monitoring Agent
 ==============================================
 
 System monitoring agent with comprehensive analytics.
-
 Capabilities: Health monitoring, usage tracking, performance analytics
 """
 
 import os
 import time
+import shutil
 from typing import Dict, List, Any, Optional
 
-from src.core import get_logger, get_config, DateTimeHelper, ANTHROPIC_AVAILABLE
-from src.database import get_database
-from .base import BaseAgent, log_agent_action
+# Core imports
+try:
+    from src.core import get_logger, DateTimeHelper, ANTHROPIC_AVAILABLE
+    from src.database import get_database
+    from .base import BaseAgent, log_agent_action
+
+    CORE_AVAILABLE = True
+except ImportError:
+    CORE_AVAILABLE = False
+    get_logger = lambda x: None
+    DateTimeHelper = None
+    get_database = lambda: None
+    BaseAgent = object
+    log_agent_action = lambda f: f
 
 # Optional imports with fallbacks
 try:
@@ -23,9 +34,6 @@ try:
     PSUTIL_AVAILABLE = True
 except ImportError:
     PSUTIL_AVAILABLE = False
-
-if ANTHROPIC_AVAILABLE:
-    from anthropic import Anthropic
 
 
 class SystemMonitorAgent(BaseAgent):
@@ -50,9 +58,11 @@ class SystemMonitorAgent(BaseAgent):
     @log_agent_action
     def _check_health(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Comprehensive system health check"""
+        timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
+
         health = {
             'status': 'healthy',
-            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+            'timestamp': timestamp,
             'services': {
                 'database': self._check_database_health(),
                 'claude_api': self._check_claude_api_health(),
@@ -76,41 +86,62 @@ class SystemMonitorAgent(BaseAgent):
         """Check database connectivity and performance"""
         try:
             start_time = time.time()
+            timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
 
-            # Use the actual health check from your database
+            if not self.db:
+                return {
+                    'status': 'critical',
+                    'error': 'Database service not available',
+                    'last_checked': timestamp
+                }
+
+            # Use the actual health check from database service
             health_data = self.db.health_check()
-
             response_time = time.time() - start_time
 
+            # Get basic statistics from repositories
+            try:
+                project_count = len(self.db.projects.list_all(limit=1000))  # Quick count
+                user_count = len(self.db.users.list_all(limit=1000))  # Quick count
+            except Exception:
+                project_count = 0
+                user_count = 0
+
             return {
-                'status': 'healthy' if health_data['status'] == 'healthy' else 'warning',
+                'status': 'healthy' if health_data.get('status') == 'healthy' else 'warning',
                 'response_time_ms': round(response_time * 1000, 2),
-                'project_count': health_data.get('project_count', 0),
-                'user_count': health_data.get('user_count', 0),
-                'schema_version': health_data.get('schema_version', 0),
-                'last_checked': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                'project_count': project_count,
+                'user_count': user_count,
+                'database_info': health_data.get('database_stats', {}),
+                'last_checked': timestamp
             }
 
         except Exception as e:
-            self.logger.error(f"Database health check failed: {e}")
+            if self.logger:
+                self.logger.error(f"Database health check failed: {e}")
+            timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
             return {
                 'status': 'critical',
                 'error': str(e),
-                'last_checked': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                'last_checked': timestamp
             }
 
     def _check_claude_api_health(self) -> Dict[str, Any]:
         """Check Claude API connectivity and quota"""
+        timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
+
         if not ANTHROPIC_AVAILABLE:
             return {
                 'status': 'unavailable',
-                'message': 'Anthropic package not installed'
+                'message': 'Anthropic package not installed',
+                'last_checked': timestamp
             }
 
         if not self.claude_client:
             return {
                 'status': 'unavailable',
-                'message': 'Claude API not configured'
+                'message': 'Claude API not configured',
+                'last_checked': timestamp
             }
 
         try:
@@ -127,24 +158,23 @@ class SystemMonitorAgent(BaseAgent):
                 'status': 'healthy',
                 'response_time_ms': round(response_time * 1000, 2),
                 'model': 'claude-3-haiku-20240307',
-                'last_checked': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                'last_checked': timestamp
             }
 
         except Exception as e:
-            self.logger.warning(f"Claude API health check failed: {e}")
+            if self.logger:
+                self.logger.warning(f"Claude API health check failed: {e}")
             return {
                 'status': 'warning',
                 'error': str(e),
-                'last_checked': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                'last_checked': timestamp
             }
 
     def _check_file_system_health(self) -> Dict[str, Any]:
         """Check file system availability and space"""
         try:
-            import shutil
-
-            # Check available space in data directory
-            data_dir = self.config.data_dir
+            # Get data directory from config
+            data_dir = self.config.get('system.data_path', 'data') if self.config else 'data'
 
             # Ensure data directory exists
             os.makedirs(data_dir, exist_ok=True)
@@ -172,7 +202,8 @@ class SystemMonitorAgent(BaseAgent):
             }
 
         except Exception as e:
-            self.logger.error(f"File system health check failed: {e}")
+            if self.logger:
+                self.logger.error(f"File system health check failed: {e}")
             return {
                 'status': 'warning',
                 'error': str(e)
@@ -206,7 +237,8 @@ class SystemMonitorAgent(BaseAgent):
             }
 
         except Exception as e:
-            self.logger.error(f"Memory usage check failed: {e}")
+            if self.logger:
+                self.logger.error(f"Memory usage check failed: {e}")
             return {
                 'status': 'warning',
                 'error': str(e)
@@ -230,7 +262,8 @@ class SystemMonitorAgent(BaseAgent):
                     'cpu_count': psutil.cpu_count()
                 })
             except Exception as e:
-                self.logger.warning(f"CPU metrics unavailable: {e}")
+                if self.logger:
+                    self.logger.warning(f"CPU metrics unavailable: {e}")
 
         return metrics
 
@@ -253,28 +286,32 @@ class SystemMonitorAgent(BaseAgent):
         alerts = []
 
         try:
-            # Check database statistics for potential issues
-            stats = self.db.get_statistics()
+            # Get basic statistics from database repositories
+            if self.db:
+                project_count = len(self.db.projects.list_all(limit=200))
 
-            # Alert if too many projects
-            project_count = stats.get('projects_count', 0)
-            if project_count > 100:
-                alerts.append({
-                    'type': 'capacity_warning',
-                    'message': f'High number of projects ({project_count}) may impact performance',
-                    'severity': 'medium',
-                    'count': project_count
-                })
+                # Alert if too many projects
+                if project_count > 100:
+                    alerts.append({
+                        'type': 'capacity_warning',
+                        'message': f'High number of projects ({project_count}) may impact performance',
+                        'severity': 'medium',
+                        'count': project_count
+                    })
 
-            # Alert if many files generated
-            files_count = stats.get('generated_files_count', 0)
-            if files_count > 1000:
-                alerts.append({
-                    'type': 'storage_warning',
-                    'message': f'Many generated files ({files_count}) may consume storage',
-                    'severity': 'low',
-                    'count': files_count
-                })
+                # Check for generated files
+                try:
+                    files_count = len(self.db.generated_files.list_all(limit=1500))
+                    if files_count > 1000:
+                        alerts.append({
+                            'type': 'storage_warning',
+                            'message': f'Many generated files ({files_count}) may consume storage',
+                            'severity': 'low',
+                            'count': files_count
+                        })
+                except Exception:
+                    # generated_files repository might not be available
+                    pass
 
         except Exception as e:
             alerts.append({
@@ -297,16 +334,18 @@ class SystemMonitorAgent(BaseAgent):
     def _get_system_stats(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Get comprehensive system statistics"""
         try:
-            # Get database statistics
-            db_stats = self.db.get_statistics()
+            timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
+
+            # Get basic statistics from repositories
+            stats = self._get_database_stats()
 
             # Get health information
             health = self._check_health({})
 
             # Combine all stats
-            stats = {
-                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()),
-                'database_stats': db_stats,
+            system_stats = {
+                'timestamp': timestamp,
+                'database_stats': stats,
                 'health_summary': {
                     'overall_status': health['status'],
                     'services_healthy': sum(1 for s in health['services'].values() if s.get('status') == 'healthy'),
@@ -317,27 +356,69 @@ class SystemMonitorAgent(BaseAgent):
                 'uptime': health['performance']['uptime_formatted']
             }
 
-            return stats
+            return system_stats
 
         except Exception as e:
-            self.logger.error(f"Failed to get system stats: {e}")
+            if self.logger:
+                self.logger.error(f"Failed to get system stats: {e}")
+            timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
             return {
                 'error': str(e),
-                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                'timestamp': timestamp
             }
+
+    def _get_database_stats(self) -> Dict[str, Any]:
+        """Get database statistics using actual repository methods"""
+        stats = {
+            'users_count': 0,
+            'projects_count': 0,
+            'modules_count': 0,
+            'generated_files_count': 0,
+            'test_results_count': 0
+        }
+
+        if not self.db:
+            return stats
+
+        try:
+            # Get counts from repositories (limited to avoid performance issues)
+            stats['users_count'] = len(self.db.users.list_all(limit=1000))
+            stats['projects_count'] = len(self.db.projects.list_all(limit=1000))
+
+            try:
+                stats['modules_count'] = len(self.db.modules.list_all(limit=1000))
+            except Exception:
+                pass  # modules repository might not be available
+
+            try:
+                stats['generated_files_count'] = len(self.db.generated_files.list_all(limit=1500))
+            except Exception:
+                pass  # generated_files repository might not be available
+
+            try:
+                stats['test_results_count'] = len(self.db.test_results.list_all(limit=1500))
+            except Exception:
+                pass  # test_results repository might not be available
+
+        except Exception as e:
+            if self.logger:
+                self.logger.warning(f"Failed to get database stats: {e}")
+
+        return stats
 
     @log_agent_action
     def _track_usage(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Track system usage and generate analytics"""
         period = data.get('period', '24h')  # 1h, 24h, 7d, 30d
+        timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
 
         try:
             # Get database statistics
-            db_stats = self.db.get_statistics()
+            db_stats = self._get_database_stats()
 
             usage_stats = {
                 'period': period,
-                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                'timestamp': timestamp,
                 'database_usage': db_stats,
                 'api_usage': self._get_api_usage_stats(period),
                 'user_activity': self._get_user_activity_stats(db_stats),
@@ -348,17 +429,17 @@ class SystemMonitorAgent(BaseAgent):
             return usage_stats
 
         except Exception as e:
-            self.logger.error(f"Usage tracking failed: {e}")
+            if self.logger:
+                self.logger.error(f"Usage tracking failed: {e}")
             return {
                 'error': str(e),
                 'period': period,
-                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                'timestamp': timestamp
             }
 
     def _get_api_usage_stats(self, period: str) -> Dict[str, Any]:
         """Get Claude API usage statistics"""
         # Simplified - in real implementation would track actual usage
-        # This would integrate with actual API call tracking
         return {
             'period': period,
             'total_requests': 0,  # Would track actual requests
@@ -382,8 +463,8 @@ class SystemMonitorAgent(BaseAgent):
         """Get project activity statistics"""
         return {
             'total_projects': db_stats.get('projects_count', 0),
-            'active_projects': db_stats.get('active_projects', 0),
-            'archived_projects': db_stats.get('archived_projects', 0),
+            'active_projects': db_stats.get('projects_count', 0),  # Simplified
+            'archived_projects': 0,  # Would check project status
             'files_generated': db_stats.get('generated_files_count', 0),
             'tests_run': db_stats.get('test_results_count', 0),
             'modules_created': db_stats.get('modules_count', 0)
@@ -415,24 +496,26 @@ class SystemMonitorAgent(BaseAgent):
     def _database_health(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Detailed database health and statistics"""
         try:
+            timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
+
             # Get comprehensive database health info
-            health = self.db.health_check()
-            stats = self.db.get_statistics()
+            health = self.db.health_check() if self.db else {'status': 'unavailable'}
+            stats = self._get_database_stats()
 
             # Calculate some derived metrics
             total_entities = sum(
                 stats.get(key, 0)
                 for key in ['projects_count', 'users_count', 'modules_count', 'generated_files_count']
-                if key in stats
             )
 
             db_health = {
-                'connection_status': health['status'],
+                'connection_status': health.get('status', 'unknown'),
                 'response_time': 'See health check for timing',
                 'statistics': stats,
                 'total_entities': total_entities,
-                'schema_version': health.get('schema_version', 'unknown'),
-                'recommendations': []
+                'database_info': health.get('database_stats', {}),
+                'recommendations': [],
+                'timestamp': timestamp
             }
 
             # Add recommendations based on stats
@@ -445,11 +528,13 @@ class SystemMonitorAgent(BaseAgent):
             return db_health
 
         except Exception as e:
-            self.logger.error(f"Database health check failed: {e}")
+            if self.logger:
+                self.logger.error(f"Database health check failed: {e}")
+            timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
             return {
                 'connection_status': 'error',
                 'error': str(e),
-                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                'timestamp': timestamp
             }
 
     @log_agent_action
@@ -457,12 +542,13 @@ class SystemMonitorAgent(BaseAgent):
         """Generate comprehensive analytics report"""
         report_type = data.get('type', 'summary')  # summary, detailed, performance
         time_range = data.get('time_range', '7d')
+        timestamp = DateTimeHelper.to_iso_string(DateTimeHelper.now()) if DateTimeHelper else None
 
         try:
             base_analytics = {
                 'report_type': report_type,
                 'time_range': time_range,
-                'generated_at': DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                'generated_at': timestamp,
                 'system_health': self._check_health({}),
                 'usage_stats': self._track_usage({'period': time_range})
             }
@@ -477,11 +563,12 @@ class SystemMonitorAgent(BaseAgent):
             return base_analytics
 
         except Exception as e:
-            self.logger.error(f"Analytics generation failed: {e}")
+            if self.logger:
+                self.logger.error(f"Analytics generation failed: {e}")
             return {
                 'error': str(e),
                 'report_type': report_type,
-                'generated_at': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                'generated_at': timestamp
             }
 
     def _get_performance_trends(self) -> Dict[str, Any]:
@@ -495,7 +582,7 @@ class SystemMonitorAgent(BaseAgent):
     def _analyze_capacity(self) -> Dict[str, Any]:
         """Analyze system capacity and usage"""
         try:
-            stats = self.db.get_statistics()
+            stats = self._get_database_stats()
 
             # Simple capacity analysis
             capacity = {
