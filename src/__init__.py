@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Socratic RAG Enhanced - Main Package
-====================================
+Socratic RAG Enhanced - Main Package with ServiceContainer Architecture
+=======================================================================
 
 Main package initialization for the Socratic RAG Enhanced system.
-Provides clean imports and package-level initialization with robust error handling.
+Uses ServiceContainer pattern for clean dependency injection.
 
-This module exposes the core functionality of the system through organized imports,
-making it easy for other modules and external code to access the required components.
+This module exposes the core functionality through organized imports,
+making it easy for other modules to access configured service instances.
 """
 
 import sys
@@ -35,24 +35,22 @@ AGENTS_AVAILABLE = False
 # Import error tracking
 _import_errors = {}
 
+# Global service container instance
+_services = None
+
 
 # ============================================================================
-# FALLBACK FUNCTIONS - Define before imports to ensure they always exist
+# FALLBACK FUNCTIONS - For when services aren't available
 # ============================================================================
 
-def _fallback_get_config():
-    """Fallback configuration function"""
+def _fallback_get_services():
+    """Fallback when services not available"""
     return None
 
 
-def _fallback_get_logger(name: str = 'fallback'):
-    """Fallback logger function"""
-    import logging
-    return logging.getLogger(name)
-
-
-def _fallback_get_database():
-    """Fallback database function"""
+def _fallback_initialize_system(config_path: str = None):
+    """Fallback system initialization"""
+    print("Warning: Core system initialization not available")
     return None
 
 
@@ -101,9 +99,8 @@ def _fallback_get_agent_status():
     }
 
 
-def _fallback_init_core_system(config_path: str = None):
-    """Fallback core system initialization"""
-    print("Warning: Core system initialization not available")
+def _fallback_get_database():
+    """Fallback database function"""
     return None
 
 
@@ -112,10 +109,13 @@ def _fallback_init_core_system(config_path: str = None):
 # ============================================================================
 
 try:
-    # Core infrastructure
+    # Core infrastructure with ServiceContainer
     from .core import (
-        # System management
-        SystemConfig, get_config, get_logger, get_event_bus, DatabaseManager,
+        # Service Container and Factory
+        ServiceContainer, ServiceFactory, initialize_system, cleanup_system,
+
+        # Core Classes
+        SystemConfig, SystemLogger, EventSystem, DatabaseManager,
 
         # Configuration and utilities
         DateTimeHelper, FileHelper, ValidationHelper,
@@ -123,32 +123,21 @@ try:
         # Exceptions
         SocraticException, ConfigurationError, ValidationError, APIError,
         DatabaseError, CodeGenerationError, TestingError, IDEIntegrationError,
-        AuthenticationError, ConflictError,
+        AuthenticationError, ConflictError, ServiceError, AgentError,
 
         # Event system
-        Event, EventSystem, initialize_system as init_core_system
+        Event, EventBus
     )
 
     CORE_AVAILABLE = True
-
-    # Use real logger once core is available
-    logger = get_logger('package')
-    logger.info("Core system imported successfully")
 
 except ImportError as e:
     CORE_AVAILABLE = False
     _import_errors['core'] = str(e)
 
-    # Fallback to basic logging before core is available
-    import logging
-
-    logger = logging.getLogger('package.fallback')
-    logger.warning(f"Core system import failed: {e}")
-
     # Assign fallback functions
-    get_config = _fallback_get_config
-    get_logger = _fallback_get_logger
-    init_core_system = _fallback_init_core_system
+    initialize_system = _fallback_initialize_system
+    cleanup_system = lambda services: None
 
 # ============================================================================
 # DATA MODELS IMPORTS
@@ -170,17 +159,10 @@ try:
     )
 
     MODELS_AVAILABLE = True
-    if CORE_AVAILABLE:
-        logger.info("Models imported successfully")
 
 except ImportError as e:
     MODELS_AVAILABLE = False
     _import_errors['models'] = str(e)
-
-    if CORE_AVAILABLE:
-        logger.warning(f"Models import failed: {e}")
-    else:
-        print(f"Warning: Models import failed: {e}")
 
 # ============================================================================
 # DATABASE IMPORTS
@@ -194,7 +176,8 @@ try:
 
         # Repositories
         UserRepository, ProjectRepository, ModuleRepository,
-        GeneratedFileRepository, TestResultRepository, ProjectCollaboratorRepository,
+        GeneratedFileRepository, TestResultRepository,
+        ProjectCollaboratorRepository,
 
         # Schema management
         DatabaseSchema,
@@ -204,17 +187,10 @@ try:
     )
 
     DATABASE_AVAILABLE = True
-    if CORE_AVAILABLE:
-        logger.info("Database layer imported successfully")
 
 except ImportError as e:
     DATABASE_AVAILABLE = False
     _import_errors['database'] = str(e)
-
-    if CORE_AVAILABLE:
-        logger.warning(f"Database import failed: {e}")
-    else:
-        print(f"Warning: Database import failed: {e}")
 
     # Assign fallback function
     get_database = _fallback_get_database
@@ -239,43 +215,29 @@ try:
     )
 
     UTILS_AVAILABLE = True
-    if CORE_AVAILABLE:
-        logger.info("Utilities imported successfully")
 
 except ImportError as e:
     UTILS_AVAILABLE = False
     _import_errors['utils'] = str(e)
-
-    if CORE_AVAILABLE:
-        logger.warning(f"Utils import failed: {e}")
-    else:
-        print(f"Warning: Utils import failed: {e}")
 
 # ============================================================================
 # SERVICES IMPORTS (Optional - graceful degradation)
 # ============================================================================
 
 try:
-    from . import services
-    # Import specific service functions for web app access
-    from .services import get_services_status, initialize_all_services
+    from .services import (
+        initialize_all_services, get_services_status
+    )
 
     SERVICES_AVAILABLE = True
-    if CORE_AVAILABLE:
-        logger.info("Services imported successfully")
 
 except ImportError as e:
     SERVICES_AVAILABLE = False
     _import_errors['services'] = str(e)
 
-    if CORE_AVAILABLE:
-        logger.info(f"Services not available (expected during development): {e}")
-    else:
-        print(f"Info: Services not available: {e}")
-
     # Assign fallback functions
-    get_services_status = _fallback_get_services_status
     initialize_all_services = _fallback_initialize_all_services
+    get_services_status = _fallback_get_services_status
 
 # ============================================================================
 # AGENTS IMPORTS (Optional - graceful degradation)
@@ -283,52 +245,19 @@ except ImportError as e:
 
 try:
     from .agents import (
-        # Agent coordination
-        get_orchestrator, initialize_all_agents, get_agent_status,
-
-        # Agent implementations
-        BaseAgent, AgentOrchestrator,
-        ProjectManagerAgent, CodeGeneratorAgent, DocumentProcessorAgent,
-        ServicesAgent, SocraticCounselorAgent, UserManagerAgent,
-        ContextAnalyzerAgent, SystemMonitorAgent
+        get_orchestrator, initialize_all_agents, get_agent_status
     )
 
     AGENTS_AVAILABLE = True
-    if CORE_AVAILABLE:
-        logger.info("Agents imported successfully")
 
 except ImportError as e:
     AGENTS_AVAILABLE = False
     _import_errors['agents'] = str(e)
 
-    if CORE_AVAILABLE:
-        logger.info(f"Agents not available (expected during development): {e}")
-    else:
-        print(f"Info: Agents not available: {e}")
-
     # Assign fallback functions
     get_orchestrator = _fallback_get_orchestrator
     initialize_all_agents = _fallback_initialize_all_agents
     get_agent_status = _fallback_get_agent_status
-
-# ============================================================================
-# WEB INTERFACE IMPORTS (Optional)
-# ============================================================================
-
-try:
-    from .web import create_app, get_app, run_development_server, get_web_status
-
-    WEB_AVAILABLE = True
-    if CORE_AVAILABLE:
-        logger.info("Web interface imported successfully")
-except ImportError as e:
-    WEB_AVAILABLE = False
-    _import_errors['web'] = str(e)
-
-    if CORE_AVAILABLE:
-        logger.info(f"Web interface not available: {e}")
-    else:
-        print(f"Info: Web interface not available: {e}")
 
 
 # ============================================================================
@@ -336,206 +265,129 @@ except ImportError as e:
 # ============================================================================
 
 def get_package_info() -> Dict[str, Any]:
-    """Get comprehensive package information"""
+    """Get package information and status"""
     return {
         'name': __title__,
         'version': __version__,
         'description': __description__,
         'author': __author__,
-        'python_version': f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
         'module_availability': {
             'core': CORE_AVAILABLE,
             'models': MODELS_AVAILABLE,
             'database': DATABASE_AVAILABLE,
             'utils': UTILS_AVAILABLE,
             'services': SERVICES_AVAILABLE,
-            'agents': AGENTS_AVAILABLE,
-            'web': WEB_AVAILABLE
+            'agents': AGENTS_AVAILABLE
         },
-        'import_errors': _import_errors,
-        'dependencies_status': _check_optional_dependencies()
+        'import_errors': _import_errors.copy()
     }
-
-
-def _check_optional_dependencies() -> Dict[str, bool]:
-    """Check availability of optional dependencies"""
-    dependencies = {}
-
-    # AI/ML dependencies
-    try:
-        import anthropic
-        dependencies['anthropic'] = True
-    except ImportError:
-        dependencies['anthropic'] = False
-
-    try:
-        import sentence_transformers
-        dependencies['sentence_transformers'] = True
-    except ImportError:
-        dependencies['sentence_transformers'] = False
-
-    try:
-        import chromadb
-        dependencies['chromadb'] = True
-    except ImportError:
-        dependencies['chromadb'] = False
-
-    # Document processing
-    try:
-        import PyPDF2
-        dependencies['PyPDF2'] = True
-    except ImportError:
-        dependencies['PyPDF2'] = False
-
-    try:
-        from docx import Document
-        dependencies['python-docx'] = True
-    except ImportError:
-        dependencies['python-docx'] = False
-
-    try:
-        import openpyxl
-        dependencies['openpyxl'] = True
-    except ImportError:
-        dependencies['openpyxl'] = False
-
-    # Code analysis
-    try:
-        import black
-        dependencies['black'] = True
-    except ImportError:
-        dependencies['black'] = False
-
-    try:
-        import pylint
-        dependencies['pylint'] = True
-    except ImportError:
-        dependencies['pylint'] = False
-
-    # Web and formatting
-    try:
-        import markdown
-        dependencies['markdown'] = True
-    except ImportError:
-        dependencies['markdown'] = False
-
-    try:
-        from bs4 import BeautifulSoup
-        dependencies['beautifulsoup4'] = True
-    except ImportError:
-        dependencies['beautifulsoup4'] = False
-
-    return dependencies
-
-
-def initialize_system(config_path: Optional[str] = None) -> Optional[Any]:
-    """Initialize the complete Socratic system"""
-    if not CORE_AVAILABLE:
-        if CORE_AVAILABLE:
-            logger.error("Cannot initialize system - core modules not available")
-        else:
-            print("Error: Cannot initialize system - core modules not available")
-        return None
-
-    try:
-        # Initialize core system
-        config = init_core_system(config_path)
-
-        # Initialize services if available
-        if SERVICES_AVAILABLE:
-            services_result = initialize_all_services()
-            logger.info(f"Services initialization: {services_result}")
-
-        # Initialize agents if available
-        if AGENTS_AVAILABLE:
-            agents_result = initialize_all_agents()
-            logger.info(f"Agents initialization: {agents_result}")
-
-        logger.info("System initialization completed successfully")
-        return config
-
-    except Exception as e:
-        if CORE_AVAILABLE:
-            logger.error(f"System initialization failed: {e}")
-        else:
-            print(f"Error: System initialization failed: {e}")
-        return None
 
 
 def get_system_status() -> Dict[str, Any]:
-    """Get comprehensive system status"""
-    status = {
-        'package_info': {
-            'version': __version__,
-            'title': __title__
-        },
-        'module_availability': {
-            'core': CORE_AVAILABLE,
-            'models': MODELS_AVAILABLE,
-            'database': DATABASE_AVAILABLE,
-            'utils': UTILS_AVAILABLE,
-            'services': SERVICES_AVAILABLE,
-            'agents': AGENTS_AVAILABLE,
-            'web': WEB_AVAILABLE
-        },
-        'import_errors': _import_errors
-    }
+    """Get detailed system status"""
+    status = get_package_info()
 
-    # Add database status if available
-    if DATABASE_AVAILABLE:
-        try:
-            db = get_database()
-            if db:
-                health = db.health_check() if hasattr(db, 'health_check') else {'status': 'unknown'}
-                status['database_available'] = health.get('status') == 'healthy'
-                status['database_info'] = health
-        except Exception as e:
-            status['database_error'] = str(e)
-
-    # Add service status if available
-    if SERVICES_AVAILABLE:
-        try:
-            status['services_available'] = get_services_status()
-        except Exception as e:
-            status['services_error'] = str(e)
-
-    # Add agent status if available
-    if AGENTS_AVAILABLE:
-        try:
-            orchestrator = get_orchestrator()
-            if orchestrator:
-                status['agents_available'] = get_agent_status()
-            else:
-                status['agents_available'] = {'status': 'no_orchestrator'}
-        except Exception as e:
-            status['agents_error'] = str(e)
+    # Add services status if available
+    if _services is not None:
+        status['services_initialized'] = True
+        status['service_container'] = {
+            'config_loaded': _services.config is not None,
+            'logger_system': _services.logger_system is not None,
+            'event_system': _services.event_system is not None,
+            'db_manager': _services.db_manager is not None
+        }
+    else:
+        status['services_initialized'] = False
+        status['service_container'] = None
 
     return status
 
 
+def get_services() -> Optional[ServiceContainer]:
+    """Get the global service container instance"""
+    return _services
+
+
+def initialize_package(config_path: Optional[str] = None) -> Optional[ServiceContainer]:
+    """Initialize the package with services"""
+    global _services
+
+    if not CORE_AVAILABLE:
+        print("Warning: Core system not available, cannot initialize services")
+        return None
+
+    try:
+        _services = initialize_system(config_path)
+
+        # Log successful initialization
+        if _services:
+            logger = _services.get_logger('package')
+            logger.info(f"Socratic RAG Enhanced v{__version__} package initialized")
+            logger.info(f"Available modules: {[k for k, v in get_system_status()['module_availability'].items() if v]}")
+
+            if _import_errors:
+                logger.warning(f"Some modules failed to import: {list(_import_errors.keys())}")
+
+        return _services
+
+    except Exception as e:
+        print(f"Package initialization failed: {e}")
+        return None
+
+
+def cleanup_package():
+    """Cleanup package resources"""
+    global _services
+
+    if _services is not None and CORE_AVAILABLE:
+        try:
+            cleanup_system(_services)
+            _services = None
+        except Exception as e:
+            print(f"Package cleanup failed: {e}")
+
+
 # ============================================================================
-# CONVENIENCE IMPORTS - MAIN INTERFACES
+# BACKWARD COMPATIBILITY FUNCTIONS
 # ============================================================================
 
-# Make the most commonly used items available at package level
-if CORE_AVAILABLE:
-    # Most common core imports - already imported above
-    pass
+def get_logger(name: str):
+    """Backward compatibility function for getting logger"""
+    if _services is not None:
+        return _services.get_logger(name)
+    else:
+        # Fallback to basic logging
+        import logging
+        return logging.getLogger(name)
 
-if MODELS_AVAILABLE:
-    # Most common model imports - already imported above
-    pass
 
-if DATABASE_AVAILABLE:
-    # Most common database import - already imported above
-    pass
+def get_config():
+    """Backward compatibility function for getting config"""
+    if _services is not None:
+        return _services.get_config()
+    else:
+        # Return None or basic config
+        return None
 
-if UTILS_AVAILABLE:
-    # Most common utility imports - already imported above
-    pass
+
+def get_event_bus():
+    """Backward compatibility function for getting event bus"""
+    if _services is not None:
+        return _services.get_event_bus()
+    else:
+        return None
+
+
+def get_db_manager():
+    """Backward compatibility function for getting database manager"""
+    if _services is not None:
+        return _services.get_db_manager()
+    else:
+        return None
+
 
 # ============================================================================
-# PACKAGE EXPORTS
+# MODULE EXPORTS
 # ============================================================================
 
 # Base exports (always available)
@@ -544,7 +396,14 @@ __all__ = [
     '__version__', '__title__', '__description__', '__author__',
 
     # Package-level functions
-    'get_package_info', 'initialize_system', 'get_system_status',
+    'get_package_info', 'get_system_status', 'get_services',
+    'initialize_package', 'cleanup_package',
+
+    # Service Container functions
+    'initialize_system', 'cleanup_system',
+
+    # Backward compatibility functions
+    'get_logger', 'get_config', 'get_event_bus', 'get_db_manager',
 
     # Availability flags
     'CORE_AVAILABLE', 'MODELS_AVAILABLE', 'DATABASE_AVAILABLE',
@@ -554,23 +413,30 @@ __all__ = [
 # Add conditional exports based on what's available
 if CORE_AVAILABLE:
     __all__.extend([
-        'get_config', 'get_logger', 'SocraticException', 'DateTimeHelper'
+        'ServiceContainer', 'ServiceFactory', 'SystemConfig', 'SystemLogger',
+        'EventSystem', 'DatabaseManager', 'Event', 'EventBus',
+        'SocraticException', 'ConfigurationError', 'ValidationError',
+        'DateTimeHelper', 'FileHelper', 'ValidationHelper'
     ])
 
 if MODELS_AVAILABLE:
     __all__.extend([
-        'Project', 'Module', 'GeneratedFile', 'TestResult', 'ModelFactory'
+        'Project', 'Module', 'GeneratedFile', 'TestResult', 'User',
+        'ProjectPhase', 'ProjectStatus', 'ModuleStatus', 'ModuleType',
+        'Priority', 'RiskLevel', 'FileType', 'FileStatus', 'TestType',
+        'TestStatus', 'UserRole', 'ModelFactory'
     ])
 
 if DATABASE_AVAILABLE:
     __all__.extend([
-        'get_database', 'DatabaseService'
+        'get_database', 'DatabaseService', 'DatabaseSchema'
     ])
 
 if UTILS_AVAILABLE:
     __all__.extend([
         'get_file_processor', 'get_text_processor', 'get_code_analyzer',
-        'get_validator', 'get_knowledge_extractor'
+        'get_validator', 'get_knowledge_extractor', 'DocumentInfo',
+        'TextChunk', 'CodeAnalysisResult'
     ])
 
 if SERVICES_AVAILABLE:
@@ -589,11 +455,27 @@ if AGENTS_AVAILABLE:
 
 # Log initialization status
 if CORE_AVAILABLE:
-    logger.info(f"Socratic RAG Enhanced v{__version__} package initialized")
-    logger.info(f"Available modules: {[k for k, v in get_system_status()['module_availability'].items() if v]}")
+    # Don't auto-initialize services here, let the user do it explicitly
+    print(f"Socratic RAG Enhanced v{__version__} package loaded")
+    print(f"Available modules: {[k for k, v in get_package_info()['module_availability'].items() if v]}")
 
     if _import_errors:
-        logger.warning(f"Some modules failed to import: {list(_import_errors.keys())}")
+        print(f"Import warnings: {list(_import_errors.keys())}")
 else:
-    print(f"Socratic RAG Enhanced v{__version__} package initialized (limited mode)")
+    print(f"Socratic RAG Enhanced v{__version__} package loaded (limited mode)")
     print(f"Import errors: {list(_import_errors.keys())}")
+
+# Auto-initialize services only if running as main module
+if __name__ == "__main__":
+    print("Initializing services for testing...")
+    services = initialize_package()
+    if services:
+        print("✅ Package initialization successful")
+
+        # Basic functionality test
+        logger = services.get_logger('test')
+        logger.info("Package test successful")
+
+        cleanup_package()
+    else:
+        print("❌ Package initialization failed")

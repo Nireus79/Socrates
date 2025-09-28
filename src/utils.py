@@ -555,7 +555,7 @@ class TextProcessor:
 
             # Simplified Flesch score approximation
             flesch_score = 206.835 - (1.015 * avg_sentence_length) - (84.6 * (avg_word_length / 4.7))
-            flesch_score = max(0, min(100, flesch_score))  # Clamp between 0-100
+            flesch_score = max(0.0, min(100.0, flesch_score))  # Clamp between 0-100
 
             return {
                 'flesch_score': round(flesch_score, 2),
@@ -1200,4 +1200,4 @@ if __name__ == "__main__":
 
     except Exception as e:
         logger.error(f"❌ Utilities test failed: {e}")
-        raise
+        raise RuntimeError("Processing failed")
