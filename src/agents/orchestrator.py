@@ -9,10 +9,11 @@ Manages all agents and provides unified interface for agent operations.
 
 from typing import Dict, List, Any, Optional
 import logging
+from .base import BaseAgent
 
 # Import core system components with fallbacks
 try:
-    from src.core import get_logger, get_event_bus, DateTimeHelper, get_config
+    from src.core import ServiceContainer, DateTimeHelper
     from src.database import get_database
 
     CORE_AVAILABLE = True
@@ -38,7 +39,7 @@ except ImportError:
 
     DateTimeHelper = None
 
-from .base import BaseAgent
+
 
 
 class AgentOrchestrator:
@@ -46,7 +47,8 @@ class AgentOrchestrator:
     Central orchestrator for all agents with intelligent request routing
     """
 
-    def __init__(self):
+    def __init__(self, services: ServiceContainer):
+        self.services = services
         self.logger = get_logger("orchestrator") if CORE_AVAILABLE else logging.getLogger("orchestrator")
         self.events = get_event_bus() if CORE_AVAILABLE else None
         self.db_service = get_database() if CORE_AVAILABLE else None

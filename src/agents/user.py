@@ -18,7 +18,7 @@ from typing import Dict, List, Any, Optional
 from functools import wraps
 
 try:
-    from src.core import get_logger, DateTimeHelper, ValidationError, ValidationHelper, get_event_bus
+    from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper
     from src.models import User, UserRole, UserStatus, ModelValidator
     from src.database import get_database
     from .base import BaseAgent, require_authentication, log_agent_action
@@ -27,11 +27,20 @@ try:
 except ImportError:
     CORE_AVAILABLE = False
 
-
     # Fallback implementations
     def get_logger(name):
         import logging
         return logging.getLogger(name)
+
+    class ServiceContainer:
+        def get_logger(self, name):
+            import logging
+            return logging.getLogger(name)
+        def get_config(self):
+            return {}
+
+    def get_database():
+        return None
 
 
 class UserManagerAgent(BaseAgent):
@@ -42,15 +51,9 @@ class UserManagerAgent(BaseAgent):
     Capabilities: Complete user lifecycle, authentication, team management
     """
 
-    def __init__(self):
+    def __init__(self, services: ServiceContainer):
         """Initialize UserManagerAgent with corrected patterns"""
-        super().__init__("user_manager", "User Manager")
-
-        # Database service initialization (corrected pattern)
-        self.db_service = get_database() if CORE_AVAILABLE else None
-
-        # Event bus for user-related events
-        self.events = get_event_bus() if CORE_AVAILABLE else None
+        super().__init__("user_manager", "User Manager", services)
 
         # Initialize logging
         if self.logger:
@@ -77,312 +80,324 @@ class UserManagerAgent(BaseAgent):
             full_name = data.get('full_name', '')
 
             if not username or not password_hash:
-                self.logger.warning("User creation failed: Username and password hash are required")
-                raise ValidationError("Username and password hash are required")
+                self.logger.warning("User creation failed: Username and password are required")
+                return self._error_response("Username and password are required")
 
-            # Validate username format
-            if not username.replace('_', '').replace('-', '').isalnum() or len(username) < 3:
-                self.logger.warning(f"User creation failed: Invalid username format: {username}")
-                raise ValidationError(
-                    "Username must be alphanumeric with optional underscores/hyphens, at least 3 characters")
-
-            # Validate email if provided
-            if email and not ValidationHelper.validate_email(email):
-                self.logger.warning(f"User creation failed: Invalid email format: {email}")
-                raise ValidationError("Invalid email format")
+            if not ValidationHelper.validate_email(email):
+                return self._error_response("Valid email address is required")
 
             # Check if user already exists
-            existing_user = self.db_service.users.get_by_username(username)
-            if existing_user:
-                self.logger.warning(f"User creation failed: Username {username} already exists")
-                raise ValidationError(f"User {username} already exists")
+            if self.db_service:
+                existing_user = self.db_service.users.get_by_username(username)
+                if existing_user:
+                    return self._error_response(f"User '{username}' already exists")
 
-            # Check if email already exists
-            if email:
                 existing_email = self.db_service.users.get_by_email(email)
                 if existing_email:
-                    self.logger.warning(f"User creation failed: Email {email} already registered")
-                    raise ValidationError(f"Email {email} already registered")
+                    return self._error_response(f"Email '{email}' is already registered")
 
-            # Create user model with corrected field names
-            name_parts = full_name.split() if full_name else []
-            user = User(
+            # Parse role with validation
+            role_str = data.get('role', UserRole.DEVELOPER.value)
+            try:
+                if isinstance(role_str, str):
+                    user_role = UserRole(role_str.lower())
+                else:
+                    user_role = UserRole.DEVELOPER  # Default fallback
+            except ValueError:
+                self.logger.warning(f"Invalid role '{role_str}', defaulting to DEVELOPER")
+                user_role = UserRole.DEVELOPER
+
+            # Create user model
+            new_user = User(
                 username=username,
-                email=email or '',
+                email=email,
                 password_hash=password_hash,
-                first_name=name_parts[0] if name_parts else '',
-                last_name=' '.join(name_parts[1:]) if len(name_parts) > 1 else '',
-                role=UserRole(data.get('role', 'developer')),  # Single role system
+                first_name=data.get('first_name', ''),
+                last_name=data.get('last_name', ''),
+                role=user_role,
                 status=UserStatus.ACTIVE,
+                bio=data.get('bio', ''),
+                skills=data.get('skills', []),
                 preferences=data.get('preferences', {}),
-                created_at=DateTimeHelper.now(),  # Rule #7: Use DateTimeHelper
+                created_at=DateTimeHelper.now(),
                 updated_at=DateTimeHelper.now()
             )
 
-            # Save user to database
-            success = self.db_service.users.create(user)
-            if not success:
-                self.logger.error(f"Database operation failed for user creation: {username}")
-                raise Exception("Failed to create user in database")
+            # Validate user data
+            validation_errors = ModelValidator.validate_user_data(new_user.to_dict())
+            if validation_errors:
+                return self._error_response(f"Validation failed: {', '.join(validation_errors)}")
 
-            # Initialize user tracking and emit events
-            self._initialize_user_tracking(user.username)
+            # Save to database
+            if self.db_service:
+                saved_user = self.db_service.users.create(new_user)
+                user_id = saved_user.id if saved_user else new_user.id
+            else:
+                user_id = new_user.id
 
-            # Log successful creation
-            self.logger.info(f"User created successfully: {username} with role {user.role.value}")
+            # Emit user creation event
+            if self.events:
+                self.events.emit('user_created', self.agent_id, {
+                    'user_id': user_id,
+                    'username': username,
+                    'role': user_role.value,
+                    'created_by': 'user_manager_agent'
+                })
 
-            return {
-                'success': True,
-                'user_id': user.id,
-                'status': 'created',
-                'username': user.username,
-                'role': user.role.value,
-                'email': user.email,
-                'created_at': DateTimeHelper.to_iso_string(user.created_at)
-            }
+            self.logger.info(f"Successfully created user: {username} (ID: {user_id})")
 
-        except ValidationError:
-            raise
+            return self._success_response(f"User '{username}' created successfully", {
+                'user_id': user_id,
+                'username': username,
+                'email': email,
+                'role': user_role.value,
+                'status': UserStatus.ACTIVE.value,
+                'full_name': full_name,
+                'created_at': DateTimeHelper.to_iso_string(new_user.created_at)
+            })
+
+        except ValidationError as ve:
+            error_msg = f"User creation validation failed: {ve}"
+            self.logger.error(error_msg)
+            return self._error_response(str(ve))
+
         except Exception as e:
-            self.logger.error(f"Unexpected error creating user {username or 'unknown'}: {e}")
+            error_msg = f"User creation failed for '{username}': {e}"
+            self.logger.error(error_msg)
             return self._error_response(f"Failed to create user: {str(e)}")
-
-    def _initialize_user_tracking(self, username: str):
-        """Initialize tracking and analytics for new user"""
-        try:
-            if self.events:
-                self.events.emit('user_created', 'user_manager', {
-                    'username': username,
-                    'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-                })
-
-            self.logger.info(f"User tracking initialized for {username}")
-        except Exception as e:
-            self.logger.warning(f"Failed to initialize user tracking for {username}: {e}")
-
-    @log_agent_action
-    def _authenticate_user(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Authenticate user and return session information"""
-        username = data.get('username')  # Initialize username early
-
-        try:
-            password_hash = data.get('password_hash') or data.get('passcode_hash')  # Support both field names
-
-            if not username or not password_hash:
-                self.logger.warning("Authentication failed: Username and password are required")
-                return {
-                    'success': False,
-                    'message': 'Username and password are required',
-                    'authenticated': False
-                }
-
-            # Find user in database
-            user = self.db_service.users.get_by_username(username)
-            if not user:
-                self.logger.warning(f"Authentication failed: User {username} not found")
-                return {
-                    'success': False,
-                    'message': 'User not found',
-                    'authenticated': False
-                }
-
-            # Check user status
-            if user.status != UserStatus.ACTIVE:
-                self.logger.warning(f"Authentication failed: User {username} account is not active")
-                return {
-                    'success': False,
-                    'message': 'Account deactivated',
-                    'authenticated': False
-                }
-
-            # Password verification is handled by the web layer
-            # Update last login timestamp
-            user.last_login = DateTimeHelper.now()  # Rule #7: Use DateTimeHelper
-            user.updated_at = DateTimeHelper.now()
-            self.db_service.users.update(user)
-
-            # Emit login event
-            if self.events:
-                self.events.emit('user_login', 'user_manager', {
-                    'username': username,
-                    'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-                })
-
-            self.logger.info(f"User authenticated successfully: {username}")
-
-            return {
-                'success': True,
-                'authenticated': True,
-                'user_id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'role': user.role.value,
-                'full_name': user.full_name,
-                'last_login': DateTimeHelper.to_iso_string(user.last_login) if user.last_login else None,
-                'preferences': getattr(user, 'preferences', {})
-            }
-
-        except Exception as e:
-            self.logger.error(f"Authentication error for user {username or 'unknown'}: {e}")
-            return {
-                'success': False,
-                'message': 'Authentication error occurred',
-                'authenticated': False
-            }
 
     @require_authentication
     @log_agent_action
-    def _update_profile(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Update user profile information with validation"""
-        username = data.get('username')  # Initialize early
-
+    def _authenticate_user(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Authenticate user with password verification"""
         try:
+            username = data.get('username')
+            password_hash = data.get('password_hash')
+
+            if not username or not password_hash:
+                return self._error_response("Username and password are required")
+
+            if not self.db_service:
+                return self._error_response("Database service not available")
+
+            # Get user from database
             user = self.db_service.users.get_by_username(username)
             if not user:
-                self.logger.warning(f"Profile update failed: User {username} not found")
-                raise ValidationError("User not found")
+                self.logger.warning(f"Authentication failed: User '{username}' not found")
+                return self._error_response("Invalid username or password")
 
+            # Check user status
+            if user.status != UserStatus.ACTIVE:
+                self.logger.warning(f"Authentication failed: User '{username}' is not active")
+                return self._error_response("Account is not active")
+
+            # Check if account is locked
+            if user.is_locked:
+                self.logger.warning(f"Authentication failed: User '{username}' account is locked")
+                return self._error_response("Account is temporarily locked")
+
+            # Verify password (simplified check - in real implementation, use proper hashing)
+            if user.password_hash != password_hash:
+                # Increment failed login attempts
+                user.login_attempts += 1
+                if user.login_attempts >= 5:
+                    # Lock account for 30 minutes
+                    import datetime
+                    user.locked_until = DateTimeHelper.now() + datetime.timedelta(minutes=30)
+                    self.logger.warning(f"Account locked for user '{username}' due to multiple failed attempts")
+
+                if self.db_service:
+                    self.db_service.users.update(user.id, user)
+
+                return self._error_response("Invalid username or password")
+
+            # Authentication successful
+            user.last_login = DateTimeHelper.now()
+            user.login_attempts = 0  # Reset on successful login
+            user.locked_until = None
+
+            if self.db_service:
+                self.db_service.users.update(user.id, user)
+
+            # Emit authentication event
+            if self.events:
+                self.events.emit('user_authenticated', self.agent_id, {
+                    'user_id': user.id,
+                    'username': username,
+                    'login_time': DateTimeHelper.to_iso_string(user.last_login)
+                })
+
+            self.logger.info(f"User '{username}' authenticated successfully")
+
+            return self._success_response("Authentication successful", {
+                'user_id': user.id,
+                'username': user.username,
+                'role': user.role.value,
+                'last_login': DateTimeHelper.to_iso_string(user.last_login),
+                'permissions': self._get_user_permissions(user.role)
+            })
+
+        except Exception as e:
+            error_msg = f"Authentication error: {e}"
+            self.logger.error(error_msg)
+            return self._error_response(f"Authentication failed: {str(e)}")
+
+    @log_agent_action
+    def _update_profile(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update user profile information"""
+        try:
+            user_id = data.get('user_id')
+            if not user_id:
+                return self._error_response("User ID is required")
+
+            if not self.db_service:
+                return self._error_response("Database service not available")
+
+            # Get existing user
+            user = self.db_service.users.get(user_id)
+            if not user:
+                return self._error_response(f"User not found: {user_id}")
+
+            # Update allowed fields
+            updatable_fields = ['first_name', 'last_name', 'bio', 'skills', 'preferences', 'avatar_url']
             updated_fields = []
 
-            # Update email if provided
-            if 'email' in data:
-                email = data['email']
-                if email and not ValidationHelper.validate_email(email):
-                    self.logger.warning(f"Profile update failed: Invalid email format: {email}")
-                    raise ValidationError("Invalid email format")
-
-                # Check if email is already taken by another user
-                if email != user.email:
-                    existing_email = self.db_service.users.get_by_email(email)
-                    if existing_email and existing_email.username != username:
-                        self.logger.warning(f"Profile update failed: Email {email} already taken")
-                        raise ValidationError("Email already taken by another user")
-
-                user.email = email
-                updated_fields.append('email')
-
-            # Update full name if provided
-            if 'full_name' in data:
-                full_name = data['full_name']
-                if full_name:
-                    name_parts = full_name.split()
-                    user.first_name = name_parts[0] if name_parts else ''
-                    user.last_name = ' '.join(name_parts[1:]) if len(name_parts) > 1 else ''
-                    updated_fields.extend(['first_name', 'last_name'])
-
-            # Update preferences if provided
-            if 'preferences' in data:
-                # Merge preferences instead of replacing
-                if not hasattr(user, 'preferences') or user.preferences is None:
-                    user.preferences = {}
-                user.preferences.update(data['preferences'])
-                updated_fields.append('preferences')
-
-            # Update other allowed fields
-            allowed_fields = ['first_name', 'last_name']
-            for field in allowed_fields:
+            for field in updatable_fields:
                 if field in data:
                     setattr(user, field, data[field])
                     updated_fields.append(field)
 
+            # Special handling for email updates (requires validation)
+            if 'email' in data:
+                new_email = data['email']
+                if ValidationHelper.validate_email(new_email):
+                    # Check if email is already in use
+                    existing_user = self.db_service.users.get_by_email(new_email)
+                    if existing_user and existing_user.id != user_id:
+                        return self._error_response("Email address is already in use")
+
+                    user.email = new_email
+                    updated_fields.append('email')
+                else:
+                    return self._error_response("Invalid email address")
+
             # Update timestamp
-            user.updated_at = DateTimeHelper.now()  # Rule #7: Use DateTimeHelper
+            user.updated_at = DateTimeHelper.now()
 
-            # Save changes to database
-            success = self.db_service.users.update(user)
-            if not success:
-                self.logger.error(f"Database update failed for user profile: {username}")
-                raise Exception("Failed to update user profile")
+            # Save changes
+            updated_user = self.db_service.users.update(user_id, user)
 
-            self.logger.info(f"Profile updated successfully for user: {username}, fields: {updated_fields}")
+            # Emit profile update event
+            if self.events:
+                self.events.emit('profile_updated', self.agent_id, {
+                    'user_id': user_id,
+                    'updated_fields': updated_fields,
+                    'updated_by': 'user_manager_agent'
+                })
 
-            return {
-                'success': True,
-                'message': 'Profile updated successfully',
-                'username': username,
+            self.logger.info(f"Profile updated for user {user_id}: {updated_fields}")
+
+            return self._success_response("Profile updated successfully", {
+                'user_id': user_id,
                 'updated_fields': updated_fields,
                 'updated_at': DateTimeHelper.to_iso_string(user.updated_at)
-            }
+            })
 
-        except ValidationError:
-            raise
         except Exception as e:
-            self.logger.error(f"Unexpected error updating profile for {username or 'unknown'}: {e}")
+            error_msg = f"Profile update failed: {e}"
+            self.logger.error(error_msg)
             return self._error_response(f"Failed to update profile: {str(e)}")
 
     @require_authentication
     @log_agent_action
     def _manage_roles(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Manage user roles with proper validation"""
-        target_username = data.get('target_username') or data.get('username')  # Initialize early
-
+        """Manage user role assignments"""
         try:
-            action = data.get('action')
+            action = data.get('action')  # 'assign', 'revoke', 'list'
+            target_user_id = data.get('target_user_id')
 
-            if not target_username:
-                self.logger.warning("Role management failed: Target username is required")
-                raise ValidationError("Target username is required")
+            if action not in ['assign', 'revoke', 'list']:
+                return self._error_response("Invalid action. Use: assign, revoke, or list")
 
-            user = self.db_service.users.get_by_username(target_username)
+            if not self.db_service:
+                return self._error_response("Database service not available")
+
+            if action == 'list':
+                # List user roles
+                if target_user_id:
+                    user = self.db_service.users.get(target_user_id)
+                    if not user:
+                        return self._error_response(f"User not found: {target_user_id}")
+                    return self._success_response("User role retrieved", self._list_user_roles(user))
+                else:
+                    # List all users and their roles
+                    all_users = self.db_service.users.list()
+                    user_roles = [self._list_user_roles(user) for user in all_users]
+                    return self._success_response("All user roles retrieved", {'users': user_roles})
+
+            # For assign/revoke operations
+            if not target_user_id:
+                return self._error_response("Target user ID is required")
+
+            user = self.db_service.users.get(target_user_id)
             if not user:
-                self.logger.warning(f"Role management failed: User {target_username} not found")
-                raise ValidationError("User not found")
+                return self._error_response(f"User not found: {target_user_id}")
 
             if action == 'assign':
-                return self._assign_role(user, data)
-            elif action == 'list':
-                return self._list_user_roles(user)
-            elif action == 'capabilities':
-                return self._get_role_capabilities(data.get('role'))
-            else:
-                self.logger.warning(f"Role management failed: Unknown action: {action}")
-                raise ValidationError(f"Unknown role action: {action}")
+                role = data.get('role')
+                if not role:
+                    return self._error_response("Role is required for assignment")
 
-        except ValidationError:
-            raise
+                return self._assign_role_to_user(user, role)
+
+            elif action == 'revoke':
+                # For simplified role system, revoke means setting to default role
+                return self._assign_role_to_user(user, UserRole.VIEWER.value)
+
         except Exception as e:
-            self.logger.error(f"Role management error for {target_username or 'unknown'}: {e}")
-            return self._error_response(f"Role management failed: {str(e)}")
+            error_msg = f"Role management failed: {e}"
+            self.logger.error(error_msg)
+            return self._error_response(f"Failed to manage roles: {str(e)}")
 
-    def _assign_role(self, user: User, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Assign role to user (single role system)"""
+    def _assign_role_to_user(self, user: User, role: str) -> Dict[str, Any]:
+        """Assign a role to a user"""
         try:
-            role = data.get('role')
-            if not role:
-                raise ValidationError("Role is required")
-
+            # Validate role
             try:
-                new_role = UserRole(role)
-                old_role = user.role.value if user.role else 'none'
+                new_role = UserRole(role.lower())
+            except ValueError:
+                return self._error_response(f"Invalid role: {role}")
 
-                user.role = new_role
-                user.updated_at = DateTimeHelper.now()  # Rule #7: Use DateTimeHelper
+            old_role = user.role.value if user.role else 'none'
 
-                success = self.db_service.users.update(user)
-                if not success:
-                    raise Exception("Failed to update user role in database")
+            # Update user role
+            user.role = new_role
+            user.updated_at = DateTimeHelper.now()
 
-                # Emit role assignment event
-                if self.events:
-                    self.events.emit('user_role_assigned', 'user_manager', {
-                        'username': user.username,
-                        'old_role': old_role,
-                        'new_role': role,
-                        'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-                    })
+            # Save to database
+            if self.db_service:
+                self.db_service.users.update(user.id, user)
 
-                self.logger.info(f"Role {role} assigned to user {user.username} (was {old_role})")
-
-                return {
-                    'success': True,
-                    'message': f'Role {role} assigned to {user.username}',
+            # Emit role change event
+            if self.events:
+                self.events.emit('role_assigned', self.agent_id, {
+                    'user_id': user.id,
                     'username': user.username,
                     'old_role': old_role,
-                    'new_role': user.role.value
-                }
-            except ValueError:
-                self.logger.warning(f"Invalid role assignment attempted: {role}")
-                raise ValidationError(f"Invalid role: {role}")
+                    'new_role': new_role.value,
+                    'assigned_by': 'user_manager_agent'
+                })
+
+            self.logger.info(f"Role '{new_role.value}' assigned to user '{user.username}'")
+
+            return self._success_response(f"Role '{new_role.value}' assigned successfully", {
+                'user_id': user.id,
+                'username': user.username,
+                'old_role': old_role,
+                'new_role': new_role.value,
+                'permissions': self._get_user_permissions(new_role),
+                'assigned_at': DateTimeHelper.to_iso_string(user.updated_at)
+            })
 
         except ValidationError:
             raise
@@ -428,266 +443,242 @@ class UserManagerAgent(BaseAgent):
                 'create_tests', 'run_test_suites', 'report_bugs', 'validate_requirements',
                 'performance_testing', 'security_testing', 'test_automation'
             ],
-            UserRole.BUSINESS_ANALYST.value: [
-                'gather_requirements', 'stakeholder_communication', 'process_analysis',
-                'create_specifications', 'validate_business_rules', 'risk_analysis'
-            ],
-            UserRole.DEVOPS.value: [
-                'deploy_applications', 'manage_infrastructure', 'monitor_systems',
-                'automate_processes', 'security_management', 'performance_optimization'
+            UserRole.STAKEHOLDER.value: [
+                'view_progress', 'provide_feedback', 'approve_requirements',
+                'review_deliverables', 'request_changes', 'view_reports'
             ],
             UserRole.VIEWER.value: [
-                'view_projects', 'view_documentation', 'participate_in_meetings',
-                'provide_feedback', 'view_reports'
+                'view_projects', 'view_progress', 'read_documentation'
             ]
         }
 
-        try:
-            UserRole(role)  # Validate role exists
-            capabilities = role_capabilities.get(role, [])
+        return {
+            'role': role,
+            'capabilities': role_capabilities.get(role, []),
+            'description': self._get_role_description(role)
+        }
 
-            return {
-                'success': True,
-                'role': role,
-                'capabilities': capabilities,
-                'capability_count': len(capabilities)
-            }
-        except ValueError:
-            self.logger.warning(f"Invalid role capabilities request: {role}")
-            raise ValidationError(f"Invalid role: {role}")
+    def _get_role_description(self, role: str) -> str:
+        """Get description for a role"""
+        descriptions = {
+            UserRole.ADMIN.value: "Full system administration and user management",
+            UserRole.PROJECT_MANAGER.value: "Project planning, team coordination, and delivery management",
+            UserRole.DEVELOPER.value: "Software development, coding, and technical implementation",
+            UserRole.DESIGNER.value: "User experience design, visual design, and prototyping",
+            UserRole.TESTER.value: "Quality assurance, testing, and bug reporting",
+            UserRole.STAKEHOLDER.value: "Business oversight, requirements approval, and feedback",
+            UserRole.VIEWER.value: "Read-only access to projects and documentation"
+        }
+        return descriptions.get(role, "Unknown role")
 
-    @require_authentication
-    @log_agent_action
-    def _get_user_info(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Get detailed information about a user with privacy controls"""
-        target_username = data.get('target_username') or data.get('username')  # Initialize early
-        requesting_username = data.get('username')  # Initialize early
+    def _get_user_permissions(self, role: UserRole) -> List[str]:
+        """Get permissions for a specific role"""
+        role_capabilities = self._get_role_capabilities(role.value)
+        return role_capabilities['capabilities']
 
-        try:
-            if not target_username:
-                raise ValidationError("Target username is required")
-
-            user = self.db_service.users.get_by_username(target_username)
-            if not user:
-                self.logger.warning(f"User info request failed: User {target_username} not found")
-                raise ValidationError("User not found")
-
-            # Basic info available to all authenticated users
-            user_info = {
-                'username': user.username,
-                'full_name': user.full_name,
-                'role': user.role.value if user.role else 'none',
-                'status': user.status.value if user.status else 'unknown',
-                'created_at': DateTimeHelper.to_iso_string(user.created_at)
-            }
-
-            # Additional sensitive info only if requesting own info
-            if requesting_username == target_username:
-                user_info.update({
-                    'email': user.email,
-                    'preferences': getattr(user, 'preferences', {}),
-                    'last_login': DateTimeHelper.to_iso_string(user.last_login) if user.last_login else None,
-                    'updated_at': DateTimeHelper.to_iso_string(user.updated_at)
-                })
-                self.logger.debug(f"Full user info provided for own account: {target_username}")
-            else:
-                self.logger.debug(
-                    f"Basic user info provided for: {target_username} (requested by {requesting_username})")
-
-            return {
-                'success': True,
-                **user_info
-            }
-
-        except ValidationError:
-            raise
-        except Exception as e:
-            self.logger.error(f"Error getting user info for {target_username or 'unknown'}: {e}")
-            return self._error_response(f"Failed to get user info: {str(e)}")
-
-    @require_authentication
-    @log_agent_action
-    def _deactivate_user(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Deactivate a user account with proper authorization"""
-        target_username = data.get('target_username')  # Initialize early
-        requesting_username = data.get('username')  # Initialize early
-
-        try:
-            reason = data.get('reason', 'No reason provided')
-
-            if not target_username:
-                raise ValidationError("Target username is required")
-
-            # Basic permission check - users can only deactivate themselves
-            # In production, you'd implement proper admin role checking
-            if requesting_username != target_username:
-                self.logger.warning(
-                    f"Unauthorized deactivation attempt: {requesting_username} tried to deactivate {target_username}")
-                raise ValidationError("You can only deactivate your own account")
-
-            user = self.db_service.users.get_by_username(target_username)
-            if not user:
-                self.logger.warning(f"Deactivation failed: User {target_username} not found")
-                raise ValidationError("User not found")
-
-            if user.status == UserStatus.INACTIVE:
-                self.logger.info(f"User {target_username} already deactivated")
-                return {
-                    'success': True,
-                    'message': f'User {target_username} is already deactivated',
-                    'username': target_username,
-                    'status': 'already_inactive'
-                }
-
-            # Deactivate user
-            user.status = UserStatus.INACTIVE
-            user.updated_at = DateTimeHelper.now()  # Rule #7: Use DateTimeHelper
-
-            success = self.db_service.users.update(user)
-            if not success:
-                raise Exception("Failed to deactivate user in database")
-
-            # Emit deactivation event
-            if self.events:
-                self.events.emit('user_deactivated', 'user_manager', {
-                    'username': target_username,
-                    'reason': reason,
-                    'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()),
-                    'deactivated_by': requesting_username
-                })
-
-            self.logger.info(f"User deactivated: {target_username} by {requesting_username}, reason: {reason}")
-
-            return {
-                'success': True,
-                'message': f'User {target_username} deactivated successfully',
-                'username': target_username,
-                'status': 'deactivated',
-                'reason': reason,
-                'deactivated_at': DateTimeHelper.to_iso_string(user.updated_at)
-            }
-
-        except ValidationError:
-            raise
-        except Exception as e:
-            self.logger.error(f"Error deactivating user {target_username or 'unknown'}: {e}")
-            return self._error_response(f"Failed to deactivate user: {str(e)}")
-
-    @require_authentication
     @log_agent_action
     def _list_users(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """List users with filtering and pagination"""
+        """List users with optional filtering"""
         try:
+            if not self.db_service:
+                return self._error_response("Database service not available")
+
             # Get filtering parameters
-            status_filter = data.get('status')
             role_filter = data.get('role')
+            status_filter = data.get('status')
             limit = data.get('limit', 50)
             offset = data.get('offset', 0)
 
-            # Get users from database
-            users = self.db_service.users.get_all()
+            # Get all users
+            all_users = self.db_service.users.list()
 
             # Apply filters
-            if status_filter:
-                try:
-                    status_enum = UserStatus(status_filter)
-                    users = [u for u in users if u.status == status_enum]
-                except ValueError:
-                    self.logger.warning(f"Invalid status filter: {status_filter}")
-
+            filtered_users = all_users
             if role_filter:
                 try:
-                    role_enum = UserRole(role_filter)
-                    users = [u for u in users if u.role == role_enum]
+                    role_enum = UserRole(role_filter.lower())
+                    filtered_users = [u for u in filtered_users if u.role == role_enum]
                 except ValueError:
-                    self.logger.warning(f"Invalid role filter: {role_filter}")
+                    return self._error_response(f"Invalid role filter: {role_filter}")
+
+            if status_filter:
+                try:
+                    status_enum = UserStatus(status_filter.lower())
+                    filtered_users = [u for u in filtered_users if u.status == status_enum]
+                except ValueError:
+                    return self._error_response(f"Invalid status filter: {status_filter}")
 
             # Apply pagination
-            total_count = len(users)
-            users = users[offset:offset + limit]
+            total_count = len(filtered_users)
+            paginated_users = filtered_users[offset:offset + limit]
 
-            # Format user list (basic info only)
+            # Format user data
             user_list = []
-            for user in users:
-                user_list.append({
+            for user in paginated_users:
+                user_data = {
+                    'id': user.id,
                     'username': user.username,
-                    'full_name': user.full_name,
                     'email': user.email,
+                    'full_name': user.full_name,
                     'role': user.role.value if user.role else 'none',
                     'status': user.status.value if user.status else 'unknown',
+                    'last_login': DateTimeHelper.to_iso_string(user.last_login) if user.last_login else None,
                     'created_at': DateTimeHelper.to_iso_string(user.created_at),
-                    'last_login': DateTimeHelper.to_iso_string(user.last_login) if user.last_login else None
-                })
+                    'projects_created': user.projects_created,
+                    'sessions_completed': user.sessions_completed
+                }
+                user_list.append(user_data)
 
-            self.logger.info(f"User list retrieved: {len(user_list)} users (total: {total_count})")
-
-            return {
-                'success': True,
+            return self._success_response("Users retrieved successfully", {
                 'users': user_list,
                 'total_count': total_count,
-                'returned_count': len(user_list),
                 'offset': offset,
-                'limit': limit
-            }
+                'limit': limit,
+                'filters_applied': {
+                    'role': role_filter,
+                    'status': status_filter
+                }
+            })
 
         except Exception as e:
-            self.logger.error(f"Error listing users: {e}")
-            return self._error_response(f"Failed to list users: {str(e)}")
+            error_msg = f"Failed to list users: {e}"
+            self.logger.error(error_msg)
+            return self._error_response(error_msg)
 
-    @require_authentication
     @log_agent_action
-    def _check_permissions(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Check if user has specific permissions"""
-        username = data.get('username')  # Initialize early
+    def _get_user_info(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Get detailed information about a specific user"""
+        try:
+            user_id = data.get('user_id')
+            username = data.get('username')
+
+            if not user_id and not username:
+                return self._error_response("Either user_id or username is required")
+
+            if not self.db_service:
+                return self._error_response("Database service not available")
+
+            # Get user
+            if user_id:
+                user = self.db_service.users.get(user_id)
+            else:
+                user = self.db_service.users.get_by_username(username)
+
+            if not user:
+                identifier = user_id or username
+                return self._error_response(f"User not found: {identifier}")
+
+            # Compile comprehensive user information
+            user_info = {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'full_name': user.full_name,
+                'role': user.role.value if user.role else 'none',
+                'status': user.status.value if user.status else 'unknown',
+                'bio': user.bio,
+                'skills': user.skills,
+                'avatar_url': user.avatar_url,
+                'created_at': DateTimeHelper.to_iso_string(user.created_at),
+                'updated_at': DateTimeHelper.to_iso_string(user.updated_at),
+                'last_login': DateTimeHelper.to_iso_string(user.last_login) if user.last_login else None,
+                'is_locked': user.is_locked,
+                'login_attempts': user.login_attempts,
+                'statistics': {
+                    'projects_created': user.projects_created,
+                    'sessions_completed': user.sessions_completed,
+                    'code_generated_lines': user.code_generated_lines
+                },
+                'permissions': self._get_user_permissions(user.role) if user.role else [],
+                'role_info': self._get_role_capabilities(user.role.value) if user.role else {}
+            }
+
+            return self._success_response("User information retrieved", user_info)
+
+        except Exception as e:
+            error_msg = f"Failed to get user info: {e}"
+            self.logger.error(error_msg)
+            return self._error_response(error_msg)
+
+    @log_agent_action
+    def _deactivate_user(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Deactivate a user account"""
+        try:
+            user_id = data.get('user_id')
+            if not user_id:
+                return self._error_response("User ID is required")
+
+            if not self.db_service:
+                return self._error_response("Database service not available")
+
+            user = self.db_service.users.get(user_id)
+            if not user:
+                return self._error_response(f"User not found: {user_id}")
+
+            if user.status == UserStatus.INACTIVE:
+                return self._success_response("User is already inactive", {
+                    'user_id': user_id,
+                    'username': user.username,
+                    'status': 'already_inactive'
+                })
+
+            # Update user status
+            user.status = UserStatus.INACTIVE
+            user.updated_at = DateTimeHelper.now()
+
+            # Save changes
+            self.db_service.users.update(user_id, user)
+
+            # Emit deactivation event
+            if self.events:
+                self.events.emit('user_deactivated', self.agent_id, {
+                    'user_id': user_id,
+                    'username': user.username,
+                    'deactivated_by': 'user_manager_agent'
+                })
+
+            self.logger.info(f"User '{user.username}' deactivated successfully")
+
+            return self._success_response("User deactivated successfully", {
+                'user_id': user_id,
+                'username': user.username,
+                'previous_status': UserStatus.ACTIVE.value,
+                'new_status': UserStatus.INACTIVE.value,
+                'deactivated_at': DateTimeHelper.to_iso_string(user.updated_at)
+            })
+
+        except Exception as e:
+            error_msg = f"User deactivation failed: {e}"
+            self.logger.error(error_msg)
+            return self._error_response(error_msg)
+
+    def health_check(self) -> Dict[str, Any]:
+        """Enhanced health check for UserManagerAgent"""
+        health = super().health_check()
 
         try:
-            permission = data.get('permission')
-            context = data.get('context', {})
+            # Check database connectivity
+            if self.db_service:
+                # Try to count users
+                users_count = len(self.db_service.users.list()) if hasattr(self.db_service, 'users') else 0
+                health['database_check'] = {
+                    'status': 'healthy',
+                    'users_in_database': users_count
+                }
+            else:
+                health['database_check'] = {
+                    'status': 'unavailable',
+                    'users_in_database': 0
+                }
 
-            if not permission:
-                raise ValidationError("Permission is required")
-
-            user = self.db_service.users.get_by_username(username)
-            if not user:
-                raise ValidationError("User not found")
-
-            # Get role capabilities
-            role_info = self._get_role_capabilities(user.role.value)
-            capabilities = role_info.get('capabilities', [])
-
-            # Check if user has the required permission
-            has_permission = permission in capabilities
-
-            # Additional context-based checks could be implemented here
-            # For example, project-specific permissions
-
-            self.logger.debug(f"Permission check for {username}: {permission} = {has_permission}")
-
-            return {
-                'success': True,
-                'username': username,
-                'permission': permission,
-                'has_permission': has_permission,
-                'user_role': user.role.value,
-                'context': context
+            # Check available roles
+            health['role_system'] = {
+                'available_roles': [role.value for role in UserRole],
+                'role_count': len(UserRole)
             }
 
-        except ValidationError:
-            raise
         except Exception as e:
-            self.logger.error(f"Error checking permissions for {username or 'unknown'}: {e}")
-            return self._error_response(f"Failed to check permissions: {str(e)}")
+            health['status'] = 'degraded'
+            health['error'] = f"Health check failed: {e}"
 
-    def _error_response(self, error_message: str, error_code: Optional[str] = None) -> Dict[str, Any]:
-        """Create standardized error response"""
-        response = {
-            'success': False,
-            'error': error_message,
-            'agent_id': self.agent_id,
-            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-        }
-
-        if error_code:
-            response['error_code'] = error_code
-
-        return response
+        return health
