@@ -4,16 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="ui">
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="full">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/developer_guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/developer_guide.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/run.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/code.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/code.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/context.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/context.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/orchestrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/orchestrator.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -422,7 +418,15 @@
       <option name="project" value="LOCAL" />
       <updated>1758998429060</updated>
     </task>
-    <option name="localTasksCounter" value="37" />
+    <task id="LOCAL-00037" summary="full">
+      <option name="closed" value="true" />
+      <created>1759033583107</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1759033583107</updated>
+    </task>
+    <option name="localTasksCounter" value="38" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -444,6 +448,7 @@
     <MESSAGE value="key" />
     <MESSAGE value="texts" />
     <MESSAGE value="ui" />
-    <option name="LAST_COMMIT_MESSAGE" value="ui" />
+    <MESSAGE value="full" />
+    <option name="LAST_COMMIT_MESSAGE" value="full" />
   </component>
 </project>

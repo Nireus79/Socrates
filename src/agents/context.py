@@ -14,8 +14,8 @@ from typing import Dict, List, Any, Optional
 
 from src.core import get_logger, DateTimeHelper, ValidationError
 from src.models import (
-    Project, ConversationMessage, UserRole,
-    ProjectPhase, ModuleStatus, RiskLevel
+    Project, ConversationMessage, UserRole, TechnicalRole,
+    ProjectPhase, ModuleStatus, RiskLevel, ConversationStatus
 )
 from src.database import get_database
 from .base import BaseAgent, require_project_access, log_agent_action
@@ -31,8 +31,12 @@ class ContextAnalyzerAgent(BaseAgent):
 
     def __init__(self):
         super().__init__("context_analyzer", "Context Analyzer")
+        self.db_service = get_database()
         self.patterns = {}
         self.conflict_rules = self._load_conflict_rules()
+
+        if self.logger:
+            self.logger.info("ContextAnalyzerAgent initialized with conflict detection rules")
 
     def get_capabilities(self) -> List[str]:
         return [
@@ -44,7 +48,10 @@ class ContextAnalyzerAgent(BaseAgent):
 
     def _load_conflict_rules(self) -> Dict[str, Any]:
         """Load conflict detection rules"""
-        return {
+        if self.logger:
+            self.logger.debug("Loading conflict detection rules")
+
+        rules = {
             "technology_conflicts": {
                 "database": {
                     "sqlite": ["high_concurrency", "large_datasets", "concurrent_users"],
@@ -67,6 +74,11 @@ class ContextAnalyzerAgent(BaseAgent):
             ]
         }
 
+        if self.logger:
+            self.logger.debug(f"Loaded {len(rules['requirement_conflicts'])} requirement conflict rules")
+
+        return rules
+
     @require_project_access
     @log_agent_action
     def _analyze_context(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -74,44 +86,67 @@ class ContextAnalyzerAgent(BaseAgent):
         project_id = data.get('project_id')
         analysis_type = data.get('type', 'full')
 
-        # Get project data
-        project = self.db.projects.get_by_id(project_id)
-        if not project:
-            raise ValidationError("Project not found")
+        if self.logger:
+            self.logger.info(f"Starting context analysis for project {project_id}, type: {analysis_type}")
 
-        # Perform analysis based on type
-        if analysis_type == 'conversation':
-            return self._analyze_conversation_patterns(project)
-        elif analysis_type == 'technical':
-            return self._analyze_technical_context(project)
-        elif analysis_type == 'conflicts':
-            return self._detect_all_conflicts(project)
-        elif analysis_type == 'health':
-            return self._assess_project_health(project)
-        else:
-            return self._analyze_full_context(project)
+        try:
+            # Get project data
+            project = self.db_service.projects.get_by_id(project_id)
+            if not project:
+                if self.logger:
+                    self.logger.error(f"Project {project_id} not found")
+                raise ValidationError("Project not found")
+
+            # Perform analysis based on type
+            if analysis_type == 'conversation':
+                return self._analyze_conversation_patterns(project)
+            elif analysis_type == 'technical':
+                return self._analyze_technical_context(project)
+            elif analysis_type == 'conflicts':
+                return self._detect_all_conflicts(project)
+            elif analysis_type == 'health':
+                return self._assess_project_health_internal(project)
+            else:
+                return self._analyze_full_context(project)
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Context analysis failed for project {project_id}: {e}")
+            raise
 
     def _analyze_full_context(self, project: Project) -> Dict[str, Any]:
         """Full context analysis including all aspects"""
-        analysis = {
-            'project_id': project.project_id,
-            'project_name': project.name,
-            'analysis_timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()),
-            'project_health': self._assess_project_health_internal(project),
-            'conversation_insights': self._analyze_conversation_patterns(project),
-            'technical_assessment': self._analyze_technical_context(project),
-            'conflict_analysis': self._detect_all_conflicts(project),
-            'recommendations': [],
-            'risk_factors': [],
-            'strengths': []
-        }
+        if self.logger:
+            self.logger.info(f"Performing full context analysis for project {project.name}")
 
-        # Generate comprehensive recommendations
-        analysis['recommendations'] = self._generate_context_recommendations(analysis)
-        analysis['risk_factors'] = self._extract_risk_factors(analysis)
-        analysis['strengths'] = self._identify_project_strengths(analysis)
+        try:
+            analysis = {
+                'project_id': project.id,
+                'project_name': project.name,
+                'analysis_timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                'project_health': self._assess_project_health_internal(project),
+                'conversation_insights': self._analyze_conversation_patterns(project),
+                'technical_assessment': self._analyze_technical_context(project),
+                'conflict_analysis': self._detect_all_conflicts(project),
+                'recommendations': [],
+                'risk_factors': [],
+                'strengths': []
+            }
 
-        return analysis
+            # Generate comprehensive recommendations
+            analysis['recommendations'] = self._generate_context_recommendations(analysis)
+            analysis['risk_factors'] = self._extract_risk_factors(analysis)
+            analysis['strengths'] = self._identify_project_strengths(analysis)
+
+            if self.logger:
+                self.logger.info(f"Full context analysis completed for project {project.name}")
+
+            return analysis
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Full context analysis failed for project {project.name}: {e}")
+            raise
 
     @require_project_access
     @log_agent_action
@@ -119,291 +154,313 @@ class ContextAnalyzerAgent(BaseAgent):
         """Analyze conversation patterns and user behavior"""
         project_id = data.get('project_id')
 
-        project = self.db.projects.get_by_id(project_id)
-        if not project:
-            raise ValidationError("Project not found")
+        if self.logger:
+            self.logger.info(f"Analyzing conversation patterns for project {project_id}")
 
-        return self._analyze_conversation_patterns(project)
+        try:
+            project = self.db_service.projects.get_by_id(project_id)
+            if not project:
+                if self.logger:
+                    self.logger.error(f"Project {project_id} not found")
+                raise ValidationError("Project not found")
+
+            return self._analyze_conversation_patterns(project)
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Conversation analysis failed for project {project_id}: {e}")
+            raise
 
     def _analyze_conversation_patterns(self, project: Project) -> Dict[str, Any]:
         """Analyze conversation patterns and user behavior"""
-        conversation_data = project.conversation_history or []
+        if self.logger:
+            self.logger.debug(f"Analyzing conversation patterns for project {project.name}")
+
+        try:
+            # Get conversation data from Socratic sessions
+            sessions = self.db_service.socratic_sessions.get_project_sessions(project.id)
+            conversation_count = len(sessions)
+
+            if self.logger:
+                self.logger.debug(f"Found {conversation_count} Socratic sessions for project {project.name}")
+
+        except Exception as e:
+            if self.logger:
+                self.logger.warning(f"Could not retrieve conversation data for project {project.name}: {e}")
+            conversation_count = 0
+            sessions = []
 
         patterns = {
-            'total_interactions': len(conversation_data),
-            'response_quality': self._assess_response_quality(conversation_data),
-            'topic_coverage': self._analyze_topic_coverage(conversation_data),
-            'user_engagement': self._measure_engagement(conversation_data),
-            'information_gaps': self._identify_information_gaps(conversation_data),
-            'conversation_flow': self._analyze_conversation_flow(conversation_data),
-            'phase_distribution': self._analyze_phase_distribution(conversation_data)
+            'total_interactions': conversation_count,
+            'response_quality': self._assess_response_quality(sessions),
+            'topic_coverage': self._analyze_topic_coverage(sessions),
+            'user_engagement': self._measure_engagement(sessions),
+            'information_gaps': self._identify_information_gaps(project),
+            'conversation_flow': self._analyze_conversation_flow(sessions),
+            'phase_distribution': self._analyze_phase_distribution(sessions)
         }
+
+        if self.logger:
+            quality_score = patterns['response_quality']['score']
+            self.logger.info(
+                f"Conversation analysis completed - Quality: {quality_score}, Interactions: {conversation_count}")
 
         return patterns
 
-    def _assess_response_quality(self, conversation_data: List[ConversationMessage]) -> Dict[str, Any]:
+    def _assess_response_quality(self, sessions: List) -> Dict[str, Any]:
         """Assess quality of user responses"""
-        if not conversation_data:
+        if self.logger:
+            self.logger.debug("Assessing response quality from sessions")
+
+        if not sessions:
+            if self.logger:
+                self.logger.warning("No conversation data available for quality assessment")
             return {
                 'score': 0,
-                'analysis': 'No conversation data',
+                'analysis': 'No conversation data available',
                 'total_responses': 0,
                 'detailed_responses': 0
             }
 
-        # Filter user responses
-        user_responses = [msg for msg in conversation_data if msg.type == 'user']
+        try:
+            # Basic quality assessment based on session completion
+            completed_sessions = sum(1 for session in sessions if hasattr(session, 'completion_percentage')
+                                     and session.completion_percentage >= 80)
 
-        if not user_responses:
+            total_sessions = len(sessions)
+            quality_score = (completed_sessions / total_sessions * 100) if total_sessions > 0 else 0
+
+            if self.logger:
+                self.logger.debug(
+                    f"Quality assessment: {completed_sessions}/{total_sessions} sessions completed (score: {quality_score:.1f})")
+
+            return {
+                'score': quality_score,
+                'analysis': f'Quality based on session completion rate',
+                'total_responses': total_sessions,
+                'detailed_responses': completed_sessions
+            }
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error assessing response quality: {e}")
             return {
                 'score': 0,
-                'analysis': 'No user responses found',
+                'analysis': f'Error assessing quality: {str(e)}',
                 'total_responses': 0,
                 'detailed_responses': 0
             }
 
-        # Assess response quality based on length and content
-        detailed_responses = 0
-        total_length = 0
+    def _analyze_topic_coverage(self, sessions: List) -> Dict[str, Any]:
+        """Analyze topic coverage in conversations"""
+        if self.logger:
+            self.logger.debug("Analyzing topic coverage from sessions")
 
-        for response in user_responses:
-            response_length = len(response.content)
-            total_length += response_length
+        if not sessions:
+            if self.logger:
+                self.logger.warning("No sessions available for topic coverage analysis")
+            return {'coverage_score': 0, 'covered_topics': [], 'missing_topics': []}
 
-            # Consider detailed if response is substantial and has specific information
-            if response_length > 50 and any(
-                    keyword in response.content.lower()
-                    for keyword in ['because', 'need', 'require', 'should', 'want', 'will', 'plan']
-            ):
-                detailed_responses += 1
+        try:
+            # Basic topic coverage based on roles covered in sessions
+            covered_roles = set()
+            for session in sessions:
+                if hasattr(session, 'completed_roles'):
+                    covered_roles.update(session.completed_roles)
 
-        avg_length = total_length / len(user_responses) if user_responses else 0
-        quality_score = min(100.0, (detailed_responses / len(user_responses)) * 100)
+            all_roles = list(TechnicalRole)
+            coverage_score = (len(covered_roles) / len(all_roles) * 100) if all_roles else 0
 
-        return {
-            'score': round(quality_score, 1),
-            'total_responses': len(user_responses),
-            'detailed_responses': detailed_responses,
-            'average_length': round(avg_length, 1),
-            'analysis': self._get_quality_analysis(quality_score)
-        }
+            covered_topics = [role.value for role in covered_roles]
+            missing_topics = [role.value for role in all_roles if role not in covered_roles]
 
-    def _get_quality_analysis(self, score: float) -> str:
-        """Get textual analysis of response quality"""
-        if score >= 80:
-            return "Excellent response quality with detailed, thoughtful answers"
-        elif score >= 60:
-            return "Good response quality with adequate detail"
-        elif score >= 40:
-            return "Moderate response quality, could use more detail"
-        elif score >= 20:
-            return "Limited response quality, needs more specific information"
-        else:
-            return "Poor response quality, responses are too brief or vague"
+            if self.logger:
+                self.logger.debug(
+                    f"Topic coverage: {len(covered_roles)}/{len(all_roles)} roles covered (score: {coverage_score:.1f})")
 
-    def _analyze_topic_coverage(self, conversation_data: List[ConversationMessage]) -> Dict[str, Any]:
-        """Analyze topic coverage in conversation"""
-        topics = {
-            'requirements': 0,
-            'technical': 0,
-            'design': 0,
-            'business': 0,
-            'testing': 0,
-            'deployment': 0
-        }
-
-        topic_keywords = {
-            'requirements': ['require', 'need', 'must', 'should', 'feature', 'functionality'],
-            'technical': ['api', 'database', 'framework', 'technology', 'code', 'algorithm'],
-            'design': ['user', 'interface', 'design', 'experience', 'ui', 'ux', 'layout'],
-            'business': ['business', 'revenue', 'customer', 'market', 'profit', 'cost'],
-            'testing': ['test', 'quality', 'validation', 'verify', 'check', 'qa'],
-            'deployment': ['deploy', 'production', 'server', 'hosting', 'launch', 'live']
-        }
-
-        for message in conversation_data:
-            content_lower = message.content.lower()
-
-            for topic, keywords in topic_keywords.items():
-                if any(keyword in content_lower for keyword in keywords):
-                    topics[topic] += 1
-
-        # Calculate coverage percentage
-        total_messages = len(conversation_data)
-        topic_coverage = {}
-
-        for topic, count in topics.items():
-            coverage_pct = (count / total_messages * 100) if total_messages > 0 else 0
-            topic_coverage[topic] = {
-                'count': count,
-                'coverage_percentage': round(coverage_pct, 1)
+            return {
+                'coverage_score': coverage_score,
+                'covered_topics': covered_topics,
+                'missing_topics': missing_topics
             }
 
-        return topic_coverage
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error analyzing topic coverage: {e}")
+            return {'coverage_score': 0, 'covered_topics': [], 'missing_topics': []}
 
-    def _measure_engagement(self, conversation_data: List[ConversationMessage]) -> Dict[str, Any]:
+    def _measure_engagement(self, sessions: List) -> Dict[str, Any]:
         """Measure user engagement levels"""
-        if not conversation_data:
-            return {'score': 0, 'trend': 'none', 'message_count': 0}
+        if self.logger:
+            self.logger.debug("Measuring user engagement from sessions")
 
-        user_messages = [msg for msg in conversation_data if msg.type == 'user']
+        if not sessions:
+            if self.logger:
+                self.logger.warning("No sessions available for engagement measurement")
+            return {'score': 0, 'engagement_level': 'none'}
 
-        if len(user_messages) < 2:
+        try:
+            # Calculate engagement based on session activity
+            active_sessions = sum(1 for session in sessions if hasattr(session, 'status')
+                                  and session.status == ConversationStatus.ACTIVE)
+
+            total_questions = sum(getattr(session, 'total_questions', 0) for session in sessions)
+            answered_questions = sum(getattr(session, 'questions_answered', 0) for session in sessions)
+
+            answer_rate = (answered_questions / total_questions * 100) if total_questions > 0 else 0
+            engagement_level = 'high' if answer_rate > 70 else 'medium' if answer_rate > 40 else 'low'
+
+            if self.logger:
+                self.logger.debug(
+                    f"Engagement: {answered_questions}/{total_questions} questions answered (rate: {answer_rate:.1f}%, level: {engagement_level})")
+
             return {
-                'score': 50 if user_messages else 0,
-                'trend': 'insufficient_data',
-                'message_count': len(user_messages)
+                'score': answer_rate,
+                'engagement_level': engagement_level,
+                'active_sessions': active_sessions,
+                'total_questions': total_questions,
+                'answered_questions': answered_questions
             }
 
-        # Calculate engagement based on multiple factors
-        total_length = sum(len(msg.content) for msg in user_messages)
-        avg_length = total_length / len(user_messages)
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error measuring engagement: {e}")
+            return {'score': 0, 'engagement_level': 'error'}
 
-        # Engagement factors
-        length_score = min(100.0, (avg_length / 100) * 100)  # Normalize to 100
-        frequency_score = min(100.0, len(user_messages) * 10)  # More messages = higher engagement
+    def _identify_information_gaps(self, project: Project) -> List[str]:
+        """Identify information gaps in project data"""
+        if self.logger:
+            self.logger.debug(f"Identifying information gaps for project {project.name}")
 
-        # Look for engagement indicators
-        engagement_indicators = 0
-        for msg in user_messages:
-            content = msg.content.lower()
-            if any(indicator in content for indicator in [
-                'question', '?', 'how', 'what', 'why', 'when', 'where',
-                'interested', 'important', 'priority', 'concern'
-            ]):
-                engagement_indicators += 1
-
-        indicator_score = min(100.0, (engagement_indicators / len(user_messages)) * 100)
-
-        # Overall engagement score
-        engagement_score = (length_score + frequency_score + indicator_score) / 3
-
-        # Determine trend
-        if len(user_messages) >= 3:
-            recent_avg = sum(len(msg.content) for msg in user_messages[-3:]) / 3
-            earlier_avg = sum(len(msg.content) for msg in user_messages[:-3]) / max(1, len(user_messages) - 3)
-
-            if recent_avg > earlier_avg * 1.2:
-                trend = 'increasing'
-            elif recent_avg < earlier_avg * 0.8:
-                trend = 'decreasing'
-            else:
-                trend = 'stable'
-        else:
-            trend = 'insufficient_data'
-
-        return {
-            'score': round(engagement_score, 1),
-            'trend': trend,
-            'message_count': len(user_messages),
-            'avg_message_length': round(avg_length, 1),
-            'engagement_indicators': engagement_indicators
-        }
-
-    def _identify_information_gaps(self, conversation_data: List[ConversationMessage]) -> List[str]:
-        """Identify information gaps that need addressing"""
         gaps = []
 
-        # Analyze topic coverage
-        topic_coverage = self._analyze_topic_coverage(conversation_data)
+        try:
+            # Check basic project information gaps
+            if not project.description or len(project.description.strip()) < 10:
+                gaps.append("Project description is missing or too brief")
 
-        # Check for insufficient coverage in key areas
-        if topic_coverage['requirements']['count'] < 3:
-            gaps.append("Insufficient requirements gathering - need more detailed feature specifications")
+            if not project.requirements or len(project.requirements) < 2:
+                gaps.append("Insufficient requirements defined")
 
-        if topic_coverage['technical']['count'] < 2:
-            gaps.append("Limited technical discussion - architecture and technology choices need clarification")
+            if not project.technology_stack or len(project.technology_stack) == 0:
+                gaps.append("Technology stack not defined")
 
-        if topic_coverage['design']['count'] < 1:
-            gaps.append("No design considerations mentioned - user experience needs attention")
+            if not project.constraints or len(project.constraints) == 0:
+                gaps.append("Project constraints not specified")
 
-        if topic_coverage['testing']['count'] == 0:
-            gaps.append("Testing strategy not discussed - quality assurance approach missing")
+            if not project.success_criteria or len(project.success_criteria) == 0:
+                gaps.append("Success criteria not defined")
 
-        if topic_coverage['deployment']['count'] == 0:
-            gaps.append("Deployment planning not addressed - production environment needs consideration")
+            if not project.team_members or len(project.team_members) == 0:
+                gaps.append("No team members assigned")
 
-        # Check for business context
-        if topic_coverage['business']['count'] == 0:
-            gaps.append("Business context missing - stakeholder needs and success criteria unclear")
+            if self.logger:
+                self.logger.debug(f"Identified {len(gaps)} information gaps for project {project.name}")
 
-        return gaps
+            return gaps
 
-    def _analyze_conversation_flow(self, conversation_data: List[ConversationMessage]) -> Dict[str, Any]:
-        """Analyze the flow and progression of conversation"""
-        if not conversation_data:
-            return {'flow_quality': 'none', 'progression': 'none'}
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error identifying information gaps: {e}")
+            return ["Error analyzing project information"]
 
-        # Analyze phase progression
-        phases_seen = set()
-        phase_transitions = []
+    def _analyze_conversation_flow(self, sessions: List) -> Dict[str, Any]:
+        """Analyze conversation flow patterns"""
+        if self.logger:
+            self.logger.debug("Analyzing conversation flow patterns")
 
-        current_phase = None
-        for msg in conversation_data:
-            if hasattr(msg, 'phase') and msg.phase:
-                if msg.phase != current_phase:
-                    phase_transitions.append(msg.phase)
-                    current_phase = msg.phase
-                phases_seen.add(msg.phase)
+        if not sessions:
+            if self.logger:
+                self.logger.warning("No sessions available for flow analysis")
+            return {'flow_quality': 'poor', 'session_count': 0}
 
-        # Assess flow quality
-        expected_flow = [ProjectPhase.DISCOVERY, ProjectPhase.ANALYSIS, ProjectPhase.DESIGN,
-                         ProjectPhase.IMPLEMENTATION]
-        flow_score = 0
+        try:
+            session_count = len(sessions)
+            avg_completion = sum(getattr(session, 'completion_percentage', 0) for session in
+                                 sessions) / session_count if session_count > 0 else 0
 
-        if len(phases_seen) > 1:
-            # Check if phases follow logical order
-            for i, phase in enumerate(phase_transitions[:-1]):
-                next_phase = phase_transitions[i + 1]
-                if expected_flow.index(next_phase) > expected_flow.index(phase):
-                    flow_score += 1
+            flow_quality = 'excellent' if avg_completion > 80 else 'good' if avg_completion > 60 else 'poor'
 
-            flow_score = (flow_score / max(1, len(phase_transitions) - 1)) * 100
+            if self.logger:
+                self.logger.debug(
+                    f"Flow analysis: {session_count} sessions, avg completion: {avg_completion:.1f}%, quality: {flow_quality}")
 
-        return {
-            'phases_covered': len(phases_seen),
-            'phase_transitions': [p.value for p in phase_transitions] if phase_transitions else [],
-            'flow_quality': 'good' if flow_score > 70 else 'moderate' if flow_score > 40 else 'poor',
-            'flow_score': round(flow_score, 1)
-        }
+            return {
+                'flow_quality': flow_quality,
+                'session_count': session_count,
+                'average_completion': avg_completion
+            }
 
-    def _analyze_phase_distribution(self, conversation_data: List[ConversationMessage]) -> Dict[str, int]:
-        """Analyze distribution of messages across project phases"""
-        phase_counts = {phase.value: 0 for phase in ProjectPhase}
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error analyzing conversation flow: {e}")
+            return {'flow_quality': 'error', 'session_count': 0}
 
-        for msg in conversation_data:
-            if hasattr(msg, 'phase') and msg.phase:
-                phase_counts[msg.phase.value] += 1
-            else:
-                phase_counts[ProjectPhase.DISCOVERY.value] += 1  # Default to discovery
+    def _analyze_phase_distribution(self, sessions: List) -> Dict[str, Any]:
+        """Analyze distribution across project phases"""
+        if self.logger:
+            self.logger.debug("Analyzing phase distribution")
 
-        return phase_counts
+        phases = {}
+        try:
+            for session in sessions:
+                # Assume sessions are in discovery phase if not specified
+                phase = 'discovery'
+                if phase in phases:
+                    phases[phase] += 1
+                else:
+                    phases[phase] = 1
+
+            if self.logger:
+                self.logger.debug(f"Phase distribution: {phases}")
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error analyzing phase distribution: {e}")
+
+        return phases
 
     def _analyze_technical_context(self, project: Project) -> Dict[str, Any]:
-        """Analyze technical aspects of the project"""
-        tech_analysis = {
-            'tech_stack_defined': len(project.tech_stack) > 0,
-            'tech_stack_count': len(project.tech_stack),
-            'tech_stack': project.tech_stack,
-            'architecture_defined': bool(project.architecture_pattern),
-            'architecture_pattern': project.architecture_pattern,
-            'deployment_target': project.deployment_target,
-            'language_preferences': project.language_preferences,
-            'technical_completeness': 0.0
-        }
+        """Analyze technical context and completeness"""
+        if self.logger:
+            self.logger.debug(f"Analyzing technical context for project {project.name}")
 
-        # Calculate technical completeness score
-        completeness_factors = [
-            len(project.tech_stack) > 0,  # Has technology choices
-            bool(project.architecture_pattern),  # Has architecture pattern
-            len(project.language_preferences) > 0,  # Has language preferences
-            bool(project.deployment_target and project.deployment_target != 'local'),  # Has deployment target
-            len(project.constraints) > 0  # Has technical constraints
-        ]
+        try:
+            tech_analysis = {
+                'architecture_pattern': 'not_specified',
+                'technology_stack': project.technology_stack,
+                'deployment_target': 'not_specified',
+                'language_preferences': [],
+                'technical_completeness': 0.0
+            }
 
-        tech_analysis['technical_completeness'] = (sum(completeness_factors) / len(completeness_factors)) * 100
+            # Calculate technical completeness score
+            completeness_factors = [
+                len(project.technology_stack) > 0,
+                len(project.constraints) > 0,
+                len(project.requirements) > 2,
+                bool(project.description and len(project.description) > 20),
+                len(project.success_criteria) > 0
+            ]
 
-        return tech_analysis
+            tech_analysis['technical_completeness'] = (sum(completeness_factors) / len(completeness_factors)) * 100
+
+            if self.logger:
+                completeness_score = tech_analysis['technical_completeness']
+                self.logger.debug(f"Technical analysis completed - Completeness: {completeness_score:.1f}%")
+
+            return tech_analysis
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error analyzing technical context: {e}")
+            return {
+                'architecture_pattern': 'error',
+                'technology_stack': {},
+                'deployment_target': 'error',
+                'language_preferences': [],
+                'technical_completeness': 0.0
+            }
 
     @require_project_access
     @log_agent_action
@@ -411,258 +468,272 @@ class ContextAnalyzerAgent(BaseAgent):
         """Detect all types of conflicts in project"""
         project_id = data.get('project_id')
 
-        project = self.db.projects.get_by_id(project_id)
-        if not project:
-            raise ValidationError("Project not found")
+        if self.logger:
+            self.logger.info(f"Starting conflict detection for project {project_id}")
 
-        return self._detect_all_conflicts(project)
+        try:
+            project = self.db_service.projects.get_by_id(project_id)
+            if not project:
+                if self.logger:
+                    self.logger.error(f"Project {project_id} not found")
+                raise ValidationError("Project not found")
+
+            return self._detect_all_conflicts(project)
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Conflict detection failed for project {project_id}: {e}")
+            raise
 
     def _detect_all_conflicts(self, project: Project) -> Dict[str, Any]:
         """Detect all types of conflicts in project"""
-        conflicts = {
-            'technology_conflicts': self._detect_technology_conflicts(project),
-            'requirement_conflicts': self._detect_requirement_conflicts(project),
-            'timeline_conflicts': self._detect_timeline_conflicts(project),
-            'resource_conflicts': self._detect_resource_conflicts(project)
-        }
+        if self.logger:
+            self.logger.debug(f"Detecting all conflicts for project {project.name}")
 
-        # Calculate overall conflict assessment
-        all_conflicts = []
-        for conflict_list in conflicts.values():
-            if isinstance(conflict_list, list):
-                all_conflicts.extend(conflict_list)
+        try:
+            conflicts = {
+                'technology_conflicts': self._detect_technology_conflicts(project),
+                'requirement_conflicts': self._detect_requirement_conflicts(project),
+                'timeline_conflicts': self._detect_timeline_conflicts(project),
+                'resource_conflicts': self._detect_resource_conflicts(project)
+            }
 
-        total_conflicts = len(all_conflicts)
+            # Calculate overall conflict assessment
+            all_conflicts = []
+            for conflict_list in conflicts.values():
+                if isinstance(conflict_list, list):
+                    all_conflicts.extend(conflict_list)
 
-        # Determine severity
-        high_severity = sum(1 for c in all_conflicts if c.get('severity') == 'high')
-        medium_severity = sum(1 for c in all_conflicts if c.get('severity') == 'medium')
+            total_conflicts = len(all_conflicts)
 
-        if high_severity > 0:
-            overall_severity = 'high'
-        elif medium_severity > 2:
-            overall_severity = 'high'
-        elif medium_severity > 0 or total_conflicts > 3:
-            overall_severity = 'medium'
-        else:
-            overall_severity = 'low'
+            # Determine severity
+            high_severity = sum(1 for c in all_conflicts if c.get('severity') == 'high')
+            medium_severity = sum(1 for c in all_conflicts if c.get('severity') == 'medium')
 
-        conflicts.update({
-            'total_count': total_conflicts,
-            'severity': overall_severity,
-            'high_severity_count': high_severity,
-            'medium_severity_count': medium_severity,
-            'summary': self._generate_conflict_summary(all_conflicts)
-        })
+            if high_severity > 0:
+                overall_severity = 'high'
+            elif medium_severity > 2:
+                overall_severity = 'high'
+            elif medium_severity > 0 or total_conflicts > 3:
+                overall_severity = 'medium'
+            else:
+                overall_severity = 'low'
 
-        return conflicts
+            conflicts.update({
+                'total_count': total_conflicts,
+                'severity': overall_severity,
+                'summary': f"Found {total_conflicts} conflicts with {overall_severity} severity. " +
+                           "Review and address conflicts before proceeding." if total_conflicts > 0 else "No conflicts detected."
+            })
+
+            if self.logger:
+                self.logger.info(
+                    f"Conflict detection completed for project {project.name}: {total_conflicts} conflicts ({overall_severity} severity)")
+
+            return conflicts
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error detecting conflicts for project {project.name}: {e}")
+            raise
 
     def _detect_technology_conflicts(self, project: Project) -> List[Dict[str, Any]]:
-        """Detect conflicts in technology choices"""
-        conflicts = []
-        tech_stack = [tech.lower() for tech in project.tech_stack]
-        requirements = [req.lower() for req in project.requirements]
+        """Detect technology stack conflicts"""
+        if self.logger:
+            self.logger.debug(f"Detecting technology conflicts for project {project.name}")
 
-        # Check database conflicts
-        database_conflicts = self.conflict_rules['technology_conflicts']['database']
-        for db_tech, problematic_reqs in database_conflicts.items():
-            if db_tech in tech_stack:
-                for req_pattern in problematic_reqs:
-                    if any(req_pattern in req for req in requirements):
-                        conflicts.append({
-                            'type': 'database_compatibility',
-                            'technology': db_tech,
-                            'conflict_with': req_pattern,
-                            'message': f'{db_tech.title()} may not handle {req_pattern.replace("_", " ")} well',
-                            'severity': 'medium',
-                            'suggestion': self._get_database_alternative(db_tech, req_pattern)
-                        })
-
-        # Check framework conflicts
-        framework_conflicts = self.conflict_rules['technology_conflicts']['frameworks']
-        for framework, problematic_reqs in framework_conflicts.items():
-            if framework in tech_stack:
-                for req_pattern in problematic_reqs:
-                    if any(req_pattern in req for req in requirements):
-                        conflicts.append({
-                            'type': 'framework_limitation',
-                            'technology': framework,
-                            'conflict_with': req_pattern,
-                            'message': f'{framework.title()} may require additional setup for {req_pattern.replace("_", " ")}',
-                            'severity': 'low',
-                            'suggestion': self._get_framework_alternative(framework, req_pattern)
-                        })
-
-        return conflicts
-
-    def _get_database_alternative(self, current_db: str, requirement: str) -> str:
-        """Get database alternative suggestion"""
-        alternatives = {
-            'sqlite': {
-                'high_concurrency': 'Consider PostgreSQL or MySQL for high concurrency',
-                'large_datasets': 'Consider PostgreSQL for large datasets',
-                'concurrent_users': 'Consider PostgreSQL or MySQL for multiple concurrent users'
-            },
-            'mysql': {
-                'simple_deployment': 'Consider SQLite for simple single-user deployment',
-                'serverless': 'Consider SQLite or managed database service'
-            },
-            'postgresql': {
-                'simple_setup': 'Consider SQLite for simpler setup requirements',
-                'minimal_features': 'Consider SQLite if full PostgreSQL features not needed'
-            }
-        }
-
-        return alternatives.get(current_db, {}).get(requirement, f'Consider alternatives to {current_db}')
-
-    def _get_framework_alternative(self, current_framework: str, requirement: str) -> str:
-        """Get framework alternative suggestion"""
-        alternatives = {
-            'flask': {
-                'complex_orm': 'Consider Django with built-in ORM',
-                'enterprise_features': 'Consider Django for enterprise features',
-                'admin_panel': 'Consider Django with built-in admin'
-            },
-            'django': {
-                'microservices': 'Consider Flask or FastAPI for microservices',
-                'simple_api': 'Consider Flask or FastAPI for simple APIs'
-            },
-            'fastapi': {
-                'traditional_templates': 'Consider Django or Flask with templates',
-                'complex_forms': 'Consider Django for complex form handling'
-            }
-        }
-
-        return alternatives.get(current_framework, {}).get(requirement, f'Consider alternatives to {current_framework}')
-
-    def _detect_requirement_conflicts(self, project: Project) -> List[Dict[str, Any]]:
-        """Detect conflicting requirements"""
-        conflicts = []
-        requirements = [req.lower() for req in project.requirements]
-
-        # Check for conflicting requirement pairs
-        for req1, req2 in self.conflict_rules['requirement_conflicts']:
-            req1_present = any(req1.replace('_', ' ') in req for req in requirements)
-            req2_present = any(req2.replace('_', ' ') in req for req in requirements)
-
-            if req1_present and req2_present:
-                conflicts.append({
-                    'type': 'requirement_conflict',
-                    'conflicting_requirements': [req1.replace('_', ' '), req2.replace('_', ' ')],
-                    'message': f'Potential conflict between {req1.replace("_", " ")} and {req2.replace("_", " ")}',
-                    'severity': 'medium',
-                    'suggestion': f'Prioritize either {req1.replace("_", " ")} or {req2.replace("_", " ")}, or find a balanced approach'
-                })
-
-        return conflicts
-
-    def _detect_timeline_conflicts(self, project: Project) -> List[Dict[str, Any]]:
-        """Detect timeline-related conflicts"""
         conflicts = []
 
         try:
-            modules = self.db.modules.get_project_modules(project.project_id)
+            tech_stack = project.technology_stack
 
-            if not modules:
+            if not tech_stack:
+                if self.logger:
+                    self.logger.debug("No technology stack defined, skipping technology conflict detection")
                 return conflicts
 
-            total_estimated_hours = sum(m.estimated_hours for m in modules if m.estimated_hours)
-            active_modules = len(
-                [m for m in modules if m.status not in [ModuleStatus.COMPLETED, ModuleStatus.NOT_STARTED]])
+            # Check for database conflicts
+            database = tech_stack.get('database', '').lower()
+            if database and database in self.conflict_rules['technology_conflicts']['database']:
+                conflicting_reqs = self.conflict_rules['technology_conflicts']['database'][database]
+                for req in project.requirements:
+                    req_lower = req.lower()
+                    for conflict_req in conflicting_reqs:
+                        if conflict_req in req_lower:
+                            conflict = {
+                                'type': 'technology_database',
+                                'database': database,
+                                'conflicting_requirement': req,
+                                'message': f'Database choice "{database}" may conflict with requirement: {req}',
+                                'severity': 'medium',
+                                'suggestion': f'Consider alternative database or modify requirement'
+                            }
+                            conflicts.append(conflict)
+
+                            if self.logger:
+                                self.logger.warning(f"Technology conflict detected: {database} vs {req}")
+
+            # Check for framework conflicts
+            framework = tech_stack.get('backend', '').lower() or tech_stack.get('framework', '').lower()
+            if framework and framework in self.conflict_rules['technology_conflicts']['frameworks']:
+                conflicting_reqs = self.conflict_rules['technology_conflicts']['frameworks'][framework]
+                for req in project.requirements:
+                    req_lower = req.lower()
+                    for conflict_req in conflicting_reqs:
+                        if conflict_req in req_lower:
+                            conflict = {
+                                'type': 'technology_framework',
+                                'framework': framework,
+                                'conflicting_requirement': req,
+                                'message': f'Framework choice "{framework}" may conflict with requirement: {req}',
+                                'severity': 'medium',
+                                'suggestion': f'Consider alternative framework or adjust requirement'
+                            }
+                            conflicts.append(conflict)
+
+                            if self.logger:
+                                self.logger.warning(f"Framework conflict detected: {framework} vs {req}")
+
+            if self.logger:
+                self.logger.debug(f"Technology conflict detection completed: {len(conflicts)} conflicts found")
+
+            return conflicts
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error detecting technology conflicts: {e}")
+            return []
+
+    def _detect_requirement_conflicts(self, project: Project) -> List[Dict[str, Any]]:
+        """Detect conflicting requirements"""
+        if self.logger:
+            self.logger.debug(f"Detecting requirement conflicts for project {project.name}")
+
+        conflicts = []
+
+        try:
+            requirements = [req.lower() for req in project.requirements]
+
+            # Check for known conflicting requirement pairs using instance rules
+            for req1, req2 in self.conflict_rules['requirement_conflicts']:
+                req1_present = any(req1 in req for req in requirements)
+                req2_present = any(req2 in req for req in requirements)
+
+                if req1_present and req2_present:
+                    conflict = {
+                        'type': 'requirement_conflict',
+                        'requirement_1': req1,
+                        'requirement_2': req2,
+                        'message': f'Conflicting requirements detected: {req1} vs {req2}',
+                        'severity': 'medium',
+                        'suggestion': f'Prioritize either {req1.replace("_", " ")} or {req2.replace("_", " ")}, or find a balanced approach'
+                    }
+                    conflicts.append(conflict)
+
+                    if self.logger:
+                        self.logger.warning(f"Requirement conflict detected: {req1} vs {req2}")
+
+            if self.logger:
+                self.logger.debug(f"Requirement conflict detection completed: {len(conflicts)} conflicts found")
+
+            return conflicts
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error detecting requirement conflicts: {e}")
+            return []
+
+    def _detect_timeline_conflicts(self, project: Project) -> List[Dict[str, Any]]:
+        """Detect timeline-related conflicts"""
+        if self.logger:
+            self.logger.debug(f"Detecting timeline conflicts for project {project.name}")
+
+        conflicts = []
+
+        try:
+            modules = self.db_service.modules.get_project_modules(project.id)
+
+            if not modules:
+                if self.logger:
+                    self.logger.debug("No modules found, skipping timeline conflict detection")
+                return conflicts
+
+            total_estimated_hours = sum(
+                getattr(m, 'estimated_hours', 0) for m in modules if hasattr(m, 'estimated_hours'))
+            active_modules = len([m for m in modules if hasattr(m, 'status') and
+                                  getattr(m, 'status', None) not in [ModuleStatus.COMPLETED, ModuleStatus.NOT_STARTED]])
 
             # Check for unrealistic timelines
             if total_estimated_hours > 2000:  # More than 50 work weeks for one person
-                conflicts.append({
+                conflict = {
                     'type': 'timeline_unrealistic',
                     'estimated_hours': total_estimated_hours,
                     'message': f'Total estimated hours ({total_estimated_hours}) may be unrealistic for timeline',
                     'severity': 'high',
                     'suggestion': 'Consider breaking into phases or adding team members'
-                })
+                }
+                conflicts.append(conflict)
+
+                if self.logger:
+                    self.logger.warning(f"Unrealistic timeline detected: {total_estimated_hours} hours")
 
             # Check for too many concurrent modules
             if active_modules > 5:
-                conflicts.append({
+                conflict = {
                     'type': 'concurrent_complexity',
                     'active_modules': active_modules,
                     'message': f'Too many concurrent modules ({active_modules}) may impact focus and quality',
                     'severity': 'medium',
                     'suggestion': 'Focus on completing modules sequentially or in smaller groups'
-                })
+                }
+                conflicts.append(conflict)
+
+                if self.logger:
+                    self.logger.warning(f"Too many concurrent modules: {active_modules}")
+
+            if self.logger:
+                self.logger.debug(f"Timeline conflict detection completed: {len(conflicts)} conflicts found")
 
         except Exception as e:
-            self.logger.error(f"Timeline conflict detection failed: {e}")
+            if self.logger:
+                self.logger.error(f"Timeline conflict detection failed: {e}")
 
         return conflicts
 
     def _detect_resource_conflicts(self, project: Project) -> List[Dict[str, Any]]:
         """Detect resource allocation conflicts"""
+        if self.logger:
+            self.logger.debug(f"Detecting resource conflicts for project {project.name}")
+
         conflicts = []
 
         try:
-            team_size = len(project.get_all_team_members())
-            modules = self.db.modules.get_project_modules(project.project_id)
+            team_size = len(project.team_members) if project.team_members else 0
+            modules = self.db_service.modules.get_project_modules(project.id)
 
             # Check team capacity vs project complexity
             if team_size < 2 and len(modules) > 8:
-                conflicts.append({
+                conflict = {
                     'type': 'team_capacity',
                     'team_size': team_size,
                     'module_count': len(modules),
-                    'message': f'Small team size ({team_size}) relative to project complexity ({len(modules)} modules)',
-                    'severity': 'high',
-                    'suggestion': 'Consider adding team members or reducing project scope'
-                })
+                    'message': f'Small team relative to project scope',
+                    'severity': 'medium',
+                    'suggestion': 'Consider adding team members or reducing initial scope'
+                }
+                conflicts.append(conflict)
 
-            # Check role distribution
-            role_distribution = {}
-            for collaborator in project.collaborators:
-                role = collaborator.role.value
-                role_distribution[role] = role_distribution.get(role, 0) + 1
+                if self.logger:
+                    self.logger.warning(f"Team capacity conflict: {team_size} team members for {len(modules)} modules")
 
-            # Check for missing critical roles
-            if len(modules) > 3:
-                if 'technical_lead' not in role_distribution:
-                    conflicts.append({
-                        'type': 'missing_role',
-                        'missing_role': 'technical_lead',
-                        'message': 'Complex project lacks technical leadership role',
-                        'severity': 'medium',
-                        'suggestion': 'Consider assigning a technical lead for architectural decisions'
-                    })
-
-                if 'qa_tester' not in role_distribution:
-                    conflicts.append({
-                        'type': 'missing_role',
-                        'missing_role': 'qa_tester',
-                        'message': 'Project lacks dedicated quality assurance role',
-                        'severity': 'medium',
-                        'suggestion': 'Consider adding QA role for quality assurance'
-                    })
+            if self.logger:
+                self.logger.debug(f"Resource conflict detection completed: {len(conflicts)} conflicts found")
 
         except Exception as e:
-            self.logger.error(f"Resource conflict detection failed: {e}")
+            if self.logger:
+                self.logger.error(f"Resource conflict detection failed: {e}")
 
         return conflicts
-
-    def _generate_conflict_summary(self, all_conflicts: List[Dict[str, Any]]) -> str:
-        """Generate a summary of all conflicts"""
-        if not all_conflicts:
-            return "No significant conflicts detected"
-
-        high_count = sum(1 for c in all_conflicts if c.get('severity') == 'high')
-        medium_count = sum(1 for c in all_conflicts if c.get('severity') == 'medium')
-        low_count = len(all_conflicts) - high_count - medium_count
-
-        summary_parts = []
-        if high_count > 0:
-            summary_parts.append(f"{high_count} high-severity conflict{'s' if high_count != 1 else ''}")
-        if medium_count > 0:
-            summary_parts.append(f"{medium_count} medium-severity conflict{'s' if medium_count != 1 else ''}")
-        if low_count > 0:
-            summary_parts.append(f"{low_count} low-severity conflict{'s' if low_count != 1 else ''}")
-
-        return f"Found {', '.join(summary_parts)}. Review and address conflicts before proceeding."
 
     @require_project_access
     @log_agent_action
@@ -670,118 +741,139 @@ class ContextAnalyzerAgent(BaseAgent):
         """Assess overall project health"""
         project_id = data.get('project_id')
 
-        project = self.db.projects.get_by_id(project_id)
-        if not project:
-            raise ValidationError("Project not found")
+        if self.logger:
+            self.logger.info(f"Assessing project health for project {project_id}")
 
-        return self._assess_project_health_internal(project)
+        try:
+            project = self.db_service.projects.get_by_id(project_id)
+            if not project:
+                if self.logger:
+                    self.logger.error(f"Project {project_id} not found")
+                raise ValidationError("Project not found")
+
+            return self._assess_project_health_internal(project)
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Project health assessment failed for project {project_id}: {e}")
+            raise
 
     def _assess_project_health_internal(self, project: Project) -> Dict[str, Any]:
         """Internal project health assessment"""
-        health_score = 100
-        issues = []
-        strengths = []
+        if self.logger:
+            self.logger.debug(f"Assessing project health for {project.name}")
 
-        # Check conversation activity
-        conversation_count = len(project.conversation_history)
-        if conversation_count < 3:
-            health_score -= 25
-            issues.append("Very limited conversation history - insufficient requirements gathering")
-        elif conversation_count < 8:
-            health_score -= 10
-            issues.append("Limited conversation history - may need more detailed discussions")
-        else:
-            strengths.append("Good conversation engagement with substantial interaction history")
+        try:
+            health_score = 100
+            issues = []
+            strengths = []
 
-        # Check requirements definition
-        req_count = len(project.requirements)
-        if req_count < 2:
-            health_score -= 20
-            issues.append("Insufficient requirements - project scope unclear")
-        elif req_count < 5:
-            health_score -= 10
-            issues.append("Limited requirements - consider more detailed specifications")
-        else:
-            strengths.append("Well-defined requirements with clear project scope")
+            # Check conversation activity (using sessions instead of conversation_history)
+            try:
+                sessions = self.db_service.socratic_sessions.get_project_sessions(project.id)
+                session_count = len(sessions)
 
-        # Check technology stack definition
-        tech_count = len(project.tech_stack)
-        if tech_count == 0:
-            health_score -= 15
-            issues.append("Technology stack not defined - implementation approach unclear")
-        elif tech_count < 3:
-            health_score -= 8
-            issues.append("Technology stack partially defined - consider more specific choices")
-        else:
-            strengths.append("Technology stack well-defined with clear technical direction")
+                if self.logger:
+                    self.logger.debug(f"Found {session_count} Socratic sessions for health assessment")
 
-        # Check team collaboration
-        team_size = len(project.get_all_team_members())
-        if team_size == 1:
-            health_score -= 5
-            issues.append("Single-person project - consider collaboration or external review")
-        else:
-            strengths.append(f"Good team collaboration with {team_size} team members")
+            except Exception as e:
+                if self.logger:
+                    self.logger.warning(f"Could not retrieve sessions for health assessment: {e}")
+                session_count = 0
 
-        # Check constraints awareness
-        if len(project.constraints) == 0:
-            health_score -= 10
-            issues.append("No constraints identified - potential for scope creep or unrealistic expectations")
-        else:
-            strengths.append("Project constraints clearly identified and documented")
+            if session_count < 1:
+                health_score -= 25
+                issues.append("No Socratic sessions started - insufficient requirements gathering")
+            elif session_count < 3:
+                health_score -= 10
+                issues.append("Limited Socratic sessions - may need more detailed discussions")
+            else:
+                strengths.append("Good engagement with multiple Socratic questioning sessions")
 
-        # Check progress and risk indicators
-        if project.risk_level == RiskLevel.HIGH:
-            health_score -= 15
-            issues.append("High risk level identified - needs immediate attention")
-        elif project.risk_level == RiskLevel.MEDIUM:
-            health_score -= 8
-            issues.append("Medium risk level - monitor closely")
+            # Check requirements definition
+            req_count = len(project.requirements) if project.requirements else 0
+            if req_count < 2:
+                health_score -= 20
+                issues.append("Insufficient requirements - project scope unclear")
+            elif req_count < 5:
+                health_score -= 10
+                issues.append("Limited requirements - consider more detailed specifications")
+            else:
+                strengths.append("Well-defined requirements with clear project scope")
 
-        # Determine overall health level
-        if health_score >= 90:
-            health_level = 'excellent'
-        elif health_score >= 75:
-            health_level = 'good'
-        elif health_score >= 60:
-            health_level = 'fair'
-        elif health_score >= 40:
-            health_level = 'poor'
-        else:
-            health_level = 'critical'
+            # Check technology stack definition
+            tech_count = len(project.technology_stack) if project.technology_stack else 0
+            if tech_count == 0:
+                health_score -= 15
+                issues.append("Technology stack not defined - implementation approach unclear")
+            elif tech_count < 3:
+                health_score -= 8
+                issues.append("Technology stack partially defined - consider more specific choices")
+            else:
+                strengths.append("Technology stack well-defined with clear technical direction")
 
-        return {
-            'score': max(0.0, health_score),
-            'level': health_level,
-            'issues': issues,
-            'strengths': strengths,
-            'recommendations': self._generate_health_recommendations(health_score, issues),
-            'assessment_timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-        }
+            # Check team collaboration
+            team_size = len(project.team_members) if project.team_members else 0
+            if team_size == 1:
+                health_score -= 5
+                issues.append("Single-person project - consider collaboration or external review")
+            else:
+                strengths.append("Team collaboration enabled with multiple members")
 
-    def _generate_health_recommendations(self, health_score: float, issues: List[str]) -> List[str]:
-        """Generate recommendations based on health assessment"""
+            # Ensure health score doesn't go below 0
+            health_score = max(0, health_score)
+
+            health_result = {
+                'score': health_score,
+                'status': 'excellent' if health_score > 80 else 'good' if health_score > 60 else 'needs_attention',
+                'issues': issues,
+                'strengths': strengths,
+                'recommendations': self._generate_health_recommendations(health_score, issues)
+            }
+
+            if self.logger:
+                self.logger.info(
+                    f"Project health assessment completed for {project.name}: {health_score}/100 ({health_result['status']})")
+
+            return health_result
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error assessing project health: {e}")
+            raise
+
+    def _generate_health_recommendations(self, score: int, issues: List[str]) -> List[str]:
+        """Generate recommendations based on health score and issues"""
+        if self.logger:
+            self.logger.debug(f"Generating health recommendations for score {score}")
+
         recommendations = []
 
-        if health_score < 60:
-            recommendations.append("Project needs significant attention - consider project review meeting")
+        try:
+            if score < 50:
+                recommendations.append("Project health is concerning - address fundamental issues before proceeding")
+            elif score < 70:
+                recommendations.append("Project health needs improvement - focus on addressing identified issues")
 
-        if any("conversation" in issue.lower() for issue in issues):
-            recommendations.append("Schedule more detailed requirements gathering sessions")
+            # Generate specific recommendations based on issues
+            for issue in issues[:3]:  # Top 3 issues
+                if "requirements" in issue.lower():
+                    recommendations.append(
+                        "Conduct additional Socratic questioning sessions to gather more requirements")
+                elif "technology" in issue.lower():
+                    recommendations.append("Define comprehensive technology stack for clear implementation direction")
+                elif "team" in issue.lower():
+                    recommendations.append("Consider expanding team or establishing collaboration processes")
 
-        if any("requirements" in issue.lower() for issue in issues):
-            recommendations.append("Focus on defining clear, specific, and measurable requirements")
+            if self.logger:
+                self.logger.debug(f"Generated {len(recommendations)} health recommendations")
 
-        if any("technology" in issue.lower() for issue in issues):
-            recommendations.append("Define technology stack and architecture approach")
+            return recommendations
 
-        if any("team" in issue.lower() for issue in issues):
-            recommendations.append("Consider adding team members or establishing review processes")
-
-        if not recommendations:
-            recommendations.append("Project health is good - maintain current approach and monitor progress")
-
-        return recommendations
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error generating health recommendations: {e}")
+            return ["Error generating recommendations"]
 
     @require_project_access
     @log_agent_action
@@ -790,213 +882,339 @@ class ContextAnalyzerAgent(BaseAgent):
         project_id = data.get('project_id')
         focus_area = data.get('focus', 'all')
 
-        project = self.db.projects.get_by_id(project_id)
-        if not project:
-            raise ValidationError("Project not found")
+        if self.logger:
+            self.logger.info(f"Generating insights for project {project_id}, focus: {focus_area}")
 
-        insights = {
-            'project_id': project_id,
-            'focus_area': focus_area,
-            'generated_at': DateTimeHelper.to_iso_string(DateTimeHelper.now()),
-            'key_insights': self._extract_key_insights(project),
-            'improvement_opportunities': self._identify_improvements(project),
-            'success_indicators': self._identify_success_factors(project),
-            'risk_mitigation': self._suggest_risk_mitigation(project)
-        }
+        try:
+            project = self.db_service.projects.get_by_id(project_id)
+            if not project:
+                if self.logger:
+                    self.logger.error(f"Project {project_id} not found")
+                raise ValidationError("Project not found")
 
-        return insights
+            insights = {
+                'project_id': project.id,
+                'focus_area': focus_area,
+                'generated_at': DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                'key_insights': self._extract_key_insights(project),
+                'improvement_opportunities': self._identify_improvements(project),
+                'success_indicators': self._identify_success_factors(project),
+                'risk_mitigation': self._suggest_risk_mitigation(project)
+            }
+
+            if self.logger:
+                insight_count = len(insights['key_insights'])
+                self.logger.info(f"Generated {insight_count} key insights for project {project.name}")
+
+            return insights
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Insight generation failed for project {project_id}: {e}")
+            raise
 
     def _extract_key_insights(self, project: Project) -> List[Dict[str, Any]]:
         """Extract key insights about project"""
+        if self.logger:
+            self.logger.debug(f"Extracting key insights for project {project.name}")
+
         insights = []
 
-        # Analyze project complexity
-        complexity_score = self._calculate_project_complexity(project)
-        if complexity_score > 75:
-            insights.append({
-                'category': 'complexity',
-                'message': 'High project complexity detected',
-                'impact': 'May increase development time and require experienced team',
-                'recommendation': 'Consider phased approach and ensure adequate technical leadership'
-            })
+        try:
+            # Analyze project complexity
+            complexity_score = self._calculate_project_complexity(project)
+            if complexity_score > 75:
+                insight = {
+                    'category': 'complexity',
+                    'message': 'High project complexity detected',
+                    'impact': 'May increase development time and require experienced team',
+                    'recommendation': 'Consider phased approach and ensure adequate technical leadership'
+                }
+                insights.append(insight)
 
-        # Analyze scope
-        if len(project.requirements) > 15:
-            insights.append({
-                'category': 'scope',
-                'message': 'Large number of requirements detected',
-                'impact': 'May increase complexity and development time significantly',
-                'recommendation': 'Consider prioritizing requirements and implementing MVP first'
-            })
+                if self.logger:
+                    self.logger.info(f"High complexity insight added: score {complexity_score}")
 
-        # Analyze team readiness
-        team_size = len(project.get_all_team_members())
-        if team_size < 3 and len(project.requirements) > 8:
-            insights.append({
-                'category': 'team',
-                'message': 'Small team relative to project scope',
-                'impact': 'May lead to bottlenecks and longer development cycles',
-                'recommendation': 'Consider adding team members or reducing initial scope'
-            })
+            # Analyze scope
+            req_count = len(project.requirements) if project.requirements else 0
+            if req_count > 15:
+                insight = {
+                    'category': 'scope',
+                    'message': 'Large number of requirements detected',
+                    'impact': 'May increase complexity and development time significantly',
+                    'recommendation': 'Consider prioritizing requirements and implementing MVP first'
+                }
+                insights.append(insight)
 
-        # Technology alignment insight
-        if len(project.tech_stack) < 3:
-            insights.append({
-                'category': 'technology',
-                'message': 'Limited technology stack defined',
-                'impact': 'May lead to technical decisions being made ad-hoc during development',
-                'recommendation': 'Define comprehensive technology stack including database, backend, and frontend choices'
-            })
+                if self.logger:
+                    self.logger.info(f"Large scope insight added: {req_count} requirements")
 
-        return insights
+            # Analyze team readiness
+            team_size = len(project.team_members) if project.team_members else 0
+            if team_size < 3 and req_count > 8:
+                insight = {
+                    'category': 'team',
+                    'message': 'Small team relative to project scope',
+                    'impact': 'May lead to bottlenecks and longer development cycles',
+                    'recommendation': 'Consider adding team members or reducing initial scope'
+                }
+                insights.append(insight)
+
+                if self.logger:
+                    self.logger.info(f"Team capacity insight added: {team_size} members for {req_count} requirements")
+
+            # Technology alignment insight
+            tech_count = len(project.technology_stack) if project.technology_stack else 0
+            if tech_count < 3:
+                insight = {
+                    'category': 'technology',
+                    'message': 'Limited technology stack defined',
+                    'impact': 'May lead to technical decisions being made ad-hoc during development',
+                    'recommendation': 'Define comprehensive technology stack including database, backend, and frontend choices'
+                }
+                insights.append(insight)
+
+                if self.logger:
+                    self.logger.info(f"Technology insight added: only {tech_count} technologies defined")
+
+            if self.logger:
+                self.logger.debug(f"Extracted {len(insights)} key insights")
+
+            return insights
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error extracting key insights: {e}")
+            return []
 
     def _calculate_project_complexity(self, project: Project) -> float:
         """Calculate a project complexity score"""
-        complexity = 0
+        if self.logger:
+            self.logger.debug(f"Calculating complexity score for project {project.name}")
 
-        # Requirements complexity
-        complexity += min(len(project.requirements) * 3, 30)
+        try:
+            complexity = 0
 
-        # Technology complexity
-        complexity += len(project.tech_stack) * 2
+            # Requirements complexity
+            req_count = len(project.requirements) if project.requirements else 0
+            complexity += min(req_count * 3, 30)
 
-        # Team complexity
-        complexity += len(project.get_all_team_members()) * 1
+            # Technology complexity
+            tech_count = len(project.technology_stack) if project.technology_stack else 0
+            complexity += tech_count * 2
 
-        # Constraint complexity
-        complexity += len(project.constraints) * 2
+            # Team complexity
+            team_count = len(project.team_members) if project.team_members else 0
+            complexity += team_count * 1
 
-        # Conversation complexity (more detailed conversations = more complex requirements)
-        if project.conversation_history:
-            avg_msg_length = sum(len(msg.content) for msg in project.conversation_history) / len(
-                project.conversation_history)
-            complexity += min(avg_msg_length / 10, 15.0)
+            # Constraint complexity
+            constraint_count = len(project.constraints) if project.constraints else 0
+            complexity += constraint_count * 2
 
-        return min(complexity, 100)
+            final_score = min(complexity, 100)
+
+            if self.logger:
+                self.logger.debug(
+                    f"Complexity calculation: req({req_count}*3) + tech({tech_count}*2) + team({team_count}*1) + constraints({constraint_count}*2) = {final_score}")
+
+            return final_score
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error calculating project complexity: {e}")
+            return 0.0
 
     def _identify_improvements(self, project: Project) -> List[str]:
         """Identify improvement opportunities"""
+        if self.logger:
+            self.logger.debug(f"Identifying improvements for project {project.name}")
+
         improvements = []
 
-        # Check conversation quality
-        if project.conversation_history:
-            conv_analysis = self._analyze_conversation_patterns(project)
-            if conv_analysis['response_quality']['score'] < 70:
-                improvements.append("Improve response quality in conversations with more detailed and specific answers")
+        try:
+            # Check technical completeness
+            tech_analysis = self._analyze_technical_context(project)
+            if tech_analysis['technical_completeness'] < 80:
+                improvements.append("Complete technical specifications including architecture and deployment details")
 
-        # Check technical completeness
-        tech_analysis = self._analyze_technical_context(project)
-        if tech_analysis['technical_completeness'] < 80:
-            improvements.append("Complete technical specifications including architecture and deployment details")
+            # Check for missing constraints
+            constraint_count = len(project.constraints) if project.constraints else 0
+            if constraint_count < 2:
+                improvements.append(
+                    "Document project constraints including budget, timeline, and technical limitations")
 
-        # Check for missing constraints
-        if len(project.constraints) < 2:
-            improvements.append("Document project constraints including budget, timeline, and technical limitations")
+            if self.logger:
+                self.logger.debug(f"Identified {len(improvements)} improvement opportunities")
 
-        return improvements
+            return improvements
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error identifying improvements: {e}")
+            return []
 
     def _identify_success_factors(self, project: Project) -> List[str]:
         """Identify factors contributing to project success"""
+        if self.logger:
+            self.logger.debug(f"Identifying success factors for project {project.name}")
+
         success_factors = []
 
-        if len(project.requirements) >= 5:
-            success_factors.append("Well-defined requirements provide clear project direction")
+        try:
+            req_count = len(project.requirements) if project.requirements else 0
+            if req_count >= 5:
+                success_factors.append("Well-defined requirements provide clear project direction")
 
-        if len(project.get_all_team_members()) >= 3:
-            success_factors.append("Good team size enables collaboration and knowledge sharing")
+            team_count = len(project.team_members) if project.team_members else 0
+            if team_count >= 3:
+                success_factors.append("Good team size enables collaboration and knowledge sharing")
 
-        if len(project.tech_stack) >= 3:
-            success_factors.append("Defined technology stack provides clear implementation path")
+            tech_count = len(project.technology_stack) if project.technology_stack else 0
+            if tech_count >= 3:
+                success_factors.append("Defined technology stack provides clear implementation path")
 
-        if len(project.conversation_history) >= 10:
-            success_factors.append("Extensive conversation history indicates thorough planning")
+            if self.logger:
+                self.logger.debug(f"Identified {len(success_factors)} success factors")
 
-        return success_factors
+            return success_factors
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error identifying success factors: {e}")
+            return []
 
     def _suggest_risk_mitigation(self, project: Project) -> List[str]:
         """Suggest risk mitigation strategies"""
+        if self.logger:
+            self.logger.debug(f"Suggesting risk mitigation for project {project.name}")
+
         mitigations = []
 
-        # Detect and mitigate conflicts
-        conflicts = self._detect_all_conflicts(project)
-        if conflicts['total_count'] > 0:
-            mitigations.append("Address identified conflicts in requirements and technology choices")
+        try:
+            # Detect and mitigate conflicts
+            conflicts = self._detect_all_conflicts(project)
+            if conflicts['total_count'] > 0:
+                mitigations.append("Address identified conflicts in requirements and technology choices")
 
-        # Team-related risks
-        team_size = len(project.get_all_team_members())
-        if team_size == 1:
-            mitigations.append("Consider adding team members or establishing external review processes")
+            # Team-related risks
+            team_size = len(project.team_members) if project.team_members else 0
+            if team_size == 1:
+                mitigations.append("Consider adding team members or establishing external review processes")
 
-        # Scope-related risks
-        if len(project.requirements) > 12:
-            mitigations.append("Implement phased delivery approach to manage scope and reduce risk")
+            # Scope-related risks
+            req_count = len(project.requirements) if project.requirements else 0
+            if req_count > 12:
+                mitigations.append("Implement phased delivery approach to manage scope and reduce risk")
 
-        # Technical risks
-        if not project.architecture_pattern:
-            mitigations.append("Define architectural approach early to avoid technical debt")
+            if self.logger:
+                self.logger.debug(f"Suggested {len(mitigations)} risk mitigation strategies")
 
-        return mitigations
+            return mitigations
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error suggesting risk mitigation: {e}")
+            return []
 
     def _generate_context_recommendations(self, analysis: Dict[str, Any]) -> List[str]:
         """Generate recommendations based on comprehensive analysis"""
+        if self.logger:
+            self.logger.debug("Generating context recommendations from analysis")
+
         recommendations = []
 
-        # Health-based recommendations
-        health = analysis.get('project_health', {})
-        if health.get('score', 100) < 70:
-            recommendations.append(
-                "Focus on improving project health through better requirement definition and team coordination")
+        try:
+            # Health-based recommendations
+            health = analysis.get('project_health', {})
+            if health.get('score', 100) < 70:
+                recommendations.append(
+                    "Focus on improving project health through better requirement definition and team coordination")
 
-        # Conflict-based recommendations
-        conflicts = analysis.get('conflict_analysis', {})
-        if conflicts.get('total_count', 0) > 3:
-            recommendations.append("Address identified conflicts before proceeding with implementation")
+            # Conflict-based recommendations
+            conflicts = analysis.get('conflict_analysis', {})
+            if conflicts.get('total_count', 0) > 3:
+                recommendations.append("Address identified conflicts before proceeding with implementation")
 
-        # Conversation-based recommendations
-        conversation = analysis.get('conversation_insights', {})
-        engagement_score = conversation.get('user_engagement', {}).get('score', 0)
-        if engagement_score < 60:
-            recommendations.append("Encourage more detailed and engaged responses in project discussions")
+            # Conversation-based recommendations
+            conversation = analysis.get('conversation_insights', {})
+            engagement_score = conversation.get('user_engagement', {}).get('score', 0)
+            if engagement_score < 60:
+                recommendations.append("Encourage more detailed and engaged responses in project discussions")
 
-        # Technical recommendations
-        technical = analysis.get('technical_assessment', {})
-        if technical.get('technical_completeness', 0) < 70:
-            recommendations.append("Complete technical architecture and technology stack definitions")
+            # Technical recommendations
+            technical = analysis.get('technical_assessment', {})
+            if technical.get('technical_completeness', 0) < 70:
+                recommendations.append("Complete technical architecture and technology stack definitions")
 
-        return recommendations[:5]  # Return top 5 recommendations
+            # Limit to top 5 recommendations
+            final_recommendations = recommendations[:5]
+
+            if self.logger:
+                self.logger.debug(f"Generated {len(final_recommendations)} context recommendations")
+
+            return final_recommendations
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error generating context recommendations: {e}")
+            return []
 
     def _extract_risk_factors(self, analysis: Dict[str, Any]) -> List[str]:
         """Extract risk factors from analysis"""
+        if self.logger:
+            self.logger.debug("Extracting risk factors from analysis")
+
         risks = []
 
-        conflicts = analysis.get('conflict_analysis', {})
-        if conflicts.get('severity') == 'high':
-            risks.append("High-severity conflicts may impact project success")
+        try:
+            conflicts = analysis.get('conflict_analysis', {})
+            if conflicts.get('severity') == 'high':
+                risks.append("High-severity conflicts may impact project success")
 
-        health = analysis.get('project_health', {})
-        if health.get('score', 100) < 50:
-            risks.append("Poor project health indicates fundamental issues")
+            health = analysis.get('project_health', {})
+            if health.get('score', 100) < 50:
+                risks.append("Poor project health indicates fundamental issues")
 
-        conversation = analysis.get('conversation_insights', {})
-        if conversation.get('response_quality', {}).get('score', 0) < 40:
-            risks.append("Low response quality may indicate unclear requirements")
+            conversation = analysis.get('conversation_insights', {})
+            if conversation.get('response_quality', {}).get('score', 0) < 40:
+                risks.append("Low response quality may indicate unclear requirements")
 
-        return risks
+            if self.logger:
+                self.logger.debug(f"Extracted {len(risks)} risk factors")
+
+            return risks
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error extracting risk factors: {e}")
+            return []
 
     def _identify_project_strengths(self, analysis: Dict[str, Any]) -> List[str]:
         """Identify project strengths from analysis"""
+        if self.logger:
+            self.logger.debug("Identifying project strengths from analysis")
+
         strengths = []
 
-        health = analysis.get('project_health', {})
-        if health.get('score', 0) > 80:
-            strengths.append("Excellent project health with strong foundation")
+        try:
+            health = analysis.get('project_health', {})
+            if health.get('score', 0) > 80:
+                strengths.append("Excellent project health with strong foundation")
 
-        conversation = analysis.get('conversation_insights', {})
-        if conversation.get('user_engagement', {}).get('score', 0) > 70:
-            strengths.append("High user engagement indicates strong project commitment")
+            conversation = analysis.get('conversation_insights', {})
+            if conversation.get('user_engagement', {}).get('score', 0) > 70:
+                strengths.append("High user engagement indicates strong project commitment")
 
-        conflicts = analysis.get('conflict_analysis', {})
-        if conflicts.get('total_count', 0) == 0:
-            strengths.append("No significant conflicts detected - clear project direction")
+            conflicts = analysis.get('conflict_analysis', {})
+            if conflicts.get('total_count', 0) == 0:
+                strengths.append("No significant conflicts detected - clear project direction")
 
-        return strengths
+            if self.logger:
+                self.logger.debug(f"Identified {len(strengths)} project strengths")
+
+            return strengths
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error identifying project strengths: {e}")
+            return []
