@@ -734,6 +734,10 @@ __all__ = [
     # System Functions
     'initialize_system', 'cleanup_system',
 
+    'initialize_system', 'cleanup_system',
+
+    'get_logger', 'get_event_bus', 'get_config', 'get_database',
+
     # Legacy aliases
     'EventBus', 'SocraticSystem', 'ConfigManager', 'LogManager'
 ]

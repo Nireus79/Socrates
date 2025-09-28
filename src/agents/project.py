@@ -20,7 +20,7 @@ from functools import wraps
 import json
 
 try:
-    from src.core import get_logger, DateTimeHelper, ValidationError, ValidationHelper, get_event_bus
+    from src.core import get_logger, DateTimeHelper, ValidationError, ValidationHelper, get_event_bus, ServiceContainer
     from src.models import Project, Module, Task, ProjectStatus, ProjectPhase, TaskPriority, ModelValidator
     from src.database import get_database
     from .base import BaseAgent, require_authentication, require_project_access, log_agent_action
@@ -43,6 +43,9 @@ except ImportError:
 
 
     def get_database():
+        return None
+
+    def ServiceContainer():
         return None
 
 
@@ -141,15 +144,9 @@ class ProjectManagerAgent(BaseAgent):
     Capabilities: Complete project lifecycle, team coordination, progress tracking
     """
 
-    def __init__(self):
+    def __init__(self, services: ServiceContainer):
         """Initialize ProjectManagerAgent with corrected patterns"""
-        super().__init__("project_manager", "Project Manager")
-
-        # Database service initialization (corrected pattern)
-        self.db_service = get_database() if CORE_AVAILABLE else None
-
-        # Event bus for project-related events
-        self.events = get_event_bus() if CORE_AVAILABLE else None
+        super().__init__("project_manager", "Project Manager", services)
 
         # Initialize logging
         if self.logger:
