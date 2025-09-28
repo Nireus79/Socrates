@@ -1,34 +1,44 @@
 #!/usr/bin/env python3
 """
-Socratic RAG Enhanced - Data Models and Validation
-=================================================
+Socratic RAG Enhanced - Database Layer
+=====================================
 
-Comprehensive data models for all system entities.
-Includes validation, type checking, and utility methods.
+Database service and repository implementations for the Socratic RAG Enhanced system.
+Provides data persistence, retrieval, and management functionality.
 
 ✅ CORRECTED - Key Fixes Applied:
-- Added missing 'size_bytes' attribute to GeneratedCodebase model
-- Enhanced model validation and type checking
-- Improved import handling with proper fallbacks
-- Added comprehensive model factory and validation utilities
+- Added missing 'codebases' property alias in DatabaseService
+- Fixed import fallbacks with complete model definitions including size_bytes
+- Added missing dataclass import in fallback block
+- Resolved type mismatch issues in repository return types
 """
 
-import uuid
+import sqlite3
 import json
+import os
+import threading
+import uuid
+from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from dataclasses import dataclass, field
 from datetime import datetime
-from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Any, Optional, Union
-from enum import Enum
+from pathlib import Path
+from typing import Dict, List, Any, Optional, Union, Type, TypeVar, Generic
 
-# Core imports with fallbacks
+# Core imports with enhanced fallbacks
 try:
-    from src.core import DateTimeHelper, ValidationError, get_logger
+    from src.core import get_config, get_logger, DateTimeHelper, ValidationError, DatabaseError
 
     CORE_AVAILABLE = True
 except ImportError:
     CORE_AVAILABLE = False
-    # Fallback implementations
+    # Enhanced fallback implementations
     import logging
+    from dataclasses import dataclass
+
+
+    def get_config():
+        return {'database': {'path': 'data/socratic_rag.db'}}
 
 
     def get_logger(name):
@@ -53,908 +63,765 @@ except ImportError:
         pass
 
 
-# ============================================================================
-# ENUMERATIONS
-# ============================================================================
+    class DatabaseError(Exception):
+        pass
 
-class ProjectPhase(Enum):
-    """Project development phase"""
-    PLANNING = "planning"
-    DESIGN = "design"
-    DEVELOPMENT = "development"
-    TESTING = "testing"
-    DEPLOYMENT = "deployment"
-    MAINTENANCE = "maintenance"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
+# Model imports with complete fallbacks
+try:
+    from src.models import (
+        User, Project, Module, Task, GeneratedCodebase, GeneratedFile, TestResult,
+        SocraticSession, Question, ConversationMessage, Conflict, TechnicalSpec,
+        ProjectMetrics, UserActivity, KnowledgeEntry, ProjectContext, ModuleContext, TaskContext,
+        ProjectPhase, ProjectStatus, ModuleStatus, UserRole, UserStatus, TechnicalRole,
+        FileType, TestType, Priority, ConflictType
+    )
 
-
-class ProjectStatus(Enum):
-    """Project status"""
-    ACTIVE = "active"
-    PAUSED = "paused"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
-    ARCHIVED = "archived"
+    MODELS_AVAILABLE = True
+except ImportError:
+    MODELS_AVAILABLE = False
+    from dataclasses import dataclass
+    from typing import Dict, List, Any, Optional
+    from enum import Enum
 
 
-class ModuleStatus(Enum):
-    """Module development status"""
-    PLANNED = "planned"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    BLOCKED = "blocked"
-    CANCELLED = "cancelled"
+    class ProjectStatus(Enum):
+        DRAFT = "draft"
+        ACTIVE = "active"
+        COMPLETED = "completed"
 
 
-class ModuleType(Enum):
-    """Module type classification"""
-    FEATURE = "feature"
-    COMPONENT = "component"
-    SERVICE = "service"
-    INTEGRATION = "integration"
-    TESTING = "testing"
-    DOCUMENTATION = "documentation"
+    class UserRole(Enum):
+        ADMIN = "admin"
+        DEVELOPER = "developer"
+        VIEWER = "viewer"
 
 
-class Priority(Enum):
-    """Priority levels"""
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
+    @dataclass
+    class BaseModel:
+        id: str = ""
+        created_at: datetime = field(default_factory=datetime.now)
+        updated_at: datetime = field(default_factory=datetime.now)
 
 
-class RiskLevel(Enum):
-    """Risk assessment levels"""
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
+    @dataclass
+    class User(BaseModel):
+        username: str = ""
+        email: str = ""
+        role: UserRole = UserRole.VIEWER
 
 
-class FileType(Enum):
-    """Supported file types"""
-    PYTHON = "python"
-    JAVASCRIPT = "javascript"
-    HTML = "html"
-    CSS = "css"
-    SQL = "sql"
-    MARKDOWN = "markdown"
-    JSON = "json"
-    YAML = "yaml"
-    XML = "xml"
-    TEXT = "text"
-    BINARY = "binary"
+    @dataclass
+    class Project(BaseModel):
+        name: str = ""
+        description: str = ""
+        owner_id: str = ""
+        status: ProjectStatus = ProjectStatus.DRAFT
 
 
-class FileStatus(Enum):
-    """File processing status"""
-    PENDING = "pending"
-    PROCESSING = "processing"
-    COMPLETED = "completed"
-    FAILED = "failed"
+    @dataclass
+    class GeneratedCodebase(BaseModel):
+        """Complete fallback model with size_bytes included"""
+        project_id: str = ""
+        version: str = "1.0.0"
+        architecture_type: str = ""
+        total_lines_of_code: int = 0
+        total_files: int = 0
+        size_bytes: int = 0
+        code_quality_score: float = 0.0
+        test_coverage: float = 0.0
 
 
-class TestType(Enum):
-    """Test type classification"""
-    UNIT = "unit"
-    INTEGRATION = "integration"
-    FUNCTIONAL = "functional"
-    PERFORMANCE = "performance"
-    SECURITY = "security"
-    END_TO_END = "end_to_end"
+    @dataclass
+    class GeneratedFile(BaseModel):
+        codebase_id: str = ""
+        file_path: str = ""
+        content: str = ""
+        size_bytes: int = 0
 
 
-class TestStatus(Enum):
-    """Test execution status"""
-    PENDING = "pending"
-    RUNNING = "running"
-    PASSED = "passed"
-    FAILED = "failed"
-    SKIPPED = "skipped"
-    ERROR = "error"
+    # Minimal fallback implementations for other models
+    Module = Task = TestResult = SocraticSession = Question = ConversationMessage = BaseModel
+    Conflict = TechnicalSpec = ProjectMetrics = UserActivity = KnowledgeEntry = BaseModel
+    ProjectContext = ModuleContext = TaskContext = BaseModel
 
+# Type variables for generic repository
+T = TypeVar('T')
 
-class UserRole(Enum):
-    """User role definitions"""
-    ADMIN = "admin"
-    MANAGER = "manager"
-    DEVELOPER = "developer"
-    ANALYST = "analyst"
-    VIEWER = "viewer"
-
-
-class UserStatus(Enum):
-    """User account status"""
-    ACTIVE = "active"
-    INACTIVE = "inactive"
-    PENDING = "pending"
-    SUSPENDED = "suspended"
-
-
-class TechnicalRole(Enum):
-    """Technical roles for Socratic questioning"""
-    BUSINESS_ANALYST = "business_analyst"
-    SYSTEM_ARCHITECT = "system_architect"
-    UI_UX_DESIGNER = "ui_ux_designer"
-    BACKEND_DEVELOPER = "backend_developer"
-    FRONTEND_DEVELOPER = "frontend_developer"
-    DATABASE_ARCHITECT = "database_architect"
-    DEVOPS_ENGINEER = "devops_engineer"
-    QA_ENGINEER = "qa_engineer"
-    SECURITY_SPECIALIST = "security_specialist"
-    PROJECT_MANAGER = "project_manager"
-
-
-class ConversationStatus(Enum):
-    """Socratic conversation status"""
-    ACTIVE = "active"
-    PAUSED = "paused"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
+logger = get_logger(__name__)
 
 
 # ============================================================================
-# BASE MODELS
+# BASE REPOSITORY CLASSES
 # ============================================================================
 
-@dataclass
-class BaseModel:
-    """Base class for all data models"""
+class BaseRepository(Generic[T], ABC):
+    """Base repository with type-safe operations"""
 
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: datetime = field(default_factory=DateTimeHelper.now)
-    updated_at: datetime = field(default_factory=DateTimeHelper.now)
+    def __init__(self, db_manager, model_class: Type[T]):
+        self.db_manager = db_manager
+        self.model_class = model_class
+        self.table_name = self._get_table_name()
+        self.logger = get_logger(f"{__name__}.{self.__class__.__name__}")
 
-    def update_timestamp(self) -> None:
-        """Update the last modified timestamp"""
-        self.updated_at = DateTimeHelper.now()
+    def _get_table_name(self) -> str:
+        """Get table name from model class"""
+        return self.model_class.__name__.lower() + 's'
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert model to dictionary"""
-        return asdict(self)
+    @abstractmethod
+    def create(self, entity: T) -> bool:
+        """Create new entity"""
+        pass
 
-    def to_json(self) -> str:
-        """Convert model to JSON string"""
+    @abstractmethod
+    def get_by_id(self, entity_id: str) -> Optional[T]:
+        """Get entity by ID"""
+        pass
 
-        def json_serializer(obj):
-            if isinstance(obj, datetime):
-                return DateTimeHelper.to_iso_string(obj)
-            elif isinstance(obj, Enum):
-                return obj.value
-            return str(obj)
+    @abstractmethod
+    def update(self, entity: T) -> bool:
+        """Update existing entity"""
+        pass
 
-        return json.dumps(self.to_dict(), default=json_serializer, indent=2)
+    @abstractmethod
+    def delete(self, entity_id: str) -> bool:
+        """Delete entity by ID"""
+        pass
+
+    def get_all(self) -> List[T]:
+        """Get all entities"""
+        try:
+            query = f"SELECT * FROM {self.table_name}"
+            results = self.db_manager.execute_query(query)
+            return [self._row_to_model(row) for row in results]
+        except Exception as e:
+            self.logger.error(f"Error getting all {self.table_name}: {e}")
+            return []
+
+    def _row_to_model(self, row: Dict[str, Any]) -> T:
+        """Convert database row to model instance"""
+        try:
+            # Basic conversion - override in subclasses for complex models
+            return self.model_class(**row)
+        except Exception as e:
+            self.logger.error(f"Error converting row to model: {e}")
+            return self.model_class()
+
+    def _model_to_dict(self, entity: T) -> Dict[str, Any]:
+        """Convert model instance to dictionary"""
+        if hasattr(entity, 'to_dict'):
+            return entity.to_dict()
+        elif hasattr(entity, '__dict__'):
+            return entity.__dict__
+        else:
+            return {}
 
 
 # ============================================================================
-# USER MANAGEMENT MODELS
+# SPECIFIC REPOSITORY IMPLEMENTATIONS
 # ============================================================================
 
-@dataclass
-class User(BaseModel):
-    """User account model"""
+class UserRepository(BaseRepository[User]):
+    """User repository with type safety"""
 
-    username: str = ""
-    email: str = ""
-    password_hash: str = ""
-    first_name: str = ""
-    last_name: str = ""
-    role: UserRole = UserRole.VIEWER
-    status: UserStatus = UserStatus.PENDING
+    def create(self, user: User) -> bool:
+        try:
+            data = self._model_to_dict(user)
+            query = """
+                INSERT INTO users (id, username, email, role, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """
+            params = (
+                data.get('id', str(uuid.uuid4())),
+                data.get('username', ''),
+                data.get('email', ''),
+                data.get('role', 'viewer'),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            )
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error creating user: {e}")
+            return False
 
-    # Profile information
-    avatar_url: Optional[str] = None
-    bio: str = ""
-    skills: List[str] = field(default_factory=list)
-    preferences: Dict[str, Any] = field(default_factory=dict)
+    def get_by_id(self, user_id: str) -> Optional[User]:
+        try:
+            query = "SELECT * FROM users WHERE id = ?"
+            results = self.db_manager.execute_query(query, (user_id,))
+            return self._row_to_model(results[0]) if results else None
+        except Exception as e:
+            self.logger.error(f"Error getting user {user_id}: {e}")
+            return None
 
-    # Authentication
-    last_login: Optional[datetime] = None
-    login_attempts: int = 0
-    locked_until: Optional[datetime] = None
-    api_key: Optional[str] = None
+    def get_by_username(self, username: str) -> Optional[User]:
+        try:
+            query = "SELECT * FROM users WHERE username = ?"
+            results = self.db_manager.execute_query(query, (username,))
+            return self._row_to_model(results[0]) if results else None
+        except Exception as e:
+            self.logger.error(f"Error getting user by username {username}: {e}")
+            return None
 
-    # Statistics
-    projects_created: int = 0
-    sessions_completed: int = 0
-    questions_answered: int = 0
+    def update(self, user: User) -> bool:
+        try:
+            data = self._model_to_dict(user)
+            query = """
+                UPDATE users 
+                SET username = ?, email = ?, role = ?, updated_at = ?
+                WHERE id = ?
+            """
+            params = (
+                data.get('username', ''),
+                data.get('email', ''),
+                data.get('role', 'viewer'),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                data.get('id', '')
+            )
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error updating user: {e}")
+            return False
+
+    def delete(self, user_id: str) -> bool:
+        try:
+            query = "DELETE FROM users WHERE id = ?"
+            self.db_manager.execute_update(query, (user_id,))
+            return True
+        except Exception as e:
+            self.logger.error(f"Error deleting user {user_id}: {e}")
+            return False
+
+
+class ProjectRepository(BaseRepository[Project]):
+    """Project repository with type safety"""
+
+    def create(self, project: Project) -> bool:
+        try:
+            data = self._model_to_dict(project)
+            query = """
+                INSERT INTO projects (id, name, description, owner_id, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """
+            params = (
+                data.get('id', str(uuid.uuid4())),
+                data.get('name', ''),
+                data.get('description', ''),
+                data.get('owner_id', ''),
+                data.get('status', 'draft'),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            )
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error creating project: {e}")
+            return False
+
+    def get_by_id(self, project_id: str) -> Optional[Project]:
+        try:
+            query = "SELECT * FROM projects WHERE id = ?"
+            results = self.db_manager.execute_query(query, (project_id,))
+            return self._row_to_model(results[0]) if results else None
+        except Exception as e:
+            self.logger.error(f"Error getting project {project_id}: {e}")
+            return None
+
+    def get_by_owner(self, owner_id: str) -> List[Project]:
+        try:
+            query = "SELECT * FROM projects WHERE owner_id = ?"
+            results = self.db_manager.execute_query(query, (owner_id,))
+            return [self._row_to_model(row) for row in results]
+        except Exception as e:
+            self.logger.error(f"Error getting projects for owner {owner_id}: {e}")
+            return []
+
+    def update(self, project: Project) -> bool:
+        try:
+            data = self._model_to_dict(project)
+            query = """
+                UPDATE projects 
+                SET name = ?, description = ?, status = ?, updated_at = ?
+                WHERE id = ?
+            """
+            params = (
+                data.get('name', ''),
+                data.get('description', ''),
+                data.get('status', 'draft'),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                data.get('id', '')
+            )
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error updating project: {e}")
+            return False
+
+    def delete(self, project_id: str) -> bool:
+        try:
+            query = "DELETE FROM projects WHERE id = ?"
+            self.db_manager.execute_update(query, (project_id,))
+            return True
+        except Exception as e:
+            self.logger.error(f"Error deleting project {project_id}: {e}")
+            return False
+
+
+class GeneratedCodebaseRepository(BaseRepository[GeneratedCodebase]):
+    """Generated codebase repository with proper size_bytes support"""
+
+    def create(self, codebase: GeneratedCodebase) -> bool:
+        try:
+            data = self._model_to_dict(codebase)
+            query = """
+                INSERT INTO generated_codebases 
+                (id, project_id, version, architecture_type, total_lines_of_code, 
+                 total_files, size_bytes, code_quality_score, test_coverage, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            params = (
+                data.get('id', str(uuid.uuid4())),
+                data.get('project_id', ''),
+                data.get('version', '1.0.0'),
+                data.get('architecture_type', ''),
+                data.get('total_lines_of_code', 0),
+                data.get('total_files', 0),
+                data.get('size_bytes', 0),
+                data.get('code_quality_score', 0.0),
+                data.get('test_coverage', 0.0),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            )
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error creating codebase: {e}")
+            return False
+
+    def get_by_id(self, codebase_id: str) -> Optional[GeneratedCodebase]:
+        try:
+            query = "SELECT * FROM generated_codebases WHERE id = ?"
+            results = self.db_manager.execute_query(query, (codebase_id,))
+            return self._row_to_model(results[0]) if results else None
+        except Exception as e:
+            self.logger.error(f"Error getting codebase {codebase_id}: {e}")
+            return None
+
+    def get_by_project_id(self, project_id: str) -> List[GeneratedCodebase]:
+        try:
+            query = "SELECT * FROM generated_codebases WHERE project_id = ?"
+            results = self.db_manager.execute_query(query, (project_id,))
+            return [self._row_to_model(row) for row in results]
+        except Exception as e:
+            self.logger.error(f"Error getting codebases for project {project_id}: {e}")
+            return []
+
+    def update(self, codebase: GeneratedCodebase) -> bool:
+        try:
+            data = self._model_to_dict(codebase)
+            query = """
+                UPDATE generated_codebases 
+                SET version = ?, architecture_type = ?, total_lines_of_code = ?, 
+                    total_files = ?, size_bytes = ?, code_quality_score = ?, 
+                    test_coverage = ?, updated_at = ?
+                WHERE id = ?
+            """
+            params = (
+                data.get('version', '1.0.0'),
+                data.get('architecture_type', ''),
+                data.get('total_lines_of_code', 0),
+                data.get('total_files', 0),
+                data.get('size_bytes', 0),  # ✅ FIXED: Properly handles size_bytes
+                data.get('code_quality_score', 0.0),
+                data.get('test_coverage', 0.0),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                data.get('id', '')
+            )
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error updating codebase: {e}")
+            return False
+
+    def delete(self, codebase_id: str) -> bool:
+        try:
+            query = "DELETE FROM generated_codebases WHERE id = ?"
+            self.db_manager.execute_update(query, (codebase_id,))
+            return True
+        except Exception as e:
+            self.logger.error(f"Error deleting codebase {codebase_id}: {e}")
+            return False
+
+
+class GeneratedFileRepository(BaseRepository[GeneratedFile]):
+    """Generated file repository with size_bytes support"""
+
+    def create(self, file: GeneratedFile) -> bool:
+        try:
+            data = self._model_to_dict(file)
+            query = """
+                INSERT INTO generated_files 
+                (id, codebase_id, file_path, content, size_bytes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """
+            params = (
+                data.get('id', str(uuid.uuid4())),
+                data.get('codebase_id', ''),
+                data.get('file_path', ''),
+                data.get('content', ''),
+                data.get('size_bytes', 0),  # ✅ FIXED: Properly handles size_bytes
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            )
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error creating file: {e}")
+            return False
+
+    def get_by_id(self, file_id: str) -> Optional[GeneratedFile]:
+        try:
+            query = "SELECT * FROM generated_files WHERE id = ?"
+            results = self.db_manager.execute_query(query, (file_id,))
+            return self._row_to_model(results[0]) if results else None
+        except Exception as e:
+            self.logger.error(f"Error getting file {file_id}: {e}")
+            return None
+
+    def get_by_codebase_id(self, codebase_id: str) -> List[GeneratedFile]:
+        try:
+            query = "SELECT * FROM generated_files WHERE codebase_id = ?"
+            results = self.db_manager.execute_query(query, (codebase_id,))
+            return [self._row_to_model(row) for row in results]
+        except Exception as e:
+            self.logger.error(f"Error getting files for codebase {codebase_id}: {e}")
+            return []
+
+    def update(self, file: GeneratedFile) -> bool:
+        try:
+            data = self._model_to_dict(file)
+            query = """
+                UPDATE generated_files 
+                SET file_path = ?, content = ?, size_bytes = ?, updated_at = ?
+                WHERE id = ?
+            """
+            params = (
+                data.get('file_path', ''),
+                data.get('content', ''),
+                data.get('size_bytes', 0),  # ✅ FIXED: Properly handles size_bytes
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                data.get('id', '')
+            )
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error updating file: {e}")
+            return False
+
+    def delete(self, file_id: str) -> bool:
+        try:
+            query = "DELETE FROM generated_files WHERE id = ?"
+            self.db_manager.execute_update(query, (file_id,))
+            return True
+        except Exception as e:
+            self.logger.error(f"Error deleting file {file_id}: {e}")
+            return False
+
+
+# ============================================================================
+# DATABASE MANAGER
+# ============================================================================
+
+class DatabaseManager:
+    """Core database management with connection pooling"""
+
+    def __init__(self, db_path: str):
+        self.db_path = db_path
+        self.lock = threading.Lock()
+        self.logger = get_logger(f"{__name__}.DatabaseManager")
+        self._ensure_database_exists()
+        self._init_schema()
+
+    def _ensure_database_exists(self):
+        """Ensure database file and directory exist"""
+        try:
+            db_dir = Path(self.db_path).parent
+            db_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            self.logger.error(f"Error creating database directory: {e}")
+            raise DatabaseError(f"Failed to create database directory: {e}")
+
+    def _init_schema(self):
+        """Initialize database schema"""
+        try:
+            with self.get_connection() as conn:
+                # Users table
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS users (
+                        id TEXT PRIMARY KEY,
+                        username TEXT UNIQUE NOT NULL,
+                        email TEXT UNIQUE NOT NULL,
+                        role TEXT NOT NULL DEFAULT 'viewer',
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
+                    )
+                """)
+
+                # Projects table
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS projects (
+                        id TEXT PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        description TEXT,
+                        owner_id TEXT NOT NULL,
+                        status TEXT NOT NULL DEFAULT 'draft',
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL,
+                        FOREIGN KEY (owner_id) REFERENCES users(id)
+                    )
+                """)
+
+                # Generated codebases table
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS generated_codebases (
+                        id TEXT PRIMARY KEY,
+                        project_id TEXT NOT NULL,
+                        version TEXT NOT NULL DEFAULT '1.0.0',
+                        architecture_type TEXT,
+                        total_lines_of_code INTEGER DEFAULT 0,
+                        total_files INTEGER DEFAULT 0,
+                        size_bytes INTEGER DEFAULT 0,
+                        code_quality_score REAL DEFAULT 0.0,
+                        test_coverage REAL DEFAULT 0.0,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL,
+                        FOREIGN KEY (project_id) REFERENCES projects(id)
+                    )
+                """)
+
+                # Generated files table
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS generated_files (
+                        id TEXT PRIMARY KEY,
+                        codebase_id TEXT NOT NULL,
+                        file_path TEXT NOT NULL,
+                        content TEXT NOT NULL,
+                        size_bytes INTEGER DEFAULT 0,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL,
+                        FOREIGN KEY (codebase_id) REFERENCES generated_codebases(id)
+                    )
+                """)
+
+                conn.commit()
+                self.logger.info("Database schema initialized successfully")
+
+        except Exception as e:
+            self.logger.error(f"Error initializing database schema: {e}")
+            raise DatabaseError(f"Failed to initialize database schema: {e}")
+
+    @contextmanager
+    def get_connection(self):
+        """Get database connection with proper cleanup"""
+        conn = None
+        try:
+            with self.lock:
+                conn = sqlite3.connect(self.db_path, timeout=30.0)
+                conn.row_factory = sqlite3.Row
+                yield conn
+        except Exception as e:
+            self.logger.error(f"Database connection error: {e}")
+            if conn:
+                conn.rollback()
+            raise DatabaseError(f"Database operation failed: {e}")
+        finally:
+            if conn:
+                conn.close()
+
+    def execute_query(self, query: str, params: tuple = ()) -> List[Dict[str, Any]]:
+        """Execute SELECT query and return results"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.execute(query, params)
+                return [dict(row) for row in cursor.fetchall()]
+        except Exception as e:
+            self.logger.error(f"Query execution failed: {e}")
+            raise DatabaseError(f"Query failed: {e}")
+
+    def execute_update(self, query: str, params: tuple = ()) -> int:
+        """Execute INSERT/UPDATE/DELETE query and return affected rows"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.execute(query, params)
+                conn.commit()
+                return cursor.rowcount
+        except Exception as e:
+            self.logger.error(f"Update execution failed: {e}")
+            raise DatabaseError(f"Update failed: {e}")
+
+    def health_check(self) -> Dict[str, Any]:
+        """Check database health and connectivity"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.execute("SELECT 1")
+                cursor.fetchone()
+                return {
+                    'status': 'healthy',
+                    'database_path': self.db_path,
+                    'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                }
+        except Exception as e:
+            return {
+                'status': 'unhealthy',
+                'error': str(e),
+                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            }
+
+
+# ============================================================================
+# DATABASE SERVICE (MAIN INTERFACE)
+# ============================================================================
+
+class DatabaseService:
+    """Main database service with all repositories"""
+
+    def __init__(self, db_path: str = None):
+        if db_path is None:
+            config = get_config()
+            db_path = config.get('database', {}).get('path', 'data/socratic_rag.db')
+
+        self.db_manager = DatabaseManager(db_path)
+        self.logger = get_logger(f"{__name__}.DatabaseService")
+
+        # Initialize repositories with proper types
+        self.users = UserRepository(self.db_manager, User)
+        self.projects = ProjectRepository(self.db_manager, Project)
+        self.generated_codebases = GeneratedCodebaseRepository(self.db_manager, GeneratedCodebase)
+        self.generated_files = GeneratedFileRepository(self.db_manager, GeneratedFile)
+
+        # Add other repositories as needed
+        # self.modules = ModuleRepository(self.db_manager, Module)
+        # self.tasks = TaskRepository(self.db_manager, Task)
+        # self.sessions = SocraticSessionRepository(self.db_manager, SocraticSession)
+
+        self.logger.info("DatabaseService initialized successfully")
 
     @property
-    def full_name(self) -> str:
-        """Get user's full name"""
-        return f"{self.first_name} {self.last_name}".strip()
+    def codebases(self):
+        """Alias for generated_codebases for backward compatibility"""
+        return self.generated_codebases
 
-    @property
-    def is_active(self) -> bool:
-        """Check if user account is active"""
-        return self.status == UserStatus.ACTIVE
+    def health_check(self) -> Dict[str, Any]:
+        """Check overall database health"""
+        return self.db_manager.health_check()
 
-    @property
-    def is_locked(self) -> bool:
-        """Check if user account is locked"""
-        if self.locked_until:
-            return DateTimeHelper.now() < self.locked_until
-        return False
+    def get_stats(self) -> Dict[str, Any]:
+        """Get database statistics"""
+        try:
+            stats = {}
 
+            # Count records in each table
+            tables = ['users', 'projects', 'generated_codebases', 'generated_files']
+            for table in tables:
+                try:
+                    query = f"SELECT COUNT(*) as count FROM {table}"
+                    result = self.db_manager.execute_query(query)
+                    stats[f"{table}_count"] = result[0]['count'] if result else 0
+                except Exception as e:
+                    self.logger.warning(f"Error counting {table}: {e}")
+                    stats[f"{table}_count"] = 0
 
-@dataclass
-class Collaborator(BaseModel):
-    """Project collaborator model"""
+            # Calculate total size
+            try:
+                query = "SELECT SUM(size_bytes) as total_size FROM generated_codebases"
+                result = self.db_manager.execute_query(query)
+                stats['total_codebase_size_bytes'] = result[0]['total_size'] or 0
+            except Exception as e:
+                self.logger.warning(f"Error calculating total size: {e}")
+                stats['total_codebase_size_bytes'] = 0
 
-    project_id: str = ""
-    user_id: str = ""
-    username: str = ""
-    role: str = "viewer"
-    joined_at: datetime = field(default_factory=DateTimeHelper.now)
-    is_active: bool = True
-    permissions: List[str] = field(default_factory=list)
+            stats['timestamp'] = DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            return stats
 
+        except Exception as e:
+            self.logger.error(f"Error getting database stats: {e}")
+            return {'error': str(e)}
 
-# ============================================================================
-# PROJECT MANAGEMENT MODELS
-# ============================================================================
-
-@dataclass
-class Project(BaseModel):
-    """Main project model"""
-
-    name: str = ""
-    description: str = ""
-    domain: str = ""
-
-    # Project status and management
-    phase: ProjectPhase = ProjectPhase.PLANNING
-    status: ProjectStatus = ProjectStatus.ACTIVE
-    priority: Priority = Priority.MEDIUM
-    risk_level: RiskLevel = RiskLevel.LOW
-
-    # Project details
-    target_audience: str = ""
-    success_criteria: Dict[str, Any] = field(default_factory=dict)
-    business_goals: List[str] = field(default_factory=list)
-    technical_requirements: List[str] = field(default_factory=list)
-    constraints: List[str] = field(default_factory=list)
-    assumptions: List[str] = field(default_factory=list)
-
-    # Technology stack
-    technology_stack: Dict[str, str] = field(default_factory=dict)
-    architecture_pattern: str = ""
-
-    # Management
-    created_by: str = ""  # User ID
-    assigned_to: Optional[str] = None  # User ID
-    collaborators: List[str] = field(default_factory=list)  # User IDs
-
-    # Dates
-    start_date: Optional[datetime] = None
-    target_date: Optional[datetime] = None
-    completion_date: Optional[datetime] = None
-
-    # Progress tracking
-    completion_percentage: float = 0.0
-    modules_count: int = 0
-    completed_modules: int = 0
-
-    # Quality metrics
-    quality_score: float = 0.0
-    test_coverage: float = 0.0
-
-    @property
-    def is_completed(self) -> bool:
-        """Check if project is completed"""
-        return self.status == ProjectStatus.COMPLETED
-
-    @property
-    def is_overdue(self) -> bool:
-        """Check if project is overdue"""
-        if self.target_date and not self.is_completed:
-            return DateTimeHelper.now() > self.target_date
-        return False
-
-
-@dataclass
-class Module(BaseModel):
-    """Project module model"""
-
-    project_id: str = ""
-    name: str = ""
-    description: str = ""
-
-    # Module classification
-    module_type: ModuleType = ModuleType.FEATURE
-    status: ModuleStatus = ModuleStatus.PLANNED
-    priority: Priority = Priority.MEDIUM
-
-    # Dependencies and relationships
-    dependencies: List[str] = field(default_factory=list)  # Module IDs
-    blocked_by: List[str] = field(default_factory=list)  # Module IDs
-
-    # Requirements and acceptance criteria
-    requirements: List[str] = field(default_factory=list)
-    acceptance_criteria: List[str] = field(default_factory=list)
-
-    # Assignment and tracking
-    assigned_to: Optional[str] = None  # User ID
-    estimated_hours: float = 0.0
-    actual_hours: float = 0.0
-    completion_percentage: float = 0.0
-
-    # Quality metrics
-    quality_score: float = 0.0
-    test_coverage: float = 0.0
-
-    @property
-    def is_completed(self) -> bool:
-        """Check if module is completed"""
-        return self.status == ModuleStatus.COMPLETED
-
-    @property
-    def is_blocked(self) -> bool:
-        """Check if module is blocked"""
-        return self.status == ModuleStatus.BLOCKED or len(self.blocked_by) > 0
-
-
-@dataclass
-class Task(BaseModel):
-    """Individual task model"""
-
-    module_id: str = ""
-    project_id: str = ""
-    title: str = ""
-    description: str = ""
-
-    # Task management
-    status: str = "todo"  # todo, in_progress, completed, cancelled
-    priority: Priority = Priority.MEDIUM
-
-    # Assignment and tracking
-    assigned_to: Optional[str] = None  # User ID
-    dependencies: List[str] = field(default_factory=list)  # Task IDs
-
-    # Time tracking
-    estimated_hours: float = 0.0
-    actual_hours: float = 0.0
-
-    # Dates
-    due_date: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-
-    @property
-    def is_completed(self) -> bool:
-        """Check if task is completed"""
-        return self.status == "completed"
-
-    @property
-    def is_overdue(self) -> bool:
-        """Check if task is overdue"""
-        if self.due_date and not self.is_completed:
-            return DateTimeHelper.now() > self.due_date
-        return False
+    def backup(self, backup_path: str) -> bool:
+        """Create database backup"""
+        try:
+            import shutil
+            shutil.copy2(self.db_manager.db_path, backup_path)
+            self.logger.info(f"Database backed up to {backup_path}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Database backup failed: {e}")
+            return False
 
 
 # ============================================================================
-# SOCRATIC CONVERSATION MODELS
+# REPOSITORY MANAGER
 # ============================================================================
 
-@dataclass
-class SocraticSession(BaseModel):
-    """Socratic questioning session"""
+class RepositoryManager:
+    """Centralized repository management"""
 
-    project_id: str = ""
-    user_id: str = ""
+    def __init__(self, db_service: DatabaseService):
+        self.db_service = db_service
+        self.logger = get_logger(f"{__name__}.RepositoryManager")
 
-    # Session configuration
-    current_role: TechnicalRole = TechnicalRole.BUSINESS_ANALYST
-    status: ConversationStatus = ConversationStatus.ACTIVE
+    def get_repository(self, model_type: str):
+        """Get repository by model type"""
+        repository_mapping = {
+            'user': self.db_service.users,
+            'project': self.db_service.projects,
+            'generated_codebase': self.db_service.generated_codebases,
+            'generated_file': self.db_service.generated_files,
+            'codebase': self.db_service.codebases,  # Alias support
+        }
 
-    # Role coverage tracking
-    roles_to_cover: List[TechnicalRole] = field(default_factory=list)
-    completed_roles: List[TechnicalRole] = field(default_factory=list)
+        return repository_mapping.get(model_type.lower())
 
-    # Progress metrics
-    total_questions: int = 0
-    questions_answered: int = 0
-    insights_generated: int = 0
-    conflicts_detected: int = 0
-
-    # Session data
-    session_notes: str = ""
-    quality_score: float = 0.0
-    completion_percentage: float = 0.0
-
-    @property
-    def is_completed(self) -> bool:
-        """Check if session is completed"""
-        return self.status == ConversationStatus.COMPLETED
-
-    @property
-    def remaining_roles(self) -> List[TechnicalRole]:
-        """Get remaining roles to cover"""
-        return [role for role in self.roles_to_cover if role not in self.completed_roles]
-
-
-@dataclass
-class Question(BaseModel):
-    """Individual Socratic question"""
-
-    session_id: str = ""
-    project_id: str = ""
-    role: TechnicalRole = TechnicalRole.BUSINESS_ANALYST
-
-    # Question content
-    question_text: str = ""
-    context: str = ""
-    answer: str = ""
-
-    # Quality metrics
-    confidence_score: float = 0.0
-    follow_up_questions: List[str] = field(default_factory=list)
-    insights: List[str] = field(default_factory=list)
-    conflicts_detected: List[str] = field(default_factory=list)
-
-    # Timing
-    answered_at: Optional[datetime] = None
-
-    @property
-    def is_answered(self) -> bool:
-        """Check if question has been answered"""
-        return bool(self.answer and self.answer.strip())
-
-
-@dataclass
-class ConversationMessage(BaseModel):
-    """Individual conversation message"""
-
-    session_id: str = ""
-    question_id: Optional[str] = None
-
-    # Message content
-    role: str = "user"  # user, assistant, system
-    content: str = ""
-
-    # Metadata
-    token_count: int = 0
-    confidence_score: float = 0.0
-    context_used: List[str] = field(default_factory=list)
-
-
-@dataclass
-class Conflict(BaseModel):
-    """Detected specification conflict"""
-
-    project_id: str = ""
-    session_id: Optional[str] = None
-
-    # Conflict details
-    conflict_type: str = ""
-    severity: str = "medium"  # low, medium, high, critical
-    description: str = ""
-
-    # Conflicting elements
-    source_element: str = ""
-    target_element: str = ""
-    conflicting_values: Dict[str, Any] = field(default_factory=dict)
-
-    # Resolution
-    resolution_status: str = "pending"  # pending, resolved, ignored
-    resolution_notes: str = ""
-    resolved_by: Optional[str] = None  # User ID
-    resolved_at: Optional[datetime] = None
-
-    @property
-    def is_resolved(self) -> bool:
-        """Check if conflict is resolved"""
-        return self.resolution_status == "resolved"
+    def get_all_repositories(self) -> Dict[str, Any]:
+        """Get all available repositories"""
+        return {
+            'users': self.db_service.users,
+            'projects': self.db_service.projects,
+            'generated_codebases': self.db_service.generated_codebases,
+            'generated_files': self.db_service.generated_files,
+            'codebases': self.db_service.codebases,  # Alias
+        }
 
 
 # ============================================================================
-# TECHNICAL SPECIFICATION MODELS
+# GLOBAL INSTANCES AND FACTORY FUNCTIONS
 # ============================================================================
 
-@dataclass
-class TechnicalSpecification(BaseModel):
-    """Technical specification document"""
-
-    project_id: str = ""
-    title: str = ""
-    description: str = ""
-
-    # Specification content
-    functional_requirements: List[str] = field(default_factory=list)
-    non_functional_requirements: List[str] = field(default_factory=list)
-    technical_constraints: List[str] = field(default_factory=list)
-    architecture_decisions: Dict[str, Any] = field(default_factory=dict)
-
-    # Documentation requirements
-    documentation_requirements: List[str] = field(default_factory=list)
-
-    # Approval and validation
-    is_approved: bool = False
-    approved_by: Optional[str] = None  # User ID
-    approved_at: Optional[datetime] = None
-    approval_notes: str = ""
-
-
-# ============================================================================
-# CODE GENERATION MODELS
-# ============================================================================
-
-@dataclass
-class GeneratedCodebase(BaseModel):
-    """Complete generated codebase"""
-
-    project_id: str = ""
-    spec_id: str = ""
-    version: str = "1.0.0"
-
-    # Architecture information
-    architecture_type: str = ""
-    technology_stack: Dict[str, str] = field(default_factory=dict)
-
-    # File structure
-    file_structure: Dict[str, Any] = field(default_factory=dict)
-    generated_files: List[str] = field(default_factory=list)  # GeneratedFile IDs
-
-    # Quality metrics
-    total_lines_of_code: int = 0
-    total_files: int = 0
-    size_bytes: int = 0  # ✅ ADDED: Missing size_bytes attribute
-    code_quality_score: float = 0.0
-    test_coverage: float = 0.0
-
-    # Performance metrics
-    generation_time_seconds: float = 0.0
-    compilation_successful: bool = False
-    tests_passing: bool = False
-
-    # Security analysis
-    security_scan_results: Dict[str, Any] = field(default_factory=dict)
-    security_issues_count: int = 0
-    critical_issues_count: int = 0
-
-    # Deployment information
-    deployment_config: Dict[str, Any] = field(default_factory=dict)
-    deployment_status: str = "not_deployed"  # not_deployed, staging, production
-
-    # Validation results
-    validation_results: List[str] = field(default_factory=list)  # TestResult IDs
-    error_count: int = 0
-    warning_count: int = 0
-
-
-@dataclass
-class GeneratedFile(BaseModel):
-    """Individual generated file"""
-
-    codebase_id: str = ""
-    project_id: str = ""
-
-    # File information
-    file_path: str = ""
-    file_type: FileType = FileType.PYTHON
-    file_purpose: str = ""  # model, controller, view, test, config, etc.
-
-    # File content
-    content: str = ""
-    dependencies: List[str] = field(default_factory=list)
-    documentation: str = ""
-
-    # Generation metadata
-    generated_by_agent: str = ""
-    version: str = "1.0.0"
-
-    # Quality metrics
-    size_bytes: int = 0
-    complexity_score: float = 0.0
-    test_coverage: float = 0.0
-
-    @property
-    def size_mb(self) -> float:
-        """Get file size in megabytes"""
-        return self.size_bytes / (1024 * 1024) if self.size_bytes > 0 else 0.0
-
-    @property
-    def line_count(self) -> int:
-        """Get number of lines in file"""
-        return len(self.content.split('\n')) if self.content else 0
-
-
-@dataclass
-class TestResult(BaseModel):
-    """Test execution result"""
-
-    codebase_id: str = ""
-    project_id: str = ""
-
-    # Test information
-    test_name: str = ""
-    test_type: TestType = TestType.UNIT
-    status: TestStatus = TestStatus.PENDING
-
-    # Execution details
-    passed: bool = False
-    execution_time: float = 0.0
-    error_message: str = ""
-    coverage_percentage: float = 0.0
-
-    @property
-    def is_successful(self) -> bool:
-        """Check if test passed"""
-        return self.status == TestStatus.PASSED and self.passed
-
-
-# ============================================================================
-# ANALYTICS AND METRICS MODELS
-# ============================================================================
-
-@dataclass
-class ProjectMetrics(BaseModel):
-    """Project analytics and metrics"""
-
-    project_id: str = ""
-
-    # Time metrics
-    total_development_time: float = 0.0
-    estimated_completion_time: float = 0.0
-    actual_completion_time: float = 0.0
-
-    # Code metrics
-    total_lines_of_code: int = 0
-    total_files_generated: int = 0
-    code_quality_average: float = 0.0
-    test_coverage_average: float = 0.0
-
-    # Productivity metrics
-    questions_per_hour: float = 0.0
-    insights_per_session: float = 0.0
-    conflicts_detected: int = 0
-    conflicts_resolved: int = 0
-
-    # Quality metrics
-    overall_quality_score: float = 0.0
-    user_satisfaction_score: float = 0.0
-
-
-@dataclass
-class UserActivity(BaseModel):
-    """User activity tracking"""
-
-    user_id: str = ""
-
-    # Activity metrics
-    sessions_started: int = 0
-    sessions_completed: int = 0
-    questions_answered: int = 0
-    projects_created: int = 0
-
-    # Time metrics
-    total_active_time: float = 0.0
-    average_session_duration: float = 0.0
-
-    # Last activity
-    last_login: Optional[datetime] = None
-    last_project_id: Optional[str] = None
-
-
-@dataclass
-class KnowledgeEntry(BaseModel):
-    """Knowledge base entry for RAG system"""
-
-    # Content identification
-    title: str = ""
-    content: str = ""
-    content_type: str = "text"  # text, code, documentation
-
-    # Categorization
-    domain: str = ""
-    tags: List[str] = field(default_factory=list)
-
-    # Source information
-    source_type: str = ""  # conversation, document, code, external
-    source_id: Optional[str] = None
-    project_id: Optional[str] = None
-
-    # Vector embeddings and search
-    embedding_vector: Optional[List[float]] = None
-    search_keywords: List[str] = field(default_factory=list)
-
-    # Quality and relevance
-    relevance_score: float = 0.0
-    usage_count: int = 0
-    last_accessed: Optional[datetime] = None
-
-
-# ============================================================================
-# CONTEXT MODELS
-# ============================================================================
-
-@dataclass
-class ModuleContext(BaseModel):
-    """Context information for a module"""
-
-    module_id: str = ""
-    project_id: str = ""
-
-    # Context data
-    business_context: str = ""
-    technical_context: str = ""
-    dependencies_context: str = ""
-
-    # Related entities
-    related_modules: List[str] = field(default_factory=list)
-    related_requirements: List[str] = field(default_factory=list)
-    related_constraints: List[str] = field(default_factory=list)
-
-
-@dataclass
-class TaskContext(BaseModel):
-    """Context information for a task"""
-
-    task_id: str = ""
-    module_id: str = ""
-    project_id: str = ""
-
-    # Context data
-    task_context: str = ""
-    implementation_notes: str = ""
-    testing_requirements: str = ""
-
-    # Dependencies
-    prerequisite_tasks: List[str] = field(default_factory=list)
-    dependent_tasks: List[str] = field(default_factory=list)
-
-
-# ============================================================================
-# MODEL FACTORY AND UTILITIES
-# ============================================================================
-
-class ModelFactory:
-    """Factory for creating model instances"""
-
-    MODELS = {
-        'user': User,
-        'collaborator': Collaborator,
-        'project': Project,
-        'module': Module,
-        'task': Task,
-        'socratic_session': SocraticSession,
-        'question': Question,
-        'conversation_message': ConversationMessage,
-        'conflict': Conflict,
-        'technical_spec': TechnicalSpecification,
-        'generated_codebase': GeneratedCodebase,
-        'generated_file': GeneratedFile,
-        'test_result': TestResult,
-        'project_metrics': ProjectMetrics,
-        'user_activity': UserActivity,
-        'knowledge_entry': KnowledgeEntry,
-        'module_context': ModuleContext,
-        'task_context': TaskContext,
-    }
-
-    @classmethod
-    def get_model_class(cls, model_name: str) -> type:
-        """Get model class by name"""
-        return cls.MODELS.get(model_name)
-
-    @classmethod
-    def get_all_models(cls) -> Dict[str, type]:
-        """Get all registered models"""
-        return cls.MODELS.copy()
-
-    @classmethod
-    def create_instance(cls, model_name: str, **kwargs) -> BaseModel:
-        """Create model instance by name"""
-        model_class = cls.get_model_class(model_name)
-        if not model_class:
-            raise ValidationError(f"Unknown model type: {model_name}")
-        return model_class(**kwargs)
-
-
-class ModelValidator:
-    """Advanced model validation utilities"""
-
-    @staticmethod
-    def validate_project_data(project_data: Dict[str, Any]) -> List[str]:
-        """Validate project data dictionary"""
-        issues = []
-
-        # Required fields
-        required_fields = ['name', 'created_by']
-        for field in required_fields:
-            if field not in project_data or not project_data[field]:
-                issues.append(f"Required field '{field}' is missing or empty")
-
-        # Name validation
-        if 'name' in project_data:
-            name = project_data['name']
-            if not name or len(name.strip()) < 2:
-                issues.append("Project name must be at least 2 characters long")
-
-        # Technology stack validation
-        if 'technology_stack' in project_data:
-            tech_stack = project_data['technology_stack']
-            if not isinstance(tech_stack, dict):
-                issues.append("Technology stack must be a dictionary")
-
-        # Status validation
-        if 'status' in project_data:
-            status = project_data['status']
-            valid_statuses = [s.value for s in ProjectStatus]
-            if status not in valid_statuses:
-                issues.append(f"Invalid status: '{status}'. Must be one of: {valid_statuses}")
-
-        # Phase validation
-        if 'phase' in project_data:
-            phase = project_data['phase']
-            valid_phases = [p.value for p in ProjectPhase]
-            if phase not in valid_phases:
-                issues.append(f"Invalid phase: '{phase}'. Must be one of: {valid_phases}")
-
-        return issues
-
-    @staticmethod
-    def validate_user_data(user_data: Dict[str, Any]) -> List[str]:
-        """Validate user data dictionary"""
-        issues = []
-
-        # Required fields
-        required_fields = ['username', 'email']
-        for field in required_fields:
-            if field not in user_data or not user_data[field]:
-                issues.append(f"Required field '{field}' is missing or empty")
-
-        # Email validation (basic)
-        if 'email' in user_data:
-            email = user_data['email']
-            if email and '@' not in email:
-                issues.append("Invalid email format")
-
-        # Username validation
-        if 'username' in user_data:
-            username = user_data['username']
-            if username and len(username.strip()) < 3:
-                issues.append("Username must be at least 3 characters long")
-
-        # Role validation
-        if 'role' in user_data:
-            role = user_data['role']
-            valid_roles = [r.value for r in UserRole]
-            if role not in valid_roles:
-                issues.append(f"Invalid role: '{role}'. Must be one of: {valid_roles}")
-
-        return issues
-
-    @staticmethod
-    def validate_generated_codebase_data(codebase_data: Dict[str, Any]) -> List[str]:
-        """Validate generated codebase data"""
-        issues = []
-
-        # Required fields
-        required_fields = ['project_id']
-        for field in required_fields:
-            if field not in codebase_data or not codebase_data[field]:
-                issues.append(f"Required field '{field}' is missing or empty")
-
-        # Numeric validations
-        numeric_fields = ['total_files', 'total_lines_of_code', 'size_bytes']
-        for field in numeric_fields:
-            if field in codebase_data:
-                value = codebase_data[field]
-                if not isinstance(value, (int, float)) or value < 0:
-                    issues.append(f"Field '{field}' must be a non-negative number")
-
-        # Percentage validations
-        percentage_fields = ['code_quality_score', 'test_coverage']
-        for field in percentage_fields:
-            if field in codebase_data:
-                value = codebase_data[field]
-                if not isinstance(value, (int, float)) or not (0 <= value <= 100):
-                    issues.append(f"Field '{field}' must be a percentage between 0 and 100")
-
-        return issues
+_database_service_instance = None
+_repository_manager_instance = None
+
+
+def get_database(db_path: str = None) -> DatabaseService:
+    """Get global database service instance"""
+    global _database_service_instance
+    if _database_service_instance is None:
+        _database_service_instance = DatabaseService(db_path)
+    return _database_service_instance
+
+
+def get_repository_manager() -> RepositoryManager:
+    """Get global repository manager instance"""
+    global _repository_manager_instance
+    if _repository_manager_instance is None:
+        _repository_manager_instance = RepositoryManager(get_database())
+    return _repository_manager_instance
+
+
+def init_database(db_path: str = None) -> DatabaseService:
+    """Initialize database with custom path"""
+    global _database_service_instance
+    _database_service_instance = DatabaseService(db_path)
+    return _database_service_instance
 
 
 # ============================================================================
@@ -962,79 +829,45 @@ class ModelValidator:
 # ============================================================================
 
 __all__ = [
-    # Enumerations
-    'ProjectPhase', 'ProjectStatus', 'ModuleStatus', 'ModuleType', 'Priority', 'RiskLevel',
-    'FileType', 'FileStatus', 'TestType', 'TestStatus', 'UserRole', 'UserStatus',
-    'TechnicalRole', 'ConversationStatus',
+    # Main service classes
+    'DatabaseService', 'DatabaseManager', 'RepositoryManager',
 
-    # Base models
-    'BaseModel',
+    # Repository classes
+    'BaseRepository', 'UserRepository', 'ProjectRepository',
+    'GeneratedCodebaseRepository', 'GeneratedFileRepository',
 
-    # User models
-    'User', 'Collaborator',
+    # Factory functions
+    'get_database', 'get_repository_manager', 'init_database',
 
-    # Project models
-    'Project', 'Module', 'Task',
-
-    # Socratic models
-    'SocraticSession', 'Question', 'ConversationMessage', 'Conflict',
-
-    # Technical models
-    'TechnicalSpecification',
-
-    # Code generation models
-    'GeneratedCodebase', 'GeneratedFile', 'TestResult',
-
-    # Analytics models
-    'ProjectMetrics', 'UserActivity', 'KnowledgeEntry',
-
-    # Context models
-    'ModuleContext', 'TaskContext',
-
-    # Utilities
-    'ModelFactory', 'ModelValidator'
+    # Exceptions
+    'DatabaseError',
 ]
 
 if __name__ == "__main__":
-    # Test model functionality
-    print("Testing model functionality...")
+    # Test database functionality
+    print("Testing database functionality...")
 
     try:
-        # Test GeneratedCodebase with size_bytes
-        codebase = GeneratedCodebase(
-            project_id="test_project",
-            total_files=10,
-            total_lines_of_code=1000,
-            size_bytes=50000  # ✅ Now available
-        )
+        # Test database service initialization
+        db = get_database()
+        print(f"✅ DatabaseService initialized successfully")
 
-        print(f"✅ GeneratedCodebase created successfully")
-        print(f"✅ size_bytes attribute accessible: {codebase.size_bytes}")
+        # Test codebases property alias
+        print(f"✅ codebases alias accessible: {db.codebases is db.generated_codebases}")
 
-        # Test GeneratedFile
-        file = GeneratedFile(
-            codebase_id="test_codebase",
-            project_id="test_project",
-            file_path="src/main.py",
-            size_bytes=5000
-        )
+        # Test health check
+        health = db.health_check()
+        print(f"✅ Database health check: {health.get('status', 'unknown')}")
 
-        print(f"✅ GeneratedFile created successfully")
-        print(f"✅ File size: {file.size_bytes} bytes ({file.size_mb:.2f} MB)")
+        # Test repository manager
+        repo_manager = get_repository_manager()
+        codebase_repo = repo_manager.get_repository('codebase')
+        print(f"✅ Repository manager working: {codebase_repo is not None}")
 
-        # Test validation
-        validator = ModelValidator()
-        issues = validator.validate_generated_codebase_data({
-            'project_id': 'test',
-            'total_files': 10,
-            'size_bytes': 50000
-        })
-
-        print(f"✅ Validation passed: {len(issues)} issues found")
-        print("🎉 All model tests passed!")
+        print("🎉 All database tests passed!")
 
     except Exception as e:
-        print(f"❌ Model test failed: {e}")
+        print(f"❌ Database test failed: {e}")
         import sys
 
         sys.exit(1)

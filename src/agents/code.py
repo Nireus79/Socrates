@@ -84,27 +84,19 @@ except ImportError:
         JAVASCRIPT = "javascript"
         HTML = "html"
         CSS = "css"
-        JSON = "json"
         SQL = "sql"
-        YAML = "yaml"
-        DOCKERFILE = "dockerfile"
 
 
     class TestType(Enum):
         UNIT = "unit"
         INTEGRATION = "integration"
-        E2E = "e2e"
-        SECURITY = "security"
-        PERFORMANCE = "performance"
+        FUNCTIONAL = "functional"
 
 
     class ProjectPhase(Enum):
         PLANNING = "planning"
-        ANALYSIS = "analysis"
-        DESIGN = "design"
-        IMPLEMENTATION = "implementation"
+        DEVELOPMENT = "development"
         TESTING = "testing"
-        DEPLOYMENT = "deployment"
 
 
     class ModelValidator:
@@ -129,7 +121,6 @@ except ImportError:
         def __init__(self, **kwargs):
             for k, v in kwargs.items():
                 setattr(self, k, v)
-            self.generated_files = getattr(self, 'generated_files', [])
 
 
     class GeneratedFile:
@@ -149,933 +140,439 @@ except ImportError:
             self.agent_id = agent_id
             self.name = name
             self.logger = get_logger(agent_id)
-            self.claude_client = None
 
         def _error_response(self, message, error_code=None):
             return {'success': False, 'error': message}
 
+        def _success_response(self, message, data=None):
+            return {'success': True, 'message': message, 'data': data or {}}
+
 
     def require_authentication(func):
-        return func
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
 
 
     def require_project_access(func):
-        return func
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
 
 
     def log_agent_action(func):
-        return func
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
 
 
 class CodeGeneratorAgent(BaseAgent):
-    """
-    Enhanced code generation agent with architecture design and testing
-
-    Absorbs: ArchitecturalDesignerAgent + TestingService capabilities
-    Capabilities: Complete multi-file code generation, testing, error correction
-    """
+    """Enhanced code generation agent with multi-file architecture support"""
 
     def __init__(self):
-        """Initialize CodeGeneratorAgent with corrected patterns"""
-        super().__init__("code_generator", "Code Generator")
+        super().__init__("code_generator", "Code Generator Agent")
+        self.db_service = get_database()
+        self.event_bus = get_event_bus()
 
-        # Database service initialization (corrected pattern)
-        self.db_service = get_database() if CORE_AVAILABLE else None
+        # Code generation settings
+        self.supported_frameworks = {
+            'backend': ['flask', 'fastapi', 'django', 'express'],
+            'frontend': ['react', 'vue', 'angular', 'vanilla'],
+            'database': ['sqlite', 'postgresql', 'mysql', 'mongodb'],
+            'testing': ['pytest', 'unittest', 'jest', 'mocha']
+        }
 
-        # Event bus for code generation events
-        self.events = get_event_bus() if CORE_AVAILABLE else None
-
-        # Load templates and frameworks
-        self.supported_frameworks = self._load_framework_templates()
-        self.test_frameworks = self._load_test_frameworks()
-        self.code_templates = self._load_code_templates()
-        self.architecture_patterns = self._load_architecture_patterns()
-
-        # Initialize logging
-        if self.logger:
-            self.logger.info(f"CodeGeneratorAgent initialized successfully")
-
-    def get_capabilities(self) -> List[str]:
-        """Return list of capabilities this agent provides"""
-        return [
-            "generate_project_files", "design_architecture", "generate_tests",
-            "run_isolated_tests", "analyze_test_results", "fix_code_issues",
-            "optimize_performance", "security_scan", "generate_documentation",
-            "create_deployment_config", "validate_code_quality", "create_codebase"
-        ]
-
-    def _load_framework_templates(self) -> Dict[str, Dict[str, Any]]:
-        """Load templates for different frameworks"""
-        return {
-            "flask_api": {
-                "language": "python",
-                "dependencies": ["flask", "flask-cors", "flask-sqlalchemy"],
-                "structure": {
-                    "app.py": "main_application",
-                    "models/": "directory",
-                    "routes/": "directory",
-                    "services/": "directory",
-                    "config.py": "configuration",
-                    "requirements.txt": "dependencies"
-                },
-                "patterns": ["mvc", "restful_api"]
+        # File structure templates
+        self.architecture_patterns = {
+            'mvc': {
+                'directories': ['models', 'views', 'controllers', 'static', 'templates', 'tests'],
+                'core_files': ['app.py', 'config.py', 'requirements.txt']
             },
-            "react_frontend": {
-                "language": "javascript",
-                "dependencies": ["react", "react-dom", "react-router-dom"],
-                "structure": {
-                    "src/": "directory",
-                    "src/components/": "directory",
-                    "src/pages/": "directory",
-                    "src/services/": "directory",
-                    "public/": "directory",
-                    "package.json": "dependencies"
-                },
-                "patterns": ["component_based", "spa"]
+            'microservices': {
+                'directories': ['services', 'api', 'shared', 'tests', 'docker'],
+                'core_files': ['main.py', 'docker-compose.yml', 'requirements.txt']
             },
-            "fastapi": {
-                "language": "python",
-                "dependencies": ["fastapi", "uvicorn", "sqlalchemy", "pydantic"],
-                "structure": {
-                    "main.py": "main_application",
-                    "models/": "directory",
-                    "routers/": "directory",
-                    "schemas/": "directory",
-                    "database.py": "database_config"
-                },
-                "patterns": ["async_api", "typed_api"]
-            },
-            "node_express": {
-                "language": "javascript",
-                "dependencies": ["express", "cors", "helmet", "morgan"],
-                "structure": {
-                    "server.js": "main_application",
-                    "routes/": "directory",
-                    "middleware/": "directory",
-                    "models/": "directory",
-                    "controllers/": "directory"
-                },
-                "patterns": ["mvc", "middleware_based"]
+            'layered': {
+                'directories': ['presentation', 'business', 'data', 'tests'],
+                'core_files': ['app.py', 'config.py', 'requirements.txt']
             }
         }
 
-    def _load_test_frameworks(self) -> Dict[str, Dict[str, Any]]:
-        """Load testing framework configurations"""
-        return {
-            "python": {
-                "unit": "pytest",
-                "integration": "pytest",
-                "e2e": "selenium",
-                "performance": "locust",
-                "security": "bandit"
-            },
-            "javascript": {
-                "unit": "jest",
-                "integration": "supertest",
-                "e2e": "cypress",
-                "performance": "lighthouse",
-                "security": "eslint-plugin-security"
-            }
-        }
-
-    def _load_code_templates(self) -> Dict[str, str]:
-        """Load code generation templates"""
-        return {
-            "flask_app": '''
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app)
-
-@app.route('/api/health')
-def health_check():
-    return jsonify({"status": "healthy", "timestamp": "{{ timestamp }}"})
-
-@app.route('/api/{{ resource }}', methods=['GET', 'POST'])
-def {{ resource }}_handler():
-    if request.method == 'GET':
-        return jsonify({"{{ resource }}": []})
-    elif request.method == 'POST':
-        data = request.json
-        return jsonify({"message": "{{ resource }} created", "data": data})
-
-if __name__ == '__main__':
-    app.run(debug=True)
-''',
-            "react_component": '''
-import React, { useState, useEffect } from 'react';
-
-const {{ ComponentName }} = () => {
-    const [{{ stateName }}, set{{ StateName }}] = useState({{ defaultValue }});
-
-    useEffect(() => {
-        // Initialize component
-        fetch('/api/{{ resource }}')
-            .then(response => response.json())
-            .then(data => set{{ StateName }}(data.{{ resource }}))
-            .catch(error => console.error('Error:', error));
-    }, []);
-
-    return (
-        <div className="{{ componentClass }}">
-            <h2>{{ title }}</h2>
-            {{{ stateName }}.map(item => (
-                <div key={item.id} className="item">
-                    {item.name}
-                </div>
-            ))}
-        </div>
-    );
-};
-
-export default {{ ComponentName }};
-''',
-            "test_template": '''
-import pytest
-from {{ module_name }} import {{ class_name }}
-
-class Test{{ ClassNameName }}:
-    def setup_method(self):
-        """Set up test fixtures"""
-        self.{{ instance_name }} = {{ class_name }}()
-
-    def test_{{ method_name }}_success(self):
-        """Test successful {{ method_name }} operation"""
-        result = self.{{ instance_name }}.{{ method_name }}({{ test_params }})
-        assert result is not None
-        assert result.get('success') == True
-
-    def test_{{ method_name }}_error_handling(self):
-        """Test error handling for {{ method_name }}"""
-        with pytest.raises({{ exception_type }}):
-            self.{{ instance_name }}.{{ method_name }}({{ invalid_params }})
-'''
-        }
-
-    def _load_architecture_patterns(self) -> Dict[str, Dict[str, Any]]:
-        """Load architecture pattern definitions"""
-        return {
-            "mvc": {
-                "description": "Model-View-Controller pattern",
-                "structure": ["models/", "views/", "controllers/"],
-                "benefits": ["separation_of_concerns", "testability", "maintainability"]
-            },
-            "microservices": {
-                "description": "Microservices architecture",
-                "structure": ["services/", "gateway/", "shared/"],
-                "benefits": ["scalability", "independence", "technology_diversity"]
-            },
-            "layered": {
-                "description": "Layered architecture",
-                "structure": ["presentation/", "business/", "data/"],
-                "benefits": ["clear_dependencies", "modularity", "testability"]
-            },
-            "hexagonal": {
-                "description": "Hexagonal/Ports and Adapters",
-                "structure": ["core/", "adapters/", "ports/"],
-                "benefits": ["testability", "flexibility", "isolation"]
-            }
-        }
+        self.logger.info("CodeGeneratorAgent initialized with enhanced multi-file support")
 
     @require_authentication
     @require_project_access
     @log_agent_action
-    def _design_architecture(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Design system architecture based on project requirements"""
-        project_id = data.get('project_id')  # Initialize early
-        username = data.get('username')  # Initialize early
+    def generate_codebase(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Generate complete codebase with architecture, files, and tests
 
-        try:
-            architecture_type = data.get('architecture_type', 'mvc')
-            technology_stack = data.get('technology_stack', {})
-
-            # Get project for context
-            project = self.db_service.projects.get_by_id(project_id)
-            if not project:
-                self.logger.warning(f"Architecture design failed: Project {project_id} not found")
-                raise ValidationError("Project not found")
-
-            # Analyze requirements for architecture decisions
-            requirements = getattr(project, 'requirements', [])
-            constraints = getattr(project, 'constraints', [])
-
-            # Design architecture based on requirements
-            architecture = self._create_architecture_design(
-                architecture_type, technology_stack, requirements, constraints
-            )
-
-            # Generate technical specification
-            tech_spec = self._create_technical_specification(project, architecture)
-
-            # Save architecture design
-            architecture_doc = {
-                'project_id': project_id,
-                'architecture_type': architecture_type,
-                'technology_stack': technology_stack,
-                'design': architecture,
-                'technical_specification': tech_spec,
-                'created_by': username,
-                'created_at': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+        Args:
+            request_data: {
+                'project_id': str,
+                'user_id': str,
+                'specifications': TechnicalSpecification,
+                'architecture': str,
+                'framework_preferences': Dict[str, str],
+                'generate_tests': bool,
+                'include_documentation': bool
             }
 
-            # Emit architecture design event
-            if self.events:
-                self.events.emit('architecture_designed', 'code_generator', {
+        Returns:
+            Dict with generated codebase information
+        """
+        try:
+            # Validate request
+            project_id = request_data.get('project_id')
+            user_id = request_data.get('user_id')
+            specs = request_data.get('specifications')
+
+            if not all([project_id, user_id, specs]):
+                return self._error_response("Missing required parameters", "MISSING_PARAMS")
+
+            # Get project details
+            if self.db_service:
+                project = self.db_service.projects.get_by_id(project_id)
+                if not project:
+                    return self._error_response("Project not found", "PROJECT_NOT_FOUND")
+            else:
+                # Fallback when database not available
+                project = Project(project_id=project_id, name="Generated Project")
+
+            # Design architecture
+            architecture = self._design_architecture(specs, request_data.get('architecture', 'mvc'))
+
+            # Generate file structure
+            file_structure = self._generate_file_structure(architecture, request_data.get('framework_preferences', {}))
+
+            # Generate all files
+            generated_files = self._generate_all_files(project, specs, architecture, file_structure)
+
+            # Generate tests if requested
+            if request_data.get('generate_tests', True):
+                test_files = self._generate_test_files(project, generated_files, architecture)
+                generated_files.extend(test_files)
+
+            # Create codebase record
+            codebase = self._create_codebase_record(project, architecture, generated_files)
+
+            # Store in database
+            if self.db_service and hasattr(self.db_service, 'codebases'):
+                saved_codebase = self.db_service.codebases.create(codebase)
+                codebase_id = getattr(saved_codebase, 'id', str(codebase.id))
+            else:
+                codebase_id = str(codebase.id)
+
+            # Generate documentation if requested
+            documentation = {}
+            if request_data.get('include_documentation', True):
+                documentation = self._generate_documentation(project, architecture, generated_files)
+
+            # Fire event
+            if self.event_bus:
+                self.event_bus.emit('codebase_generated', self.agent_id, {
+                    'codebase_id': codebase_id,
                     'project_id': project_id,
-                    'architecture_type': architecture_type,
-                    'component_count': len(architecture.get('components', [])),
-                    'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                    'user_id': user_id,
+                    'file_count': len(generated_files)
                 })
 
-            self.logger.info(f"Architecture designed for project {project_id}: {architecture_type}")
-
-            return {
-                'success': True,
-                'project_id': project_id,
+            return self._success_response({
+                'message': "Codebase generated successfully",
+                'codebase_id': codebase_id,
                 'architecture': architecture,
-                'technical_specification': tech_spec,
-                'architecture_document': architecture_doc,
-                'designed_at': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-            }
+                'file_count': len(generated_files),
+                'files': [self._file_summary(f) for f in generated_files],
+                'documentation': documentation,
+                'next_steps': self._get_next_steps(architecture)
+            })
 
-        except ValidationError:
-            raise
         except Exception as e:
-            self.logger.error(f"Error designing architecture for project {project_id or 'unknown'}: {e}")
-            return self._error_response(f"Failed to design architecture: {str(e)}")
+            error_msg = f"Code generation failed: {str(e)}"
+            self.logger.error(error_msg)
+            return self._error_response(error_msg, "GENERATION_FAILED")
 
-    def _create_architecture_design(self, arch_type: str, tech_stack: Dict, requirements: List, constraints: List) -> \
-    Dict[str, Any]:
-        """Create detailed architecture design"""
+    def _design_architecture(self, specs: TechnicalSpecification, pattern: str) -> Dict[str, Any]:
+        """Design system architecture based on specifications"""
         try:
-            pattern = self.architecture_patterns.get(arch_type, self.architecture_patterns['mvc'])
+            # Get base pattern
+            base_pattern = self.architecture_patterns.get(pattern, self.architecture_patterns['mvc'])
+
+            # Analyze requirements for architecture decisions
+            requirements = getattr(specs, 'requirements', [])
+            scale_requirements = self._analyze_scale_requirements(requirements)
 
             architecture = {
-                'pattern': arch_type,
-                'description': pattern['description'],
-                'technology_stack': tech_stack,
+                'pattern': pattern,
+                'directories': base_pattern['directories'].copy(),
+                'core_files': base_pattern['core_files'].copy(),
                 'components': [],
-                'data_flow': [],
-                'security_considerations': [],
-                'scalability_plan': {},
-                'deployment_strategy': {}
+                'services': [],
+                'database_design': {},
+                'api_design': {},
+                'security_measures': [],
+                'performance_optimizations': []
             }
 
-            # Define components based on pattern
-            if arch_type == 'mvc':
-                architecture['components'] = [
-                    {'name': 'Models', 'responsibility': 'Data management and business logic'},
-                    {'name': 'Views', 'responsibility': 'User interface and presentation'},
-                    {'name': 'Controllers', 'responsibility': 'Request handling and coordination'}
-                ]
-            elif arch_type == 'microservices':
-                architecture['components'] = [
-                    {'name': 'API Gateway', 'responsibility': 'Request routing and authentication'},
-                    {'name': 'User Service', 'responsibility': 'User management operations'},
-                    {'name': 'Data Service', 'responsibility': 'Data processing and storage'},
-                    {'name': 'Notification Service', 'responsibility': 'Event notifications'}
-                ]
-            elif arch_type == 'layered':
-                architecture['components'] = [
-                    {'name': 'Presentation Layer', 'responsibility': 'User interface and API endpoints'},
-                    {'name': 'Business Layer', 'responsibility': 'Business logic and rules'},
-                    {'name': 'Data Layer', 'responsibility': 'Data access and persistence'}
-                ]
+            # Add components based on requirements
+            self._add_architecture_components(architecture, requirements, scale_requirements)
 
-            # Add security considerations
-            architecture['security_considerations'] = [
-                'Input validation and sanitization',
-                'Authentication and authorization',
-                'HTTPS/TLS encryption',
-                'SQL injection prevention',
-                'XSS protection'
-            ]
+            # Design database schema
+            architecture['database_design'] = self._design_database_schema(specs)
 
-            # Add scalability planning
-            architecture['scalability_plan'] = {
-                'horizontal_scaling': 'Load balancer with multiple instances',
-                'database_scaling': 'Read replicas and connection pooling',
-                'caching_strategy': 'Redis for session and data caching',
-                'cdn_usage': 'Static asset delivery via CDN'
-            }
+            # Design API structure
+            architecture['api_design'] = self._design_api_structure(specs)
+
+            # Add security measures
+            architecture['security_measures'] = self._design_security_measures(specs)
 
             return architecture
 
         except Exception as e:
-            self.logger.error(f"Error creating architecture design: {e}")
-            return {
-                'pattern': arch_type,
-                'error': str(e),
-                'components': [],
-                'data_flow': []
-            }
-
-    def _create_technical_specification(self, project: Project, architecture: Dict[str, Any]) -> Dict[str, Any]:
-        """Create comprehensive technical specification"""
-        try:
-            tech_spec = {
-                'project_overview': {
-                    'name': getattr(project, 'name', 'Unknown Project'),
-                    'description': getattr(project, 'description', ''),
-                    'requirements': getattr(project, 'requirements', []),
-                    'constraints': getattr(project, 'constraints', [])
-                },
-                'architecture': architecture,
-                'implementation_plan': {
-                    'phases': [
-                        {'phase': 'setup', 'description': 'Environment and project setup'},
-                        {'phase': 'backend', 'description': 'API and business logic implementation'},
-                        {'phase': 'frontend', 'description': 'User interface development'},
-                        {'phase': 'integration', 'description': 'System integration and testing'},
-                        {'phase': 'deployment', 'description': 'Production deployment setup'}
-                    ],
-                    'estimated_timeline': '4-6 weeks for MVP'
-                },
-                'technology_decisions': architecture.get('technology_stack', {}),
-                'testing_strategy': {
-                    'unit_tests': 'Comprehensive unit test coverage for all components',
-                    'integration_tests': 'API endpoint and service integration testing',
-                    'e2e_tests': 'End-to-end user workflow testing',
-                    'performance_tests': 'Load testing for scalability validation'
-                },
-                'deployment_requirements': {
-                    'minimum_requirements': 'Python 3.8+, Node.js 14+, Database',
-                    'recommended_setup': 'Docker containers with orchestration',
-                    'monitoring': 'Application and infrastructure monitoring',
-                    'backup_strategy': 'Automated database backups'
-                }
-            }
-
-            return tech_spec
-
-        except Exception as e:
-            self.logger.error(f"Error creating technical specification: {e}")
-            return {'error': str(e)}
-
-    @require_authentication
-    @require_project_access
-    @log_agent_action
-    def _generate_project_files(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate complete multi-file project structure"""
-        project_id = data.get('project_id')  # Initialize early
-        username = data.get('username')  # Initialize early
-
-        try:
-            architecture = data.get('architecture', {})
-            output_format = data.get('output_format', 'organized')  # organized, zip, repository
-
-            # Get project for context
-            project = self.db_service.projects.get_by_id(project_id)
-            if not project:
-                self.logger.warning(f"File generation failed: Project {project_id} not found")
-                raise ValidationError("Project not found")
-
-            # Validate architecture
-            if not architecture:
-                # Use default architecture if none provided
-                architecture = self._create_architecture_design('mvc', {}, [], [])
-
-            # Generate file structure
-            file_structure = self._plan_file_structure(architecture)
-
-            # Generate all project files
-            generated_files = self._generate_all_files(project, architecture, file_structure)
-
-            # Create codebase record
-            codebase = GeneratedCodebase(
-                id=f"codebase_{project_id}_{int(DateTimeHelper.now().timestamp())}",
-                project_id=project_id,
-                architecture_pattern=architecture.get('pattern', 'mvc'),
-                technology_stack=architecture.get('technology_stack', {}),
-                generated_files=generated_files,
-                file_count=len(generated_files),
-                size_bytes=sum(getattr(f, 'size_bytes', 0) for f in generated_files),
-                generation_status='completed',
-                created_by=username,
-                created_at=DateTimeHelper.now(),  # Rule #7: Use DateTimeHelper
-                updated_at=DateTimeHelper.now()
-            )
-
-            # Save codebase to database
-            success = self.db_service.codebases.create(codebase)
-            if not success:
-                self.logger.error(f"Failed to save generated codebase: {project_id}")
-                raise Exception("Failed to save generated codebase")
-
-            # Generate documentation
-            documentation = self._generate_project_documentation(project, architecture, generated_files)
-
-            # Emit code generation event
-            if self.events:
-                self.events.emit('project_files_generated', 'code_generator', {
-                    'project_id': project_id,
-                    'codebase_id': codebase.id,
-                    'file_count': len(generated_files),
-                    'total_size': codebase.size_bytes,
-                    'architecture': architecture.get('pattern'),
-                    'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-                })
-
-            self.logger.info(
-                f"Project files generated for {project_id}: {len(generated_files)} files, {codebase.size_bytes} bytes")
-
-            return {
-                'success': True,
-                'project_id': project_id,
-                'codebase_id': codebase.id,
-                'generated_files': [self._serialize_file(f) for f in generated_files],
-                'file_count': len(generated_files),
-                'total_size': codebase.size_bytes,
-                'documentation': documentation,
-                'file_structure': file_structure,
-                'generated_at': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-            }
-
-        except ValidationError:
+            self.logger.error(f"Architecture design failed: {e}")
             raise
-        except Exception as e:
-            self.logger.error(f"Error generating project files for {project_id or 'unknown'}: {e}")
-            return self._error_response(f"Failed to generate project files: {str(e)}")
 
-    def _plan_file_structure(self, architecture: Dict[str, Any]) -> Dict[str, Any]:
-        """Plan organized file structure based on architecture"""
+    def _analyze_scale_requirements(self, requirements: List[str]) -> Dict[str, Any]:
+        """Analyze scale and performance requirements"""
+        scale_indicators = {
+            'high_traffic': any('traffic' in req.lower() or 'users' in req.lower() for req in requirements),
+            'real_time': any('real-time' in req.lower() or 'live' in req.lower() for req in requirements),
+            'data_intensive': any('data' in req.lower() or 'analytics' in req.lower() for req in requirements),
+            'multi_user': any('multi' in req.lower() or 'concurrent' in req.lower() for req in requirements)
+        }
+
+        return {
+            'estimated_scale': 'large' if scale_indicators['high_traffic'] else 'medium',
+            'needs_caching': scale_indicators['high_traffic'] or scale_indicators['data_intensive'],
+            'needs_queue': scale_indicators['real_time'] or scale_indicators['high_traffic'],
+            'needs_load_balancing': scale_indicators['high_traffic'] or scale_indicators['multi_user']
+        }
+
+    def _generate_file_structure(self, architecture: Dict[str, Any], framework_prefs: Dict[str, str]) -> Dict[
+        str, List[str]]:
+        """Generate detailed file structure"""
+        structure = {
+            'backend': [],
+            'frontend': [],
+            'database': [],
+            'tests': [],
+            'config': [],
+            'documentation': []
+        }
+
+        # Backend files
+        backend_framework = framework_prefs.get('backend', 'flask')
+        structure['backend'].extend(self._get_backend_files(architecture, backend_framework))
+
+        # Frontend files
+        frontend_framework = framework_prefs.get('frontend', 'react')
+        structure['frontend'].extend(self._get_frontend_files(architecture, frontend_framework))
+
+        # Database files
+        database_type = framework_prefs.get('database', 'sqlite')
+        structure['database'].extend(self._get_database_files(architecture, database_type))
+
+        # Configuration files
+        structure['config'].extend(self._get_config_files(architecture, framework_prefs))
+
+        # Documentation files
+        structure['documentation'].extend(['README.md', 'API.md', 'SETUP.md'])
+
+        return structure
+
+    def _get_backend_files(self, architecture: Dict[str, Any], framework: str) -> List[str]:
+        """Generate backend file list based on architecture and framework"""
+        files = []
+
+        if framework == 'flask':
+            files.extend([
+                'app.py',
+                'config.py',
+                'models/__init__.py',
+                'controllers/__init__.py',
+                'services/__init__.py',
+                'utils/__init__.py'
+            ])
+
+            # Add model files based on database design
+            db_design = architecture.get('database_design', {})
+            for table_name in db_design.get('tables', []):
+                files.append(f'models/{table_name.lower()}.py')
+
+            # Add controller files based on API design
+            api_design = architecture.get('api_design', {})
+            for endpoint_group in api_design.get('endpoint_groups', []):
+                files.append(f'controllers/{endpoint_group.lower()}_controller.py')
+
+        elif framework == 'fastapi':
+            files.extend([
+                'main.py',
+                'config.py',
+                'models/__init__.py',
+                'routers/__init__.py',
+                'services/__init__.py',
+                'dependencies.py'
+            ])
+
+        return files
+
+    def _get_frontend_files(self, architecture: Dict[str, Any], framework: str) -> List[str]:
+        """Generate frontend file list"""
+        files = []
+
+        if framework == 'react':
+            files.extend([
+                'src/App.js',
+                'src/index.js',
+                'src/components/Layout.js',
+                'src/services/api.js',
+                'public/index.html',
+                'package.json'
+            ])
+
+            # Add component files based on UI requirements
+            components = architecture.get('components', [])
+            for component in components:
+                files.append(f'src/components/{component}.js')
+
+        elif framework == 'vue':
+            files.extend([
+                'src/App.vue',
+                'src/main.js',
+                'src/router/index.js',
+                'src/store/index.js',
+                'public/index.html',
+                'package.json'
+            ])
+
+        return files
+
+    def _get_database_files(self, architecture: Dict[str, Any], db_type: str) -> List[str]:
+        """Generate database-related files"""
+        files = []
+
+        if db_type in ['postgresql', 'mysql']:
+            files.extend([
+                'migrations/__init__.py',
+                'migrations/001_initial.sql',
+                'database/schema.sql',
+                'database/seed_data.sql'
+            ])
+        elif db_type == 'sqlite':
+            files.extend([
+                'database/database.db',
+                'database/init_db.py'
+            ])
+
+        return files
+
+    def _get_config_files(self, architecture: Dict[str, Any], framework_prefs: Dict[str, str]) -> List[str]:
+        """Generate configuration files"""
+        files = [
+            'requirements.txt',
+            '.env.example',
+            '.gitignore',
+            'Dockerfile'
+        ]
+
+        # Add framework-specific config files
+        if framework_prefs.get('frontend') in ['react', 'vue', 'angular']:
+            files.append('package.json')
+
+        if architecture.get('pattern') == 'microservices':
+            files.append('docker-compose.yml')
+
+        return files
+
+    def _generate_all_files(self, project: Project, specs: TechnicalSpecification,
+                            architecture: Dict[str, Any], file_structure: Dict[str, List[str]]) -> List[GeneratedFile]:
+        """Generate content for all files"""
+        generated_files = []
+
         try:
-            pattern = architecture.get('pattern', 'mvc')
-            tech_stack = architecture.get('technology_stack', {})
+            for category, files in file_structure.items():
+                for file_path in files:
+                    content = self._generate_file_content(project, specs, architecture, file_path, category)
+                    if content:
+                        generated_file = GeneratedFile(
+                            codebase_id="",  # Will be set when codebase is created
+                            project_id=getattr(project, 'id', 'unknown'),
+                            file_path=file_path,
+                            content=content,
+                            file_type=self._determine_file_type(file_path),
+                            size_bytes=len(content.encode('utf-8')),
+                            generated_at=DateTimeHelper.now()
+                        )
+                        generated_files.append(generated_file)
 
-            structure = {
-                'backend/': {
-                    'app.py': 'main_application',
-                    'models/': {
-                        '__init__.py': 'module_init',
-                        'user.py': 'user_model',
-                        'project.py': 'project_model'
-                    },
-                    'routes/': {
-                        '__init__.py': 'module_init',
-                        'api.py': 'api_routes',
-                        'auth.py': 'authentication_routes'
-                    },
-                    'services/': {
-                        '__init__.py': 'module_init',
-                        'user_service.py': 'user_business_logic',
-                        'auth_service.py': 'authentication_service'
-                    },
-                    'config.py': 'configuration',
-                    'requirements.txt': 'dependencies'
-                },
-                'frontend/': {
-                    'src/': {
-                        'components/': {
-                            'App.jsx': 'main_app_component',
-                            'Header.jsx': 'header_component',
-                            'Footer.jsx': 'footer_component'
-                        },
-                        'pages/': {
-                            'Home.jsx': 'home_page',
-                            'Login.jsx': 'login_page',
-                            'Dashboard.jsx': 'dashboard_page'
-                        },
-                        'services/': {
-                            'api.js': 'api_client',
-                            'auth.js': 'authentication_client'
-                        },
-                        'styles/': {
-                            'App.css': 'main_styles',
-                            'components.css': 'component_styles'
-                        },
-                        'index.js': 'app_entry_point'
-                    },
-                    'public/': {
-                        'index.html': 'html_template',
-                        'favicon.ico': 'favicon'
-                    },
-                    'package.json': 'dependencies'
-                },
-                'database/': {
-                    'migrations/': {
-                        '001_initial.sql': 'initial_schema',
-                        '002_users.sql': 'user_tables'
-                    },
-                    'seeds/': {
-                        'sample_data.sql': 'sample_data'
-                    },
-                    'schema.sql': 'database_schema'
-                },
-                'tests/': {
-                    'backend/': {
-                        'test_models.py': 'model_tests',
-                        'test_routes.py': 'route_tests',
-                        'test_services.py': 'service_tests'
-                    },
-                    'frontend/': {
-                        'components.test.js': 'component_tests',
-                        'integration.test.js': 'integration_tests'
-                    },
-                    'e2e/': {
-                        'user_workflows.test.js': 'e2e_tests'
-                    }
-                },
-                'config/': {
-                    'docker-compose.yml': 'docker_configuration',
-                    'nginx.conf': 'nginx_configuration',
-                    '.env.example': 'environment_template'
-                },
-                'docs/': {
-                    'README.md': 'project_documentation',
-                    'API.md': 'api_documentation',
-                    'DEPLOYMENT.md': 'deployment_guide'
-                },
-                'scripts/': {
-                    'setup.sh': 'setup_script',
-                    'deploy.sh': 'deployment_script'
-                },
-                '.gitignore': 'git_ignore',
-                'README.md': 'main_readme',
-                'docker-compose.yml': 'docker_compose'
-            }
-
-            return structure
-
-        except Exception as e:
-            self.logger.error(f"Error planning file structure: {e}")
-            return {'error': str(e)}
-
-    def _generate_all_files(self, project: Project, architecture: Dict[str, Any], file_structure: Dict[str, Any]) -> \
-    List[GeneratedFile]:
-        """Generate all project files based on structure"""
-        try:
-            generated_files = []
-
-            # Flatten structure and generate files
-            file_list = self._flatten_file_structure(file_structure)
-
-            for file_path, file_purpose in file_list:
-                try:
-                    file_content = self._generate_file_content(file_path, file_purpose, project, architecture)
-                    file_type = self._determine_file_type(file_path)
-
-                    generated_file = GeneratedFile(
-                        file_id=f"file_{len(generated_files)}",
-                        codebase_id="",  # Will be set later
-                        file_path=file_path,
-                        file_type=file_type,
-                        file_purpose=file_purpose,
-                        content=file_content,
-                        dependencies=self._analyze_file_dependencies(file_content, file_path),
-                        documentation=self._generate_file_documentation(file_path, file_purpose),
-                        generated_by_agent="code_generator",
-                        version="1.0.0",
-                        size_bytes=len(file_content.encode('utf-8')),
-                        complexity_score=self._calculate_file_complexity(file_content),
-                        test_coverage=0.0,
-                        created_at=DateTimeHelper.now(),
-                        updated_at=DateTimeHelper.now()
-                    )
-
-                    generated_files.append(generated_file)
-
-                except Exception as e:
-                    self.logger.warning(f"Failed to generate file {file_path}: {e}")
-                    continue
-
-            self.logger.info(f"Generated {len(generated_files)} files successfully")
             return generated_files
 
         except Exception as e:
-            self.logger.error(f"Error generating all files: {e}")
-            return []
+            self.logger.error(f"File generation failed: {e}")
+            raise
 
-    def _flatten_file_structure(self, structure: Dict[str, Any], prefix: str = "") -> List[Tuple[str, str]]:
-        """Flatten nested file structure into list of (path, purpose) tuples"""
-        files = []
-
-        try:
-            for key, value in structure.items():
-                full_path = f"{prefix}/{key}".strip("/")
-
-                if isinstance(value, dict):
-                    # It's a directory, recurse
-                    files.extend(self._flatten_file_structure(value, full_path))
-                else:
-                    # It's a file
-                    files.append((full_path, value))
-
-            return files
-
-        except Exception as e:
-            self.logger.error(f"Error flattening file structure: {e}")
-            return []
-
-    def _generate_file_content(self, file_path: str, file_purpose: str, project: Project,
-                               architecture: Dict[str, Any]) -> str:
+    def _generate_file_content(self, project: Project, specs: TechnicalSpecification,
+                               architecture: Dict[str, Any], file_path: str, category: str) -> str:
         """Generate content for a specific file"""
         try:
-            # Use Claude for complex file generation if available
-            if self.claude_client and file_purpose not in ['module_init', 'dependencies', 'git_ignore']:
-                return self._generate_claude_file_content(file_path, file_purpose, project, architecture)
+            file_name = os.path.basename(file_path)
+            file_ext = os.path.splitext(file_name)[1]
+
+            # Determine file purpose
+            file_purpose = self._determine_file_purpose(file_path, category)
+
+            # Generate content based on file type and purpose
+            if file_ext == '.py':
+                return self._generate_python_content(project, specs, architecture, file_name, file_purpose)
+            elif file_ext == '.js':
+                return self._generate_javascript_content(project, specs, architecture, file_name, file_purpose)
+            elif file_ext == '.html':
+                return self._generate_html_content(project, specs, architecture, file_name, file_purpose)
+            elif file_ext == '.sql':
+                return self._generate_sql_content(project, specs, architecture, file_name, file_purpose)
+            elif file_ext == '.md':
+                return self._generate_markdown_content(project, specs, architecture, file_name, file_purpose)
+            elif file_ext == '.json':
+                return self._generate_json_content(project, specs, architecture, file_name, file_purpose)
+            elif file_name in ['Dockerfile', '.gitignore', '.env.example']:
+                return self._generate_config_content(project, specs, architecture, file_name, file_purpose)
             else:
-                return self._generate_template_file_content(file_path, file_purpose, project, architecture)
+                return f"# Generated file: {file_path}\n# Purpose: {file_purpose}\n"
 
         except Exception as e:
-            self.logger.warning(f"Error generating content for {file_path}: {e}")
-            return self._generate_fallback_content(file_path, file_purpose)
+            self.logger.error(f"Content generation failed for {file_path}: {e}")
+            return f"# Error generating content for {file_path}: {str(e)}\n"
 
-    def _generate_claude_file_content(self, file_path: str, file_purpose: str, project: Project,
-                                      architecture: Dict[str, Any]) -> str:
-        """Generate file content using Claude API"""
-        try:
-            prompt = f"""
-            Generate complete, production-ready code for this file:
-
-            File Path: {file_path}
-            File Purpose: {file_purpose}
-            Project Name: {getattr(project, 'name', 'Unknown Project')}
-            Project Description: {getattr(project, 'description', 'No description')}
-            Architecture Pattern: {architecture.get('pattern', 'mvc')}
-            Technology Stack: {json.dumps(architecture.get('technology_stack', {}), indent=2)}
-
-            Requirements:
-            - Production-ready code with proper error handling
-            - Clear imports and dependencies
-            - Comprehensive comments and docstrings
-            - Follow best practices for the technology
-            - Include security considerations
-            - Make it functional and complete
-            - Use modern, clean code patterns
-
-            Generate ONLY the file content, no explanations or markdown formatting.
-            """
-
-            response = self.claude_client.messages.create(
-                model="claude-3-sonnet-20240229",
-                max_tokens=4000,
-                messages=[{"role": "user", "content": prompt}]
-            )
-
-            content = response.content[0].text.strip()
-            if content:
-                return content
-            else:
-                self.logger.warning(f"Claude returned empty content for {file_path}")
-                return self._generate_template_file_content(file_path, file_purpose, project, architecture)
-
-        except Exception as e:
-            self.logger.warning(f"Claude file generation failed for {file_path}: {e}")
-            return self._generate_template_file_content(file_path, file_purpose, project, architecture)
-
-    def _generate_template_file_content(self, file_path: str, file_purpose: str, project: Project,
-                                        architecture: Dict[str, Any]) -> str:
-        """Generate file content using templates"""
-        try:
-            file_name = file_path.split('/')[-1]
-
-            # Handle specific file types
-            if file_name == 'requirements.txt':
-                return self._generate_requirements_file(architecture.get('technology_stack', {}))
-            elif file_name == '.gitignore':
-                return self._generate_gitignore_file()
-            elif file_name == 'package.json':
-                return self._generate_package_json(project, architecture)
-            elif file_name == '__init__.py':
-                return '"""Module initialization file."""\n'
-            elif file_name.endswith('.py'):
-                return self._generate_python_file(file_path, file_purpose, project)
-            elif file_name.endswith(('.js', '.jsx')):
-                return self._generate_javascript_file(file_path, file_purpose, project)
-            elif file_name.endswith('.sql'):
-                return self._generate_sql_file(file_path, file_purpose, project)
-            elif file_name.endswith('.md'):
-                return self._generate_markdown_file(file_path, file_purpose, project)
-            else:
-                return self._generate_generic_file(file_path, file_purpose, project)
-
-        except Exception as e:
-            self.logger.warning(f"Error generating template content for {file_path}: {e}")
-            return self._generate_fallback_content(file_path, file_purpose)
-
-    def _generate_generic_file(self, file_path: str, file_purpose: str, project: Project) -> str:
-        """Generate generic file content for unknown file types"""
-        file_name = file_path.split('/')[-1]
-
-        if file_name.endswith('.yml') or file_name.endswith('.yaml'):
-            return f'''# {file_purpose.replace('_', ' ').title()}
-# Configuration file for {getattr(project, 'name', 'Project')}
-
-version: '1.0'
-name: {getattr(project, 'name', 'project').lower().replace(' ', '-')}
-description: {getattr(project, 'description', 'Generated configuration')}
-
-# Add your configuration here
-settings:
-  debug: false
-  log_level: info
-'''
-        elif file_name.endswith('.conf') or file_name.endswith('.config'):
-            return f'''# {file_purpose.replace('_', ' ').title()}
-# Configuration file for {getattr(project, 'name', 'Project')}
-
-[DEFAULT]
-project_name = {getattr(project, 'name', 'Project')}
-version = 1.0.0
-
-[settings]
-debug = false
-log_level = info
-'''
-        elif file_name == 'Dockerfile':
-            return '''# Multi-stage build for production
-FROM python:3.9-slim as builder
-
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-FROM python:3.9-slim
-WORKDIR /app
-COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
-COPY . .
-
-EXPOSE 5000
-CMD ["python", "app.py"]
-'''
-        else:
-            return f'''# {file_purpose.replace('_', ' ').title()}
-# Generated file for {getattr(project, 'name', 'Project')}
-
-# TODO: Implement {file_purpose.replace('_', ' ')}
-# File: {file_path}
-# Purpose: {file_purpose}
-'''
-
-    def _generate_requirements_file(self, tech_stack: Dict[str, Any]) -> str:
-        """Generate Python requirements.txt file"""
-        requirements = [
-            "flask>=2.0.0",
-            "flask-cors>=3.0.0",
-            "flask-sqlalchemy>=2.5.0",
-            "python-dotenv>=0.19.0",
-            "pytest>=6.0.0",
-            "pytest-cov>=3.0.0"
-        ]
-
-        # Add specific dependencies based on tech stack
-        if 'database' in tech_stack:
-            db_type = tech_stack['database'].lower()
-            if 'postgres' in db_type:
-                requirements.append("psycopg2-binary>=2.9.0")
-            elif 'mysql' in db_type:
-                requirements.append("PyMySQL>=1.0.0")
-
-        return '\n'.join(requirements) + '\n'
-
-    def _generate_gitignore_file(self) -> str:
-        """Generate .gitignore file"""
-        return '''# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Database
-*.db
-*.sqlite3
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-logs/
-*.log
-
-# Build directories
-build/
-dist/
-'''
-
-    def _generate_package_json(self, project: Project, architecture: Dict[str, Any]) -> str:
-        """Generate package.json for Node.js projects"""
-        package_data = {
-            "name": getattr(project, 'name', 'project').lower().replace(' ', '-'),
-            "version": "1.0.0",
-            "description": getattr(project, 'description', 'Generated project'),
-            "main": "src/index.js",
-            "scripts": {
-                "start": "react-scripts start",
-                "build": "react-scripts build",
-                "test": "react-scripts test",
-                "eject": "react-scripts eject"
-            },
-            "dependencies": {
-                "react": "^18.0.0",
-                "react-dom": "^18.0.0",
-                "react-router-dom": "^6.0.0",
-                "axios": "^0.27.0"
-            },
-            "devDependencies": {
-                "react-scripts": "5.0.1",
-                "@testing-library/react": "^13.0.0",
-                "@testing-library/jest-dom": "^5.0.0"
-            },
-            "browserslist": {
-                "production": [">0.2%", "not dead", "not op_mini all"],
-                "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
-            }
-        }
-
-        return json.dumps(package_data, indent=2)
-
-    def _generate_python_file(self, file_path: str, file_purpose: str, project: Project) -> str:
+    def _generate_python_content(self, project: Project, specs: TechnicalSpecification,
+                                 architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
         """Generate Python file content"""
-        file_name = file_path.split('/')[-1]
-
         if 'model' in file_purpose:
             return f'''"""
-{file_purpose.replace('_', ' ').title()} for {getattr(project, 'name', 'Project')}
+{file_purpose.replace('_', ' ').title()} model for {getattr(project, 'name', 'Project')}
 """
 
 from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text
+from sqlalchemy.ext.declarative import declarative_base
 
-db = SQLAlchemy()
+Base = declarative_base()
 
-class {file_name.replace('.py', '').title()}(db.Model):
+class {file_name.replace('.py', '').title()}(Base):
     """
     {file_purpose.replace('_', ' ').title()} model
     """
     __tablename__ = '{file_name.replace('.py', '').lower()}s'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now())
+    updated_at = Column(DateTime, default=lambda: datetime.now(), onupdate=lambda: datetime.now())
 
     def to_dict(self):
         """Convert to dictionary representation"""
@@ -1111,385 +608,241 @@ def handle_data():
     elif request.method == 'POST':
         data = request.get_json()
         # Process data here
-        return jsonify({{'message': 'Data processed successfully', 'data': data}})
+        return jsonify({{'success': True, 'data': data}})
+'''
+        elif file_name == 'app.py':
+            return f'''"""
+Main application file for {getattr(project, 'name', 'Project')}
+"""
+
+from flask import Flask, jsonify
+from flask_cors import CORS
+import os
+
+def create_app():
+    """Application factory pattern"""
+    app = Flask(__name__)
+
+    # Configuration
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
+    app.config['DEBUG'] = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+
+    # Enable CORS
+    CORS(app)
+
+    # Register blueprints
+    # Add blueprint registration here
+
+    @app.route('/')
+    def index():
+        return jsonify({{'message': 'Welcome to {getattr(project, 'name', 'Project')}', 'status': 'running'}})
+
+    @app.route('/health')
+    def health():
+        return jsonify({{'status': 'healthy'}})
+
+    return app
+
+if __name__ == '__main__':
+    app = create_app()
+    app.run(debug=True, host='0.0.0.0', port=5000)
+'''
+        elif file_name == 'config.py':
+            return f'''"""
+Configuration settings for {getattr(project, 'name', 'Project')}
+"""
+
+import os
+from datetime import timedelta
+
+class Config:
+    """Base configuration"""
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///app.db'
+
+    # JWT Configuration
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret'
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+
+    # Application settings
+    APP_NAME = '{getattr(project, 'name', 'Project')}'
+    APP_VERSION = '1.0.0'
+
+class DevelopmentConfig(Config):
+    """Development configuration"""
+    DEBUG = True
+    TESTING = False
+
+class ProductionConfig(Config):
+    """Production configuration"""
+    DEBUG = False
+    TESTING = False
+
+class TestingConfig(Config):
+    """Testing configuration"""
+    DEBUG = True
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+
+config = {{
+    'development': DevelopmentConfig,
+    'production': ProductionConfig,
+    'testing': TestingConfig,
+    'default': DevelopmentConfig
+}}
 '''
         else:
             return f'''"""
-{file_purpose.replace('_', ' ').title()} for {getattr(project, 'name', 'Project')}
+{file_purpose.replace('_', ' ').title()} module for {getattr(project, 'name', 'Project')}
 """
+
+# Generated module: {file_name}
+# Purpose: {file_purpose}
 
 def main():
     """Main function"""
-    print("Hello from {file_name}")
+    pass
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
 '''
 
-    def _generate_javascript_file(self, file_path: str, file_purpose: str, project: Project) -> str:
-        """Generate JavaScript/React file content"""
-        file_name = file_path.split('/')[-1]
-
-        if 'component' in file_purpose:
-            component_name = file_name.replace('.jsx', '').replace('.js', '')
-            return f'''import React, {{ useState, useEffect }} from 'react';
-import './styles/{component_name}.css';
-
-const {component_name} = () => {{
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {{
-        // Load data
-        fetchData();
-    }}, []);
-
-    const fetchData = async () => {{
-        try {{
-            setLoading(true);
-            const response = await fetch('/api/data');
-            const result = await response.json();
-            setData(result.data || []);
-        }} catch (error) {{
-            console.error('Error fetching data:', error);
-        }} finally {{
-            setLoading(false);
-        }}
-    }};
-
-    if (loading) {{
-        return <div className="loading">Loading...</div>;
-    }}
-
-    return (
-        <div className="{component_name.lower()}">
-            <h2>{component_name}</h2>
-            <div className="content">
-                {{data.length > 0 ? (
-                    <ul>
-                        {{data.map((item, index) => (
-                            <li key={{index}}>{{item.name || item}}</li>
-                        ))}}
-                    </ul>
-                ) : (
-                    <p>No data available</p>
-                )}}
-            </div>
-        </div>
-    );
-}};
-
-export default {component_name};
-'''
-        else:
-            return f'''/**
- * {file_purpose.replace('_', ' ').title()} for {getattr(project, 'name', 'Project')}
- */
-
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-
-export const apiClient = {{
-    get: async (endpoint) => {{
-        try {{
-            const response = await fetch(`${{API_BASE_URL}}/${{endpoint}}`);
-            return await response.json();
-        }} catch (error) {{
-            console.error('API GET error:', error);
-            throw error;
-        }}
-    }},
-
-    post: async (endpoint, data) => {{
-        try {{
-            const response = await fetch(`${{API_BASE_URL}}/${{endpoint}}`, {{
-                method: 'POST',
-                headers: {{
-                    'Content-Type': 'application/json',
-                }},
-                body: JSON.stringify(data),
-            }});
-            return await response.json();
-        }} catch (error) {{
-            console.error('API POST error:', error);
-            throw error;
-        }}
-    }}
-}};
-'''
-
-    def _generate_sql_file(self, file_path: str, file_purpose: str, project: Project) -> str:
-        """Generate SQL file content"""
-        if 'schema' in file_purpose:
-            return '''-- Database schema for the application
-
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS projects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    owner_id INTEGER NOT NULL,
-    status VARCHAR(20) DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (owner_id) REFERENCES users(id)
-);
-
--- Add indexes for performance
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_projects_owner ON projects(owner_id);
-CREATE INDEX idx_projects_status ON projects(status);
-'''
-        else:
-            return f'''-- {file_purpose.replace('_', ' ').title()}
-
--- Sample data or migration script
-INSERT INTO users (username, email, password_hash) VALUES 
-('admin', 'admin@example.com', 'hashed_password'),
-('demo', 'demo@example.com', 'hashed_password');
-'''
-
-    def _generate_markdown_file(self, file_path: str, file_purpose: str, project: Project) -> str:
-        """Generate Markdown documentation file"""
-        file_name = file_path.split('/')[-1]
-        project_name = getattr(project, 'name', 'Project')
-
-        if file_name == 'README.md':
-            return f'''# {project_name}
-
-{getattr(project, 'description', 'A generated project using the Socratic RAG Enhanced system.')}
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.8 or higher
-- Node.js 14 or higher
-- Database (SQLite for development, PostgreSQL for production)
-
-### Installation
-
-1. Clone the repository
-```bash
-git clone <repository-url>
-cd {project_name.lower().replace(' ', '-')}
-```
-
-2. Set up the backend
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\\Scripts\\activate
-pip install -r requirements.txt
-```
-
-3. Set up the frontend
-```bash
-cd frontend
-npm install
-```
-
-### Running the Application
-
-1. Start the backend server
-```bash
-cd backend
-python app.py
-```
-
-2. Start the frontend development server
-```bash
-cd frontend
-npm start
-```
-
-3. Open your browser and navigate to `http://localhost:3000`
-
-## Project Structure
-
-```
-{project_name.lower().replace(' ', '-')}/
-├── backend/          # Python Flask API
-├── frontend/         # React application
-├── database/         # Database schema and migrations
-├── tests/           # Test suites
-├── config/          # Configuration files
-├── docs/            # Documentation
-└── scripts/         # Utility scripts
-```
-
-## API Documentation
-
-The API documentation is available at `/api/docs` when running the backend server.
-
-## Testing
-
-Run the test suites:
-
-```bash
-# Backend tests
-cd backend && python -m pytest
-
-# Frontend tests
-cd frontend && npm test
-```
-
-## Deployment
-
-See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment instructions.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License.
-'''
-        else:
-            return f'''# {file_purpose.replace('_', ' ').title()}
-
-Documentation for {file_purpose.replace('_', ' ')}.
-
-## Overview
-
-This document provides information about {file_purpose.replace('_', ' ')}.
-
-## Usage
-
-Instructions for using this component.
-
-## Examples
-
-Code examples and usage patterns.
-'''
-
-    def _generate_fallback_content(self, file_path: str, file_purpose: str) -> str:
-        """Generate fallback content when other methods fail"""
-        return f'''// Generated file: {file_path}
-// Purpose: {file_purpose}
-// Generated by CodeGeneratorAgent
-
-// TODO: Implement {file_purpose.replace('_', ' ')}
-console.log('File generated: {file_path}');
-'''
-
-    def _determine_file_type(self, file_path: str) -> str:
-        """Determine file type from file path"""
-        extension = file_path.split('.')[-1].lower()
-
-        extension_mapping = {
-            'py': 'python',
-            'js': 'javascript',
-            'jsx': 'javascript',
-            'ts': 'typescript',
-            'tsx': 'typescript',
-            'html': 'html',
-            'css': 'css',
-            'scss': 'css',
-            'sql': 'sql',
-            'json': 'json',
-            'yml': 'yaml',
-            'yaml': 'yaml',
-            'md': 'markdown',
-            'txt': 'text',
-            'dockerfile': 'dockerfile'
-        }
-
-        return extension_mapping.get(extension, 'text')
-
-    def _analyze_file_dependencies(self, content: str, file_path: str) -> List[str]:
-        """Analyze file dependencies from content"""
-        dependencies = []
+    def _generate_test_files(self, project: Project, generated_files: List[GeneratedFile],
+                             architecture: Dict[str, Any]) -> List[GeneratedFile]:
+        """Generate comprehensive test files"""
+        test_files = []
 
         try:
-            lines = content.split('\n')
-            for line in lines[:20]:  # Check first 20 lines
-                line = line.strip()
+            # Generate unit tests for each Python file
+            python_files = [f for f in generated_files if f.file_path.endswith('.py')]
+            for py_file in python_files:
+                test_content = self._generate_unit_test_content(py_file, project)
+                test_file = GeneratedFile(
+                    codebase_id="",
+                    project_id=getattr(project, 'id', 'unknown'),
+                    file_path=f"tests/test_{os.path.basename(py_file.file_path)}",
+                    content=test_content,
+                    file_type=FileType.PYTHON,
+                    size_bytes=len(test_content.encode('utf-8')),
+                    generated_at=DateTimeHelper.now()
+                )
+                test_files.append(test_file)
 
-                # Python imports
-                if line.startswith('import ') or line.startswith('from '):
-                    dependencies.append(line)
+            # Generate integration tests
+            integration_test_content = self._generate_integration_test_content(project, architecture)
+            integration_test = GeneratedFile(
+                codebase_id="",
+                project_id=getattr(project, 'id', 'unknown'),
+                file_path="tests/test_integration.py",
+                content=integration_test_content,
+                file_type=FileType.PYTHON,
+                size_bytes=len(integration_test_content.encode('utf-8')),
+                generated_at=DateTimeHelper.now()
+            )
+            test_files.append(integration_test)
 
-                # JavaScript imports
-                elif line.startswith('import ') and 'from' in line:
-                    dependencies.append(line)
+            # Generate test configuration
+            test_config_content = self._generate_test_config_content(project)
+            test_config = GeneratedFile(
+                codebase_id="",
+                project_id=getattr(project, 'id', 'unknown'),
+                file_path="tests/conftest.py",
+                content=test_config_content,
+                file_type=FileType.PYTHON,
+                size_bytes=len(test_config_content.encode('utf-8')),
+                generated_at=DateTimeHelper.now()
+            )
+            test_files.append(test_config)
 
-                # Require statements
-                elif 'require(' in line:
-                    dependencies.append(line)
-
-            return dependencies[:10]  # Limit to 10 dependencies
+            return test_files
 
         except Exception as e:
-            self.logger.warning(f"Error analyzing dependencies for {file_path}: {e}")
+            self.logger.error(f"Test generation failed: {e}")
             return []
 
-    def _generate_file_documentation(self, file_path: str, file_purpose: str) -> str:
-        """Generate documentation for a file"""
-        return f"""
-File: {file_path}
-Purpose: {file_purpose.replace('_', ' ').title()}
-Generated: {DateTimeHelper.to_iso_string(DateTimeHelper.now())}
+    def _generate_unit_test_content(self, source_file: GeneratedFile, project: Project) -> str:
+        """Generate unit test content for a source file"""
+        file_name = os.path.basename(source_file.file_path)
+        module_name = file_name.replace('.py', '')
 
-This file implements {file_purpose.replace('_', ' ')} functionality.
+        return f'''"""
+Unit tests for {module_name} module
 """
 
-    def _calculate_file_complexity(self, content: str) -> float:
-        """Calculate complexity score for a file"""
+import unittest
+from unittest.mock import patch, MagicMock
+import sys
+import os
+
+# Add project root to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+class Test{module_name.title()}(unittest.TestCase):
+    """Test cases for {module_name} module"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        self.test_data = {{'test': 'data'}}
+
+    def tearDown(self):
+        """Clean up after tests"""
+        pass
+
+    def test_{module_name}_creation(self):
+        """Test {module_name} creation"""
+        # Test implementation here
+        self.assertTrue(True)
+
+    def test_{module_name}_methods(self):
+        """Test {module_name} methods"""
+        # Test implementation here
+        self.assertIsNotNone(self.test_data)
+
+    @patch('your_module.external_dependency')
+    def test_{module_name}_with_mock(self, mock_dependency):
+        """Test {module_name} with mocked dependencies"""
+        mock_dependency.return_value = 'mocked_result'
+        # Test implementation here
+        self.assertEqual(mock_dependency.return_value, 'mocked_result')
+
+if __name__ == '__main__':
+    unittest.main()
+'''
+
+    def _create_codebase_record(self, project: Project, architecture: Dict[str, Any],
+                                generated_files: List[GeneratedFile]) -> GeneratedCodebase:
+        """Create codebase record with metadata"""
         try:
-            lines = content.split('\n')
-            non_empty_lines = len([line for line in lines if line.strip()])
+            total_size = sum(getattr(f, 'size_bytes', 0) for f in generated_files)
+            total_lines = sum(len(getattr(f, 'content', '').splitlines()) for f in generated_files)
 
-            # Simple complexity calculation
-            complexity = 1.0
+            codebase = GeneratedCodebase(
+                project_id=getattr(project, 'id', 'unknown'),
+                version="1.0.0",
+                architecture_type=architecture.get('pattern', 'mvc'),
+                technology_stack=self._extract_technology_stack(architecture),
+                file_structure=self._create_file_structure_summary(generated_files),
+                total_files=len(generated_files),
+                total_lines_of_code=total_lines,
+                size_bytes=total_size,  # Using size_bytes attribute
+                generated_at=DateTimeHelper.now(),
+                last_updated=DateTimeHelper.now(),
+                status="generated"
+            )
 
-            if non_empty_lines > 100:
-                complexity += 2.0
-            elif non_empty_lines > 50:
-                complexity += 1.0
+            # Set codebase_id for all files
+            for file in generated_files:
+                file.codebase_id = codebase.id
 
-            # Add complexity for control structures
-            control_keywords = ['if', 'for', 'while', 'try', 'catch', 'switch']
-            for line in lines:
-                for keyword in control_keywords:
-                    if keyword in line.lower():
-                        complexity += 0.1
-
-            return min(complexity, 10.0)  # Cap at 10.0
+            return codebase
 
         except Exception as e:
-            self.logger.warning(f"Error calculating complexity: {e}")
-            return 1.0
+            self.logger.error(f"Codebase record creation failed: {e}")
+            raise
 
-    def _serialize_file(self, file: GeneratedFile) -> Dict[str, Any]:
-        """Serialize a GeneratedFile for response"""
-        return {
-            'file_id': getattr(file, 'file_id', ''),
-            'file_path': getattr(file, 'file_path', ''),
-            'file_type': getattr(file, 'file_type', ''),
-            'file_purpose': getattr(file, 'file_purpose', ''),
-            'size_bytes': getattr(file, 'size_bytes', 0),
-            'complexity_score': getattr(file, 'complexity_score', 1.0),
-            'dependencies': getattr(file, 'dependencies', []),
-            'content_preview': getattr(file, 'content', '')[:200] + '...' if len(
-                getattr(file, 'content', '')) > 200 else getattr(file, 'content', '')
-        }
-
-    def _generate_project_documentation(self, project: Project, architecture: Dict[str, Any],
-                                        files: List[GeneratedFile]) -> Dict[str, Any]:
+    def _generate_documentation(self, project: Project, architecture: Dict[str, Any],
+                                files: List[GeneratedFile]) -> Dict[str, Any]:
         """Generate comprehensive project documentation"""
         try:
             return {
@@ -1520,48 +873,556 @@ This file implements {file_purpose.replace('_', ' ')} functionality.
             }
 
         except Exception as e:
-            self.logger.error(f"Error generating project documentation: {e}")
+            self.logger.error(f"Documentation generation failed: {e}")
             return {'error': str(e)}
+
+    # Helper methods
+    def _determine_file_type(self, file_path: str) -> FileType:
+        """Determine file type from file path"""
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext == '.py':
+            return FileType.PYTHON
+        elif ext == '.js':
+            return FileType.JAVASCRIPT
+        elif ext == '.html':
+            return FileType.HTML
+        elif ext == '.css':
+            return FileType.CSS
+        elif ext == '.sql':
+            return FileType.SQL
+        else:
+            return FileType.PYTHON  # Default fallback
+
+    def _determine_file_purpose(self, file_path: str, category: str) -> str:
+        """Determine the purpose of a file based on its path and category"""
+        file_name = os.path.basename(file_path).lower()
+
+        if 'model' in file_path or 'models' in file_path:
+            return 'data_model'
+        elif 'controller' in file_path or 'controllers' in file_path:
+            return 'api_controller'
+        elif 'view' in file_path or 'views' in file_path:
+            return 'view_template'
+        elif 'test' in file_path:
+            return 'unit_test'
+        elif file_name in ['app.py', 'main.py']:
+            return 'main_application'
+        elif file_name == 'config.py':
+            return 'configuration'
+        else:
+            return f'{category}_file'
+
+    def _file_summary(self, file: GeneratedFile) -> Dict[str, Any]:
+        """Create summary of generated file"""
+        return {
+            'path': getattr(file, 'file_path', 'unknown'),
+            'type': getattr(file, 'file_type', 'unknown'),
+            'size': getattr(file, 'size_bytes', 0),
+            'lines': len(getattr(file, 'content', '').splitlines())
+        }
+
+    def _extract_technology_stack(self, architecture: Dict[str, Any]) -> Dict[str, str]:
+        """Extract technology stack from architecture"""
+        return {
+            'backend': 'Flask',
+            'frontend': 'React',
+            'database': 'SQLite',
+            'testing': 'pytest'
+        }
+
+    def _create_file_structure_summary(self, files: List[GeneratedFile]) -> Dict[str, Any]:
+        """Create file structure summary"""
+        structure = {}
+        for file in files:
+            path_parts = getattr(file, 'file_path', '').split('/')
+            current = structure
+            for part in path_parts[:-1]:
+                if part not in current:
+                    current[part] = {}
+                current = current[part]
+            current[path_parts[-1]] = getattr(file, 'size_bytes', 0)
+        return structure
 
     def _extract_api_endpoints(self, files: List[GeneratedFile]) -> List[Dict[str, str]]:
         """Extract API endpoints from generated files"""
         endpoints = []
+        for file in files:
+            content = getattr(file, 'content', '')
+            if '@' in content and 'route' in content:
+                # Simple extraction - could be more sophisticated
+                lines = content.splitlines()
+                for line in lines:
+                    if 'route(' in line and '@' in line:
+                        endpoints.append({
+                            'file': getattr(file, 'file_path', ''),
+                            'endpoint': line.strip()
+                        })
+        return endpoints
 
-        try:
-            for file in files:
-                if 'route' in getattr(file, 'file_purpose', '') or 'api' in getattr(file, 'file_purpose', ''):
-                    content = getattr(file, 'content', '')
-                    lines = content.split('\n')
+    def _get_next_steps(self, architecture: Dict[str, Any]) -> List[str]:
+        """Get recommended next steps"""
+        return [
+            'Review generated code structure',
+            'Set up development environment',
+            'Install dependencies',
+            'Run initial tests',
+            'Configure database',
+            'Start development server',
+            'Begin customization'
+        ]
 
-                    for line in lines:
-                        if '@' in line and 'route(' in line:
-                            # Extract Flask route
-                            try:
-                                route_info = line.strip()
-                                endpoints.append({
-                                    'file': getattr(file, 'file_path', ''),
-                                    'endpoint': route_info,
-                                    'type': 'Flask Route'
-                                })
-                            except:
-                                continue
-
-            return endpoints[:20]  # Limit to 20 endpoints
-
-        except Exception as e:
-            self.logger.warning(f"Error extracting API endpoints: {e}")
-            return []
-
-    def _error_response(self, error_message: str, error_code: Optional[str] = None) -> Dict[str, Any]:
-        """Create standardized error response"""
-        response = {
-            'success': False,
-            'error': error_message,
-            'agent_id': self.agent_id,
-            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+    # Additional helper methods for architecture design
+    def _design_database_schema(self, specs: TechnicalSpecification) -> Dict[str, Any]:
+        """Design database schema based on specifications"""
+        return {
+            'tables': ['users', 'projects', 'data'],
+            'relationships': ['one_to_many', 'many_to_many'],
+            'indexes': ['user_id', 'project_id'],
+            'constraints': ['foreign_keys', 'unique_constraints']
         }
 
-        if error_code:
-            response['error_code'] = error_code
+    def _design_api_structure(self, specs: TechnicalSpecification) -> Dict[str, Any]:
+        """Design API structure"""
+        return {
+            'endpoint_groups': ['auth', 'users', 'projects', 'data'],
+            'authentication': 'JWT',
+            'rate_limiting': True,
+            'versioning': 'v1'
+        }
 
-        return response
+    def _design_security_measures(self, specs: TechnicalSpecification) -> List[str]:
+        """Design security measures"""
+        return [
+            'Input validation',
+            'SQL injection prevention',
+            'XSS protection',
+            'CSRF protection',
+            'Rate limiting',
+            'Authentication',
+            'Authorization'
+        ]
+
+    def _add_architecture_components(self, architecture: Dict[str, Any],
+                                     requirements: List[str], scale_req: Dict[str, Any]) -> None:
+        """Add components to architecture based on requirements"""
+        if scale_req.get('needs_caching'):
+            architecture['components'].append('redis_cache')
+
+        if scale_req.get('needs_queue'):
+            architecture['components'].append('task_queue')
+
+        if scale_req.get('needs_load_balancing'):
+            architecture['components'].append('load_balancer')
+
+    def _generate_javascript_content(self, project: Project, specs: TechnicalSpecification,
+                                     architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
+        """Generate JavaScript file content"""
+        return f'''/*
+ * {file_purpose.replace('_', ' ').title()} for {getattr(project, 'name', 'Project')}
+ */
+
+// Generated JavaScript file: {file_name}
+console.log('Loading {file_name}');
+
+export default class {file_name.replace('.js', '').title()} {{
+    constructor() {{
+        this.initialized = false;
+        this.init();
+    }}
+
+    init() {{
+        console.log('{file_name} initialized');
+        this.initialized = true;
+    }}
+}}
+'''
+
+    def _generate_html_content(self, project: Project, specs: TechnicalSpecification,
+                               architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
+        """Generate HTML file content"""
+        return f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{getattr(project, 'name', 'Project')}</title>
+</head>
+<body>
+    <div id="app">
+        <h1>Welcome to {getattr(project, 'name', 'Project')}</h1>
+        <p>This is a generated {file_purpose} page.</p>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
+'''
+
+    def _generate_sql_content(self, project: Project, specs: TechnicalSpecification,
+                              architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
+        """Generate SQL file content"""
+        return f'''-- {file_purpose.replace('_', ' ').title()} for {getattr(project, 'name', 'Project')}
+-- Generated SQL file: {file_name}
+
+-- Create basic tables
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username VARCHAR(80) UNIQUE NOT NULL,
+    email VARCHAR(120) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    user_id INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
+-- Insert sample data
+INSERT OR IGNORE INTO users (username, email) VALUES 
+    ('admin', 'admin@example.com'),
+    ('user1', 'user1@example.com');
+'''
+
+    def _generate_markdown_content(self, project: Project, specs: TechnicalSpecification,
+                                   architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
+        """Generate Markdown file content"""
+        if file_name == 'README.md':
+            return f'''# {getattr(project, 'name', 'Project')}
+
+## Overview
+This project was generated using the Socratic RAG Enhanced code generation system.
+
+## Architecture
+- Pattern: {architecture.get('pattern', 'mvc').upper()}
+- Backend: Python Flask
+- Frontend: React
+- Database: SQLite
+
+## Setup Instructions
+
+### Prerequisites
+- Python 3.8+
+- Node.js 14+
+- Git
+
+### Installation
+1. Clone the repository
+2. Set up Python virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\\Scripts\\activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Set up the database:
+   ```bash
+   python database/init_db.py
+   ```
+5. Start the development server:
+   ```bash
+   python app.py
+   ```
+
+## Project Structure
+```
+project/
+├── app.py              # Main application
+├── config.py           # Configuration
+├── models/             # Data models
+├── controllers/        # API controllers
+├── static/             # Static assets
+├── templates/          # HTML templates
+└── tests/              # Test files
+```
+
+## API Endpoints
+- `GET /` - Application home
+- `GET /health` - Health check
+- `GET /api/data` - Get data
+- `POST /api/data` - Create data
+
+## Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
+
+## License
+This project is licensed under the MIT License.
+'''
+        else:
+            return f'''# {file_purpose.replace('_', ' ').title()}
+
+This is a generated documentation file for {getattr(project, 'name', 'Project')}.
+
+## Purpose
+{file_purpose.replace('_', ' ')}
+
+## Generated
+{DateTimeHelper.to_iso_string(DateTimeHelper.now())}
+'''
+
+    def _generate_json_content(self, project: Project, specs: TechnicalSpecification,
+                               architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
+        """Generate JSON file content"""
+        if file_name == 'package.json':
+            return json.dumps({
+                "name": getattr(project, 'name', 'project').lower().replace(' ', '-'),
+                "version": "1.0.0",
+                "description": getattr(project, 'description', 'Generated project'),
+                "main": "src/index.js",
+                "scripts": {
+                    "start": "react-scripts start",
+                    "build": "react-scripts build",
+                    "test": "react-scripts test",
+                    "eject": "react-scripts eject"
+                },
+                "dependencies": {
+                    "react": "^18.0.0",
+                    "react-dom": "^18.0.0",
+                    "axios": "^0.27.0"
+                },
+                "devDependencies": {
+                    "react-scripts": "5.0.1"
+                }
+            }, indent=2)
+        else:
+            return json.dumps({
+                "generated": True,
+                "purpose": file_purpose,
+                "timestamp": DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            }, indent=2)
+
+    def _generate_config_content(self, project: Project, specs: TechnicalSpecification,
+                                 architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
+        """Generate configuration file content"""
+        if file_name == 'Dockerfile':
+            return f'''# Dockerfile for {getattr(project, 'name', 'Project')}
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Expose port
+EXPOSE 5000
+
+# Run the application
+CMD ["python", "app.py"]
+'''
+        elif file_name == '.gitignore':
+            return '''# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.local
+
+# Database
+*.db
+*.sqlite
+
+# Logs
+*.log
+
+# Node modules
+node_modules/
+
+# Build artifacts
+dist/
+build/
+'''
+        elif file_name == '.env.example':
+            return f'''# Environment variables for {getattr(project, 'name', 'Project')}
+# Copy this file to .env and update the values
+
+# Flask configuration
+FLASK_ENV=development
+FLASK_DEBUG=True
+SECRET_KEY=your-secret-key-here
+
+# Database
+DATABASE_URL=sqlite:///app.db
+
+# JWT
+JWT_SECRET_KEY=your-jwt-secret-here
+
+# External APIs
+API_KEY=your-api-key-here
+'''
+        else:
+            return f'# Generated configuration file: {file_name}\n'
+
+    def _generate_integration_test_content(self, project: Project, architecture: Dict[str, Any]) -> str:
+        """Generate integration test content"""
+        return f'''"""
+Integration tests for {getattr(project, 'name', 'Project')}
+"""
+
+import unittest
+import json
+import sys
+import os
+
+# Add project root to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    from app import create_app
+except ImportError:
+    # Fallback if app structure is different
+    create_app = None
+
+class IntegrationTestCase(unittest.TestCase):
+    """Integration test cases"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        if create_app:
+            self.app = create_app()
+            self.app.config['TESTING'] = True
+            self.client = self.app.test_client()
+            self.app_context = self.app.app_context()
+            self.app_context.push()
+
+    def tearDown(self):
+        """Clean up after tests"""
+        if hasattr(self, 'app_context'):
+            self.app_context.pop()
+
+    def test_application_startup(self):
+        """Test application starts successfully"""
+        if self.client:
+            response = self.client.get('/')
+            self.assertEqual(response.status_code, 200)
+
+    def test_health_endpoint(self):
+        """Test health check endpoint"""
+        if self.client:
+            response = self.client.get('/health')
+            self.assertEqual(response.status_code, 200)
+            data = json.loads(response.data)
+            self.assertIn('status', data)
+
+    def test_api_endpoints(self):
+        """Test API endpoints are accessible"""
+        if self.client:
+            # Test GET endpoint
+            response = self.client.get('/api/data')
+            self.assertIn(response.status_code, [200, 404])  # May not exist yet
+
+            # Test POST endpoint
+            test_data = {{'test': 'data'}}
+            response = self.client.post('/api/data', 
+                                        data=json.dumps(test_data),
+                                        content_type='application/json')
+            self.assertIn(response.status_code, [200, 201, 404])
+
+if __name__ == '__main__':
+    unittest.main()
+'''
+
+    def _generate_test_config_content(self, project: Project) -> str:
+        """Generate test configuration content"""
+        return f'''"""
+Test configuration for {getattr(project, 'name', 'Project')}
+"""
+
+import pytest
+import sys
+import os
+from unittest.mock import MagicMock
+
+# Add project root to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+@pytest.fixture
+def app():
+    """Create application for testing"""
+    try:
+        from app import create_app
+        app = create_app()
+        app.config['TESTING'] = True
+        return app
+    except ImportError:
+        return None
+
+@pytest.fixture
+def client(app):
+    """Create test client"""
+    if app:
+        return app.test_client()
+    return None
+
+@pytest.fixture
+def mock_database():
+    """Mock database for testing"""
+    return MagicMock()
+
+@pytest.fixture
+def sample_data():
+    """Sample test data"""
+    return {{
+        'test_user': {{
+            'username': 'testuser',
+            'email': 'test@example.com'
+        }},
+        'test_project': {{
+            'name': 'Test Project',
+            'description': 'A test project'
+        }}
+    }}
+
+# Test configuration
+pytest_plugins = []
+'''
+
+
+if __name__ == "__main__":
+    # Initialize and test the agent
+    agent = CodeGeneratorAgent()
+    print(f"✅ {agent.name} initialized successfully")
+    print(f"✅ Agent ID: {agent.agent_id}")
+    print(f"✅ Supported frameworks: {agent.supported_frameworks}")
+    print(f"✅ Architecture patterns: {list(agent.architecture_patterns.keys())}")
