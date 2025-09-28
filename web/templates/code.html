@@ -1015,19 +1015,20 @@ if __name__ == '__main__':
 function sampleModelsCode() {
     return `from app import db
 from datetime import datetime
+from src.core import DateTimeHelper
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=DateTimeHelper.now)
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Numeric(10, 2), nullable=False)
     description = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=DateTimeHelper.now)
 
     def to_dict(self):
         return {

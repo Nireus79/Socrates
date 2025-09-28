@@ -4217,14 +4217,14 @@ import logging
 import logging.handlers
 import json
 from datetime import datetime
-from src.core import get_config
+from src.core import get_config, DateTimeHelper
 
 class JSONFormatter(logging.Formatter):
     """JSON log formatter for structured logging"""
     
     def format(self, record):
         log_entry = {
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': DateTimeHelper.now().isoformat(),
             'level': record.levelname,
             'logger': record.name,
             'message': record.getMessage(),

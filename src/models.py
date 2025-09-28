@@ -289,8 +289,8 @@ class User(BaseModel):
         if not self.username or len(self.username.strip()) < 3:
             raise ValidationError("Username must be at least 3 characters long")
 
-        if not ValidationHelper.validate_email(self.email):
-            raise ValidationError("Invalid email address")
+        if self.email and not ValidationHelper.validate_email(self.email):
+            raise ValidationError("Invalid email address")  # Only validate if email is provided
 
         if not self.password_hash and self.status == UserStatus.ACTIVE:
             raise ValidationError("Active users must have a password")
@@ -401,8 +401,8 @@ class Project(BaseModel):
 
     def validate(self) -> None:
         """Validate project data"""
-        if not ValidationHelper.validate_project_name(self.name):
-            raise ValidationError("Invalid project name")
+        if not self.name or len(self.name.strip()) < 2:
+            raise ValidationError("Project name must be at least 2 characters long")
 
         if self.end_date and self.start_date and self.end_date < self.start_date:
             raise ValidationError("End date cannot be before start date")
@@ -1030,8 +1030,8 @@ class ModelValidator:
         # Name validation
         if 'name' in project_data:
             name = project_data['name']
-            if not ValidationHelper.validate_project_name(name):
-                issues.append(f"Invalid project name: '{name}'")
+            if not name or len(name.strip()) < 2:
+                issues.append(f"Project name must be at least 2 characters long")
 
         # Technology stack validation
         if 'technology_stack' in project_data:
@@ -1095,8 +1095,8 @@ class ModelValidator:
         # Username validation
         if 'username' in user_data:
             username = user_data['username']
-            if not ValidationHelper.validate_username(username):
-                issues.append(f"Invalid username format: '{username}'")
+            if not username or len(username.strip()) < 3 or not username.replace('_', '').replace('-', '').isalnum():
+                issues.append(f"Username must be at least 3 characters, alphanumeric with _ or - allowed")
 
         # Role validation
         if 'role' in user_data:
