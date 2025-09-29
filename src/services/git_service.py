@@ -368,8 +368,7 @@ temp/
                     is_dirty = repo.is_dirty(untracked_files=True)
 
                     # Get file lists
-                    untracked = [item.a_path for item in repo.untracked_files] if hasattr(repo,
-                                                                                          'untracked_files') else []
+                    untracked = list(repo.untracked_files) if hasattr(repo, 'untracked_files') else []
                     modified = [item.a_path for item in repo.index.diff(None)]
                     staged = [item.a_path for item in repo.index.diff("HEAD")]
 

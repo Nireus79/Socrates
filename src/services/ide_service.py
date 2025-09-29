@@ -631,7 +631,11 @@ class IDEService:
                         target_file.write_text(content, encoding='utf-8')
                     else:
                         # Handle binary content
-                        target_file.write_bytes(content)
+                        if isinstance(content, bytes):
+                            target_file.write_bytes(content)
+                        else:
+                            # Fallback: encode if somehow still a string
+                            target_file.write_bytes(content.encode('utf-8'))
 
                     sync_result = FileSync(
                         source_path=str(source_file),

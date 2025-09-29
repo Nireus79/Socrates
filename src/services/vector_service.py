@@ -42,12 +42,43 @@ try:
 except ImportError:
     CHROMADB_AVAILABLE = False
     chromadb = None
-    Collection = None
     Documents = List[str]
     Embeddings = List[List[float]]
 
+    # Complete type stubs for when ChromaDB is not available
+    class Collection:
+        """Type stub for Collection when ChromaDB not available"""
+        name: str = ""
+        metadata: Optional[Dict[str, Any]] = None
+
+        def add(self, documents: List[str], ids: List[str], metadatas: Optional[List[Dict[str, Any]]] = None) -> None:
+            pass
+
+        def query(self, query_texts: List[str], n_results: int = 10,
+                  where: Optional[Dict[str, Any]] = None, include: Optional[List[str]] = None) -> Dict[str, Any]:
+            return {}
+
+        def get(self, ids: List[str], include: Optional[List[str]] = None) -> Dict[str, Any]:
+            return {}
+
+        def update(self, ids: List[str], documents: Optional[List[str]] = None,
+                   metadatas: Optional[List[Dict[str, Any]]] = None) -> None:
+            pass
+
+        def delete(self, ids: List[str]) -> None:
+            pass
+
+        def count(self) -> int:
+            return 0
+
+
+    class EmbeddingFunction:
+        """Type stub for EmbeddingFunction when ChromaDB not available"""
+        pass
+
 try:
     from sentence_transformers import SentenceTransformer
+
     SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
     SENTENCE_TRANSFORMERS_AVAILABLE = False
