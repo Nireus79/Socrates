@@ -35,7 +35,7 @@ AGENTS_AVAILABLE = False
 _import_errors = {}
 
 # Global service container instance
-_services = None
+_services: Optional['ServiceContainer'] = None
 
 
 # ============================================================================
@@ -133,6 +133,31 @@ try:
 except ImportError as e:
     CORE_AVAILABLE = False
     _import_errors['core'] = str(e)
+
+
+    # ✅ FIX: Define fallback ServiceContainer class
+    class ServiceContainer:
+        """Fallback ServiceContainer when core is not available"""
+
+        def __init__(self):
+            self.config: Optional[Any] = None
+            self.logger_system: Optional[Any] = None
+            self.event_system: Optional[Any] = None
+            self.db_manager: Optional[Any] = None
+
+        def get_logger(self, name: str):
+            import logging
+            return logging.getLogger(name)
+
+        def get_config(self):
+            return {}
+
+        def get_event_bus(self):
+            return None
+
+        def get_db_manager(self):
+            return None
+
 
     # Assign fallback functions
     initialize_system = _fallback_initialize_system
@@ -286,9 +311,11 @@ def get_system_status() -> Dict[str, Any]:
     """Get detailed system status"""
     status = get_package_info()
 
-    # Add services status if available
+    # ✅ FIX: Properly check _services and its attributes with type assertion
     if _services is not None:
         status['services_initialized'] = True
+        # Type assertion to help IDE understand _services has these attributes
+        assert isinstance(_services, ServiceContainer)
         status['service_container'] = {
             'config_loaded': _services.config is not None,
             'logger_system': _services.logger_system is not None,
@@ -352,6 +379,7 @@ def cleanup_package():
 
 def get_logger(name: str):
     """Backward compatibility function for getting logger"""
+    # ✅ FIX: Proper None check and type handling
     if _services is not None:
         return _services.get_logger(name)
     else:
@@ -362,15 +390,17 @@ def get_logger(name: str):
 
 def get_config():
     """Backward compatibility function for getting config"""
+    # ✅ FIX: Proper None check and type handling
     if _services is not None:
         return _services.get_config()
     else:
-        # Return None or basic config
-        return None
+        # Return empty dict as fallback
+        return {}
 
 
 def get_event_bus():
     """Backward compatibility function for getting event bus"""
+    # ✅ FIX: Proper None check
     if _services is not None:
         return _services.get_event_bus()
     else:
@@ -379,6 +409,7 @@ def get_event_bus():
 
 def get_db_manager():
     """Backward compatibility function for getting database manager"""
+    # ✅ FIX: Proper None check
     if _services is not None:
         return _services.get_db_manager()
     else:

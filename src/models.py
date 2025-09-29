@@ -24,7 +24,8 @@ from enum import Enum
 
 # Core imports with fallbacks
 try:
-    from src.core import DateTimeHelper, ValidationError, get_logger
+    from src import get_logger  # Backward compatibility function
+    from src.core import DateTimeHelper, ValidationError  # Core classes
 
     CORE_AVAILABLE = True
 except ImportError:

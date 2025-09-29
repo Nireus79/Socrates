@@ -16,14 +16,11 @@ Features:
 """
 
 import logging
-import os
-import shutil
 import subprocess
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Dict, Any, List, Optional, Union, Tuple
 from datetime import datetime
 from pathlib import Path
-import re
 
 try:
     import git

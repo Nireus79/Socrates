@@ -28,7 +28,8 @@ from enum import Enum
 
 # Core imports
 try:
-    from src.core import get_logger, get_config, DateTimeHelper, ValidationError, FileHelper
+    from src import get_config, get_logger  # Backward compatibility functions
+    from src.core import DateTimeHelper, ValidationError, FileHelper  # Core classes
 
     CORE_AVAILABLE = True
 except ImportError:

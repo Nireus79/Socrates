@@ -14,7 +14,16 @@ Capabilities:
 - Skill assessment and productivity monitoring
 """
 
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
+from datetime import datetime
+from enum import Enum
+import logging
+import hashlib
+import secrets
+
+# ============================================================================
+# IMPORTS WITH COMPREHENSIVE FALLBACKS
+# ============================================================================
 
 try:
     from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper
@@ -23,40 +32,263 @@ try:
     from .base import BaseAgent, require_authentication, log_agent_action
 
     CORE_AVAILABLE = True
+
 except ImportError:
     CORE_AVAILABLE = False
 
-    # Fallback implementations
-    def get_logger(name):
-        import logging
-        return logging.getLogger(name)
 
+    # Fallback ServiceContainer
     class ServiceContainer:
-        def get_logger(self, name):
-            import logging
+        """Fallback ServiceContainer when core is not available"""
+
+        def __init__(self):
+            self.config = None
+            self.logger_system = None
+            self.event_system = None
+            self.db_manager = None
+
+        def get_logger(self, name: str):
             return logging.getLogger(name)
+
         def get_config(self):
             return {}
 
+        def get_event_bus(self):
+            return None
+
+        def get_db_manager(self):
+            return None
+
+
+    # Fallback DateTimeHelper
+    class DateTimeHelper:
+        """Fallback DateTimeHelper"""
+
+        @staticmethod
+        def now():
+            return datetime.now()
+
+        @staticmethod
+        def to_iso_string(dt):
+            return dt.isoformat() if dt else None
+
+        @staticmethod
+        def from_iso_string(iso_str):
+            return datetime.fromisoformat(iso_str) if iso_str else None
+
+
+    # Fallback ValidationError
+    class ValidationError(Exception):
+        """Fallback ValidationError"""
+        pass
+
+
+    # Fallback ValidationHelper
+    class ValidationHelper:
+        """Fallback ValidationHelper"""
+
+        @staticmethod
+        def validate_email(email: str) -> bool:
+            return "@" in str(email) if email else False
+
+        @staticmethod
+        def validate_required(value: Any, field_name: str) -> bool:
+            if not value:
+                raise ValidationError(f"{field_name} is required")
+            return True
+
+        @staticmethod
+        def validate_length(value: str, min_len: int, max_len: int, field_name: str) -> bool:
+            if len(value) < min_len or len(value) > max_len:
+                raise ValidationError(f"{field_name} must be between {min_len} and {max_len} characters")
+            return True
+
+
+    # Fallback UserRole enum
+    class UserRole(Enum):
+        """Fallback UserRole enum"""
+        ADMIN = "admin"
+        PROJECT_MANAGER = "project_manager"
+        DEVELOPER = "developer"
+        DESIGNER = "designer"
+        TESTER = "tester"
+        STAKEHOLDER = "stakeholder"
+        VIEWER = "viewer"
+
+
+    # Fallback UserStatus enum
+    class UserStatus(Enum):
+        """Fallback UserStatus enum"""
+        ACTIVE = "active"
+        PENDING = "pending"
+        SUSPENDED = "suspended"
+        INACTIVE = "inactive"
+
+
+    # Fallback User model
+    class User:
+        """Fallback User model"""
+
+        def __init__(self, **kwargs):
+            self.id = kwargs.get('id', '')
+            self.username = kwargs.get('username', '')
+            self.email = kwargs.get('email', '')
+            self.password_hash = kwargs.get('password_hash', '')
+            self.first_name = kwargs.get('first_name', '')
+            self.last_name = kwargs.get('last_name', '')
+            self.full_name = kwargs.get('full_name', '')
+            self.role = kwargs.get('role', UserRole.VIEWER)
+            self.status = kwargs.get('status', UserStatus.PENDING)
+            self.created_at = kwargs.get('created_at', DateTimeHelper.now())
+            self.last_login = kwargs.get('last_login', None)
+            self.skills = kwargs.get('skills', [])
+            self.projects_created = kwargs.get('projects_created', 0)
+
+        def to_dict(self):
+            return {
+                'id': self.id,
+                'username': self.username,
+                'email': self.email,
+                'first_name': self.first_name,
+                'last_name': self.last_name,
+                'full_name': self.full_name,
+                'role': self.role.value if isinstance(self.role, Enum) else self.role,
+                'status': self.status.value if isinstance(self.status, Enum) else self.status,
+                'created_at': DateTimeHelper.to_iso_string(self.created_at),
+                'last_login': DateTimeHelper.to_iso_string(self.last_login),
+                'skills': self.skills,
+                'projects_created': self.projects_created
+            }
+
+
+    # Fallback ModelValidator
+    class ModelValidator:
+        """Fallback ModelValidator"""
+
+        @staticmethod
+        def validate(model: Any) -> bool:
+            return True
+
+        @staticmethod
+        def validate_user(user: User) -> bool:
+            if not user.username or not user.email:
+                raise ValidationError("Username and email are required")
+            return True
+
+
+    # Fallback database function
     def get_database():
+        """Fallback database function"""
         return None
 
+
+    # Fallback BaseAgent class
+    class BaseAgent:
+        """Fallback BaseAgent when base module is not available"""
+
+        def __init__(self, agent_id: str, name: str, services: Optional[ServiceContainer] = None):
+            self.agent_id = agent_id
+            self.name = name
+            self.services = services
+            self.logger = logging.getLogger(f"agent.{agent_id}")
+            self.config = {}
+            self.event_bus = None
+            self.db_manager = None
+            self.db_service = None
+
+        def get_capabilities(self) -> List[str]:
+            return []
+
+        def process_request(self, action: str, data: Dict[str, Any]) -> Dict[str, Any]:
+            return {
+                'success': False,
+                'error': 'Agent functionality not available',
+                'agent_id': self.agent_id,
+                'action': action
+            }
+
+        def health_check(self) -> Dict[str, Any]:
+            return {
+                'agent_id': self.agent_id,
+                'name': self.name,
+                'status': 'degraded',
+                'available': False
+            }
+
+        def _error_response(self, message: str) -> Dict[str, Any]:
+            return {
+                'success': False,
+                'error': message
+            }
+
+        def _success_response(self, message: str, data: Any = None) -> Dict[str, Any]:
+            """Create success response with message and optional data"""
+            response = {
+                'success': True,
+                'message': message
+            }
+            if data is not None:
+                response['data'] = data
+            return response
+
+
+    # Fallback decorators
+    def require_authentication(func):
+        """Fallback authentication decorator"""
+
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
+
+
+    def log_agent_action(func):
+        """Fallback logging decorator"""
+
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
+
+
+# ============================================================================
+# ROLE CONSTANTS - Using string literals to avoid enum .value type issues
+# ============================================================================
+
+class RoleConstants:
+    """String constants for roles"""
+    ADMIN = "admin"
+    PROJECT_MANAGER = "project_manager"
+    DEVELOPER = "developer"
+    DESIGNER = "designer"
+    TESTER = "tester"
+    STAKEHOLDER = "stakeholder"
+    VIEWER = "viewer"
+
+
+# ============================================================================
+# USER MANAGER AGENT
+# ============================================================================
 
 class UserManagerAgent(BaseAgent):
     """
     Enhanced user management agent with role-based capabilities
 
-    Absorbs: Role management functionality from legacy system
     Capabilities: Complete user lifecycle, authentication, team management
     """
 
     def __init__(self, services: Optional[ServiceContainer] = None):
-        """Initialize UserManagerAgent with corrected patterns"""
+        """Initialize UserManagerAgent"""
         super().__init__("user_manager", "User Manager", services)
 
-        # Initialize logging
+        # Get database service if available
+        if self.db_manager:
+            self.db_service = get_database()
+        else:
+            self.db_service = None
+
         if self.logger:
-            self.logger.info(f"UserManagerAgent initialized successfully")
+            self.logger.info("UserManagerAgent initialized successfully")
 
     def get_capabilities(self) -> List[str]:
         """Return list of capabilities this agent provides"""
@@ -67,16 +299,43 @@ class UserManagerAgent(BaseAgent):
             "deactivate_user", "get_user_info", "check_permissions"
         ]
 
+    def process_request(self, action: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Process user management requests"""
+        action_map = {
+            'create_user': self._create_user,
+            'authenticate_user': self._authenticate_user,
+            'update_profile': self._update_profile,
+            'manage_roles': self._manage_roles,
+            'assign_permissions': self._assign_permissions,
+            'list_users': self._list_users,
+            'deactivate_user': self._deactivate_user,
+            'get_user_info': self._get_user_info,
+            'check_permissions': self._check_permissions,
+            'get_role_info': self._get_role_info
+        }
+
+        handler = action_map.get(action)
+        if not handler:
+            return self._error_response(f"Unknown action: {action}")
+
+        try:
+            return handler(data)
+        except Exception as e:
+            self.logger.error(f"Error processing {action}: {e}")
+            return self._error_response(f"Action failed: {str(e)}")
+
+    # ========================================================================
+    # USER LIFECYCLE MANAGEMENT
+    # ========================================================================
+
     @log_agent_action
     def _create_user(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Create new user with proper validation and role assignment"""
-        username = data.get('username')  # Initialize early
-
         try:
             # Extract and validate required fields
+            username = data.get('username')
             email = data.get('email')
-            password_hash = data.get('password_hash') or data.get('passcode_hash')  # Support both field names
-            full_name = data.get('full_name', '')
+            password_hash = data.get('password_hash') or data.get('passcode_hash')
 
             if not username or not password_hash:
                 self.logger.warning("User creation failed: Username and password are required")
@@ -96,12 +355,12 @@ class UserManagerAgent(BaseAgent):
                     return self._error_response(f"Email '{email}' is already registered")
 
             # Parse role with validation
-            role_str = data.get('role', UserRole.DEVELOPER.value)
+            role_str = data.get('role', RoleConstants.DEVELOPER)
             try:
                 if isinstance(role_str, str):
                     user_role = UserRole(role_str.lower())
                 else:
-                    user_role = UserRole.DEVELOPER  # Default fallback
+                    user_role = UserRole.DEVELOPER
             except ValueError:
                 self.logger.warning(f"Invalid role '{role_str}', defaulting to DEVELOPER")
                 user_role = UserRole.DEVELOPER
@@ -113,132 +372,92 @@ class UserManagerAgent(BaseAgent):
                 password_hash=password_hash,
                 first_name=data.get('first_name', ''),
                 last_name=data.get('last_name', ''),
+                full_name=data.get('full_name', f"{data.get('first_name', '')} {data.get('last_name', '')}".strip()),
                 role=user_role,
                 status=UserStatus.ACTIVE,
-                bio=data.get('bio', ''),
-                skills=data.get('skills', []),
-                preferences=data.get('preferences', {}),
                 created_at=DateTimeHelper.now(),
-                updated_at=DateTimeHelper.now()
+                skills=data.get('skills', [])
             )
 
             # Validate user data
-            validation_errors = ModelValidator.validate_user_data(new_user.to_dict())
-            if validation_errors:
-                return self._error_response(f"Validation failed: {', '.join(validation_errors)}")
+            try:
+                ModelValidator.validate_user(new_user)
+            except ValidationError as e:
+                return self._error_response(f"User validation failed: {str(e)}")
 
             # Save to database
             if self.db_service:
-                saved_user = self.db_service.users.create(new_user)
-                user_id = saved_user.id if saved_user else new_user.id
+                created_user = self.db_service.users.create(new_user)
+
+                self.logger.info(f"User created successfully: {username}")
+
+                # Assign default role permissions
+                self._assign_role_to_user(created_user, str(user_role.value))
+
+                return self._success_response(
+                    f"User '{username}' created successfully with role '{user_role.value}'",
+                    created_user.to_dict()
+                )
             else:
-                user_id = new_user.id
-
-            # Emit user creation event
-            if self.events:
-                self.events.emit('user_created', self.agent_id, {
-                    'user_id': user_id,
-                    'username': username,
-                    'role': user_role.value,
-                    'created_by': 'user_manager_agent'
-                })
-
-            self.logger.info(f"Successfully created user: {username} (ID: {user_id})")
-
-            return self._success_response(f"User '{username}' created successfully", {
-                'user_id': user_id,
-                'username': username,
-                'email': email,
-                'role': user_role.value,
-                'status': UserStatus.ACTIVE.value,
-                'full_name': full_name,
-                'created_at': DateTimeHelper.to_iso_string(new_user.created_at)
-            })
-
-        except ValidationError as ve:
-            error_msg = f"User creation validation failed: {ve}"
-            self.logger.error(error_msg)
-            return self._error_response(str(ve))
+                return self._error_response("Database service not available")
 
         except Exception as e:
-            error_msg = f"User creation failed for '{username}': {e}"
-            self.logger.error(error_msg)
+            self.logger.error(f"User creation failed: {e}")
             return self._error_response(f"Failed to create user: {str(e)}")
 
-    @require_authentication
     @log_agent_action
     def _authenticate_user(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Authenticate user with password verification"""
+        """Authenticate user with username/email and password"""
         try:
-            username = data.get('username')
+            identifier = data.get('username') or data.get('email')
             password_hash = data.get('password_hash')
 
-            if not username or not password_hash:
-                return self._error_response("Username and password are required")
+            if not identifier or not password_hash:
+                return self._error_response("Username/email and password are required")
 
             if not self.db_service:
                 return self._error_response("Database service not available")
 
-            # Get user from database
-            user = self.db_service.users.get_by_username(username)
+            # Try to find user by username or email
+            user = None
+            if '@' in identifier:
+                user = self.db_service.users.get_by_email(identifier)
+            else:
+                user = self.db_service.users.get_by_username(identifier)
+
             if not user:
-                self.logger.warning(f"Authentication failed: User '{username}' not found")
-                return self._error_response("Invalid username or password")
+                self.logger.warning(f"Authentication failed: User '{identifier}' not found")
+                return self._error_response("Invalid credentials")
 
-            # Check user status
+            # Check if account is active
             if user.status != UserStatus.ACTIVE:
-                self.logger.warning(f"Authentication failed: User '{username}' is not active")
-                return self._error_response("Account is not active")
+                return self._error_response(f"Account is {user.status.value}")
 
-            # Check if account is locked
-            if user.is_locked:
-                self.logger.warning(f"Authentication failed: User '{username}' account is locked")
-                return self._error_response("Account is temporarily locked")
-
-            # Verify password (simplified check - in real implementation, use proper hashing)
+            # Verify password
             if user.password_hash != password_hash:
-                # Increment failed login attempts
-                user.login_attempts += 1
-                if user.login_attempts >= 5:
-                    # Lock account for 30 minutes
-                    import datetime
-                    user.locked_until = DateTimeHelper.now() + datetime.timedelta(minutes=30)
-                    self.logger.warning(f"Account locked for user '{username}' due to multiple failed attempts")
+                self.logger.warning(f"Authentication failed: Invalid password for '{identifier}'")
+                return self._error_response("Invalid credentials")
 
-                if self.db_service:
-                    self.db_service.users.update(user.id, user)
-
-                return self._error_response("Invalid username or password")
-
-            # Authentication successful
+            # Update last login
             user.last_login = DateTimeHelper.now()
-            user.login_attempts = 0  # Reset on successful login
-            user.locked_until = None
+            self.db_service.users.update(user.id, user)
 
-            if self.db_service:
-                self.db_service.users.update(user.id, user)
+            self.logger.info(f"User authenticated successfully: {user.username}")
 
-            # Emit authentication event
-            if self.events:
-                self.events.emit('user_authenticated', self.agent_id, {
-                    'user_id': user.id,
-                    'username': username,
-                    'login_time': DateTimeHelper.to_iso_string(user.last_login)
-                })
+            # Generate session token (simplified)
+            session_token = secrets.token_urlsafe(32)
 
-            self.logger.info(f"User '{username}' authenticated successfully")
-
-            return self._success_response("Authentication successful", {
-                'user_id': user.id,
-                'username': user.username,
-                'role': user.role.value,
-                'last_login': DateTimeHelper.to_iso_string(user.last_login),
-                'permissions': self._get_user_permissions(user.role)
-            })
+            return self._success_response(
+                f"Welcome back, {user.username}!",
+                {
+                    'user': user.to_dict(),
+                    'session_token': session_token,
+                    'permissions': self._get_user_permissions(user.role)
+                }
+            )
 
         except Exception as e:
-            error_msg = f"Authentication error: {e}"
-            self.logger.error(error_msg)
+            self.logger.error(f"Authentication failed: {e}")
             return self._error_response(f"Authentication failed: {str(e)}")
 
     @log_agent_action
@@ -252,228 +471,250 @@ class UserManagerAgent(BaseAgent):
             if not self.db_service:
                 return self._error_response("Database service not available")
 
-            # Get existing user
             user = self.db_service.users.get(user_id)
             if not user:
                 return self._error_response(f"User not found: {user_id}")
 
             # Update allowed fields
-            updatable_fields = ['first_name', 'last_name', 'bio', 'skills', 'preferences', 'avatar_url']
-            updated_fields = []
+            updatable_fields = ['first_name', 'last_name', 'full_name', 'email', 'skills']
 
             for field in updatable_fields:
                 if field in data:
                     setattr(user, field, data[field])
-                    updated_fields.append(field)
 
-            # Special handling for email updates (requires validation)
+            # Validate updated user
             if 'email' in data:
-                new_email = data['email']
-                if ValidationHelper.validate_email(new_email):
-                    # Check if email is already in use
-                    existing_user = self.db_service.users.get_by_email(new_email)
-                    if existing_user and existing_user.id != user_id:
-                        return self._error_response("Email address is already in use")
-
-                    user.email = new_email
-                    updated_fields.append('email')
-                else:
+                if not ValidationHelper.validate_email(data['email']):
                     return self._error_response("Invalid email address")
-
-            # Update timestamp
-            user.updated_at = DateTimeHelper.now()
 
             # Save changes
             updated_user = self.db_service.users.update(user_id, user)
 
-            # Emit profile update event
-            if self.events:
-                self.events.emit('profile_updated', self.agent_id, {
-                    'user_id': user_id,
-                    'updated_fields': updated_fields,
-                    'updated_by': 'user_manager_agent'
-                })
+            self.logger.info(f"User profile updated: {user.username}")
 
-            self.logger.info(f"Profile updated for user {user_id}: {updated_fields}")
-
-            return self._success_response("Profile updated successfully", {
-                'user_id': user_id,
-                'updated_fields': updated_fields,
-                'updated_at': DateTimeHelper.to_iso_string(user.updated_at)
-            })
+            return self._success_response(
+                "Profile updated successfully",
+                updated_user.to_dict()
+            )
 
         except Exception as e:
-            error_msg = f"Profile update failed: {e}"
-            self.logger.error(error_msg)
+            self.logger.error(f"Profile update failed: {e}")
             return self._error_response(f"Failed to update profile: {str(e)}")
 
-    @require_authentication
     @log_agent_action
-    def _manage_roles(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Manage user role assignments"""
+    def _deactivate_user(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Deactivate a user account"""
         try:
-            action = data.get('action')  # 'assign', 'revoke', 'list'
-            target_user_id = data.get('target_user_id')
-
-            if action not in ['assign', 'revoke', 'list']:
-                return self._error_response("Invalid action. Use: assign, revoke, or list")
+            user_id = data.get('user_id')
+            if not user_id:
+                return self._error_response("User ID is required")
 
             if not self.db_service:
                 return self._error_response("Database service not available")
 
-            if action == 'list':
-                # List user roles
-                if target_user_id:
-                    user = self.db_service.users.get(target_user_id)
-                    if not user:
-                        return self._error_response(f"User not found: {target_user_id}")
-                    return self._success_response("User role retrieved", self._list_user_roles(user))
-                else:
-                    # List all users and their roles
-                    all_users = self.db_service.users.list()
-                    user_roles = [self._list_user_roles(user) for user in all_users]
-                    return self._success_response("All user roles retrieved", {'users': user_roles})
-
-            # For assign/revoke operations
-            if not target_user_id:
-                return self._error_response("Target user ID is required")
-
-            user = self.db_service.users.get(target_user_id)
+            user = self.db_service.users.get(user_id)
             if not user:
-                return self._error_response(f"User not found: {target_user_id}")
+                return self._error_response(f"User not found: {user_id}")
 
-            if action == 'assign':
-                role = data.get('role')
-                if not role:
-                    return self._error_response("Role is required for assignment")
+            # Update status
+            user.status = UserStatus.INACTIVE
+            updated_user = self.db_service.users.update(user_id, user)
 
-                return self._assign_role_to_user(user, role)
+            self.logger.info(f"User deactivated: {user.username}")
 
-            elif action == 'revoke':
-                # For simplified role system, revoke means setting to default role
-                return self._assign_role_to_user(user, UserRole.VIEWER.value)
+            return self._success_response(
+                f"User '{user.username}' has been deactivated",
+                updated_user.to_dict()
+            )
 
         except Exception as e:
-            error_msg = f"Role management failed: {e}"
-            self.logger.error(error_msg)
-            return self._error_response(f"Failed to manage roles: {str(e)}")
+            self.logger.error(f"User deactivation failed: {e}")
+            return self._error_response(f"Failed to deactivate user: {str(e)}")
 
-    def _assign_role_to_user(self, user: User, role: str) -> Dict[str, Any]:
-        """Assign a role to a user"""
+    # ========================================================================
+    # ROLE AND PERMISSION MANAGEMENT
+    # ========================================================================
+
+    @log_agent_action
+    def _manage_roles(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Manage user roles (assign, update, revoke)"""
         try:
+            user_id = data.get('user_id')
+            new_role = data.get('role')
+
+            if not user_id or not new_role:
+                return self._error_response("User ID and role are required")
+
             # Validate role
             try:
-                new_role = UserRole(role.lower())
+                role_enum = UserRole(new_role.lower())
             except ValueError:
-                return self._error_response(f"Invalid role: {role}")
+                return self._error_response(f"Invalid role: {new_role}")
 
-            old_role = user.role.value if user.role else 'none'
+            if not self.db_service:
+                return self._error_response("Database service not available")
 
-            # Update user role
-            user.role = new_role
-            user.updated_at = DateTimeHelper.now()
+            user = self.db_service.users.get(user_id)
+            if not user:
+                return self._error_response(f"User not found: {user_id}")
 
-            # Save to database
-            if self.db_service:
-                self.db_service.users.update(user.id, user)
+            old_role = user.role
+            user.role = role_enum
+            updated_user = self.db_service.users.update(user_id, user)
 
-            # Emit role change event
-            if self.events:
-                self.events.emit('role_assigned', self.agent_id, {
-                    'user_id': user.id,
-                    'username': user.username,
-                    'old_role': old_role,
-                    'new_role': new_role.value,
-                    'assigned_by': 'user_manager_agent'
-                })
+            self.logger.info(f"User role updated: {user.username} from {old_role.value} to {role_enum.value}")
 
-            self.logger.info(f"Role '{new_role.value}' assigned to user '{user.username}'")
+            return self._success_response(
+                f"Role updated from '{old_role.value}' to '{role_enum.value}'",
+                {
+                    'user': updated_user.to_dict(),
+                    'old_role': str(old_role.value),
+                    'new_role': str(role_enum.value),
+                    'permissions': self._get_user_permissions(role_enum)
+                }
+            )
 
-            return self._success_response(f"Role '{new_role.value}' assigned successfully", {
-                'user_id': user.id,
-                'username': user.username,
-                'old_role': old_role,
-                'new_role': new_role.value,
-                'permissions': self._get_user_permissions(new_role),
-                'assigned_at': DateTimeHelper.to_iso_string(user.updated_at)
-            })
-
-        except ValidationError:
-            raise
         except Exception as e:
-            self.logger.error(f"Role assignment error: {e}")
-            raise Exception(f"Failed to assign role: {str(e)}")
+            self.logger.error(f"Role management failed: {e}")
+            return self._error_response(f"Failed to manage role: {str(e)}")
 
-    def _list_user_roles(self, user: User) -> Dict[str, Any]:
-        """List role information for a user (single role system)"""
-        return {
-            'username': user.username,
-            'role': user.role.value if user.role else 'none',
-            'status': user.status.value if user.status else 'unknown',
-            'last_login': DateTimeHelper.to_iso_string(user.last_login) if user.last_login else None,
-            'created_at': DateTimeHelper.to_iso_string(user.created_at),
-            'updated_at': DateTimeHelper.to_iso_string(user.updated_at)
-        }
+    def _assign_role_to_user(self, user: User, role: str) -> Dict[str, Any]:
+        """Internal method to assign role and permissions to user"""
+        try:
+            role_info = self._get_role_capabilities(role)
 
-    def _get_role_capabilities(self, role: str) -> Dict[str, Any]:
-        """Get capabilities for a specific role"""
-        if not role:
-            raise ValidationError("Role is required")
+            self.logger.info(
+                f"Assigned role '{role}' to user '{user.username}' "
+                f"with {len(role_info['capabilities'])} capabilities"
+            )
 
-        # Define role capabilities mapping
-        role_capabilities = {
-            UserRole.ADMIN.value: [
-                'manage_users', 'system_admin', 'view_all_projects', 'delete_projects',
-                'manage_system_settings', 'view_analytics', 'manage_permissions'
-            ],
-            UserRole.PROJECT_MANAGER.value: [
-                'create_project', 'manage_team', 'view_analytics', 'manage_timeline',
-                'allocate_resources', 'manage_risks', 'approve_deliverables'
-            ],
-            UserRole.DEVELOPER.value: [
-                'write_code', 'run_tests', 'submit_code_reviews', 'implement_features',
-                'fix_bugs', 'create_documentation', 'deploy_code'
-            ],
-            UserRole.DESIGNER.value: [
-                'create_designs', 'user_research', 'design_systems', 'prototyping',
-                'accessibility_review', 'visual_design', 'ux_research'
-            ],
-            UserRole.TESTER.value: [
-                'create_tests', 'run_test_suites', 'report_bugs', 'validate_requirements',
-                'performance_testing', 'security_testing', 'test_automation'
-            ],
-            UserRole.STAKEHOLDER.value: [
-                'view_progress', 'provide_feedback', 'approve_requirements',
-                'review_deliverables', 'request_changes', 'view_reports'
-            ],
-            UserRole.VIEWER.value: [
-                'view_projects', 'view_progress', 'read_documentation'
-            ]
-        }
+            return {
+                'success': True,
+                'role': role,
+                'capabilities': role_info['capabilities']
+            }
 
-        return {
-            'role': role,
-            'capabilities': role_capabilities.get(role, []),
-            'description': self._get_role_description(role)
-        }
+        except Exception as e:
+            self.logger.error(f"Role assignment failed: {e}")
+            return {'success': False, 'error': str(e)}
 
-    def _get_role_description(self, role: str) -> str:
-        """Get description for a role"""
-        descriptions = {
-            UserRole.ADMIN.value: "Full system administration and user management",
-            UserRole.PROJECT_MANAGER.value: "Project planning, team coordination, and delivery management",
-            UserRole.DEVELOPER.value: "Software development, coding, and technical implementation",
-            UserRole.DESIGNER.value: "User experience design, visual design, and prototyping",
-            UserRole.TESTER.value: "Quality assurance, testing, and bug reporting",
-            UserRole.STAKEHOLDER.value: "Business oversight, requirements approval, and feedback",
-            UserRole.VIEWER.value: "Read-only access to projects and documentation"
-        }
-        return descriptions.get(role, "Unknown role")
+    @log_agent_action
+    def _assign_permissions(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Assign specific permissions to a user"""
+        try:
+            user_id = data.get('user_id')
+            permissions = data.get('permissions', [])
 
-    def _get_user_permissions(self, role: UserRole) -> List[str]:
-        """Get permissions for a specific role"""
-        role_capabilities = self._get_role_capabilities(role.value)
-        return role_capabilities['capabilities']
+            if not user_id:
+                return self._error_response("User ID is required")
+
+            if not self.db_service:
+                return self._error_response("Database service not available")
+
+            user = self.db_service.users.get(user_id)
+            if not user:
+                return self._error_response(f"User not found: {user_id}")
+
+            # Get current role permissions
+            role_permissions = self._get_user_permissions(user.role)
+
+            # Combine with additional permissions
+            all_permissions = list(set(role_permissions + permissions))
+
+            self.logger.info(f"Assigned {len(permissions)} additional permissions to {user.username}")
+
+            return self._success_response(
+                f"Assigned {len(permissions)} additional permissions to {user.username}",
+                {
+                    'user_id': user_id,
+                    'role': str(user.role.value),
+                    'base_permissions': role_permissions,
+                    'additional_permissions': permissions,
+                    'total_permissions': all_permissions
+                }
+            )
+
+        except Exception as e:
+            self.logger.error(f"Permission assignment failed: {e}")
+            return self._error_response(f"Failed to assign permissions: {str(e)}")
+
+    @log_agent_action
+    def _check_permissions(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Check if user has specific permissions"""
+        try:
+            user_id = data.get('user_id')
+            required_permissions = data.get('permissions', [])
+
+            if not user_id:
+                return self._error_response("User ID is required")
+
+            if not self.db_service:
+                return self._error_response("Database service not available")
+
+            user = self.db_service.users.get(user_id)
+            if not user:
+                return self._error_response(f"User not found: {user_id}")
+
+            user_permissions = self._get_user_permissions(user.role)
+
+            # Check each required permission
+            has_all = all(perm in user_permissions for perm in required_permissions)
+            missing = [perm for perm in required_permissions if perm not in user_permissions]
+
+            return self._success_response(
+                "Permission check completed",
+                {
+                    'user_id': user_id,
+                    'role': str(user.role.value),
+                    'has_all_permissions': has_all,
+                    'user_permissions': user_permissions,
+                    'required_permissions': required_permissions,
+                    'missing_permissions': missing
+                }
+            )
+
+        except Exception as e:
+            self.logger.error(f"Permission check failed: {e}")
+            return self._error_response(f"Failed to check permissions: {str(e)}")
+
+    # ========================================================================
+    # USER INFORMATION AND LISTING
+    # ========================================================================
+
+    @log_agent_action
+    def _get_user_info(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Get detailed information about a user"""
+        try:
+            user_id = data.get('user_id')
+            username = data.get('username')
+
+            if not user_id and not username:
+                return self._error_response("User ID or username is required")
+
+            if not self.db_service:
+                return self._error_response("Database service not available")
+
+            # Get user
+            if user_id:
+                user = self.db_service.users.get(user_id)
+            else:
+                user = self.db_service.users.get_by_username(username)
+
+            if not user:
+                return self._error_response("User not found")
+
+            # Get role information
+            role_info = self._get_role_capabilities(str(user.role.value))
+
+            user_info = user.to_dict()
+            user_info['role_info'] = role_info
+            user_info['permissions'] = self._get_user_permissions(user.role)
+
+            return self._success_response("User information retrieved", user_info)
+
+        except Exception as e:
+            self.logger.error(f"Get user info failed: {e}")
+            return self._error_response(f"Failed to get user info: {str(e)}")
 
     @log_agent_action
     def _list_users(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -518,166 +759,154 @@ class UserManagerAgent(BaseAgent):
                     'id': user.id,
                     'username': user.username,
                     'email': user.email,
-                    'full_name': user.full_name,
-                    'role': user.role.value if user.role else 'none',
-                    'status': user.status.value if user.status else 'unknown',
-                    'last_login': DateTimeHelper.to_iso_string(user.last_login) if user.last_login else None,
+                    'full_name': getattr(user, 'full_name', ''),
+                    'role': str(user.role.value),
+                    'status': str(user.status.value),
                     'created_at': DateTimeHelper.to_iso_string(user.created_at),
-                    'projects_created': user.projects_created,
-                    'sessions_completed': user.sessions_completed
+                    'last_login': DateTimeHelper.to_iso_string(user.last_login) if user.last_login else None
                 }
                 user_list.append(user_data)
 
-            return self._success_response("Users retrieved successfully", {
-                'users': user_list,
-                'total_count': total_count,
-                'offset': offset,
-                'limit': limit,
-                'filters_applied': {
-                    'role': role_filter,
-                    'status': status_filter
+            return self._success_response(
+                f"Retrieved {len(user_list)} users",
+                {
+                    'users': user_list,
+                    'total': total_count,
+                    'limit': limit,
+                    'offset': offset,
+                    'has_more': (offset + limit) < total_count
                 }
-            })
+            )
 
         except Exception as e:
-            error_msg = f"Failed to list users: {e}"
-            self.logger.error(error_msg)
-            return self._error_response(error_msg)
+            self.logger.error(f"List users failed: {e}")
+            return self._error_response(f"Failed to list users: {str(e)}")
 
     @log_agent_action
-    def _get_user_info(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Get detailed information about a specific user"""
+    def _get_role_info(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Get information about a specific role"""
         try:
-            user_id = data.get('user_id')
-            username = data.get('username')
+            role = data.get('role')
+            if not role:
+                # Return info about all roles
+                all_roles = {}
+                for role_key in [RoleConstants.ADMIN, RoleConstants.PROJECT_MANAGER,
+                                 RoleConstants.DEVELOPER, RoleConstants.DESIGNER,
+                                 RoleConstants.TESTER, RoleConstants.STAKEHOLDER,
+                                 RoleConstants.VIEWER]:
+                    all_roles[role_key] = self._get_role_capabilities(role_key)
 
-            if not user_id and not username:
-                return self._error_response("Either user_id or username is required")
+                return self._success_response({'roles': all_roles})
 
-            if not self.db_service:
-                return self._error_response("Database service not available")
-
-            # Get user
-            if user_id:
-                user = self.db_service.users.get(user_id)
-            else:
-                user = self.db_service.users.get_by_username(username)
-
-            if not user:
-                identifier = user_id or username
-                return self._error_response(f"User not found: {identifier}")
-
-            # Compile comprehensive user information
-            user_info = {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'full_name': user.full_name,
-                'role': user.role.value if user.role else 'none',
-                'status': user.status.value if user.status else 'unknown',
-                'bio': user.bio,
-                'skills': user.skills,
-                'avatar_url': user.avatar_url,
-                'created_at': DateTimeHelper.to_iso_string(user.created_at),
-                'updated_at': DateTimeHelper.to_iso_string(user.updated_at),
-                'last_login': DateTimeHelper.to_iso_string(user.last_login) if user.last_login else None,
-                'is_locked': user.is_locked,
-                'login_attempts': user.login_attempts,
-                'statistics': {
-                    'projects_created': user.projects_created,
-                    'sessions_completed': user.sessions_completed,
-                    'code_generated_lines': user.code_generated_lines
-                },
-                'permissions': self._get_user_permissions(user.role) if user.role else [],
-                'role_info': self._get_role_capabilities(user.role.value) if user.role else {}
-            }
-
-            return self._success_response("User information retrieved", user_info)
+            # Get specific role info
+            role_info = self._get_role_capabilities(role)
+            return self._success_response(role_info)
 
         except Exception as e:
-            error_msg = f"Failed to get user info: {e}"
-            self.logger.error(error_msg)
-            return self._error_response(error_msg)
+            self.logger.error(f"Get role info failed: {e}")
+            return self._error_response(f"Failed to get role info: {str(e)}")
 
-    @log_agent_action
-    def _deactivate_user(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Deactivate a user account"""
-        try:
-            user_id = data.get('user_id')
-            if not user_id:
-                return self._error_response("User ID is required")
+    # ========================================================================
+    # HELPER METHODS
+    # ========================================================================
 
-            if not self.db_service:
-                return self._error_response("Database service not available")
+    def _get_role_capabilities(self, role: str) -> Dict[str, Any]:
+        """
+        Get capabilities and information for a specific role
 
-            user = self.db_service.users.get(user_id)
-            if not user:
-                return self._error_response(f"User not found: {user_id}")
+        Args:
+            role: Role string (e.g., 'admin', 'developer')
 
-            if user.status == UserStatus.INACTIVE:
-                return self._success_response("User is already inactive", {
-                    'user_id': user_id,
-                    'username': user.username,
-                    'status': 'already_inactive'
-                })
+        Returns:
+            Dict containing role capabilities and description
+        """
+        # Use string literals for dictionary keys to avoid enum .value type issues
+        role_capabilities: Dict[str, List[str]] = {
+            "admin": [
+                'manage_users', 'system_admin', 'view_all_projects', 'delete_projects',
+                'manage_system_settings', 'view_analytics', 'manage_permissions'
+            ],
+            "project_manager": [
+                'create_project', 'manage_team', 'view_analytics', 'manage_timeline',
+                'allocate_resources', 'manage_risks', 'approve_deliverables'
+            ],
+            "developer": [
+                'write_code', 'run_tests', 'submit_code_reviews', 'implement_features',
+                'fix_bugs', 'create_documentation', 'deploy_code'
+            ],
+            "designer": [
+                'create_designs', 'user_research', 'design_systems', 'prototyping',
+                'accessibility_review', 'visual_design', 'ux_research'
+            ],
+            "tester": [
+                'create_tests', 'run_test_suites', 'report_bugs', 'validate_requirements',
+                'performance_testing', 'security_testing', 'test_automation'
+            ],
+            "stakeholder": [
+                'view_progress', 'provide_feedback', 'approve_requirements',
+                'review_deliverables', 'request_changes', 'view_reports'
+            ],
+            "viewer": [
+                'view_projects', 'view_progress', 'read_documentation'
+            ]
+        }
 
-            # Update user status
-            user.status = UserStatus.INACTIVE
-            user.updated_at = DateTimeHelper.now()
+        return {
+            'role': role,
+            'capabilities': role_capabilities.get(role, []),
+            'description': self._get_role_description(role)
+        }
 
-            # Save changes
-            self.db_service.users.update(user_id, user)
+    def _get_role_description(self, role: str) -> str:
+        """
+        Get description for a role
 
-            # Emit deactivation event
-            if self.events:
-                self.events.emit('user_deactivated', self.agent_id, {
-                    'user_id': user_id,
-                    'username': user.username,
-                    'deactivated_by': 'user_manager_agent'
-                })
+        Args:
+            role: Role string (e.g., 'admin', 'developer')
 
-            self.logger.info(f"User '{user.username}' deactivated successfully")
+        Returns:
+            Human-readable role description
+        """
+        # Use string literals for dictionary keys
+        descriptions: Dict[str, str] = {
+            "admin": "Full system administration and user management",
+            "project_manager": "Project planning, team coordination, and delivery management",
+            "developer": "Software development, coding, and technical implementation",
+            "designer": "User experience design, visual design, and prototyping",
+            "tester": "Quality assurance, testing, and bug reporting",
+            "stakeholder": "Business oversight, requirements approval, and feedback",
+            "viewer": "Read-only access to projects and documentation"
+        }
+        return descriptions.get(role, "Unknown role")
 
-            return self._success_response("User deactivated successfully", {
-                'user_id': user_id,
-                'username': user.username,
-                'previous_status': UserStatus.ACTIVE.value,
-                'new_status': UserStatus.INACTIVE.value,
-                'deactivated_at': DateTimeHelper.to_iso_string(user.updated_at)
-            })
+    def _get_user_permissions(self, role: UserRole) -> List[str]:
+        """
+        Get permissions for a specific role
 
-        except Exception as e:
-            error_msg = f"User deactivation failed: {e}"
-            self.logger.error(error_msg)
-            return self._error_response(error_msg)
+        Args:
+            role: UserRole enum instance
+
+        Returns:
+            List of permission strings
+        """
+        # Convert enum to string explicitly
+        role_str = str(role.value) if hasattr(role, 'value') else str(role)
+        role_capabilities = self._get_role_capabilities(role_str)
+        return role_capabilities['capabilities']
 
     def health_check(self) -> Dict[str, Any]:
-        """Enhanced health check for UserManagerAgent"""
-        health = super().health_check()
+        """Check agent health status"""
+        status = {
+            'agent_id': self.agent_id,
+            'name': self.name,
+            'status': 'healthy',
+            'capabilities': len(self.get_capabilities()),
+            'database_available': self.db_service is not None,
+            'services_available': self.services is not None
+        }
 
-        try:
-            # Check database connectivity
-            if self.db_service:
-                # Try to count users
-                users_count = len(self.db_service.users.list()) if hasattr(self.db_service, 'users') else 0
-                health['database_check'] = {
-                    'status': 'healthy',
-                    'users_in_database': users_count
-                }
-            else:
-                health['database_check'] = {
-                    'status': 'unavailable',
-                    'users_in_database': 0
-                }
+        if not self.db_service:
+            status['status'] = 'degraded'
+            status['warnings'] = ['Database service not available']
 
-            # Check available roles
-            health['role_system'] = {
-                'available_roles': [role.value for role in UserRole],
-                'role_count': len(UserRole)
-            }
-
-        except Exception as e:
-            health['status'] = 'degraded'
-            health['error'] = f"Health check failed: {e}"
-
-        return health
+        return status

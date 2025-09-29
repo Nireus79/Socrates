@@ -1,28 +1,38 @@
 #!/usr/bin/env python3
 """
-Socratic RAG Enhanced - Main Application Entry Point
-Version: 7.3.0
+Socratic RAG Enhanced - Application Entry Point
+==============================================
 
-This is the single entry point for the Socratic RAG Enhanced system.
-Initializes all components, agents, services, and the web interface with graceful degradation.
+Main entry point for starting the Socratic RAG Enhanced web application.
+Handles system initialization, dependency validation, and Flask server startup.
+
+Usage:
+    python run.py [--port PORT] [--debug] [--check-deps] [--headless]
 """
 
+import os
 import sys
-import signal
-import logging
 import argparse
-import webbrowser
-import threading
-import time
+import logging
 from pathlib import Path
-from typing import Optional, Dict, Any, List
+from typing import Dict, List, Optional, Any
 
-# Add the project root to Python path
+# Add project root to Python path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-# Track what's available
-COMPONENTS_AVAILABLE = {
+# Setup basic logging before imports
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+# ============================================================================
+# COMPONENT AVAILABILITY TRACKING
+# ============================================================================
+
+COMPONENTS_AVAILABLE: Dict[str, bool] = {
     'core': False,
     'database': False,
     'agents': False,
@@ -30,44 +40,67 @@ COMPONENTS_AVAILABLE = {
     'web': False
 }
 
-# Store import errors for debugging
-IMPORT_ERRORS = {}
+IMPORT_ERRORS: Dict[str, str] = {}
 
 
 # ============================================================================
-# FALLBACK FUNCTIONS - Define before imports
+# FALLBACK FUNCTIONS - For graceful degradation
 # ============================================================================
 
-def _fallback_initialize_system(config_path: str = None) -> bool:
+def _fallback_initialize_system(config_path: Optional[str] = None):
     """Fallback system initialization"""
-    print("⚠️  Core system not available - running in minimal mode")
-    return True
+    print("⚠️ Warning: Core system initialization not available")
+    print("   Running in limited mode")
+    return None
 
 
-def _fallback_init_database() -> bool:
+def _fallback_init_database():
     """Fallback database initialization"""
-    print("⚠️  Database not available - some features will be limited")
-    return True
-
-
-def _fallback_initialize_all_agents() -> Dict[str, Any]:
-    """Fallback agents initialization"""
-    return {'initialized': 0, 'status': 'unavailable', 'error': 'Agents not available'}
+    print("⚠️ Warning: Database initialization not available")
+    return False
 
 
 def _fallback_get_orchestrator():
     """Fallback orchestrator function"""
+    print("⚠️ Warning: Agent orchestrator not available")
     return None
 
 
-def _fallback_initialize_all_services() -> Dict[str, Any]:
+def _fallback_initialize_all_agents():
+    """Fallback agents initialization"""
+    return {
+        'initialized': 0,
+        'total': 0,
+        'status': 'unavailable',
+        'error': 'Agents module not available'
+    }
+
+
+def _fallback_initialize_all_services():
     """Fallback services initialization"""
-    return {'initialized': 0, 'status': 'unavailable', 'error': 'Services not available'}
+    return {
+        'initialized': 0,
+        'status': 'unavailable',
+        'error': 'Services module not available'
+    }
 
 
-def _fallback_create_app(**kwargs):
+def _fallback_create_app():
     """Fallback web app creation"""
-    print("⚠️  Web interface not available - running headless mode")
+    print("❌ Error: Web application not available - cannot start server")
+    print("   Please ensure Flask and web modules are installed")
+    print("   Run: pip install Flask Flask-Login Flask-WTF")
+    print("")
+    print("   Alternative: Run in headless mode with --headless")
+    print("   Example: python run.py --headless")
+    print("")
+    sys.exit(1)
+
+
+def _fallback_create_headless_app():
+    """Create minimal app when web interface is unavailable - running headless mode"""
+    print("⚠️ Running in headless mode - no web interface")
+    print("   System functionality available through API only")
     return None
 
 
@@ -77,16 +110,40 @@ def _fallback_create_app(**kwargs):
 
 # Core system imports
 try:
-    from src.core import (
-        SystemConfig, get_logger, initialize_system, cleanup_system
-    )
+    from src import get_logger  # ✅ FIX: Import from src, not src.core
+    from src.core import SystemConfig, initialize_system, cleanup_system
 
     COMPONENTS_AVAILABLE['core'] = True
 except ImportError as e:
     IMPORT_ERRORS['core'] = str(e)
+
+
+    # ✅ FIX: Define fallback SystemConfig class
+    class SystemConfig:
+        """Fallback SystemConfig when core is not available"""
+
+        def __init__(self):
+            self._config = {}
+
+        def load_config(self, path=None):
+            return False
+
+        def get(self, key, default=None):
+            return default
+
+
+    # ✅ FIX: Use proper def instead of lambda (PEP 8: E731)
+    def cleanup_system(services=None):
+        """Fallback cleanup function"""
+        pass
+
+
+    def get_logger(name: str):
+        """Fallback logger function"""
+        return logging.getLogger(name)
+
+
     initialize_system = _fallback_initialize_system
-    cleanup_system = lambda: None
-    get_logger = lambda name: logging.getLogger(name)
 
 # Database imports
 try:
@@ -190,474 +247,319 @@ def validate_python_version() -> bool:
 
     if sys.version_info >= (3, 12):
         print(
-            f"⚠️  Python {sys.version_info.major}.{sys.version_info.minor} detected. Some packages may have compatibility issues.")
+            f"⚠️  Python {sys.version_info.major}.{sys.version_info.minor} detected. "
+            f"Some packages may have compatibility issues."
+        )
 
     return True
 
 
-def check_file_system() -> bool:
-    """Check file system requirements"""
-    errors = []
+def validate_environment() -> bool:
+    """Validate environment and configuration"""
+    logger = get_logger('run')
 
-    # Check required directories
-    required_dirs = ['src', 'data']
-    for dir_name in required_dirs:
-        dir_path = Path(dir_name)
-        if not dir_path.exists():
-            if dir_name == 'data':
-                # Create data directory if it doesn't exist
-                dir_path.mkdir(exist_ok=True)
-                print(f"📁 Created {dir_name} directory")
-            else:
-                errors.append(f"Required directory '{dir_name}' not found")
+    # Check data directory
+    data_dir = project_root / 'data'
+    if not data_dir.exists():
+        logger.info(f"Creating data directory: {data_dir}")
+        data_dir.mkdir(parents=True, exist_ok=True)
 
-    # Check configuration file
-    config_file = Path('config.yaml')
+    # Check config file
+    config_file = project_root / 'config.yaml'
     if not config_file.exists():
-        print("⚠️  Configuration file 'config.yaml' not found - using defaults")
+        logger.warning(f"Config file not found: {config_file}")
+        logger.warning("System will use default configuration")
 
-    # Check requirements.txt
-    requirements_file = Path('requirements.txt')
-    if not requirements_file.exists():
-        print("⚠️  Requirements file 'requirements.txt' not found")
-
-    if errors:
-        print("❌ File system check failed:")
-        for error in errors:
-            print(f"   • {error}")
-        return False
+    # Check critical environment variables
+    api_key = os.getenv('API_KEY_CLAUDE') or os.getenv('ANTHROPIC_API_KEY')
+    if not api_key:
+        logger.warning("⚠️ No Claude API key found in environment variables")
+        logger.warning("   Set API_KEY_CLAUDE or ANTHROPIC_API_KEY to enable AI features")
 
     return True
 
 
 # ============================================================================
-# MAIN APPLICATION CLASS
+# SYSTEM INITIALIZATION
 # ============================================================================
 
-class SocraticRAGApplication:
-    """Main application class for Socratic RAG Enhanced"""
+def initialize_application(config_path: Optional[str] = None) -> Dict[str, Any]:
+    """Initialize the complete application system
 
-    def __init__(self, config_path: Optional[str] = None, debug: bool = False):
-        self.config_path = config_path or "config.yaml"
-        self.debug = debug
-        self.app = None
-        self.config = None
-        self.logger = None
-        self.orchestrator = None
-        self.shutdown_handlers = []
-        self.running_components = []
+    Args:
+        config_path: Optional path to config file
 
-    def initialize(self) -> bool:
-        """Initialize all system components with graceful degradation"""
+    Returns:
+        Dict with initialization status
+    """
+    logger = get_logger('run')
+    logger.info("=" * 70)
+    logger.info("Starting Socratic RAG Enhanced Application")
+    logger.info("=" * 70)
+
+    init_status = {
+        'success': False,
+        'services': None,
+        'database': False,
+        'agents': None,
+        'external_services': None,
+        'components': COMPONENTS_AVAILABLE.copy(),
+        'errors': []
+    }
+
+    # 1. Initialize core system
+    if COMPONENTS_AVAILABLE['core']:
+        logger.info("Initializing core system...")
         try:
-            print("🚀 Starting Socratic RAG Enhanced v7.3.0...")
-
-            # Track successful initializations
-            success_count = 0
-            total_attempts = 0
-
-            # 1. Initialize core system
-            print("📋 Initializing core system...")
-            total_attempts += 1
-            try:
-                if COMPONENTS_AVAILABLE['core']:
-                    success = initialize_system(self.config_path)
-                    if success:
-                        self.config = SystemConfig() if COMPONENTS_AVAILABLE['core'] else None
-                        self.logger = get_logger(__name__)
-                        self.logger.info("Core system initialized successfully")
-                        self.running_components.append('core')
-                        success_count += 1
-                    else:
-                        print("⚠️  Core system initialization failed - continuing with limited functionality")
-                else:
-                    print("⚠️  Core system not available - running in minimal mode")
-            except Exception as e:
-                print(f"⚠️  Core system error: {e}")
-
-            # 2. Initialize database
-            print("🗄️ Initializing database...")
-            total_attempts += 1
-            try:
-                if COMPONENTS_AVAILABLE['database']:
-                    init_database()
-                    if self.logger:
-                        self.logger.info("Database initialized successfully")
-                    else:
-                        print("✅ Database initialized successfully")
-                    self.running_components.append('database')
-                    success_count += 1
-                else:
-                    print("⚠️  Database not available - some features will be limited")
-            except Exception as e:
-                if self.logger:
-                    self.logger.warning(f"Database initialization failed: {e}")
-                else:
-                    print(f"⚠️  Database initialization failed: {e}")
-
-            # 3. Initialize services
-            print("🌐 Initializing external services...")
-            total_attempts += 1
-            try:
-                if COMPONENTS_AVAILABLE['services']:
-                    service_status = initialize_all_services()
-                    if service_status.get('initialized', 0) > 0:
-                        if self.logger:
-                            self.logger.info(f"Services initialized: {service_status}")
-                        else:
-                            print(f"✅ Services initialized: {service_status}")
-                        self.running_components.append('services')
-                        success_count += 1
-                    else:
-                        print("⚠️  No external services initialized - running in limited mode")
-                else:
-                    print("⚠️  Services not available - running in limited mode")
-            except Exception as e:
-                if self.logger:
-                    self.logger.warning(f"Service initialization failed: {e}")
-                else:
-                    print(f"⚠️  Service initialization failed: {e}")
-
-            # 4. Initialize agents
-            print("🤖 Initializing agent system...")
-            total_attempts += 1
-            try:
-                if COMPONENTS_AVAILABLE['agents']:
-                    agent_status = initialize_all_agents()
-                    self.orchestrator = get_orchestrator()
-
-                    if agent_status.get('initialized', 0) > 0:
-                        if self.logger:
-                            self.logger.info(f"Agents initialized: {agent_status}")
-                        else:
-                            print(f"✅ Agents initialized: {agent_status}")
-                        self.running_components.append('agents')
-                        success_count += 1
-                    else:
-                        print("⚠️  No agents initialized - core functionality will be limited")
-                else:
-                    print("⚠️  Agents not available - core functionality will be limited")
-            except Exception as e:
-                if self.logger:
-                    self.logger.warning(f"Agent initialization failed: {e}")
-                else:
-                    print(f"⚠️  Agent initialization failed: {e}")
-
-            # 5. Create Flask application
-            print("🌐 Initializing web interface...")
-            total_attempts += 1
-            try:
-                if COMPONENTS_AVAILABLE['web']:
-                    self.app = create_app(
-                        config_override={
-                            'DEBUG': self.debug,
-                            'TESTING': False,
-                        }
-                    )
-
-                    if self.app:
-                        if self.logger:
-                            self.logger.info("Web interface initialized successfully")
-                        else:
-                            print("✅ Web interface initialized successfully")
-                        self.running_components.append('web')
-                        success_count += 1
-                    else:
-                        print("⚠️  Web interface creation failed - running headless")
-                else:
-                    print("⚠️  Web interface not available - running headless")
-            except Exception as e:
-                if self.logger:
-                    self.logger.warning(f"Web interface initialization failed: {e}")
-                else:
-                    print(f"⚠️  Web interface initialization failed: {e}")
-
-            # 6. Setup shutdown handlers
-            self._setup_shutdown_handlers()
-
-            # Summary
-            print(f"✅ Socratic RAG Enhanced initialized!")
-            print(f"📊 Components running: {success_count}/{total_attempts}")
-            if self.running_components:
-                print(f"🔧 Active: {', '.join(self.running_components)}")
-
-            if IMPORT_ERRORS:
-                print(f"⚠️  Some components unavailable due to import errors")
-
-            self._print_system_status()
-
-            # Allow system to run even with partial failures
-            return success_count > 0
-
-        except Exception as e:
-            print(f"❌ Fatal error during initialization: {e}")
-            if self.logger:
-                self.logger.exception("Fatal initialization error")
-            return False
-
-    def run(self, host: str = "127.0.0.1", port: int = 5000, **kwargs) -> None:
-        """Run the application"""
-        if not self.app:
-            print("⚠️  Web interface not available - starting in headless mode")
-            print("🔧 System is running but web interface is disabled")
-            print("📝 Check logs for component status")
-
-            # Keep the application running even without web interface
-            try:
-                print(f"🚀 System running in headless mode (Ctrl+C to stop)")
-                while True:
-                    time.sleep(1)
-            except KeyboardInterrupt:
-                print("\n🛑 Received interrupt signal")
-                self.shutdown()
-            return
-
-        try:
-            # Development vs Production configuration
-            if self.debug:
-                print(f"🔧 Running in DEBUG mode on http://{host}:{port}")
-                if self.logger:
-                    self.logger.info(f"Starting development server on {host}:{port}")
-
-                # Development server options
-                run_options = {
-                    'host': host,
-                    'port': port,
-                    'debug': True,
-                    'use_reloader': False,  # Disable reloader to prevent agent duplication
-                    'threaded': True,
-                    **kwargs
-                }
+            services = initialize_system(config_path)
+            if services:
+                init_status['services'] = services
+                logger.info("✅ Core system initialized")
             else:
-                print(f"🚀 Running in PRODUCTION mode on http://{host}:{port}")
-                if self.logger:
-                    self.logger.info(f"Starting production server on {host}:{port}")
-
-                # Production server options
-                run_options = {
-                    'host': host,
-                    'port': port,
-                    'debug': False,
-                    'use_reloader': False,
-                    'threaded': True,
-                    **kwargs
-                }
-
-            # Start the Flask application
-            self.app.run(**run_options)
-
-        except KeyboardInterrupt:
-            print("\n🛑 Received interrupt signal")
-            self.shutdown()
+                init_status['errors'].append("Core system initialization returned None")
+                logger.warning("⚠️ Core system initialization returned None")
         except Exception as e:
-            if self.logger:
-                self.logger.exception(f"Application runtime error: {e}")
-            else:
-                print(f"❌ Application error: {e}")
-            self.shutdown()
+            error_msg = f"Core system initialization failed: {e}"
+            init_status['errors'].append(error_msg)
+            logger.error(f"❌ {error_msg}")
+    else:
+        logger.warning("⚠️ Core system not available")
 
-    def shutdown(self) -> None:
-        """Gracefully shutdown all components"""
-        print("\n🔄 Shutting down Socratic RAG Enhanced...")
-
+    # 2. Initialize database
+    if COMPONENTS_AVAILABLE['database']:
+        logger.info("Initializing database...")
         try:
-            # Call registered shutdown handlers
-            for handler in self.shutdown_handlers:
-                try:
-                    handler()
-                except Exception as e:
-                    if self.logger:
-                        self.logger.error(f"Shutdown handler error: {e}")
-                    else:
-                        print(f"⚠️  Shutdown handler error: {e}")
-
-            # Cleanup system
-            if COMPONENTS_AVAILABLE['core']:
-                cleanup_system()
-
-            print("✅ Shutdown complete")
-
+            db_success = init_database()
+            init_status['database'] = db_success
+            if db_success:
+                logger.info("✅ Database initialized")
+            else:
+                logger.warning("⚠️ Database initialization failed")
         except Exception as e:
-            print(f"⚠️  Error during shutdown: {e}")
+            error_msg = f"Database initialization failed: {e}"
+            init_status['errors'].append(error_msg)
+            logger.error(f"❌ {error_msg}")
+    else:
+        logger.warning("⚠️ Database system not available")
 
-    def _setup_shutdown_handlers(self) -> None:
-        """Setup graceful shutdown handlers"""
+    # 3. Initialize agents
+    if COMPONENTS_AVAILABLE['agents']:
+        logger.info("Initializing agent system...")
+        try:
+            agents_result = initialize_all_agents()
+            init_status['agents'] = agents_result
+            if agents_result.get('status') == 'success':
+                logger.info(
+                    f"✅ Agents initialized: {agents_result.get('initialized', 0)} active"
+                )
+            else:
+                logger.warning(f"⚠️ Agent initialization incomplete: {agents_result}")
+        except Exception as e:
+            error_msg = f"Agent initialization failed: {e}"
+            init_status['errors'].append(error_msg)
+            logger.error(f"❌ {error_msg}")
+    else:
+        logger.warning("⚠️ Agent system not available")
 
-        def signal_handler(signum, frame):
-            print(f"\n🔔 Received signal {signum}")
-            self.shutdown()
-            sys.exit(0)
+    # 4. Initialize external services
+    if COMPONENTS_AVAILABLE['services']:
+        logger.info("Initializing external services...")
+        try:
+            services_result = initialize_all_services()
+            init_status['external_services'] = services_result
+            if services_result.get('status') in ['success', 'partial']:
+                logger.info(
+                    f"✅ External services: {services_result.get('initialized', 0)} available"
+                )
+            else:
+                logger.warning(f"⚠️ External services limited: {services_result}")
+        except Exception as e:
+            error_msg = f"External services initialization failed: {e}"
+            init_status['errors'].append(error_msg)
+            logger.error(f"❌ {error_msg}")
+    else:
+        logger.warning("⚠️ External services not available")
 
-        # Register signal handlers
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
+    # Determine overall success
+    init_status['success'] = (
+            COMPONENTS_AVAILABLE['core'] and
+            init_status['services'] is not None
+    )
 
-    def _print_system_status(self) -> None:
-        """Print current system status"""
-        print("\n📊 System Status:")
-        print("=" * 50)
+    # Print summary
+    logger.info("=" * 70)
+    logger.info("Initialization Summary:")
+    logger.info(f"  Core System:        {'✅' if COMPONENTS_AVAILABLE['core'] else '❌'}")
+    logger.info(f"  Database:           {'✅' if init_status['database'] else '❌'}")
+    logger.info(f"  Agent System:       {'✅' if COMPONENTS_AVAILABLE['agents'] else '❌'}")
+    logger.info(f"  External Services:  {'✅' if COMPONENTS_AVAILABLE['services'] else '❌'}")
+    logger.info(f"  Web Interface:      {'✅' if COMPONENTS_AVAILABLE['web'] else '❌'}")
 
-        for component, available in COMPONENTS_AVAILABLE.items():
-            status = "✅ Available" if available else "❌ Unavailable"
-            running = "🔧 Running" if component in self.running_components else "⏹️  Stopped"
-            print(f"   {component.capitalize():12} | {status:12} | {running}")
+    if init_status['errors']:
+        logger.warning(f"  Errors: {len(init_status['errors'])}")
+        for error in init_status['errors']:
+            logger.warning(f"    - {error}")
 
-            if not available and component in IMPORT_ERRORS:
-                print(f"     └─ Error: {IMPORT_ERRORS[component][:60]}...")
+    logger.info("=" * 70)
 
-        print("=" * 50)
+    return init_status
 
 
 # ============================================================================
-# COMMAND LINE INTERFACE
+# WEB SERVER
 # ============================================================================
 
-def create_argument_parser() -> argparse.ArgumentParser:
-    """Create command line argument parser"""
+def start_web_server(
+        port: int = 5000,
+        debug: bool = False,
+        host: str = '0.0.0.0'
+) -> None:
+    """Start the Flask web server
+
+    Args:
+        port: Port number to run on
+        debug: Enable debug mode
+        host: Host address to bind to
+    """
+    logger = get_logger('run')
+
+    if not COMPONENTS_AVAILABLE['web']:
+        logger.error("❌ Web interface not available - cannot start server")
+        logger.error("   Install requirements: pip install Flask Flask-Login Flask-WTF")
+        sys.exit(1)
+
+    try:
+        logger.info(f"Starting web server on {host}:{port}")
+        logger.info(f"Debug mode: {'enabled' if debug else 'disabled'}")
+        logger.info("")
+        logger.info("=" * 70)
+        logger.info(f"🌐 Socratic RAG Enhanced is running!")
+        logger.info(f"📍 Access the application at: http://localhost:{port}")
+        logger.info(f"📖 Documentation: http://localhost:{port}/docs")
+        logger.info(f"🛠️  API: http://localhost:{port}/api")
+        logger.info("=" * 70)
+        logger.info("")
+
+        # Create and run Flask app
+        app = create_app()
+        app.run(host=host, port=port, debug=debug, use_reloader=False)
+
+    except Exception as e:
+        logger.error(f"❌ Failed to start web server: {e}")
+        sys.exit(1)
+
+
+# ============================================================================
+# MAIN ENTRY POINT
+# ============================================================================
+
+def main():
+    """Main application entry point"""
+    # Parse command line arguments
     parser = argparse.ArgumentParser(
-        description="Socratic RAG Enhanced - AI-powered project development",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python run.py                           # Run with default settings
-  python run.py --debug                   # Run in debug mode
-  python run.py --host 0.0.0.0 --port 8080  # Custom host and port
-  python run.py --config custom.yaml      # Use custom config file
-  python run.py --check-deps              # Check dependencies only
-        """
+        description='Socratic RAG Enhanced - AI-Powered Project Development'
     )
-
-    parser.add_argument(
-        '--host',
-        default='127.0.0.1',
-        help='Host to bind to (default: 127.0.0.1)'
-    )
-
     parser.add_argument(
         '--port',
         type=int,
         default=5000,
-        help='Port to bind to (default: 5000)'
+        help='Port to run the web server on (default: 5000)'
     )
-
     parser.add_argument(
         '--debug',
         action='store_true',
-        help='Run in debug mode'
+        help='Enable debug mode'
     )
-
-    parser.add_argument(
-        '--config',
-        help='Path to configuration file (default: config.yaml)'
-    )
-
     parser.add_argument(
         '--check-deps',
         action='store_true',
         help='Check dependencies and exit'
     )
-
     parser.add_argument(
-        '--version',
-        action='version',
-        version='Socratic RAG Enhanced v7.3.0'
+        '--headless',
+        action='store_true',
+        help='Run in headless mode (no web interface)'
+    )
+    parser.add_argument(
+        '--config',
+        type=str,
+        default=None,
+        help='Path to config file (default: config.yaml)'
     )
 
-    return parser
-
-
-def check_prerequisites() -> bool:
-    """Check if all prerequisites are met"""
-    print("🔍 Checking prerequisites...")
-
-    all_good = True
-
-    # Check Python version
-    if not validate_python_version():
-        all_good = False
-    else:
-        print(f"✅ Python version: {sys.version.split()[0]}")
-
-    # Check file system
-    if not check_file_system():
-        all_good = False
-    else:
-        print("✅ File system structure OK")
-
-    # Check required packages
-    missing_required = check_required_packages()
-    if missing_required:
-        all_good = False
-    else:
-        print("✅ Required packages installed")
-
-    # Component availability summary
-    available_count = sum(COMPONENTS_AVAILABLE.values())
-    total_count = len(COMPONENTS_AVAILABLE)
-    print(f"📦 Components available: {available_count}/{total_count}")
-
-    return all_good
-
-
-def main():
-    """Main entry point"""
-    # Print welcome banner
-    print("\n" + "=" * 60)
-    print("🧠 SOCRATIC RAG ENHANCED")
-    print("   AI-Powered Project Development Through Intelligent Questioning")
-    print("   Version: 7.3.0")
-    print("=" * 60)
-
-    # Parse command line arguments
-    parser = create_argument_parser()
     args = parser.parse_args()
 
-    # Check dependencies only if requested
+    # Validate Python version
+    if not validate_python_version():
+        sys.exit(1)
+
+    # Check dependencies if requested
     if args.check_deps:
-        success = check_prerequisites()
-        if success:
-            print("\n✅ All prerequisites met!")
-            sys.exit(0)
-        else:
-            print("\n❌ Some prerequisites not met. See details above.")
+        print("Checking dependencies...")
+        print("")
+        missing = check_required_packages()
+        print("")
+
+        if missing:
+            print(f"❌ Missing {len(missing)} required packages")
+            print("   Run: pip install -r requirements.txt")
             sys.exit(1)
+        else:
+            print("✅ All required dependencies are installed")
 
-    # Check prerequisites
-    if not check_prerequisites():
-        print("\n⚠️  Some prerequisites not met, but attempting to continue...")
-        print("💡 Use --check-deps flag for detailed dependency information")
+        print("")
+        print("Component availability:")
+        for component, available in COMPONENTS_AVAILABLE.items():
+            status = "✅ Available" if available else "❌ Not available"
+            print(f"  {component.capitalize():15} {status}")
 
-    # Create and initialize application
-    app = SocraticRAGApplication(
-        config_path=args.config,
-        debug=args.debug
-    )
+        if IMPORT_ERRORS:
+            print("")
+            print("Import errors:")
+            for component, error in IMPORT_ERRORS.items():
+                print(f"  {component}: {error}")
 
-    # Initialize all components
-    if not app.initialize():
-        print("\n❌ Critical initialization failure. Cannot continue.")
-        print("💡 Try installing missing dependencies: pip install -r requirements.txt")
-        sys.exit(1)
+        sys.exit(0)
 
-    try:
-        # Run the application
-        app.run(
-            host=args.host,
-            port=args.port
-        )
-    except Exception as e:
-        print(f"\n❌ Failed to start application: {e}")
-        sys.exit(1)
+    # Validate environment
+    validate_environment()
 
+    # Initialize application
+    init_status = initialize_application(args.config)
 
-def open_browser():
-    """Open browser after a short delay to ensure server is running"""
-    time.sleep(2)  # Wait for server to start
-    if COMPONENTS_AVAILABLE['web']:
-        webbrowser.open('http://127.0.0.1:5000')
+    if not init_status['success']:
+        print("")
+        print("❌ Application initialization failed")
+        print("   Some core components are unavailable")
+        print("   Run with --check-deps to see details")
+        print("")
+
+        if not args.headless:
+            response = input("Continue anyway? (y/N): ")
+            if response.lower() != 'y':
+                sys.exit(1)
+
+    # Start server or run headless
+    if args.headless:
+        logger = get_logger('run')
+        logger.info("Running in headless mode - press Ctrl+C to exit")
+        try:
+            # Keep the application running
+            import time
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            logger.info("Shutting down...")
+    else:
+        start_web_server(port=args.port, debug=args.debug)
 
 
 if __name__ == "__main__":
-    if '--check-deps' not in sys.argv:
-        threading.Thread(target=open_browser, daemon=True).start()
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n\nShutting down gracefully...")
+        sys.exit(0)
+    except Exception as e:
+        print(f"\n❌ Fatal error: {e}")
+        sys.exit(1)

@@ -23,11 +23,12 @@ from contextlib import contextmanager
 from dataclasses import field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Union, Type, TypeVar, Generic
+from typing import Dict, List, Any, Optional, Type, TypeVar, Generic
 
 # Core imports with enhanced fallbacks
 try:
-    from src.core import get_config, get_logger, DateTimeHelper, ValidationError, DatabaseError
+    from src import get_config, get_logger  # Backward compatibility functions
+    from src.core import DateTimeHelper, ValidationError, DatabaseError  # Core classes
 
     CORE_AVAILABLE = True
 except ImportError:
