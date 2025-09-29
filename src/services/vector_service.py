@@ -30,48 +30,52 @@ Embeddings = List[List[float]]
 
 try:
     import chromadb
+
     CHROMADB_AVAILABLE = True
 except ImportError:
     CHROMADB_AVAILABLE = False
     chromadb = None  # type: ignore[assignment]
 
+
 # ============================================================================
 # FALLBACK TYPE DEFINITIONS - Always defined, used when ChromaDB unavailable
 # ============================================================================
 
-# Fallback Settings class
 class Settings:
     """Settings for ChromaDB configuration"""
+
     def __init__(self, **kwargs: Any):
         self.anonymized_telemetry = kwargs.get('anonymized_telemetry', False)
         self.is_persistent = kwargs.get('is_persistent', True)
         self.chroma_db_impl = kwargs.get('chroma_db_impl', 'duckdb+parquet')
         self.persist_directory = kwargs.get('persist_directory', '')
 
+
 # Fallback Collection class
 class Collection:
     """Collection interface for vector database operations"""
+
     def __init__(self, name: str = "", metadata: Optional[Dict[str, Any]] = None):
         self.name = name
         self.metadata = metadata or {}
 
     def add(
-        self,
-        documents: List[str],
-        ids: List[str],
-        metadatas: Optional[List[Dict[str, Any]]] = None,
-        embeddings: Optional[List[List[float]]] = None
+            self,
+            documents: List[str],
+            ids: List[str],
+            metadatas: Optional[List[Dict[str, Any]]] = None,
+            embeddings: Optional[List[List[float]]] = None
     ) -> None:
         """Add documents to collection"""
         pass
 
     def query(
-        self,
-        query_texts: Optional[List[str]] = None,
-        query_embeddings: Optional[List[List[float]]] = None,
-        n_results: int = 10,
-        where: Optional[Dict[str, Any]] = None,
-        include: Optional[List[str]] = None
+            self,
+            query_texts: Optional[List[str]] = None,
+            query_embeddings: Optional[List[List[float]]] = None,
+            n_results: int = 10,
+            where: Optional[Dict[str, Any]] = None,
+            include: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """Query collection for similar documents"""
         return {
@@ -83,12 +87,12 @@ class Collection:
         }
 
     def get(
-        self,
-        ids: Optional[List[str]] = None,
-        where: Optional[Dict[str, Any]] = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
-        include: Optional[List[str]] = None
+            self,
+            ids: Optional[List[str]] = None,
+            where: Optional[Dict[str, Any]] = None,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            include: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """Get documents from collection"""
         return {
@@ -99,11 +103,11 @@ class Collection:
         }
 
     def update(
-        self,
-        ids: List[str],
-        documents: Optional[List[str]] = None,
-        metadatas: Optional[List[Dict[str, Any]]] = None,
-        embeddings: Optional[List[List[float]]] = None
+            self,
+            ids: List[str],
+            documents: Optional[List[str]] = None,
+            metadatas: Optional[List[Dict[str, Any]]] = None,
+            embeddings: Optional[List[List[float]]] = None
     ) -> None:
         """Update documents in collection"""
         pass
@@ -125,9 +129,11 @@ class Collection:
             'embeddings': []
         }
 
+
 # Fallback EmbeddingFunction class
 class EmbeddingFunction:
     """Base class for embedding functions"""
+
     def __init__(self) -> None:
         pass
 
@@ -143,13 +149,16 @@ class EmbeddingFunction:
 
 try:
     from sentence_transformers import SentenceTransformer
+
     SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
     SENTENCE_TRANSFORMERS_AVAILABLE = False
 
+
     # Fallback SentenceTransformer class
     class SentenceTransformer:
         """Fallback SentenceTransformer when library not available"""
+
         def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
             self.model_name = model_name
             logging.warning(
@@ -172,22 +181,22 @@ except ImportError:
                     return embeddings
             return embeddings
 
-
 # ============================================================================
 # CORE IMPORTS
 # ============================================================================
 
 try:
     from ..core import SocraticException
+
     CORE_AVAILABLE = True
 except ImportError:
     CORE_AVAILABLE = False
+
 
     # Fallback exception class
     class SocraticException(Exception):
         """Fallback base exception"""
         pass
-
 
 # ============================================================================
 # MODULE LOGGER
