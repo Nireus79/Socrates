@@ -4,24 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="full">
-      <change afterPath="$PROJECT_DIR$/testing/all_agents_testing.py" afterDir="false" />
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="agents">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/developer_guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/developer_guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/socratic_rag_complete_specs_v7++.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/socratic_rag_complete_specs_v7++.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/base.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/code.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/code.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/monitor.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/monitor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/orchestrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/orchestrator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/models.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/services/claude_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/claude_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/vector_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/vector_service.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -63,6 +50,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "DefaultHtmlFileTemplate": "HTML File",
+    "Python tests.Python tests in all_agents_testing.py.executor": "Run",
     "Python tests.Python tests in all_agents_tests.py.executor": "Run",
     "Python tests.Python tests in test_all_agents.py.executor": "Run",
     "Python.run.executor": "Run",
@@ -534,7 +522,15 @@
       <option name="project" value="LOCAL" />
       <updated>1759122921467</updated>
     </task>
-    <option name="localTasksCounter" value="47" />
+    <task id="LOCAL-00047" summary="agents">
+      <option name="closed" value="true" />
+      <created>1759139576696</created>
+      <option name="number" value="00047" />
+      <option name="presentableId" value="LOCAL-00047" />
+      <option name="project" value="LOCAL" />
+      <updated>1759139576696</updated>
+    </task>
+    <option name="localTasksCounter" value="48" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -543,7 +539,6 @@
     <MESSAGE value="models.py" />
     <MESSAGE value="database.py" />
     <MESSAGE value="agents.py" />
-    <MESSAGE value="agents" />
     <MESSAGE value="new" />
     <MESSAGE value="req" />
     <MESSAGE value="web" />
@@ -557,6 +552,7 @@
     <MESSAGE value="texts" />
     <MESSAGE value="ui" />
     <MESSAGE value="full" />
-    <option name="LAST_COMMIT_MESSAGE" value="full" />
+    <MESSAGE value="agents" />
+    <option name="LAST_COMMIT_MESSAGE" value="agents" />
   </component>
 </project>

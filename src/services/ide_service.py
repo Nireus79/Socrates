@@ -38,7 +38,8 @@ except ImportError:
     Observer = None
     FileSystemEventHandler = None
 
-from ..core import get_config, SocraticException
+from .. import get_config
+from ..core import SocraticException
 
 logger = logging.getLogger(__name__)
 
