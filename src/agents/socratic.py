@@ -149,7 +149,7 @@ class SocraticCounselorAgent(BaseAgent):
     Capabilities: Intelligent questioning, conflict mediation, insight extraction
     """
 
-    def __init__(self, services: ServiceContainer):
+    def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize SocraticCounselorAgent with ServiceContainer dependency injection"""
         super().__init__("socratic_counselor", "Socratic Counselor", services)
 

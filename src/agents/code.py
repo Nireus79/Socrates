@@ -188,7 +188,7 @@ except ImportError:
 class CodeGeneratorAgent(BaseAgent):
     """Enhanced code generation agent with multi-file architecture support"""
 
-    def __init__(self, services: ServiceContainer):
+    def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize CodeGeneratorAgent with ServiceContainer dependency injection"""
         super().__init__("code_generator", "Code Generator Agent", services)
 

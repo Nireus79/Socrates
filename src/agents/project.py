@@ -174,7 +174,7 @@ class ProjectManagerAgent(BaseAgent):
     Capabilities: Complete project lifecycle, team coordination, progress tracking
     """
 
-    def __init__(self, services: ServiceContainer):
+    def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize ProjectManagerAgent with ServiceContainer dependency injection"""
         super().__init__("project_manager", "Project Manager", services)
 

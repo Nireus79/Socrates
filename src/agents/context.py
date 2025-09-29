@@ -159,7 +159,7 @@ class ContextAnalyzerAgent(BaseAgent):
     Capabilities: Pattern recognition, conflict resolution, intelligent insights
     """
 
-    def __init__(self, services: ServiceContainer):
+    def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize ContextAnalyzerAgent with ServiceContainer dependency injection"""
         super().__init__("context_analyzer", "Context Analyzer", services)
 

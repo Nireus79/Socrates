@@ -143,7 +143,7 @@ except ImportError:
 class DocumentProcessorAgent(BaseAgent):
     """Enhanced document processing agent with knowledge base integration"""
 
-    def __init__(self, services: ServiceContainer):
+    def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize DocumentProcessorAgent with ServiceContainer dependency injection"""
         super().__init__("document_processor", "Document Processor Agent", services)
 

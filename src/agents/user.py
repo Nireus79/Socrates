@@ -51,7 +51,7 @@ class UserManagerAgent(BaseAgent):
     Capabilities: Complete user lifecycle, authentication, team management
     """
 
-    def __init__(self, services: ServiceContainer):
+    def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize UserManagerAgent with corrected patterns"""
         super().__init__("user_manager", "User Manager", services)
 

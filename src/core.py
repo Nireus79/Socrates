@@ -598,12 +598,25 @@ class DatabaseManager:
 class ServiceContainer:
     """Container holding all configured service instances"""
 
-    def __init__(self, config: SystemConfig, logger_system: SystemLogger,
-                 event_system: EventSystem, db_manager: DatabaseManager):
-        self.config = config
-        self.logger_system = logger_system
-        self.event_system = event_system
-        self.db_manager = db_manager
+    def __init__(
+            self,
+            config: SystemConfig,
+            logger_system: SystemLogger,
+            event_system: EventSystem,
+            db_manager: DatabaseManager
+    ):
+        """Initialize service container with all required services
+
+        Args:
+            config: System configuration instance
+            logger_system: Logging system instance
+            event_system: Event system instance
+            db_manager: Database manager instance
+        """
+        self.config: SystemConfig = config
+        self.logger_system: SystemLogger = logger_system
+        self.event_system: EventSystem = event_system
+        self.db_manager: DatabaseManager = db_manager
 
     def get_logger(self, name: str) -> logging.Logger:
         """Get a logger instance"""
@@ -733,10 +746,6 @@ __all__ = [
 
     # System Functions
     'initialize_system', 'cleanup_system',
-
-    'initialize_system', 'cleanup_system',
-
-    'get_logger', 'get_event_bus', 'get_config', 'get_database',
 
     # Legacy aliases
     'EventBus', 'SocraticSystem', 'ConfigManager', 'LogManager'

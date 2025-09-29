@@ -150,7 +150,7 @@ except ImportError:
 class ServicesAgent(BaseAgent):
     """Enhanced external services agent for Git, export, IDE, and deployment operations"""
 
-    def __init__(self, services: ServiceContainer):
+    def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize ServicesAgent with ServiceContainer dependency injection"""
         super().__init__("services", "Services Agent", services)
 
