@@ -38,7 +38,6 @@ except ImportError:
     Observer = None
     FileSystemEventHandler = None
 
-from .. import get_config
 from ..core import SocraticException
 
 logger = logging.getLogger(__name__)
@@ -145,10 +144,15 @@ class IDEService:
     """
 
     def __init__(self):
-        self.config = get_config()
-        self.ide_config = self.config.get('services', {}).get('ide', {})
-
+        # Lazy load config to avoid circular imports
+        try:
+            from .. import get_config
+            self.config = get_config()
+        except (ImportError, AttributeError):
+            self.config = None
+        self.ide_service_config = self.config.get('services', {}).get('<service>', {}) if self.config else {}
         # Configuration
+        self.ide_config = self.config.get('services', {}).get('ide', {}) if self.config else {}
         self.vscode_path = self.ide_config.get('vscode_path', 'code')
         self.workspace_template = self.ide_config.get('workspace_template', {})
         self.default_extensions = self.ide_config.get('default_extensions', [

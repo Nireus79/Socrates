@@ -21,7 +21,6 @@ import hashlib
 from dataclasses import dataclass, asdict
 from typing import Dict, Any, List, Optional, Union, Tuple
 from datetime import datetime
-import uuid
 
 try:
     import chromadb
@@ -84,7 +83,6 @@ except ImportError:
     SENTENCE_TRANSFORMERS_AVAILABLE = False
     SentenceTransformer = None
 
-from .. import get_config
 from ..core import SocraticException
 
 logger = logging.getLogger(__name__)
@@ -159,8 +157,13 @@ class VectorService:
     """
 
     def __init__(self):
-        self.config = get_config()
-        self.vector_config = self.config.get('services', {}).get('vector', {})
+        # Lazy load config to avoid circular imports
+        try:
+            from .. import get_config
+            self.config = get_config()
+        except (ImportError, AttributeError):
+            self.config = None
+        self.vector_config = self.config.get('services', {}).get('vector', {}) if self.config else {}
 
         if not CHROMADB_AVAILABLE:
             raise VectorServiceError("ChromaDB package not available. Install with: pip install chromadb")

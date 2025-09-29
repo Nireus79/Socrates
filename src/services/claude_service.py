@@ -33,7 +33,6 @@ except ImportError:
     Anthropic = None
     AsyncAnthropic = None
 
-from .. import get_config
 from ..core import SocraticException
 
 logger = logging.getLogger(__name__)
@@ -80,8 +79,15 @@ class ClaudeService:
     """
 
     def __init__(self):
-        self.config = get_config()
-        self.claude_config = self.config.get('services', {}).get('claude', {})
+        # Lazy load config to avoid circular imports
+        try:
+            from .. import get_config
+            self.config = get_config()
+        except (ImportError, AttributeError):
+            # Fallback if get_config not available yet
+            self.config = None
+
+        self.claude_config = self.config.get('services', {}).get('claude', {}) if self.config else {}
 
         if not ANTHROPIC_AVAILABLE:
             raise ClaudeServiceError("Anthropic package not available. Install with: pip install anthropic")

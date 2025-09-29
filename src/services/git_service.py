@@ -38,7 +38,6 @@ except ImportError:
     GitCommandError = Exception
     Actor = None
 
-from .. import get_config
 from ..core import SocraticException
 
 logger = logging.getLogger(__name__)
@@ -107,13 +106,19 @@ class GitService:
     """
 
     def __init__(self):
-        self.config = get_config()
-        self.git_config = self.config.get('services', {}).get('git', {})
+        # Lazy load config to avoid circular imports
+        try:
+            from .. import get_config
+            self.config = get_config()
+        except (ImportError, AttributeError):
+            self.config = None
+        self.git_service_config = self.config.get('services', {}).get('<service>', {}) if self.config else {}
 
         if not GIT_PYTHON_AVAILABLE:
             logger.warning("GitPython not available. Using command line git fallback.")
 
         # Configuration
+        self.git_config = self.config.get('services', {}).get('git', {}) if self.config else {}
         self.default_author_name = self.git_config.get('author_name', 'Socratic RAG Enhanced')
         self.default_author_email = self.git_config.get('author_email', 'socratic@example.com')
         self.auto_commit = self.git_config.get('auto_commit', True)
