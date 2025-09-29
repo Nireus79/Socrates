@@ -133,26 +133,25 @@ def initialize_web_interface(config: Optional[Dict[str, Any]] = None) -> bool:
         if app is None:
             return False
 
-        # Import agent integrations
+        # Try to initialize agent and service systems
+        agents_ready = False
+        services_ready = False
+
         try:
-            from ..agents import get_orchestrator, initialize_agents
-            from ..services import initialize_services
+            from src.agents import get_orchestrator
+            orchestrator = get_orchestrator()
+            agents_ready = orchestrator is not None
+        except (ImportError, Exception) as e:
+            logger.warning(f"Agents not available: {e}")
 
-            # Initialize agents and services
-            agents_ready = initialize_agents()
-            services_ready = initialize_services()
+        try:
+            from src.services import initialize_all_services
+            result = initialize_all_services()
+            services_ready = result.get('status') in ['success', 'partial']
+        except (ImportError, Exception) as e:
+            logger.warning(f"Services not available: {e}")
 
-            if not agents_ready:
-                logger.warning("Some agents not available - limited functionality")
-
-            if not services_ready:
-                logger.warning("Some services not available - limited functionality")
-
-            logger.info(f"Web interface initialized - Agents: {agents_ready}, Services: {services_ready}")
-
-        except Exception as e:
-            logger.error(f"Failed to initialize agent/service integration: {e}")
-            # Continue anyway - web interface can still function with limited features
+        logger.info(f"Web interface initialized - Agents: {agents_ready}, Services: {services_ready}")
 
         global _config_loaded
         _config_loaded = True
@@ -168,7 +167,7 @@ def get_web_status() -> Dict[str, Any]:
     """Get current web interface status and availability."""
     deps = check_web_dependencies()
 
-    status = {
+    status: Dict[str, Any] = {
         'web_available': deps.get('flask', False),
         'dependencies': deps,
         'app_created': _app_instance is not None,
@@ -176,18 +175,35 @@ def get_web_status() -> Dict[str, Any]:
         'missing_dependencies': [dep for dep, available in deps.items() if not available]
     }
 
-    # Add agent/service status if available
+    # Add agent status if available
+    get_agent_status = None
     try:
-        from ..agents import get_services_status as get_agent_status
-        status['agents_status'] = get_agent_status()
-    except:
-        status['agents_status'] = {'available': False}
+        from src.agents import get_agent_status
+        if get_agent_status is not None:
+            status['agents_status'] = get_agent_status()
+        else:
+            status['agents_status'] = {'available': False, 'error': 'Function not available'}
+    except ImportError:
+        get_agent_status = None
+        status['agents_status'] = {'available': False, 'error': 'Module not found'}
+    except Exception as e:
+        get_agent_status = None
+        status['agents_status'] = {'available': False, 'error': str(e)}
 
+    # Add service status if available
+    get_services_status = None
     try:
-        from ..services import get_services_status
-        status['services_status'] = get_services_status()
-    except:
-        status['services_status'] = {'available': False}
+        from src.services import get_services_status
+        if get_services_status is not None:
+            status['services_status'] = get_services_status()
+        else:
+            status['services_status'] = {'available': False, 'error': 'Function not available'}
+    except ImportError:
+        get_services_status = None
+        status['services_status'] = {'available': False, 'error': 'Module not found'}
+    except Exception as e:
+        get_services_status = None
+        status['services_status'] = {'available': False, 'error': str(e)}
 
     return status
 

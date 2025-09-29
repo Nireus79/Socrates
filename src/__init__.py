@@ -437,7 +437,10 @@ __all__ = [
 
     # Availability flags
     'CORE_AVAILABLE', 'MODELS_AVAILABLE', 'DATABASE_AVAILABLE',
-    'UTILS_AVAILABLE', 'SERVICES_AVAILABLE', 'AGENTS_AVAILABLE'
+    'UTILS_AVAILABLE', 'SERVICES_AVAILABLE', 'AGENTS_AVAILABLE',
+
+    # Backward compatibility functions
+    'get_logger', 'get_config', 'get_event_bus', 'get_db_manager',
 ]
 
 # Add conditional exports based on what's available

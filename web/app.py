@@ -19,13 +19,8 @@ import logging
 import json
 import os
 from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional, Union
-from pathlib import Path
-import asyncio
+from typing import Dict, Any, List, Optional
 from functools import wraps
-import webbrowser
-import threading
-import time
 
 try:
     from flask import (
@@ -49,11 +44,11 @@ except ImportError:
 
 # Import our system components
 try:
-    from ..core import get_config, SocraticException, get_event_bus, ValidationHelper, DateTimeHelper
-    from ..models import Project, User, TechnicalSpec, ConversationMessage, UserRole
-    from ..database import get_repository_manager
-    from ..agents import get_orchestrator, initialize_all_agents
-    from ..services import get_services_status
+    from src.core import get_config, SocraticException, get_event_bus, ValidationHelper, DateTimeHelper
+    from src.models import Project, User, TechnicalSpec, ConversationMessage, UserRole
+    from src.database import get_repository_manager
+    from src.agents import get_orchestrator
+    from src.services import get_services_status
 
     SYSTEM_AVAILABLE = True
 except ImportError as e:
@@ -61,22 +56,28 @@ except ImportError as e:
     logger = logging.getLogger(__name__)
     logger.error(f"System components not available: {e}")
 
-
-    # Define fallback functions
-    def get_orchestrator():
-        return None
-
-
-    def get_repository_manager():
-        return None
-
-
-    def initialize_all_agents():
-        return {'initialized': 0, 'status': 'failed', 'error': 'System not available'}
-
-
-    def get_services_status():
+    # Define fallback objects in except block
+    def get_config():
+        """Fallback config function"""
         return {}
+
+
+    def get_event_bus():
+        """Fallback event bus function"""
+        return None
+
+
+    SocraticException = Exception
+    ValidationHelper = None
+    DateTimeHelper = None
+    Project = None
+    User = None
+    TechnicalSpec = None
+    ConversationMessage = None
+    UserRole = None
+    get_repository_manager = None
+    get_orchestrator = None
+    get_services_status = None
 
 logger = logging.getLogger(__name__)
 
@@ -167,8 +168,9 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
     # Load configuration
     try:
         config = get_config()
-        web_config = config.get('web', {})
-    except:
+        web_config = config.get('web', {}) if config else {}
+    except (ImportError, AttributeError, TypeError) as e:
+        logger.warning(f"Could not load web config: {e}")
         web_config = {}
 
     # Apply configuration overrides
@@ -885,10 +887,14 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
             abort(403)
 
         try:
+            db_service = None
+            if repo_manager:
+                db_service = repo_manager.db_service
+
             system_status = {
                 'agents_status': orchestrator.get_agent_status() if orchestrator else {},
                 'services_status': get_services_status() if SYSTEM_AVAILABLE else {},
-                'database_status': repo_manager.health_check() if repo_manager else {}
+                'database_status': db_service.health_check() if db_service else {'status': 'unavailable'}
             }
 
             return render_template('admin.html', system_status=system_status)
