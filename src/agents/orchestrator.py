@@ -13,22 +13,26 @@ Capabilities:
 - Capability discovery and mapping
 - Event system integration
 """
-
+import logging
 from typing import Dict, List, Any, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.core import ServiceContainer
 
+
 # Define get_logger fallback FIRST (always available)
 def get_logger(name: str):
     return logging.getLogger(name)
 
+
 try:
     from src.core import DateTimeHelper
+
     CORE_AVAILABLE = True
 except ImportError:
     CORE_AVAILABLE = False
     from datetime import datetime
+
 
     class DateTimeHelper:
         @staticmethod

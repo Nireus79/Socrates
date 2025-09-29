@@ -501,7 +501,18 @@ def test_error_handling(results: TestResults, orchestrator: Any) -> None:
 def main():
     """Run all tests"""
     print_header("SOCRATIC RAG ENHANCED - AGENT SYSTEM TEST SUITE")
-    print_info("Testing all 8 agents and orchestrator\n")
+
+    # Try to initialize services for full integration testing
+    print_info("Attempting service initialization...")
+    try:
+        from src import initialize_package
+        services = initialize_package()
+        if services:
+            print_info("✅ Services initialized - testing with full integration\n")
+        else:
+            print_info("⚠️  Services unavailable - testing in degraded mode\n")
+    except Exception as e:
+        print_info(f"⚠️  Service init failed: {e} - continuing with degraded mode\n")
 
     results = TestResults()
 

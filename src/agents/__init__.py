@@ -19,6 +19,7 @@ All 8 Agents:
 
 import logging
 from typing import Any, Dict, List, Optional
+from src import get_services
 
 # Module metadata
 __version__ = "7.3.0"
@@ -149,7 +150,7 @@ def get_orchestrator() -> Optional[Any]:
             return None
 
         try:
-            _orchestrator = AgentOrchestrator()
+            _orchestrator = AgentOrchestrator(get_services())
             logger.info("Global orchestrator instance created")
         except (RuntimeError, ValueError, AttributeError) as e:
             logger.error(f"Failed to create orchestrator: {e}")

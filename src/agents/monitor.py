@@ -21,8 +21,11 @@ import os
 import time
 import shutil
 
+# Import from correct locations
+from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper
+from src import get_logger, get_event_bus  # ← Changed: import from src, not src.core
+
 try:
-    from src.core import get_logger, DateTimeHelper, ValidationError, ValidationHelper, get_event_bus
     from src.models import UserActivity, ProjectMetrics
     from src.database import get_database
     from .base import BaseAgent, require_authentication, log_agent_action
@@ -35,8 +38,7 @@ except ImportError:
     from datetime import datetime
     from enum import Enum
 
-
-    def get_logger(name: str):
+    def get_logger(name):
         return logging.getLogger(name)
 
 
@@ -133,8 +135,8 @@ except ImportError:
 class SystemMonitorAgent(BaseAgent):
     """Enhanced system monitoring agent with comprehensive analytics"""
 
-    def __init__(self):
-        super().__init__("system_monitor", "System Monitor Agent")
+    def __init__(self, services: Optional[ServiceContainer] = None):
+        super().__init__("system_monitor", "System Monitor Agent", services)
         self.db_service = get_database()
         self.event_bus = get_event_bus()
 
@@ -387,10 +389,10 @@ class SystemMonitorAgent(BaseAgent):
             }
 
             # Calculate total estimated cost
-            cost_analysis['total_estimated_cost'] = (
-                    cost_analysis['api_costs'].get('total_cost', 0.0) +
-                    cost_analysis['resource_costs'].get('total_cost', 0.0)
-            )
+            cost_analysis: Dict[str, Any] = {
+                'api_costs': {},
+                'resource_costs': {}
+            }
 
             # Add cost breakdown
             if breakdown_by == 'project':

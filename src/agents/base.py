@@ -527,8 +527,6 @@ if __name__ == "__main__":
     # Test base agent functionality
     print("Testing BaseAgent with ServiceContainer...")
 
-
-    # Test without services (fallback mode)
     class TestAgent(BaseAgent):
         def get_capabilities(self) -> List[str]:
             return ['test']
