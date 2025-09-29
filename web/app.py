@@ -394,6 +394,79 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         flash('You have been logged out.', 'info')
         return redirect(url_for('login'))
 
+    @flask_app.route('/register', methods=['GET', 'POST'])
+    def register():
+        """User registration page."""
+        if request.method == 'POST':
+            try:
+                # Get form data
+                username = request.form.get('username', '').strip()
+                email = request.form.get('email', '').strip()
+                password = request.form.get('password', '')
+                confirm_password = request.form.get('confirm_password', '')
+                first_name = request.form.get('first_name', '').strip()
+                last_name = request.form.get('last_name', '').strip()
+                terms = request.form.get('terms') == 'on'
+
+                # Basic validation
+                errors = []
+                if not username or len(username) < 3:
+                    errors.append('Username must be at least 3 characters')
+                if not email or '@' not in email:
+                    errors.append('Valid email address required')
+                if not password or len(password) < 6:
+                    errors.append('Password must be at least 6 characters')
+                if password != confirm_password:
+                    errors.append('Passwords do not match')
+                if not terms:
+                    errors.append('You must accept the Terms of Service')
+
+                if errors:
+                    for error in errors:
+                        flash(error, 'error')
+                    return render_template('auth.html', page='register')
+
+                # Check system availability
+                repo_manager = get_repository_manager()
+                if not repo_manager:
+                    flash('Registration system unavailable', 'error')
+                    return render_template('auth.html', page='register')
+
+                # Check if username exists
+                user_repo = repo_manager.get_repository('user')
+                if user_repo.find_by_username(username):
+                    flash('Username already exists', 'error')
+                    return render_template('auth.html', page='register')
+
+                # Create user via orchestrator
+                if orchestrator:
+                    full_name = f"{first_name} {last_name}".strip()
+                    result = orchestrator.route_request(
+                        'user_manager',
+                        'create_user',
+                        {
+                            'username': username,
+                            'email': email,
+                            'password_hash': generate_password_hash(password),
+                            'full_name': full_name,
+                            'role': 'developer'
+                        }
+                    )
+
+                    if result.get('success'):
+                        flash('Account created successfully! Please log in.', 'success')
+                        return redirect(url_for('login'))
+                    else:
+                        flash(f"Registration failed: {result.get('message', 'Unknown error')}", 'error')
+                else:
+                    flash('User management system unavailable', 'error')
+
+            except Exception as e:
+                logger.error(f"Registration error: {e}")
+                flash('An error occurred during registration', 'error')
+
+        return render_template('auth.html', page='register')
+
     @flask_app.route('/dashboard')
     @login_required
     def dashboard():
@@ -477,6 +550,9 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
 
         return render_template('projects.html', form=form, mode='new')
 
+    # Alias for compatibility
+    flask_app.route('/projects/create', methods=['GET', 'POST'])(new_project)
+
     @flask_app.route('/projects/<project_id>')
     @login_required
     def project_detail(project_id: str):
@@ -554,6 +630,9 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 flash('Failed to start session', 'error')
 
         return render_template('sessions.html', form=form, mode='new')
+
+    # Alias for compatibility
+    flask_app.route('/sessions/start', methods=['GET', 'POST'])(new_session)
 
     @flask_app.route('/sessions/<session_id>')
     @login_required

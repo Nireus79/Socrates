@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="tests">
-      <change beforePath="$PROJECT_DIR$/web/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
-    </list>
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="web" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -150,14 +148,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00011" summary="new">
-      <option name="closed" value="true" />
-      <created>1758873209099</created>
-      <option name="number" value="00011" />
-      <option name="presentableId" value="LOCAL-00011" />
-      <option name="project" value="LOCAL" />
-      <updated>1758873209099</updated>
     </task>
     <task id="LOCAL-00012" summary="req">
       <option name="closed" value="true" />
@@ -543,7 +533,15 @@
       <option name="project" value="LOCAL" />
       <updated>1759178508091</updated>
     </task>
-    <option name="localTasksCounter" value="60" />
+    <task id="LOCAL-00060" summary="web">
+      <option name="closed" value="true" />
+      <created>1759178905305</created>
+      <option name="number" value="00060" />
+      <option name="presentableId" value="LOCAL-00060" />
+      <option name="project" value="LOCAL" />
+      <updated>1759178905305</updated>
+    </task>
+    <option name="localTasksCounter" value="61" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -554,7 +552,6 @@
     <MESSAGE value="agents.py" />
     <MESSAGE value="new" />
     <MESSAGE value="req" />
-    <MESSAGE value="web" />
     <MESSAGE value="templates" />
     <MESSAGE value="specs" />
     <MESSAGE value="static" />
@@ -570,6 +567,7 @@
     <MESSAGE value="api key" />
     <MESSAGE value="refinement" />
     <MESSAGE value="tests" />
-    <option name="LAST_COMMIT_MESSAGE" value="tests" />
+    <MESSAGE value="web" />
+    <option name="LAST_COMMIT_MESSAGE" value="web" />
   </component>
 </project>
