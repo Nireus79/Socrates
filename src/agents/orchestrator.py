@@ -14,22 +14,21 @@ Capabilities:
 - Event system integration
 """
 
-from typing import Dict, List, Any, Optional
-import logging
+from typing import Dict, List, Any, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.core import ServiceContainer
+
+# Define get_logger fallback FIRST (always available)
+def get_logger(name: str):
+    return logging.getLogger(name)
 
 try:
-    from src.core import DateTimeHelper, get_logger
-
+    from src.core import DateTimeHelper
     CORE_AVAILABLE = True
 except ImportError:
     CORE_AVAILABLE = False
-    import logging
     from datetime import datetime
-
-
-    def get_logger(name: str):
-        return logging.getLogger(name)
-
 
     class DateTimeHelper:
         @staticmethod
@@ -56,9 +55,21 @@ class AgentOrchestrator:
     8. SystemMonitorAgent - System monitoring
     """
 
-    def __init__(self):
-        """Initialize orchestrator and all agents"""
-        self.logger = get_logger("orchestrator")
+    def __init__(self, services: Optional['ServiceContainer'] = None):
+        """Initialize orchestrator and all agents
+
+        Args:
+            services: Optional ServiceContainer for dependency injection
+        """
+        # Store services (even if None - agents will handle gracefully)
+        self.services = services
+
+        # Get logger from services or fallback
+        if services:
+            self.logger = services.get_logger("orchestrator")
+        else:
+            self.logger = get_logger("orchestrator")
+
         self.agents: Dict[str, Any] = {}
         self.agent_failures: Dict[str, str] = {}
         self.capability_map: Dict[str, str] = {}
@@ -128,7 +139,7 @@ class AgentOrchestrator:
                 raise ImportError(f"Could not import {class_name}")
 
             # Instantiate the agent
-            agent_instance = agent_class()
+            agent_instance = agent_class(self.services)
 
             # Store the agent
             self.agents[agent_id] = agent_instance
