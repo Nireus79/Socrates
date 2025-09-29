@@ -16,12 +16,11 @@ Provides data persistence, retrieval, and management functionality.
 
 import sqlite3
 import json
-import os
 import threading
 import uuid
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import field
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Union, Type, TypeVar, Generic

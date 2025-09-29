@@ -15,7 +15,6 @@ Capabilities:
 - Context-aware recommendations
 """
 
-import json
 from typing import Dict, List, Any, Optional
 
 try:

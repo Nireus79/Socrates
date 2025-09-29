@@ -19,7 +19,7 @@ import json
 import sys
 from datetime import datetime
 from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional
 from enum import Enum
 
 # Core imports with fallbacks

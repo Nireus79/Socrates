@@ -27,7 +27,6 @@ try:
 except ImportError:
     CORE_AVAILABLE = False
 
-
     # Fallback ServiceContainer class
     class ServiceContainer:
         """Fallback ServiceContainer when core is not available"""

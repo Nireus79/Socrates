@@ -22,8 +22,8 @@ import time
 import shutil
 
 # Import from correct locations
-from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper
-from src import get_logger, get_event_bus  # ← Changed: import from src, not src.core
+from src.core import ServiceContainer, DateTimeHelper
+from src import get_logger, get_event_bus
 
 try:
     from src.models import UserActivity, ProjectMetrics

@@ -15,15 +15,13 @@ Classes:
 - DocumentParser: Document parsing utilities (backward compatibility)
 """
 
-import os
 import re
 import ast
 import json
-import time
 import hashlib
 import mimetypes
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Union, Tuple
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from collections import Counter
 from enum import Enum

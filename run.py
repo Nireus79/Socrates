@@ -7,7 +7,6 @@ This is the single entry point for the Socratic RAG Enhanced system.
 Initializes all components, agents, services, and the web interface with graceful degradation.
 """
 
-import os
 import sys
 import signal
 import logging
@@ -15,7 +14,6 @@ import argparse
 import webbrowser
 import threading
 import time
-import subprocess
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 
