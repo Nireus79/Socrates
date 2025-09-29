@@ -146,10 +146,13 @@ except ImportError:
 
 
     class BaseAgent:
-        def __init__(self, agent_id, name):
+        def __init__(self, agent_id, name, services=None):
             self.agent_id = agent_id
             self.name = name
+            self.services = services
             self.logger = get_logger(agent_id)
+            self.db_service = get_database()
+            self.events = None
 
         def _error_response(self, message, error_code=None):
             return {'success': False, 'error': message}
@@ -186,6 +189,7 @@ class CodeGeneratorAgent(BaseAgent):
     """Enhanced code generation agent with multi-file architecture support"""
 
     def __init__(self, services: ServiceContainer):
+        """Initialize CodeGeneratorAgent with ServiceContainer dependency injection"""
         super().__init__("code_generator", "Code Generator Agent", services)
 
         # Code generation settings
@@ -239,38 +243,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Models
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'username': self.username,
-            'email': self.email,
-            'created_at': self.created_at.isoformat()
-        }
-
-# Routes
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/api/users', methods=['GET'])
-def get_users():
-    users = User.query.all()
-    return jsonify([user.to_dict() for user in users])
-
-@app.route('/api/users', methods=['POST'])
-def create_user():
-    data = request.get_json()
-    user = User(username=data['username'], email=data['email'])
-    db.session.add(user)
-    db.session.commit()
-    return jsonify(user.to_dict()), 201
+@app.route('/api/health')
+def health():
+    return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
 
 if __name__ == '__main__':
     with app.app_context():
@@ -278,132 +257,87 @@ if __name__ == '__main__':
     app.run(debug=True)
 ''',
             'react_component': '''import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 
-const UserList = () => {
-    const [users, setUsers] = useState([]);
+const Component = () => {
+    const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetchUsers();
+        fetchData();
     }, []);
 
-    const fetchUsers = async () => {
+    const fetchData = async () => {
         try {
-            setLoading(true);
-            const response = await axios.get('/api/users');
-            setUsers(response.data);
-        } catch (err) {
-            setError('Failed to fetch users');
-            console.error('Error fetching users:', err);
+            const response = await fetch('/api/data');
+            const result = await response.json();
+            setData(result);
+        } catch (error) {
+            console.error('Error fetching data:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    if (loading) return <div className="loading">Loading users...</div>;
-    if (error) return <div className="error">{error}</div>;
+    if (loading) return <div>Loading...</div>;
 
     return (
-        <div className="user-list">
-            <h2>Users</h2>
-            {users.length === 0 ? (
-                <p>No users found</p>
-            ) : (
-                <ul>
-                    {users.map(user => (
-                        <li key={user.id} className="user-item">
-                            <strong>{user.username}</strong> - {user.email}
-                            <small>Created: {new Date(user.created_at).toLocaleDateString()}</small>
-                        </li>
-                    ))}
-                </ul>
-            )}
+        <div className="component">
+            <h2>Component</h2>
+            {data.map(item => (
+                <div key={item.id}>{item.name}</div>
+            ))}
         </div>
     );
 };
 
-export default UserList;
+export default Component;
 ''',
             'pytest_test': '''import pytest
-import json
-from app import app, db, User
+from datetime import datetime
+
+def test_example():
+    """Test example functionality"""
+    assert True
+
+def test_data_processing():
+    """Test data processing logic"""
+    test_data = {'key': 'value'}
+    result = process_data(test_data)
+    assert result is not None
+    assert 'key' in result
+
+def test_validation():
+    """Test input validation"""
+    with pytest.raises(ValueError):
+        validate_input(None)
 
 @pytest.fixture
-def client():
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-
-    with app.test_client() as client:
-        with app.app_context():
-            db.create_all()
-            yield client
-            db.drop_all()
-
-@pytest.fixture
-def sample_user():
+def sample_data():
+    """Provide sample test data"""
     return {
-        'username': 'testuser',
-        'email': 'test@example.com'
+        'id': 1,
+        'name': 'Test',
+        'created_at': datetime.now()
     }
-
-def test_index_route(client):
-    """Test the index route returns successfully"""
-    response = client.get('/')
-    assert response.status_code == 200
-
-def test_get_users_empty(client):
-    """Test getting users when database is empty"""
-    response = client.get('/api/users')
-    assert response.status_code == 200
-    data = json.loads(response.data)
-    assert data == []
-
-def test_create_user(client, sample_user):
-    """Test creating a new user"""
-    response = client.post('/api/users', 
-                          data=json.dumps(sample_user),
-                          content_type='application/json')
-    assert response.status_code == 201
-    data = json.loads(response.data)
-    assert data['username'] == sample_user['username']
-    assert data['email'] == sample_user['email']
-    assert 'id' in data
-    assert 'created_at' in data
-
-def test_get_users_with_data(client, sample_user):
-    """Test getting users after creating one"""
-    # Create a user first
-    client.post('/api/users', 
-                data=json.dumps(sample_user),
-                content_type='application/json')
-
-    # Get users
-    response = client.get('/api/users')
-    assert response.status_code == 200
-    data = json.loads(response.data)
-    assert len(data) == 1
-    assert data[0]['username'] == sample_user['username']
 '''
         }
 
-    @require_project_access()
+    @require_authentication
+    @require_project_access
     @log_agent_action
     def _generate_codebase(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Generate complete codebase with organized file structure"""
         try:
-            project_id: str = data.get('project_id', '')
+            project_id = data.get('project_id', '')
             if not project_id:
                 return self._error_response("Project ID is required")
 
             # Get project details
             if self.db_service:
-                project = self.db_service.projects.get(project_id)
+                project = self.db_service.projects.get_by_id(project_id)
                 if not project:
                     return self._error_response(f"Project not found: {project_id}")
             else:
-                # Create mock project for fallback
                 project = Project(
                     id=project_id,
                     name=data.get('project_name', 'Generated Project'),
@@ -452,7 +386,7 @@ def test_get_users_with_data(client, sample_user):
 
             # Emit codebase generation event
             if self.events:
-                self.events.emit('codebase_generated', self.agent_id, {
+                self.events.emit('codebase_generated', {
                     'project_id': project_id,
                     'codebase_id': codebase_id,
                     'total_files': len(generated_files),
@@ -494,172 +428,151 @@ def test_get_users_with_data(client, sample_user):
         try:
             # Analyze requirements to determine architecture pattern
             scale_requirements = self._analyze_scale_requirements(requirements)
+            complexity = self._estimate_complexity(requirements)
 
-            # Select architecture pattern
-            if scale_requirements.get('needs_microservices'):
+            # Choose architecture pattern
+            if scale_requirements.get('microservices_recommended'):
                 pattern = 'microservices'
-            elif scale_requirements.get('complex_domain'):
+            elif complexity == 'high':
                 pattern = 'layered'
             else:
                 pattern = 'mvc'
 
-            # Design components
-            components = ['web_server', 'database', 'authentication']
-            if scale_requirements.get('needs_caching'):
-                components.append('cache')
-            if scale_requirements.get('needs_queue'):
-                components.append('message_queue')
-
             architecture = {
                 'pattern': pattern,
-                'components': components,
-                'technology_stack': {
-                    'backend': 'python_flask',
-                    'frontend': 'react',
-                    'database': 'sqlite',
-                    'testing': 'pytest',
-                    'deployment': 'docker'
-                },
-                'directories': self.architecture_patterns[pattern]['directories'],
-                'core_files': self.architecture_patterns[pattern]['core_files'],
-                'estimated_complexity': self._estimate_complexity(requirements),
-                'scalability_considerations': scale_requirements
+                'components': self._define_components(pattern, requirements),
+                'data_layer': self._design_data_layer(specs),
+                'api_structure': self._design_api_structure(requirements),
+                'security': self._design_security_measures(specs),
+                'scalability': scale_requirements,
+                'deployment': self._design_deployment_strategy(scale_requirements)
             }
-
-            # Add security measures
-            architecture['security_measures'] = self._design_security_measures(specs)
 
             return architecture
 
         except Exception as e:
             self.logger.error(f"Architecture design failed: {e}")
-            raise
+            return {'pattern': 'mvc', 'components': [], 'error': str(e)}
 
     def _analyze_scale_requirements(self, requirements: List[str]) -> Dict[str, Any]:
-        """Analyze scale and performance requirements"""
+        """Analyze scale requirements from specifications"""
         scale_indicators = {
-            'high_traffic': any('traffic' in req.lower() or 'users' in req.lower() for req in requirements),
-            'real_time': any('real-time' in req.lower() or 'live' in req.lower() for req in requirements),
-            'data_intensive': any('data' in req.lower() or 'analytics' in req.lower() for req in requirements),
-            'multi_user': any('multi' in req.lower() or 'concurrent' in req.lower() for req in requirements)
+            'microservices_recommended': False,
+            'expected_load': 'low',
+            'concurrent_users': 100,
+            'data_volume': 'small'
         }
 
+        # Simple heuristics for scale analysis
+        req_text = ' '.join(requirements).lower()
+
+        if any(word in req_text for word in ['million', 'scale', 'distributed', 'microservice']):
+            scale_indicators['microservices_recommended'] = True
+            scale_indicators['expected_load'] = 'high'
+            scale_indicators['concurrent_users'] = 10000
+
+        return scale_indicators
+
+    def _define_components(self, pattern: str, requirements: List[str]) -> List[Dict[str, Any]]:
+        """Define system components based on architecture pattern"""
+        components = []
+
+        if pattern == 'mvc':
+            components = [
+                {'name': 'models', 'purpose': 'Data models and business logic'},
+                {'name': 'views', 'purpose': 'UI templates and presentation'},
+                {'name': 'controllers', 'purpose': 'Request handling and routing'}
+            ]
+        elif pattern == 'microservices':
+            components = [
+                {'name': 'api_gateway', 'purpose': 'Request routing and load balancing'},
+                {'name': 'auth_service', 'purpose': 'Authentication and authorization'},
+                {'name': 'data_service', 'purpose': 'Data management'}
+            ]
+        elif pattern == 'layered':
+            components = [
+                {'name': 'presentation', 'purpose': 'User interface layer'},
+                {'name': 'business', 'purpose': 'Business logic layer'},
+                {'name': 'data', 'purpose': 'Data access layer'}
+            ]
+
+        return components
+
+    def _design_data_layer(self, specs: Optional[TechnicalSpecification]) -> Dict[str, Any]:
+        """Design data layer architecture"""
         return {
-            'estimated_scale': 'large' if scale_indicators['high_traffic'] else 'medium',
-            'needs_caching': scale_indicators['high_traffic'] or scale_indicators['data_intensive'],
-            'needs_queue': scale_indicators['real_time'] or scale_indicators['high_traffic'],
-            'needs_microservices': scale_indicators['high_traffic'] and scale_indicators['multi_user'],
-            'complex_domain': len(requirements) > 10
+            'database_type': 'sqlite',
+            'orm': 'sqlalchemy',
+            'caching': 'in-memory',
+            'migrations': True
         }
 
-    def _generate_file_structure(self, architecture: Dict[str, Any], framework_prefs: Dict[str, str]) -> Dict[
-        str, List[str]]:
-        """Generate detailed file structure"""
-        structure = {
+    def _design_api_structure(self, requirements: List[str]) -> Dict[str, Any]:
+        """Design API structure"""
+        return {
+            'style': 'REST',
+            'versioning': 'url',
+            'authentication': 'jwt',
+            'documentation': 'swagger'
+        }
+
+    def _design_security_measures(self, specs: Optional[TechnicalSpecification]) -> List[str]:
+        """Design security measures"""
+        return [
+            'Input validation and sanitization',
+            'SQL injection prevention',
+            'XSS protection',
+            'CSRF protection',
+            'Rate limiting',
+            'Authentication and authorization',
+            'HTTPS enforcement',
+            'Security headers',
+            'Data encryption'
+        ]
+
+    def _design_deployment_strategy(self, scale_requirements: Dict[str, Any]) -> Dict[str, Any]:
+        """Design deployment strategy"""
+        return {
+            'containerization': 'docker',
+            'orchestration': 'docker-compose' if scale_requirements['expected_load'] == 'low' else 'kubernetes',
+            'ci_cd': 'github-actions',
+            'monitoring': 'basic-logging'
+        }
+
+    def _generate_file_structure(self, architecture: Dict[str, Any],
+                                 preferences: Dict[str, str]) -> Dict[str, List[str]]:
+        """Generate organized file structure"""
+        pattern = architecture.get('pattern', 'mvc')
+        template = self.architecture_patterns.get(pattern, self.architecture_patterns['mvc'])
+
+        file_structure = {
+            'root': template['core_files'],
             'backend': [],
             'frontend': [],
             'database': [],
             'tests': [],
-            'config': [],
-            'documentation': []
+            'docs': []
         }
 
-        # Backend files
-        backend_framework = framework_prefs.get('backend', 'flask')
-        structure['backend'].extend(self._get_backend_files(architecture, backend_framework))
+        # Generate backend files
+        for directory in template['directories']:
+            if directory in ['models', 'controllers', 'views', 'services']:
+                file_structure['backend'].append(f"{directory}/__init__.py")
+                file_structure['backend'].append(f"{directory}/base.py")
 
-        # Frontend files
-        frontend_framework = framework_prefs.get('frontend', 'react')
-        structure['frontend'].extend(self._get_frontend_files(architecture, frontend_framework))
+        # Generate test files
+        file_structure['tests'].append('tests/__init__.py')
+        file_structure['tests'].append('tests/test_api.py')
+        file_structure['tests'].append('tests/test_models.py')
 
-        # Database files
-        database_type = framework_prefs.get('database', 'sqlite')
-        structure['database'].extend(self._get_database_files(architecture, database_type))
+        # Generate documentation
+        file_structure['docs'].append('README.md')
+        file_structure['docs'].append('DEPLOYMENT.md')
 
-        # Test files
-        structure['tests'].extend(self._get_test_files(architecture))
-
-        # Configuration files
-        structure['config'].extend(self._get_config_files(architecture, framework_prefs))
-
-        # Documentation files
-        structure['documentation'].extend(['README.md', 'API.md', 'SETUP.md'])
-
-        return structure
-
-    def _get_backend_files(self, architecture: Dict[str, Any], framework: str) -> List[str]:
-        """Generate backend file list based on architecture and framework"""
-        files = ['app.py', 'models.py', 'routes.py', 'config.py']
-
-        if architecture.get('pattern') == 'mvc':
-            files.extend(['controllers.py', 'views.py'])
-        elif architecture.get('pattern') == 'microservices':
-            files.extend(['user_service.py', 'auth_service.py', 'api_gateway.py'])
-        elif architecture.get('pattern') == 'layered':
-            files.extend(['business_layer.py', 'data_layer.py', 'presentation_layer.py'])
-
-        if 'authentication' in architecture.get('components', []):
-            files.append('auth.py')
-
-        if 'cache' in architecture.get('components', []):
-            files.append('cache.py')
-
-        return files
-
-    def _get_frontend_files(self, architecture: Dict[str, Any], framework: str) -> List[str]:
-        """Generate frontend file list"""
-        if framework == 'react':
-            return [
-                'src/App.js', 'src/index.js', 'src/components/Header.js',
-                'src/components/UserList.js', 'src/components/UserForm.js',
-                'src/styles/App.css', 'src/utils/api.js', 'package.json', 'public/index.html'
-            ]
-        elif framework == 'vue':
-            return [
-                'src/App.vue', 'src/main.js', 'src/components/Header.vue',
-                'src/components/UserList.vue', 'package.json', 'public/index.html'
-            ]
-        else:  # vanilla
-            return ['index.html', 'styles.css', 'script.js']
-
-    def _get_database_files(self, architecture: Dict[str, Any], db_type: str) -> List[str]:
-        """Generate database files"""
-        files = ['schema.sql', 'migrations/001_initial.sql']
-
-        if db_type == 'postgresql':
-            files.append('postgres_config.sql')
-        elif db_type == 'mysql':
-            files.append('mysql_config.sql')
-
-        return files
-
-    def _get_test_files(self, architecture: Dict[str, Any]) -> List[str]:
-        """Generate test files"""
-        return [
-            'test_app.py', 'test_models.py', 'test_routes.py',
-            'test_auth.py', 'conftest.py', 'requirements-test.txt'
-        ]
-
-    def _get_config_files(self, architecture: Dict[str, Any], framework_prefs: Dict[str, str]) -> List[str]:
-        """Generate configuration files"""
-        files = [
-            'requirements.txt',
-            '.env.example',
-            '.gitignore',
-            'Dockerfile'
-        ]
-
-        # Add framework-specific config files
-        if framework_prefs.get('frontend') in ['react', 'vue', 'angular']:
-            files.append('package.json')
-
-        if architecture.get('pattern') == 'microservices':
-            files.append('docker-compose.yml')
-
-        return files
+        return file_structure
 
     def _generate_all_files(self, project: Project, specs: Optional[TechnicalSpecification],
-                            architecture: Dict[str, Any], file_structure: Dict[str, List[str]]) -> List[GeneratedFile]:
+                           architecture: Dict[str, Any], file_structure: Dict[str, List[str]]) -> List[GeneratedFile]:
         """Generate content for all files"""
         generated_files = []
 
@@ -669,7 +582,7 @@ def test_get_users_with_data(client, sample_user):
                     content = self._generate_file_content(project, specs, architecture, file_path, category)
                     if content:
                         generated_file = GeneratedFile(
-                            codebase_id="",  # Will be set when codebase is created
+                            codebase_id="",
                             project_id=getattr(project, 'id', 'unknown'),
                             file_path=file_path,
                             content=content,
@@ -737,7 +650,7 @@ from typing import Dict, List, Any, Optional
 # Generated Python file: {file_name}
 # Purpose: {file_purpose}
 
-class {file_name.replace('.py', '').title()}:
+class {file_name.replace('.py', '').replace('_', '').title()}:
     """Generated class for {file_purpose}"""
 
     def __init__(self):
@@ -751,9 +664,8 @@ class {file_name.replace('.py', '').title()}:
             'data': data
         }}
 
-# Example usage
 if __name__ == "__main__":
-    processor = {file_name.replace('.py', '').title()}()
+    processor = {file_name.replace('.py', '').replace('_', '').title()}()
     result = processor.process({{"example": "data"}})
     print(f"Result: {{result}}")
 '''
@@ -764,31 +676,17 @@ if __name__ == "__main__":
         if 'component' in file_name.lower():
             return self.code_templates['react_component']
         else:
-            return f'''/*
+            return f'''/**
  * {file_purpose.replace('_', ' ').title()} for {getattr(project, 'name', 'Project')}
  * Generated by Socratic RAG Enhanced Code Generator
  */
 
-// Generated JavaScript file: {file_name}
-console.log('Loading {file_name}');
-
-export default class {file_name.replace('.js', '').title()} {{
+class {file_name.replace('.js', '').replace('-', '').title()} {{
     constructor() {{
-        this.initialized = false;
         this.createdAt = new Date();
-        this.init();
-    }}
-
-    init() {{
-        console.log('{file_name} initialized at', this.createdAt);
-        this.initialized = true;
     }}
 
     process(data) {{
-        if (!this.initialized) {{
-            throw new Error('{file_name} not initialized');
-        }}
-
         return {{
             status: 'processed',
             timestamp: this.createdAt.toISOString(),
@@ -796,6 +694,8 @@ export default class {file_name.replace('.js', '').title()} {{
         }};
     }}
 }}
+
+export default {file_name.replace('.js', '').replace('-', '').title()};
 '''
 
     def _generate_html_content(self, project: Project, specs: Optional[TechnicalSpecification],
@@ -806,42 +706,24 @@ export default class {file_name.replace('.js', '').title()} {{
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{getattr(project, 'name', 'Project')}</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>{getattr(project, 'name', 'Application')}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <div id="app">
+    <div class="container">
         <header>
-            <h1>Welcome to {getattr(project, 'name', 'Project')}</h1>
-            <nav>
-                <ul>
-                    <li><a href="#home">Home</a></li>
-                    <li><a href="#about">About</a></li>
-                    <li><a href="#contact">Contact</a></li>
-                </ul>
-            </nav>
+            <h1>{getattr(project, 'name', 'Application')}</h1>
         </header>
-
         <main>
-            <section id="home">
-                <h2>Project Overview</h2>
-                <p>This is a generated {file_purpose} page for your project.</p>
-                <p>Generated by Socratic RAG Enhanced Code Generator</p>
-            </section>
-
-            <section id="features">
-                <h2>Features</h2>
-                <ul id="feature-list">
-                    <!-- Features will be populated dynamically -->
-                </ul>
-            </section>
+            <div class="content">
+                <!-- Content for {file_purpose} -->
+            </div>
         </main>
-
         <footer>
-            <p>&copy; 2024 {getattr(project, 'name', 'Project')}. Generated with Socratic RAG Enhanced.</p>
+            <p>Generated by Socratic RAG Enhanced</p>
         </footer>
     </div>
-    <script src="app.js"></script>
+    <script src="/static/js/main.js"></script>
 </body>
 </html>
 '''
@@ -849,331 +731,134 @@ export default class {file_name.replace('.js', '').title()} {{
     def _generate_sql_content(self, project: Project, specs: Optional[TechnicalSpecification],
                               architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
         """Generate SQL file content"""
-        return f'''-- {file_purpose.replace('_', ' ').title()} for {getattr(project, 'name', 'Project')}
+        return f'''-- Database schema for {getattr(project, 'name', 'Project')}
 -- Generated by Socratic RAG Enhanced Code Generator
--- Generated SQL file: {file_name}
 
--- Create basic tables
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username VARCHAR(80) UNIQUE NOT NULL,
-    email VARCHAR(120) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS projects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    user_id INTEGER,
-    status VARCHAR(20) DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users (id)
-);
-
-CREATE TABLE IF NOT EXISTS project_files (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project_id INTEGER,
-    file_path VARCHAR(500) NOT NULL,
-    file_type VARCHAR(50),
-    content TEXT,
-    size_bytes INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES projects (id)
-);
-
--- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
-CREATE INDEX IF NOT EXISTS idx_project_files_project_id ON project_files(project_id);
-
--- Insert sample data
-INSERT OR IGNORE INTO users (username, email, password_hash) VALUES 
-    ('admin', 'admin@example.com', 'hashed_password_here'),
-    ('user1', 'user1@example.com', 'hashed_password_here');
-
--- Insert sample project
-INSERT OR IGNORE INTO projects (name, description, user_id) VALUES 
-    ('{getattr(project, 'name', 'Sample Project')}', 'Generated project from Socratic RAG Enhanced', 1);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_username ON users(username);
 '''
 
     def _generate_markdown_content(self, project: Project, specs: Optional[TechnicalSpecification],
                                    architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
-        """Generate Markdown file content"""
+        """Generate Markdown documentation"""
         if file_name == 'README.md':
             return f'''# {getattr(project, 'name', 'Project')}
 
+{getattr(project, 'description', 'Generated application')}
+
 ## Overview
-This project was generated using the Socratic RAG Enhanced code generation system.
+
+This project was generated by Socratic RAG Enhanced Code Generator.
 
 ## Architecture
+
 - **Pattern**: {architecture.get('pattern', 'mvc').upper()}
-- **Backend**: Python Flask
-- **Frontend**: React
+- **Backend**: Python/Flask
 - **Database**: SQLite
 - **Testing**: Pytest
 
-## Features
-- User authentication and management
-- RESTful API endpoints
-- Responsive web interface
-- Comprehensive test suite
-- Docker containerization ready
+## Installation
 
-## Setup Instructions
+```bash
+pip install -r requirements.txt
+```
 
-### Prerequisites
-- Python 3.8+
-- Node.js 14+
-- Git
+## Usage
 
-### Installation
-1. Clone the repository
-2. Install Python dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Install frontend dependencies:
-   ```bash
-   cd frontend
-   npm install
-   ```
-4. Set up the database:
-   ```bash
-   python -c "from app import db; db.create_all()"
-   ```
-5. Run the application:
-   ```bash
-   python app.py
-   ```
-
-## API Endpoints
-- `GET /api/users` - List all users
-- `POST /api/users` - Create a new user
-- `GET /api/users/<id>` - Get user by ID
-- `PUT /api/users/<id>` - Update user
-- `DELETE /api/users/<id>` - Delete user
+```bash
+python app.py
+```
 
 ## Testing
-Run the test suite:
+
 ```bash
 pytest tests/
 ```
 
-## Contributing
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+## Documentation
 
-## License
-Generated by Socratic RAG Enhanced Code Generator
-
-## Support
-For support and questions, please refer to the project documentation.
+For more details, see the documentation in the `docs/` directory.
 '''
         else:
             return f'''# {file_purpose.replace('_', ' ').title()}
 
-Generated documentation for {getattr(project, 'name', 'Project')}.
+Documentation for {file_purpose}.
 
-## Purpose
-{file_purpose.replace('_', ' ').title()} documentation and guidelines.
-
-## Generated by
-Socratic RAG Enhanced Code Generator
-
-## Last Updated
-{DateTimeHelper.to_iso_string(DateTimeHelper.now())}
+Generated by Socratic RAG Enhanced Code Generator.
 '''
 
     def _generate_json_content(self, project: Project, specs: Optional[TechnicalSpecification],
                                architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
-        """Generate JSON file content"""
-        if file_name == 'package.json':
-            return json.dumps({
-                "name": getattr(project, 'name', 'project').lower().replace(' ', '-'),
-                "version": "1.0.0",
-                "description": getattr(project, 'description', 'Generated project'),
-                "main": "src/index.js",
-                "scripts": {
-                    "start": "react-scripts start",
-                    "build": "react-scripts build",
-                    "test": "react-scripts test",
-                    "eject": "react-scripts eject"
-                },
-                "dependencies": {
-                    "react": "^18.0.0",
-                    "react-dom": "^18.0.0",
-                    "axios": "^1.0.0"
-                },
-                "devDependencies": {
-                    "react-scripts": "^5.0.0"
-                },
-                "browserslist": {
-                    "production": [">0.2%", "not dead", "not op_mini all"],
-                    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
-                }
-            }, indent=2)
-        else:
-            return json.dumps({
-                "generated_by": "Socratic RAG Enhanced Code Generator",
-                "file_purpose": file_purpose,
-                "project_name": getattr(project, 'name', 'Project'),
-                "created_at": DateTimeHelper.to_iso_string(DateTimeHelper.now())
-            }, indent=2)
+        """Generate JSON configuration"""
+        return json.dumps({
+            'name': getattr(project, 'name', 'project'),
+            'version': '1.0.0',
+            'description': getattr(project, 'description', 'Generated project'),
+            'generated_by': 'Socratic RAG Enhanced'
+        }, indent=2)
 
     def _generate_css_content(self, project: Project, specs: Optional[TechnicalSpecification],
-                              architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
-        """Generate CSS file content"""
-        return f'''/*
- * {file_purpose.replace('_', ' ').title()} for {getattr(project, 'name', 'Project')}
- * Generated by Socratic RAG Enhanced Code Generator
- */
+                             architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
+        """Generate CSS styling"""
+        return '''/* Generated CSS for application */
 
-/* Reset and base styles */
-* {{
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-}}
+}
 
-body {{
+body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     line-height: 1.6;
     color: #333;
-    background-color: #f5f5f5;
-}}
+}
 
-/* Header styles */
-header {{
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 1rem 0;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}}
-
-header h1 {{
-    text-align: center;
-    margin-bottom: 1rem;
-}}
-
-nav ul {{
-    list-style: none;
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-}}
-
-nav a {{
-    color: white;
-    text-decoration: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    transition: background-color 0.3s;
-}}
-
-nav a:hover {{
-    background-color: rgba(255,255,255,0.2);
-}}
-
-/* Main content */
-main {{
+.container {
     max-width: 1200px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-}}
+    margin: 0 auto;
+    padding: 20px;
+}
 
-section {{
-    background: white;
-    margin-bottom: 2rem;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}}
+header {
+    background: #007bff;
+    color: white;
+    padding: 20px 0;
+    margin-bottom: 30px;
+}
 
-/* Utility classes */
-.loading {{
+main {
+    min-height: 60vh;
+}
+
+footer {
+    margin-top: 30px;
+    padding: 20px 0;
+    border-top: 1px solid #ddd;
     text-align: center;
-    padding: 2rem;
-    font-style: italic;
-    color: #666;
-}}
-
-.error {{
-    background-color: #fee;
-    color: #c33;
-    padding: 1rem;
-    border-radius: 4px;
-    border-left: 4px solid #c33;
-}}
-
-/* User list styles */
-.user-list ul {{
-    list-style: none;
-}}
-
-.user-item {{
-    padding: 1rem;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}}
-
-.user-item:last-child {{
-    border-bottom: none;
-}}
-
-/* Footer */
-footer {{
-    text-align: center;
-    padding: 2rem;
-    margin-top: 3rem;
-    border-top: 1px solid #eee;
-    color: #666;
-}}
-
-/* Responsive design */
-@media (max-width: 768px) {{
-    nav ul {{
-        flex-direction: column;
-        gap: 1rem;
-    }}
-
-    main {{
-        margin: 1rem auto;
-        padding: 0 0.5rem;
-    }}
-
-    section {{
-        padding: 1rem;
-    }}
-}}
+}
 '''
 
     def _generate_generic_content(self, project: Project, specs: Optional[TechnicalSpecification],
                                   architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
         """Generate generic file content"""
-        return f'''# Generated file: {file_name}
+        return f'''# {file_name}
 # Purpose: {file_purpose}
-# Project: {getattr(project, 'name', 'Project')}
-# Generated by: Socratic RAG Enhanced Code Generator
-# Created: {DateTimeHelper.to_iso_string(DateTimeHelper.now())}
-
-This file was automatically generated as part of the project structure.
-Please customize this content according to your specific requirements.
+# Generated by Socratic RAG Enhanced Code Generator
 '''
 
     def _determine_file_type(self, file_path: str) -> str:
-        """Determine file type based on extension"""
+        """Determine file type from path"""
         ext = os.path.splitext(file_path)[1].lower()
-        type_mapping = {
+        type_map = {
             '.py': 'python',
             '.js': 'javascript',
             '.html': 'html',
@@ -1181,50 +866,28 @@ Please customize this content according to your specific requirements.
             '.sql': 'sql',
             '.md': 'markdown',
             '.json': 'json',
-            '.txt': 'text',
-            '.yml': 'yaml',
-            '.yaml': 'yaml'
+            '.txt': 'text'
         }
-        return type_mapping.get(ext, 'text')
+        return type_map.get(ext, 'unknown')
 
     def _determine_file_purpose(self, file_path: str, category: str) -> str:
-        """Determine the purpose of a file"""
+        """Determine file purpose from path and category"""
         file_name = os.path.basename(file_path).lower()
 
         if 'test' in file_name:
             return 'testing'
-        elif 'config' in file_name:
-            return 'configuration'
         elif 'model' in file_name:
             return 'data_model'
-        elif 'route' in file_name or 'api' in file_name:
-            return 'api_endpoint'
-        elif 'auth' in file_name:
-            return 'authentication'
-        elif 'app' in file_name or 'main' in file_name:
-            return 'main_application'
-        elif category == 'frontend':
-            return 'user_interface'
+        elif 'controller' in file_name or 'route' in file_name:
+            return 'request_handling'
+        elif 'view' in file_name or 'template' in file_name:
+            return 'presentation'
         elif category == 'backend':
             return 'server_logic'
         elif category == 'database':
             return 'data_persistence'
         else:
             return 'general_purpose'
-
-    def _design_security_measures(self, specs: Optional[TechnicalSpecification]) -> List[str]:
-        """Design security measures"""
-        return [
-            'Input validation and sanitization',
-            'SQL injection prevention',
-            'XSS protection',
-            'CSRF protection',
-            'Rate limiting',
-            'Authentication and authorization',
-            'HTTPS enforcement',
-            'Security headers',
-            'Data encryption'
-        ]
 
     def _estimate_complexity(self, requirements: List[str]) -> str:
         """Estimate project complexity"""
@@ -1277,3 +940,13 @@ Please customize this content according to your specific requirements.
             health['error'] = f"Health check failed: {e}"
 
         return health
+
+
+# ============================================================================
+# MODULE EXPORTS
+# ============================================================================
+
+__all__ = ['CodeGeneratorAgent']
+
+if __name__ == "__main__":
+    print("CodeGeneratorAgent module - use via AgentOrchestrator")

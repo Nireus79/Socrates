@@ -101,6 +101,46 @@ except ImportError:
         DEPLOYMENT = "deployment"
 
 
+    class BaseAgent:
+        def __init__(self, agent_id, name, services=None):
+            self.agent_id = agent_id
+            self.name = name
+            self.services = services
+            self.logger = get_logger(agent_id)
+            self.db_service = get_database()
+            self.events = None
+
+        def _error_response(self, message, error_code=None):
+            return {'success': False, 'error': message}
+
+        def _success_response(self, message, data=None):
+            return {'success': True, 'message': message, 'data': data or {}}
+
+
+    def require_authentication(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
+
+
+    def require_project_access(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
+
+
+    def log_agent_action(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
+
+
 class SocraticCounselorAgent(BaseAgent):
     """
     Enhanced Socratic questioning agent with role-based intelligence
@@ -110,7 +150,7 @@ class SocraticCounselorAgent(BaseAgent):
     """
 
     def __init__(self, services: ServiceContainer):
-        """Initialize SocraticCounselorAgent with corrected patterns"""
+        """Initialize SocraticCounselorAgent with ServiceContainer dependency injection"""
         super().__init__("socratic_counselor", "Socratic Counselor", services)
 
         # Question types and templates
@@ -146,76 +186,89 @@ class SocraticCounselorAgent(BaseAgent):
                 "Who are the primary users of this solution?",
                 "What would success look like for this project?",
                 "What constraints or limitations should we consider?",
-                "How does this align with your business objectives?"
+                "What is the expected scale and performance needs?"
             ],
-            "technical_exploration": [
-                "What technical challenges do you anticipate?",
-                "How will this integrate with existing systems?",
-                "What performance requirements do you have?",
-                "What security considerations are important?",
-                "How will you handle scalability?"
+            "technical_discovery": [
+                "What existing systems need to integrate with this solution?",
+                "What are the critical performance requirements?",
+                "What security and compliance requirements must we address?",
+                "What is the expected user load and concurrent usage?",
+                "What data needs to be stored, and what are the retention requirements?"
             ],
-            "design_thinking": [
-                "How will users interact with this feature?",
-                "What's the most intuitive way to present this information?",
-                "How can we minimize cognitive load for users?",
-                "What accessibility requirements should we consider?",
-                "How does this fit into the overall user journey?"
+            "design_exploration": [
+                "What are the key user workflows and interactions?",
+                "What accessibility requirements must be supported?",
+                "What devices and screen sizes need to be supported?",
+                "What is the desired look and feel of the application?",
+                "How should errors and edge cases be communicated to users?"
+            ],
+            "validation": [
+                "How will we verify this requirement is met?",
+                "What would make this feature successful from the user's perspective?",
+                "What edge cases should we consider?",
+                "How should the system handle errors in this scenario?",
+                "What are the acceptance criteria for this functionality?"
             ],
             "risk_assessment": [
                 "What could go wrong with this approach?",
-                "What dependencies might cause delays?",
-                "How would you handle edge cases?",
-                "What backup plans do you have?",
-                "What impact would failure have?"
+                "What dependencies could impact the timeline?",
+                "What technical risks should we mitigate?",
+                "What happens if third-party services are unavailable?",
+                "What is the backup plan if this approach doesn't work?"
             ],
-            "validation": [
-                "How will you measure success?",
-                "What data will you collect to validate this?",
-                "How will you know if users are satisfied?",
-                "What metrics are most important?",
-                "How will you handle negative feedback?"
+            "clarification": [
+                "Can you elaborate on what you mean by that?",
+                "What specific outcome are you expecting?",
+                "Can you provide an example of this scenario?",
+                "How does this relate to the previous requirement?",
+                "What would be different if we didn't have this feature?"
             ]
         }
 
     def _initialize_role_strategies(self) -> Dict[str, Dict[str, Any]]:
-        """Initialize questioning strategies for different roles"""
+        """Initialize questioning strategies for each role type"""
         return {
             "project_manager": {
-                "focus_areas": ["timeline", "resources", "stakeholders", "risks", "deliverables"],
+                "focus_areas": ["timeline", "resources", "stakeholders", "priorities", "risks"],
                 "question_style": "strategic",
-                "depth_preference": "broad",
+                "depth_preference": "high_level",
                 "template_priority": ["requirements_gathering", "risk_assessment", "validation"]
             },
+            "technical_lead": {
+                "focus_areas": ["architecture", "technology", "scalability", "integration", "security"],
+                "question_style": "architectural",
+                "depth_preference": "technical",
+                "template_priority": ["technical_discovery", "risk_assessment", "validation"]
+            },
             "developer": {
-                "focus_areas": ["implementation", "architecture", "performance", "maintainability"],
-                "question_style": "technical",
-                "depth_preference": "deep",
-                "template_priority": ["technical_exploration", "risk_assessment", "validation"]
+                "focus_areas": ["implementation", "algorithms", "data_structures", "apis", "testing"],
+                "question_style": "detailed",
+                "depth_preference": "implementation",
+                "template_priority": ["technical_discovery", "validation", "clarification"]
             },
             "designer": {
-                "focus_areas": ["user_experience", "interface", "accessibility", "usability"],
-                "question_style": "user_centric",
-                "depth_preference": "empathetic",
-                "template_priority": ["design_thinking", "requirements_gathering", "validation"]
+                "focus_areas": ["user_experience", "interface", "accessibility", "workflows", "branding"],
+                "question_style": "user_focused",
+                "depth_preference": "interaction",
+                "template_priority": ["design_exploration", "requirements_gathering", "validation"]
             },
             "tester": {
-                "focus_areas": ["quality", "edge_cases", "validation", "automation"],
-                "question_style": "analytical",
-                "depth_preference": "thorough",
-                "template_priority": ["validation", "risk_assessment", "technical_exploration"]
+                "focus_areas": ["quality", "edge_cases", "validation", "scenarios", "automation"],
+                "question_style": "scenario_based",
+                "depth_preference": "testing",
+                "template_priority": ["validation", "risk_assessment", "clarification"]
             },
             "business_analyst": {
-                "focus_areas": ["requirements", "processes", "stakeholders", "value"],
+                "focus_areas": ["requirements", "business_rules", "processes", "compliance", "reporting"],
                 "question_style": "analytical",
-                "depth_preference": "comprehensive",
+                "depth_preference": "business_logic",
                 "template_priority": ["requirements_gathering", "validation", "risk_assessment"]
             },
-            "stakeholder": {
-                "focus_areas": ["business_value", "outcomes", "impact", "alignment"],
-                "question_style": "outcome_focused",
-                "depth_preference": "strategic",
-                "template_priority": ["requirements_gathering", "validation", "risk_assessment"]
+            "devops": {
+                "focus_areas": ["deployment", "infrastructure", "monitoring", "ci_cd", "security"],
+                "question_style": "operational",
+                "depth_preference": "infrastructure",
+                "template_priority": ["technical_discovery", "risk_assessment", "validation"]
             }
         }
 
@@ -223,18 +276,18 @@ class SocraticCounselorAgent(BaseAgent):
     def _generate_questions(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Generate role-based Socratic questions"""
         try:
-            session_id: str = data.get('session_id', self._generate_session_id())
-            role: str = data.get('role', 'developer')
-            context: Dict[str, Any] = data.get('context', {})
-            question_count: int = data.get('question_count', 5)
-            project_phase: str = data.get('project_phase', 'planning')
+            session_id = data.get('session_id', self._generate_session_id())
+            role = data.get('role', 'developer')
+            context = data.get('context', {})
+            question_count = data.get('question_count', 5)
+            project_phase = data.get('project_phase', 'planning')
 
             # Validate inputs
             if question_count > self.max_questions_per_session:
                 question_count = self.max_questions_per_session
 
             # Get role strategy
-            strategy: Dict[str, Any] = self.role_strategies.get(role, self.role_strategies["developer"])
+            strategy = self.role_strategies.get(role, self.role_strategies["developer"])
 
             # Generate context-aware questions
             questions = self._generate_role_based_questions(
@@ -250,27 +303,21 @@ class SocraticCounselorAgent(BaseAgent):
                 'timestamp': DateTimeHelper.now(),
                 'phase': project_phase
             }
+
             self.current_sessions[session_id] = session_data
 
-            # Emit question generation event
-            if self.events:
-                self.events.emit('questions_generated', self.agent_id, {
+            self.logger.info(f"Generated {len(questions)} questions for role '{role}' in session {session_id}")
+
+            return self._success_response(
+                "Questions generated successfully",
+                {
                     'session_id': session_id,
+                    'questions': questions,
                     'role': role,
-                    'question_count': len(questions),
-                    'project_phase': project_phase
-                })
-
-            self.logger.info(f"Generated {len(questions)} questions for role {role} in session {session_id}")
-
-            return self._success_response("Questions generated successfully", {
-                'session_id': session_id,
-                'role': role,
-                'questions': questions,
-                'strategy': strategy,
-                'context_considered': bool(context),
-                'generated_at': DateTimeHelper.to_iso_string(session_data['timestamp'])
-            })
+                    'phase': project_phase,
+                    'strategy': strategy['question_style']
+                }
+            )
 
         except Exception as e:
             error_msg = f"Question generation failed: {e}"
@@ -278,180 +325,94 @@ class SocraticCounselorAgent(BaseAgent):
             return self._error_response(error_msg)
 
     def _generate_role_based_questions(self, role: str, strategy: Dict[str, Any],
-                                       context: Dict[str, Any], count: int, phase: str) -> List[Dict[str, Any]]:
+                                       context: Dict[str, Any], count: int,
+                                       phase: str) -> List[Dict[str, Any]]:
         """Generate questions based on role strategy and context"""
         questions = []
-        focus_areas = strategy.get('focus_areas', [])
-        question_style = strategy.get('question_style', 'general')
-        template_priority = strategy.get('template_priority', ['requirements_gathering'])
 
-        # Context-aware question selection
-        available_templates = []
-        for template_type in template_priority:
-            if template_type in self.question_templates:
-                available_templates.extend([
-                    {'question': q, 'type': template_type, 'focus': 'general'}
-                    for q in self.question_templates[template_type]
-                ])
+        # Get template priorities for this role
+        template_priorities = strategy.get('template_priority', ['requirements_gathering'])
 
-        # Add phase-specific questions
-        phase_questions = self._get_phase_specific_questions(phase, role)
-        available_templates.extend(phase_questions)
+        # Generate questions from prioritized templates
+        for template_type in template_priorities:
+            if len(questions) >= count:
+                break
 
-        # Add context-specific questions
-        if context:
-            context_questions = self._generate_context_questions(context, role, focus_areas)
-            available_templates.extend(context_questions)
+            template_questions = self.question_templates.get(template_type, [])
+            remaining = count - len(questions)
 
-        # Select diverse questions
-        selected_questions = self._select_diverse_questions(available_templates, count, focus_areas)
+            # Select questions from this template type
+            selected = template_questions[:remaining]
 
-        # Format questions with metadata
-        for i, q_data in enumerate(selected_questions[:count]):
-            question = {
-                'id': f"q_{i + 1}",
-                'question': q_data['question'],
-                'type': q_data.get('type', 'general'),
-                'focus_area': q_data.get('focus', 'general'),
-                'style': question_style,
-                'priority': i + 1,
-                'expected_response_type': self._get_expected_response_type(q_data['question']),
-                'follow_up_triggers': self._get_follow_up_triggers(q_data['question'])
-            }
-            questions.append(question)
+            for q_text in selected:
+                question = {
+                    'id': f"q_{len(questions) + 1}",
+                    'text': q_text,
+                    'role': role,
+                    'type': template_type,
+                    'phase': phase,
+                    'priority': 'high' if len(questions) < 3 else 'medium',
+                    'requires_response': True,
+                    'metadata': {
+                        'focus_area': strategy['focus_areas'][len(questions) % len(strategy['focus_areas'])],
+                        'style': strategy['question_style']
+                    }
+                }
+                questions.append(question)
+
+        # Add context-specific questions if needed
+        if context and len(questions) < count:
+            context_questions = self._generate_context_questions(context, role, count - len(questions))
+            questions.extend(context_questions)
+
+        return questions[:count]
+
+    def _generate_context_questions(self, context: Dict[str, Any], role: str,
+                                    count: int) -> List[Dict[str, Any]]:
+        """Generate questions based on specific context"""
+        questions = []
+
+        # Extract context elements
+        project_type = context.get('project_type', '')
+        technologies = context.get('technologies', [])
+        constraints = context.get('constraints', [])
+
+        # Generate context-aware questions
+        if project_type and len(questions) < count:
+            questions.append({
+                'id': f"q_ctx_{len(questions) + 1}",
+                'text': f"What specific challenges do you foresee for a {project_type} project?",
+                'role': role,
+                'type': 'context_specific',
+                'phase': 'discovery',
+                'priority': 'high',
+                'requires_response': True
+            })
+
+        if technologies and len(questions) < count:
+            tech_list = ', '.join(technologies[:3])
+            questions.append({
+                'id': f"q_ctx_{len(questions) + 1}",
+                'text': f"How familiar is your team with {tech_list}?",
+                'role': role,
+                'type': 'context_specific',
+                'phase': 'discovery',
+                'priority': 'medium',
+                'requires_response': True
+            })
+
+        if constraints and len(questions) < count:
+            questions.append({
+                'id': f"q_ctx_{len(questions) + 1}",
+                'text': "How do these constraints affect your implementation approach?",
+                'role': role,
+                'type': 'context_specific',
+                'phase': 'planning',
+                'priority': 'high',
+                'requires_response': True
+            })
 
         return questions
-
-    def _get_phase_specific_questions(self, phase: str, role: str) -> List[Dict[str, Any]]:
-        """Get questions specific to project phase"""
-        phase_questions: Dict[str, List[str]] = {
-            "planning": [
-                "What are the key deliverables for this phase?",
-                "How will you prioritize the features?",
-                "What assumptions are you making?"
-            ],
-            "development": [
-                "How will you ensure code quality?",
-                "What testing strategies will you employ?",
-                "How will you handle technical debt?"
-            ],
-            "testing": [
-                "What testing scenarios are most critical?",
-                "How will you measure test coverage?",
-                "What's your bug triage process?"
-            ],
-            "deployment": [
-                "What's your rollback strategy?",
-                "How will you monitor system health?",
-                "What's your go-live checklist?"
-            ]
-        }
-
-        questions: List[str] = phase_questions.get(phase, [])
-        return [{'question': q, 'type': 'phase_specific', 'focus': phase} for q in questions]
-
-    def _generate_context_questions(self, context: Dict[str, Any], role: str, focus_areas: List[str]) -> List[
-        Dict[str, Any]]:
-        """Generate questions based on provided context"""
-        context_questions = []
-
-        # Technology-specific questions
-        if 'technology' in context:
-            tech = context['technology']
-            context_questions.extend([
-                {'question': f"Why did you choose {tech} for this project?", 'type': 'context', 'focus': 'technology'},
-                {'question': f"What are the limitations of {tech} we should consider?", 'type': 'context',
-                 'focus': 'technology'}
-            ])
-
-        # Domain-specific questions
-        if 'domain' in context:
-            domain = context['domain']
-            context_questions.extend([
-                {'question': f"What are the unique challenges in the {domain} domain?", 'type': 'context',
-                 'focus': 'domain'},
-                {'question': f"What industry standards apply to {domain} solutions?", 'type': 'context',
-                 'focus': 'domain'}
-            ])
-
-        # Scale-specific questions
-        if 'scale' in context:
-            scale = context['scale']
-            context_questions.extend([
-                {'question': f"How will you handle {scale} scale requirements?", 'type': 'context', 'focus': 'scale'},
-                {'question': f"What infrastructure considerations are needed for {scale}?", 'type': 'context',
-                 'focus': 'scale'}
-            ])
-
-        return context_questions
-
-    def _select_diverse_questions(self, available_questions: List[Dict[str, Any]],
-                                  count: int, focus_areas: List[str]) -> List[Dict[str, Any]]:
-        """Select diverse questions covering different focus areas"""
-        if len(available_questions) <= count:
-            return available_questions
-
-        # Ensure diversity across focus areas
-        selected = []
-        used_focuses = set()
-
-        # First pass: select one question from each focus area
-        for focus in focus_areas:
-            focus_questions = [q for q in available_questions if q.get('focus') == focus]
-            if focus_questions and focus not in used_focuses:
-                selected.append(random.choice(focus_questions))
-                used_focuses.add(focus)
-                if len(selected) >= count:
-                    break
-
-        # Second pass: fill remaining slots with diverse questions
-        remaining_questions = [q for q in available_questions if q not in selected]
-        while len(selected) < count and remaining_questions:
-            # Prefer questions with unused focus areas
-            unused_focus_questions = [q for q in remaining_questions
-                                      if q.get('focus') not in used_focuses]
-
-            if unused_focus_questions:
-                question = random.choice(unused_focus_questions)
-                used_focuses.add(question.get('focus'))
-            else:
-                question = random.choice(remaining_questions)
-
-            selected.append(question)
-            remaining_questions.remove(question)
-
-        return selected
-
-    def _get_expected_response_type(self, question: str) -> str:
-        """Determine expected response type from question"""
-        question_lower = question.lower()
-
-        if any(word in question_lower for word in ['how many', 'how much', 'what percentage']):
-            return 'quantitative'
-        elif any(word in question_lower for word in ['how', 'what', 'why', 'where', 'when']):
-            return 'descriptive'
-        elif any(word in question_lower for word in ['would', 'could', 'should', 'might']):
-            return 'hypothetical'
-        elif '?' in question and any(word in question_lower for word in ['or', 'either']):
-            return 'choice'
-        else:
-            return 'open_ended'
-
-    def _get_follow_up_triggers(self, question: str) -> List[str]:
-        """Get potential follow-up question triggers"""
-        triggers = []
-        question_lower = question.lower()
-
-        if 'why' in question_lower:
-            triggers.extend(['elaborate', 'assumptions', 'alternatives'])
-        if 'how' in question_lower:
-            triggers.extend(['process', 'timeline', 'resources'])
-        if 'what' in question_lower:
-            triggers.extend(['examples', 'details', 'implications'])
-        if any(word in question_lower for word in ['problem', 'challenge', 'issue']):
-            triggers.extend(['root_cause', 'solutions', 'impact'])
-
-        return triggers
 
     @log_agent_action
     def _analyze_responses(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -499,7 +460,8 @@ class SocraticCounselorAgent(BaseAgent):
             self.logger.error(error_msg)
             return self._error_response(error_msg)
 
-    def _analyze_single_response(self, question_id: str, response: str, session: Dict[str, Any]) -> Dict[str, Any]:
+    def _analyze_single_response(self, question_id: str, response: str,
+                                 session: Dict[str, Any]) -> Dict[str, Any]:
         """Analyze a single response"""
         analysis = {
             'question_id': question_id,
@@ -541,8 +503,10 @@ class SocraticCounselorAgent(BaseAgent):
 
     def _assess_clarity(self, response: str) -> float:
         """Assess clarity of response (0.0 to 1.0)"""
-        # Simple heuristic based on sentence structure and length
         sentences = response.split('.')
+        if not sentences:
+            return 0.1
+
         avg_sentence_length = sum(len(s.split()) for s in sentences) / max(len(sentences), 1)
 
         if avg_sentence_length > 25:
@@ -556,7 +520,6 @@ class SocraticCounselorAgent(BaseAgent):
         """Extract key insights from response"""
         insights = []
 
-        # Look for explicit statements
         insight_patterns = [
             'I learned', 'I realized', 'I discovered', 'I found',
             'This means', 'This suggests', 'This implies', 'This indicates'
@@ -649,16 +612,22 @@ class SocraticCounselorAgent(BaseAgent):
 
         low_completeness = [a for a in analysis_results if a['completeness'] < 0.5]
         low_specificity = [a for a in analysis_results if a['specificity'] < 0.5]
+        low_clarity = [a for a in analysis_results if a['clarity'] < 0.5]
 
-        if len(low_completeness) > len(analysis_results) / 2:
-            recommendations.append("Consider asking for more detailed responses")
+        if low_completeness:
+            recommendations.append(
+                f"{len(low_completeness)} responses need more detail - consider asking for elaboration"
+            )
 
-        if len(low_specificity) > len(analysis_results) / 2:
-            recommendations.append("Ask for specific examples or concrete details")
+        if low_specificity:
+            recommendations.append(
+                f"{len(low_specificity)} responses are too vague - ask for specific examples"
+            )
 
-        concerns_count = sum(len(a['concerns']) for a in analysis_results)
-        if concerns_count > 3:
-            recommendations.append("Address identified concerns before proceeding")
+        if low_clarity:
+            recommendations.append(
+                f"{len(low_clarity)} responses are unclear - request clarification"
+            )
 
         return recommendations
 
@@ -669,20 +638,20 @@ class SocraticCounselorAgent(BaseAgent):
 
         for analysis in analysis_results:
             question_id = analysis['question_id']
-            needs = analysis['follow_up_needs']
+            needs = analysis.get('follow_up_needs', [])
 
             for need in needs:
                 if need == 'needs_elaboration':
                     follow_ups.append({
                         'original_question_id': question_id,
-                        'follow_up_question': "Could you provide more details about that?",
+                        'follow_up_question': "Can you elaborate on that with more details?",
                         'reason': 'Response was too brief',
-                        'priority': 'medium'
+                        'priority': 'high'
                     })
                 elif need == 'needs_clarification_of_dependencies':
                     follow_ups.append({
                         'original_question_id': question_id,
-                        'follow_up_question': "What specific factors does this depend on?",
+                        'follow_up_question': "What are the specific dependencies you mentioned?",
                         'reason': 'Dependencies mentioned but not clarified',
                         'priority': 'high'
                     })
@@ -737,7 +706,6 @@ class SocraticCounselorAgent(BaseAgent):
         """Detect conflicts between responses"""
         conflicts = []
 
-        # Simple conflict detection based on contradictory keywords
         positive_indicators = ['yes', 'definitely', 'absolutely', 'always', 'required']
         negative_indicators = ['no', 'never', 'impossible', 'unnecessary', 'optional']
 
@@ -746,7 +714,6 @@ class SocraticCounselorAgent(BaseAgent):
                 text1 = response1.get('response', '').lower()
                 text2 = response2.get('response', '').lower()
 
-                # Check for contradictory statements
                 has_positive1 = any(indicator in text1 for indicator in positive_indicators)
                 has_negative1 = any(indicator in text1 for indicator in negative_indicators)
                 has_positive2 = any(indicator in text2 for indicator in positive_indicators)
@@ -767,48 +734,45 @@ class SocraticCounselorAgent(BaseAgent):
         """Detect conflicts between requirements"""
         conflicts = []
 
-        # Simple requirement conflict detection
         for i, req1 in enumerate(requirements):
             for j, req2 in enumerate(requirements[i + 1:], i + 1):
-                # Look for contradictory requirements
-                if ('must' in req1.lower() and 'must not' in req2.lower()) or \
-                        ('required' in req1.lower() and 'optional' in req2.lower()):
+                req1_lower = req1.lower()
+                req2_lower = req2.lower()
+
+                # Check for contradictory requirements
+                if 'must' in req1_lower and 'must not' in req2_lower:
                     conflicts.append({
                         'type': 'requirement_contradiction',
                         'severity': 'high',
-                        'source1': f'requirement_{i + 1}',
-                        'source2': f'requirement_{j + 1}',
-                        'description': f'Conflicting requirements: "{req1}" vs "{req2}"'
+                        'source1': f'requirement_{i}',
+                        'source2': f'requirement_{j}',
+                        'description': 'Contradictory requirements detected'
                     })
 
         return conflicts
 
     def _assess_conflict_severity(self, conflicts: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Assess overall conflict severity"""
-        if not conflicts:
-            return {'level': 'none', 'risk': 'low'}
+        severity_counts = {'high': 0, 'medium': 0, 'low': 0}
 
-        severity_counts = {'low': 0, 'medium': 0, 'high': 0}
         for conflict in conflicts:
-            severity = conflict.get('severity', 'medium')
+            severity = conflict.get('severity', 'low')
             severity_counts[severity] += 1
 
-        if severity_counts['high'] > 0:
-            return {'level': 'high', 'risk': 'high', 'action': 'immediate_attention_required'}
-        elif severity_counts['medium'] > 2:
-            return {'level': 'medium', 'risk': 'medium', 'action': 'resolution_recommended'}
-        else:
-            return {'level': 'low', 'risk': 'low', 'action': 'monitor_and_clarify'}
+        return {
+            'total_conflicts': len(conflicts),
+            'high_severity': severity_counts['high'],
+            'medium_severity': severity_counts['medium'],
+            'low_severity': severity_counts['low'],
+            'requires_immediate_attention': severity_counts['high'] > 0
+        }
 
     def _generate_conflict_recommendations(self, conflicts: List[Dict[str, Any]]) -> List[str]:
         """Generate recommendations for resolving conflicts"""
-        if not conflicts:
-            return ["No conflicts detected - proceed with confidence"]
-
         recommendations = []
 
-        high_severity_conflicts = [c for c in conflicts if c.get('severity') == 'high']
-        if high_severity_conflicts:
+        high_severity = [c for c in conflicts if c.get('severity') == 'high']
+        if high_severity:
             recommendations.append("Address high-severity conflicts immediately before proceeding")
             recommendations.append("Consider stakeholder meeting to resolve contradictory requirements")
 
@@ -821,6 +785,42 @@ class SocraticCounselorAgent(BaseAgent):
             recommendations.append("Prioritize and reconcile conflicting requirements")
 
         return recommendations
+
+    @log_agent_action
+    def _extract_insights(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract insights from session data"""
+        try:
+            session_id = data.get('session_id')
+
+            if not session_id:
+                return self._error_response("Session ID is required")
+
+            if session_id not in self.current_sessions:
+                return self._error_response(f"Unknown session: {session_id}")
+
+            session = self.current_sessions[session_id]
+
+            insights = {
+                'session_id': session_id,
+                'role': session.get('role'),
+                'phase': session.get('phase'),
+                'key_insights': [],
+                'patterns': [],
+                'recommendations': []
+            }
+
+            # Extract insights from session data
+            if 'responses_analyzed' in session:
+                insights['key_insights'].append(
+                    f"{session['responses_analyzed']} responses analyzed with quality metrics"
+                )
+
+            return self._success_response("Insights extracted successfully", insights)
+
+        except Exception as e:
+            error_msg = f"Insight extraction failed: {e}"
+            self.logger.error(error_msg)
+            return self._error_response(error_msg)
 
     def _generate_session_id(self) -> str:
         """Generate unique session ID"""
@@ -855,3 +855,13 @@ class SocraticCounselorAgent(BaseAgent):
             health['error'] = f"Health check failed: {e}"
 
         return health
+
+
+# ============================================================================
+# MODULE EXPORTS
+# ============================================================================
+
+__all__ = ['SocraticCounselorAgent']
+
+if __name__ == "__main__":
+    print("SocraticCounselorAgent module - use via AgentOrchestrator")

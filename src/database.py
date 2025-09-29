@@ -8,6 +8,7 @@ Provides data persistence, retrieval, and management functionality.
 
 ✅ CORRECTED - Key Fixes Applied:
 - Added missing 'codebases' property alias in DatabaseService
+- Added ProjectCollaboratorRepository and project_collaborators table
 - Fixed import fallbacks with complete model definitions including size_bytes
 - Added missing dataclass import in fallback block
 - Resolved type mismatch issues in repository return types
@@ -72,6 +73,7 @@ try:
         User, Project, Module, Task, GeneratedCodebase, GeneratedFile, TestResult,
         SocraticSession, Question, ConversationMessage, Conflict, TechnicalSpec,
         ProjectMetrics, UserActivity, KnowledgeEntry, ProjectContext, ModuleContext, TaskContext,
+        ProjectCollaborator,
         ProjectPhase, ProjectStatus, ModuleStatus, UserRole, UserStatus, TechnicalRole,
         FileType, TestType, Priority, ConflictType
     )
@@ -137,6 +139,17 @@ except ImportError:
         file_path: str = ""
         content: str = ""
         size_bytes: int = 0
+
+
+    @dataclass
+    class ProjectCollaborator(BaseModel):
+        project_id: str = ""
+        user_id: str = ""
+        role: str = "developer"
+        permissions: List[str] = field(default_factory=list)
+        joined_at: datetime = field(default_factory=datetime.now)
+        is_active: bool = True
+        invitation_status: str = "active"
 
 
     # Minimal fallback implementations for other models
@@ -421,17 +434,15 @@ class GeneratedCodebaseRepository(BaseRepository[GeneratedCodebase]):
             data = self._model_to_dict(codebase)
             query = """
                 UPDATE generated_codebases 
-                SET version = ?, architecture_type = ?, total_lines_of_code = ?, 
-                    total_files = ?, size_bytes = ?, code_quality_score = ?, 
-                    test_coverage = ?, updated_at = ?
+                SET version = ?, total_lines_of_code = ?, total_files = ?, 
+                    size_bytes = ?, code_quality_score = ?, test_coverage = ?, updated_at = ?
                 WHERE id = ?
             """
             params = (
                 data.get('version', '1.0.0'),
-                data.get('architecture_type', ''),
                 data.get('total_lines_of_code', 0),
                 data.get('total_files', 0),
-                data.get('size_bytes', 0),  # ✅ FIXED: Properly handles size_bytes
+                data.get('size_bytes', 0),
                 data.get('code_quality_score', 0.0),
                 data.get('test_coverage', 0.0),
                 DateTimeHelper.to_iso_string(DateTimeHelper.now()),
@@ -469,7 +480,7 @@ class GeneratedFileRepository(BaseRepository[GeneratedFile]):
                 data.get('codebase_id', ''),
                 data.get('file_path', ''),
                 data.get('content', ''),
-                data.get('size_bytes', 0),  # ✅ FIXED: Properly handles size_bytes
+                data.get('size_bytes', 0),
                 DateTimeHelper.to_iso_string(DateTimeHelper.now()),
                 DateTimeHelper.to_iso_string(DateTimeHelper.now())
             )
@@ -508,7 +519,7 @@ class GeneratedFileRepository(BaseRepository[GeneratedFile]):
             params = (
                 data.get('file_path', ''),
                 data.get('content', ''),
-                data.get('size_bytes', 0),  # ✅ FIXED: Properly handles size_bytes
+                data.get('size_bytes', 0),
                 DateTimeHelper.to_iso_string(DateTimeHelper.now()),
                 data.get('id', '')
             )
@@ -525,6 +536,114 @@ class GeneratedFileRepository(BaseRepository[GeneratedFile]):
             return True
         except Exception as e:
             self.logger.error(f"Error deleting file {file_id}: {e}")
+            return False
+
+
+class ProjectCollaboratorRepository(BaseRepository[ProjectCollaborator]):
+    """Project collaborator repository with relationship management"""
+
+    def create(self, collaborator: ProjectCollaborator) -> bool:
+        try:
+            data = self._model_to_dict(collaborator)
+            query = """
+                INSERT INTO project_collaborators 
+                (id, project_id, user_id, role, permissions, joined_at, 
+                 is_active, invitation_status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            params = (
+                data.get('id', str(uuid.uuid4())),
+                data.get('project_id', ''),
+                data.get('user_id', ''),
+                data.get('role', 'developer'),
+                json.dumps(data.get('permissions', [])),
+                DateTimeHelper.to_iso_string(data.get('joined_at', DateTimeHelper.now())),
+                data.get('is_active', True),
+                data.get('invitation_status', 'active'),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            )
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error creating collaborator: {e}")
+            return False
+
+    def get_by_id(self, collaborator_id: str) -> Optional[ProjectCollaborator]:
+        try:
+            query = "SELECT * FROM project_collaborators WHERE id = ?"
+            results = self.db_manager.execute_query(query, (collaborator_id,))
+            if results:
+                row = results[0]
+                # Parse JSON permissions
+                if 'permissions' in row and isinstance(row['permissions'], str):
+                    row['permissions'] = json.loads(row['permissions'])
+                return self._row_to_model(row)
+            return None
+        except Exception as e:
+            self.logger.error(f"Error getting collaborator {collaborator_id}: {e}")
+            return None
+
+    def get_by_project(self, project_id: str) -> List[ProjectCollaborator]:
+        """Get all collaborators for a project"""
+        try:
+            query = "SELECT * FROM project_collaborators WHERE project_id = ? AND is_active = 1"
+            results = self.db_manager.execute_query(query, (project_id,))
+            collaborators = []
+            for row in results:
+                if 'permissions' in row and isinstance(row['permissions'], str):
+                    row['permissions'] = json.loads(row['permissions'])
+                collaborators.append(self._row_to_model(row))
+            return collaborators
+        except Exception as e:
+            self.logger.error(f"Error getting collaborators for project {project_id}: {e}")
+            return []
+
+    def get_by_user(self, user_id: str) -> List[ProjectCollaborator]:
+        """Get all projects a user collaborates on"""
+        try:
+            query = "SELECT * FROM project_collaborators WHERE user_id = ? AND is_active = 1"
+            results = self.db_manager.execute_query(query, (user_id,))
+            collaborators = []
+            for row in results:
+                if 'permissions' in row and isinstance(row['permissions'], str):
+                    row['permissions'] = json.loads(row['permissions'])
+                collaborators.append(self._row_to_model(row))
+            return collaborators
+        except Exception as e:
+            self.logger.error(f"Error getting projects for user {user_id}: {e}")
+            return []
+
+    def update(self, collaborator: ProjectCollaborator) -> bool:
+        try:
+            data = self._model_to_dict(collaborator)
+            query = """
+                UPDATE project_collaborators 
+                SET role = ?, permissions = ?, is_active = ?, 
+                    invitation_status = ?, updated_at = ?
+                WHERE id = ?
+            """
+            params = (
+                data.get('role', 'developer'),
+                json.dumps(data.get('permissions', [])),
+                data.get('is_active', True),
+                data.get('invitation_status', 'active'),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                data.get('id', '')
+            )
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error updating collaborator: {e}")
+            return False
+
+    def delete(self, collaborator_id: str) -> bool:
+        try:
+            query = "DELETE FROM project_collaborators WHERE id = ?"
+            self.db_manager.execute_update(query, (collaborator_id,))
+            return True
+        except Exception as e:
+            self.logger.error(f"Error deleting collaborator {collaborator_id}: {e}")
             return False
 
 
@@ -613,6 +732,25 @@ class DatabaseManager:
                     )
                 """)
 
+                # Project collaborators table
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS project_collaborators (
+                        id TEXT PRIMARY KEY,
+                        project_id TEXT NOT NULL,
+                        user_id TEXT NOT NULL,
+                        role TEXT NOT NULL DEFAULT 'developer',
+                        permissions TEXT,
+                        joined_at TEXT NOT NULL,
+                        is_active INTEGER DEFAULT 1,
+                        invitation_status TEXT DEFAULT 'active',
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL,
+                        FOREIGN KEY (project_id) REFERENCES projects(id),
+                        FOREIGN KEY (user_id) REFERENCES users(id),
+                        UNIQUE(project_id, user_id)
+                    )
+                """)
+
                 conn.commit()
                 self.logger.info("Database schema initialized successfully")
 
@@ -698,6 +836,7 @@ class DatabaseService:
         self.projects = ProjectRepository(self.db_manager, Project)
         self.generated_codebases = GeneratedCodebaseRepository(self.db_manager, GeneratedCodebase)
         self.generated_files = GeneratedFileRepository(self.db_manager, GeneratedFile)
+        self.project_collaborators = ProjectCollaboratorRepository(self.db_manager, ProjectCollaborator)
 
         # Add other repositories as needed
         # self.modules = ModuleRepository(self.db_manager, Module)
@@ -721,7 +860,7 @@ class DatabaseService:
             stats = {}
 
             # Count records in each table
-            tables = ['users', 'projects', 'generated_codebases', 'generated_files']
+            tables = ['users', 'projects', 'generated_codebases', 'generated_files', 'project_collaborators']
             for table in tables:
                 try:
                     query = f"SELECT COUNT(*) as count FROM {table}"
@@ -777,6 +916,7 @@ class RepositoryManager:
             'project': self.db_service.projects,
             'generated_codebase': self.db_service.generated_codebases,
             'generated_file': self.db_service.generated_files,
+            'project_collaborator': self.db_service.project_collaborators,
             'codebase': self.db_service.codebases,  # Alias support
         }
 
@@ -789,6 +929,7 @@ class RepositoryManager:
             'projects': self.db_service.projects,
             'generated_codebases': self.db_service.generated_codebases,
             'generated_files': self.db_service.generated_files,
+            'project_collaborators': self.db_service.project_collaborators,
             'codebases': self.db_service.codebases,  # Alias
         }
 
@@ -835,6 +976,7 @@ __all__ = [
     # Repository classes
     'BaseRepository', 'UserRepository', 'ProjectRepository',
     'GeneratedCodebaseRepository', 'GeneratedFileRepository',
+    'ProjectCollaboratorRepository',
 
     # Factory functions
     'get_database', 'get_repository_manager', 'init_database',
@@ -852,6 +994,9 @@ if __name__ == "__main__":
         db = get_database()
         print(f"✅ DatabaseService initialized successfully")
 
+        # Test project_collaborators repository exists
+        print(f"✅ project_collaborators exists: {hasattr(db, 'project_collaborators')}")
+
         # Test codebases property alias
         print(f"✅ codebases alias accessible: {db.codebases is db.generated_codebases}")
 
@@ -863,6 +1008,9 @@ if __name__ == "__main__":
         repo_manager = get_repository_manager()
         codebase_repo = repo_manager.get_repository('codebase')
         print(f"✅ Repository manager working: {codebase_repo is not None}")
+
+        collab_repo = repo_manager.get_repository('project_collaborator')
+        print(f"✅ ProjectCollaborator repository accessible: {collab_repo is not None}")
 
         print("🎉 All database tests passed!")
 

@@ -23,7 +23,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 try:
-    from src.core import get_logger, DateTimeHelper, ValidationError, ValidationHelper, get_event_bus
+    from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper
     from src.models import KnowledgeEntry, ModelFactory
     from src.database import get_database
     from src.utils import get_file_processor, get_text_processor
@@ -35,15 +35,25 @@ except ImportError:
     # Comprehensive fallback implementations
     import logging
     from datetime import datetime
-    from enum import Enum
 
 
     def get_logger(name):
         return logging.getLogger(name)
 
 
-    def get_event_bus():
-        return None
+    class ServiceContainer:
+        def get_logger(self, name):
+            import logging
+            return logging.getLogger(name)
+
+        def get_config(self):
+            return {}
+
+        def get_event_bus(self):
+            return None
+
+        def get_db_manager(self):
+            return None
 
 
     def get_database():
@@ -66,10 +76,6 @@ except ImportError:
         @staticmethod
         def to_iso_string(dt):
             return dt.isoformat() if dt else None
-
-        @staticmethod
-        def from_iso_string(iso_str):
-            return datetime.fromisoformat(iso_str) if iso_str else None
 
 
     class ValidationError(Exception):
@@ -95,16 +101,19 @@ except ImportError:
 
 
     class BaseAgent:
-        def __init__(self, agent_id, name):
+        def __init__(self, agent_id, name, services=None):
             self.agent_id = agent_id
             self.name = name
+            self.services = services
             self.logger = get_logger(agent_id)
+            self.db_service = get_database()
+            self.events = None
 
         def _error_response(self, message, error_code=None):
-            return {'success': False, 'error': message}
+            return {'success': False, 'error': message, 'error_code': error_code}
 
-        def _success_response(self, data):
-            return {'success': True, 'data': data}
+        def _success_response(self, message, data=None):
+            return {'success': True, 'message': message, 'data': data or {}}
 
 
     def require_authentication(func):
@@ -134,10 +143,9 @@ except ImportError:
 class DocumentProcessorAgent(BaseAgent):
     """Enhanced document processing agent with knowledge base integration"""
 
-    def __init__(self):
-        super().__init__("document_processor", "Document Processor Agent")
-        self.db_service = get_database()
-        self.event_bus = get_event_bus()
+    def __init__(self, services: ServiceContainer):
+        """Initialize DocumentProcessorAgent with ServiceContainer dependency injection"""
+        super().__init__("document_processor", "Document Processor Agent", services)
 
         # Initialize file processing utilities
         self.file_processor = get_file_processor()
@@ -157,13 +165,14 @@ class DocumentProcessorAgent(BaseAgent):
         self.chunk_size = 1000  # characters per chunk
         self.overlap_size = 200  # overlap between chunks
 
-        self.logger.info("DocumentProcessorAgent initialized with multi-format support")
+        if self.logger:
+            self.logger.info("DocumentProcessorAgent initialized with multi-format support")
 
     def get_capabilities(self) -> List[str]:
         """Return list of capabilities this agent provides"""
         return [
             "process_files",
-            "analyze_repository", 
+            "analyze_repository",
             "extract_knowledge",
             "chunk_documents",
             "store_vectors",
@@ -177,12 +186,12 @@ class DocumentProcessorAgent(BaseAgent):
     @require_authentication
     @require_project_access
     @log_agent_action
-    def process_files(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _process_files(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Process uploaded files and extract knowledge
 
         Args:
-            request_data: {
+            data: {
                 'file_paths': List[str],
                 'project_id': str,
                 'user_id': str,
@@ -195,11 +204,11 @@ class DocumentProcessorAgent(BaseAgent):
             Dict with processing results and extracted knowledge
         """
         try:
-            file_paths = request_data.get('file_paths', [])
-            project_id = request_data.get('project_id')
-            user_id = request_data.get('user_id')
-            extract_knowledge = request_data.get('extract_knowledge', True)
-            analysis_depth = request_data.get('analysis_depth', 'detailed')
+            file_paths = data.get('file_paths', [])
+            project_id = data.get('project_id')
+            user_id = data.get('user_id')
+            extract_knowledge = data.get('extract_knowledge', True)
+            analysis_depth = data.get('analysis_depth', 'detailed')
 
             if not all([file_paths, project_id, user_id]):
                 return self._error_response("Missing required parameters", "MISSING_PARAMS")
@@ -251,127 +260,24 @@ class DocumentProcessorAgent(BaseAgent):
             results['processing_time'] = (end_time - start_time).total_seconds()
 
             # Fire event
-            if self.event_bus:
-                self.event_bus.emit('files_processed', self.agent_id, {
+            if self.events:
+                self.events.emit('files_processed', {
                     'project_id': project_id,
                     'user_id': user_id,
-                    'files_count': len(file_paths),
-                    'knowledge_entries_count': len(results['knowledge_entries']),
-                    'processing_time': results['processing_time']
+                    'files_processed': len(results['processed_files']),
+                    'knowledge_entries': len(results['knowledge_entries']),
+                    'total_size': results['total_size']
                 })
 
-            return self._success_response({
-                'message': f"Processed {len(file_paths)} files successfully",
-                'results': results,
-                'summary': {
-                    'total_files': len(file_paths),
-                    'successful': len(results['processed_files']),
-                    'failed': len(results['errors']),
-                    'knowledge_entries': len(results['knowledge_entries']),
-                    'total_size_mb': results['total_size'] / (1024 * 1024)
-                }
-            })
+            self.logger.info(
+                f"Processed {len(file_paths)} files: {len(results['processed_files'])} successful, {len(results['errors'])} errors")
+
+            return self._success_response("Files processed successfully", results)
 
         except Exception as e:
             error_msg = f"File processing failed: {str(e)}"
             self.logger.error(error_msg)
             return self._error_response(error_msg, "PROCESSING_FAILED")
-
-    @require_authentication
-    @require_project_access
-    @log_agent_action
-    def analyze_repository(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Analyze GitHub repository structure and extract knowledge
-
-        Args:
-            request_data: {
-                'repository_url': str,
-                'project_id': str,
-                'user_id': str,
-                'analysis_depth': str,  # 'basic', 'detailed', 'comprehensive'
-                'include_code_analysis': bool
-            }
-
-        Returns:
-            Dict with repository analysis results
-        """
-        try:
-            repo_url = request_data.get('repository_url')
-            project_id = request_data.get('project_id')
-            user_id = request_data.get('user_id')
-            analysis_depth = request_data.get('analysis_depth', 'detailed')
-            include_code_analysis = request_data.get('include_code_analysis', True)
-
-            if not all([repo_url, project_id, user_id]):
-                return self._error_response("Missing required parameters", "MISSING_PARAMS")
-
-            # Initialize analysis results
-            analysis = {
-                'repository_url': repo_url,
-                'analysis_timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()),
-                'structure': {},
-                'statistics': {},
-                'languages': {},
-                'files': [],
-                'knowledge_entries': []
-            }
-
-            # Parse repository URL
-            parsed_url = urlparse(repo_url)
-            if 'github.com' not in parsed_url.netloc:
-                return self._error_response("Only GitHub repositories are supported", "UNSUPPORTED_REPO")
-
-            # Extract repo info from URL
-            path_parts = parsed_url.path.strip('/').split('/')
-            if len(path_parts) < 2:
-                return self._error_response("Invalid GitHub repository URL", "INVALID_URL")
-
-            repo_owner = path_parts[0]
-            repo_name = path_parts[1]
-
-            # Perform repository analysis
-            if analysis_depth == 'basic':
-                analysis = self._basic_repo_analysis(repo_owner, repo_name, analysis)
-            elif analysis_depth == 'detailed':
-                analysis = self._detailed_repo_analysis(repo_owner, repo_name, analysis, include_code_analysis)
-            else:  # comprehensive
-                analysis = self._comprehensive_repo_analysis(repo_owner, repo_name, analysis, include_code_analysis)
-
-            # Create knowledge entries from analysis
-            if analysis_depth != 'basic':
-                knowledge_entries = self._create_repo_knowledge_entries(analysis, project_id, user_id)
-                analysis['knowledge_entries'] = knowledge_entries
-
-                # Store in database
-                if self.db_service and hasattr(self.db_service, 'knowledge'):
-                    for entry in knowledge_entries:
-                        try:
-                            self.db_service.knowledge.create(entry)
-                        except Exception as e:
-                            self.logger.error(f"Error storing knowledge entry: {e}")
-
-            # Fire event
-            if self.event_bus:
-                self.event_bus.emit('repository_analyzed', self.agent_id, {
-                    'project_id': project_id,
-                    'user_id': user_id,
-                    'repository_url': repo_url,
-                    'analysis_depth': analysis_depth,
-                    'files_analyzed': len(analysis.get('files', [])),
-                    'knowledge_entries_created': len(analysis.get('knowledge_entries', []))
-                })
-
-            return self._success_response({
-                'message': f"Repository analysis completed ({analysis_depth})",
-                'analysis': analysis,
-                'summary': self._create_analysis_summary(analysis)
-            })
-
-        except Exception as e:
-            error_msg = f"Repository analysis failed: {str(e)}"
-            self.logger.error(error_msg)
-            return self._error_response(error_msg, "ANALYSIS_FAILED")
 
     def _process_single_file(self, file_path: str, analysis_depth: str) -> Dict[str, Any]:
         """Process a single file and extract information"""
@@ -380,7 +286,7 @@ class DocumentProcessorAgent(BaseAgent):
                 # Fallback processing when file processor not available
                 return self._fallback_file_processing(file_path)
 
-            # Use file processor (corrected - no extra parameters)
+            # Use file processor
             doc_info = self.file_processor.process_file(file_path)
 
             # Convert DocumentInfo to dict
@@ -415,9 +321,99 @@ class DocumentProcessorAgent(BaseAgent):
                 'processed': False
             }
 
-    def _extract_knowledge_entries(self, file_result: Dict[str, Any], 
+    def _fallback_file_processing(self, file_path: str) -> Dict[str, Any]:
+        """Fallback file processing when utilities not available"""
+        try:
+            file_path_obj = Path(file_path)
+            content = ""
+
+            if file_path_obj.suffix.lower() in ['.txt', '.md', '.py', '.js', '.html', '.css', '.json', '.yaml',
+                                                 '.yml']:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+
+            return {
+                'file_path': str(file_path),
+                'file_name': file_path_obj.name,
+                'file_type': file_path_obj.suffix,
+                'size_bytes': file_path_obj.stat().st_size if file_path_obj.exists() else 0,
+                'content': content,
+                'word_count': len(content.split()),
+                'extraction_method': 'fallback'
+            }
+
+        except Exception as e:
+            return {
+                'file_path': str(file_path),
+                'error': str(e),
+                'processed': False
+            }
+
+    def _analyze_file_content(self, file_result: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze file content and extract metadata"""
+        analysis = {}
+
+        try:
+            content = file_result.get('content', '')
+
+            # Extract keywords
+            analysis['keywords'] = self._extract_keywords(content)
+
+            # Extract metadata patterns
+            analysis['metadata'] = self._extract_metadata_patterns(content)
+
+            # Analyze content structure
+            lines = content.splitlines()
+            analysis['line_count'] = len(lines)
+            analysis['non_empty_lines'] = len([l for l in lines if l.strip()])
+
+            # Language-specific analysis
+            if self._is_code_file(file_result['file_path']):
+                analysis['language'] = self._detect_programming_language(file_result['file_path'])
+                analysis['complexity'] = self._estimate_code_complexity(content)
+
+            return analysis
+
+        except Exception as e:
+            self.logger.error(f"Error analyzing file content: {e}")
+            return {}
+
+    def _extract_code_structure(self, content: str) -> List[Dict[str, Any]]:
+        """Extract code structure from content"""
+        structures = []
+
+        try:
+            # Extract functions/methods
+            function_pattern = r'def\s+(\w+)\s*\([^)]*\):'
+            functions = re.findall(function_pattern, content)
+
+            for func_name in functions:
+                structures.append({
+                    'type': 'function',
+                    'name': func_name,
+                    'language': 'python'
+                })
+
+            # Extract classes
+            class_pattern = r'class\s+(\w+)'
+            classes = re.findall(class_pattern, content)
+
+            for class_name in classes:
+                structures.append({
+                    'type': 'class',
+                    'name': class_name,
+                    'language': 'python'
+                })
+
+            return structures
+
+        except Exception as e:
+            self.logger.error(f"Error extracting code structure: {e}")
+            return []
+
+    def _extract_knowledge_entries(self, file_result: Dict[str, Any],
                                    project_id: str, user_id: str) -> List[KnowledgeEntry]:
-        """Extract knowledge entries from processed file (corrected signature)"""
+        """Extract knowledge entries from processed file"""
         knowledge_entries = []
 
         try:
@@ -425,7 +421,7 @@ class DocumentProcessorAgent(BaseAgent):
             if not content.strip():
                 return knowledge_entries
 
-            # Create main knowledge entry for file (corrected instantiation)
+            # Create main knowledge entry for file
             main_entry = ModelFactory.create_knowledge_entry(
                 content=content,
                 source_type=file_result.get('file_type', 'file'),
@@ -480,215 +476,101 @@ class DocumentProcessorAgent(BaseAgent):
             self.logger.error(f"Error extracting knowledge entries: {e}")
             return []
 
-    def _fallback_file_processing(self, file_path: str) -> Dict[str, Any]:
-        """Fallback file processing when utilities not available"""
-        try:
-            file_path = Path(file_path)
-            content = ""
+    @require_authentication
+    @require_project_access
+    @log_agent_action
+    def _analyze_repository(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Analyze GitHub repository structure and content
 
-            if file_path.suffix.lower() in ['.txt', '.md', '.py', '.js', '.html', '.css', '.json', '.yaml', '.yml']:
-                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    content = f.read()
-
-            return {
-                'file_path': str(file_path),
-                'file_name': file_path.name,
-                'file_type': file_path.suffix,
-                'size_bytes': file_path.stat().st_size if file_path.exists() else 0,
-                'content': content,
-                'word_count': len(content.split()) if content else 0,
-                'extraction_method': 'fallback',
-                'errors': [],
-                'warnings': ['Using fallback processing - limited functionality']
+        Args:
+            data: {
+                'repo_url': str,
+                'project_id': str,
+                'user_id': str,
+                'analysis_depth': str,  # 'basic', 'detailed', 'comprehensive'
+                'include_code_analysis': bool
             }
 
-        except Exception as e:
-            return {
-                'file_path': str(file_path),
-                'error': str(e),
-                'processed': False
+        Returns:
+            Dict with repository analysis results
+        """
+        try:
+            repo_url = data.get('repo_url')
+            project_id = data.get('project_id')
+            user_id = data.get('user_id')
+            analysis_depth = data.get('analysis_depth', 'detailed')
+            include_code_analysis = data.get('include_code_analysis', True)
+
+            if not all([repo_url, project_id, user_id]):
+                return self._error_response("Missing required parameters", "MISSING_PARAMS")
+
+            # Initialize analysis structure
+            analysis = {
+                'repository_url': repo_url,
+                'analysis_timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                'analysis_depth': analysis_depth,
+                'structure': {},
+                'files': [],
+                'languages': {},
+                'summary': {}
             }
 
-    def _analyze_file_content(self, file_result: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze file content for additional insights"""
-        content = file_result.get('content', '')
-        analysis = {}
+            # Validate GitHub URL
+            parsed_url = urlparse(repo_url)
+            if 'github.com' not in parsed_url.netloc:
+                return self._error_response("Only GitHub repositories are supported", "UNSUPPORTED_REPO")
 
-        if content:
-            # Basic text analysis
-            lines = content.splitlines()
-            analysis.update({
-                'line_count': len(lines),
-                'non_empty_lines': len([line for line in lines if line.strip()]),
-                'character_count': len(content),
-                'average_line_length': sum(len(line) for line in lines) / len(lines) if lines else 0
-            })
+            # Extract repo info from URL
+            path_parts = parsed_url.path.strip('/').split('/')
+            if len(path_parts) < 2:
+                return self._error_response("Invalid GitHub repository URL", "INVALID_URL")
 
-            # Language detection for code files
-            if self._is_code_file(file_result.get('file_path', '')):
-                analysis['language'] = self._detect_programming_language(file_result.get('file_path', ''))
-                analysis['complexity_estimate'] = self._estimate_code_complexity(content)
+            repo_owner = path_parts[0]
+            repo_name = path_parts[1]
 
-            # Extract metadata patterns
-            analysis['metadata'] = self._extract_metadata_patterns(content)
+            # Perform basic structure analysis
+            analysis['structure'] = {
+                'owner': repo_owner,
+                'name': repo_name,
+                'analysis_type': analysis_depth
+            }
 
-        return analysis
+            # Note: Full GitHub API integration would go here
+            # For now, we provide the structure for analysis
+            analysis['summary'] = {
+                'repository': f"{repo_owner}/{repo_name}",
+                'url': repo_url,
+                'status': 'analyzed',
+                'note': 'Full GitHub API integration pending'
+            }
 
-    def _extract_code_structure(self, content: str) -> List[Dict[str, Any]]:
-        """Extract code structure from file content"""
-        structure = []
+            # Fire event
+            if self.events:
+                self.events.emit('repository_analyzed', {
+                    'project_id': project_id,
+                    'user_id': user_id,
+                    'repository_url': repo_url,
+                    'analysis_depth': analysis_depth
+                })
 
-        try:
-            lines = content.splitlines()
-            
-            for line_num, line in enumerate(lines, 1):
-                line = line.strip()
-                
-                # Extract functions
-                if line.startswith('def ') and '(' in line:
-                    func_name = line.split('(')[0].replace('def ', '').strip()
-                    structure.append({
-                        'type': 'function',
-                        'name': func_name,
-                        'line': line_num,
-                        'content': line
-                    })
-                
-                # Extract classes
-                elif line.startswith('class ') and ':' in line:
-                    class_name = line.split('(')[0].replace('class ', '').replace(':', '').strip()
-                    structure.append({
-                        'type': 'class',
-                        'name': class_name,
-                        'line': line_num,
-                        'content': line
-                    })
-                
-                # Extract imports
-                elif line.startswith(('import ', 'from ')):
-                    structure.append({
-                        'type': 'import',
-                        'name': line,
-                        'line': line_num,
-                        'content': line
-                    })
+            self.logger.info(f"Repository analysis completed for {repo_url}")
 
-            return structure
-
-        except Exception as e:
-            self.logger.error(f"Error extracting code structure: {e}")
-            return []
-
-    def _basic_repo_analysis(self, owner: str, name: str, analysis: Dict[str, Any]) -> Dict[str, Any]:
-        """Perform basic repository analysis"""
-        # Basic analysis without API calls
-        analysis['structure'] = {
-            'owner': owner,
-            'name': name,
-            'analysis_type': 'basic'
-        }
-        
-        analysis['statistics'] = {
-            'analysis_depth': 'basic',
-            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-        }
-
-        return analysis
-
-    def _detailed_repo_analysis(self, owner: str, name: str, analysis: Dict[str, Any], 
-                                include_code: bool) -> Dict[str, Any]:
-        """Perform detailed repository analysis"""
-        # Enhanced analysis with more detailed structure extraction
-        analysis.update(self._basic_repo_analysis(owner, name, analysis))
-        
-        analysis['structure'].update({
-            'analysis_type': 'detailed',
-            'include_code_analysis': include_code
-        })
-
-        # Add mock file structure for demonstration
-        analysis['files'] = [
-            {'path': 'README.md', 'type': 'documentation', 'size': 1024},
-            {'path': 'src/main.py', 'type': 'code', 'language': 'python', 'size': 2048},
-            {'path': 'requirements.txt', 'type': 'config', 'size': 512}
-        ]
-
-        analysis['languages'] = {'Python': 75, 'Markdown': 20, 'Other': 5}
-
-        return analysis
-
-    def _comprehensive_repo_analysis(self, owner: str, name: str, analysis: Dict[str, Any], 
-                                     include_code: bool) -> Dict[str, Any]:
-        """Perform comprehensive repository analysis"""
-        # Most detailed analysis with full code structure
-        analysis.update(self._detailed_repo_analysis(owner, name, analysis, include_code))
-        
-        analysis['structure']['analysis_type'] = 'comprehensive'
-        
-        # Add comprehensive metrics
-        analysis['statistics'].update({
-            'total_files': len(analysis.get('files', [])),
-            'total_size': sum(f.get('size', 0) for f in analysis.get('files', [])),
-            'complexity_score': 'medium'
-        })
-
-        return analysis
-
-    def _create_repo_knowledge_entries(self, analysis: Dict[str, Any], 
-                                       project_id: str, user_id: str) -> List[KnowledgeEntry]:
-        """Create knowledge entries from repository analysis"""
-        knowledge_entries = []
-
-        try:
-            # Create main repository entry
-            repo_summary = json.dumps(analysis.get('structure', {}), indent=2)
-            main_entry = ModelFactory.create_knowledge_entry(
-                content=repo_summary,
-                source_type='repository_analysis',
-                source_id=f"repo_{int(time.time())}",
-                keywords=['repository', 'structure', 'analysis'],
-                category='repository',
-                project_id=project_id,
-                user_id=user_id,
-                extracted_by=self.agent_id,
-                extraction_method='repository_analysis'
+            return self._success_response(
+                "Repository analysis completed",
+                {
+                    'analysis': analysis,
+                    'summary': analysis['summary']
+                }
             )
-            knowledge_entries.append(main_entry)
-
-            # Create entries for significant files
-            for file_info in analysis.get('files', [])[:10]:  # Limit to first 10 files
-                if file_info.get('type') == 'code':
-                    file_entry = ModelFactory.create_knowledge_entry(
-                        content=f"File: {file_info.get('path', 'unknown')}\nType: {file_info.get('type', 'unknown')}\nLanguage: {file_info.get('language', 'unknown')}",
-                        source_type='repository_file',
-                        source_id=f"file_{int(time.time())}_{len(knowledge_entries)}",
-                        keywords=['file', file_info.get('language', 'code')],
-                        category='code',
-                        project_id=project_id,
-                        user_id=user_id,
-                        extracted_by=self.agent_id,
-                        extraction_method='file_analysis'
-                    )
-                    knowledge_entries.append(file_entry)
-
-            return knowledge_entries
 
         except Exception as e:
-            self.logger.error(f"Error creating repository knowledge entries: {e}")
-            return []
-
-    def _create_analysis_summary(self, analysis: Dict[str, Any]) -> Dict[str, Any]:
-        """Create summary of analysis results"""
-        return {
-            'repository_url': analysis.get('repository_url', 'unknown'),
-            'analysis_type': analysis.get('structure', {}).get('analysis_type', 'unknown'),
-            'total_files': len(analysis.get('files', [])),
-            'languages_detected': list(analysis.get('languages', {}).keys()),
-            'knowledge_entries_created': len(analysis.get('knowledge_entries', [])),
-            'analysis_timestamp': analysis.get('analysis_timestamp', 'unknown')
-        }
+            error_msg = f"Repository analysis failed: {str(e)}"
+            self.logger.error(error_msg)
+            return self._error_response(error_msg, "ANALYSIS_FAILED")
 
     # Helper methods
+
     def _is_code_file(self, file_path: str) -> bool:
         """Check if file is a code file"""
         code_extensions = {'.py', '.js', '.ts', '.java', '.cpp', '.c', '.cs', '.php', '.rb', '.go', '.rs'}
@@ -698,7 +580,7 @@ class DocumentProcessorAgent(BaseAgent):
         """Detect programming language from file extension"""
         extension_map = {
             '.py': 'Python',
-            '.js': 'JavaScript', 
+            '.js': 'JavaScript',
             '.ts': 'TypeScript',
             '.java': 'Java',
             '.cpp': 'C++',
@@ -715,7 +597,7 @@ class DocumentProcessorAgent(BaseAgent):
         """Estimate code complexity"""
         lines = content.splitlines()
         non_empty_lines = len([line for line in lines if line.strip()])
-        
+
         # Simple complexity estimation
         if non_empty_lines < 50:
             return 'low'
@@ -729,14 +611,15 @@ class DocumentProcessorAgent(BaseAgent):
         # Simple keyword extraction
         words = re.findall(r'\b[a-zA-Z]{4,}\b', content.lower())
         # Get most common words (excluding common stop words)
-        stop_words = {'this', 'that', 'with', 'have', 'will', 'from', 'they', 'been', 'said', 'each', 'which', 'their'}
+        stop_words = {'this', 'that', 'with', 'have', 'will', 'from', 'they', 'been', 'said', 'each', 'which',
+                      'their'}
         keywords = [word for word in set(words) if word not in stop_words]
         return keywords[:10]  # Return top 10 keywords
 
     def _extract_metadata_patterns(self, content: str) -> Dict[str, Any]:
         """Extract metadata patterns from content"""
         metadata = {}
-        
+
         # Extract URLs
         urls = re.findall(r'https?://[^\s]+', content)
         if urls:
@@ -758,12 +641,12 @@ class DocumentProcessorAgent(BaseAgent):
         """Create overlapping chunks from content"""
         chunks = []
         content_length = len(content)
-        
+
         start = 0
         while start < content_length:
             end = min(start + self.chunk_size, content_length)
             chunk = content[start:end]
-            
+
             # Try to break at word boundaries
             if end < content_length:
                 last_space = chunk.rfind(' ')
@@ -776,11 +659,41 @@ class DocumentProcessorAgent(BaseAgent):
 
         return chunks
 
+    def health_check(self) -> Dict[str, Any]:
+        """Enhanced health check for DocumentProcessorAgent"""
+        health = super().health_check()
+
+        try:
+            # Check file processor availability
+            health['file_processor'] = {
+                'available': self.file_processor is not None,
+                'supported_formats': len(self.supported_formats)
+            }
+
+            # Check text processor availability
+            health['text_processor'] = {
+                'available': self.text_processor is not None
+            }
+
+            # Check processing settings
+            health['processing_settings'] = {
+                'max_file_size': self.max_file_size,
+                'chunk_size': self.chunk_size,
+                'overlap_size': self.overlap_size
+            }
+
+        except Exception as e:
+            health['status'] = 'degraded'
+            health['error'] = f"Health check failed: {e}"
+
+        return health
+
+
+# ============================================================================
+# MODULE EXPORTS
+# ============================================================================
+
+__all__ = ['DocumentProcessorAgent']
 
 if __name__ == "__main__":
-    # Initialize and test the agent
-    agent = DocumentProcessorAgent()
-    print(f"✅ {agent.name} initialized successfully")
-    print(f"✅ Agent ID: {agent.agent_id}")
-    print(f"✅ Capabilities: {agent.get_capabilities()}")
-    print(f"✅ Supported formats: {list(agent.supported_formats.keys())}")
+    print("DocumentProcessorAgent module - use via AgentOrchestrator")

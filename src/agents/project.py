@@ -20,7 +20,7 @@ from functools import wraps
 import json
 
 try:
-    from src.core import get_logger, DateTimeHelper, ValidationError, ValidationHelper, get_event_bus, ServiceContainer
+    from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper
     from src.models import Project, Module, Task, ProjectStatus, ProjectPhase, TaskPriority, ModelValidator
     from src.database import get_database
     from .base import BaseAgent, require_authentication, require_project_access, log_agent_action
@@ -45,8 +45,20 @@ except ImportError:
     def get_database():
         return None
 
-    def ServiceContainer():
-        return None
+
+    class ServiceContainer:
+        def get_logger(self, name):
+            import logging
+            return logging.getLogger(name)
+
+        def get_config(self):
+            return {}
+
+        def get_event_bus(self):
+            return None
+
+        def get_db_manager(self):
+            return None
 
 
     class DateTimeHelper:
@@ -115,25 +127,43 @@ except ImportError:
 
 
     class BaseAgent:
-        def __init__(self, agent_id, name):
+        def __init__(self, agent_id, name, services=None):
             self.agent_id = agent_id
             self.name = name
+            self.services = services
             self.logger = get_logger(agent_id)
+            self.db_service = get_database()
+            self.events = get_event_bus()
 
         def _error_response(self, message, error_code=None):
             return {'success': False, 'error': message}
 
+        def _success_response(self, message, data=None):
+            return {'success': True, 'message': message, 'data': data or {}}
+
 
     def require_authentication(func):
-        return func
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
 
 
     def require_project_access(func):
-        return func
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
 
 
     def log_agent_action(func):
-        return func
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
 
 
 class ProjectManagerAgent(BaseAgent):
@@ -145,12 +175,11 @@ class ProjectManagerAgent(BaseAgent):
     """
 
     def __init__(self, services: ServiceContainer):
-        """Initialize ProjectManagerAgent with corrected patterns"""
+        """Initialize ProjectManagerAgent with ServiceContainer dependency injection"""
         super().__init__("project_manager", "Project Manager", services)
 
-        # Initialize logging
         if self.logger:
-            self.logger.info(f"ProjectManagerAgent initialized successfully")
+            self.logger.info("ProjectManagerAgent initialized successfully")
 
     def get_capabilities(self) -> List[str]:
         """Return list of capabilities this agent provides"""
@@ -165,7 +194,7 @@ class ProjectManagerAgent(BaseAgent):
     @log_agent_action
     def _create_project(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Create new project with full setup and validation"""
-        username = data.get('username')  # Initialize early
+        username = data.get('username')
 
         try:
             # Extract and validate project data
@@ -186,68 +215,48 @@ class ProjectManagerAgent(BaseAgent):
                 'tags': data.get('tags', []),
                 'status': ProjectStatus.DRAFT,
                 'phase': ProjectPhase.PLANNING,
-                'created_at': DateTimeHelper.now(),  # Rule #7: Use DateTimeHelper
+                'created_at': DateTimeHelper.now(),
                 'updated_at': DateTimeHelper.now()
             }
 
             # Validate required fields
-            if not project_data['name'] or len(project_data['name'].strip()) < 2:
-                self.logger.warning("Project creation failed: Invalid project name")
-                raise ValidationError("Project name must be at least 2 characters long")
+            if not project_data['name']:
+                raise ValidationError("Project name is required")
+            if not project_data['owner_id']:
+                raise ValidationError("Project owner is required")
 
-            # Validate project data using model validator
+            # Validate data using model validator
             validation_issues = ModelValidator.validate_project_data(project_data)
             if validation_issues:
-                self.logger.warning(f"Project creation failed: Validation issues: {validation_issues}")
-                raise ValidationError(f"Project validation failed: {'; '.join(validation_issues)}")
+                raise ValidationError(f"Project validation failed: {', '.join(validation_issues)}")
 
-            # Create project model
+            # Create project in database
             project = Project(**project_data)
+            created_project = self.db_service.projects.create(project)
 
-            # Save project to database
-            success = self.db_service.projects.create(project)
-            if not success:
-                self.logger.error(f"Database operation failed for project creation: {project_data['name']}")
-                raise Exception("Failed to create project in database")
-
-            # Create default modules if specified
-            default_modules = data.get('default_modules', [])
-            modules_created = 0
-            for module_data in default_modules:
-                try:
-                    module_data['project_id'] = project.id
-                    module_data['created_at'] = DateTimeHelper.now()
-                    module_data['updated_at'] = DateTimeHelper.now()
-
-                    module = Module(**module_data)
-                    if self.db_service.modules.create(module):
-                        modules_created += 1
-                except Exception as e:
-                    self.logger.warning(f"Failed to create default module: {e}")
-
-            # Initialize project tracking and analytics
-            self._initialize_project_tracking(project.id)
+            # Initialize project tracking systems
+            self._initialize_project_tracking(created_project.id)
 
             # Emit project creation event
             if self.events:
-                self.events.emit('project_created', 'project_manager', {
-                    'project_id': project.id,
-                    'project_name': project.name,
-                    'owner': username,
-                    'modules_created': modules_created,
-                    'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                self.events.emit('project_created', {
+                    'project_id': created_project.id,
+                    'owner_id': username,
+                    'name': project_data['name']
                 })
 
-            self.logger.info(f"Project created successfully: {project.name} (ID: {project.id}) by {username}")
+            self.logger.info(f"Project created successfully: {created_project.id} by {username}")
 
-            return {
-                'success': True,
-                'project_id': project.id,
-                'name': project.name,
-                'status': 'created',
-                'modules_created': modules_created,
-                'created_at': DateTimeHelper.to_iso_string(project.created_at)
-            }
+            return self._success_response(
+                "Project created successfully",
+                {
+                    'project_id': created_project.id,
+                    'name': created_project.name,
+                    'status': created_project.status.value,
+                    'phase': created_project.phase.value,
+                    'created_at': DateTimeHelper.to_iso_string(created_project.created_at)
+                }
+            )
 
         except ValidationError:
             raise
@@ -292,8 +301,8 @@ class ProjectManagerAgent(BaseAgent):
     @log_agent_action
     def _update_project(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Update project information with validation"""
-        project_id = data.get('project_id')  # Initialize early
-        username = data.get('username')  # Initialize early
+        project_id = data.get('project_id')
+        username = data.get('username')
 
         try:
             updates = data.get('updates', {})
@@ -317,152 +326,81 @@ class ProjectManagerAgent(BaseAgent):
             updated_fields = []
             for field in allowed_fields:
                 if field in updates:
-                    old_value = getattr(project, field, None)
-                    new_value = updates[field]
-
-                    # Validate specific fields
-                    if field == 'name' and (not new_value or len(str(new_value).strip()) < 2):
-                        self.logger.warning(f"Project update failed: Invalid name: {new_value}")
-                        raise ValidationError("Project name must be at least 2 characters long")
-
-                    if field == 'phase':
-                        try:
-                            new_value = ProjectPhase(new_value)
-                        except ValueError:
-                            self.logger.warning(f"Project update failed: Invalid phase: {new_value}")
-                            raise ValidationError(f"Invalid project phase: {new_value}")
-
-                    if field == 'status':
-                        try:
-                            new_value = ProjectStatus(new_value)
-                        except ValueError:
-                            self.logger.warning(f"Project update failed: Invalid status: {new_value}")
-                            raise ValidationError(f"Invalid project status: {new_value}")
-
-                    setattr(project, field, new_value)
+                    setattr(project, field, updates[field])
                     updated_fields.append(field)
 
-                    self.logger.debug(f"Updated field {field}: {old_value} -> {new_value}")
-
             # Update timestamp
-            project.updated_at = DateTimeHelper.now()  # Rule #7: Use DateTimeHelper
+            project.updated_at = DateTimeHelper.now()
 
-            # Save changes to database
-            success = self.db_service.projects.update(project)
-            if not success:
-                self.logger.error(f"Database update failed for project: {project_id}")
-                raise Exception("Failed to update project in database")
+            # Save updated project
+            updated_project = self.db_service.projects.update(project)
 
-            # Emit project update event
+            # Emit update event
             if self.events:
-                self.events.emit('project_updated', 'project_manager', {
+                self.events.emit('project_updated', {
                     'project_id': project_id,
-                    'updated_fields': updated_fields,
                     'updated_by': username,
-                    'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                    'fields_updated': updated_fields
                 })
 
-            self.logger.info(f"Project updated successfully: {project_id}, fields: {updated_fields}")
+            self.logger.info(f"Project {project_id} updated successfully by {username}")
 
-            return {
-                'success': True,
-                'project_id': project_id,
-                'updated_fields': updated_fields,
-                'status': 'updated',
-                'updated_at': DateTimeHelper.to_iso_string(project.updated_at)
-            }
+            return self._success_response(
+                "Project updated successfully",
+                {
+                    'project_id': updated_project.id,
+                    'fields_updated': updated_fields,
+                    'updated_at': DateTimeHelper.to_iso_string(updated_project.updated_at)
+                }
+            )
 
         except ValidationError:
             raise
         except Exception as e:
-            self.logger.error(f"Unexpected error updating project {project_id or 'unknown'}: {e}")
+            self.logger.error(f"Error updating project {project_id or 'unknown'}: {e}")
             return self._error_response(f"Failed to update project: {str(e)}")
 
     @require_authentication
     @require_project_access
     @log_agent_action
     def _archive_project(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Archive project and all related data"""
-        project_id = data.get('project_id')  # Initialize early
-        username = data.get('username')  # Initialize early
+        """Archive project with proper cleanup"""
+        project_id = data.get('project_id')
+        username = data.get('username')
 
         try:
-            archive_reason = data.get('reason', 'User requested')
-
             if not project_id:
                 raise ValidationError("Project ID is required")
 
             # Get project
             project = self.db_service.projects.get_by_id(project_id)
             if not project:
-                self.logger.warning(f"Archive failed: Project {project_id} not found")
                 raise ValidationError("Project not found")
 
-            if project.status == ProjectStatus.ARCHIVED:
-                self.logger.info(f"Project {project_id} already archived")
-                return {
-                    'success': True,
-                    'message': f'Project {project.name} is already archived',
-                    'project_id': project_id,
-                    'status': 'already_archived'
-                }
-
-            # Archive project
-            old_status = project.status
+            # Update status to archived
             project.status = ProjectStatus.ARCHIVED
-            project.updated_at = DateTimeHelper.now()  # Rule #7: Use DateTimeHelper
+            project.updated_at = DateTimeHelper.now()
 
-            success = self.db_service.projects.update(project)
-            if not success:
-                self.logger.error(f"Database update failed for project archival: {project_id}")
-                raise Exception("Failed to archive project in database")
-
-            # Archive related modules and tasks
-            archived_modules = 0
-            archived_tasks = 0
-
-            try:
-                modules = self.db_service.modules.get_by_project_id(project_id)
-                for module in modules:
-                    module.status = 'archived'
-                    module.updated_at = DateTimeHelper.now()
-                    if self.db_service.modules.update(module):
-                        archived_modules += 1
-
-                tasks = self.db_service.tasks.get_by_project_id(project_id)
-                for task in tasks:
-                    task.status = 'cancelled'
-                    task.updated_at = DateTimeHelper.now()
-                    if self.db_service.tasks.update(task):
-                        archived_tasks += 1
-
-            except Exception as e:
-                self.logger.warning(f"Error archiving related data for project {project_id}: {e}")
+            # Save changes
+            self.db_service.projects.update(project)
 
             # Emit archive event
             if self.events:
-                self.events.emit('project_archived', 'project_manager', {
+                self.events.emit('project_archived', {
                     'project_id': project_id,
-                    'project_name': project.name,
-                    'reason': archive_reason,
-                    'archived_by': username,
-                    'archived_modules': archived_modules,
-                    'archived_tasks': archived_tasks,
-                    'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                    'archived_by': username
                 })
 
-            self.logger.info(f"Project archived: {project_id} by {username}, reason: {archive_reason}")
+            self.logger.info(f"Project {project_id} archived by {username}")
 
-            return {
-                'success': True,
-                'message': f'Project {project.name} archived successfully',
-                'project_id': project_id,
-                'status': 'archived',
-                'reason': archive_reason,
-                'archived_modules': archived_modules,
-                'archived_tasks': archived_tasks,
-                'archived_at': DateTimeHelper.to_iso_string(project.updated_at)
-            }
+            return self._success_response(
+                "Project archived successfully",
+                {
+                    'project_id': project_id,
+                    'status': 'archived',
+                    'archived_at': DateTimeHelper.to_iso_string(project.updated_at)
+                }
+            )
 
         except ValidationError:
             raise
@@ -473,34 +411,187 @@ class ProjectManagerAgent(BaseAgent):
     @require_authentication
     @require_project_access
     @log_agent_action
-    def _track_progress(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Track project progress across all modules and tasks"""
-        project_id = data.get('project_id')  # Initialize early
+    def _manage_modules(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Manage project modules (create, update, delete)"""
+        action = data.get('action')
+        project_id = data.get('project_id')
 
         try:
             if not project_id:
                 raise ValidationError("Project ID is required")
 
-            # Get comprehensive progress data
+            if action == 'create':
+                return self._create_module(data)
+            elif action == 'update':
+                return self._update_module(data)
+            elif action == 'delete':
+                return self._delete_module(data)
+            elif action == 'list':
+                return self._list_modules(data)
+            else:
+                raise ValidationError(f"Unknown module action: {action}")
+
+        except ValidationError:
+            raise
+        except Exception as e:
+            self.logger.error(f"Error managing modules: {e}")
+            return self._error_response(f"Failed to manage modules: {str(e)}")
+
+    def _create_module(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new module in project"""
+        try:
+            module_data = {
+                'project_id': data.get('project_id'),
+                'name': data.get('name'),
+                'description': data.get('description', ''),
+                'order': data.get('order', 0),
+                'phase': data.get('phase', ProjectPhase.PLANNING),
+                'estimated_hours': data.get('estimated_hours'),
+                'dependencies': data.get('dependencies', []),
+                'created_at': DateTimeHelper.now(),
+                'updated_at': DateTimeHelper.now()
+            }
+
+            # Validate required fields
+            if not module_data['name']:
+                raise ValidationError("Module name is required")
+
+            # Create module
+            module = Module(**module_data)
+            created_module = self.db_service.modules.create(module)
+
+            self.logger.info(f"Module created: {created_module.id} in project {module_data['project_id']}")
+
+            return self._success_response(
+                "Module created successfully",
+                {
+                    'module_id': created_module.id,
+                    'name': created_module.name,
+                    'project_id': created_module.project_id
+                }
+            )
+
+        except ValidationError:
+            raise
+        except Exception as e:
+            self.logger.error(f"Error creating module: {e}")
+            return self._error_response(f"Failed to create module: {str(e)}")
+
+    def _update_module(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update existing module"""
+        module_id = data.get('module_id')
+
+        try:
+            if not module_id:
+                raise ValidationError("Module ID is required")
+
+            module = self.db_service.modules.get_by_id(module_id)
+            if not module:
+                raise ValidationError("Module not found")
+
+            # Update fields
+            updates = data.get('updates', {})
+            allowed_fields = ['name', 'description', 'order', 'phase', 'estimated_hours', 'dependencies']
+
+            for field in allowed_fields:
+                if field in updates:
+                    setattr(module, field, updates[field])
+
+            module.updated_at = DateTimeHelper.now()
+            updated_module = self.db_service.modules.update(module)
+
+            return self._success_response(
+                "Module updated successfully",
+                {'module_id': updated_module.id}
+            )
+
+        except ValidationError:
+            raise
+        except Exception as e:
+            self.logger.error(f"Error updating module: {e}")
+            return self._error_response(f"Failed to update module: {str(e)}")
+
+    def _delete_module(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Delete module from project"""
+        module_id = data.get('module_id')
+
+        try:
+            if not module_id:
+                raise ValidationError("Module ID is required")
+
+            # Delete module
+            deleted = self.db_service.modules.delete(module_id)
+
+            if deleted:
+                return self._success_response("Module deleted successfully", {'module_id': module_id})
+            else:
+                raise ValidationError("Module not found")
+
+        except ValidationError:
+            raise
+        except Exception as e:
+            self.logger.error(f"Error deleting module: {e}")
+            return self._error_response(f"Failed to delete module: {str(e)}")
+
+    def _list_modules(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """List all modules for a project"""
+        project_id = data.get('project_id')
+
+        try:
+            if not project_id:
+                raise ValidationError("Project ID is required")
+
+            modules = self.db_service.modules.get_by_project_id(project_id)
+
+            module_list = []
+            for module in modules:
+                module_list.append({
+                    'id': module.id,
+                    'name': module.name,
+                    'description': module.description,
+                    'phase': module.phase.value if hasattr(module.phase, 'value') else module.phase,
+                    'estimated_hours': module.estimated_hours,
+                    'order': module.order
+                })
+
+            return self._success_response(
+                "Modules retrieved successfully",
+                {'modules': module_list, 'count': len(module_list)}
+            )
+
+        except ValidationError:
+            raise
+        except Exception as e:
+            self.logger.error(f"Error listing modules: {e}")
+            return self._error_response(f"Failed to list modules: {str(e)}")
+
+    @require_authentication
+    @require_project_access
+    @log_agent_action
+    def _track_progress(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Track and calculate project progress"""
+        project_id = data.get('project_id')
+
+        try:
+            if not project_id:
+                raise ValidationError("Project ID is required")
+
+            # Get comprehensive progress metrics
             progress = self._get_comprehensive_progress(project_id)
 
-            # Update project progress in database
+            # Update project with calculated progress
             project = self.db_service.projects.get_by_id(project_id)
             if project:
-                project.progress_percentage = progress['completion_percentage']
-                project.completed_modules = progress.get('modules_completed', 0)
-                project.total_modules = progress.get('modules_total', 0)
+                project.progress_percentage = progress.get('completion_percentage', 0.0)
                 project.updated_at = DateTimeHelper.now()
                 self.db_service.projects.update(project)
 
-            self.logger.info(f"Progress tracked for project {project_id}: {progress['completion_percentage']:.1f}%")
+            self.logger.info(f"Progress tracked for project {project_id}: {progress.get('completion_percentage')}%")
 
-            return {
-                'success': True,
-                'project_id': project_id,
-                'progress': progress,
-                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-            }
+            return self._success_response(
+                "Progress tracked successfully",
+                progress
+            )
 
         except ValidationError:
             raise
@@ -561,201 +652,21 @@ class ProjectManagerAgent(BaseAgent):
             return {'error': str(e), 'completion_percentage': 0.0}
 
     @require_authentication
-    @require_project_access
-    @log_agent_action
-    def _risk_assessment(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Perform comprehensive risk assessment for project"""
-        project_id = data.get('project_id')  # Initialize early
-
-        try:
-            assessment_type = data.get('type', 'full')  # full, timeline, resource, technical
-
-            if not project_id:
-                raise ValidationError("Project ID is required")
-
-            project = self.db_service.projects.get_by_id(project_id)
-            if not project:
-                raise ValidationError("Project not found")
-
-            risks = []
-
-            if assessment_type in ['full', 'timeline']:
-                risks.extend(self._assess_timeline_risks(project))
-
-            if assessment_type in ['full', 'resource']:
-                risks.extend(self._assess_resource_risks(project))
-
-            if assessment_type in ['full', 'technical']:
-                risks.extend(self._assess_technical_risks(project))
-
-            # Calculate overall risk level
-            risk_level = self._calculate_overall_risk_level(risks)
-
-            self.logger.info(f"Risk assessment completed for project {project_id}: {risk_level} risk level")
-
-            return {
-                'success': True,
-                'project_id': project_id,
-                'assessment_type': assessment_type,
-                'risks': risks,
-                'risk_level': risk_level,
-                'risk_count': len(risks),
-                'assessment_date': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-            }
-
-        except ValidationError:
-            raise
-        except Exception as e:
-            self.logger.error(f"Error performing risk assessment for project {project_id or 'unknown'}: {e}")
-            return self._error_response(f"Failed to perform risk assessment: {str(e)}")
-
-    def _assess_timeline_risks(self, project: Project) -> List[Dict[str, Any]]:
-        """Assess timeline-related risks"""
-        risks = []
-
-        try:
-            # Check if project has realistic timeline
-            if project.start_date and project.end_date:
-                timeline_days = (project.end_date - project.start_date).days
-                estimated_days = (project.estimated_hours or 0) // 8  # Assuming 8 hours per day
-
-                if timeline_days < estimated_days:
-                    risks.append({
-                        'type': 'timeline',
-                        'severity': 'high',
-                        'description': 'Timeline appears unrealistic for estimated work',
-                        'impact': 'Project may face delays or quality issues',
-                        'mitigation': 'Review timeline or reduce scope'
-                    })
-
-            # Check project duration
-            if project.created_at:
-                days_since_creation = (DateTimeHelper.now() - project.created_at).days
-                if days_since_creation > 365:  # More than a year
-                    risks.append({
-                        'type': 'timeline',
-                        'severity': 'medium',
-                        'description': 'Long-running project may face scope creep',
-                        'impact': 'Increased complexity and resource requirements',
-                        'mitigation': 'Regular milestone reviews and scope validation'
-                    })
-
-        except Exception as e:
-            self.logger.warning(f"Error assessing timeline risks: {e}")
-
-        return risks
-
-    def _assess_resource_risks(self, project: Project) -> List[Dict[str, Any]]:
-        """Assess resource-related risks"""
-        risks = []
-
-        try:
-            # Check team size
-            team_size = len(project.team_members or [])
-            if team_size == 0:
-                risks.append({
-                    'type': 'resource',
-                    'severity': 'high',
-                    'description': 'No team members assigned to project',
-                    'impact': 'Project cannot proceed without team assignment',
-                    'mitigation': 'Assign team members with appropriate skills'
-                })
-            elif team_size > 10:
-                risks.append({
-                    'type': 'resource',
-                    'severity': 'medium',
-                    'description': 'Large team may face coordination challenges',
-                    'impact': 'Communication overhead and potential delays',
-                    'mitigation': 'Implement proper team structure and communication processes'
-                })
-
-            # Check budget vs estimated hours
-            if project.budget and project.estimated_hours:
-                hourly_rate = project.budget / project.estimated_hours
-                if hourly_rate < 50:  # Assuming minimum viable rate
-                    risks.append({
-                        'type': 'resource',
-                        'severity': 'medium',
-                        'description': 'Budget may be insufficient for estimated work',
-                        'impact': 'Quality or scope compromises may be necessary',
-                        'mitigation': 'Review budget allocation or adjust scope'
-                    })
-
-        except Exception as e:
-            self.logger.warning(f"Error assessing resource risks: {e}")
-
-        return risks
-
-    def _assess_technical_risks(self, project: Project) -> List[Dict[str, Any]]:
-        """Assess technical risks"""
-        risks = []
-
-        try:
-            # Check technology stack complexity
-            tech_count = len(project.technology_stack or {})
-            if tech_count > 8:
-                risks.append({
-                    'type': 'technical',
-                    'severity': 'medium',
-                    'description': 'Complex technology stack may increase development complexity',
-                    'impact': 'Higher learning curve and integration challenges',
-                    'mitigation': 'Provide adequate training and documentation'
-                })
-
-            # Check for experimental technologies
-            tech_stack = project.technology_stack or {}
-            experimental_techs = []
-            for tech, version in tech_stack.items():
-                if 'beta' in str(version).lower() or 'alpha' in str(version).lower():
-                    experimental_techs.append(tech)
-
-            if experimental_techs:
-                risks.append({
-                    'type': 'technical',
-                    'severity': 'high',
-                    'description': f'Using experimental technologies: {", ".join(experimental_techs)}',
-                    'impact': 'Potential stability and support issues',
-                    'mitigation': 'Consider stable alternatives or plan for additional testing'
-                })
-
-        except Exception as e:
-            self.logger.warning(f"Error assessing technical risks: {e}")
-
-        return risks
-
-    def _calculate_overall_risk_level(self, risks: List[Dict[str, Any]]) -> str:
-        """Calculate overall risk level based on individual risks"""
-        if not risks:
-            return 'low'
-
-        high_risks = len([r for r in risks if r.get('severity') == 'high'])
-        medium_risks = len([r for r in risks if r.get('severity') == 'medium'])
-
-        if high_risks > 0:
-            return 'high'
-        elif medium_risks > 2:
-            return 'high'
-        elif medium_risks > 0:
-            return 'medium'
-        else:
-            return 'low'
-
-    @require_authentication
     @log_agent_action
     def _list_projects(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """List projects with filtering and pagination"""
-        username = data.get('username')  # Initialize early
+        username = data.get('username')
 
         try:
-            # Get filtering parameters
+            # Get filter parameters
             status_filter = data.get('status')
             phase_filter = data.get('phase')
             owner_filter = data.get('owner')
             limit = data.get('limit', 50)
             offset = data.get('offset', 0)
 
-            # Get projects accessible to user
-            all_projects = self.db_service.projects.get_projects_for_user(username)
+            # Get all projects for user
+            all_projects = self.db_service.projects.get_by_owner(username)
 
             # Apply filters
             filtered_projects = []
@@ -820,7 +731,7 @@ class ProjectManagerAgent(BaseAgent):
     @log_agent_action
     def _get_project_info(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Get detailed project information"""
-        project_id = data.get('project_id')  # Initialize early
+        project_id = data.get('project_id')
 
         try:
             if not project_id:
@@ -832,10 +743,10 @@ class ProjectManagerAgent(BaseAgent):
                 raise ValidationError("Project not found")
 
             # Get related data
-            progress = self._get_comprehensive_progress(project_id)
             modules = self.db_service.modules.get_by_project_id(project_id)
+            tasks = self.db_service.tasks.get_by_project_id(project_id)
 
-            # Format project info
+            # Format response
             project_info = {
                 'id': project.id,
                 'name': project.name,
@@ -843,6 +754,7 @@ class ProjectManagerAgent(BaseAgent):
                 'owner_id': project.owner_id,
                 'status': project.status.value,
                 'phase': project.phase.value,
+                'progress_percentage': project.progress_percentage,
                 'goals': project.goals,
                 'requirements': project.requirements,
                 'technology_stack': project.technology_stack,
@@ -852,26 +764,18 @@ class ProjectManagerAgent(BaseAgent):
                 'stakeholders': project.stakeholders,
                 'estimated_hours': project.estimated_hours,
                 'budget': project.budget,
-                'priority': project.priority.value if hasattr(project.priority, 'value') else str(project.priority),
+                'priority': project.priority,
                 'tags': project.tags,
-                'progress': progress,
-                'module_count': len(modules),
                 'created_at': DateTimeHelper.to_iso_string(project.created_at),
-                'updated_at': DateTimeHelper.to_iso_string(project.updated_at)
+                'updated_at': DateTimeHelper.to_iso_string(project.updated_at),
+                'modules_count': len(modules),
+                'tasks_count': len(tasks)
             }
 
-            # Add timeline information if available
-            if project.start_date:
-                project_info['start_date'] = DateTimeHelper.to_iso_string(project.start_date)
-            if project.end_date:
-                project_info['end_date'] = DateTimeHelper.to_iso_string(project.end_date)
-
-            self.logger.debug(f"Project info retrieved for: {project_id}")
-
-            return {
-                'success': True,
-                'project': project_info
-            }
+            return self._success_response(
+                "Project information retrieved successfully",
+                project_info
+            )
 
         except ValidationError:
             raise
@@ -879,16 +783,123 @@ class ProjectManagerAgent(BaseAgent):
             self.logger.error(f"Error getting project info for {project_id or 'unknown'}: {e}")
             return self._error_response(f"Failed to get project info: {str(e)}")
 
-    def _error_response(self, error_message: str, error_code: Optional[str] = None) -> Dict[str, Any]:
-        """Create standardized error response"""
-        response = {
-            'success': False,
-            'error': error_message,
-            'agent_id': self.agent_id,
-            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-        }
+    @require_authentication
+    @require_project_access
+    @log_agent_action
+    def _risk_assessment(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Perform comprehensive risk assessment for project"""
+        project_id = data.get('project_id')
 
-        if error_code:
-            response['error_code'] = error_code
+        try:
+            if not project_id:
+                raise ValidationError("Project ID is required")
 
-        return response
+            project = self.db_service.projects.get_by_id(project_id)
+            if not project:
+                raise ValidationError("Project not found")
+
+            # Analyze various risk factors
+            risks = {
+                'timeline_risks': self._assess_timeline_risks(project),
+                'resource_risks': self._assess_resource_risks(project),
+                'technical_risks': self._assess_technical_risks(project),
+                'team_risks': self._assess_team_risks(project),
+                'overall_risk_level': 'low'
+            }
+
+            # Calculate overall risk level
+            risk_counts = {'high': 0, 'medium': 0, 'low': 0}
+            for risk_category in ['timeline_risks', 'resource_risks', 'technical_risks', 'team_risks']:
+                for risk in risks[risk_category]:
+                    risk_counts[risk.get('severity', 'low')] += 1
+
+            if risk_counts['high'] > 0:
+                risks['overall_risk_level'] = 'high'
+            elif risk_counts['medium'] > 1:
+                risks['overall_risk_level'] = 'medium'
+            else:
+                risks['overall_risk_level'] = 'low'
+
+            return self._success_response(
+                "Risk assessment completed",
+                risks
+            )
+
+        except ValidationError:
+            raise
+        except Exception as e:
+            self.logger.error(f"Error performing risk assessment: {e}")
+            return self._error_response(f"Failed to assess risks: {str(e)}")
+
+    def _assess_timeline_risks(self, project: Project) -> List[Dict[str, Any]]:
+        """Assess timeline-related risks"""
+        risks = []
+
+        # Check if estimated hours are reasonable
+        if project.estimated_hours and project.estimated_hours < 10:
+            risks.append({
+                'risk': 'Underestimated project timeline',
+                'severity': 'medium',
+                'description': 'Project estimated hours seem very low'
+            })
+
+        return risks
+
+    def _assess_resource_risks(self, project: Project) -> List[Dict[str, Any]]:
+        """Assess resource-related risks"""
+        risks = []
+
+        # Check team size
+        team_size = len(project.team_members or [])
+        if team_size == 0:
+            risks.append({
+                'risk': 'No team members assigned',
+                'severity': 'high',
+                'description': 'Project has no team members assigned'
+            })
+        elif team_size < 2:
+            risks.append({
+                'risk': 'Single person project',
+                'severity': 'medium',
+                'description': 'Project relies on single team member'
+            })
+
+        return risks
+
+    def _assess_technical_risks(self, project: Project) -> List[Dict[str, Any]]:
+        """Assess technical risks"""
+        risks = []
+
+        # Check if technology stack is defined
+        if not project.technology_stack or len(project.technology_stack) == 0:
+            risks.append({
+                'risk': 'Undefined technology stack',
+                'severity': 'medium',
+                'description': 'Technology stack not clearly defined'
+            })
+
+        return risks
+
+    def _assess_team_risks(self, project: Project) -> List[Dict[str, Any]]:
+        """Assess team-related risks"""
+        risks = []
+
+        # Check if stakeholders are defined
+        if not project.stakeholders or len(project.stakeholders) == 0:
+            risks.append({
+                'risk': 'No stakeholders identified',
+                'severity': 'low',
+                'description': 'Project stakeholders not clearly identified'
+            })
+
+        return risks
+
+
+# ============================================================================
+# MODULE EXPORTS
+# ============================================================================
+
+__all__ = ['ProjectManagerAgent']
+
+if __name__ == "__main__":
+    print("ProjectManagerAgent module - use via AgentOrchestrator")
