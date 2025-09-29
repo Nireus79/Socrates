@@ -261,6 +261,7 @@ class SystemConfig:
             'SOCRATIC_LOG_LEVEL': ('logging', 'level'),
             'SOCRATIC_API_HOST': ('api', 'host'),
             'SOCRATIC_API_PORT': ('api', 'port'),
+            'API_KEY_CLAUDE': ('anthropic', 'api_key'),
         }
 
         for env_var, (section, key) in env_mappings.items():
