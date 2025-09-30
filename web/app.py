@@ -352,7 +352,8 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 user_repo = repo_manager.get_repository('user')
                 user = user_repo.get(user_id)
                 if user:
-                    return WebUser(user.id, user.username, user.email, user.role.value)
+                    role_value = user.role.value if hasattr(user.role, 'value') else user.role
+                    return WebUser(user.id, user.username, user.email, role_value)
         except Exception as e:
             logger.error(f"Error loading user: {e}")
         return None
@@ -390,7 +391,8 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                     user = user_repo.get_by_username(username)
 
                     if user and check_password_hash(user.password_hash, password):
-                        web_user = WebUser(user.id, user.username, user.email, user.role.value)
+                        role_value = user.role.value if hasattr(user.role, 'value') else user.role
+                        web_user = WebUser(user.id, user.username, user.email, role_value)
                         login_user(web_user, remember=form.remember.data)
                         flash('Login successful!', 'success')
                         return redirect(url_for('dashboard'))
@@ -474,6 +476,15 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                     )
 
                     # Save to database using repository
+                    # Save to database using repository
+                    print(f"DEBUG: Attempting to create user: {username}")
+                    print(f"DEBUG: User object before conversion: {new_user}")
+
+                    # Convert enum fields to string values
+                    new_user.role = new_user.role.value if hasattr(new_user.role, 'value') else new_user.role
+                    new_user.status = new_user.status.value if hasattr(new_user.status, 'value') else new_user.status
+
+                    print(f"DEBUG: User object after conversion: {new_user}")
                     created_user = user_repo.create(new_user)
 
                     if created_user:
@@ -481,6 +492,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                         return redirect(url_for('login'))
                     else:
                         flash('Registration failed: Could not create user', 'error')
+                        print("DEBUG: user_repo.create() returned None or False")
 
                 except Exception as e:
                     logger.error(f"Registration error: {e}")

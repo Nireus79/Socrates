@@ -240,14 +240,18 @@ class UserRepository(BaseRepository[User]):
         try:
             data = self._model_to_dict(user)
             query = """
-                INSERT INTO users (id, username, email, role, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO users (id, username, email, password_hash, first_name, last_name, role, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
             params = (
                 data.get('id', str(uuid.uuid4())),
                 data.get('username', ''),
                 data.get('email', ''),
+                data.get('password_hash', ''),
+                data.get('first_name', ''),
+                data.get('last_name', ''),
                 data.get('role', 'viewer'),
+                data.get('status', 'pending'),
                 DateTimeHelper.to_iso_string(DateTimeHelper.now()),
                 DateTimeHelper.to_iso_string(DateTimeHelper.now())
             )
