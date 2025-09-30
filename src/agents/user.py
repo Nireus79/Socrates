@@ -338,8 +338,10 @@ class UserManagerAgent(BaseAgent):
             password_hash = data.get('password_hash') or data.get('passcode_hash')
 
             # Only validate email if provided and not empty
-            if email and email.strip() and not ValidationHelper.validate_email(email):
-                return self._error_response("Valid email address is required")
+            if email and email.strip():
+                existing_email = self.db_service.users.get_by_email(email)
+                if existing_email:
+                    return self._error_response(f"Email '{email}' is already registered")
 
             # Check if user already exists
             if self.db_service:
