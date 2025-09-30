@@ -341,26 +341,34 @@ class UserRepository(BaseRepository[User]):
 class ProjectRepository(BaseRepository[Project]):
     """Project repository with type safety"""
 
-    def create(self, project: Project) -> bool:
+    def create(self, user: User) -> bool:
+        """Create new user in database"""
         try:
-            data = self._model_to_dict(project)
+            # Convert User model to dict
+            if hasattr(user, 'to_dict'):
+                data = user.to_dict()
+            elif hasattr(user, '__dict__'):
+                data = user.__dict__.copy()
+            else:
+                data = {}
+
             query = """
-                INSERT INTO projects (id, name, description, owner_id, status, created_at, updated_at)
+                INSERT INTO users (id, username, email, password_hash, role, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """
             params = (
                 data.get('id', str(uuid.uuid4())),
-                data.get('name', ''),
-                data.get('description', ''),
-                data.get('owner_id', ''),
-                data.get('status', 'draft'),
+                data.get('username', ''),
+                data.get('email', ''),
+                data.get('password_hash', ''),
+                data.get('role', 'viewer'),
                 DateTimeHelper.to_iso_string(DateTimeHelper.now()),
                 DateTimeHelper.to_iso_string(DateTimeHelper.now())
             )
             self.db_manager.execute_update(query, params)
             return True
         except Exception as e:
-            self.logger.error(f"Error creating project: {e}")
+            self.logger.error(f"Error creating user: {e}")
             return False
 
     def get_by_id(self, project_id: str) -> Optional[Project]:
