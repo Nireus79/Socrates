@@ -221,10 +221,36 @@ if FLASK_AVAILABLE:
 
 
     class ProjectForm(FlaskForm):
-        """Project creation/editing form."""
+        """Project creation/editing form - Full version."""
+        # Basic Information
         name = StringField('Project Name', validators=[DataRequired(), Length(max=200)])
         description = TextAreaField('Description', validators=[Length(max=2000)])
-        tech_stack = TextAreaField('Technology Stack')
+        project_type = SelectField('Project Type', choices=[
+            ('web_application', 'Web Application'),
+            ('mobile_app', 'Mobile App'),
+            ('desktop_app', 'Desktop Application'),
+            ('api_service', 'API Service'),
+            ('data_analysis', 'Data Analysis'),
+            ('machine_learning', 'Machine Learning'),
+            ('other', 'Other')
+        ])
+
+        # Technology Stack (stored as JSON string)
+        tech_stack = TextAreaField('Technology Stack (JSON)')
+
+        # Requirements
+        requirements = TextAreaField('Requirements', validators=[Length(max=5000)])
+
+        # Timeline
+        estimated_hours = IntegerField('Estimated Hours', validators=[OptionalValidator()])
+
+        # Priority
+        priority = SelectField('Priority', choices=[
+            ('low', 'Low'),
+            ('medium', 'Medium'),
+            ('high', 'High')
+        ], default='medium')
+
         submit = SubmitField('Create Project')
 
 
@@ -572,25 +598,35 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
 
         if form and form.validate_on_submit():
             try:
-                repo_manager = get_repository_manager()
-                if repo_manager and orchestrator:
-                    # Create project via agent
-                    result = orchestrator.route_request(
-                        'project_manager',
-                        'create_project',
-                        {
-                            'name': form.name.data,
-                            'description': form.description.data,
-                            'tech_stack': form.tech_stack.data,
-                            'user_id': current_user.id
-                        }
-                    )
+                # Parse tech_stack JSON if provided
+                tech_stack = {}
+                if form.tech_stack.data:
+                    try:
+                        import json
+                        tech_stack = json.loads(form.tech_stack.data)
+                    except:
+                        tech_stack = {'raw': form.tech_stack.data}
 
-                    if result.get('success'):
-                        flash('Project created successfully!', 'success')
-                        return redirect(url_for('projects'))
-                    else:
-                        flash(f"Error creating project: {result.get('message')}", 'error')
+                # Create project via agent
+                result = orchestrator.route_request(
+                    'project_manager',
+                    'create_project',
+                    {
+                        'name': form.name.data,
+                        'description': form.description.data,
+                        'tech_stack': tech_stack,
+                        'requirements': form.requirements.data or '',
+                        'estimated_hours': form.estimated_hours.data,
+                        'priority': form.priority.data or 'medium',
+                        'owner_id': current_user.id
+                    }
+                )
+
+                if result.get('success'):
+                    flash('Project created successfully!', 'success')
+                    return redirect(url_for('projects'))
+                else:
+                    flash(f"Error creating project: {result.get('message')}", 'error')
             except Exception as e:
                 logger.error(f"Project creation error: {e}")
                 flash('Failed to create project', 'error')

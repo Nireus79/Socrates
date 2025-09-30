@@ -16,26 +16,9 @@
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
 }
-.project-status {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-}
-.progress-ring {
-    width: 60px;
-    height: 60px;
-}
-.progress-ring-circle {
-    transition: stroke-dasharray 0.3s ease;
-}
 .json-editor {
     font-family: 'Courier New', monospace;
     font-size: 0.9rem;
-}
-.module-item {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.5rem;
-    background: rgba(255, 255, 255, 0.02);
 }
 </style>
 {% endblock %}
@@ -73,9 +56,9 @@
 </div>
 
 {% if page == 'create' %}
-<!-- Project Creation Form -->
+<!-- Full-Featured Project Creation Form -->
 <div class="row justify-content-center">
-    <div class="col-lg-8">
+    <div class="col-lg-10">
         <div class="card bg-dark border">
             <div class="card-header">
                 <h5 class="mb-0">
@@ -83,10 +66,14 @@
                 </h5>
             </div>
             <div class="card-body">
-                <form method="POST" id="projectForm" novalidate>
+                <form method="POST" id="projectForm">
                     {{ form.hidden_tag() }}
 
-                    <!-- Basic Information -->
+                    <!-- Basic Information Section -->
+                    <h6 class="border-bottom pb-2 mb-3">
+                        <i class="bi bi-info-circle"></i> Basic Information
+                    </h6>
+
                     <div class="row">
                         <div class="col-md-8">
                             <div class="form-floating mb-3">
@@ -103,15 +90,7 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-floating mb-3">
-                                <select class="form-select" id="project_type" name="project_type">
-                                    <option value="web_application">Web Application</option>
-                                    <option value="mobile_app">Mobile App</option>
-                                    <option value="desktop_app">Desktop Application</option>
-                                    <option value="api_service">API Service</option>
-                                    <option value="data_analysis">Data Analysis</option>
-                                    <option value="machine_learning">Machine Learning</option>
-                                    <option value="other">Other</option>
-                                </select>
+                                {{ form.project_type(class="form-select") }}
                                 <label>Project Type</label>
                             </div>
                         </div>
@@ -130,69 +109,99 @@
                         {% endif %}
                     </div>
 
-                    <!-- Technology Stack -->
-                    <div class="mb-4">
-                        <h6 class="border-bottom pb-2 mb-3">
-                            <i class="bi bi-stack"></i> Technology Stack
-                        </h6>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Primary Language</label>
-                                <select class="form-select" id="primary_language" onchange="updateTechStack()">
-                                    <option value="">Select Language</option>
-                                    <option value="python">Python</option>
-                                    <option value="javascript">JavaScript</option>
-                                    <option value="typescript">TypeScript</option>
-                                    <option value="java">Java</option>
-                                    <option value="csharp">C#</option>
-                                    <option value="go">Go</option>
-                                    <option value="rust">Rust</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Framework</label>
-                                <select class="form-select" id="framework" onchange="updateTechStack()">
-                                    <option value="">Select Framework</option>
-                                    <!-- Options populated by JavaScript -->
-                                </select>
-                            </div>
-                        </div>
+                    <!-- Technology Stack Section -->
+                    <h6 class="border-bottom pb-2 mb-3">
+                        <i class="bi bi-stack"></i> Technology Stack
+                    </h6>
 
-                        <!-- Quick Technology Buttons -->
-                        <div class="mb-3">
-                            <label class="form-label small">Quick Add:</label>
-                            <div class="btn-group-sm" role="group">
-                                <button type="button" class="btn btn-outline-info btn-sm" onclick="addTech('database', 'postgresql')">PostgreSQL</button>
-                                <button type="button" class="btn btn-outline-info btn-sm" onclick="addTech('database', 'mongodb')">MongoDB</button>
-                                <button type="button" class="btn btn-outline-info btn-sm" onclick="addTech('cache', 'redis')">Redis</button>
-                                <button type="button" class="btn btn-outline-info btn-sm" onclick="addTech('deployment', 'docker')">Docker</button>
-                                <button type="button" class="btn btn-outline-info btn-sm" onclick="addTech('cloud', 'aws')">AWS</button>
-                            </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Primary Language</label>
+                            <select class="form-select" id="primary_language" onchange="updateTechStack()">
+                                <option value="">Select Language</option>
+                                <option value="python">Python</option>
+                                <option value="javascript">JavaScript</option>
+                                <option value="typescript">TypeScript</option>
+                                <option value="java">Java</option>
+                                <option value="csharp">C#</option>
+                                <option value="go">Go</option>
+                                <option value="rust">Rust</option>
+                                <option value="php">PHP</option>
+                                <option value="ruby">Ruby</option>
+                            </select>
                         </div>
-
-                        <!-- Technology Stack JSON Editor -->
-                        <div class="form-floating">
-                            {{ form.tech_stack(class="form-control json-editor", placeholder="Technology Stack JSON", rows="6") }}
-                            <label>Technology Stack (JSON)</label>
-                            <div class="form-text">
-                                Define your technology stack in JSON format. Example: {"backend": "python", "framework": "flask"}
-                            </div>
-                            {% if form.tech_stack.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.technology_stack.errors %}{{ error }}{% endfor %}
-                            </div>
-                            {% endif %}
+                        <div class="col-md-6">
+                            <label class="form-label">Framework</label>
+                            <select class="form-select" id="framework" onchange="updateTechStack()">
+                                <option value="">Select Framework</option>
+                            </select>
                         </div>
                     </div>
 
-                    <!-- Requirements -->
+                    <!-- Quick Technology Buttons -->
+                    <div class="mb-3">
+                        <label class="form-label small">Quick Add:</label>
+                        <div class="btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="addTech('database', 'postgresql')">PostgreSQL</button>
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="addTech('database', 'mongodb')">MongoDB</button>
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="addTech('cache', 'redis')">Redis</button>
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="addTech('deployment', 'docker')">Docker</button>
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="addTech('cloud', 'aws')">AWS</button>
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="addTech('cloud', 'azure')">Azure</button>
+                        </div>
+                    </div>
+
+                    <!-- Technology Stack JSON Editor -->
+                    <div class="form-floating mb-4">
+                        {{ form.tech_stack(class="form-control json-editor", placeholder="Technology Stack JSON", rows="6") }}
+                        <label>Technology Stack (JSON)</label>
+                        <div class="form-text">
+                            Define your technology stack in JSON format. Example: {"language": "python", "framework": "flask", "database": "postgresql"}
+                        </div>
+                        {% if form.tech_stack.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.tech_stack.errors %}{{ error }}{% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Requirements Section -->
+                    <h6 class="border-bottom pb-2 mb-3">
+                        <i class="bi bi-list-check"></i> Requirements
+                    </h6>
+
                     <div class="form-floating mb-4">
                         {{ form.requirements(class="form-control", placeholder="Project Requirements", rows="4") }}
                         <label>
-                            <i class="bi bi-list-check"></i> Requirements & Features
+                            <i class="bi bi-list-ul"></i> Requirements
                         </label>
                         <div class="form-text">
-                            Describe the key features, requirements, and functionality you want in your project.
+                            List your project requirements (one per line or comma-separated)
+                        </div>
+                        {% if form.requirements.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.requirements.errors %}{{ error }}{% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Planning & Priority Section -->
+                    <h6 class="border-bottom pb-2 mb-3">
+                        <i class="bi bi-calendar-check"></i> Planning & Priority
+                    </h6>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.estimated_hours(class="form-control", placeholder="Estimated Hours") }}
+                                <label>Estimated Hours</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.priority(class="form-select") }}
+                                <label>Priority</label>
+                            </div>
                         </div>
                     </div>
 
@@ -217,7 +226,6 @@
 {% elif page == 'detail' and project %}
 <!-- Project Detail View -->
 <div class="row">
-    <!-- Project Info -->
     <div class="col-lg-8">
         <div class="card bg-dark border mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -225,243 +233,78 @@
                     <i class="bi bi-info-circle"></i> Project Information
                 </h5>
                 <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-primary" onclick="editProject('{{ project.id }}')">
-                        <i class="bi bi-pencil"></i> Edit
-                    </button>
-                    <button class="btn btn-outline-success" onclick="startSocraticSession('{{ project.id }}')">
-                        <i class="bi bi-chat-dots"></i> Socratic
-                    </button>
-                    <button class="btn btn-outline-info" onclick="generateCode('{{ project.id }}')">
-                        <i class="bi bi-code-slash"></i> Generate
-                    </button>
+                    <a href="{{ url_for('sessions') }}?project_id={{ project.id }}" class="btn btn-outline-success">
+                        <i class="bi bi-chat-dots"></i> Start Session
+                    </a>
+                    <a href="{{ url_for('code') }}?project_id={{ project.id }}" class="btn btn-outline-info">
+                        <i class="bi bi-code-slash"></i> Generate Code
+                    </a>
                 </div>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-8">
-                        <h4>{{ project.name }}</h4>
-                        <p class="text-muted mb-3">{{ project.description or 'No description provided' }}</p>
+                <h4>{{ project.name }}</h4>
+                <p class="text-muted mb-3">{{ project.description or 'No description provided' }}</p>
 
-                        <!-- Requirements -->
-                        {% if project.requirements %}
-                        <h6>Requirements</h6>
-                        <div class="bg-secondary bg-opacity-25 p-3 rounded mb-3">
-                            <pre class="mb-0 text-light">{{ project.requirements }}</pre>
-                        </div>
-                        {% endif %}
+                {% if project.technology_stack %}
+                <h6>Technology Stack</h6>
+                <div class="mb-3">
+                    {% for key, value in project.technology_stack.items() %}
+                    <span class="badge bg-secondary me-1">{{ key }}: {{ value }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
 
-                        <!-- Technology Stack -->
-                        {% if project.technology_stack %}
-                        <h6>Technology Stack</h6>
-                        <div class="mb-3">
-                            {% for category, tech in project.technology_stack.items() %}
-                            <span class="badge bg-info tech-badge me-1 mb-1">
-                                {{ category }}: {{ tech }}
-                            </span>
-                            {% endfor %}
+                {% if project.requirements %}
+                <h6>Requirements</h6>
+                <ul class="mb-3">
+                    {% for req in project.requirements %}
+                    <li>{{ req }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <small class="text-muted">Priority:</small>
+                        <div>
+                            {% if project.priority == 'high' %}
+                            <span class="badge bg-danger">High</span>
+                            {% elif project.priority == 'medium' %}
+                            <span class="badge bg-warning">Medium</span>
+                            {% else %}
+                            <span class="badge bg-info">Low</span>
+                            {% endif %}
                         </div>
-                        {% endif %}
                     </div>
                     <div class="col-md-4">
-                        <!-- Project Stats -->
-                        <div class="text-center mb-3">
-                            <div class="progress-ring mx-auto mb-2">
-                                <svg class="progress-ring" width="60" height="60">
-                                    <circle class="progress-ring-circle"
-                                            stroke="currentColor"
-                                            stroke-width="4"
-                                            fill="transparent"
-                                            r="26"
-                                            cx="30"
-                                            cy="30"
-                                            style="stroke-dasharray: 163 163; stroke-dashoffset: 100; stroke: #198754;"/>
-                                </svg>
-                                <div class="position-absolute" style="top: 50%; left: 50%; transform: translate(-50%, -50%);">
-                                    <small class="fw-bold">65%</small>
-                                </div>
-                            </div>
-                            <div class="small text-muted">Completion</div>
-                        </div>
-
-                        <!-- Status Badge -->
-                        <div class="text-center mb-3">
-                            <span class="badge bg-{% if project.status == 'completed' %}success{% elif project.status == 'in_progress' %}warning{% else %}secondary{% endif %} px-3 py-2">
-                                {% if project.status == 'completed' %}
-                                <i class="bi bi-check-circle"></i> Completed
-                                {% elif project.status == 'in_progress' %}
-                                <i class="bi bi-clock"></i> In Progress
-                                {% elif project.status == 'planning' %}
-                                <i class="bi bi-clipboard"></i> Planning
-                                {% else %}
-                                <i class="bi bi-pause-circle"></i> {{ project.status|title }}
-                                {% endif %}
-                            </span>
-                        </div>
-
-                        <!-- Quick Stats -->
-                        <div class="row text-center small">
-                            <div class="col-6">
-                                <div class="border rounded p-2">
-                                    <div class="fw-bold">0</div>
-                                    <div class="text-muted">Modules</div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="border rounded p-2">
-                                    <div class="fw-bold">0</div>
-                                    <div class="text-muted">Files</div>
-                                </div>
-                            </div>
-                        </div>
+                        <small class="text-muted">Estimated Hours:</small>
+                        <div>{{ project.estimated_hours or 'Not specified' }}</div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Project Modules -->
-        <div class="card bg-dark border">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-puzzle"></i> Project Modules
-                </h5>
-                <button class="btn btn-sm btn-outline-primary" onclick="addModule()">
-                    <i class="bi bi-plus-circle"></i> Add Module
-                </button>
-            </div>
-            <div class="card-body">
-                <div id="modules-container">
-                    <!-- Sample modules -->
-                    <div class="module-item p-3 mb-3">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">Authentication Module</h6>
-                                <p class="text-muted mb-2 small">User login, registration, and session management</p>
-                                <div>
-                                    <span class="badge bg-success me-1">Ready</span>
-                                    <span class="badge bg-info me-1">Backend</span>
-                                    <span class="badge bg-secondary">Priority: High</span>
-                                </div>
-                            </div>
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-primary">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="btn btn-outline-danger">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">Status:</small>
+                        <div>{{ project.status.value if project.status else 'Unknown' }}</div>
                     </div>
-
-                    <div class="module-item p-3 mb-3">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">Dashboard Module</h6>
-                                <p class="text-muted mb-2 small">Main dashboard with analytics and overview</p>
-                                <div>
-                                    <span class="badge bg-warning me-1">Planning</span>
-                                    <span class="badge bg-info me-1">Frontend</span>
-                                    <span class="badge bg-secondary">Priority: Medium</span>
-                                </div>
-                            </div>
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-primary">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="btn btn-outline-danger">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Empty State -->
-                <div class="text-center py-3 d-none" id="modules-empty">
-                    <i class="bi bi-puzzle display-4 text-muted mb-3"></i>
-                    <h6>No Modules Yet</h6>
-                    <p class="text-muted">Break down your project into manageable modules.</p>
-                    <button class="btn btn-primary" onclick="addModule()">
-                        <i class="bi bi-plus-circle"></i> Add First Module
-                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Sidebar -->
     <div class="col-lg-4">
-        <!-- Actions -->
         <div class="card bg-dark border mb-4">
             <div class="card-header">
-                <h6 class="mb-0">
-                    <i class="bi bi-lightning"></i> Actions
-                </h6>
+                <h6 class="mb-0">Quick Actions</h6>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <button class="btn btn-success" onclick="startSocraticSession('{{ project.id }}')">
-                        <i class="bi bi-chat-dots"></i> Start Socratic Session
-                    </button>
-                    <button class="btn btn-primary" onclick="generateCode('{{ project.id }}')">
+                    <a href="{{ url_for('sessions') }}?project_id={{ project.id }}" class="btn btn-success">
+                        <i class="bi bi-chat-dots"></i> Socratic Session
+                    </a>
+                    <a href="{{ url_for('code') }}?project_id={{ project.id }}" class="btn btn-info">
                         <i class="bi bi-code-slash"></i> Generate Code
+                    </a>
+                    <button class="btn btn-outline-secondary" disabled>
+                        <i class="bi bi-gear"></i> Settings
                     </button>
-                    <button class="btn btn-info" onclick="runTests('{{ project.id }}')">
-                        <i class="bi bi-play-circle"></i> Run Tests
-                    </button>
-                    <button class="btn btn-warning" onclick="deployProject('{{ project.id }}')">
-                        <i class="bi bi-cloud-upload"></i> Deploy to IDE
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Project Timeline -->
-        <div class="card bg-dark border mb-4">
-            <div class="card-header">
-                <h6 class="mb-0">
-                    <i class="bi bi-clock-history"></i> Timeline
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="timeline">
-                    <div class="timeline-item mb-3">
-                        <div class="timeline-marker bg-primary"></div>
-                        <div class="timeline-content ms-3">
-                            <div class="small text-muted">2 hours ago</div>
-                            <div>Project created</div>
-                        </div>
-                    </div>
-                    <div class="timeline-item mb-3">
-                        <div class="timeline-marker bg-info"></div>
-                        <div class="timeline-content ms-3">
-                            <div class="small text-muted">1 hour ago</div>
-                            <div>Technology stack defined</div>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-secondary"></div>
-                        <div class="timeline-content ms-3">
-                            <div class="small text-muted">Pending</div>
-                            <div>Code generation</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Generated Files -->
-        <div class="card bg-dark border">
-            <div class="card-header">
-                <h6 class="mb-0">
-                    <i class="bi bi-files"></i> Generated Files
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="text-center text-muted">
-                    <i class="bi bi-files display-4 mb-3"></i>
-                    <p class="mb-0">No files generated yet</p>
-                    <small>Generate code to see files here</small>
                 </div>
             </div>
         </div>
@@ -469,63 +312,35 @@
 </div>
 
 {% else %}
-<!-- Projects List View -->
+<!-- Project List View -->
 <div class="row">
     {% if projects %}
-    <!-- Projects Grid -->
     <div class="col-12">
-        <div class="row">
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
             {% for project in projects %}
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card project-card bg-dark h-100 position-relative">
-                    <!-- Status Badge -->
-                    <div class="project-status">
-                        <span class="badge bg-{% if project.status == 'completed' %}success{% elif project.status == 'in_progress' %}warning{% else %}secondary{% endif %}">
-                            {{ project.status|title }}
-                        </span>
-                    </div>
-
+            <div class="col">
+                <div class="card project-card bg-dark h-100">
                     <div class="card-body d-flex flex-column">
-                        <!-- Project Header -->
-                        <div class="mb-3">
-                            <h5 class="card-title mb-2">
-                                <i class="bi bi-folder-fill text-primary me-2"></i>
-                                {{ project.name }}
-                            </h5>
-                            <p class="card-text text-muted small">
-                                {{ project.description[:100] }}{% if project.description and project.description|length > 100 %}...{% endif %}
-                            </p>
-                        </div>
+                        <h5 class="card-title">
+                            <i class="bi bi-folder-fill text-primary"></i>
+                            {{ project.name }}
+                        </h5>
 
-                        <!-- Technology Stack -->
+                        <p class="card-text text-muted flex-grow-1">
+                            {{ project.description[:100] + '...' if project.description and project.description|length > 100 else project.description or 'No description' }}
+                        </p>
+
                         {% if project.technology_stack %}
                         <div class="mb-3">
-                            {% for tech in project.technology_stack.values()[:3] %}
-                            <span class="badge bg-info tech-badge me-1">{{ tech }}</span>
-                            {% endfor %}
-                            {% if project.technology_stack.values()|length > 3 %}
-                            <span class="text-muted small">+{{ project.technology_stack.values()|length - 3 }}</span>
-                            {% endif %}
+                            <small class="text-muted">Tech Stack:</small>
+                            <div class="mt-1">
+                                {% for key, value in project.technology_stack.items() %}
+                                <span class="badge bg-secondary tech-badge">{{ value }}</span>
+                                {% endfor %}
+                            </div>
                         </div>
                         {% endif %}
 
-                        <!-- Project Stats -->
-                        <div class="row mb-3 text-center small">
-                            <div class="col-4">
-                                <div class="fw-bold">0</div>
-                                <div class="text-muted">Modules</div>
-                            </div>
-                            <div class="col-4">
-                                <div class="fw-bold">0</div>
-                                <div class="text-muted">Sessions</div>
-                            </div>
-                            <div class="col-4">
-                                <div class="fw-bold">0</div>
-                                <div class="text-muted">Files</div>
-                            </div>
-                        </div>
-
-                        <!-- Actions -->
                         <div class="mt-auto">
                             <div class="d-flex justify-content-between align-items-center">
                                 <small class="text-muted">
@@ -536,14 +351,14 @@
                                        class="btn btn-outline-primary">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <button class="btn btn-outline-success"
-                                            onclick="startSocraticSession('{{ project.id }}')">
+                                    <a href="{{ url_for('sessions') }}?project_id={{ project.id }}"
+                                       class="btn btn-outline-success">
                                         <i class="bi bi-chat-dots"></i>
-                                    </button>
-                                    <button class="btn btn-outline-info"
-                                            onclick="generateCode('{{ project.id }}')">
+                                    </a>
+                                    <a href="{{ url_for('code') }}?project_id={{ project.id }}"
+                                       class="btn btn-outline-info">
                                         <i class="bi bi-code-slash"></i>
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -569,100 +384,25 @@
 </div>
 {% endif %}
 
-<!-- Add Module Modal -->
-<div class="modal fade" id="addModuleModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content bg-dark">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-plus-circle"></i> Add Project Module
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="moduleForm">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="module_name" placeholder="Module Name" required>
-                                <label>Module Name</label>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-floating mb-3">
-                                <select class="form-select" id="module_type">
-                                    <option value="backend">Backend</option>
-                                    <option value="frontend">Frontend</option>
-                                    <option value="database">Database</option>
-                                    <option value="api">API</option>
-                                    <option value="service">Service</option>
-                                </select>
-                                <label>Module Type</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-floating mb-3">
-                        <textarea class="form-control" id="module_description" placeholder="Description" rows="3"></textarea>
-                        <label>Description</label>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                <select class="form-select" id="module_priority">
-                                    <option value="low">Low</option>
-                                    <option value="medium" selected>Medium</option>
-                                    <option value="high">High</option>
-                                </select>
-                                <label>Priority</label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                <select class="form-select" id="module_status">
-                                    <option value="planning" selected>Planning</option>
-                                    <option value="in_progress">In Progress</option>
-                                    <option value="ready">Ready</option>
-                                    <option value="completed">Completed</option>
-                                </select>
-                                <label>Status</label>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveModule()">
-                    <i class="bi bi-check-circle"></i> Add Module
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-// Projects page JavaScript
-
 // Technology stack framework mappings
 const frameworkMapping = {
     'python': ['flask', 'django', 'fastapi', 'pyramid', 'tornado'],
-    'javascript': ['react', 'vue', 'angular', 'express', 'next'],
-    'typescript': ['react', 'vue', 'angular', 'nest', 'next'],
+    'javascript': ['react', 'vue', 'angular', 'express', 'nextjs'],
+    'typescript': ['react', 'vue', 'angular', 'nestjs', 'nextjs'],
     'java': ['spring', 'spring-boot', 'struts', 'jsf'],
     'csharp': ['asp.net', 'blazor', '.net-core', 'mvc'],
     'go': ['gin', 'echo', 'fiber', 'beego'],
-    'rust': ['actix', 'rocket', 'warp', 'axum']
+    'rust': ['actix', 'rocket', 'warp', 'axum'],
+    'php': ['laravel', 'symfony', 'codeigniter'],
+    'ruby': ['rails', 'sinatra']
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize technology stack editor
     initializeTechStackEditor();
-
-    // Set up form validation
     setupFormValidation();
 });
 
@@ -690,13 +430,17 @@ function updateTechStack() {
 function updateTechStackJSON() {
     const language = document.getElementById('primary_language').value;
     const framework = document.getElementById('framework').value;
-    const techStackTextarea = document.querySelector('[name="technology_stack"]');
+    const techStackTextarea = document.querySelector('[name="tech_stack"]');
 
     if (techStackTextarea) {
         try {
             let techStack = {};
             if (techStackTextarea.value) {
-                techStack = JSON.parse(techStackTextarea.value);
+                try {
+                    techStack = JSON.parse(techStackTextarea.value);
+                } catch(e) {
+                    techStack = {};
+                }
             }
 
             if (language) techStack.language = language;
@@ -710,13 +454,17 @@ function updateTechStackJSON() {
 }
 
 function addTech(category, technology) {
-    const techStackTextarea = document.querySelector('[name="technology_stack"]');
+    const techStackTextarea = document.querySelector('[name="tech_stack"]');
 
     if (techStackTextarea) {
         try {
             let techStack = {};
             if (techStackTextarea.value) {
-                techStack = JSON.parse(techStackTextarea.value);
+                try {
+                    techStack = JSON.parse(techStackTextarea.value);
+                } catch(e) {
+                    techStack = {};
+                }
             }
 
             techStack[category] = technology;
@@ -728,7 +476,7 @@ function addTech(category, technology) {
 }
 
 function initializeTechStackEditor() {
-    const techStackTextarea = document.querySelector('[name="technology_stack"]');
+    const techStackTextarea = document.querySelector('[name="tech_stack"]');
     if (techStackTextarea && !techStackTextarea.value) {
         // Initialize with empty JSON object
         techStackTextarea.value = JSON.stringify({
@@ -745,7 +493,7 @@ function setupFormValidation() {
     if (form) {
         form.addEventListener('submit', function(e) {
             // Validate JSON syntax
-            const techStackField = document.querySelector('[name="technology_stack"]');
+            const techStackField = document.querySelector('[name="tech_stack"]');
             if (techStackField && techStackField.value) {
                 try {
                     JSON.parse(techStackField.value);
@@ -762,92 +510,11 @@ function setupFormValidation() {
 
 function previewProject() {
     const formData = new FormData(document.getElementById('projectForm'));
-
-    // Show preview modal or navigate to preview page
-    alert('Preview functionality would show a formatted preview of the project specifications');
+    alert('Preview functionality: Would show a formatted preview of the project specifications');
 }
 
 function refreshProjects() {
     window.location.reload();
-}
-
-function startSocraticSession(projectId) window.location.href = `{{ url_for('sessions') }}?project_id=${projectId}`;
-
-}
-
-function generateCode(projectId) {
-    window.location.href = `{{ url_for('code') }}?project_id=${projectId}`;
-}
-
-function runTests(projectId) {
-    // Implement test running
-    fetch(`/api/projects/${projectId}/test`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        alert(data.success ? 'Tests started successfully!' : 'Failed to start tests: ' + data.message);
-    })
-    .catch(error => {
-        console.error('Test error:', error);
-        alert('Failed to start tests');
-    });
-}
-
-function deployProject(projectId) {
-    // Implement deployment to IDE
-    fetch(`/code/deploy`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ project_id: projectId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        alert(data.success ? 'Deployment started!' : 'Deployment failed: ' + data.message);
-    })
-    .catch(error => {
-        console.error('Deploy error:', error);
-        alert('Failed to deploy project');
-    });
-}
-
-function addModule() {
-    const modal = new bootstrap.Modal(document.getElementById('addModuleModal'));
-    modal.show();
-}
-
-function saveModule() {
-    const form = document.getElementById('moduleForm');
-    const formData = new FormData(form);
-
-    // Create module object
-    const module = {
-        name: formData.get('module_name') || document.getElementById('module_name').value,
-        type: document.getElementById('module_type').value,
-        description: document.getElementById('module_description').value,
-        priority: document.getElementById('module_priority').value,
-        status: document.getElementById('module_status').value
-    };
-
-    // In a real implementation, this would send to the server
-    console.log('Adding module:', module);
-
-    // Close modal and show success
-    bootstrap.Modal.getInstance(document.getElementById('addModuleModal')).hide();
-    alert('Module added successfully!');
-
-    // Reset form
-    form.reset();
-}
-
-function editProject(projectId) {
-    // Navigate to edit form
-    window.location.href = `{{ url_for('new_project') }}?edit=${projectId}`;
 }
 </script>
 {% endblock %}
