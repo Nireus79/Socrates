@@ -371,7 +371,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 repo_manager = get_repository_manager()
                 if repo_manager:
                     user_repo = repo_manager.get_repository('user')
-                    user = user_repo.find_by_username(username)
+                    user = user_repo.get_by_username(username)
 
                     if user and check_password_hash(user.password_hash, password):
                         web_user = WebUser(user.id, user.username, user.email, user.role.value)
@@ -434,7 +434,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
 
                 # Check if username exists
                 user_repo = repo_manager.get_repository('user')
-                if user_repo.find_by_username(username):
+                if user_repo.get_by_username(username):
                     flash('Username already exists', 'error')
                     return render_template('auth.html', page='register')
 

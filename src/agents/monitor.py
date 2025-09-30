@@ -181,6 +181,39 @@ class SystemMonitorAgent(BaseAgent):
             "project_metrics"
         ]
 
+    def process_request(self, action: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Process system monitoring requests"""
+        action_map = {
+            'check_health': self.check_health,
+            'track_usage': self.track_usage,
+            'monitor_performance': self.monitor_performance,
+            'analyze_costs': self.analyze_costs,
+            'generate_analytics': self.generate_analytics,
+            'alert_management': self.alert_management,
+            'resource_monitoring': self.resource_monitoring,
+            'api_usage_tracking': self.api_usage_tracking,
+            'get_system_stats': self.get_system_stats,
+            'database_health': self.database_health,
+            'user_activity_stats': self.user_activity_stats,
+            'project_metrics': self.project_metrics
+        }
+
+        handler = action_map.get(action)
+        if not handler:
+            return self._error_response(
+                f"Action '{action}' not supported by System Monitor Agent",
+                "UNSUPPORTED_ACTION"
+            )
+
+        try:
+            return handler(data)
+        except Exception as e:
+            self.logger.error(f"Error processing {action}: {e}")
+            return self._error_response(
+                f"Request failed: {str(e)}",
+                "ACTION_FAILED"
+            )
+
     @require_authentication
     @log_agent_action
     def check_health(self, request_data: Dict[str, Any]) -> Dict[str, Any]:

@@ -275,6 +275,24 @@ class UserRepository(BaseRepository[User]):
             self.logger.error(f"Error getting user by username {username}: {e}")
             return None
 
+    def find_by_username(self, username: str) -> Optional[User]:
+        """Alias for get_by_username for consistency"""
+        return self.get_by_username(username)
+
+    def find_by_email(self, email: str) -> Optional[User]:
+        """Alias for get_by_email for consistency"""
+        return self.get_by_email(email)
+
+    def get_by_email(self, email: str) -> Optional[User]:
+        """Get user by email"""
+        try:
+            query = "SELECT * FROM users WHERE email = ?"
+            results = self.db_manager.execute_query(query, (email,))
+            return self._row_to_model(results[0]) if results else None
+        except Exception as e:
+            self.logger.error(f"Error getting user by email {email}: {e}")
+            return None
+
     def update(self, user: User) -> bool:
         try:
             data = self._model_to_dict(user)
@@ -304,6 +322,20 @@ class UserRepository(BaseRepository[User]):
         except Exception as e:
             self.logger.error(f"Error deleting user {user_id}: {e}")
             return False
+
+    def list(self, limit: int = 100, offset: int = 0) -> List[User]:
+        """List users with pagination"""
+        try:
+            query = "SELECT * FROM users LIMIT ? OFFSET ?"
+            results = self.db_manager.execute_query(query, (limit, offset))
+            return [self._row_to_model(row) for row in results]
+        except Exception as e:
+            self.logger.error(f"Error listing users: {e}")
+            return []
+
+    def list_all(self, limit: int = 1000) -> List[User]:
+        """Get all users (alias for compatibility)"""
+        return self.list(limit=limit, offset=0)
 
 
 class ProjectRepository(BaseRepository[Project]):

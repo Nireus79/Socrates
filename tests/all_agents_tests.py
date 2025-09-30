@@ -15,7 +15,6 @@ Tests:
 """
 
 import sys
-import os
 import traceback
 from typing import Dict, Any, List
 from pathlib import Path
@@ -387,11 +386,11 @@ def test_request_routing(results: TestResults, orchestrator: Any) -> None:
         results.add_fail("Request routing", "No orchestrator available")
         return
 
-    # Test routing to each agent
+    # Test routing to each agent with REAL actions, not metadata methods
     test_requests = [
-        ('system_monitor', 'get_capabilities', {}),
-        ('project_manager', 'get_capabilities', {}),
-        ('code_generator', 'get_capabilities', {}),
+        ('user_manager', 'list_users', {'username': 'test'}),
+        ('project_manager', 'list_projects', {'username': 'test'}),
+        ('system_monitor', 'check_health', {}),
     ]
 
     for agent_id, action, data in test_requests:
