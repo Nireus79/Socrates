@@ -350,7 +350,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
             repo_manager = get_repository_manager()
             if repo_manager:
                 user_repo = repo_manager.get_repository('user')
-                user = user_repo.get(user_id)
+                user = user_repo.get_by_id(user_id)
                 if user:
                     role_value = user.role.value if hasattr(user.role, 'value') else user.role
                     return WebUser(user.id, user.username, user.email, role_value)
@@ -518,12 +518,12 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 repo_manager = get_repository_manager()
                 if repo_manager:
                     project_repo = repo_manager.get_repository('project')
-                    projects = project_repo.find_by_user(current_user.id)
+                    projects = project_repo.get_by_owner(current_user.id)
 
             # Get agent status
             agent_status = {}
             if orchestrator:
-                agent_status = orchestrator.get_status()
+                agent_status = orchestrator.health_check()
 
             return render_template('dashboard.html',
                                    projects=projects,
