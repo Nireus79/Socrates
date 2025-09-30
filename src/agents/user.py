@@ -337,11 +337,8 @@ class UserManagerAgent(BaseAgent):
             email = data.get('email')
             password_hash = data.get('password_hash') or data.get('passcode_hash')
 
-            if not username or not password_hash:
-                self.logger.warning("User creation failed: Username and password are required")
-                return self._error_response("Username and password are required")
-
-            if not ValidationHelper.validate_email(email):
+            # Only validate email if provided and not empty
+            if email and email.strip() and not ValidationHelper.validate_email(email):
                 return self._error_response("Valid email address is required")
 
             # Check if user already exists
@@ -350,9 +347,11 @@ class UserManagerAgent(BaseAgent):
                 if existing_user:
                     return self._error_response(f"User '{username}' already exists")
 
-                existing_email = self.db_service.users.get_by_email(email)
-                if existing_email:
-                    return self._error_response(f"Email '{email}' is already registered")
+                # Only check for duplicate email if provided and not empty
+                if email and email.strip():
+                    existing_email = self.db_service.users.get_by_email(email)
+                    if existing_email:
+                        return self._error_response(f"Email '{email}' is already registered")
 
             # Parse role with validation
             role_str = data.get('role', RoleConstants.DEVELOPER)
