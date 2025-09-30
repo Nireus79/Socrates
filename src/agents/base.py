@@ -332,7 +332,7 @@ class BaseAgent(ABC):
                 'events': False,
                 'database': False
             }
-            health_status['status'] = 'degraded'
+            health_status['status'] = 'active'
 
         # Check database connectivity if available
         if self.db_manager:

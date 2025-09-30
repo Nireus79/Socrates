@@ -878,6 +878,116 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         """API endpoint for project code generation."""
         return generate_code()
 
+    @flask_app.route('/api/services/status', methods=['GET'])
+    @login_required
+    @with_agent_orchestration
+    def api_services_status():
+        """
+        Get external services health status.
+
+        Query Parameters:
+            detailed (bool): Include detailed metrics (default: False)
+            include_recommendations (bool): Include recommendations (default: True)
+        """
+        try:
+            # Extract parameters from query string
+            detailed = request.args.get('detailed', 'false').lower() == 'true'
+            include_recommendations = request.args.get('include_recommendations', 'true').lower() == 'true'
+
+            # Route request to system monitor agent
+            result = orchestrator.route_request(
+                'system_monitor',
+                'check_health',
+                {
+                    'detailed': detailed,
+                    'include_recommendations': include_recommendations
+                }
+            )
+
+            if result.get('success'):
+                return api_response(
+                    success=True,
+                    message='Services status retrieved',
+                    data=result.get('data', {})
+                )
+            else:
+                return api_response(
+                    success=False,
+                    message=result.get('error', 'Failed to retrieve services status'),
+                    status_code=500
+                )
+
+        except Exception as e:
+            logger.error(f"API services status error: {e}")
+            return api_response(
+                success=False,
+                message=str(e),
+                status_code=500
+            )
+
+    @flask_app.route('/api/analytics/performance', methods=['POST'])
+    @login_required
+    @with_agent_orchestration
+    def api_analytics_performance():
+        """
+        Get performance analytics and metrics.
+
+        Request Body (JSON):
+            {
+                "time_range": "1h" | "24h" | "7d" | "30d",
+                "include_historical": bool,
+                "include_recommendations": bool
+            }
+        """
+        try:
+            # Extract parameters from request body
+            data = request.get_json() or {}
+
+            time_range = data.get('time_range', '1h')
+            include_historical = data.get('include_historical', False)
+            include_recommendations = data.get('include_recommendations', True)
+
+            # Validate time_range
+            valid_ranges = ['1h', '24h', '7d', '30d']
+            if time_range not in valid_ranges:
+                return api_response(
+                    success=False,
+                    message=f'Invalid time_range. Must be one of: {", ".join(valid_ranges)}',
+                    status_code=400
+                )
+
+            # Route request to system monitor agent
+            result = orchestrator.route_request(
+                'system_monitor',
+                'monitor_performance',
+                {
+                    'time_range': time_range,
+                    'include_historical': include_historical,
+                    'include_recommendations': include_recommendations
+                }
+            )
+
+            if result.get('success'):
+                return api_response(
+                    success=True,
+                    message='Performance analytics retrieved',
+                    data=result.get('data', {})
+                )
+            else:
+                return api_response(
+                    success=False,
+                    message=result.get('error', 'Failed to retrieve performance analytics'),
+                    status_code=500
+                )
+
+        except Exception as e:
+            logger.error(f"API analytics performance error: {e}")
+            return api_response(
+                success=False,
+                message=str(e),
+                status_code=500
+            )
+
     # =================================================================
     # ERROR HANDLERS
     # =================================================================
