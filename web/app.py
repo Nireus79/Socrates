@@ -446,7 +446,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                     full_name = f"{first_name} {last_name}".strip()
 
                     # Use a default email if not provided
-                    user_email = email if email else f"{username}@local.user"
+                    user_email = email if email else f"{username}@example.com"
 
                     result = orchestrator.route_request(
                         'user_manager',
