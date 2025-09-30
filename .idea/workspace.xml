@@ -6,7 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="fix">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/projects.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/projects.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/sessions.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/sessions.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -151,14 +152,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00029" summary="texts">
-      <option name="closed" value="true" />
-      <created>1758954832504</created>
-      <option name="number" value="00029" />
-      <option name="presentableId" value="LOCAL-00029" />
-      <option name="project" value="LOCAL" />
-      <updated>1758954832504</updated>
     </task>
     <task id="LOCAL-00030" summary="ui">
       <option name="closed" value="true" />
@@ -544,7 +537,15 @@
       <option name="project" value="LOCAL" />
       <updated>1759231786220</updated>
     </task>
-    <option name="localTasksCounter" value="78" />
+    <task id="LOCAL-00078" summary="fix">
+      <option name="closed" value="true" />
+      <created>1759243385554</created>
+      <option name="number" value="00078" />
+      <option name="presentableId" value="LOCAL-00078" />
+      <option name="project" value="LOCAL" />
+      <updated>1759243385555</updated>
+    </task>
+    <option name="localTasksCounter" value="79" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">

@@ -771,12 +771,12 @@ function refreshProjects() {
     window.location.reload();
 }
 
-function startSocraticSession(projectId) {
-    window.location.href = `{{ url_for('socratic_sessions') }}?project_id=${projectId}`;
+function startSocraticSession(projectId) window.location.href = `{{ url_for('sessions') }}?project_id=${projectId}`;
+
 }
 
 function generateCode(projectId) {
-    window.location.href = `{{ url_for('code_generation') }}?project_id=${projectId}`;
+    window.location.href = `{{ url_for('code') }}?project_id=${projectId}`;
 }
 
 function runTests(projectId) {

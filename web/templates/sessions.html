@@ -795,7 +795,7 @@ function createNewSession() {
     }
 
     // In real implementation, this would call the API
-    fetch('{{ url_for("start_socratic_session") }}', {
+    fetch('{{ url_for("new_session") }}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -830,7 +830,7 @@ function exportSession() {
 
 function generateFromSession() {
     // Generate code from current session insights
-    window.location.href = `{{ url_for('code_generation') }}?session_id=${currentSessionId}`;
+    window.location.href = `{{ url_for('code') }}?session_id=${currentSessionId}`;
 }
 
 function pauseSession() {
