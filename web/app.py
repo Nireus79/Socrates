@@ -83,7 +83,7 @@ except ImportError:
 try:
     from src import get_config, get_logger, get_event_bus
     from src.core import SocraticException, ValidationHelper, DateTimeHelper
-    from src.models import Project, User, TechnicalSpec, ConversationMessage, UserRole
+    from src.models import Project, User, TechnicalSpec, ConversationMessage, UserRole, UserStatus
     from src.database import get_repository_manager
     from src.agents import get_orchestrator
     from src.services import get_services_status
@@ -91,7 +91,6 @@ try:
     SYSTEM_AVAILABLE = True
 except ImportError as e:
     SYSTEM_AVAILABLE = False
-
 
     # Define all fallback functions and classes in except block
     def get_config():
@@ -426,12 +425,10 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 terms = request.form.get('terms') == 'on'
 
                 # Basic validation
-                # Basic validation
                 errors = []
                 if not username or len(username) < 3:
                     errors.append('Username must be at least 3 characters')
-                # Remove email validation - it's optional now
-                if email and '@' not in email:  # Only validate if provided
+                if email and '@' not in email:
                     errors.append('Valid email address format required')
                 if not password or len(password) < 6:
                     errors.append('Password must be at least 6 characters')
@@ -457,34 +454,37 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                     flash('Username already exists', 'error')
                     return render_template('auth.html', page='register')
 
-                # Create user via orchestrator
-                # Create user via orchestrator
-                if orchestrator:
-                    full_name = f"{first_name} {last_name}".strip()
+                # Create user directly via repository
+                try:
+                    from src.models import User, UserRole, UserStatus
+                    from src.core import DateTimeHelper
 
-                    # Use a default email if not provided
                     user_email = email if email else f"{username}@example.com"
 
-                    result = orchestrator.route_request(
-                        'user_manager',
-                        'create_user',
-                        {
-                            'username': username,
-                            'email': user_email,
-                            'password_hash': generate_password_hash(password),
-                            'first_name': first_name,
-                            'last_name': last_name,
-                            'role': 'developer'
-                        }
+                    # Create user model
+                    new_user = User(
+                        username=username,
+                        email=user_email,
+                        password_hash=generate_password_hash(password),
+                        first_name=first_name,
+                        last_name=last_name,
+                        role=UserRole.DEVELOPER,
+                        status=UserStatus.ACTIVE,
+                        created_at=DateTimeHelper.now()
                     )
 
-                    if result.get('success'):
+                    # Save to database using repository
+                    created_user = user_repo.create(new_user)
+
+                    if created_user:
                         flash('Account created successfully! Please log in.', 'success')
                         return redirect(url_for('login'))
                     else:
-                        flash(f"Registration failed: {result.get('error', 'Unknown error')}", 'error')
-                else:
-                    flash('User management system unavailable', 'error')
+                        flash('Registration failed: Could not create user', 'error')
+
+                except Exception as e:
+                    logger.error(f"Registration error: {e}")
+                    flash(f'Registration failed: {str(e)}', 'error')
 
             except Exception as e:
                 logger.error(f"Registration error: {e}")
