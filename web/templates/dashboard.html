@@ -227,7 +227,7 @@
                     <button class="btn btn-success" onclick="startQuickSession()">
                         <i class="bi bi-chat-dots"></i> Start Socratic Session
                     </button>
-                    <a href="{{ url_for('code_generation') }}" class="btn btn-info">
+                    <a href="{{ url_for('code') }}" class="btn btn-info">
                         <i class="bi bi-code-slash"></i> Generate Code
                     </a>
                     <button class="btn btn-warning" onclick="uploadDocument()">
@@ -430,7 +430,7 @@ function initializeMetricsChart() {
 
 function refreshDashboard() {
     // Refresh system status
-    fetch('{{ url_for("api_system_status") }}')
+    fetch('{{ url_for("api_health") }}')
         .then(response => response.json())
         .then(data => {
             console.log('Dashboard refreshed', data);
@@ -455,7 +455,7 @@ function updateSystemMetrics() {
 
 function startSocraticSession(projectId) {
     // Start session for specific project
-    window.location.href = `{{ url_for('socratic_sessions') }}?project_id=${projectId}`;
+    window.location.href = `{{ url_for('sessions') }}?project_id=${projectId}`;
 }
 
 function startQuickSession() {
@@ -468,7 +468,7 @@ function submitQuickSession() {
     const formData = new FormData(form);
 
     // Submit quick session
-    fetch('{{ url_for("start_socratic_session") }}', {
+    fetch('{{ url_for("new_session") }}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -482,7 +482,7 @@ function submitQuickSession() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            window.location.href = `{{ url_for('socratic_sessions') }}?session_id=${data.data.session_id}`;
+            window.location.href = `{{ url_for('sessions') }}?session_id=${data.data.session_id}`;
         } else {
             alert('Failed to start session: ' + data.message);
         }

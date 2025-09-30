@@ -16,6 +16,8 @@ import argparse
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Any
+import webbrowser
+from threading import Timer
 
 # Add project root to Python path
 project_root = Path(__file__).parent
@@ -408,6 +410,9 @@ def initialize_application(config_path: Optional[str] = None) -> Dict[str, Any]:
 # ============================================================================
 # WEB SERVER
 # ============================================================================
+def open_browser():
+    webbrowser.open('http://127.0.0.1:5000')
+
 
 def start_web_server(
         port: int = 5000,
@@ -442,6 +447,7 @@ def start_web_server(
 
         # Create and run Flask app
         app = create_app()
+        Timer(1.5, lambda: webbrowser.open('http://127.0.0.1:5000')).start()
         app.run(host=host, port=port, debug=debug, use_reloader=False)
 
     except Exception as e:

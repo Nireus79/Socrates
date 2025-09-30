@@ -824,6 +824,12 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
             logger.error(f"Admin page error: {e}")
             return render_template('admin.html', stats={}, error=str(e))
 
+    @flask_app.route('/documents/upload', methods=['GET', 'POST'])
+    @login_required
+    def upload_document():
+        """Document upload page - placeholder."""
+        flash('Document upload feature coming soon!', 'info')
+        return redirect(url_for('dashboard'))
     # =================================================================
     # API ROUTES
     # =================================================================
