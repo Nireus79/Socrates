@@ -201,7 +201,6 @@ class ProjectManagerAgent(BaseAgent):
                 'name': data.get('name'),
                 'description': data.get('description', ''),
                 'owner_id': data.get('owner_id') or username,
-                'goals': data.get('goals', ''),
                 'requirements': data.get('requirements', []),
                 'technology_stack': data.get('tech_stack', {}),
                 'constraints': data.get('constraints', []),
