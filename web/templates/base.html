@@ -93,9 +93,6 @@
 
                         <!-- Real-time status update -->
                         <button class="btn btn-sm btn-outline-secondary"
-                                hx-get="{{ url_for('api_system_status') }}"
-                                hx-trigger="every 30s"
-                                hx-target="#status-indicators"
                                 title="Auto-refresh system status">
                             <i class="bi bi-arrow-clockwise"></i>
                         </button>
