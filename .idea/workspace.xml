@@ -4,12 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="from src import get_config">
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="login">
+      <change afterPath="$PROJECT_DIR$/debug_user.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/monitor.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/monitor.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/all_agents_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/all_agents_tests.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -154,22 +152,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00014" summary="templates">
-      <option name="closed" value="true" />
-      <created>1758883729829</created>
-      <option name="number" value="00014" />
-      <option name="presentableId" value="LOCAL-00014" />
-      <option name="project" value="LOCAL" />
-      <updated>1758883729829</updated>
-    </task>
-    <task id="LOCAL-00015" summary="specs">
-      <option name="closed" value="true" />
-      <created>1758897065459</created>
-      <option name="number" value="00015" />
-      <option name="presentableId" value="LOCAL-00015" />
-      <option name="project" value="LOCAL" />
-      <updated>1758897065459</updated>
     </task>
     <task id="LOCAL-00016" summary="static">
       <option name="closed" value="true" />
@@ -547,11 +529,26 @@
       <option name="project" value="LOCAL" />
       <updated>1759196030737</updated>
     </task>
-    <option name="localTasksCounter" value="63" />
+    <task id="LOCAL-00063" summary="0 warnings">
+      <option name="closed" value="true" />
+      <created>1759197492681</created>
+      <option name="number" value="00063" />
+      <option name="presentableId" value="LOCAL-00063" />
+      <option name="project" value="LOCAL" />
+      <updated>1759197492681</updated>
+    </task>
+    <task id="LOCAL-00064" summary="login">
+      <option name="closed" value="true" />
+      <created>1759197759490</created>
+      <option name="number" value="00064" />
+      <option name="presentableId" value="LOCAL-00064" />
+      <option name="project" value="LOCAL" />
+      <updated>1759197759490</updated>
+    </task>
+    <option name="localTasksCounter" value="65" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Initial" />
     <MESSAGE value="core" />
     <MESSAGE value="models.py" />
     <MESSAGE value="database.py" />
@@ -575,6 +572,8 @@
     <MESSAGE value="tests" />
     <MESSAGE value="web" />
     <MESSAGE value="from src import get_config" />
-    <option name="LAST_COMMIT_MESSAGE" value="from src import get_config" />
+    <MESSAGE value="0 warnings" />
+    <MESSAGE value="login" />
+    <option name="LAST_COMMIT_MESSAGE" value="login" />
   </component>
 </project>

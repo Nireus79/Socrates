@@ -720,9 +720,14 @@ class DatabaseManager:
                         id TEXT PRIMARY KEY,
                         username TEXT UNIQUE NOT NULL,
                         email TEXT UNIQUE NOT NULL,
+                        password_hash TEXT NOT NULL,
+                        first_name TEXT,
+                        last_name TEXT,
                         role TEXT NOT NULL DEFAULT 'viewer',
+                        status TEXT NOT NULL DEFAULT 'active',
                         created_at TEXT NOT NULL,
-                        updated_at TEXT NOT NULL
+                        updated_at TEXT NOT NULL,
+                        last_login TEXT
                     )
                 """)
 
