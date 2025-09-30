@@ -54,6 +54,7 @@
                 </div>
                 <div class="card-body p-4">
                     <form method="POST" id="loginForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <!-- Username Field -->
                         <div class="form-floating mb-3">
                             <input type="text" class="form-control" id="login_username" name="username"
@@ -105,6 +106,7 @@
                 </div>
                 <div class="card-body p-4">
                     <form method="POST" id="registerForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
                         <!-- Username Field (Required) -->
                         <div class="form-floating mb-3">
@@ -207,6 +209,7 @@
                 <div class="card-body p-4">
                     <!-- Profile Form -->
                     <form method="POST" id="profileForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <div class="form-floating mb-3">
                             <input type="text" class="form-control" id="profile_username"
                                    value="{{ current_user.username if current_user else '' }}" readonly>
@@ -263,6 +266,7 @@
             </div>
             <div class="modal-body">
                 <form id="changePasswordForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="form-floating mb-3">
                         <input type="password" class="form-control" id="current_password"
                                name="current_password" required>
