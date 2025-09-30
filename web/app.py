@@ -104,6 +104,15 @@ except ImportError as e:
         return logging.getLogger(name)
 
 
+    def get_services_status():
+        """Fallback services status function"""
+        return {
+            'available_services': {},
+            'initialized_services': [],
+            'total_available': 0,
+            'total_services': 0
+        }
+
     def get_event_bus():
         """Fallback event bus function"""
         return None
@@ -548,7 +557,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 repo_manager = get_repository_manager()
                 if repo_manager:
                     project_repo = repo_manager.get_repository('project')
-                    projects = project_repo.find_by_user(current_user.id)
+                    projects = project_repo.get_by_owner(current_user.id)
 
             return render_template('projects.html', projects=projects)
         except Exception as e:
@@ -586,7 +595,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 logger.error(f"Project creation error: {e}")
                 flash('Failed to create project', 'error')
 
-        return render_template('projects.html', form=form, mode='new')
+        return render_template('projects.html', form=form, page='create')
 
     # Alias for compatibility
     flask_app.route('/projects/create', methods=['GET', 'POST'])(new_project)
@@ -667,7 +676,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 logger.error(f"Session creation error: {e}")
                 flash('Failed to start session', 'error')
 
-        return render_template('sessions.html', form=form, mode='new')
+        return render_template('sessions.html', form=form, page='create')
 
     # Alias for compatibility
     flask_app.route('/sessions/start', methods=['GET', 'POST'])(new_session)
@@ -709,7 +718,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 repo_manager = get_repository_manager()
                 if repo_manager:
                     project_repo = repo_manager.get_repository('project')
-                    projects = project_repo.find_by_user(current_user.id)
+                    pprojects = project_repo.get_by_owner(current_user.id)
 
             return render_template('code.html', projects=projects)
         except Exception as e:

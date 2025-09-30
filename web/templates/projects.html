@@ -172,12 +172,12 @@
 
                         <!-- Technology Stack JSON Editor -->
                         <div class="form-floating">
-                            {{ form.technology_stack(class="form-control json-editor", placeholder="Technology Stack JSON", rows="6") }}
+                            {{ form.tech_stack(class="form-control json-editor", placeholder="Technology Stack JSON", rows="6") }}
                             <label>Technology Stack (JSON)</label>
                             <div class="form-text">
                                 Define your technology stack in JSON format. Example: {"backend": "python", "framework": "flask"}
                             </div>
-                            {% if form.technology_stack.errors %}
+                            {% if form.tech_stack.errors %}
                             <div class="invalid-feedback d-block">
                                 {% for error in form.technology_stack.errors %}{{ error }}{% endfor %}
                             </div>
