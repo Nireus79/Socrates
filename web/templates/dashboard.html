@@ -85,7 +85,7 @@
                     <!-- Services Status -->
                     <div class="col-md-3 mb-3">
                         <div class="d-flex align-items-center justify-content-center">
-                            {% set services_count = system_status.services_status.total_available or 0 %}
+                            {% set services_count = system_status.total_available or 0 %}
                             <span class="status-indicator bg-{% if services_count > 2 %}success{% elif services_count > 0 %}warning{% else %}danger{% endif %} me-2"></span>
                             <div>
                                 <div class="h4 mb-0">{{ services_count }}/4</div>

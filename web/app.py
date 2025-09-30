@@ -87,6 +87,7 @@ try:
     from src.database import get_repository_manager
     from src.agents import get_orchestrator
     from src.services import get_services_status
+    from src import get_system_status
 
     SYSTEM_AVAILABLE = True
 except ImportError as e:
@@ -172,7 +173,7 @@ except ImportError as e:
         return None
 
 
-    def get_services_status():
+    def get_system_status():
         """Fallback services status"""
         return {}
 
@@ -510,7 +511,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         """Main dashboard page."""
         try:
             # Get system status
-            services_status = get_services_status() if SYSTEM_AVAILABLE else {}
+            system_status = get_services_status() if SYSTEM_AVAILABLE else {}
 
             # Get user's projects
             projects = []
@@ -527,13 +528,13 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
 
             return render_template('dashboard.html',
                                    projects=projects,
-                                   services_status=services_status,
+                                   system_status=system_status,
                                    agent_status=agent_status)
         except Exception as e:
             logger.error(f"Dashboard error: {e}")
             return render_template('dashboard.html',
                                    projects=[],
-                                   services_status={},
+                                   system_status={},
                                    agent_status={},
                                    error=str(e))
 
@@ -803,7 +804,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
             agent_health = {}
 
             if SYSTEM_AVAILABLE and orchestrator:
-                agent_health = orchestrator.get_status()
+                agent_health = orchestrator.health_check()
 
             if SYSTEM_AVAILABLE:
                 repo_manager = get_repository_manager()
@@ -846,7 +847,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
     def api_agents_status():
         """Get all agents status."""
         try:
-            status = orchestrator.get_status()
+            status = orchestrator.health_check()
             return api_response(status)
         except Exception as e:
             logger.error(f"API agents status error: {e}")
