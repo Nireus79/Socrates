@@ -306,7 +306,7 @@ class VectorService:
     def __init__(self):
         # Lazy load config to avoid circular imports
         try:
-            from .. import get_config
+            from src import get_config
             self.config = get_config()
         except (ImportError, AttributeError):
             self.config = None

@@ -79,7 +79,7 @@ class ClaudeService:
     def __init__(self):
         # Lazy load config to avoid circular imports
         try:
-            from .. import get_config
+            from src import get_config
             self.config = get_config()
         except (ImportError, AttributeError):
             # Fallback if get_config not available yet
