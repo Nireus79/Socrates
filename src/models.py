@@ -469,15 +469,25 @@ class Project(BaseModel):
         self.validate()
 
     def validate(self) -> None:
-        """Validate project data"""
-        if not self.name or len(self.name.strip()) < 2:
-            raise ValidationError("Project name must be at least 2 characters long")
+        """Validate user data
 
-        if self.end_date and self.start_date and self.end_date < self.start_date:
-            raise ValidationError("End date cannot be before start date")
+        This method validates User model attributes specifically.
 
-        if self.progress_percentage < 0 or self.progress_percentage > 100:
-            raise ValidationError("Progress percentage must be between 0 and 100")
+        Raises:
+            ValidationError: If validation fails
+        """
+        # Type assertion to help IDE understand this is User class
+        assert isinstance(self, User), "validate() called on non-User instance"
+
+        if not self.username or len(self.username.strip()) < 3:
+            raise ValidationError("Username must be at least 3 characters long")
+
+        # Email is optional, but if provided must be valid
+        if self.email and "@" not in self.email:
+            raise ValidationError("Invalid email address")
+
+        if not self.password_hash and self.status == UserStatus.ACTIVE:
+            raise ValidationError("Active users must have a password")
 
     @property
     def is_completed(self) -> bool:

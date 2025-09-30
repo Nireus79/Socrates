@@ -26,11 +26,6 @@
     border-color: #0d6efd;
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
-.demo-info {
-    background: rgba(13, 110, 253, 0.1);
-    border: 1px solid rgba(13, 110, 253, 0.3);
-    border-radius: 0.5rem;
-}
 .password-strength {
     height: 4px;
     border-radius: 2px;
@@ -45,9 +40,9 @@
 {% endblock %}
 
 {% block content %}
-<div class="auth-container d-flex align-items-center justify-content-center">
+<div class="auth-container d-flex align-items-center justify-content-center py-5">
     <div class="row w-100 justify-content-center">
-        <div class="col-md-6 col-lg-4">
+        <div class="col-md-6 col-lg-5">
 
             {% if page == 'login' or not page %}
             <!-- Login Form -->
@@ -55,75 +50,45 @@
                 <div class="auth-header text-white text-center py-4">
                     <i class="bi bi-box-arrow-in-right display-4 mb-2"></i>
                     <h3 class="mb-0">Welcome Back</h3>
-                    <p class="mb-0 opacity-75">Sign in to your account</p>
+                    <p class="mb-0 opacity-75">Sign in to continue</p>
                 </div>
                 <div class="card-body p-4">
-
-                    <!-- Demo Info Banner -->
-                    <div class="demo-info p-3 mb-4 text-center">
-                        <h6 class="mb-2">
-                            <i class="bi bi-info-circle"></i> Demo Access Available
-                        </h6>
-                        <p class="mb-1 small">
-                            <strong>Username:</strong> demo<br>
-                            <strong>Password:</strong> demo123
-                        </p>
-                        <small class="text-muted">Or create your own account!</small>
-                    </div>
-
-                    <form method="POST" novalidate>
-                        {{ form.hidden_tag() }}
-
+                    <form method="POST" id="loginForm">
                         <!-- Username Field -->
                         <div class="form-floating mb-3">
-                            {{ form.username(class="form-control", placeholder="Username") }}
+                            <input type="text" class="form-control" id="login_username" name="username"
+                                   placeholder="Username" required autofocus>
                             <label>
-                                <i class="bi bi-person"></i> Username
+                                <i class="bi bi-person-circle"></i> Username
                             </label>
-                            {% if form.username.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.username.errors %}
-                                <div>{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
                         </div>
 
                         <!-- Password Field -->
                         <div class="form-floating mb-3">
-                            {{ form.password(class="form-control", type="password", placeholder="Password") }}
+                            <input type="password" class="form-control" id="login_password" name="password"
+                                   placeholder="Password" required>
                             <label>
                                 <i class="bi bi-lock"></i> Password
                             </label>
-                            {% if form.password.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.password.errors %}
-                                <div>{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
                         </div>
 
                         <!-- Remember Me -->
-                        <div class="form-check mb-4">
-                            <input class="form-check-input" type="checkbox" id="remember_me" name="remember_me">
-                            <label class="form-check-label" for="remember_me">
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                            <label class="form-check-label" for="remember">
                                 Remember me
                             </label>
                         </div>
 
                         <!-- Submit Button -->
-                        <div class="d-grid mb-3">
-                            {{ form.submit(class="btn btn-primary btn-lg") }}
-                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mb-3">
+                            <i class="bi bi-box-arrow-in-right"></i> Sign In
+                        </button>
 
-                        <!-- Additional Links -->
+                        <!-- Links -->
                         <div class="text-center">
-                            <a href="#" class="text-muted text-decoration-none small me-3" onclick="showForgotPassword()">
-                                Forgot Password?
-                            </a>
-                            <a href="{{ url_for('register') }}" class="text-primary text-decoration-none small">
-                                Create Account
+                            <a href="{{ url_for('register') }}" class="text-primary text-decoration-none">
+                                <i class="bi bi-person-plus"></i> Create Account
                             </a>
                         </div>
                     </form>
@@ -139,85 +104,93 @@
                     <p class="mb-0 opacity-75">Join Socratic RAG Enhanced</p>
                 </div>
                 <div class="card-body p-4">
+                    <form method="POST" id="registerForm">
 
-                    <form method="POST" id="registerForm" novalidate>
-                        <!-- First Name Field -->
-<!--                        <div class="form-floating mb-3">-->
-<!--                            <input type="text" class="form-control" id="first_name" name="first_name" placeholder="First Name" required>-->
-<!--                            <label>-->
-<!--                                <i class="bi bi-person"></i> First Name-->
-<!--                            </label>-->
-<!--                        </div>-->
-
-<!--                        &lt;!&ndash; Last Name Field &ndash;&gt;-->
-<!--                        <div class="form-floating mb-3">-->
-<!--                            <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Last Name" required>-->
-<!--                            <label>-->
-<!--                                <i class="bi bi-person"></i> Last Name-->
-<!--                            </label>-->
-<!--                        </div>-->
-
-                        <!-- Username Field -->
+                        <!-- Username Field (Required) -->
                         <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
+                            <input type="text" class="form-control" id="reg_username" name="username"
+                                   placeholder="Username" required autofocus>
                             <label>
-                                <i class="bi bi-person-circle"></i> Username
+                                <i class="bi bi-person-circle"></i> Username *
                             </label>
                             <div class="form-text">
-                                Username must be at least 3 characters (letters, numbers, hyphens, underscores only)
+                                At least 3 characters (letters, numbers, hyphens, underscores)
                             </div>
                         </div>
 
-                        <!-- Email Field -->
+                        <!-- Email Field (Optional) -->
                         <div class="form-floating mb-3">
-                            <input type="email" class="form-control" id="email" name="email" placeholder="Email">
+                            <input type="email" class="form-control" id="reg_email" name="email"
+                                   placeholder="Email">
                             <label>
-                                <i class="bi bi-envelope"></i> Email Address
+                                <i class="bi bi-envelope"></i> Email (optional)
                             </label>
                         </div>
 
-                        <!-- Password Field -->
+                        <!-- First Name Field (Optional) -->
                         <div class="form-floating mb-3">
-                            <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                            <input type="text" class="form-control" id="reg_first_name" name="first_name"
+                                   placeholder="First Name">
                             <label>
-                                <i class="bi bi-lock"></i> Password
+                                <i class="bi bi-person"></i> First Name (optional)
+                            </label>
+                        </div>
+
+                        <!-- Last Name Field (Optional) -->
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="reg_last_name" name="last_name"
+                                   placeholder="Last Name">
+                            <label>
+                                <i class="bi bi-person"></i> Last Name (optional)
+                            </label>
+                        </div>
+
+                        <!-- Password Field (Required) -->
+                        <div class="form-floating mb-3">
+                            <input type="password" class="form-control" id="reg_password" name="password"
+                                   placeholder="Password" required>
+                            <label>
+                                <i class="bi bi-lock"></i> Password *
                             </label>
                             <div class="password-strength" id="password-strength"></div>
                             <div class="form-text">
-                                Password must be at least 8 characters long
+                                Minimum 6 characters
                             </div>
                         </div>
 
-                        <!-- Confirm Password Field -->
-                        <div class="form-floating mb-4">
-                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required>
+                        <!-- Confirm Password Field (Required) -->
+                        <div class="form-floating mb-3">
+                            <input type="password" class="form-control" id="reg_confirm_password"
+                                   name="confirm_password" placeholder="Confirm Password" required>
                             <label>
-                                <i class="bi bi-lock-fill"></i> Confirm Password
+                                <i class="bi bi-lock-fill"></i> Confirm Password *
                             </label>
+                            <div id="password-match-message" class="form-text"></div>
                         </div>
 
-                        <!-- Terms & Conditions -->
-                        <div class="form-check mb-4">
+                        <!-- Terms Acceptance (Required) -->
+                        <div class="form-check mb-3">
                             <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
-                            <label class="form-check-label small" for="terms">
-                                I agree to the <a href="#" class="text-primary">Terms of Service</a>
-                                and <a href="#" class="text-primary">Privacy Policy</a>
+                            <label class="form-check-label" for="terms">
+                                I accept the <a href="#" class="text-primary">Terms of Service</a>
+                                and <a href="#" class="text-primary">Privacy Policy</a> *
                             </label>
                         </div>
 
                         <!-- Submit Button -->
-                        <div class="d-grid mb-3">
-                            <button type="submit" class="btn btn-success btn-lg">
-                                <i class="bi bi-person-plus"></i> Create Account
-                            </button>
+                        <button type="submit" class="btn btn-primary w-100 mb-3">
+                            <i class="bi bi-person-plus"></i> Create Account
+                        </button>
+
+                        <!-- Links -->
+                        <div class="text-center">
+                            <a href="{{ url_for('login') }}" class="text-primary text-decoration-none">
+                                <i class="bi bi-box-arrow-in-right"></i> Already have an account? Sign In
+                            </a>
                         </div>
 
-                        <!-- Back to Login -->
-                        <div class="text-center">
-                            <span class="text-muted small">Already have an account? </span>
-                            <a href="{{ url_for('login') }}" class="text-primary text-decoration-none small">
-                                Sign In
-                            </a>
+                        <div class="text-center mt-2">
+                            <small class="text-muted">* Required fields</small>
                         </div>
                     </form>
                 </div>
@@ -228,173 +201,59 @@
             <div class="card auth-card">
                 <div class="auth-header text-white text-center py-4">
                     <i class="bi bi-person-circle display-4 mb-2"></i>
-                    <h3 class="mb-0">User Profile</h3>
-                    <p class="mb-0 opacity-75">Manage your account settings</p>
+                    <h3 class="mb-0">{{ current_user.username if current_user else 'User' }}</h3>
+                    <p class="mb-0 opacity-75">Profile Settings</p>
                 </div>
                 <div class="card-body p-4">
-
-                    {% if current_user.is_authenticated %}
-                    <!-- Profile Info -->
-                    <div class="row mb-4">
-                        <div class="col-12 text-center">
-                            <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                                 style="width: 80px; height: 80px;">
-                                <i class="bi bi-person-fill display-6 text-white"></i>
-                            </div>
-                            <h4>{{ current_user.username }}</h4>
-                            <p class="text-muted">{{ current_user.email }}</p>
-                            {% if current_user.is_admin %}
-                            <span class="badge bg-warning">Administrator</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Account Stats -->
-                    <div class="row text-center mb-4">
-                        <div class="col-4">
-                            <div class="border rounded p-2">
-                                <div class="h5 mb-0">{{ user_stats.projects if user_stats else 0 }}</div>
-                                <small class="text-muted">Projects</small>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="border rounded p-2">
-                                <div class="h5 mb-0">{{ user_stats.sessions if user_stats else 0 }}</div>
-                                <small class="text-muted">Sessions</small>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="border rounded p-2">
-                                <div class="h5 mb-0">{{ user_stats.files if user_stats else 0 }}</div>
-                                <small class="text-muted">Files</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Settings Form -->
+                    <!-- Profile Form -->
                     <form method="POST" id="profileForm">
                         <div class="form-floating mb-3">
                             <input type="text" class="form-control" id="profile_username"
-                                   value="{{ current_user.username }}" readonly>
+                                   value="{{ current_user.username if current_user else '' }}" readonly>
                             <label>Username</label>
                         </div>
 
                         <div class="form-floating mb-3">
-                            <input type="email" class="form-control" id="reg_email" name="email" placeholder="Email">
-                                   value="{{ current_user.email }}">
+                            <input type="email" class="form-control" id="profile_email" name="email"
+                                   value="{{ current_user.email if current_user else '' }}">
                             <label>Email Address</label>
                         </div>
 
-                        <!-- Name Fields -->
                         <div class="row mb-3">
                             <div class="col-6">
                                 <div class="form-floating">
-                                    <input type="text" class="form-control" id="first_name" name="first_name">
+                                    <input type="text" class="form-control" id="profile_first_name" name="first_name">
                                     <label>First Name</label>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="form-floating">
-                                    <input type="text" class="form-control" id="last_name" name="last_name">
+                                    <input type="text" class="form-control" id="profile_last_name" name="last_name">
                                     <label>Last Name</label>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Preferences -->
-                        <h6 class="border-bottom pb-2 mb-3">Preferences</h6>
+                        <button type="submit" class="btn btn-primary w-100 mb-3">
+                            <i class="bi bi-check-circle"></i> Update Profile
+                        </button>
 
-                        <div class="form-check form-switch mb-3">
-                            <input type="checkbox" class="form-check-input" id="email_notifications" name="email_notifications" checked>
-                            <label class="form-check-label" for="email_notifications">
-                                Email notifications
-                            </label>
-                        </div>
-
-                        <div class="form-check form-switch mb-3">
-                            <input type="checkbox" class="form-check-input" id="auto_save" name="auto_save" checked>
-                            <label class="form-check-label" for="auto_save">
-                                Auto-save projects
-                            </label>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Default Role</label>
-                            <select class="form-select" id="default_role" name="default_role">
-                                <option value="developer">Developer</option>
-                                <option value="project_manager">Project Manager</option>
-                                <option value="designer">UI/UX Designer</option>
-                                <option value="tester">QA Tester</option>
-                                <option value="business_analyst">Business Analyst</option>
-                                <option value="devops">DevOps Engineer</option>
-                            </select>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle"></i> Save Changes
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary" onclick="showChangePassword()">
-                                <i class="bi bi-key"></i> Change Password
-                            </button>
-                        </div>
+                        <button type="button" class="btn btn-outline-warning w-100" data-bs-toggle="modal"
+                                data-bs-target="#changePasswordModal">
+                            <i class="bi bi-key"></i> Change Password
+                        </button>
                     </form>
-                    {% endif %}
                 </div>
             </div>
             {% endif %}
 
-            <!-- System Status Footer -->
-            <div class="text-center mt-4">
-                <small class="text-muted">
-                    System Status:
-                    {% if system_available %}
-                    <span class="text-success"><i class="bi bi-circle-fill"></i> Online</span>
-                    {% else %}
-                    <span class="text-warning"><i class="bi bi-circle-fill"></i> Limited Mode</span>
-                    {% endif %}
-                </small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Forgot Password Modal -->
-<div class="modal fade" id="forgotPasswordModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content bg-dark">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-key"></i> Reset Password
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i>
-                    Password reset is not yet implemented. Please contact support for assistance.
-                </div>
-                <form id="forgotPasswordForm">
-                    <div class="form-floating mb-3">
-                        <input type="email" class="form-control" id="reset_email" placeholder="Email">
-                        <label>Email Address</label>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="requestPasswordReset()">
-                    <i class="bi bi-envelope"></i> Send Reset Link
-                </button>
-            </div>
         </div>
     </div>
 </div>
 
 <!-- Change Password Modal -->
 <div class="modal fade" id="changePasswordModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
+    <div class="modal-dialog">
         <div class="modal-content bg-dark">
             <div class="modal-header">
                 <h5 class="modal-title">
@@ -405,15 +264,18 @@
             <div class="modal-body">
                 <form id="changePasswordForm">
                     <div class="form-floating mb-3">
-                        <input type="password" class="form-control" id="current_password" name="current_password" placeholder="Current Password" required>
+                        <input type="password" class="form-control" id="current_password"
+                               name="current_password" required>
                         <label>Current Password</label>
                     </div>
                     <div class="form-floating mb-3">
-                        <input type="password" class="form-control" id="new_password" name="new_password" placeholder="New Password" required>
+                        <input type="password" class="form-control" id="new_password"
+                               name="new_password" required>
                         <label>New Password</label>
                     </div>
                     <div class="form-floating mb-3">
-                        <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password" placeholder="Confirm New Password" required>
+                        <input type="password" class="form-control" id="confirm_new_password"
+                               name="confirm_new_password" required>
                         <label>Confirm New Password</label>
                     </div>
                 </form>
@@ -432,9 +294,7 @@
 {% block extra_scripts %}
 <script>
 // Authentication page JavaScript
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize form validation
     initializeValidation();
 
     // Auto-focus first input
@@ -445,69 +305,56 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeValidation() {
-    // Add real-time validation for forms
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
-        form.addEventListener('submit', function(e) {
-            // Only validate registration form client-side
-            if (form.id === 'registerForm') {
-                if (!validateRegistrationForm(form)) {
-                    e.preventDefault();
-                }
-            }
-            // Let other forms submit normally to Flask
-        });
-    });
-
     // Password strength indicator
-    const passwordInput = document.getElementById('password');
+    const passwordInput = document.getElementById('reg_password');
     if (passwordInput) {
         passwordInput.addEventListener('input', checkPasswordStrength);
     }
 
     // Confirm password matching
-    const confirmPasswordInput = document.getElementById('confirm_password');
+    const confirmPasswordInput = document.getElementById('reg_confirm_password');
     if (confirmPasswordInput) {
         confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+        passwordInput?.addEventListener('input', checkPasswordMatch);
+    }
+
+    // Form validation on submit
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+        registerForm.addEventListener('submit', function(e) {
+            if (!validateRegistrationForm(registerForm)) {
+                e.preventDefault();
+            }
+        });
     }
 }
 
 function validateRegistrationForm(form) {
-    const formData = new FormData(form);
     let isValid = true;
+    const formData = new FormData(form);
 
     // Clear previous errors
     form.querySelectorAll('.is-invalid').forEach(el => {
         el.classList.remove('is-invalid');
     });
 
-    // Validate required fields
-    const requiredFields = ['username', 'password', 'confirm_password']; // 'first_name', 'last_name', 'email',
-    requiredFields.forEach(fieldName => {
-        const field = form.querySelector(`[name="${fieldName}"]`);
-        if (!field.value.trim()) {
-            field.classList.add('is-invalid');
-            isValid = false;
-        }
-    });
-
-    // Validate username
+    // Validate username (required)
     const username = formData.get('username');
-    if (username && (username.length < 3 || !/^[a-zA-Z0-9_-]+$/.test(username))) {
+    if (!username || username.length < 3 || !/^[a-zA-Z0-9_-]+$/.test(username)) {
         form.querySelector('[name="username"]').classList.add('is-invalid');
         isValid = false;
     }
 
-    // Validate email
+    // Validate email (optional, but if provided must be valid)
     const email = formData.get('email');
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         form.querySelector('[name="email"]').classList.add('is-invalid');
         isValid = false;
     }
 
-    // Validate password
+    // Validate password (required, min 6 chars)
     const password = formData.get('password');
-    if (password && password.length < 8) {
+    if (!password || password.length < 6) {
         form.querySelector('[name="password"]').classList.add('is-invalid');
         isValid = false;
     }
@@ -519,7 +366,7 @@ function validateRegistrationForm(form) {
         isValid = false;
     }
 
-    // Validate terms
+    // Validate terms acceptance
     const terms = formData.get('terms');
     if (!terms) {
         form.querySelector('[name="terms"]').classList.add('is-invalid');
@@ -529,75 +376,66 @@ function validateRegistrationForm(form) {
     return isValid;
 }
 
-function checkPasswordStrength(e) {
-    const password = e.target.value;
+function checkPasswordStrength() {
+    const password = document.getElementById('reg_password').value;
     const strengthBar = document.getElementById('password-strength');
 
-    let strength = 0;
-    if (password.length >= 8) strength++;
-    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
-    if (password.match(/\d/)) strength++;
-    if (password.match(/[^a-zA-Z\d]/)) strength++;
+    if (!strengthBar) return;
 
-    // Update visual indicator
-    strengthBar.className = 'password-strength';
-    if (strength === 1) strengthBar.classList.add('strength-weak');
-    else if (strength === 2) strengthBar.classList.add('strength-fair');
-    else if (strength === 3) strengthBar.classList.add('strength-good');
-    else if (strength >= 4) strengthBar.classList.add('strength-strong');
+    if (password.length === 0) {
+        strengthBar.className = 'password-strength';
+        return;
+    }
+
+    let strength = 0;
+    if (password.length >= 6) strength++;
+    if (password.length >= 10) strength++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[^a-zA-Z0-9]/.test(password)) strength++;
+
+    const classes = ['strength-weak', 'strength-fair', 'strength-good', 'strength-strong'];
+    const strengthClass = classes[Math.min(Math.floor(strength / 1.5), 3)];
+
+    strengthBar.className = 'password-strength ' + strengthClass;
 }
 
 function checkPasswordMatch() {
-    const password = document.getElementById('password');
-    const confirmPassword = document.getElementById('confirm_password');
+    const password = document.getElementById('reg_password')?.value;
+    const confirmPassword = document.getElementById('reg_confirm_password')?.value;
+    const messageDiv = document.getElementById('password-match-message');
 
-    if (password && confirmPassword) {
-        if (password.value !== confirmPassword.value) {
-            confirmPassword.classList.add('is-invalid');
-        } else {
-            confirmPassword.classList.remove('is-invalid');
-        }
+    if (!messageDiv || !confirmPassword) return;
+
+    if (password === confirmPassword) {
+        messageDiv.innerHTML = '<span class="text-success"><i class="bi bi-check-circle"></i> Passwords match</span>';
+        document.getElementById('reg_confirm_password').classList.remove('is-invalid');
+    } else {
+        messageDiv.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle"></i> Passwords do not match</span>';
+        document.getElementById('reg_confirm_password').classList.add('is-invalid');
     }
-}
-
-function showForgotPassword() {
-    const modal = new bootstrap.Modal(document.getElementById('forgotPasswordModal'));
-    modal.show();
-}
-
-function showChangePassword() {
-    const modal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
-    modal.show();
-}
-
-function requestPasswordReset() {
-    // Placeholder for password reset functionality
-    alert('Password reset functionality not yet implemented. Please contact support.');
-    bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal')).hide();
 }
 
 function submitPasswordChange() {
     const form = document.getElementById('changePasswordForm');
     const formData = new FormData(form);
 
-    // Validate passwords
-    const newPassword = formData.get('new_password');
-    const confirmPassword = formData.get('confirm_new_password');
-
-    if (newPassword !== confirmPassword) {
-        alert('Passwords do not match');
+    // Validate passwords match
+    if (formData.get('new_password') !== formData.get('confirm_new_password')) {
+        alert('New passwords do not match');
         return;
     }
 
-    if (newPassword.length < 8) {
-        alert('Password must be at least 8 characters long');
-        return;
-    }
-
-    // Submit via AJAX
-    fetch('/change-password', {
+    // Submit password change
+    fetch('/api/users/change-password', {
         method: 'POST',
-        body: formData
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            current_password: formData.get('current_password'),
+            new_password: formData.get('new_password')
+        })
     })
     .then(response => response.json())
     .then(data => {
@@ -606,43 +444,12 @@ function submitPasswordChange() {
             bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
             form.reset();
         } else {
-            alert(data.message || 'Failed to change password');
+            alert('Error: ' + data.error);
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while changing password');
+        alert('Error changing password: ' + error);
     });
 }
-
-function showSuccessMessage(message) {
-    // Create temporary alert
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
-    alertDiv.style.top = '20px';
-    alertDiv.style.right = '20px';
-    alertDiv.style.zIndex = '9999';
-    alertDiv.innerHTML = `
-        <i class="bi bi-check-circle"></i> ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-
-    document.body.appendChild(alertDiv);
-
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.parentNode.removeChild(alertDiv);
-        }
-    }, 5000);
-}
-
-// Handle profile form submission
-document.getElementById('profileForm')?.addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    // The form will be handled by Flask normally
-    this.submit();
-});
 </script>
 {% endblock %}

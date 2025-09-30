@@ -409,11 +409,13 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 terms = request.form.get('terms') == 'on'
 
                 # Basic validation
+                # Basic validation
                 errors = []
                 if not username or len(username) < 3:
                     errors.append('Username must be at least 3 characters')
-                if not email or '@' not in email:
-                    errors.append('Valid email address required')
+                # Remove email validation - it's optional now
+                if email and '@' not in email:  # Only validate if provided
+                    errors.append('Valid email address format required')
                 if not password or len(password) < 6:
                     errors.append('Password must be at least 6 characters')
                 if password != confirm_password:
@@ -439,16 +441,23 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                     return render_template('auth.html', page='register')
 
                 # Create user via orchestrator
+                # Create user via orchestrator
                 if orchestrator:
                     full_name = f"{first_name} {last_name}".strip()
+
+                    # Use a default email if not provided
+                    user_email = email if email else f"{username}@local.user"
+
                     result = orchestrator.route_request(
                         'user_manager',
                         'create_user',
                         {
                             'username': username,
-                            'email': email,
+                            'email': user_email,
                             'password_hash': generate_password_hash(password),
                             'full_name': full_name,
+                            'first_name': first_name,
+                            'last_name': last_name,
                             'role': 'developer'
                         }
                     )
