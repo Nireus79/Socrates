@@ -92,23 +92,29 @@ try:
 except ImportError as e:
     SYSTEM_AVAILABLE = False
 
+
     # Define all fallback functions and classes in except block
     def get_config():
         """Fallback config function"""
         return {}
 
+
     def get_logger(name: str):
         """Fallback logger function"""
         return logging.getLogger(name)
+
 
     def get_event_bus():
         """Fallback event bus function"""
         return None
 
+
     SocraticException = Exception
+
 
     class ValidationHelper:
         """Fallback ValidationHelper"""
+
         @staticmethod
         def is_valid_email(email: str) -> bool:
             return '@' in email
@@ -117,8 +123,10 @@ except ImportError as e:
         def is_valid_username(username: str) -> bool:
             return len(username) >= 3
 
+
     class DateTimeHelper:
         """Fallback DateTimeHelper"""
+
         @staticmethod
         def now():
             return datetime.now()
@@ -127,21 +135,26 @@ except ImportError as e:
         def to_iso_string(dt):
             return dt.isoformat() if dt else None
 
+
     class Project:
         """Fallback Project model"""
         pass
+
 
     class User:
         """Fallback User model"""
         pass
 
+
     class TechnicalSpec:
         """Fallback TechnicalSpec model"""
         pass
 
+
     class ConversationMessage:
         """Fallback ConversationMessage model"""
         pass
+
 
     class UserRole:
         """Fallback UserRole enum"""
@@ -149,13 +162,16 @@ except ImportError as e:
         DEVELOPER = 'developer'
         USER = 'user'
 
+
     def get_repository_manager():
         """Fallback repository manager"""
         return None
 
+
     def get_orchestrator():
         """Fallback orchestrator"""
         return None
+
 
     def get_services_status():
         """Fallback services status"""
@@ -253,6 +269,7 @@ def api_response(success: bool = True, message: str = '', data: Any = None, stat
 
 def with_agent_orchestration(f):
     """Decorator to ensure agent orchestrator is available."""
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not SYSTEM_AVAILABLE:
@@ -455,7 +472,6 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                             'username': username,
                             'email': user_email,
                             'password_hash': generate_password_hash(password),
-                            'full_name': full_name,
                             'first_name': first_name,
                             'last_name': last_name,
                             'role': 'developer'
@@ -466,7 +482,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                         flash('Account created successfully! Please log in.', 'success')
                         return redirect(url_for('login'))
                     else:
-                        flash(f"Registration failed: {result.get('message', 'Unknown error')}", 'error')
+                        flash(f"Registration failed: {result.get('error', 'Unknown error')}", 'error')
                 else:
                     flash('User management system unavailable', 'error')
 
@@ -498,16 +514,16 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 agent_status = orchestrator.get_status()
 
             return render_template('dashboard.html',
-                                 projects=projects,
-                                 services_status=services_status,
-                                 agent_status=agent_status)
+                                   projects=projects,
+                                   services_status=services_status,
+                                   agent_status=agent_status)
         except Exception as e:
             logger.error(f"Dashboard error: {e}")
             return render_template('dashboard.html',
-                                 projects=[],
-                                 services_status={},
-                                 agent_status={},
-                                 error=str(e))
+                                   projects=[],
+                                   services_status={},
+                                   agent_status={},
+                                   error=str(e))
 
     @flask_app.route('/projects')
     @login_required
@@ -581,9 +597,9 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                         modules = module_repo.find_by_project(project_id)
 
             return render_template('projects.html',
-                                 project=project,
-                                 modules=modules,
-                                 mode='detail')
+                                   project=project,
+                                   modules=modules,
+                                   mode='detail')
         except Exception as e:
             logger.error(f"Project detail error: {e}")
             return render_template('projects.html', error=str(e))
@@ -662,9 +678,9 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                     messages = session_data.get('messages', [])
 
             return render_template('sessions.html',
-                                 session=session_data,
-                                 messages=messages,
-                                 mode='detail')
+                                   session=session_data,
+                                   messages=messages,
+                                   mode='detail')
         except Exception as e:
             logger.error(f"Session detail error: {e}")
             return render_template('sessions.html', error=str(e))
@@ -710,7 +726,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 if result.get('success'):
                     flash('Code generation started!', 'success')
                     return redirect(url_for('code_status',
-                                          generation_id=result.get('data', {}).get('generation_id')))
+                                            generation_id=result.get('data', {}).get('generation_id')))
                 else:
                     flash(f"Error generating code: {result.get('message')}", 'error')
             except Exception as e:
@@ -735,8 +751,8 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                     status_data = result.get('data')
 
             return render_template('code.html',
-                                 generation_status=status_data,
-                                 mode='status')
+                                   generation_status=status_data,
+                                   mode='status')
         except Exception as e:
             logger.error(f"Code status error: {e}")
             return render_template('code.html', error=str(e))
@@ -934,7 +950,6 @@ __all__ = [
     'api_response',
     'with_agent_orchestration',
 ]
-
 
 # =================================================================
 # DEVELOPMENT SERVER RUNNER
