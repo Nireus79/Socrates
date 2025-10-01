@@ -353,6 +353,35 @@ class UserRepository(BaseRepository[User]):
 class ProjectRepository(BaseRepository[Project]):
     """Project repository with type safety"""
 
+    def _row_to_model(self, row: Dict[str, Any]) -> Project:
+        """Convert database row to Project instance with proper type conversions"""
+        try:
+            from src.models import ProjectStatus, ProjectPhase, TaskPriority
+            from src.core import DateTimeHelper
+
+            # Convert datetime strings to datetime objects
+            if 'created_at' in row and isinstance(row['created_at'], str):
+                row['created_at'] = DateTimeHelper.from_iso_string(row['created_at'])
+            if 'updated_at' in row and isinstance(row['updated_at'], str):
+                row['updated_at'] = DateTimeHelper.from_iso_string(row['updated_at'])
+            if 'start_date' in row and row['start_date'] and isinstance(row['start_date'], str):
+                row['start_date'] = DateTimeHelper.from_iso_string(row['start_date'])
+            if 'end_date' in row and row['end_date'] and isinstance(row['end_date'], str):
+                row['end_date'] = DateTimeHelper.from_iso_string(row['end_date'])
+
+            # Convert enum strings to enum objects
+            if 'status' in row and isinstance(row['status'], str):
+                row['status'] = ProjectStatus(row['status'])
+            if 'phase' in row and isinstance(row['phase'], str):
+                row['phase'] = ProjectPhase(row['phase'])
+            if 'priority' in row and isinstance(row['priority'], str):
+                row['priority'] = TaskPriority(row['priority'])
+
+            return Project(**row)
+        except Exception as e:
+            self.logger.error(f"Error converting row to Project: {e}")
+            return Project()
+
     def create(self, project: Project) -> Optional[Project]:
         """Create new project in database"""
         try:
