@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 try:
     from .base import BaseAgent
+
     BASE_AVAILABLE = True
 except ImportError:
     logger.warning("BaseAgent not available")
@@ -48,6 +49,7 @@ except ImportError:
 # Agent 1: User Manager
 try:
     from .user import UserManagerAgent
+
     USER_AGENT_AVAILABLE = True
 except ImportError:
     logger.warning("UserManagerAgent not available")
@@ -57,6 +59,7 @@ except ImportError:
 # Agent 2: Project Manager
 try:
     from .project import ProjectManagerAgent
+
     PROJECT_AGENT_AVAILABLE = True
 except ImportError:
     logger.warning("ProjectManagerAgent not available")
@@ -66,6 +69,7 @@ except ImportError:
 # Agent 3: Socratic Counselor
 try:
     from .socratic import SocraticCounselorAgent
+
     SOCRATIC_AGENT_AVAILABLE = True
 except ImportError:
     logger.warning("SocraticCounselorAgent not available")
@@ -75,6 +79,7 @@ except ImportError:
 # Agent 4: Code Generator
 try:
     from .code import CodeGeneratorAgent
+
     CODE_AGENT_AVAILABLE = True
 except ImportError:
     logger.warning("CodeGeneratorAgent not available")
@@ -84,6 +89,7 @@ except ImportError:
 # Agent 5: Context Analyzer
 try:
     from .context import ContextAnalyzerAgent
+
     CONTEXT_AGENT_AVAILABLE = True
 except ImportError:
     logger.warning("ContextAnalyzerAgent not available")
@@ -93,6 +99,7 @@ except ImportError:
 # Agent 6: Document Processor
 try:
     from .document import DocumentProcessorAgent
+
     DOCUMENT_AGENT_AVAILABLE = True
 except ImportError:
     logger.warning("DocumentProcessorAgent not available")
@@ -102,6 +109,7 @@ except ImportError:
 # Agent 7: Services Agent
 try:
     from .services import ServicesAgent
+
     SERVICES_AGENT_AVAILABLE = True
 except ImportError:
     logger.warning("ServicesAgent not available")
@@ -111,6 +119,7 @@ except ImportError:
 # Agent 8: System Monitor
 try:
     from .monitor import SystemMonitorAgent
+
     MONITOR_AGENT_AVAILABLE = True
 except ImportError:
     logger.warning("SystemMonitorAgent not available")
@@ -120,6 +129,7 @@ except ImportError:
 # Agent Orchestrator
 try:
     from .orchestrator import AgentOrchestrator
+
     ORCHESTRATOR_AVAILABLE = True
 except ImportError:
     logger.warning("AgentOrchestrator not available")
@@ -136,7 +146,7 @@ _orchestrator: Optional[Any] = None
 def get_orchestrator() -> Optional[Any]:
     """
     Get or create global orchestrator instance
-    
+
     Returns:
         AgentOrchestrator instance or None if unavailable
     """
@@ -162,7 +172,7 @@ def get_orchestrator() -> Optional[Any]:
 def reset_orchestrator() -> None:
     """Reset global orchestrator instance (useful for testing)"""
     global _orchestrator
-    
+
     if _orchestrator is not None:
         try:
             if hasattr(_orchestrator, 'shutdown'):
@@ -179,9 +189,9 @@ def reset_orchestrator() -> None:
 # ============================================================================
 
 def process_agent_request(
-    agent_id: str, 
-    action: str, 
-    data: Dict[str, Any]
+        agent_id: str,
+        action: str,
+        data: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
     Process request through orchestrator
@@ -194,9 +204,9 @@ def process_agent_request(
     Returns:
         Dict with response from agent
     """
-    orchestrator = get_orchestrator()
+    orch_instance = get_orchestrator()
 
-    if orchestrator is None:
+    if orch_instance is None:
         return {
             'success': False,
             'error': 'Agent orchestrator not available',
@@ -204,12 +214,12 @@ def process_agent_request(
             'action': action
         }
 
-    return orchestrator.route_request(agent_id, action, data)
+    return orch_instance.route_request(agent_id, action, data)
 
 
 def process_by_capability(
-    capability: str, 
-    data: Dict[str, Any]
+        capability: str,
+        data: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
     Process request by capability name
@@ -221,16 +231,16 @@ def process_by_capability(
     Returns:
         Dict with response from appropriate agent
     """
-    orchestrator = get_orchestrator()
+    orch_instance = get_orchestrator()
 
-    if orchestrator is None:
+    if orch_instance is None:
         return {
             'success': False,
             'error': 'Agent orchestrator not available',
             'capability': capability
         }
 
-    return orchestrator.route_by_capability(capability, data)
+    return orch_instance.route_by_capability(capability, data)
 
 
 def get_available_agents() -> Dict[str, type]:
@@ -277,13 +287,13 @@ def get_agent_capabilities() -> Dict[str, List[str]]:
     Returns:
         Dict mapping agent_id to list of capabilities
     """
-    orchestrator = get_orchestrator()
+    orch_instance = get_orchestrator()
 
-    if orchestrator is not None:
+    if orch_instance is not None:
         # Get capabilities from orchestrator's agents
         try:
             capabilities: Dict[str, List[str]] = {}
-            for agent_id, agent in orchestrator.agents.items():
+            for agent_id, agent in orch_instance.agents.items():
                 if hasattr(agent, 'get_capabilities'):
                     capabilities[agent_id] = agent.get_capabilities()
                 else:
@@ -333,7 +343,7 @@ def create_agent(agent_type: str) -> Optional[Any]:
         )
 
     agent_class = available_agents[agent_type]
-    
+
     try:
         return agent_class()
     except (RuntimeError, ValueError, AttributeError, TypeError) as e:
@@ -348,12 +358,12 @@ def get_agent_status() -> Dict[str, Any]:
     Returns:
         Dict with status information for all agents
     """
-    orchestrator = get_orchestrator()
+    orch_instance = get_orchestrator()
 
     # Try to get status from orchestrator first
-    if orchestrator is not None:
+    if orch_instance is not None:
         try:
-            return orchestrator.get_agent_status()
+            return orch_instance.get_agent_status()
         except (RuntimeError, AttributeError) as e:
             logger.warning(f"Could not get status from orchestrator: {e}")
 
@@ -374,8 +384,8 @@ def get_agent_status() -> Dict[str, Any]:
             status['agents'][agent_id] = {
                 'name': getattr(temp_agent, 'name', agent_id),
                 'capabilities': (
-                    temp_agent.get_capabilities() 
-                    if hasattr(temp_agent, 'get_capabilities') 
+                    temp_agent.get_capabilities()
+                    if hasattr(temp_agent, 'get_capabilities')
                     else []
                 ),
                 'status': 'available'
@@ -426,28 +436,95 @@ def get_system_health() -> Dict[str, Any]:
     Returns:
         Dict with health information
     """
-    orchestrator = get_orchestrator()
+    orch_instance = get_orchestrator()
 
-    if orchestrator is not None and hasattr(orchestrator, 'health_check'):
+    if orch_instance is not None and hasattr(orch_instance, 'health_check'):
         try:
-            return orchestrator.health_check()
+            return orch_instance.health_check()
         except (RuntimeError, AttributeError) as e:
             logger.error(f"Health check failed: {e}")
 
     # Fallback health check
     available_agents = get_available_agents()
-    
+
     return {
         'status': 'limited' if len(available_agents) > 0 else 'unavailable',
         'orchestrator_available': ORCHESTRATOR_AVAILABLE,
         'agents_available': len(available_agents),
         'total_agents': 8,
         'message': (
-            f"{len(available_agents)}/8 agents available" 
-            if len(available_agents) > 0 
+            f"{len(available_agents)}/8 agents available"
+            if len(available_agents) > 0
             else "No agents available"
         )
     }
+
+
+def initialize_all_agents() -> Dict[str, Any]:
+    """
+    Initialize all available agents through orchestrator
+
+    This function creates the global orchestrator instance which
+    initializes all 8 agents. Similar to initialize_all_services().
+
+    Returns:
+        Dict with initialization status:
+        {
+            'initialized': int,      # Number of agents initialized
+            'total': int,            # Total expected agents (8)
+            'agents': List[str],     # List of initialized agent IDs
+            'status': str,           # 'success', 'partial', or 'failed'
+            'details': Dict,         # Detailed status from orchestrator
+            'error': str             # Error message if failed (optional)
+        }
+    """
+    try:
+        # Initialize orchestrator (which initializes all agents)
+        orch_instance = get_orchestrator()
+
+        if orch_instance is None:
+            return {
+                'initialized': 0,
+                'total': 8,
+                'agents': [],
+                'status': 'failed',
+                'error': 'Failed to create orchestrator instance'
+            }
+
+        # Get agent status from orchestrator
+        available_agents = get_available_agents()
+        initialized_count = len(orch_instance.agents) if hasattr(orch_instance, 'agents') else 0
+        agent_ids = list(orch_instance.agents.keys()) if hasattr(orch_instance, 'agents') else []
+
+        # Determine overall status
+        if initialized_count == 8:
+            status = 'success'
+        elif initialized_count > 0:
+            status = 'partial'
+        else:
+            status = 'failed'
+
+        return {
+            'initialized': initialized_count,
+            'total': 8,
+            'agents': agent_ids,
+            'status': status,
+            'details': {
+                'orchestrator_available': True,
+                'available_agent_classes': len(available_agents),
+                'initialized_instances': initialized_count
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Agent initialization failed: {e}")
+        return {
+            'initialized': 0,
+            'total': 8,
+            'agents': [],
+            'status': 'failed',
+            'error': str(e)
+        }
 
 
 # ============================================================================
@@ -459,10 +536,10 @@ __all__ = [
     '__version__',
     '__author__',
     '__description__',
-    
+
     # Base class
     'BaseAgent',
-    
+
     # All 8 Agent classes
     'UserManagerAgent',
     'ProjectManagerAgent',
@@ -472,26 +549,27 @@ __all__ = [
     'DocumentProcessorAgent',
     'ServicesAgent',
     'SystemMonitorAgent',
-    
+
     # Orchestrator
     'AgentOrchestrator',
-    
+
     # Primary functions
     'get_orchestrator',
     'reset_orchestrator',
     'process_agent_request',
     'process_by_capability',
-    
+
     # Discovery functions
     'get_available_agents',
     'get_agent_capabilities',
     'list_agents',
-    
+
     # Agent management
     'create_agent',
     'get_agent_status',
     'shutdown_agents',
     'get_system_health',
+    'initialize_all_agents'
 ]
 
 # ============================================================================

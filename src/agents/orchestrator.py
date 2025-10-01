@@ -521,6 +521,9 @@ class AgentOrchestrator:
         # Check each agent
         for agent_id, agent in self.agents.items():
             try:
+                # Initialize agent_health to avoid reference issues
+                agent_health = None
+
                 # Check if agent has health_check method
                 if hasattr(agent, 'health_check'):
                     agent_health = agent.health_check()
@@ -534,10 +537,19 @@ class AgentOrchestrator:
                     'name': getattr(agent, 'name', agent_id)
                 }
 
+                # ADD DETAILED LOGGING HERE
                 if agent_status in ['healthy', 'active']:
                     health['healthy_agents'] += 1
+                    self.logger.info(f"✓ Agent health: {agent_id} = {agent_status}")
                 else:
                     health['unhealthy_agents'] += 1
+                    # Log unhealthy agents at WARNING level with details
+                    agent_name = getattr(agent, 'name', agent_id)
+                    error_info = agent_health.get('error', 'No error details') if agent_health and isinstance(
+                        agent_health, dict) else 'No health check details'
+                    self.logger.warning(
+                        f"✗ Agent health: {agent_id} ({agent_name}) = {agent_status} | Details: {error_info}"
+                    )
 
             except (RuntimeError, AttributeError) as e:
                 health['agents'][agent_id] = {
@@ -546,6 +558,8 @@ class AgentOrchestrator:
                     'name': getattr(agent, 'name', agent_id)
                 }
                 health['unhealthy_agents'] += 1
+                # ADD DETAILED ERROR LOGGING
+                self.logger.error(f"✗ Agent health check failed: {agent_id} | Error: {str(e)}")
 
         # Add failed agents
         for agent_id, error in self.agent_failures.items():
@@ -553,6 +567,8 @@ class AgentOrchestrator:
                 'status': 'failed',
                 'error': error
             }
+            # ADD LOGGING FOR FAILED AGENTS
+            self.logger.error(f"✗ Agent failed to initialize: {agent_id} | Error: {error}")
 
         # Determine overall orchestrator health
         if health['unhealthy_agents'] > 0:

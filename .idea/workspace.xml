@@ -4,9 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="Phase 1 finished">
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="delete">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/project.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/project.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/orchestrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/orchestrator.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -151,14 +153,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00044" summary="full">
-      <option name="closed" value="true" />
-      <created>1759087044337</created>
-      <option name="number" value="00044" />
-      <option name="presentableId" value="LOCAL-00044" />
-      <option name="project" value="LOCAL" />
-      <updated>1759087044337</updated>
     </task>
     <task id="LOCAL-00045" summary="full">
       <option name="closed" value="true" />
@@ -544,11 +538,18 @@
       <option name="project" value="LOCAL" />
       <updated>1759309654523</updated>
     </task>
-    <option name="localTasksCounter" value="93" />
+    <task id="LOCAL-00093" summary="delete">
+      <option name="closed" value="true" />
+      <created>1759325332016</created>
+      <option name="number" value="00093" />
+      <option name="presentableId" value="LOCAL-00093" />
+      <option name="project" value="LOCAL" />
+      <updated>1759325332017</updated>
+    </task>
+    <option name="localTasksCounter" value="94" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="agents.py" />
     <MESSAGE value="new" />
     <MESSAGE value="req" />
     <MESSAGE value="templates" />
@@ -573,6 +574,7 @@
     <MESSAGE value="fix" />
     <MESSAGE value="project create" />
     <MESSAGE value="Phase 1 finished" />
-    <option name="LAST_COMMIT_MESSAGE" value="Phase 1 finished" />
+    <MESSAGE value="delete" />
+    <option name="LAST_COMMIT_MESSAGE" value="delete" />
   </component>
 </project>

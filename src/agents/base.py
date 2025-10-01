@@ -161,7 +161,7 @@ class BaseAgent(ABC):
             if not api_key:
                 # Try environment variable
                 import os
-                api_key = os.getenv('ANTHROPIC_API_KEY')
+                api_key = os.getenv('API_KEY_CLAUDE')
 
             if api_key:
                 self.claude_client = Anthropic(api_key=api_key)
