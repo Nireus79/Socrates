@@ -132,7 +132,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Framework</label>
-                            <select class="form-select" id="framework" onchange="updateTechStack()">
+                            <select class="form-select" id="framework" onchange="updateTechStackJSON()">
                                 <option value="">Select Framework</option>
                             </select>
                         </div>
@@ -410,10 +410,8 @@ function updateTechStack() {
     const language = document.getElementById('primary_language').value;
     const frameworkSelect = document.getElementById('framework');
 
-    // Clear existing options
     frameworkSelect.innerHTML = '<option value="">Select Framework</option>';
 
-    // Populate framework options
     if (language && frameworkMapping[language]) {
         frameworkMapping[language].forEach(framework => {
             const option = document.createElement('option');
@@ -423,7 +421,6 @@ function updateTechStack() {
         });
     }
 
-    // Update JSON
     updateTechStackJSON();
 }
 
@@ -478,7 +475,6 @@ function addTech(category, technology) {
 function initializeTechStackEditor() {
     const techStackTextarea = document.querySelector('[name="tech_stack"]');
     if (techStackTextarea && !techStackTextarea.value) {
-        // Initialize with empty JSON object
         techStackTextarea.value = JSON.stringify({
             "language": "",
             "framework": "",
@@ -492,12 +488,11 @@ function setupFormValidation() {
     const form = document.getElementById('projectForm');
     if (form) {
         form.addEventListener('submit', function(e) {
-            // Validate JSON syntax
             const techStackField = document.querySelector('[name="tech_stack"]');
             if (techStackField && techStackField.value) {
                 try {
                     JSON.parse(techStackField.value);
-                } catch (e) {
+                } catch (error) {
                     e.preventDefault();
                     alert('Invalid JSON in Technology Stack field');
                     techStackField.focus();
