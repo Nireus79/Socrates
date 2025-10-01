@@ -899,17 +899,10 @@ class UserManagerAgent(BaseAgent):
 
     def health_check(self) -> Dict[str, Any]:
         """Check agent health status"""
-        status = {
+        return {
             'agent_id': self.agent_id,
             'name': self.name,
             'status': 'healthy',
             'capabilities': len(self.get_capabilities()),
-            'database_available': self.db_service is not None,
             'services_available': self.services is not None
         }
-
-        if not self.db_service:
-            status['status'] = 'degraded'
-            status['warnings'] = ['Database service not available']
-
-        return status
