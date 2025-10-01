@@ -355,6 +355,8 @@ class ProjectRepository(BaseRepository[Project]):
 
     def _row_to_model(self, row: Dict[str, Any]) -> Project:
         """Convert database row to Project instance with proper type conversions"""
+        import json  # ← Move import to top
+
         try:
             from src.models import ProjectStatus, ProjectPhase, TaskPriority
             from src.core import DateTimeHelper
@@ -368,6 +370,13 @@ class ProjectRepository(BaseRepository[Project]):
                 row['start_date'] = DateTimeHelper.from_iso_string(row['start_date'])
             if 'end_date' in row and row['end_date'] and isinstance(row['end_date'], str):
                 row['end_date'] = DateTimeHelper.from_iso_string(row['end_date'])
+
+            # Convert technology_stack JSON string to dict
+            if 'technology_stack' in row and isinstance(row['technology_stack'], str):
+                try:
+                    row['technology_stack'] = json.loads(row['technology_stack'])
+                except (json.JSONDecodeError, TypeError):
+                    row['technology_stack'] = {}
 
             # Convert enum strings to enum objects
             if 'status' in row and isinstance(row['status'], str):
@@ -386,17 +395,28 @@ class ProjectRepository(BaseRepository[Project]):
         """Create new project in database"""
         try:
             data = self._model_to_dict(project)
+
+            # Convert status enum to string if needed
+            status = data.get('status', 'draft')
+            if hasattr(status, 'value'):
+                status = status.value
+
+            # Serialize technology_stack to JSON string for database storage
+            import json
+            tech_stack_json = json.dumps(data.get('technology_stack', {}))
+
             query = """
                 INSERT INTO projects 
-                (id, name, description, owner_id, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (id, name, description, owner_id, status, technology_stack, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """
             params = (
                 data.get('id', str(uuid.uuid4())),
                 data.get('name', ''),
                 data.get('description', ''),
                 data.get('owner_id', ''),
-                data.get('status', 'draft'),
+                status,
+                tech_stack_json,
                 DateTimeHelper.to_iso_string(DateTimeHelper.now()),
                 DateTimeHelper.to_iso_string(DateTimeHelper.now())
             )
