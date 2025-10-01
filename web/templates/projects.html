@@ -305,6 +305,13 @@
                     <button class="btn btn-outline-secondary" disabled>
                         <i class="bi bi-gear"></i> Settings
                     </button>
+                    {% if project.owner_id == current_user.id %}
+                    <hr>
+                    <button onclick="confirmDelete('{{ project.id }}', '{{ project.name }}')"
+                            class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete Project
+                    </button>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -359,6 +366,13 @@
                                        class="btn btn-outline-info">
                                         <i class="bi bi-code-slash"></i>
                                     </a>
+                                    {% if project.owner_id == current_user.id %}
+                                    <button onclick="confirmDelete('{{ project.id }}', '{{ project.name }}')"
+                                            class="btn btn-outline-danger"
+                                            title="Delete Project">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -510,6 +524,26 @@ function previewProject() {
 
 function refreshProjects() {
     window.location.reload();
+}
+
+function confirmDelete(projectId, projectName) {
+    if (confirm(`Are you sure you want to delete "${projectName}"?\n\nThis will permanently delete:\n- The project\n- All modules\n- All collaborators\n- All generated code\n- All related data\n\nThis action cannot be undone.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/projects/${projectId}/delete`;
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken.content;
+            form.appendChild(csrfInput);
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+    }
 }
 </script>
 {% endblock %}

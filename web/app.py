@@ -636,6 +636,51 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
     # Alias for compatibility
     flask_app.route('/projects/create', methods=['GET', 'POST'])(new_project)
 
+    @flask_app.route('/projects/<project_id>/delete', methods=['POST'])
+    @login_required
+    def delete_project(project_id: str):
+        """Delete project permanently."""
+        try:
+            if not SYSTEM_AVAILABLE:
+                flash('System not available', 'error')
+                return redirect(url_for('projects'))
+
+            # Get project to verify ownership
+            repo_manager = get_repository_manager()
+            if repo_manager:
+                project_repo = repo_manager.get_repository('project')
+                project = project_repo.get_by_id(project_id)
+
+                if not project:
+                    flash('Project not found', 'error')
+                    return redirect(url_for('projects'))
+
+                # Check ownership
+                if project.owner_id != current_user.id:
+                    flash('Only the project owner can delete this project', 'error')
+                    return redirect(url_for('projects'))
+
+            result = orchestrator.route_request(
+                'project_manager',
+                'delete_project',
+                {
+                    'project_id': project_id,
+                    'username': current_user.username,
+                    'user_id': current_user.id
+                }
+            )
+
+            if result.get('success'):
+                flash('Project deleted successfully', 'success')
+            else:
+                flash(f"Error deleting project: {result.get('message', 'Unknown error')}", 'error')
+
+        except Exception as e:
+            logger.error(f"Project deletion error: {e}")
+            flash('Failed to delete project', 'error')
+
+        return redirect(url_for('projects'))
+
     @flask_app.route('/projects/<project_id>')
     @login_required
     def project_detail(project_id: str):
@@ -648,7 +693,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 repo_manager = get_repository_manager()
                 if repo_manager:
                     project_repo = repo_manager.get_repository('project')
-                    project = project_repo.get(project_id)
+                    project = project_repo.get_by_id(project_id)
 
                     if project:
                         module_repo = repo_manager.get_repository('module')

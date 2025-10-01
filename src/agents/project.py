@@ -414,6 +414,91 @@ class ProjectManagerAgent(BaseAgent):
     @require_authentication
     @require_project_access
     @log_agent_action
+    def _delete_project(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Permanently delete project and all related data (hard delete)"""
+        project_id = data.get('project_id')
+        username = data.get('username')
+        user_id = data.get('user_id')
+
+        try:
+            if not project_id:
+                raise ValidationError("Project ID is required")
+
+            # Get project
+            project = self.db_service.projects.get_by_id(project_id)
+            if not project:
+                raise ValidationError("Project not found")
+
+            # Authorization check: Only owner can delete
+            if project.owner_id != user_id:
+                raise ValidationError("Only the project owner can delete this project")
+
+            # Cascade delete related data
+            # Delete modules
+            modules = self.db_service.modules.get_by_project_id(project_id)
+            for module in modules:
+                self.db_service.modules.delete(module.id)
+
+            # Delete collaborators
+            try:
+                collaborators_query = "SELECT * FROM project_collaborators WHERE project_id = ?"
+                collaborators = self.db_service.db_manager.execute_query(collaborators_query, (project_id,))
+                for collab in collaborators:
+                    delete_query = "DELETE FROM project_collaborators WHERE id = ?"
+                    self.db_service.db_manager.execute_update(delete_query, (collab['id'],))
+            except Exception as e:
+                self.logger.warning(f"Error deleting collaborators: {e}")
+
+            # Delete generated codebases and files
+            try:
+                codebases = self.db_service.db_manager.execute_query(
+                    "SELECT * FROM generated_codebases WHERE project_id = ?",
+                    (project_id,)
+                )
+                for codebase in codebases:
+                    # Delete files in this codebase
+                    self.db_service.db_manager.execute_update(
+                        "DELETE FROM generated_files WHERE codebase_id = ?",
+                        (codebase['id'],)
+                    )
+                    # Delete codebase
+                    self.db_service.db_manager.execute_update(
+                        "DELETE FROM generated_codebases WHERE id = ?",
+                        (codebase['id'],)
+                    )
+            except Exception as e:
+                self.logger.warning(f"Error deleting generated code: {e}")
+
+            # Finally, delete the project itself
+            deleted = self.db_service.projects.delete(project_id)
+
+            if not deleted:
+                raise ValidationError("Failed to delete project")
+
+            # Emit deletion event
+            if self.events:
+                self.events.emit('project_deleted', {
+                    'project_id': project_id,
+                    'project_name': project.name,
+                    'deleted_by': username
+                })
+
+            self.logger.info(f"Project {project_id} permanently deleted by {username}")
+
+            return self._success_response(
+                "Project deleted successfully",
+                {'project_id': project_id}
+            )
+
+        except ValidationError:
+            raise
+        except Exception as e:
+            self.logger.error(f"Error deleting project {project_id or 'unknown'}: {e}")
+            return self._error_response(f"Failed to delete project: {str(e)}")
+
+    @require_authentication
+    @require_project_access
+    @log_agent_action
     def _manage_modules(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Manage project modules (create, update, delete)"""
         action = data.get('action')
