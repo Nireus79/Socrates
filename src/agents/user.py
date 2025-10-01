@@ -761,8 +761,8 @@ class UserManagerAgent(BaseAgent):
                     'username': user.username,
                     'email': user.email,
                     'full_name': getattr(user, 'full_name', ''),
-                    'role': str(user.role.value),
-                    'status': str(user.status.value),
+                    'role': str(user.role.value) if hasattr(user.role, 'value') else str(user.role),
+                    'status': str(user.status.value) if hasattr(user.status, 'value') else str(user.status),
                     'created_at': DateTimeHelper.to_iso_string(user.created_at),
                     'last_login': DateTimeHelper.to_iso_string(user.last_login) if user.last_login else None
                 }

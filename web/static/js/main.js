@@ -703,10 +703,13 @@ function trackPagePerformance() {
     }
 
     // Send performance data to analytics endpoint
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
     fetch('/api/analytics/performance', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
         },
         body: JSON.stringify({
             load_time: loadTime,

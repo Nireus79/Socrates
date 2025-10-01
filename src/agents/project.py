@@ -316,7 +316,7 @@ class ProjectManagerAgent(BaseAgent):
 
             # Update allowed fields with validation
             allowed_fields = [
-                'name', 'description', 'goals', 'requirements', 'technology_stack',
+                'name', 'description', 'requirements', 'technology_stack',
                 'constraints', 'success_criteria', 'team_members', 'stakeholders',
                 'estimated_hours', 'budget', 'priority', 'tags', 'phase', 'status'
             ]
@@ -753,7 +753,6 @@ class ProjectManagerAgent(BaseAgent):
                 'status': project.status.value,
                 'phase': project.phase.value,
                 'progress_percentage': project.progress_percentage,
-                'goals': project.goals,
                 'requirements': project.requirements,
                 'technology_stack': project.technology_stack,
                 'constraints': project.constraints,
