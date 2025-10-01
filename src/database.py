@@ -799,6 +799,7 @@ class DatabaseManager:
                         status TEXT NOT NULL DEFAULT 'draft',
                         created_at TEXT NOT NULL,
                         updated_at TEXT NOT NULL,
+                        technology_stack TEXT,
                         FOREIGN KEY (owner_id) REFERENCES users(id)
                     )
                 """)
