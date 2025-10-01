@@ -183,10 +183,12 @@ class ProjectManagerAgent(BaseAgent):
     def get_capabilities(self) -> List[str]:
         """Return list of capabilities this agent provides"""
         return [
-            "create_project", "update_project", "archive_project", "manage_modules",
-            "assign_tasks", "track_progress", "manage_collaborators", "generate_reports",
-            "risk_assessment", "resource_allocation", "timeline_management",
-            "get_project_info", "list_projects", "project_analytics"
+            "create_project", "update_project", "archive_project",
+            "delete_project", "manage_modules",
+            "assign_tasks", "track_progress", "manage_collaborators",
+            "generate_reports", "risk_assessment", "resource_allocation",
+            "timeline_management", "get_project_info", "list_projects",
+            "project_analytics"
         ]
 
     @require_authentication
@@ -411,9 +413,6 @@ class ProjectManagerAgent(BaseAgent):
             self.logger.error(f"Error archiving project {project_id or 'unknown'}: {e}")
             return self._error_response(f"Failed to archive project: {str(e)}")
 
-    @require_authentication
-    @require_project_access
-    @log_agent_action
     def _delete_project(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Permanently delete project and all related data (hard delete)"""
         project_id = data.get('project_id')
@@ -433,43 +432,7 @@ class ProjectManagerAgent(BaseAgent):
             if project.owner_id != user_id:
                 raise ValidationError("Only the project owner can delete this project")
 
-            # Cascade delete related data
-            # Delete modules
-            modules = self.db_service.modules.get_by_project_id(project_id)
-            for module in modules:
-                self.db_service.modules.delete(module.id)
-
-            # Delete collaborators
-            try:
-                collaborators_query = "SELECT * FROM project_collaborators WHERE project_id = ?"
-                collaborators = self.db_service.db_manager.execute_query(collaborators_query, (project_id,))
-                for collab in collaborators:
-                    delete_query = "DELETE FROM project_collaborators WHERE id = ?"
-                    self.db_service.db_manager.execute_update(delete_query, (collab['id'],))
-            except Exception as e:
-                self.logger.warning(f"Error deleting collaborators: {e}")
-
-            # Delete generated codebases and files
-            try:
-                codebases = self.db_service.db_manager.execute_query(
-                    "SELECT * FROM generated_codebases WHERE project_id = ?",
-                    (project_id,)
-                )
-                for codebase in codebases:
-                    # Delete files in this codebase
-                    self.db_service.db_manager.execute_update(
-                        "DELETE FROM generated_files WHERE codebase_id = ?",
-                        (codebase['id'],)
-                    )
-                    # Delete codebase
-                    self.db_service.db_manager.execute_update(
-                        "DELETE FROM generated_codebases WHERE id = ?",
-                        (codebase['id'],)
-                    )
-            except Exception as e:
-                self.logger.warning(f"Error deleting generated code: {e}")
-
-            # Finally, delete the project itself
+            # Delete the project (cascade handled by database if foreign keys exist)
             deleted = self.db_service.projects.delete(project_id)
 
             if not deleted:
