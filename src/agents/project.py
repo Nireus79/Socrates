@@ -229,8 +229,13 @@ class ProjectManagerAgent(BaseAgent):
                 raise ValidationError(f"Project validation failed: {', '.join(validation_issues)}")
 
             # Create project in database
+            # Create project in database
             project = Project(**project_data)
             created_project = self.db_service.projects.create(project)
+
+            # Check if creation was successful
+            if not created_project:
+                raise ValidationError("Failed to create project in database")
 
             # Initialize project tracking systems
             self._initialize_project_tracking(created_project.id)

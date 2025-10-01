@@ -219,14 +219,22 @@ class BaseRepository(Generic[T], ABC):
             self.logger.error(f"Error converting row to model: {e}")
             return self.model_class()
 
-    def _model_to_dict(self, entity: T) -> Dict[str, Any]:
-        """Convert model instance to dictionary"""
+    @staticmethod
+    def _model_to_dict(entity: T) -> Dict[str, Any]:
+        """Convert model instance to dictionary with enum handling"""
         if hasattr(entity, 'to_dict'):
-            return entity.to_dict()
+            data = entity.to_dict()
         elif hasattr(entity, '__dict__'):
-            return entity.__dict__
+            data = entity.__dict__.copy()
         else:
-            return {}
+            data = {}
+
+        # Convert all enum values to strings for database storage
+        for key, value in data.items():
+            if hasattr(value, 'value'):  # It's an enum
+                data[key] = value.value
+
+        return data
 
 
 # ============================================================================
@@ -345,35 +353,32 @@ class UserRepository(BaseRepository[User]):
 class ProjectRepository(BaseRepository[Project]):
     """Project repository with type safety"""
 
-    def create(self, user: User) -> bool:
-        """Create new user in database"""
+    def create(self, project: Project) -> Optional[Project]:
+        """Create new project in database"""
         try:
-            # Convert User model to dict
-            if hasattr(user, 'to_dict'):
-                data = user.to_dict()
-            elif hasattr(user, '__dict__'):
-                data = user.__dict__.copy()
-            else:
-                data = {}
-
+            data = self._model_to_dict(project)
             query = """
-                INSERT INTO users (id, username, email, password_hash, role, created_at, updated_at)
+                INSERT INTO projects 
+                (id, name, description, owner_id, status, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """
             params = (
                 data.get('id', str(uuid.uuid4())),
-                data.get('username', ''),
-                data.get('email', ''),
-                data.get('password_hash', ''),
-                data.get('role', 'viewer'),
+                data.get('name', ''),
+                data.get('description', ''),
+                data.get('owner_id', ''),
+                data.get('status', 'draft'),
                 DateTimeHelper.to_iso_string(DateTimeHelper.now()),
                 DateTimeHelper.to_iso_string(DateTimeHelper.now())
             )
             self.db_manager.execute_update(query, params)
-            return True
+
+            # Return the created project
+            return self.get_by_id(data.get('id'))
+
         except Exception as e:
-            self.logger.error(f"Error creating user: {e}")
-            return False
+            self.logger.error(f"Error creating project: {e}")
+            return None
 
     def get_by_id(self, project_id: str) -> Optional[Project]:
         try:
