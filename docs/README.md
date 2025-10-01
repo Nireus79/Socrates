@@ -1,415 +1,306 @@
-# 🧠 Socratic RAG Enhanced
+# Socratic RAG Enhanced v7.3.0
 
-**AI-Powered Project Development Through Intelligent Questioning**
+> AI-powered project development through intelligent Socratic questioning and automated code generation
 
-![Version](https://img.shields.io/badge/version-7.3.0-blue.svg)
-![Python](https://img.shields.io/badge/python-3.8+-brightgreen.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Status](https://img.shields.io/badge/status-active-success.svg)
+[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+[![Flask](https://img.shields.io/badge/flask-3.0.3-green.svg)](https://flask.palletsprojects.com/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
----
-
-## 🎯 Vision & Mission
-
-Transform project ideas into complete, working applications through intelligent Socratic questioning and automated code generation. Socratic RAG Enhanced uses role-based AI agents to guide project development through structured conversations, automatically generating enterprise-grade code with proper architecture, comprehensive testing, and IDE integration.
-
-### **Evolution from Legacy Approach:**
-
-```
-❌ OLD: Questions → Basic Specs → ONE MONOLITHIC SCRIPT → Manual Implementation
-
-✅ NEW: Role-Based Questions → Detailed Specifications → Architectural Breakdown → 
-        Organized Multi-File Structure → IDE Integration → Testing → Correction → 
-        Working Application
-```
+Transform your project ideas into working applications through AI-powered Socratic questioning, intelligent code generation, and automated development workflows.
 
 ---
 
-## ✨ Key Features
+## 🌟 Features
 
-### 🤖 **Intelligent Agent System**
-- **8 Specialized Agents**: Each with focused responsibilities and capabilities
-- **Role-Based Questioning**: 7+ role types (PM, Tech Lead, Developer, Designer, QA, Business Analyst, DevOps)
-- **Agent Orchestration**: Coordinated multi-agent workflows
-- **Context-Aware Processing**: Agents learn and adapt to project context
+### **Intelligent Agent System**
+- **8 Specialized AI Agents** working in harmony
+- Role-based questioning (Project Manager, Developer, Designer, QA, etc.)
+- Context-aware conversation management
+- Conflict detection and resolution
 
-### 💻 **Advanced Code Generation**
-- **Multi-File Architecture**: Generates organized project structures (not monolithic scripts)
-- **Enterprise-Grade Code**: Proper separation of concerns, design patterns, best practices
-- **Comprehensive Testing**: Unit, integration, security, and performance tests
-- **Intelligent Error Correction**: Automatic detection and fixing of code issues
+### **Automated Code Generation**
+- Multi-file project structure generation
+- Support for multiple frameworks (Flask, React, FastAPI, etc.)
+- Proper architecture (not monolithic scripts)
+- Comprehensive testing suite generation
+- Documentation auto-generation
 
-### 🔧 **Complete Development Pipeline**
-- **Socratic Discovery**: Deep requirements gathering through intelligent questioning
-- **Architectural Design**: Proper application architecture planning
-- **Code Generation**: Multi-file, production-ready code
-- **IDE Integration**: Seamless integration with VS Code and other IDEs
-- **Testing & Validation**: Automated testing with failure analysis
-- **Deployment Ready**: Complete applications ready for production
+### **Web Interface**
+- Modern, responsive dashboard
+- Real-time agent status monitoring
+- Project management interface
+- Socratic conversation sessions
+- Code generation and testing UI
 
-### 🌐 **Web Interface & Services**
-- **Modern Web UI**: Flask-based interface with real-time updates
-- **Multiple Integrations**: Claude API, ChromaDB, Git, IDE services
-- **Project Management**: Full project lifecycle management
-- **Team Collaboration**: Multi-user support with role-based access
+### **Advanced Features**
+- Vector-based knowledge storage (ChromaDB)
+- Git integration for version control
+- IDE synchronization (VS Code)
+- Multi-format export (ZIP, JSON, Docker)
+- Performance monitoring and analytics
 
 ---
 
-## 🏗️ System Architecture
+## 📋 Prerequisites
 
-### **Modular Agent Architecture**
-
-```
-📊 Complete Modular Agent Architecture
-├── 🎯 AgentOrchestrator        # Coordination and request routing
-├── 💬 SocraticCounselorAgent   # Intelligent questioning system
-├── 💻 CodeGeneratorAgent       # Multi-file code generation
-├── 📊 ProjectManagerAgent      # Project lifecycle management
-├── 👥 UserManagerAgent         # User authentication & management
-├── 🧠 ContextAnalyzerAgent     # Context analysis & conflict detection
-├── 📄 DocumentProcessorAgent   # Document processing & knowledge extraction
-├── 🔍 SystemMonitorAgent       # System monitoring & analytics
-└── 🛠️ ServicesAgent           # External services & integrations
-```
-
-### **Technology Stack**
-- **Backend**: Python 3.8+, Flask, SQLite/PostgreSQL
-- **AI/ML**: Anthropic Claude API, ChromaDB, SentenceTransformers
-- **Frontend**: HTML5, CSS3, JavaScript, HTMX, Bootstrap
-- **Services**: Git integration, VS Code extension, Docker support
-- **Testing**: pytest, coverage, security scanning
+- **Python 3.8+** (Python 3.12 may have compatibility issues with some packages)
+- **pip** (Python package manager)
+- **Git** (for version control features)
+- **Anthropic API Key** (for Claude AI integration)
 
 ---
 
 ## 🚀 Quick Start
 
-### **Prerequisites**
+### **1. Clone the Repository**
+```bash
+git clone https://github.com/your-username/socratic-rag-enhanced.git
+cd socratic-rag-enhanced
+```
 
-- Python 3.8 or higher
-- pip package manager
-- Git (for code generation features)
-- VS Code (recommended for IDE integration)
+### **2. Create Virtual Environment**
+```bash
+# Windows
+python -m venv .venv
+.venv\Scripts\activate
 
-### **Installation**
+# macOS/Linux
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/socratic-rag-enhanced.git
-   cd socratic-rag-enhanced
-   ```
+### **3. Install Dependencies**
+```bash
+pip install -r requirements.txt
+```
 
-2. **Create virtual environment**
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
+### **4. Configure API Keys (Optional)**
+```bash
+# Create .env file or edit config.yaml
+echo "ANTHROPIC_API_KEY=your-api-key-here" > .env
+```
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### **5. Run the Application**
+```bash
+python run.py
+```
 
-4. **Configure the system**
-   ```bash
-   cp config.yaml.example config.yaml
-   # Edit config.yaml with your settings
-   ```
-
-5. **Set up API keys** (optional but recommended)
-   ```bash
-   export ANTHROPIC_API_KEY="your-claude-api-key"
-   ```
-
-6. **Run the application**
-   ```bash
-   python run.py
-   ```
-
-7. **Access the web interface**
-   - Open your browser to http://127.0.0.1:5000
-   - Start your first intelligent project development session!
+### **6. Access the Web Interface**
+Open your browser and navigate to:
+```
+http://localhost:5000
+```
 
 ---
 
-## 📖 Usage Guide
+## 📖 Usage
 
-### **Basic Workflow**
+### **Creating Your First Project**
 
-1. **Create a New Project**
-   - Access the web interface
-   - Click "New Project" and provide basic project information
-   - The system will guide you through role-based questioning
+1. **Navigate to Projects**
+   - Click "Projects" in the navigation menu
+   - Click "Create New Project"
 
-2. **Socratic Discovery Phase**
-   - Answer questions from different role perspectives:
-     - **Project Manager**: Timeline, resources, stakeholders
-     - **Technical Lead**: Architecture, performance, security
-     - **Developer**: Features, data flow, APIs
-     - **QA/Tester**: Edge cases, quality metrics
-     - **Business Analyst**: Requirements, compliance, reporting
+2. **Fill in Project Details**
+   - Project name and description
+   - Technology stack preferences
+   - Requirements and constraints
+   - Timeline and priority
 
-3. **Code Generation**
-   - System analyzes your responses and designs architecture
-   - Generates complete, organized multi-file project structure
-   - Includes backend, frontend, database, tests, and documentation
+3. **Start Socratic Session**
+   - Choose your role (Developer, Manager, etc.)
+   - Answer AI-generated questions
+   - System learns from your responses
 
-4. **Testing & Validation**
-   - Automatic execution of comprehensive test suite
-   - Performance benchmarking and security scanning
-   - Intelligent error detection and correction
+4. **Generate Code**
+   - Review specifications
+   - Click "Generate Code"
+   - Download or sync to IDE
 
-5. **IDE Integration**
-   - Generated files pushed directly to your development environment
-   - Ready-to-run application with proper configuration
-   - Complete with debugging setup and development server
+### **Working with Agents**
 
-### **Advanced Features**
+The system includes 8 specialized agents:
 
-- **Conflict Detection**: Identifies and resolves requirement conflicts
-- **Team Collaboration**: Multi-user projects with role-based access
-- **Version Control**: Integrated Git workflows
-- **Export Options**: ZIP, JSON, Docker containerization
-- **Analytics**: Project insights and development metrics
+| Agent | Purpose |
+|-------|---------|
+| **Orchestrator** | Coordinates all agent activities |
+| **Socratic Counselor** | Manages questioning sessions |
+| **Code Generator** | Creates project code and tests |
+| **Project Manager** | Tracks progress and resources |
+| **User Manager** | Handles authentication and roles |
+| **Context Analyzer** | Detects conflicts and insights |
+| **Document Processor** | Analyzes uploaded files |
+| **System Monitor** | Monitors performance and health |
+
+---
+
+## 🏗️ Architecture
+
+```
+socratic-rag-enhanced/
+├── src/
+│   ├── agents/          # 8 specialized AI agents
+│   ├── services/        # External integrations
+│   ├── database/        # SQLite + repositories
+│   ├── models.py        # Data models
+│   └── core.py          # Core utilities
+├── web/
+│   ├── templates/       # HTML templates
+│   ├── static/          # CSS, JS, images
+│   └── app.py           # Flask application
+├── tests/               # Test suite
+├── data/                # Database and uploads
+├── docs/                # Documentation
+├── config.yaml          # Configuration
+├── requirements.txt     # Python dependencies
+└── run.py              # Application entry point
+```
 
 ---
 
 ## ⚙️ Configuration
 
-### **Basic Configuration**
-
-Edit `config.yaml` to customize your installation:
-
+### **config.yaml**
 ```yaml
-# Core application settings
 app:
   name: "Socratic RAG Enhanced"
   version: "7.3.0"
-  debug: true
-  secret_key: "your-secret-key-change-in-production"
+  debug: false
 
-# Database configuration
+web:
+  host: "0.0.0.0"
+  port: 5000
+  secret_key: "change-this-in-production"
+
 database:
-  sqlite:
-    path: "data/projects.db"
-  vector:
-    path: "data/vector_db"
+  path: "data/projects.db"
 
-# Agent system settings
-agents:
-  global:
-    max_concurrent: 5
-    timeout_seconds: 300
-  
-  code_generator:
-    max_files_per_project: 500
-    testing_enabled: true
-    security_scanning: true
-
-# External services
 services:
-  claude:
-    api_key: "your-anthropic-api-key"
-    model: "claude-3-5-sonnet-20241022"
-    max_tokens: 8192
+  anthropic:
+    api_key: "${ANTHROPIC_API_KEY}"
+    model: "claude-sonnet-4"
+  
+  vector:
+    provider: "chromadb"
+    persist_directory: "data/vector_db"
 ```
 
 ### **Environment Variables**
-
 ```bash
-# Required for full AI functionality
-ANTHROPIC_API_KEY=your-claude-api-key
+# Required for AI features
+ANTHROPIC_API_KEY=your-api-key
 
-# Optional overrides
+# Optional
+FLASK_ENV=development
 SOCRATIC_DEBUG=true
-SOCRATIC_DATABASE_PATH=custom/path/projects.db
-SOCRATIC_LOG_LEVEL=INFO
 ```
 
 ---
 
-## 🧪 Development & Testing
+## 🧪 Testing
 
-### **Running Tests**
-
+### **Run All Tests**
 ```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=src --cov-report=html
-
-# Run specific test categories
-pytest tests/test_agents/        # Agent tests
-pytest tests/test_core.py        # Core system tests
-pytest tests/test_integration.py # Integration tests
+python tests/all_agents_tests.py
 ```
 
-### **Development Mode**
+### **Expected Output**
+```
+Total Tests: 45
+Passed: 45
+Failed: 0
+Warnings: 0
 
+🎉 ALL TESTS PASSED!
+```
+
+### **Test Individual Components**
 ```bash
-# Run with debug mode and auto-reload
+# Test specific agent
+pytest tests/test_agents/test_socratic.py
+
+# Test with coverage
+pytest --cov=src tests/
+```
+
+---
+
+## 📊 System Requirements
+
+### **Minimum**
+- **CPU:** Dual-core processor
+- **RAM:** 4GB
+- **Storage:** 2GB free space
+- **OS:** Windows 10/macOS 10.14+/Linux
+
+### **Recommended**
+- **CPU:** Quad-core processor
+- **RAM:** 8GB or more
+- **Storage:** 10GB free space
+- **OS:** Windows 11/macOS 12+/Ubuntu 20.04+
+
+---
+
+## 🔧 Troubleshooting
+
+### **Common Issues**
+
+**1. Import Errors**
+```bash
+# Solution: Reinstall dependencies
+pip install --upgrade -r requirements.txt
+```
+
+**2. CSRF Token Errors**
+```bash
+# Check that Flask-WTF is installed
+pip install Flask-WTF
+```
+
+**3. Database Errors**
+```bash
+# Delete and recreate database
+rm data/projects.db
+python run.py
+```
+
+**4. Port Already in Use**
+```bash
+# Run on different port
+python run.py --port 8080
+```
+
+**5. Agent Health Issues**
+```bash
+# Check agent status in logs
 python run.py --debug
-
-# Run with custom configuration
-python run.py --config development.yaml
-
-# Run on custom host/port
-python run.py --host 0.0.0.0 --port 8080
-```
-
-### **Code Quality**
-
-```bash
-# Linting and formatting
-flake8 src/
-black src/
-isort src/
-
-# Type checking
-mypy src/
-
-# Security scanning
-bandit -r src/
-```
-
----
-
-## 📁 Project Structure
-
-```
-socratic-rag-enhanced/
-├── 📋 README.md                    # This file
-├── 📋 requirements.txt             # Python dependencies
-├── ⚙️ config.yaml                  # System configuration
-├── 🚀 run.py                       # Main application entry point
-│
-├── 📁 src/                         # Core system code
-│   ├── 🔧 core.py                  # Core infrastructure
-│   ├── 📊 models.py                # Data models
-│   ├── 🗄️ database.py             # Database layer
-│   ├── 🔨 utils.py                 # Utility functions
-│   │
-│   ├── 📁 agents/                  # 🤖 Modular agent system
-│   │   ├── base.py                 # Base agent class
-│   │   ├── orchestrator.py         # Agent coordination
-│   │   ├── socratic.py             # Socratic questioning
-│   │   ├── code.py                 # Code generation
-│   │   ├── project.py              # Project management
-│   │   ├── user.py                 # User management
-│   │   ├── context.py              # Context analysis
-│   │   ├── document.py             # Document processing
-│   │   ├── monitor.py              # System monitoring
-│   │   └── services.py             # External services
-│   │
-│   └── 📁 services/                # External integrations
-│       ├── claude_service.py       # Claude API
-│       ├── vector_service.py       # ChromaDB
-│       ├── git_service.py          # Git operations
-│       └── ide_service.py          # IDE integration
-│
-├── 📁 web/                         # Web interface
-│   ├── 🌐 app.py                   # Flask application
-│   ├── 📁 templates/               # HTML templates
-│   └── 📁 static/                  # CSS, JS, images
-│
-├── 📁 tests/                       # Test suite
-│   ├── 🔬 test_core.py             # Core tests
-│   ├── 📁 test_agents/             # Agent tests
-│   ├── 🛠️ test_services.py         # Service tests
-│   ├── 🌐 test_web.py              # Web tests
-│   └── 🔗 test_integration.py      # Integration tests
-│
-├── 📁 data/                        # Runtime data (created automatically)
-│   ├── 🗄️ projects.db             # SQLite database
-│   ├── 📁 vector_db/               # ChromaDB storage
-│   ├── 📁 uploads/                 # File uploads
-│   ├── 📁 exports/                 # Generated exports
-│   ├── 📁 generated_projects/      # Generated code
-│   └── 📁 logs/                    # Application logs
-│
-└── 📁 docs/                        # Documentation
-    ├── 📖 user_guide.md            # User documentation
-    ├── 👩‍💻 developer_guide.md        # Development guide
-    └── 📁 agents/                   # Agent documentation
 ```
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ### **Development Setup**
+```bash
+# Install development dependencies
+pip install -r requirements.txt
+pip install pytest black flake8
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes and add tests
-4. Ensure all tests pass: `pytest`
-5. Commit your changes: `git commit -m 'Add amazing feature'`
-6. Push to the branch: `git push origin feature/amazing-feature`
-7. Open a Pull Request
+# Format code
+black src/ tests/
 
-### **Areas for Contribution**
+# Run linter
+flake8 src/ tests/
 
-- 🤖 New specialized agents
-- 🔧 Enhanced code generation templates
-- 🌐 UI/UX improvements
-- 📊 Analytics and monitoring features
-- 🔌 New service integrations
-- 📝 Documentation improvements
-- 🧪 Test coverage expansion
+# Run tests
+pytest
+```
 
 ---
 
-## 📊 Roadmap
-
-### **Version 7.4.0 (Next Release)**
-- [ ] Advanced template system for code generation
-- [ ] Real-time collaboration features
-- [ ] Enhanced security scanning
-- [ ] Performance optimization dashboard
-
-### **Version 8.0.0 (Major Release)**
-- [ ] Plugin architecture for custom agents
-- [ ] Advanced AI model support (GPT-4, Gemini)
-- [ ] Enterprise SSO integration
-- [ ] Cloud deployment automation
-
-### **Future Versions**
-- [ ] Mobile application
-- [ ] Advanced project analytics
-- [ ] AI-powered code review
-- [ ] Marketplace for templates and agents
-
----
-
-## 🆘 Support & Documentation
-
-### **Getting Help**
-
-- 📖 **Documentation**: Check the `docs/` directory
-- 🐛 **Bug Reports**: Create an issue on GitHub
-- 💡 **Feature Requests**: Open a discussion on GitHub
-- 💬 **Community**: Join our Discord server
-- 📧 **Email**: support@socratic-rag.com
-
-### **Common Issues**
-
-**Q: The system shows "Claude API key not configured" warnings**
-A: Add your Anthropic API key to config.yaml or set the ANTHROPIC_API_KEY environment variable.
-
-**Q: Import errors when starting the system**
-A: Ensure all dependencies are installed: `pip install -r requirements.txt`
-
-**Q: Database connection errors**
-A: Check that the data directory is writable and SQLite is properly installed.
-
-**Q: Web interface not accessible**
-A: Verify the port is not in use and firewall settings allow local connections.
-
----
-
-## 📄 License
+## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
@@ -417,31 +308,35 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **Anthropic** for the Claude API that powers our intelligent questioning
-- **ChromaDB** for vector storage and similarity search
-- **Sentence Transformers** for embedding generation
-- **Flask** community for the excellent web framework
-- **The Open Source Community** for the amazing tools that make this possible
+- **Anthropic** - Claude AI API
+- **ChromaDB** - Vector database
+- **Flask** - Web framework
+- **Sentence Transformers** - Text embeddings
+- **Bootstrap** - UI framework
 
 ---
 
-## 📈 Stats & Metrics
+## 📞 Support
 
-![GitHub stars](https://img.shields.io/github/stars/your-username/socratic-rag-enhanced)
-![GitHub forks](https://img.shields.io/github/forks/your-username/socratic-rag-enhanced)
-![GitHub issues](https://img.shields.io/github/issues/your-username/socratic-rag-enhanced)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/your-username/socratic-rag-enhanced)
-
-**Project Metrics:**
-- 🤖 8 Specialized Agents
-- 🔧 35+ Core Files
-- 📊 78 Agent Capabilities
-- 🧪 80%+ Test Coverage
-- 📦 Multi-Platform Support
-- 🌐 Enterprise Ready
+- **Documentation:** [docs/](docs/)
+- **Issues:** [GitHub Issues](https://github.com/your-username/socratic-rag-enhanced/issues)
+- **Email:** support@socratic-rag.com
 
 ---
 
-*Built with ❤️ by the Socratic RAG Enhanced team*
+## 🗺️ Roadmap
 
-**Transform your ideas into working applications through the power of intelligent questioning.**
+### **Version 7.4.0** (Next)
+- [ ] Enhanced role-based questioning
+- [ ] Advanced code templates
+- [ ] Real-time collaboration
+
+### **Version 8.0.0** (Future)
+- [ ] Plugin architecture
+- [ ] Multi-AI model support
+- [ ] Enterprise features
+- [ ] Cloud deployment
+
+---
+
+**Made with ❤️ by the Socratic RAG Team**

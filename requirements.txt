@@ -1,5 +1,4 @@
 # Socratic RAG System v7++ - Python Dependencies
-# Complete dependency list for all agents and services
 
 # =============================================================================
 # CORE WEB FRAMEWORK
@@ -45,7 +44,6 @@ watchdog~=5.0.0
 psutil~=6.0.0
 
 # =============================================================================
-# TESTING & DEVELOPMENT (Optional)
+# TESTING (Optional - for development)
 # =============================================================================
 pytest~=8.0.0
-black~=24.0.0
