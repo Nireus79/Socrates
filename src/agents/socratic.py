@@ -173,7 +173,8 @@ class SocraticCounselorAgent(BaseAgent):
             "generate_questions", "analyze_responses", "detect_conflicts",
             "suggest_improvements", "facilitate_session", "extract_insights",
             "role_based_questioning", "context_aware_questioning",
-            "conflict_mediation", "session_guidance", "learning_adaptation"
+            "conflict_mediation", "session_guidance", "learning_adaptation",
+            "get_user_sessions"
         ]
 
     def _initialize_question_templates(self) -> Dict[str, List[str]]:
@@ -824,6 +825,76 @@ class SocraticCounselorAgent(BaseAgent):
         """Generate unique session ID"""
         import time
         return f"session_{int(time.time() * 1000)}"
+
+    @log_agent_action
+    def _get_user_sessions(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Get all sessions for a specific user
+
+        Args:
+            data: {
+                'user_id': str,  # Required
+                'status': str,   # Optional filter: 'active', 'completed', 'paused'
+                'limit': int,    # Optional, default 50
+                'offset': int    # Optional, default 0
+            }
+
+        Returns:
+            Dict with list of user sessions
+        """
+        try:
+            user_id = data.get('user_id')
+            status_filter = data.get('status')
+            limit = data.get('limit', 50)
+            offset = data.get('offset', 0)
+
+            if not user_id:
+                return self._error_response("User ID is required")
+
+            # Get sessions from current active sessions (in-memory)
+            active_sessions = []
+            for session_id, session in self.current_sessions.items():
+                if session.get('user_id') == user_id:
+                    session_summary = {
+                        'session_id': session_id,
+                        'project_id': session.get('project_id'),
+                        'role': session.get('role'),
+                        'status': 'active',
+                        'created_at': session.get('created_at'),
+                        'questions_count': session.get('questions_asked', 0),
+                        'responses_count': session.get('responses_received', 0)
+                    }
+                    active_sessions.append(session_summary)
+
+            # TODO: Also query database for historical sessions when session repository is implemented
+            # For now, return only active in-memory sessions
+            all_sessions = active_sessions
+
+            # Apply status filter if provided
+            if status_filter:
+                all_sessions = [s for s in all_sessions if s.get('status') == status_filter]
+
+            # Apply pagination
+            total_count = len(all_sessions)
+            paginated_sessions = all_sessions[offset:offset + limit]
+
+            self.logger.info(f"Retrieved {len(paginated_sessions)} sessions for user {user_id}")
+
+            return self._success_response(
+                f"Retrieved {len(paginated_sessions)} sessions",
+                {
+                    'sessions': paginated_sessions,
+                    'total': total_count,
+                    'limit': limit,
+                    'offset': offset,
+                    'has_more': (offset + limit) < total_count
+                }
+            )
+
+        except Exception as e:
+            error_msg = f"Failed to get user sessions: {e}"
+            self.logger.error(error_msg)
+            return self._error_response(error_msg)
 
     def health_check(self) -> Dict[str, Any]:
         """Enhanced health check for SocraticCounselorAgent"""

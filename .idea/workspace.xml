@@ -6,10 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="project create">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/project.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/project.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/socratic.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/socratic.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/agents/user.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/user.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/static/js/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/web/static/js/main.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/base.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -154,14 +152,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00034" summary="ui">
-      <option name="closed" value="true" />
-      <created>1758996891996</created>
-      <option name="number" value="00034" />
-      <option name="presentableId" value="LOCAL-00034" />
-      <option name="project" value="LOCAL" />
-      <updated>1758996891996</updated>
     </task>
     <task id="LOCAL-00035" summary="ui">
       <option name="closed" value="true" />
@@ -547,7 +537,15 @@
       <option name="project" value="LOCAL" />
       <updated>1759252970544</updated>
     </task>
-    <option name="localTasksCounter" value="83" />
+    <task id="LOCAL-00083" summary="project create">
+      <option name="closed" value="true" />
+      <created>1759291146919</created>
+      <option name="number" value="00083" />
+      <option name="presentableId" value="LOCAL-00083" />
+      <option name="project" value="LOCAL" />
+      <updated>1759291146919</updated>
+    </task>
+    <option name="localTasksCounter" value="84" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">

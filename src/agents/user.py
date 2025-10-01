@@ -14,11 +14,10 @@ Capabilities:
 - Skill assessment and productivity monitoring
 """
 
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional
 from datetime import datetime
 from enum import Enum
 import logging
-import hashlib
 import secrets
 
 # ============================================================================
@@ -35,7 +34,6 @@ try:
 
 except ImportError:
     CORE_AVAILABLE = False
-
 
     # Fallback ServiceContainer
     class ServiceContainer:
@@ -763,8 +761,12 @@ class UserManagerAgent(BaseAgent):
                     'full_name': getattr(user, 'full_name', ''),
                     'role': str(user.role.value) if hasattr(user.role, 'value') else str(user.role),
                     'status': str(user.status.value) if hasattr(user.status, 'value') else str(user.status),
-                    'created_at': DateTimeHelper.to_iso_string(user.created_at),
-                    'last_login': DateTimeHelper.to_iso_string(user.last_login) if user.last_login else None
+                    'created_at': DateTimeHelper.to_iso_string(user.created_at) if isinstance(user.created_at,
+                                                                                              datetime) else str(
+                        user.created_at),
+                    'last_login': DateTimeHelper.to_iso_string(user.last_login) if isinstance(user.last_login,
+                                                                                              datetime) else str(
+                        user.last_login) if user.last_login else None
                 }
                 user_list.append(user_data)
 
@@ -797,11 +799,11 @@ class UserManagerAgent(BaseAgent):
                                  RoleConstants.VIEWER]:
                     all_roles[role_key] = self._get_role_capabilities(role_key)
 
-                return self._success_response({'roles': all_roles})
+                return self._success_response("Role information retrieved", {'roles': all_roles})
 
             # Get specific role info
             role_info = self._get_role_capabilities(role)
-            return self._success_response(role_info)
+            return self._success_response("Role information retrieved", role_info)
 
         except Exception as e:
             self.logger.error(f"Get role info failed: {e}")
