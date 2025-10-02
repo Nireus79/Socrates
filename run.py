@@ -269,7 +269,7 @@ def validate_environment() -> bool:
         logger.warning("System will use default configuration")
 
     # Check critical environment variables
-    api_key = os.getenv('')   # TODO API_KEY_CLAUDE
+    api_key = os.getenv('API_KEY_CLAUDE')
     if not api_key:
         logger.warning("⚠️ No Claude API key found in environment variables")
         logger.warning("   Set API_KEY_CLAUDE to enable AI features")
