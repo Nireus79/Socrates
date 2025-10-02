@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="socratic.py">
-      <change afterPath="$PROJECT_DIR$/tests/test_session_persistence.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="tests">
+      <change afterPath="$PROJECT_DIR$/tests/init_test_database.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_session_persistence.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_session_persistence.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -151,22 +151,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00054" summary="services">
-      <option name="closed" value="true" />
-      <created>1759162427061</created>
-      <option name="number" value="00054" />
-      <option name="presentableId" value="LOCAL-00054" />
-      <option name="project" value="LOCAL" />
-      <updated>1759162427061</updated>
-    </task>
-    <task id="LOCAL-00055" summary="api key">
-      <option name="closed" value="true" />
-      <created>1759163153094</created>
-      <option name="number" value="00055" />
-      <option name="presentableId" value="LOCAL-00055" />
-      <option name="project" value="LOCAL" />
-      <updated>1759163153094</updated>
     </task>
     <task id="LOCAL-00056" summary="refinement">
       <option name="closed" value="true" />
@@ -544,7 +528,23 @@
       <option name="project" value="LOCAL" />
       <updated>1759410664461</updated>
     </task>
-    <option name="localTasksCounter" value="103" />
+    <task id="LOCAL-00103" summary="tests">
+      <option name="closed" value="true" />
+      <created>1759412125690</created>
+      <option name="number" value="00103" />
+      <option name="presentableId" value="LOCAL-00103" />
+      <option name="project" value="LOCAL" />
+      <updated>1759412125690</updated>
+    </task>
+    <task id="LOCAL-00104" summary="tests">
+      <option name="closed" value="true" />
+      <created>1759412184612</created>
+      <option name="number" value="00104" />
+      <option name="presentableId" value="LOCAL-00104" />
+      <option name="project" value="LOCAL" />
+      <updated>1759412184612</updated>
+    </task>
+    <option name="localTasksCounter" value="105" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -561,7 +561,6 @@
     <MESSAGE value="services" />
     <MESSAGE value="api key" />
     <MESSAGE value="refinement" />
-    <MESSAGE value="tests" />
     <MESSAGE value="web" />
     <MESSAGE value="from src import get_config" />
     <MESSAGE value="0 warnings" />
@@ -573,6 +572,7 @@
     <MESSAGE value="health" />
     <MESSAGE value="database.py" />
     <MESSAGE value="socratic.py" />
-    <option name="LAST_COMMIT_MESSAGE" value="socratic.py" />
+    <MESSAGE value="tests" />
+    <option name="LAST_COMMIT_MESSAGE" value="tests" />
   </component>
 </project>
