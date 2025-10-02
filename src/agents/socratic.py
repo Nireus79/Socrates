@@ -459,6 +459,21 @@ class SocraticCounselorAgent(BaseAgent):
                 analysis = self._analyze_single_response(question_id, response_text, session)
                 analysis_results.append(analysis)
 
+                # Persist the response as a conversation message
+                import uuid
+                message_data = {
+                    'id': f"msg-{uuid.uuid4().hex[:12]}",
+                    'role': 'user',
+                    'content': response_text,
+                    'metadata': {'question_id': question_id},
+                    'created_at': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+                }
+                self._persist_message(session_id, message_data)
+
+                # Update question with answer in database
+                if self.question_repo and question_id:
+                    self.question_repo.update_answer(question_id, response_text)
+
             # Generate overall insights
             overall_insights = self._generate_session_insights(analysis_results, session)
 
@@ -468,7 +483,8 @@ class SocraticCounselorAgent(BaseAgent):
             # Update session with analysis
             session['responses_analyzed'] = len(responses)
             session['last_analysis'] = DateTimeHelper.now()
-
+            if session_id in self.current_sessions:
+                self._update_session_in_db(session_id, session)
             return self._success_response("Response analysis completed", {
                 'session_id': session_id,
                 'analysis_results': analysis_results,
@@ -857,18 +873,20 @@ class SocraticCounselorAgent(BaseAgent):
         try:
             from src.models import SocraticSession
 
+            # Map session_data fields to actual SocraticSession model fields
             session = SocraticSession(
                 id=session_data.get('id'),
-                project_id=session_data.get('project_id'),
-                user_id=session_data.get('user_id'),
-                questioning_mode=session_data.get('questioning_mode', 'sequential'),
-                current_phase=session_data.get('current_phase', 'discovery'),
-                current_role=session_data.get('current_role', 'project_manager'),
-                total_questions=session_data.get('total_questions', 0),
-                answered_questions=session_data.get('answered_questions', 0),
-                status=session_data.get('status', 'active'),
-                quality_score=session_data.get('quality_score', 0.0),
-                completion_percentage=session_data.get('completion_percentage', 0.0),
+                project_id=session_data.get('project_id', ''),
+                user_id=session_data.get('user_id', ''),
+                current_role=session_data.get('role', 'project_manager'),  # Maps to current_role
+                status='active',  # ConversationStatus enum value
+                total_questions=session_data.get('questions_generated', 0),
+                questions_answered=0,  # Starts at 0, updated when answers submitted
+                insights_generated=0,
+                conflicts_detected=0,
+                session_notes='',
+                quality_score=0.0,
+                completion_percentage=0.0,
                 created_at=DateTimeHelper.from_iso_string(session_data.get('created_at')) if session_data.get(
                     'created_at') else DateTimeHelper.now(),
                 updated_at=DateTimeHelper.now()
@@ -958,19 +976,22 @@ class SocraticCounselorAgent(BaseAgent):
         try:
             from src.models import SocraticSession
 
+            # Map session_data fields to actual SocraticSession model fields
             session = SocraticSession(
                 id=session_id,
-                project_id=session_data.get('project_id'),
-                user_id=session_data.get('user_id'),
-                questioning_mode=session_data.get('questioning_mode', 'sequential'),
-                current_phase=session_data.get('current_phase'),
-                current_role=session_data.get('current_role'),
-                total_questions=session_data.get('total_questions', 0),
-                answered_questions=session_data.get('answered_questions', 0),
+                project_id=session_data.get('project_id', ''),
+                user_id=session_data.get('user_id', ''),
+                current_role=session_data.get('role', 'project_manager'),
                 status=session_data.get('status', 'active'),
+                total_questions=session_data.get('questions_generated', session_data.get('total_questions', 0)),
+                questions_answered=session_data.get('responses_received', session_data.get('questions_answered', 0)),
+                insights_generated=session_data.get('insights_generated', 0),
+                conflicts_detected=session_data.get('conflicts_detected', 0),
+                session_notes=session_data.get('session_notes', ''),
                 quality_score=session_data.get('quality_score', 0.0),
                 completion_percentage=session_data.get('completion_percentage', 0.0),
-                created_at=DateTimeHelper.from_iso_string(session_data.get('created_at')),
+                created_at=DateTimeHelper.from_iso_string(session_data.get('created_at')) if session_data.get(
+                    'created_at') else DateTimeHelper.now(),
                 updated_at=DateTimeHelper.now()
             )
 
