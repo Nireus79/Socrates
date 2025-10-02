@@ -21,7 +21,7 @@ from functools import wraps
 
 try:
     from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper
-    from src.models import ConversationMessage, UserRole, Project, ProjectPhase, ModelValidator
+    from src.models import ConversationMessage, UserRole, Project, ProjectPhase, ModelValidator, TechnicalRole
     from src.database import get_database
     from .base import BaseAgent, require_authentication, require_project_access, log_agent_action
 
@@ -37,6 +37,15 @@ except ImportError:
     def get_logger(name):
         return logging.getLogger(name)
 
+
+    class TechnicalRole(Enum):
+        PROJECT_MANAGER = "project_manager"
+        BUSINESS_ANALYST = "business_analyst"
+        UX_DESIGNER = "ux_designer"
+        FRONTEND_DEVELOPER = "frontend_developer"
+        BACKEND_DEVELOPER = "backend_developer"
+        DATABASE_ARCHITECT = "database_architect"
+        DEVOPS_ENGINEER = "devops_engineer"
 
     class ServiceContainer:
         def get_logger(self, name):
@@ -877,15 +886,22 @@ class SocraticCounselorAgent(BaseAgent):
             return False
 
         try:
-            from src.models import SocraticSession
+            from src.models import SocraticSession, TechnicalRole, ConversationStatus
+
+            # Convert role string to enum
+            role_str = session_data.get('role', 'project_manager')
+            if isinstance(role_str, str):
+                current_role = TechnicalRole(role_str)
+            else:
+                current_role = role_str
 
             # Map session_data fields to actual SocraticSession model fields
             session = SocraticSession(
                 id=session_data.get('session_id') or session_data.get('id'),
                 project_id=session_data.get('project_id', ''),
                 user_id=session_data.get('user_id', ''),
-                current_role=session_data.get('role', 'project_manager'),
-                status='active',
+                current_role=current_role,
+                status=ConversationStatus.ACTIVE,
                 total_questions=session_data.get('questions_generated', 0),
                 questions_answered=0,
                 insights_generated=0,
@@ -920,11 +936,12 @@ class SocraticCounselorAgent(BaseAgent):
             # Ensure question has an ID
             if 'id' not in question_data or not question_data['id']:
                 question_data['id'] = f"q-{uuid.uuid4().hex[:12]}"
-
+            role_str = question_data.get('role', 'project_manager')
+            role = TechnicalRole(role_str) if isinstance(role_str, str) else role_str
             question = Question(
                 id=question_data.get('id'),
                 session_id=session_id,
-                role=question_data.get('role', 'project_manager'),
+                role=role,
                 question_text=question_data.get('text', ''),
                 context=question_data.get('context', ''),
                 is_follow_up=question_data.get('is_follow_up', False),
@@ -958,20 +975,19 @@ class SocraticCounselorAgent(BaseAgent):
 
         try:
             from src.models import ConversationMessage
-            import uuid
-
-            # Ensure message has an ID
-            if 'id' not in message_data or not message_data['id']:
-                message_data['id'] = f"msg-{uuid.uuid4().hex[:12]}"
 
             message = ConversationMessage(
-                id=message_data.get('id'),
-                session_id=session_id,
-                role=message_data.get('role', 'user'),
+                project_id=message_data.get('project_id', ''),
+                timestamp=DateTimeHelper.now(),
+                message_type=message_data.get('type', 'user'),
                 content=message_data.get('content', ''),
-                metadata=message_data.get('metadata', {}),
-                created_at=DateTimeHelper.from_iso_string(message_data.get('created_at')) if message_data.get(
-                    'created_at') else DateTimeHelper.now()
+                phase=message_data.get('phase', 'discovery'),
+                role=message_data.get('role'),
+                author=message_data.get('author'),
+                question_number=message_data.get('question_number'),
+                insights_extracted=message_data.get('insights_extracted', {}),
+                created_at=DateTimeHelper.now(),
+                updated_at=DateTimeHelper.now()
             )
 
             success = self.message_repo.create(message)
@@ -990,15 +1006,29 @@ class SocraticCounselorAgent(BaseAgent):
             return False
 
         try:
-            from src.models import SocraticSession
+            from src.models import SocraticSession, TechnicalRole, ConversationStatus
+
+            # Convert role string to enum
+            role_str = session_data.get('role', 'project_manager')
+            if isinstance(role_str, str):
+                current_role = TechnicalRole(role_str)
+            else:
+                current_role = role_str
+
+            # Convert status string to enum
+            status_str = session_data.get('status', 'active')
+            if isinstance(status_str, str):
+                status = ConversationStatus(status_str)
+            else:
+                status = status_str
 
             # Map session_data fields to actual SocraticSession model fields
             session = SocraticSession(
                 id=session_id,
                 project_id=session_data.get('project_id', ''),
                 user_id=session_data.get('user_id', ''),
-                current_role=session_data.get('role', 'project_manager'),
-                status=session_data.get('status', 'active'),
+                current_role=current_role,
+                status=status,
                 total_questions=session_data.get('questions_generated', session_data.get('total_questions', 0)),
                 questions_answered=session_data.get('responses_analyzed', session_data.get('questions_answered', 0)),
                 insights_generated=session_data.get('insights_generated', 0),
