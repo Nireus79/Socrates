@@ -4,8 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="api key">
-      <change beforePath="$PROJECT_DIR$/src/agents/socratic.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/socratic.py" afterDir="false" />
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="sessions">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -150,14 +151,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00064" summary="login">
-      <option name="closed" value="true" />
-      <created>1759197759490</created>
-      <option name="number" value="00064" />
-      <option name="presentableId" value="LOCAL-00064" />
-      <option name="project" value="LOCAL" />
-      <updated>1759197759490</updated>
     </task>
     <task id="LOCAL-00065" summary="login">
       <option name="closed" value="true" />
@@ -543,11 +536,18 @@
       <option name="project" value="LOCAL" />
       <updated>1759430396563</updated>
     </task>
-    <option name="localTasksCounter" value="113" />
+    <task id="LOCAL-00113" summary="sessions">
+      <option name="closed" value="true" />
+      <created>1759430908955</created>
+      <option name="number" value="00113" />
+      <option name="presentableId" value="LOCAL-00113" />
+      <option name="project" value="LOCAL" />
+      <updated>1759430908956</updated>
+    </task>
+    <option name="localTasksCounter" value="114" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="specs" />
     <MESSAGE value="static" />
     <MESSAGE value="run.py" />
     <MESSAGE value="debug" />
@@ -572,6 +572,7 @@
     <MESSAGE value="socratic.py" />
     <MESSAGE value="tests" />
     <MESSAGE value="api key" />
-    <option name="LAST_COMMIT_MESSAGE" value="api key" />
+    <MESSAGE value="sessions" />
+    <option name="LAST_COMMIT_MESSAGE" value="sessions" />
   </component>
 </project>
