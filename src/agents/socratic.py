@@ -163,6 +163,7 @@ class SocraticCounselorAgent(BaseAgent):
         self.effectiveness_threshold = 0.7
         self.max_questions_per_session = 25
         self.conflict_detection_enabled = True
+
         # Initialize persistence repositories
         self.session_repo = None
         self.question_repo = None
@@ -312,6 +313,8 @@ class SocraticCounselorAgent(BaseAgent):
             # Track session
             session_data = {
                 'session_id': session_id,
+                'project_id': data.get('project_id', ''),
+                'user_id': data.get('user_id', ''),
                 'role': role,
                 'questions_generated': len(questions),
                 'context': context,
@@ -483,8 +486,11 @@ class SocraticCounselorAgent(BaseAgent):
             # Update session with analysis
             session['responses_analyzed'] = len(responses)
             session['last_analysis'] = DateTimeHelper.now()
+
+            # Update session in database
             if session_id in self.current_sessions:
                 self._update_session_in_db(session_id, session)
+
             return self._success_response("Response analysis completed", {
                 'session_id': session_id,
                 'analysis_results': analysis_results,
@@ -875,13 +881,13 @@ class SocraticCounselorAgent(BaseAgent):
 
             # Map session_data fields to actual SocraticSession model fields
             session = SocraticSession(
-                id=session_data.get('id'),
+                id=session_data.get('session_id') or session_data.get('id'),
                 project_id=session_data.get('project_id', ''),
                 user_id=session_data.get('user_id', ''),
-                current_role=session_data.get('role', 'project_manager'),  # Maps to current_role
-                status='active',  # ConversationStatus enum value
+                current_role=session_data.get('role', 'project_manager'),
+                status='active',
                 total_questions=session_data.get('questions_generated', 0),
-                questions_answered=0,  # Starts at 0, updated when answers submitted
+                questions_answered=0,
                 insights_generated=0,
                 conflicts_detected=0,
                 session_notes='',
@@ -909,6 +915,11 @@ class SocraticCounselorAgent(BaseAgent):
 
         try:
             from src.models import Question
+            import uuid
+
+            # Ensure question has an ID
+            if 'id' not in question_data or not question_data['id']:
+                question_data['id'] = f"q-{uuid.uuid4().hex[:12]}"
 
             question = Question(
                 id=question_data.get('id'),
@@ -947,6 +958,11 @@ class SocraticCounselorAgent(BaseAgent):
 
         try:
             from src.models import ConversationMessage
+            import uuid
+
+            # Ensure message has an ID
+            if 'id' not in message_data or not message_data['id']:
+                message_data['id'] = f"msg-{uuid.uuid4().hex[:12]}"
 
             message = ConversationMessage(
                 id=message_data.get('id'),
@@ -984,7 +1000,7 @@ class SocraticCounselorAgent(BaseAgent):
                 current_role=session_data.get('role', 'project_manager'),
                 status=session_data.get('status', 'active'),
                 total_questions=session_data.get('questions_generated', session_data.get('total_questions', 0)),
-                questions_answered=session_data.get('responses_received', session_data.get('questions_answered', 0)),
+                questions_answered=session_data.get('responses_analyzed', session_data.get('questions_answered', 0)),
                 insights_generated=session_data.get('insights_generated', 0),
                 conflicts_detected=session_data.get('conflicts_detected', 0),
                 session_notes=session_data.get('session_notes', ''),
@@ -1030,19 +1046,22 @@ class SocraticCounselorAgent(BaseAgent):
                     self.logger.warning(f"Session {session_id} not found in database")
                 return None
 
-            # Convert session to dict
+            # Convert session to dict - only use fields that exist in the model
             session_data = {
                 'id': session.id,
+                'session_id': session.id,
                 'project_id': session.project_id,
                 'user_id': session.user_id,
-                'questioning_mode': session.questioning_mode,
-                'current_phase': session.current_phase,
+                'role': session.current_role,
                 'current_role': session.current_role,
                 'total_questions': session.total_questions,
-                'answered_questions': session.answered_questions,
+                'questions_answered': session.questions_answered,
                 'status': session.status,
                 'quality_score': session.quality_score,
                 'completion_percentage': session.completion_percentage,
+                'insights_generated': session.insights_generated,
+                'conflicts_detected': session.conflicts_detected,
+                'session_notes': session.session_notes,
                 'created_at': DateTimeHelper.to_iso_string(session.created_at),
                 'updated_at': DateTimeHelper.to_iso_string(session.updated_at),
                 'questions': [],
