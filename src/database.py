@@ -1271,7 +1271,7 @@ class ConversationMessageRepository(BaseRepository[ConversationMessage]):
             # Note: session_id is stored in DB but not in model - we skip it during instantiation
             return ConversationMessage(
                 id=row.get('id', ''),
-                # session_id not in model, skip it
+                session_id=row.get('session_id', ''),
                 project_id=row.get('project_id', ''),
                 timestamp=timestamp,
                 message_type=row.get('message_type', 'user'),

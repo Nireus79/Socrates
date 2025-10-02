@@ -650,6 +650,7 @@ class Question(BaseModel):
 class ConversationMessage(BaseModel):
     """Individual conversation message"""
 
+    session_id: str = ""  # Link to specific Socratic session
     project_id: str = ""
     timestamp: datetime = field(default_factory=DateTimeHelper.now)
     message_type: str = "user"  # user, agent, system

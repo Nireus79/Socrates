@@ -977,6 +977,7 @@ class SocraticCounselorAgent(BaseAgent):
             from src.models import ConversationMessage
 
             message = ConversationMessage(
+                session_id=session_id,
                 project_id=message_data.get('project_id', ''),
                 timestamp=DateTimeHelper.now(),
                 message_type=message_data.get('type', 'user'),
