@@ -163,6 +163,22 @@ class SocraticCounselorAgent(BaseAgent):
         self.effectiveness_threshold = 0.7
         self.max_questions_per_session = 25
         self.conflict_detection_enabled = True
+        # Initialize persistence repositories
+        self.session_repo = None
+        self.question_repo = None
+        self.message_repo = None
+
+        # Get repositories from database service
+        if self.db_service:
+            try:
+                self.session_repo = self.db_service.socratic_sessions
+                self.question_repo = self.db_service.questions
+                self.message_repo = self.db_service.conversation_messages
+                if self.logger:
+                    self.logger.info("Session persistence repositories initialized")
+            except AttributeError as e:
+                if self.logger:
+                    self.logger.warning(f"Session repositories not available: {e}")
 
         if self.logger:
             self.logger.info("SocraticCounselorAgent initialized successfully")
@@ -174,7 +190,7 @@ class SocraticCounselorAgent(BaseAgent):
             "suggest_improvements", "facilitate_session", "extract_insights",
             "role_based_questioning", "context_aware_questioning",
             "conflict_mediation", "session_guidance", "learning_adaptation",
-            "get_user_sessions"
+            "get_user_sessions", "resume_session"
         ]
 
     def _initialize_question_templates(self) -> Dict[str, List[str]]:
@@ -304,6 +320,13 @@ class SocraticCounselorAgent(BaseAgent):
             }
 
             self.current_sessions[session_id] = session_data
+
+            # Persist session to database
+            self._persist_session(session_data)
+
+            # Persist all questions to database
+            for question in questions:
+                self._persist_question(session_id, question)
 
             self.logger.info(f"Generated {len(questions)} questions for role '{role}' in session {session_id}")
 
@@ -825,6 +848,236 @@ class SocraticCounselorAgent(BaseAgent):
         """Generate unique session ID"""
         import time
         return f"session_{int(time.time() * 1000)}"
+
+    def _persist_session(self, session_data: Dict[str, Any]) -> bool:
+        """Persist session to database"""
+        if not self.session_repo:
+            return False
+
+        try:
+            from src.models import SocraticSession
+
+            session = SocraticSession(
+                id=session_data.get('id'),
+                project_id=session_data.get('project_id'),
+                user_id=session_data.get('user_id'),
+                questioning_mode=session_data.get('questioning_mode', 'sequential'),
+                current_phase=session_data.get('current_phase', 'discovery'),
+                current_role=session_data.get('current_role', 'project_manager'),
+                total_questions=session_data.get('total_questions', 0),
+                answered_questions=session_data.get('answered_questions', 0),
+                status=session_data.get('status', 'active'),
+                quality_score=session_data.get('quality_score', 0.0),
+                completion_percentage=session_data.get('completion_percentage', 0.0),
+                created_at=DateTimeHelper.from_iso_string(session_data.get('created_at')) if session_data.get(
+                    'created_at') else DateTimeHelper.now(),
+                updated_at=DateTimeHelper.now()
+            )
+
+            success = self.session_repo.create(session)
+            if success and self.logger:
+                self.logger.info(f"Persisted session {session.id} to database")
+            return success
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Failed to persist session: {e}")
+            return False
+
+    def _persist_question(self, session_id: str, question_data: Dict[str, Any]) -> bool:
+        """Persist question to database"""
+        if not self.question_repo:
+            return False
+
+        try:
+            from src.models import Question
+
+            question = Question(
+                id=question_data.get('id'),
+                session_id=session_id,
+                role=question_data.get('role', 'project_manager'),
+                question_text=question_data.get('text', ''),
+                context=question_data.get('context', ''),
+                is_follow_up=question_data.get('is_follow_up', False),
+                parent_question_id=question_data.get('parent_question_id'),
+                importance_score=question_data.get('importance_score', 0.5),
+                is_answered=question_data.get('is_answered', False),
+                answer_text=question_data.get('answer_text', ''),
+                answer_quality_score=question_data.get('answer_quality_score', 0.0),
+                generated_insights=question_data.get('generated_insights', []),
+                detected_conflicts=question_data.get('detected_conflicts', []),
+                recommended_follow_ups=question_data.get('recommended_follow_ups', []),
+                created_at=DateTimeHelper.from_iso_string(question_data.get('created_at')) if question_data.get(
+                    'created_at') else DateTimeHelper.now(),
+                updated_at=DateTimeHelper.now()
+            )
+
+            success = self.question_repo.create(question)
+            if success and self.logger:
+                self.logger.debug(f"Persisted question {question.id} to database")
+            return success
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Failed to persist question: {e}")
+            return False
+
+    def _persist_message(self, session_id: str, message_data: Dict[str, Any]) -> bool:
+        """Persist conversation message to database"""
+        if not self.message_repo:
+            return False
+
+        try:
+            from src.models import ConversationMessage
+
+            message = ConversationMessage(
+                id=message_data.get('id'),
+                session_id=session_id,
+                role=message_data.get('role', 'user'),
+                content=message_data.get('content', ''),
+                metadata=message_data.get('metadata', {}),
+                created_at=DateTimeHelper.from_iso_string(message_data.get('created_at')) if message_data.get(
+                    'created_at') else DateTimeHelper.now()
+            )
+
+            success = self.message_repo.create(message)
+            if success and self.logger:
+                self.logger.debug(f"Persisted message to database for session {session_id}")
+            return success
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Failed to persist message: {e}")
+            return False
+
+    def _update_session_in_db(self, session_id: str, session_data: Dict[str, Any]) -> bool:
+        """Update existing session in database"""
+        if not self.session_repo:
+            return False
+
+        try:
+            from src.models import SocraticSession
+
+            session = SocraticSession(
+                id=session_id,
+                project_id=session_data.get('project_id'),
+                user_id=session_data.get('user_id'),
+                questioning_mode=session_data.get('questioning_mode', 'sequential'),
+                current_phase=session_data.get('current_phase'),
+                current_role=session_data.get('current_role'),
+                total_questions=session_data.get('total_questions', 0),
+                answered_questions=session_data.get('answered_questions', 0),
+                status=session_data.get('status', 'active'),
+                quality_score=session_data.get('quality_score', 0.0),
+                completion_percentage=session_data.get('completion_percentage', 0.0),
+                created_at=DateTimeHelper.from_iso_string(session_data.get('created_at')),
+                updated_at=DateTimeHelper.now()
+            )
+
+            success = self.session_repo.update(session)
+            if success and self.logger:
+                self.logger.debug(f"Updated session {session_id} in database")
+            return success
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Failed to update session in database: {e}")
+            return False
+
+    def _resume_session(self, session_id: str) -> Optional[Dict[str, Any]]:
+        """Resume session from database
+
+        Loads session, questions, and conversation history from database
+        and restores to memory cache.
+
+        Args:
+            session_id: ID of session to resume
+
+        Returns:
+            Session data dict if successful, None otherwise
+        """
+        if not self.session_repo:
+            if self.logger:
+                self.logger.error("Cannot resume session: session repository not available")
+            return None
+
+        try:
+            # Load session from database
+            session = self.session_repo.get_by_id(session_id)
+            if not session:
+                if self.logger:
+                    self.logger.warning(f"Session {session_id} not found in database")
+                return None
+
+            # Convert session to dict
+            session_data = {
+                'id': session.id,
+                'project_id': session.project_id,
+                'user_id': session.user_id,
+                'questioning_mode': session.questioning_mode,
+                'current_phase': session.current_phase,
+                'current_role': session.current_role,
+                'total_questions': session.total_questions,
+                'answered_questions': session.answered_questions,
+                'status': session.status,
+                'quality_score': session.quality_score,
+                'completion_percentage': session.completion_percentage,
+                'created_at': DateTimeHelper.to_iso_string(session.created_at),
+                'updated_at': DateTimeHelper.to_iso_string(session.updated_at),
+                'questions': [],
+                'conversation_history': []
+            }
+
+            # Load questions
+            if self.question_repo:
+                questions = self.question_repo.get_by_session_id(session_id)
+                session_data['questions'] = [
+                    {
+                        'id': q.id,
+                        'role': q.role,
+                        'text': q.question_text,
+                        'context': q.context,
+                        'is_follow_up': q.is_follow_up,
+                        'parent_question_id': q.parent_question_id,
+                        'importance_score': q.importance_score,
+                        'is_answered': q.is_answered,
+                        'answer_text': q.answer_text,
+                        'answer_quality_score': q.answer_quality_score,
+                        'generated_insights': q.generated_insights,
+                        'detected_conflicts': q.detected_conflicts,
+                        'recommended_follow_ups': q.recommended_follow_ups,
+                        'created_at': DateTimeHelper.to_iso_string(q.created_at)
+                    }
+                    for q in questions
+                ]
+
+            # Load conversation messages
+            if self.message_repo:
+                messages = self.message_repo.get_by_session_id(session_id)
+                session_data['conversation_history'] = [
+                    {
+                        'id': m.id,
+                        'role': m.role,
+                        'content': m.content,
+                        'metadata': m.metadata,
+                        'created_at': DateTimeHelper.to_iso_string(m.created_at)
+                    }
+                    for m in messages
+                ]
+
+            # Restore to memory cache
+            self.current_sessions[session_id] = session_data
+
+            if self.logger:
+                self.logger.info(
+                    f"Resumed session {session_id} from database with {len(session_data['questions'])} questions and {len(session_data['conversation_history'])} messages")
+
+            return session_data
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Failed to resume session: {e}")
+            return None
 
     @log_agent_action
     def _get_user_sessions(self, data: Dict[str, Any]) -> Dict[str, Any]:
