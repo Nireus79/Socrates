@@ -1399,6 +1399,69 @@ class DatabaseManager:
                     )
                 """)
 
+                # Socratic sessions table
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS socratic_sessions (
+                        id TEXT PRIMARY KEY,
+                        project_id TEXT NOT NULL,
+                        user_id TEXT NOT NULL,
+                        current_role TEXT NOT NULL,
+                        status TEXT NOT NULL DEFAULT 'active',
+                        roles_to_cover TEXT,
+                        completed_roles TEXT,
+                        total_questions INTEGER DEFAULT 0,
+                        questions_answered INTEGER DEFAULT 0,
+                        insights_generated TEXT,
+                        conflicts_detected TEXT,
+                        session_notes TEXT,
+                        quality_score REAL DEFAULT 0.0,
+                        completion_percentage REAL DEFAULT 0.0,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL,
+                        FOREIGN KEY (project_id) REFERENCES projects(id),
+                        FOREIGN KEY (user_id) REFERENCES users(id)
+                    )
+                """)
+
+                # Questions table
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS questions (
+                        id TEXT PRIMARY KEY,
+                        session_id TEXT NOT NULL,
+                        role TEXT NOT NULL,
+                        question_text TEXT NOT NULL,
+                        context TEXT,
+                        is_follow_up INTEGER DEFAULT 0,
+                        parent_question_id TEXT,
+                        importance_score REAL DEFAULT 0.5,
+                        is_answered INTEGER DEFAULT 0,
+                        answer_text TEXT,
+                        answer_quality_score REAL DEFAULT 0.0,
+                        generated_insights TEXT,
+                        detected_conflicts TEXT,
+                        recommended_follow_ups TEXT,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL,
+                        FOREIGN KEY (session_id) REFERENCES socratic_sessions(id)
+                    )
+                """)
+
+                # Conversation messages table
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS conversation_messages (
+                        id TEXT PRIMARY KEY,
+                        session_id TEXT NOT NULL,
+                        project_id TEXT NOT NULL,
+                        role TEXT NOT NULL,
+                        content TEXT NOT NULL,
+                        message_type TEXT NOT NULL,
+                        metadata TEXT,
+                        timestamp TEXT NOT NULL,
+                        FOREIGN KEY (session_id) REFERENCES socratic_sessions(id),
+                        FOREIGN KEY (project_id) REFERENCES projects(id)
+                    )
+                """)
+
                 conn.commit()
                 self.logger.info("Database schema initialized successfully")
 
