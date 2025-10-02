@@ -119,8 +119,6 @@ try:
 except ImportError as e:
     IMPORT_ERRORS['core'] = str(e)
 
-
-    # ✅ FIX: Define fallback SystemConfig class
     class SystemConfig:
         """Fallback SystemConfig when core is not available"""
 
@@ -133,8 +131,6 @@ except ImportError as e:
         def get(self, key, default=None):
             return default
 
-
-    # ✅ FIX: Use proper def instead of lambda (PEP 8: E731)
     def cleanup_system(services=None):
         """Fallback cleanup function"""
         pass

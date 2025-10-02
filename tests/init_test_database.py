@@ -15,7 +15,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
     from src.database import get_database
-    from src.core import get_logger
+    # Fixed: get_logger is in src/__init__.py, not src.core
+    from src import get_logger
 
     print("Initializing test database...")
 
@@ -31,20 +32,14 @@ try:
         existing_tables = [row['name'] for row in result]
         print(f"\nExisting tables: {existing_tables}")
 
-        if 'socratic_sessions' in existing_tables:
-            print("✓ socratic_sessions table already exists")
-        else:
-            print("✗ socratic_sessions table missing - will be created by DatabaseManager")
+        # Check for required session tables
+        required_tables = ['socratic_sessions', 'questions', 'conversation_messages']
 
-        if 'questions' in existing_tables:
-            print("✓ questions table already exists")
-        else:
-            print("✗ questions table missing - will be created by DatabaseManager")
-
-        if 'conversation_messages' in existing_tables:
-            print("✓ conversation_messages table already exists")
-        else:
-            print("✗ conversation_messages table missing - will be created by DatabaseManager")
+        for table in required_tables:
+            if table in existing_tables:
+                print(f"✓ {table} table exists")
+            else:
+                print(f"✗ {table} table MISSING")
 
     except Exception as e:
         print(f"Error checking tables: {e}")
@@ -65,9 +60,12 @@ try:
     missing_tables = [t for t in required_tables if t not in final_tables]
 
     if missing_tables:
-        print(f"\n⚠ Warning: Still missing tables: {missing_tables}")
-        print("\nThe database schema may need to be manually initialized.")
-        print("Check that DatabaseManager._init_schema() includes these tables.")
+        print(f"\n⚠ Warning: Missing tables: {missing_tables}")
+        print("\nThese tables need to be added to DatabaseManager._init_schema()")
+        print("Location: src/database.py, method _init_schema()")
+        print("\nThe schema should include CREATE TABLE statements for:")
+        for table in missing_tables:
+            print(f"  - {table}")
     else:
         print("\n✓ All required tables exist!")
         print("You can now run: python tests/test_session_persistence.py")
@@ -75,6 +73,7 @@ try:
 except ImportError as e:
     print(f"✗ Import error: {e}")
     print("\nMake sure you're running from the project root directory.")
+    print("Try: cd /path/to/socratic-rag-enhanced")
     sys.exit(1)
 except Exception as e:
     print(f"✗ Error: {e}")
