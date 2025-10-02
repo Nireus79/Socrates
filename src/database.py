@@ -1461,6 +1461,8 @@ class DatabaseManager:
                         insights_extracted TEXT,
                         metadata TEXT,
                         timestamp TEXT NOT NULL,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL,
                         FOREIGN KEY (session_id) REFERENCES socratic_sessions(id),
                         FOREIGN KEY (project_id) REFERENCES projects(id)
                     )
