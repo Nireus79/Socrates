@@ -91,9 +91,18 @@ class ClaudeService:
             raise ClaudeServiceError("Anthropic package not available. Install with: pip install anthropic")
 
         # Initialize API client
-        api_key = self.claude_config.get('') or self.config.get('')  # TODO API_KEY_CLAUDE
+        # Get API key from config (which loads from environment)
+        api_key = self.claude_config.get('api_key') or self.config.get('anthropic', {}).get('api_key')
+
         if not api_key:
-            raise ClaudeServiceError("Claude API key not found in configuration")
+            # Fallback to direct environment check
+            import os
+            api_key = os.getenv('API_KEY_CLAUDE')
+
+        if not api_key:
+            raise ClaudeServiceError(
+                "Claude API key not found. Set API_KEY_CLAUDE environment variable."
+            )
 
         self.client = Anthropic(api_key=api_key)
         self.async_client = AsyncAnthropic(api_key=api_key)

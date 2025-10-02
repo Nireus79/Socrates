@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="tests">
-      <change afterPath="$PROJECT_DIR$/tests/init_test_database.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_session_persistence.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_session_persistence.py" afterDir="false" />
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="api key">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -151,46 +151,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00056" summary="refinement">
-      <option name="closed" value="true" />
-      <created>1759173715123</created>
-      <option name="number" value="00056" />
-      <option name="presentableId" value="LOCAL-00056" />
-      <option name="project" value="LOCAL" />
-      <updated>1759173715123</updated>
-    </task>
-    <task id="LOCAL-00057" summary="refinement">
-      <option name="closed" value="true" />
-      <created>1759175938266</created>
-      <option name="number" value="00057" />
-      <option name="presentableId" value="LOCAL-00057" />
-      <option name="project" value="LOCAL" />
-      <updated>1759175938266</updated>
-    </task>
-    <task id="LOCAL-00058" summary="tests">
-      <option name="closed" value="true" />
-      <created>1759176508817</created>
-      <option name="number" value="00058" />
-      <option name="presentableId" value="LOCAL-00058" />
-      <option name="project" value="LOCAL" />
-      <updated>1759176508818</updated>
-    </task>
-    <task id="LOCAL-00059" summary="tests">
-      <option name="closed" value="true" />
-      <created>1759178508091</created>
-      <option name="number" value="00059" />
-      <option name="presentableId" value="LOCAL-00059" />
-      <option name="project" value="LOCAL" />
-      <updated>1759178508091</updated>
-    </task>
-    <task id="LOCAL-00060" summary="web">
-      <option name="closed" value="true" />
-      <created>1759178905305</created>
-      <option name="number" value="00060" />
-      <option name="presentableId" value="LOCAL-00060" />
-      <option name="project" value="LOCAL" />
-      <updated>1759178905305</updated>
     </task>
     <task id="LOCAL-00061" summary="web">
       <option name="closed" value="true" />
@@ -544,7 +504,47 @@
       <option name="project" value="LOCAL" />
       <updated>1759412184612</updated>
     </task>
-    <option name="localTasksCounter" value="105" />
+    <task id="LOCAL-00105" summary="tests">
+      <option name="closed" value="true" />
+      <created>1759412286279</created>
+      <option name="number" value="00105" />
+      <option name="presentableId" value="LOCAL-00105" />
+      <option name="project" value="LOCAL" />
+      <updated>1759412286279</updated>
+    </task>
+    <task id="LOCAL-00106" summary="tests">
+      <option name="closed" value="true" />
+      <created>1759412334313</created>
+      <option name="number" value="00106" />
+      <option name="presentableId" value="LOCAL-00106" />
+      <option name="project" value="LOCAL" />
+      <updated>1759412334313</updated>
+    </task>
+    <task id="LOCAL-00107" summary="tests">
+      <option name="closed" value="true" />
+      <created>1759414734883</created>
+      <option name="number" value="00107" />
+      <option name="presentableId" value="LOCAL-00107" />
+      <option name="project" value="LOCAL" />
+      <updated>1759414734883</updated>
+    </task>
+    <task id="LOCAL-00108" summary="tests">
+      <option name="closed" value="true" />
+      <created>1759414762468</created>
+      <option name="number" value="00108" />
+      <option name="presentableId" value="LOCAL-00108" />
+      <option name="project" value="LOCAL" />
+      <updated>1759414762468</updated>
+    </task>
+    <task id="LOCAL-00109" summary="api key">
+      <option name="closed" value="true" />
+      <created>1759414986875</created>
+      <option name="number" value="00109" />
+      <option name="presentableId" value="LOCAL-00109" />
+      <option name="project" value="LOCAL" />
+      <updated>1759414986875</updated>
+    </task>
+    <option name="localTasksCounter" value="110" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -559,7 +559,6 @@
     <MESSAGE value="full" />
     <MESSAGE value="agents" />
     <MESSAGE value="services" />
-    <MESSAGE value="api key" />
     <MESSAGE value="refinement" />
     <MESSAGE value="web" />
     <MESSAGE value="from src import get_config" />
@@ -573,6 +572,7 @@
     <MESSAGE value="database.py" />
     <MESSAGE value="socratic.py" />
     <MESSAGE value="tests" />
-    <option name="LAST_COMMIT_MESSAGE" value="tests" />
+    <MESSAGE value="api key" />
+    <option name="LAST_COMMIT_MESSAGE" value="api key" />
   </component>
 </project>

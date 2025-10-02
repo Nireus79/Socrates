@@ -153,13 +153,12 @@ class BaseAgent(ABC):
             return
 
         try:
-            # Get API key from config
             api_key = None
             if self.config:
-                api_key = self.config.get('anthropic.api_key') or self.config.get('api_key')
+                api_key = self.config.get('anthropic.api_key')
 
             if not api_key:
-                # Try environment variable
+                # Fallback for direct environment check
                 import os
                 api_key = os.getenv('API_KEY_CLAUDE')
 
