@@ -881,7 +881,7 @@ class SocraticCounselorAgent(BaseAgent):
         return f"session_{int(time.time() * 1000)}"
 
     def _persist_session(self, session_data: Dict[str, Any]) -> bool:
-        """Persist session to database"""
+        """Persist Socratic session to database"""
         if not self.session_repo:
             return False
 
@@ -891,26 +891,27 @@ class SocraticCounselorAgent(BaseAgent):
             # Convert role string to enum
             role_str = session_data.get('role', 'project_manager')
             if isinstance(role_str, str):
-                current_role = TechnicalRole(role_str)
+                role = TechnicalRole(role_str)
             else:
-                current_role = role_str
+                role = role_str
 
-            # Map session_data fields to actual SocraticSession model fields
+            # Map session_data fields to SocraticSession model fields
             session = SocraticSession(
-                id=session_data.get('session_id') or session_data.get('id'),
+                id=session_data.get('session_id', ''),  # Map session_id -> id
                 project_id=session_data.get('project_id', ''),
                 user_id=session_data.get('user_id', ''),
-                current_role=current_role,
+                current_role=role,  # Map role -> current_role (as enum)
                 status=ConversationStatus.ACTIVE,
-                total_questions=session_data.get('questions_generated', 0),
-                questions_answered=0,
-                insights_generated=0,
-                conflicts_detected=0,
-                session_notes='',
+                roles_to_cover=[role],  # List[TechnicalRole] - Initialize with current role enum
+                completed_roles=[],  # No completed roles yet
+                total_questions=session_data.get('questions_generated', 0),  # Map questions_generated -> total_questions
+                questions_answered=0,  # No answers yet
+                insights_generated=0,  # int counter, not list
+                conflicts_detected=0,  # int counter, not list
+                session_notes='',  # String field, leave empty for now
                 quality_score=0.0,
                 completion_percentage=0.0,
-                created_at=DateTimeHelper.from_iso_string(session_data.get('created_at')) if session_data.get(
-                    'created_at') else DateTimeHelper.now(),
+                created_at=session_data.get('timestamp', DateTimeHelper.now()),
                 updated_at=DateTimeHelper.now()
             )
 
@@ -1052,18 +1053,25 @@ class SocraticCounselorAgent(BaseAgent):
                 self.logger.error(f"Failed to update session in database: {e}")
             return False
 
-    def _resume_session(self, session_id: str) -> Optional[Dict[str, Any]]:
+    def _resume_session(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Resume session from database
 
         Loads session, questions, and conversation history from database
         and restores to memory cache.
 
         Args:
-            session_id: ID of session to resume
+            data: Dict containing session_id
 
         Returns:
             Session data dict if successful, None otherwise
         """
+        # Extract session_id from data dict
+        session_id = data.get('session_id')
+        if not session_id:
+            if self.logger:
+                self.logger.error("Cannot resume session: session_id not provided")
+            return None
+
         if not self.session_repo:
             if self.logger:
                 self.logger.error("Cannot resume session: session repository not available")
@@ -1083,11 +1091,11 @@ class SocraticCounselorAgent(BaseAgent):
                 'session_id': session.id,
                 'project_id': session.project_id,
                 'user_id': session.user_id,
-                'role': session.current_role,
-                'current_role': session.current_role,
+                'role': session.current_role.value if hasattr(session.current_role, 'value') else session.current_role,
+                'current_role': session.current_role.value if hasattr(session.current_role, 'value') else session.current_role,
                 'total_questions': session.total_questions,
                 'questions_answered': session.questions_answered,
-                'status': session.status,
+                'status': session.status.value if hasattr(session.status, 'value') else session.status,
                 'quality_score': session.quality_score,
                 'completion_percentage': session.completion_percentage,
                 'insights_generated': session.insights_generated,
@@ -1105,7 +1113,7 @@ class SocraticCounselorAgent(BaseAgent):
                 session_data['questions'] = [
                     {
                         'id': q.id,
-                        'role': q.role,
+                        'role': q.role.value if hasattr(q.role, 'value') else q.role,
                         'text': q.question_text,
                         'context': q.context,
                         'is_follow_up': q.is_follow_up,
@@ -1128,10 +1136,10 @@ class SocraticCounselorAgent(BaseAgent):
                 session_data['conversation_history'] = [
                     {
                         'id': m.id,
-                        'role': m.role,
+                        'role': m.role.value if hasattr(m.role, 'value') else m.role,
                         'content': m.content,
-                        'metadata': m.metadata,
-                        'created_at': DateTimeHelper.to_iso_string(m.created_at)
+                        'message_type': m.message_type,
+                        'timestamp': DateTimeHelper.to_iso_string(m.timestamp)
                     }
                     for m in messages
                 ]
@@ -1148,6 +1156,8 @@ class SocraticCounselorAgent(BaseAgent):
         except Exception as e:
             if self.logger:
                 self.logger.error(f"Failed to resume session: {e}")
+                import traceback
+                self.logger.error(traceback.format_exc())
             return None
 
     @log_agent_action
