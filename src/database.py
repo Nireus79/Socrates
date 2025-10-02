@@ -39,7 +39,7 @@ except ImportError:
 
 
     def get_config():
-        return {'database': {'path': 'data/socratic_rag.db'}}
+        return {'database': {'path': 'data/socratic.db'}}
 
 
     def get_logger(name):
@@ -1474,7 +1474,7 @@ class DatabaseService:
     def __init__(self, db_path: str = None):
         if db_path is None:
             config = get_config()
-            db_path = config.get('database', {}).get('path', 'data/socratic_rag.db')
+            db_path = config.get('database', {}).get('path', 'data/socratic.db')
 
         self.db_manager = DatabaseManager(db_path)
         self.logger = get_logger(f"{__name__}.DatabaseService")
