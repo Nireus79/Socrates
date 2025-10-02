@@ -75,7 +75,7 @@ try:
         ProjectMetrics, UserActivity, KnowledgeEntry, ProjectContext, ModuleContext, TaskContext,
         ProjectCollaborator,
         ProjectPhase, ProjectStatus, ModuleStatus, UserRole, UserStatus, TechnicalRole,
-        FileType, TestType, Priority, ConflictType
+        FileType, TestType, Priority, ConflictType, ConversationStatus
     )
 
     MODELS_AVAILABLE = True
@@ -91,6 +91,20 @@ except ImportError:
         ACTIVE = "active"
         COMPLETED = "completed"
 
+    class TechnicalRole(Enum):
+        PROJECT_MANAGER = "project_manager"
+        BUSINESS_ANALYST = "business_analyst"
+        UX_DESIGNER = "ux_designer"
+        FRONTEND_DEVELOPER = "frontend_developer"
+        BACKEND_DEVELOPER = "backend_developer"
+        DATABASE_ARCHITECT = "database_architect"
+        DEVOPS_ENGINEER = "devops_engineer"
+
+    class ConversationStatus(Enum):
+        ACTIVE = "active"
+        PAUSED = "paused"
+        COMPLETED = "completed"
+        CANCELLED = "cancelled"
 
     class UserRole(Enum):
         ADMIN = "admin"
@@ -745,6 +759,536 @@ class ProjectCollaboratorRepository(BaseRepository[ProjectCollaborator]):
             return False
 
 
+class SocraticSessionRepository(BaseRepository[SocraticSession]):
+    """Repository for managing Socratic sessions with persistence"""
+
+    def create(self, session: SocraticSession) -> bool:
+        """Create a new Socratic session"""
+        try:
+            data = self._model_to_dict(session)
+            query = """
+                INSERT INTO socratic_sessions (
+                    id, project_id, user_id, current_role, status,
+                    roles_to_cover, completed_roles, total_questions,
+                    questions_answered, insights_generated, conflicts_detected,
+                    session_notes, quality_score, completion_percentage,
+                    created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+
+            # Convert list fields to JSON strings
+            roles_to_cover_json = json.dumps(
+                [r.value if hasattr(r, 'value') else r for r in data.get('roles_to_cover', [])])
+            completed_roles_json = json.dumps(
+                [r.value if hasattr(r, 'value') else r for r in data.get('completed_roles', [])])
+
+            params = (
+                data.get('id'),
+                data.get('project_id'),
+                data.get('user_id'),
+                data.get('current_role'),
+                data.get('status'),
+                roles_to_cover_json,
+                completed_roles_json,
+                data.get('total_questions', 0),
+                data.get('questions_answered', 0),
+                data.get('insights_generated', 0),
+                data.get('conflicts_detected', 0),
+                data.get('session_notes', ''),
+                data.get('quality_score', 0.0),
+                data.get('completion_percentage', 0.0),
+                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
+                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+            )
+
+            self.db_manager.execute_update(query, params)
+            self.logger.info(f"Created Socratic session: {session.id}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error creating Socratic session: {e}")
+            return False
+
+    def get_by_id(self, session_id: str) -> Optional[SocraticSession]:
+        """Get Socratic session by ID"""
+        try:
+            query = "SELECT * FROM socratic_sessions WHERE id = ?"
+            results = self.db_manager.execute_query(query, (session_id,))
+
+            if results:
+                return self._row_to_model(results[0])
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Error getting Socratic session {session_id}: {e}")
+            return None
+
+    def update(self, session: SocraticSession) -> bool:
+        """Update existing Socratic session"""
+        try:
+            data = self._model_to_dict(session)
+
+            # Convert list fields to JSON strings
+            roles_to_cover_json = json.dumps(
+                [r.value if hasattr(r, 'value') else r for r in data.get('roles_to_cover', [])])
+            completed_roles_json = json.dumps(
+                [r.value if hasattr(r, 'value') else r for r in data.get('completed_roles', [])])
+
+            query = """
+                UPDATE socratic_sessions SET
+                    current_role = ?, status = ?, roles_to_cover = ?,
+                    completed_roles = ?, total_questions = ?, questions_answered = ?,
+                    insights_generated = ?, conflicts_detected = ?, session_notes = ?,
+                    quality_score = ?, completion_percentage = ?, updated_at = ?
+                WHERE id = ?
+            """
+
+            params = (
+                data.get('current_role'),
+                data.get('status'),
+                roles_to_cover_json,
+                completed_roles_json,
+                data.get('total_questions', 0),
+                data.get('questions_answered', 0),
+                data.get('insights_generated', 0),
+                data.get('conflicts_detected', 0),
+                data.get('session_notes', ''),
+                data.get('quality_score', 0.0),
+                data.get('completion_percentage', 0.0),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                data.get('id')
+            )
+
+            self.db_manager.execute_update(query, params)
+            self.logger.info(f"Updated Socratic session: {session.id}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error updating Socratic session: {e}")
+            return False
+
+    def delete(self, session_id: str) -> bool:
+        """Delete Socratic session by ID"""
+        try:
+            query = "DELETE FROM socratic_sessions WHERE id = ?"
+            self.db_manager.execute_update(query, (session_id,))
+            self.logger.info(f"Deleted Socratic session: {session_id}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error deleting Socratic session {session_id}: {e}")
+            return False
+
+    def get_by_project_id(self, project_id: str) -> List[SocraticSession]:
+        """Get all sessions for a project"""
+        try:
+            query = "SELECT * FROM socratic_sessions WHERE project_id = ? ORDER BY created_at DESC"
+            results = self.db_manager.execute_query(query, (project_id,))
+            return [self._row_to_model(row) for row in results]
+
+        except Exception as e:
+            self.logger.error(f"Error getting sessions for project {project_id}: {e}")
+            return []
+
+    def get_by_user_id(self, user_id: str) -> List[SocraticSession]:
+        """Get all sessions for a user"""
+        try:
+            query = "SELECT * FROM socratic_sessions WHERE user_id = ? ORDER BY created_at DESC"
+            results = self.db_manager.execute_query(query, (user_id,))
+            return [self._row_to_model(row) for row in results]
+
+        except Exception as e:
+            self.logger.error(f"Error getting sessions for user {user_id}: {e}")
+            return []
+
+    def list_user_sessions(self, user_id: str, status: str = None) -> List[SocraticSession]:
+        """List user sessions with optional status filter"""
+        try:
+            if status:
+                query = "SELECT * FROM socratic_sessions WHERE user_id = ? AND status = ? ORDER BY created_at DESC"
+                results = self.db_manager.execute_query(query, (user_id, status))
+            else:
+                query = "SELECT * FROM socratic_sessions WHERE user_id = ? ORDER BY created_at DESC"
+                results = self.db_manager.execute_query(query, (user_id,))
+
+            return [self._row_to_model(row) for row in results]
+
+        except Exception as e:
+            self.logger.error(f"Error listing sessions for user {user_id}: {e}")
+            return []
+
+    def _row_to_model(self, row: Dict[str, Any]) -> SocraticSession:
+        """Convert database row to SocraticSession model"""
+        try:
+            # Parse JSON fields
+            roles_to_cover = []
+            if row.get('roles_to_cover'):
+                roles_json = json.loads(row['roles_to_cover'])
+                roles_to_cover = [TechnicalRole(r) if isinstance(r, str) else r for r in roles_json]
+
+            completed_roles = []
+            if row.get('completed_roles'):
+                roles_json = json.loads(row['completed_roles'])
+                completed_roles = [TechnicalRole(r) if isinstance(r, str) else r for r in roles_json]
+
+            # Parse datetime fields
+            created_at = DateTimeHelper.from_iso_string(row['created_at']) if row.get(
+                'created_at') else DateTimeHelper.now()
+            updated_at = DateTimeHelper.from_iso_string(row['updated_at']) if row.get(
+                'updated_at') else DateTimeHelper.now()
+
+            return SocraticSession(
+                id=row.get('id', ''),
+                project_id=row.get('project_id', ''),
+                user_id=row.get('user_id', ''),
+                current_role=TechnicalRole(row['current_role']) if row.get(
+                    'current_role') else TechnicalRole.PROJECT_MANAGER,
+                status=ConversationStatus(row['status']) if row.get('status') else ConversationStatus.ACTIVE,
+                roles_to_cover=roles_to_cover,
+                completed_roles=completed_roles,
+                total_questions=row.get('total_questions', 0),
+                questions_answered=row.get('questions_answered', 0),
+                insights_generated=row.get('insights_generated', 0),
+                conflicts_detected=row.get('conflicts_detected', 0),
+                session_notes=row.get('session_notes', ''),
+                quality_score=row.get('quality_score', 0.0),
+                completion_percentage=row.get('completion_percentage', 0.0),
+                created_at=created_at,
+                updated_at=updated_at
+            )
+        except Exception as e:
+            self.logger.error(f"Error converting row to SocraticSession: {e}")
+            return SocraticSession()
+
+
+class QuestionRepository(BaseRepository[Question]):
+    """Repository for managing Socratic questions"""
+
+    def create(self, question: Question) -> bool:
+        """Create a new question"""
+        try:
+            data = self._model_to_dict(question)
+            query = """
+                INSERT INTO questions (
+                    id, session_id, role, question_text, context,
+                    is_follow_up, parent_question_id, importance_score,
+                    is_answered, answer_text, answer_quality_score,
+                    generated_insights, detected_conflicts, recommended_follow_ups,
+                    created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+
+            # Convert list fields to JSON
+            generated_insights_json = json.dumps(data.get('generated_insights', []))
+            detected_conflicts_json = json.dumps(data.get('detected_conflicts', []))
+            recommended_follow_ups_json = json.dumps(data.get('recommended_follow_ups', []))
+
+            params = (
+                data.get('id'),
+                data.get('session_id'),
+                data.get('role'),
+                data.get('question_text'),
+                data.get('context', ''),
+                data.get('is_follow_up', False),
+                data.get('parent_question_id'),
+                data.get('importance_score', 0.5),
+                data.get('is_answered', False),
+                data.get('answer_text', ''),
+                data.get('answer_quality_score', 0.0),
+                generated_insights_json,
+                detected_conflicts_json,
+                recommended_follow_ups_json,
+                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
+                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+            )
+
+            self.db_manager.execute_update(query, params)
+            self.logger.info(f"Created question: {question.id}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error creating question: {e}")
+            return False
+
+    def get_by_id(self, question_id: str) -> Optional[Question]:
+        """Get question by ID"""
+        try:
+            query = "SELECT * FROM questions WHERE id = ?"
+            results = self.db_manager.execute_query(query, (question_id,))
+
+            if results:
+                return self._row_to_model(results[0])
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Error getting question {question_id}: {e}")
+            return None
+
+    def update(self, question: Question) -> bool:
+        """Update existing question"""
+        try:
+            data = self._model_to_dict(question)
+
+            # Convert list fields to JSON
+            generated_insights_json = json.dumps(data.get('generated_insights', []))
+            detected_conflicts_json = json.dumps(data.get('detected_conflicts', []))
+            recommended_follow_ups_json = json.dumps(data.get('recommended_follow_ups', []))
+
+            query = """
+                UPDATE questions SET
+                    is_answered = ?, answer_text = ?, answer_quality_score = ?,
+                    generated_insights = ?, detected_conflicts = ?,
+                    recommended_follow_ups = ?, updated_at = ?
+                WHERE id = ?
+            """
+
+            params = (
+                data.get('is_answered', False),
+                data.get('answer_text', ''),
+                data.get('answer_quality_score', 0.0),
+                generated_insights_json,
+                detected_conflicts_json,
+                recommended_follow_ups_json,
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                data.get('id')
+            )
+
+            self.db_manager.execute_update(query, params)
+            self.logger.info(f"Updated question: {question.id}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error updating question: {e}")
+            return False
+
+    def delete(self, question_id: str) -> bool:
+        """Delete question by ID"""
+        try:
+            query = "DELETE FROM questions WHERE id = ?"
+            self.db_manager.execute_update(query, (question_id,))
+            self.logger.info(f"Deleted question: {question_id}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error deleting question {question_id}: {e}")
+            return False
+
+    def get_by_session_id(self, session_id: str) -> List[Question]:
+        """Get all questions for a session"""
+        try:
+            query = "SELECT * FROM questions WHERE session_id = ? ORDER BY created_at ASC"
+            results = self.db_manager.execute_query(query, (session_id,))
+            return [self._row_to_model(row) for row in results]
+
+        except Exception as e:
+            self.logger.error(f"Error getting questions for session {session_id}: {e}")
+            return []
+
+    def update_answer(self, question_id: str, answer: str) -> bool:
+        """Update question with user's answer"""
+        try:
+            query = """
+                UPDATE questions SET
+                    is_answered = ?, answer_text = ?, updated_at = ?
+                WHERE id = ?
+            """
+
+            params = (
+                True,
+                answer,
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                question_id
+            )
+
+            self.db_manager.execute_update(query, params)
+            self.logger.info(f"Updated answer for question: {question_id}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error updating answer for question {question_id}: {e}")
+            return False
+
+    def _row_to_model(self, row: Dict[str, Any]) -> Question:
+        """Convert database row to Question model"""
+        try:
+            # Parse JSON fields
+            generated_insights = json.loads(row['generated_insights']) if row.get('generated_insights') else []
+            detected_conflicts = json.loads(row['detected_conflicts']) if row.get('detected_conflicts') else []
+            recommended_follow_ups = json.loads(row['recommended_follow_ups']) if row.get(
+                'recommended_follow_ups') else []
+
+            # Parse datetime fields
+            created_at = DateTimeHelper.from_iso_string(row['created_at']) if row.get(
+                'created_at') else DateTimeHelper.now()
+            updated_at = DateTimeHelper.from_iso_string(row['updated_at']) if row.get(
+                'updated_at') else DateTimeHelper.now()
+
+            return Question(
+                id=row.get('id', ''),
+                session_id=row.get('session_id', ''),
+                role=TechnicalRole(row['role']) if row.get('role') else TechnicalRole.PROJECT_MANAGER,
+                question_text=row.get('question_text', ''),
+                context=row.get('context', ''),
+                is_follow_up=bool(row.get('is_follow_up', False)),
+                parent_question_id=row.get('parent_question_id'),
+                importance_score=float(row.get('importance_score', 0.5)),
+                is_answered=bool(row.get('is_answered', False)),
+                answer_text=row.get('answer_text', ''),
+                answer_quality_score=float(row.get('answer_quality_score', 0.0)),
+                generated_insights=generated_insights,
+                detected_conflicts=detected_conflicts,
+                recommended_follow_ups=recommended_follow_ups,
+                created_at=created_at,
+                updated_at=updated_at
+            )
+        except Exception as e:
+            self.logger.error(f"Error converting row to Question: {e}")
+            return Question()
+
+
+class ConversationMessageRepository(BaseRepository[ConversationMessage]):
+    """Repository for managing conversation messages"""
+
+    def create(self, message: ConversationMessage) -> bool:
+        """Create a new conversation message"""
+        try:
+            data = self._model_to_dict(message)
+            query = """
+                INSERT INTO conversation_messages (
+                    id, session_id, project_id, timestamp, message_type,
+                    content, phase, role, author, question_number,
+                    insights_extracted, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+
+            # Convert insights_extracted dict to JSON
+            insights_json = json.dumps(data.get('insights_extracted', {}))
+
+            params = (
+                data.get('id'),
+                data.get('session_id'),
+                data.get('project_id'),
+                DateTimeHelper.to_iso_string(data.get('timestamp', DateTimeHelper.now())),
+                data.get('message_type', 'user'),
+                data.get('content'),
+                data.get('phase', 'discovery'),
+                data.get('role'),
+                data.get('author'),
+                data.get('question_number'),
+                insights_json,
+                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
+                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+            )
+
+            self.db_manager.execute_update(query, params)
+            self.logger.info(f"Created conversation message: {message.id}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error creating conversation message: {e}")
+            return False
+
+    def get_by_id(self, message_id: str) -> Optional[ConversationMessage]:
+        """Get conversation message by ID"""
+        try:
+            query = "SELECT * FROM conversation_messages WHERE id = ?"
+            results = self.db_manager.execute_query(query, (message_id,))
+
+            if results:
+                return self._row_to_model(results[0])
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Error getting conversation message {message_id}: {e}")
+            return None
+
+    def update(self, message: ConversationMessage) -> bool:
+        """Update existing conversation message"""
+        try:
+            data = self._model_to_dict(message)
+
+            # Convert insights_extracted dict to JSON
+            insights_json = json.dumps(data.get('insights_extracted', {}))
+
+            query = """
+                UPDATE conversation_messages SET
+                    content = ?, insights_extracted = ?, updated_at = ?
+                WHERE id = ?
+            """
+
+            params = (
+                data.get('content'),
+                insights_json,
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                data.get('id')
+            )
+
+            self.db_manager.execute_update(query, params)
+            self.logger.info(f"Updated conversation message: {message.id}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error updating conversation message: {e}")
+            return False
+
+    def delete(self, message_id: str) -> bool:
+        """Delete conversation message by ID"""
+        try:
+            query = "DELETE FROM conversation_messages WHERE id = ?"
+            self.db_manager.execute_update(query, (message_id,))
+            self.logger.info(f"Deleted conversation message: {message_id}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error deleting conversation message {message_id}: {e}")
+            return False
+
+    def get_by_session_id(self, session_id: str) -> List[ConversationMessage]:
+        """Get all messages for a session"""
+        try:
+            query = "SELECT * FROM conversation_messages WHERE session_id = ? ORDER BY timestamp ASC"
+            results = self.db_manager.execute_query(query, (session_id,))
+            return [self._row_to_model(row) for row in results]
+
+        except Exception as e:
+            self.logger.error(f"Error getting messages for session {session_id}: {e}")
+            return []
+
+    def _row_to_model(self, row: Dict[str, Any]) -> ConversationMessage:
+        """Convert database row to ConversationMessage model"""
+        try:
+            # Parse JSON fields
+            insights_extracted = json.loads(row['insights_extracted']) if row.get('insights_extracted') else {}
+
+            # Parse datetime fields
+            timestamp = DateTimeHelper.from_iso_string(row['timestamp']) if row.get(
+                'timestamp') else DateTimeHelper.now()
+            created_at = DateTimeHelper.from_iso_string(row['created_at']) if row.get(
+                'created_at') else DateTimeHelper.now()
+            updated_at = DateTimeHelper.from_iso_string(row['updated_at']) if row.get(
+                'updated_at') else DateTimeHelper.now()
+
+            # Note: session_id is stored in DB but not in model - we skip it during instantiation
+            return ConversationMessage(
+                id=row.get('id', ''),
+                # session_id not in model, skip it
+                project_id=row.get('project_id', ''),
+                timestamp=timestamp,
+                message_type=row.get('message_type', 'user'),
+                content=row.get('content', ''),
+                phase=row.get('phase', 'discovery'),
+                role=row.get('role'),
+                author=row.get('author'),
+                question_number=row.get('question_number'),
+                insights_extracted=insights_extracted,
+                created_at=created_at,
+                updated_at=updated_at
+            )
+        except Exception as e:
+            self.logger.error(f"Error converting row to ConversationMessage: {e}")
+            return ConversationMessage()
+
+
 # ============================================================================
 # DATABASE MANAGER
 # ============================================================================
@@ -946,7 +1490,10 @@ class DatabaseService:
         # self.modules = ModuleRepository(self.db_manager, Module)
         # self.tasks = TaskRepository(self.db_manager, Task)
         # self.sessions = SocraticSessionRepository(self.db_manager, SocraticSession)
-
+        # Session persistence repositories
+        self.socratic_sessions = SocraticSessionRepository(self.db_manager, SocraticSession)
+        self.questions = QuestionRepository(self.db_manager, Question)
+        self.conversation_messages = ConversationMessageRepository(self.db_manager, ConversationMessage)
         self.logger.info("DatabaseService initialized successfully")
 
     @property
@@ -1021,7 +1568,10 @@ class RepositoryManager:
             'generated_codebase': self.db_service.generated_codebases,
             'generated_file': self.db_service.generated_files,
             'project_collaborator': self.db_service.project_collaborators,
-            'codebase': self.db_service.codebases,  # Alias support
+            'codebase': self.db_service.codebases,
+            'socratic_session': self.db_service.socratic_sessions,
+            'question': self.db_service.questions,
+            'conversation_message': self.db_service.conversation_messages,
         }
 
         return repository_mapping.get(model_type.lower())
@@ -1034,7 +1584,10 @@ class RepositoryManager:
             'generated_codebases': self.db_service.generated_codebases,
             'generated_files': self.db_service.generated_files,
             'project_collaborators': self.db_service.project_collaborators,
-            'codebases': self.db_service.codebases,  # Alias
+            'codebases': self.db_service.codebases,
+            'socratic_sessions': self.db_service.socratic_sessions,
+            'questions': self.db_service.questions,
+            'conversation_messages': self.db_service.conversation_messages,
         }
 
 
@@ -1080,7 +1633,8 @@ __all__ = [
     # Repository classes
     'BaseRepository', 'UserRepository', 'ProjectRepository',
     'GeneratedCodebaseRepository', 'GeneratedFileRepository',
-    'ProjectCollaboratorRepository',
+    'ProjectCollaboratorRepository', 'SocraticSessionRepository',
+    'QuestionRepository', 'ConversationMessageRepository',
 
     # Factory functions
     'get_database', 'get_repository_manager', 'init_database',
