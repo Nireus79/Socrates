@@ -91,6 +91,7 @@ except ImportError:
         ACTIVE = "active"
         COMPLETED = "completed"
 
+
     class TechnicalRole(Enum):
         PROJECT_MANAGER = "project_manager"
         BUSINESS_ANALYST = "business_analyst"
@@ -100,11 +101,13 @@ except ImportError:
         DATABASE_ARCHITECT = "database_architect"
         DEVOPS_ENGINEER = "devops_engineer"
 
+
     class ConversationStatus(Enum):
         ACTIVE = "active"
         PAUSED = "paused"
         COMPLETED = "completed"
         CANCELLED = "cancelled"
+
 
     class UserRole(Enum):
         ADMIN = "admin"
@@ -1288,6 +1291,257 @@ class ConversationMessageRepository(BaseRepository[ConversationMessage]):
             self.logger.error(f"Error converting row to ConversationMessage: {e}")
             return ConversationMessage()
 
+# ============================================================================
+# TechnicalSpecificationRepository
+# ============================================================================
+
+class TechnicalSpecificationRepository(BaseRepository[TechnicalSpec]):
+    """Repository for managing technical specifications"""
+
+    def create(self, spec: TechnicalSpec) -> bool:
+        """Create a new technical specification"""
+        try:
+            data = self._model_to_dict(spec)
+            query = """
+                INSERT INTO technical_specifications (
+                    id, project_id, session_id, version, architecture_type,
+                    technology_stack, functional_requirements, non_functional_requirements,
+                    system_components, data_models, api_specifications,
+                    performance_requirements, security_requirements, scalability_requirements,
+                    deployment_strategy, infrastructure_requirements, monitoring_requirements,
+                    testing_strategy, acceptance_criteria, documentation_requirements,
+                    is_approved, approved_by, approved_at, approval_notes,
+                    created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+
+            params = (
+                data.get('id'),
+                data.get('project_id'),
+                data.get('session_id'),
+                data.get('version', '1.0.0'),
+                data.get('architecture_type'),
+                json.dumps(data.get('technology_stack', {})),
+                json.dumps(data.get('functional_requirements', [])),
+                json.dumps(data.get('non_functional_requirements', [])),
+                json.dumps(data.get('system_components', [])),
+                json.dumps(data.get('data_models', [])),
+                json.dumps(data.get('api_specifications', [])),
+                json.dumps(data.get('performance_requirements', {})),
+                json.dumps(data.get('security_requirements', [])),
+                json.dumps(data.get('scalability_requirements', {})),
+                data.get('deployment_strategy'),
+                json.dumps(data.get('infrastructure_requirements', {})),
+                json.dumps(data.get('monitoring_requirements', [])),
+                json.dumps(data.get('testing_strategy', {})),
+                json.dumps(data.get('acceptance_criteria', [])),
+                json.dumps(data.get('documentation_requirements', [])),
+                1 if data.get('is_approved') else 0,
+                data.get('approved_by'),
+                DateTimeHelper.to_iso_string(data.get('approved_at')) if data.get('approved_at') else None,
+                data.get('approval_notes'),
+                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
+                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+            )
+
+            self.db_manager.execute_update(query, params)
+            self.logger.info(f"Created technical specification: {spec.id}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error creating technical specification: {e}")
+            return False
+
+    def get_by_id(self, spec_id: str) -> Optional[TechnicalSpec]:
+        """Get technical specification by ID"""
+        try:
+            query = "SELECT * FROM technical_specifications WHERE id = ?"
+            results = self.db_manager.execute_query(query, (spec_id,))
+            if results:
+                return self._row_to_model(results[0])
+            return None
+        except Exception as e:
+            self.logger.error(f"Error getting specification {spec_id}: {e}")
+            return None
+
+    def get_by_project_id(self, project_id: str) -> List[TechnicalSpec]:
+        """Get all specifications for a project"""
+        try:
+            query = "SELECT * FROM technical_specifications WHERE project_id = ? ORDER BY version DESC"
+            results = self.db_manager.execute_query(query, (project_id,))
+            return [self._row_to_model(row) for row in results]
+        except Exception as e:
+            self.logger.error(f"Error getting specifications for project {project_id}: {e}")
+            return []
+
+    def get_latest(self, project_id: str) -> Optional[TechnicalSpec]:
+        """Get the latest specification for a project"""
+        try:
+            query = """
+                SELECT * FROM technical_specifications 
+                WHERE project_id = ? 
+                ORDER BY version DESC, created_at DESC 
+                LIMIT 1
+            """
+            results = self.db_manager.execute_query(query, (project_id,))
+            if results:
+                return self._row_to_model(results[0])
+            return None
+        except Exception as e:
+            self.logger.error(f"Error getting latest specification for project {project_id}: {e}")
+            return None
+
+    def list_versions(self, project_id: str) -> List[str]:
+        """List all specification versions for a project"""
+        try:
+            query = "SELECT version FROM technical_specifications WHERE project_id = ? ORDER BY version DESC"
+            results = self.db_manager.execute_query(query, (project_id,))
+            return [row['version'] for row in results]
+        except Exception as e:
+            self.logger.error(f"Error listing versions for project {project_id}: {e}")
+            return []
+
+    def update(self, spec: TechnicalSpec) -> bool:
+        """Update an existing specification"""
+        try:
+            data = self._model_to_dict(spec)
+            query = """
+                UPDATE technical_specifications SET
+                    architecture_type = ?,
+                    technology_stack = ?,
+                    functional_requirements = ?,
+                    non_functional_requirements = ?,
+                    system_components = ?,
+                    data_models = ?,
+                    api_specifications = ?,
+                    performance_requirements = ?,
+                    security_requirements = ?,
+                    scalability_requirements = ?,
+                    deployment_strategy = ?,
+                    infrastructure_requirements = ?,
+                    monitoring_requirements = ?,
+                    testing_strategy = ?,
+                    acceptance_criteria = ?,
+                    documentation_requirements = ?,
+                    is_approved = ?,
+                    approved_by = ?,
+                    approved_at = ?,
+                    approval_notes = ?,
+                    updated_at = ?
+                WHERE id = ?
+            """
+
+            params = (
+                data.get('architecture_type'),
+                json.dumps(data.get('technology_stack', {})),
+                json.dumps(data.get('functional_requirements', [])),
+                json.dumps(data.get('non_functional_requirements', [])),
+                json.dumps(data.get('system_components', [])),
+                json.dumps(data.get('data_models', [])),
+                json.dumps(data.get('api_specifications', [])),
+                json.dumps(data.get('performance_requirements', {})),
+                json.dumps(data.get('security_requirements', [])),
+                json.dumps(data.get('scalability_requirements', {})),
+                data.get('deployment_strategy'),
+                json.dumps(data.get('infrastructure_requirements', {})),
+                json.dumps(data.get('monitoring_requirements', [])),
+                json.dumps(data.get('testing_strategy', {})),
+                json.dumps(data.get('acceptance_criteria', [])),
+                json.dumps(data.get('documentation_requirements', [])),
+                1 if data.get('is_approved') else 0,
+                data.get('approved_by'),
+                DateTimeHelper.to_iso_string(data.get('approved_at')) if data.get('approved_at') else None,
+                data.get('approval_notes'),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                data.get('id')
+            )
+
+            self.db_manager.execute_update(query, params)
+            self.logger.info(f"Updated technical specification: {spec.id}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error updating specification {spec.id}: {e}")
+            return False
+
+    def approve(self, spec_id: str, approved_by: str, notes: str = "") -> bool:
+        """Approve a specification"""
+        try:
+            query = """
+                UPDATE technical_specifications SET
+                    is_approved = 1,
+                    approved_by = ?,
+                    approved_at = ?,
+                    approval_notes = ?,
+                    updated_at = ?
+                WHERE id = ?
+            """
+
+            params = (
+                approved_by,
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                notes,
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                spec_id
+            )
+
+            self.db_manager.execute_update(query, params)
+            self.logger.info(f"Approved specification: {spec_id}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error approving specification {spec_id}: {e}")
+            return False
+
+    def _row_to_model(self, row: Dict[str, Any]) -> TechnicalSpec:
+        """Convert database row to TechnicalSpec model"""
+        try:
+            # Parse datetime fields
+            created_at = DateTimeHelper.from_iso_string(row['created_at']) if row.get(
+                'created_at') else DateTimeHelper.now()
+            updated_at = DateTimeHelper.from_iso_string(row['updated_at']) if row.get(
+                'updated_at') else DateTimeHelper.now()
+            approved_at = DateTimeHelper.from_iso_string(row['approved_at']) if row.get('approved_at') else None
+
+            return TechnicalSpec(
+                id=row.get('id', ''),
+                project_id=row.get('project_id', ''),
+                version=row.get('version', '1.0.0'),
+                architecture_type=row.get('architecture_type', ''),
+                technology_stack=json.loads(row['technology_stack']) if row.get('technology_stack') else {},
+                functional_requirements=json.loads(row['functional_requirements']) if row.get(
+                    'functional_requirements') else [],
+                non_functional_requirements=json.loads(row['non_functional_requirements']) if row.get(
+                    'non_functional_requirements') else [],
+                system_components=json.loads(row['system_components']) if row.get('system_components') else [],
+                data_models=json.loads(row['data_models']) if row.get('data_models') else [],
+                api_specifications=json.loads(row['api_specifications']) if row.get('api_specifications') else [],
+                performance_requirements=json.loads(row['performance_requirements']) if row.get(
+                    'performance_requirements') else {},
+                security_requirements=json.loads(row['security_requirements']) if row.get(
+                    'security_requirements') else [],
+                scalability_requirements=json.loads(row['scalability_requirements']) if row.get(
+                    'scalability_requirements') else {},
+                deployment_strategy=row.get('deployment_strategy', ''),
+                infrastructure_requirements=json.loads(row['infrastructure_requirements']) if row.get(
+                    'infrastructure_requirements') else {},
+                monitoring_requirements=json.loads(row['monitoring_requirements']) if row.get(
+                    'monitoring_requirements') else [],
+                testing_strategy=json.loads(row['testing_strategy']) if row.get('testing_strategy') else {},
+                acceptance_criteria=json.loads(row['acceptance_criteria']) if row.get('acceptance_criteria') else [],
+                documentation_requirements=json.loads(row['documentation_requirements']) if row.get(
+                    'documentation_requirements') else [],
+                is_approved=bool(row.get('is_approved', 0)),
+                approved_by=row.get('approved_by'),
+                approved_at=approved_at,
+                approval_notes=row.get('approval_notes', ''),
+                created_at=created_at,
+                updated_at=updated_at
+            )
+        except Exception as e:
+            self.logger.error(f"Error converting row to TechnicalSpec: {e}")
+            return TechnicalSpec()
+
 
 # ============================================================================
 # DATABASE MANAGER
@@ -1468,6 +1722,40 @@ class DatabaseManager:
                     )
                 """)
 
+                # Technical specifications table
+                conn.execute("""
+                                    CREATE TABLE IF NOT EXISTS technical_specifications (
+                                        id TEXT PRIMARY KEY,
+                                        project_id TEXT NOT NULL,
+                                        session_id TEXT,
+                                        version TEXT NOT NULL DEFAULT '1.0.0',
+                                        architecture_type TEXT,
+                                        technology_stack TEXT,
+                                        functional_requirements TEXT,
+                                        non_functional_requirements TEXT,
+                                        system_components TEXT,
+                                        data_models TEXT,
+                                        api_specifications TEXT,
+                                        performance_requirements TEXT,
+                                        security_requirements TEXT,
+                                        scalability_requirements TEXT,
+                                        deployment_strategy TEXT,
+                                        infrastructure_requirements TEXT,
+                                        monitoring_requirements TEXT,
+                                        testing_strategy TEXT,
+                                        acceptance_criteria TEXT,
+                                        documentation_requirements TEXT,
+                                        is_approved INTEGER DEFAULT 0,
+                                        approved_by TEXT,
+                                        approved_at TEXT,
+                                        approval_notes TEXT,
+                                        created_at TEXT NOT NULL,
+                                        updated_at TEXT NOT NULL,
+                                        FOREIGN KEY (project_id) REFERENCES projects(id),
+                                        FOREIGN KEY (session_id) REFERENCES socratic_sessions(id)
+                                    )
+                                """)
+
                 conn.commit()
                 self.logger.info("Database schema initialized successfully")
 
@@ -1554,6 +1842,7 @@ class DatabaseService:
         self.generated_codebases = GeneratedCodebaseRepository(self.db_manager, GeneratedCodebase)
         self.generated_files = GeneratedFileRepository(self.db_manager, GeneratedFile)
         self.project_collaborators = ProjectCollaboratorRepository(self.db_manager, ProjectCollaborator)
+        self.technical_specifications = TechnicalSpecificationRepository(self.db_manager, self.logger)
 
         # Add other repositories as needed
         # self.modules = ModuleRepository(self.db_manager, Module)
