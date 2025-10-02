@@ -108,6 +108,7 @@ class SessionPersistenceTests:
 
         try:
             # Create session by generating questions
+            # Fix: Use valid TechnicalRole value
             result = self.orchestrator.route_request(
                 'socratic_counselor',
                 'generate_questions',
@@ -115,7 +116,7 @@ class SessionPersistenceTests:
                     'session_id': self.test_session_id,
                     'project_id': self.test_project_id,
                     'user_id': self.test_user_id,
-                    'role': 'developer',
+                    'role': 'backend_developer',  # Fixed: was 'developer'
                     'question_count': 3,
                     'project_phase': 'planning'
                 }
