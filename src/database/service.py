@@ -21,7 +21,8 @@ from .repositories import (
     TechnicalSpecificationRepository,
     ProjectContextRepository,
     ModuleContextRepository,
-    TaskContextRepository
+    TaskContextRepository,
+    ConflictRepository
 )
 
 # Core imports with fallbacks
@@ -166,6 +167,7 @@ class DatabaseService:
         self.project_contexts = ProjectContextRepository(self.db_manager, ProjectContext)
         self.module_contexts = ModuleContextRepository(self.db_manager, ModuleContext)
         self.task_contexts = TaskContextRepository(self.db_manager, TaskContext)
+        self.conflicts = ConflictRepository(self.db_manager, Conflict)
 
     # ==========================================================================
     # BACKWARD COMPATIBILITY ALIASES

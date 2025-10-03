@@ -381,6 +381,32 @@ class DatabaseManager:
                     )
                 """)
 
+                # Conflicts table
+                conn.execute("""
+                                    CREATE TABLE IF NOT EXISTS conflicts (
+                                        id TEXT PRIMARY KEY,
+                                        project_id TEXT NOT NULL,
+                                        session_id TEXT,
+                                        conflict_type TEXT NOT NULL,
+                                        description TEXT NOT NULL,
+                                        severity TEXT NOT NULL DEFAULT 'medium',
+                                        first_requirement TEXT,
+                                        second_requirement TEXT,
+                                        conflicting_roles TEXT,
+                                        is_resolved INTEGER DEFAULT 0,
+                                        resolution_strategy TEXT,
+                                        resolution_notes TEXT,
+                                        resolved_by TEXT,
+                                        resolved_at TEXT,
+                                        affected_modules TEXT,
+                                        estimated_impact_hours INTEGER,
+                                        created_at TEXT NOT NULL,
+                                        updated_at TEXT NOT NULL,
+                                        FOREIGN KEY (project_id) REFERENCES projects(id),
+                                        FOREIGN KEY (session_id) REFERENCES socratic_sessions(id)
+                                    )
+                                """)
+
                 # Create indexes for performance
                 self._create_indexes(conn)
 
@@ -409,6 +435,9 @@ class DatabaseManager:
             "CREATE INDEX IF NOT EXISTS idx_project_contexts_project ON project_contexts(project_id)",
             "CREATE INDEX IF NOT EXISTS idx_module_contexts_project ON module_contexts(project_id)",
             "CREATE INDEX IF NOT EXISTS idx_task_contexts_project ON task_contexts(project_id)",
+            "CREATE INDEX IF NOT EXISTS idx_conflicts_project ON conflicts(project_id)",
+            "CREATE INDEX IF NOT EXISTS idx_conflicts_session ON conflicts(session_id)",
+            "CREATE INDEX IF NOT EXISTS idx_conflicts_resolved ON conflicts(is_resolved)",
             "CREATE INDEX IF NOT EXISTS idx_codebases_project ON generated_codebases(project_id)",
             "CREATE INDEX IF NOT EXISTS idx_files_codebase ON generated_files(codebase_id)",
         ]
