@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-Socratic RAG Enhanced - Base Agent Architecture with ServiceContainer
-====================================================================
+BaseAgent - Foundation Class for All Agents
+============================================
 
-Base agent class and common utilities for all Socratic RAG agents.
 Provides common functionality like Claude API integration, logging, events.
 Uses dependency injection pattern with ServiceContainer.
 """
@@ -21,8 +20,6 @@ try:
         ServiceContainer, DateTimeHelper, ANTHROPIC_AVAILABLE,
         AgentError, ValidationError, DatabaseError
     )
-    from src.database import get_database
-
     CORE_AVAILABLE = True
 except ImportError:
     CORE_AVAILABLE = False
@@ -79,11 +76,6 @@ except ImportError:
     # Fallback constants
     ANTHROPIC_AVAILABLE = False
 
-
-    # Fallback database function
-    def get_database():
-        return None
-
 # Anthropic client import with fallback
 if ANTHROPIC_AVAILABLE:
     try:
@@ -123,9 +115,6 @@ class BaseAgent(ABC):
             self.logger = logging.getLogger(f"agent.{agent_id}")
             self.events = None
             self.db_manager = None
-
-        # Initialize database service (backward compatibility)
-        self.db_service = get_database() if CORE_AVAILABLE else None
 
         # Claude API client setup
         self.claude_client = None
@@ -181,100 +170,53 @@ class BaseAgent(ABC):
 
     def process_request(self, action: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Process agent request with comprehensive error handling and monitoring
+        Process incoming request
 
         Args:
-            action: The action to perform
+            action: Action to perform
             data: Request data
 
         Returns:
-            Dict containing response data
+            Dict with response
         """
-        request_id = f"{self.agent_id}_{int(time.time() * 1000000)}"
+        # Track request start
         start_time = time.time()
-
-        # Log request start
-        if self.logger:
-            self.logger.debug(f"Processing request {request_id}: {action}")
-
-        # Emit start event
-        if self.events:
-            self.events.emit('agent_request_start', self.agent_id, {
-                'request_id': request_id,
-                'action': action,
-                'agent_id': self.agent_id
-            })
+        self.stats['requests_processed'] += 1
+        self.stats['last_activity'] = DateTimeHelper.now()
 
         try:
-            # Update statistics
-            self.stats['requests_processed'] += 1
-            self.stats['last_activity'] = DateTimeHelper.now()
-            self._start_times[request_id] = start_time
-
-            # Route to specific action handler
+            # Find and execute action method
             method_name = f"_{action}"
             if hasattr(self, method_name):
-                handler = getattr(self, method_name)
-                result = handler(data)
+                method = getattr(self, method_name)
+                result = method(data)
+
+                # Update performance stats
+                duration = time.time() - start_time
+                self._update_response_time(duration)
+
+                return result
             else:
-                raise AgentError(f"Action '{action}' not supported by {self.name}")
-
-            # Calculate response time
-            response_time = time.time() - start_time
-            self._update_response_time(response_time)
-
-            # Emit success event
-            if self.events:
-                self.events.emit('agent_request_success', self.agent_id, {
-                    'request_id': request_id,
-                    'action': action,
-                    'response_time': response_time
-                })
-
-            # Log success
-            if self.logger:
-                self.logger.debug(f"Request {request_id} completed in {response_time:.3f}s")
-
-            return self._success_response("Request processed successfully", result)
+                return self._error_response(
+                    f"Unknown action: {action}",
+                    "UNKNOWN_ACTION"
+                )
 
         except Exception as e:
-            # Update error statistics
             self.stats['errors_encountered'] += 1
-            response_time = time.time() - start_time
-
-            # Log error
             if self.logger:
-                self.logger.error(f"Request {request_id} failed: {e}", exc_info=True)
+                self.logger.error(f"Request processing error: {e}", exc_info=True)
+            return self._error_response(str(e), "PROCESSING_ERROR")
 
-            # Emit error event
-            if self.events:
-                self.events.emit('agent_request_error', self.agent_id, {
-                    'request_id': request_id,
-                    'action': action,
-                    'error': str(e),
-                    'response_time': response_time
-                })
-
-            return self._error_response(f"Request failed: {e}")
-
-        finally:
-            # Cleanup
-            if request_id in self._start_times:
-                del self._start_times[request_id]
-
-    def _update_response_time(self, response_time: float):
-        """Update average response time statistics"""
+    def _update_response_time(self, duration: float):
+        """Update average response time"""
         current_avg = self.stats['average_response_time']
-        requests_count = self.stats['requests_processed']
+        count = self.stats['requests_processed']
+        self.stats['average_response_time'] = (
+            (current_avg * (count - 1) + duration) / count
+        )
 
-        if requests_count == 1:
-            self.stats['average_response_time'] = response_time
-        else:
-            # Calculate running average
-            new_avg = ((current_avg * (requests_count - 1)) + response_time) / requests_count
-            self.stats['average_response_time'] = new_avg
-
-    def _success_response(self, message: str, data: Any = None) -> Dict[str, Any]:
+    def _success_response(self, message: str, data: Dict[str, Any] = None) -> Dict[str, Any]:
         """Create standardized success response"""
         return {
             'success': True,
@@ -386,52 +328,61 @@ def require_authentication(func):
 
     @wraps(func)
     def wrapper(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        # Check for user_id
         user_id = data.get('user_id')
-
-        # Check if user_id is provided
         if not user_id:
-            return self._error_response("Authentication required", "AUTH_REQUIRED")
+            return self._error_response(
+                "Authentication required: user_id must be provided",
+                "AUTH_REQUIRED"
+            )
 
-        # Get database service
-        db_service = None
-        if hasattr(self, 'db_manager') and self.db_manager:
-            # Use new pattern
-            try:
-                from src.database import DatabaseService
-                db_service = DatabaseService(self.db_manager)
-            except:
-                pass
-        elif hasattr(self, 'db_service') and self.db_service:
-            # Fallback to old pattern
-            db_service = self.db_service
+        # Get database manager
+        db_manager = self.services.get_db_manager() if self.services else None
+        if not db_manager:
+            return self._error_response(
+                "Database service unavailable",
+                "DB_UNAVAILABLE"
+            )
 
-        if not db_service:
-            return self._error_response("Database service unavailable", "DB_UNAVAILABLE")
-
-        # Verify user exists
+        # Verify user exists and is active
         try:
-            user = db_service.users.get_by_id(user_id)
+            # Import here to avoid circular imports
+            from src.database import get_database
+            db = get_database()
+            user = db.users.get_by_id(user_id)
+
             if not user:
-                return self._error_response("Invalid user", "INVALID_USER")
+                return self._error_response(
+                    f"Invalid user_id: {user_id}",
+                    "INVALID_USER"
+                )
 
-            # Check if user is active
-            user_status = user.status.value if hasattr(user.status, 'value') else user.status
-            if user_status != 'active':
-                return self._error_response("User account inactive", "USER_INACTIVE")
+            # Check user status
+            user_status = user.status if hasattr(user, 'status') else 'active'
+            if isinstance(user_status, str):
+                status_value = user_status
+            else:
+                status_value = user_status.value if hasattr(user_status, 'value') else str(user_status)
 
-            # Add authenticated user to data for use in method
+            if status_value != 'active':
+                return self._error_response(
+                    f"User account is not active: {status_value}",
+                    "USER_INACTIVE"
+                )
+
+            # Add authenticated user to data for use in wrapped method
             data['_authenticated_user'] = user
 
-            # Log authentication success if logger available
-            if hasattr(self, 'logger') and self.logger:
-                self.logger.debug(f"User {user_id} authenticated for {func.__name__}")
-
+            # Call the wrapped function
             return func(self, data)
 
         except Exception as e:
-            if hasattr(self, 'logger') and self.logger:
-                self.logger.error(f"Authentication error in {func.__name__}: {e}")
-            return self._error_response(f"Authentication failed: {str(e)}", "AUTH_ERROR")
+            if self.logger:
+                self.logger.error(f"Authentication error: {e}")
+            return self._error_response(
+                f"Authentication failed: {str(e)}",
+                "AUTH_FAILED"
+            )
 
     return wrapper
 
@@ -439,123 +390,155 @@ def require_authentication(func):
 def require_project_access(func):
     """
     Decorator to require project access for agent methods.
-    Automatically applies require_authentication first.
 
     Validates that:
-    - User is authenticated (via require_authentication)
-    - project_id is provided in data
-    - Project exists in database
-    - User is either project owner or active collaborator
+    - User is authenticated (applies require_authentication automatically)
+    - project_id is provided
+    - Project exists
+    - User is owner or active collaborator
 
     Adds _project_role and _project to data dict for use in wrapped method.
-    Roles: 'owner', 'editor', 'viewer', etc.
     """
 
     @wraps(func)
-    def inner_wrapper(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        user_id = data.get('user_id')
+    @require_authentication
+    def wrapper(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        # Check for project_id
         project_id = data.get('project_id')
-
-        # Check if project_id is provided
         if not project_id:
-            return self._error_response("Project ID required", "PROJECT_ID_REQUIRED")
-
-        # Get database service
-        db_service = None
-        if hasattr(self, 'db_manager') and self.db_manager:
-            # Use new pattern
-            try:
-                from src.database import DatabaseService
-                db_service = DatabaseService(self.db_manager)
-            except:
-                pass
-        elif hasattr(self, 'db_service') and self.db_service:
-            # Fallback to old pattern
-            db_service = self.db_service
-
-        if not db_service:
-            return self._error_response("Database service unavailable", "DB_UNAVAILABLE")
-
-        try:
-            # Get project
-            project = db_service.projects.get_by_id(project_id)
-            if not project:
-                return self._error_response("Project not found", "PROJECT_NOT_FOUND")
-
-            # Check if user is owner
-            if project.owner_id == user_id:
-                data['_project_role'] = 'owner'
-                data['_project'] = project
-
-                if hasattr(self, 'logger') and self.logger:
-                    self.logger.debug(f"User {user_id} authorized as owner for project {project_id}")
-
-                return func(self, data)
-
-            # Check if user is collaborator
-            collaborators = db_service.project_collaborators.get_by_project_id(project_id)
-            user_collab = next(
-                (c for c in collaborators if c.user_id == user_id and c.is_active),
-                None
+            return self._error_response(
+                "project_id is required",
+                "PROJECT_ID_REQUIRED"
             )
 
-            if user_collab:
-                # Get role as string
-                role = user_collab.role.value if hasattr(user_collab.role, 'value') else user_collab.role
-                data['_project_role'] = role
+        # Get authenticated user (added by require_authentication)
+        user = data.get('_authenticated_user')
+        if not user:
+            return self._error_response(
+                "Authentication required",
+                "AUTH_REQUIRED"
+            )
+
+        try:
+            # Import here to avoid circular imports
+            from src.database import get_database
+            db = get_database()
+
+            # Check if project exists
+            project = db.projects.get_by_id(project_id)
+            if not project:
+                return self._error_response(
+                    f"Project not found: {project_id}",
+                    "PROJECT_NOT_FOUND"
+                )
+
+            # Check if user is owner
+            project_owner_id = project.owner_id if hasattr(project, 'owner_id') else None
+            user_id = user.id if hasattr(user, 'id') else str(user)
+
+            if project_owner_id == user_id:
+                data['_project_role'] = 'owner'
                 data['_project'] = project
-
-                if hasattr(self, 'logger') and self.logger:
-                    self.logger.debug(f"User {user_id} authorized as {role} for project {project_id}")
-
                 return func(self, data)
 
-            # User has no access to this project
-            if hasattr(self, 'logger') and self.logger:
-                self.logger.warning(f"User {user_id} denied access to project {project_id}")
+            # Check if user is a collaborator
+            collaborators = db.project_collaborators.get_by_project_id(project_id)
+            for collab in collaborators:
+                collab_user_id = collab.user_id if hasattr(collab, 'user_id') else None
+                collab_status = collab.status if hasattr(collab, 'status') else 'active'
 
-            return self._error_response("Access denied", "ACCESS_DENIED")
+                # Handle status enum
+                if not isinstance(collab_status, str):
+                    collab_status = collab_status.value if hasattr(collab_status, 'value') else str(collab_status)
+
+                if collab_user_id == user_id and collab_status == 'active':
+                    collab_role = collab.role if hasattr(collab, 'role') else 'collaborator'
+                    if not isinstance(collab_role, str):
+                        collab_role = collab_role.value if hasattr(collab_role, 'value') else str(collab_role)
+
+                    data['_project_role'] = collab_role
+                    data['_project'] = project
+                    return func(self, data)
+
+            # User has no access
+            return self._error_response(
+                f"Access denied: User {user_id} does not have access to project {project_id}",
+                "ACCESS_DENIED"
+            )
 
         except Exception as e:
-            if hasattr(self, 'logger') and self.logger:
-                self.logger.error(f"Project access check error in {func.__name__}: {e}")
-            return self._error_response(f"Access check failed: {str(e)}", "ACCESS_CHECK_ERROR")
+            if self.logger:
+                self.logger.error(f"Project access check error: {e}")
+            return self._error_response(
+                f"Access check failed: {str(e)}",
+                "ACCESS_CHECK_FAILED"
+            )
 
-    # Apply authentication decorator first
-    return require_authentication(inner_wrapper)
+    return wrapper
 
 
 def log_agent_action(func):
-    """Decorator to log agent actions"""
+    """
+    Decorator to log agent actions with performance tracking
+    """
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
+        action_name = func.__name__
+        start_time = time.time()
+
         if hasattr(self, 'logger') and self.logger:
-            self.logger.info(f"Executing {func.__name__} on agent {self.agent_id}")
+            self.logger.info(f"Starting action: {action_name}")
 
         try:
             result = func(self, *args, **kwargs)
+            duration = time.time() - start_time
 
             if hasattr(self, 'logger') and self.logger:
-                self.logger.debug(f"Successfully completed {func.__name__}")
+                self.logger.info(f"Completed action: {action_name} in {duration:.3f}s")
+
+            # Emit event if event bus available
+            if hasattr(self, 'events') and self.events:
+                self.events.emit('agent_action', self.agent_id, {
+                    'action': action_name,
+                    'duration': duration,
+                    'success': True
+                })
 
             return result
 
         except Exception as e:
+            duration = time.time() - start_time
+
             if hasattr(self, 'logger') and self.logger:
-                self.logger.error(f"Error in {func.__name__}: {e}")
+                self.logger.error(f"Failed action: {action_name} after {duration:.3f}s - {e}")
+
+            # Emit error event
+            if hasattr(self, 'events') and self.events:
+                self.events.emit('agent_action', self.agent_id, {
+                    'action': action_name,
+                    'duration': duration,
+                    'success': False,
+                    'error': str(e)
+                })
+
             raise
 
     return wrapper
 
 
-def monitor_performance(operation_name: str = None):
-    """Decorator to monitor performance of agent methods"""
+def monitor_performance(operation: str = None):
+    """
+    Decorator factory for detailed performance monitoring
+
+    Args:
+        operation: Custom operation name (defaults to function name)
+    """
 
     def decorator(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            operation = operation_name or func.__name__
+            op_name = operation or func.__name__
             start_time = time.time()
 
             try:
@@ -564,12 +547,12 @@ def monitor_performance(operation_name: str = None):
                 # Log performance
                 duration = time.time() - start_time
                 if hasattr(self, 'logger') and self.logger:
-                    self.logger.debug(f"Operation {operation} completed in {duration:.3f}s")
+                    self.logger.debug(f"Operation {op_name} completed in {duration:.3f}s")
 
                 # Emit performance event
                 if hasattr(self, 'events') and self.events:
                     self.events.emit('agent_performance', self.agent_id, {
-                        'operation': operation,
+                        'operation': op_name,
                         'duration': duration,
                         'success': True
                     })
@@ -581,12 +564,12 @@ def monitor_performance(operation_name: str = None):
 
                 # Log error with performance
                 if hasattr(self, 'logger') and self.logger:
-                    self.logger.error(f"Operation {operation} failed after {duration:.3f}s: {e}")
+                    self.logger.error(f"Operation {op_name} failed after {duration:.3f}s: {e}")
 
                 # Emit error event
                 if hasattr(self, 'events') and self.events:
                     self.events.emit('agent_performance', self.agent_id, {
-                        'operation': operation,
+                        'operation': op_name,
                         'duration': duration,
                         'success': False,
                         'error': str(e)
@@ -604,7 +587,7 @@ def monitor_performance(operation_name: str = None):
 # ============================================================================
 
 def create_agent_with_services(agent_class, agent_id: str, name: str,
-                               services: ServiceContainer) -> BaseAgent:
+                                services: ServiceContainer) -> BaseAgent:
     """Factory function to create agents with services"""
     try:
         return agent_class(agent_id, name, services)
