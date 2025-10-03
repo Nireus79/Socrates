@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="sessions">
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="ph2">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database.py" afterDir="false" />
     </list>
@@ -151,14 +151,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00067" summary="login">
-      <option name="closed" value="true" />
-      <created>1759199562806</created>
-      <option name="number" value="00067" />
-      <option name="presentableId" value="LOCAL-00067" />
-      <option name="project" value="LOCAL" />
-      <updated>1759199562806</updated>
     </task>
     <task id="LOCAL-00068" summary="login">
       <option name="closed" value="true" />
@@ -544,11 +536,18 @@
       <option name="project" value="LOCAL" />
       <updated>1759431539426</updated>
     </task>
-    <option name="localTasksCounter" value="116" />
+    <task id="LOCAL-00116" summary="ph2">
+      <option name="closed" value="true" />
+      <created>1759432821777</created>
+      <option name="number" value="00116" />
+      <option name="presentableId" value="LOCAL-00116" />
+      <option name="project" value="LOCAL" />
+      <updated>1759432821777</updated>
+    </task>
+    <option name="localTasksCounter" value="117" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="static" />
     <MESSAGE value="run.py" />
     <MESSAGE value="debug" />
     <MESSAGE value="working" />
@@ -573,6 +572,7 @@
     <MESSAGE value="tests" />
     <MESSAGE value="api key" />
     <MESSAGE value="sessions" />
-    <option name="LAST_COMMIT_MESSAGE" value="sessions" />
+    <MESSAGE value="ph2" />
+    <option name="LAST_COMMIT_MESSAGE" value="ph2" />
   </component>
 </project>

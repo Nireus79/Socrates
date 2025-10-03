@@ -1291,6 +1291,7 @@ class ConversationMessageRepository(BaseRepository[ConversationMessage]):
             self.logger.error(f"Error converting row to ConversationMessage: {e}")
             return ConversationMessage()
 
+
 # ============================================================================
 # TechnicalSpecificationRepository
 # ============================================================================
@@ -1462,6 +1463,18 @@ class TechnicalSpecificationRepository(BaseRepository[TechnicalSpec]):
 
         except Exception as e:
             self.logger.error(f"Error updating specification {spec.id}: {e}")
+            return False
+
+    def delete(self, spec_id: str) -> bool:
+        """Delete a specification by ID"""
+        try:
+            query = "DELETE FROM technical_specifications WHERE id = ?"
+            self.db_manager.execute_update(query, (spec_id,))
+            self.logger.info(f"Deleted technical specification: {spec_id}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error deleting specification {spec_id}: {e}")
             return False
 
     def approve(self, spec_id: str, approved_by: str, notes: str = "") -> bool:
