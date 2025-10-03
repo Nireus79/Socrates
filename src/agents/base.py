@@ -387,22 +387,19 @@ def require_authentication(func):
     return wrapper
 
 
-def require_project_access(project_id_param: str = 'project_id'):
+def require_project_access(func):
     """Decorator to require project access for agent methods"""
 
-    def decorator(func):
-        @wraps(func)
-        def wrapper(self, *args, **kwargs):
-            # For now, just log the requirement
-            if hasattr(self, 'logger') and self.logger:
-                self.logger.debug(f"Project access required for {func.__name__}")
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        # For now, just log the requirement
+        if hasattr(self, 'logger') and self.logger:
+            self.logger.debug(f"Project access required for {func.__name__}")
 
-            # TODO: Implement actual project access check
-            return func(self, *args, **kwargs)
+        # TODO: Implement actual project access check
+        return func(self, *args, **kwargs)
 
-        return wrapper
-
-    return decorator
+    return wrapper
 
 
 def log_agent_action(func):

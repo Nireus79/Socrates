@@ -251,7 +251,19 @@ class ContextAnalyzerAgent(BaseAgent):
 
         # Check if context is older than threshold
         now = DateTimeHelper.now()
-        age_minutes = (now - context.last_analyzed_at).total_seconds() / 60
+        last_analyzed = context.last_analyzed_at
+
+        # Handle timezone mismatch between aware and naive datetimes
+        if now.tzinfo is not None and last_analyzed.tzinfo is None:
+            # Make last_analyzed timezone-aware (assume UTC)
+            from datetime import timezone
+            last_analyzed = last_analyzed.replace(tzinfo=timezone.utc)
+        elif now.tzinfo is None and last_analyzed.tzinfo is not None:
+            # Make now timezone-aware (assume UTC)
+            from datetime import timezone
+            now = now.replace(tzinfo=timezone.utc)
+
+        age_minutes = (now - last_analyzed).total_seconds() / 60
 
         return age_minutes > self.context_refresh_threshold_minutes
 
