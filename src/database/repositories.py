@@ -7,6 +7,7 @@ All concrete repository implementations for the Socratic RAG Enhanced system.
 
 from typing import Dict, List, Any, Optional
 from datetime import datetime
+from dataclasses import dataclass
 
 # Import base repository
 from .base import BaseRepository, parse_json_field, dump_json_field

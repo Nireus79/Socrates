@@ -4,14 +4,14 @@
 import sys
 import os
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from src import initialize_package
 from src.database import get_database
 from src.agents.context import ContextAnalyzerAgent
 from src.models import Project, ProjectStatus, Conflict, ConflictType
 from src.core import DateTimeHelper
 import uuid
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 class TestResults:
