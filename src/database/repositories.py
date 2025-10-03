@@ -238,7 +238,7 @@ class ProjectRepository(BaseRepository[Project]):
                 data.get('owner_id'), data.get('status', 'draft'),
                 DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
                 DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now())),
-                data.get('technology_stack')
+                dump_json_field(data.get('technology_stack'))
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -274,7 +274,7 @@ class ProjectRepository(BaseRepository[Project]):
             """
             params = (
                 data.get('name'), data.get('description'), data.get('status'),
-                data.get('technology_stack'),
+                dump_json_field(data.get('technology_stack')),
                 DateTimeHelper.to_iso_string(DateTimeHelper.now()),
                 data.get('id')
             )
