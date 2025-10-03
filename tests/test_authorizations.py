@@ -15,13 +15,16 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from src.core import ServiceContainer
 from src.database import get_database, init_database
-from src.models import User, Project, ProjectCollaborator, UserStatus, UserRole, CollaboratorRole
+from src.models import User, Project, ProjectCollaborator, UserStatus, UserRole
 from src.agents.base import BaseAgent, require_authentication, require_project_access
 
 
 # Test Agent for authorization testing
 class TestAuthAgent(BaseAgent):
     """Test agent with decorated methods"""
+
+    def __init__(self, agent_id, name, services):
+        super().__init__(agent_id, name, services)
 
     def get_capabilities(self):
         return ['auth_test', 'project_test']
@@ -97,16 +100,30 @@ def setup_test_env():
     )
     db.projects.create(project)
 
-    # Add collaborator
+    # Add collaborator (using UserRole, not CollaboratorRole)
     collaboration = ProjectCollaborator(
         id='collab_1',
         project_id='project_test_1',
         user_id='user_collab_1',
-        role=CollaboratorRole.EDITOR,
+        role=UserRole.DEVELOPER,  # Changed from CollaboratorRole.EDITOR
         is_active=True,
         joined_at=datetime.now()
     )
     db.project_collaborators.create(collaboration)
+
+    # Create agent WITHOUT ServiceContainer (use None)
+    agent = TestAuthAgent('test_auth_agent', 'Test Auth Agent', None)
+
+    yield {
+        'db': db,
+        'agent': agent,
+        'active_user_id': 'user_active_1',
+        'inactive_user_id': 'user_inactive_1',
+        'collaborator_user_id': 'user_collab_1',
+        'project_id': 'project_test_1',
+        'invalid_user_id': 'user_invalid_999',
+        'invalid_project_id': 'project_invalid_999'
+    }
 
     # Create services
     services = ServiceContainer()
@@ -303,8 +320,8 @@ class TestProjectAccess:
             id='collab_inactive',
             project_id=project_id,
             user_id='user_inactive_collab',
-            role=CollaboratorRole.VIEWER,
-            is_active=False,  # Inactive collaboration
+            role=UserRole.VIEWER,
+            is_active=False,
             joined_at=datetime.now()
         )
         db.project_collaborators.create(inactive_collaboration)

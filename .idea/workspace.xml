@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="tests">
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="authorizations">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -108,7 +108,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="Python tests in all_agents_tests.py" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+    <configuration name="Python tests in test_agents_.py" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="Socrates" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -119,19 +119,19 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;$PROJECT_DIR$/tests/all_agents_tests.py&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/tests/test_agents_.py&quot;" />
       <option name="_new_targetType" value="&quot;PATH&quot;" />
       <method v="2" />
     </configuration>
     <list>
       <item itemvalue="Python.main" />
       <item itemvalue="Python.run" />
-      <item itemvalue="Python tests.Python tests in all_agents_tests.py" />
+      <item itemvalue="Python tests.Python tests in test_agents_.py" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python.run" />
-        <item itemvalue="Python tests.Python tests in all_agents_tests.py" />
+        <item itemvalue="Python tests.Python tests in test_agents_.py" />
       </list>
     </recent_temporary>
   </component>
@@ -150,14 +150,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00090" summary="Phase 1 finished">
-      <option name="closed" value="true" />
-      <created>1759307022329</created>
-      <option name="number" value="00090" />
-      <option name="presentableId" value="LOCAL-00090" />
-      <option name="project" value="LOCAL" />
-      <updated>1759307022329</updated>
     </task>
     <task id="LOCAL-00091" summary="Phase 1 finished">
       <option name="closed" value="true" />
@@ -543,11 +535,18 @@
       <option name="project" value="LOCAL" />
       <updated>1759505679533</updated>
     </task>
-    <option name="localTasksCounter" value="139" />
+    <task id="LOCAL-00139" summary="authorizations">
+      <option name="closed" value="true" />
+      <created>1759515956623</created>
+      <option name="number" value="00139" />
+      <option name="presentableId" value="LOCAL-00139" />
+      <option name="project" value="LOCAL" />
+      <updated>1759515956624</updated>
+    </task>
+    <option name="localTasksCounter" value="140" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="working" />
     <MESSAGE value="key" />
     <MESSAGE value="texts" />
     <MESSAGE value="ui" />
@@ -572,6 +571,7 @@
     <MESSAGE value="tech specs" />
     <MESSAGE value="database dir" />
     <MESSAGE value="tests" />
-    <option name="LAST_COMMIT_MESSAGE" value="tests" />
+    <MESSAGE value="authorizations" />
+    <option name="LAST_COMMIT_MESSAGE" value="authorizations" />
   </component>
 </project>
