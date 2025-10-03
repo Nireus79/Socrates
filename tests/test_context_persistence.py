@@ -114,12 +114,21 @@ def setup_test_environment(results: TestResults) -> Optional[tuple]:
 
     try:
         # Import core components
-        from src.core import ServiceContainer
+        from src import get_services, initialize_package
         from src.database import get_database
         from src.agents.context import ContextAnalyzerAgent
-        from src.models import Project
+        from src.models import Project, ProjectStatus
 
         results.add_pass("Imports successful")
+
+        # Initialize the package first
+        print_info("Initializing package...")
+        services = initialize_package()
+        if not services:
+            results.add_fail("Package initialization", "initialize_package() returned None")
+            return None
+
+        results.add_pass("Package initialized")
 
         # Get database service
         db_service = get_database()
@@ -128,10 +137,6 @@ def setup_test_environment(results: TestResults) -> Optional[tuple]:
             return None
 
         results.add_pass("Database service initialized")
-
-        # Create service container
-        services = ServiceContainer()
-        results.add_pass("Service container created")
 
         # Create ContextAnalyzerAgent
         agent = ContextAnalyzerAgent(services)
@@ -148,29 +153,36 @@ def setup_test_environment(results: TestResults) -> Optional[tuple]:
 
         results.add_pass("Context repositories initialized")
 
-        # Create a test project
+        # Create a test project (manually set id to ensure it's there)
+        import uuid
+        test_project_id = str(uuid.uuid4())
+
         project = Project(
-            id="test-context-project-001",
+            id=test_project_id,
             name="Context Persistence Test Project",
             description="Test project for verifying context persistence",
-            owner="test-user",
+            owner_id="test-user",
             technology_stack={
                 'backend': 'python',
                 'frontend': 'react',
                 'database': 'postgresql'
             },
-            status='active',
-            created_at=datetime.now(),
-            updated_at=datetime.now()
+            status=ProjectStatus.DRAFT
         )
 
+        print_info(f"Creating project with ID: {project.id}")
+
         # Save project to database
-        if db_service.projects.create(project):
-            results.add_pass("Test project created in database")
-        else:
-            results.add_fail("Test project creation", "Failed to save to database")
+        try:
+            success = db_service.projects.create(project)
+            if not success:
+                results.add_fail("Test project creation", "create() returned False")
+                return None
+        except Exception as e:
+            results.add_fail("Test project creation", f"Exception during create: {e}")
             return None
 
+        results.add_pass("Test project created in database")
         print_info(f"Test project ID: {project.id}")
 
         return (db_service, agent, project.id)
@@ -471,6 +483,3 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
-
-# cd tests
-# python test_context_persistence.py
