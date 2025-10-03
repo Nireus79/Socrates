@@ -329,19 +329,7 @@ class ContextAnalyzerAgent(BaseAgent):
 
             # Perform analysis (use existing logic)
                 # Simplified analysis for now
-            analysis = {
-                    'project_id': project_id,
-                    'project_name': project.name if project else '',
-                    'business_domain': '',
-                    'target_audience': '',
-                    'business_goals': [],
-                    'existing_systems': [],
-                    'integration_requirements': [],
-                    'performance_requirements': {},
-                    'team_structure': {},
-                    'budget_constraints': {},
-                    'timeline_constraints': {}
-                }
+            analysis = self._analyze_full_context_internal(project)
 
             # Save context to database
             if self.project_context_repo:
