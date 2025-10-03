@@ -47,7 +47,7 @@ try:
     from src.models import (
         User, Project, GeneratedCodebase, GeneratedFile, ProjectCollaborator,
         SocraticSession, Question, ConversationMessage, TechnicalSpec,
-        ProjectContext, ModuleContext, TaskContext
+        ProjectContext, ModuleContext, TaskContext, Conflict
     )
 
     MODELS_AVAILABLE = True
@@ -114,6 +114,12 @@ except ImportError:
     @dataclass
     class TaskContext:
         pass
+
+
+    @dataclass
+    class Conflict:
+        id: str = ""
+        project_id: str = ""
 
 
 # ==============================================================================
@@ -316,7 +322,8 @@ class RepositoryManager:
             'specification': self.db_service.technical_specifications,
             'project_context': self.db_service.project_contexts,
             'module_context': self.db_service.module_contexts,
-            'task_context': self.db_service.task_contexts
+            'task_context': self.db_service.task_contexts,
+            'conflict': self.db_service.conflicts
         }
 
         return repository_mapping.get(model_type.lower())

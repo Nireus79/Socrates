@@ -14,7 +14,7 @@ Capabilities:
 - Risk identification and mitigation
 - Context-aware recommendations
 """
-
+import uuid
 from typing import Dict, List, Any, Optional
 
 try:
@@ -22,9 +22,8 @@ try:
     from src.models import (
         Project, ConversationMessage, UserRole, TechnicalRole,
         ProjectPhase, ModuleStatus, RiskLevel, ConversationStatus,
-        ProjectContext, ModuleContext, TaskContext
+        ProjectContext, ModuleContext, TaskContext, Conflict, ConflictType
     )
-    import uuid
     from src.database import get_database
     from .base import BaseAgent, require_project_access, log_agent_action
 
@@ -36,6 +35,19 @@ except ImportError:
     from datetime import datetime
     from enum import Enum
 
+
+    class ConflictType(Enum):
+        TECHNICAL = "technical"
+        BUSINESS = "business"
+        SCOPE = "scope"
+        RESOURCE = "resource"
+        TIMELINE = "timeline"
+
+
+    class Conflict:
+        def __init__(self, **kwargs):
+            for k, v in kwargs.items():
+                setattr(self, k, v)
 
     def get_logger(name):
         return logging.getLogger(name)
@@ -189,6 +201,11 @@ class ContextAnalyzerAgent(BaseAgent):
             self.project_context_repo = self.db_service.project_contexts
             self.module_context_repo = self.db_service.module_contexts
             self.task_context_repo = self.db_service.task_contexts
+            # Initialize conflict repository
+            if self.db_service:
+                self.conflict_repo = self.db_service.conflicts
+            else:
+                self.conflict_repo = None
         else:
             self.project_context_repo = None
             self.module_context_repo = None
@@ -547,6 +564,7 @@ class ContextAnalyzerAgent(BaseAgent):
     def _detect_conflicts(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Detect all types of conflicts in project"""
         project_id = data.get('project_id')
+        session_id = data.get('session_id', '')
 
         if self.logger:
             self.logger.info(f"Starting conflict detection for project {project_id}")
@@ -558,12 +576,25 @@ class ContextAnalyzerAgent(BaseAgent):
                     self.logger.error(f"Project {project_id} not found")
                 raise ValidationError("Project not found")
 
-            return self._detect_all_conflicts(project)
+            # Detect all conflicts
+            conflicts = self._detect_all_conflicts(project)
+
+            # Save conflicts to database
+            conflict_ids = self._save_conflicts_to_db(project_id, session_id, conflicts)
+
+            # Add conflict IDs to response
+            conflicts['saved_conflict_ids'] = conflict_ids
+            conflicts['conflicts_persisted'] = len(conflict_ids)
+
+            if self.logger:
+                self.logger.info(f"Detected and saved {len(conflict_ids)} conflicts for project {project_id}")
+
+            return self._success_response("Conflict detection complete", conflicts)
 
         except Exception as e:
             if self.logger:
                 self.logger.error(f"Conflict detection failed for project {project_id}: {e}")
-            raise
+            return self._error_response(f"Conflict detection failed: {e}")
 
     def _detect_all_conflicts(self, project: Project) -> Dict[str, Any]:
         """Detect all types of conflicts in project"""
@@ -795,6 +826,164 @@ class ContextAnalyzerAgent(BaseAgent):
                 self.logger.error(f"Resource conflict detection failed: {e}")
 
         return conflicts
+
+    def _save_conflicts_to_db(self, project_id: str, session_id: str, conflict_data: Dict[str, Any]) -> List[str]:
+        """
+        Save detected conflicts to database
+
+        Args:
+            project_id: Project ID
+            session_id: Session ID (optional)
+            conflict_data: Dict with conflict categories (technology_conflicts, requirement_conflicts, etc.)
+
+        Returns:
+            List of created conflict IDs
+        """
+        if not self.conflict_repo:
+            return []
+
+        conflict_ids = []
+
+        try:
+            # Process each conflict type
+            for conflict_type_key, conflicts_list in conflict_data.items():
+                if not isinstance(conflicts_list, list):
+                    continue
+
+                for conflict_dict in conflicts_list:
+                    # Create Conflict model from dict
+                    conflict = Conflict(
+                        id=str(uuid.uuid4()),
+                        project_id=project_id,
+                        session_id=session_id if session_id else "",
+                        conflict_type=self._map_conflict_type(conflict_dict.get('type', 'technical')),
+                        description=conflict_dict.get('message', conflict_dict.get('description', '')),
+                        severity=conflict_dict.get('severity', 'medium'),
+                        first_requirement=conflict_dict.get('first_requirement', conflict_dict.get('source1', '')),
+                        second_requirement=conflict_dict.get('second_requirement', conflict_dict.get('source2', '')),
+                        conflicting_roles=[],
+                        is_resolved=False,
+                        resolution_strategy='',
+                        resolution_notes='',
+                        resolved_by=None,
+                        resolved_at=None,
+                        affected_modules=[],
+                        estimated_impact_hours=None,
+                        created_at=DateTimeHelper.now(),
+                        updated_at=DateTimeHelper.now()
+                    )
+
+                    # Save to database
+                    if self.conflict_repo.create(conflict):
+                        conflict_ids.append(conflict.id)
+                        if self.logger:
+                            self.logger.info(f"Saved conflict {conflict.id} to database")
+                    else:
+                        if self.logger:
+                            self.logger.warning(f"Failed to save conflict to database")
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error saving conflicts to database: {e}")
+
+        return conflict_ids
+
+    @require_project_access
+    @log_agent_action
+    def _get_conflicts(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Get conflicts for a project"""
+        project_id = data.get('project_id')
+        unresolved_only = data.get('unresolved_only', False)
+
+        if self.logger:
+            self.logger.info(f"Retrieving conflicts for project {project_id}")
+
+        try:
+            if not self.conflict_repo:
+                return self._error_response("Conflict repository not available")
+
+            if unresolved_only:
+                conflicts = self.conflict_repo.get_unresolved(project_id)
+            else:
+                conflicts = self.conflict_repo.get_by_project_id(project_id)
+
+            # Convert to dicts for response
+            conflicts_data = [self._conflict_to_dict(c) for c in conflicts]
+
+            return self._success_response(
+                f"Found {len(conflicts)} conflicts",
+                {'conflicts': conflicts_data}
+            )
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error retrieving conflicts: {e}")
+            return self._error_response(f"Failed to retrieve conflicts: {e}")
+
+    def _conflict_to_dict(self, conflict: Conflict) -> Dict[str, Any]:
+        """Convert Conflict model to dictionary"""
+        return {
+            'id': conflict.id,
+            'project_id': conflict.project_id,
+            'session_id': conflict.session_id,
+            'conflict_type': conflict.conflict_type.value if hasattr(conflict.conflict_type, 'value') else str(
+                conflict.conflict_type),
+            'description': conflict.description,
+            'severity': conflict.severity,
+            'first_requirement': conflict.first_requirement,
+            'second_requirement': conflict.second_requirement,
+            'is_resolved': conflict.is_resolved,
+            'resolution_notes': conflict.resolution_notes,
+            'resolved_by': conflict.resolved_by,
+            'resolved_at': DateTimeHelper.to_iso_string(conflict.resolved_at) if conflict.resolved_at else None,
+            'affected_modules': conflict.affected_modules,
+            'created_at': DateTimeHelper.to_iso_string(conflict.created_at),
+            'updated_at': DateTimeHelper.to_iso_string(conflict.updated_at)
+        }
+
+    @require_project_access
+    @log_agent_action
+    def _resolve_conflict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Mark a conflict as resolved"""
+        conflict_id = data.get('conflict_id')
+        resolution_notes = data.get('resolution_notes', '')
+        resolved_by = data.get('resolved_by')
+
+        if not conflict_id:
+            return self._error_response("Conflict ID required")
+
+        if self.logger:
+            self.logger.info(f"Resolving conflict {conflict_id}")
+
+        try:
+            if not self.conflict_repo:
+                return self._error_response("Conflict repository not available")
+
+            success = self.conflict_repo.mark_resolved(conflict_id, resolution_notes, resolved_by)
+
+            if success:
+                return self._success_response("Conflict marked as resolved")
+            else:
+                return self._error_response("Failed to mark conflict as resolved")
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error resolving conflict: {e}")
+            return self._error_response(f"Failed to resolve conflict: {e}")
+
+    def _map_conflict_type(self, conflict_type_str: str) -> ConflictType:
+        """Map string conflict type to ConflictType enum"""
+        type_mapping = {
+            'technology_database': ConflictType.TECHNICAL,
+            'technology_framework': ConflictType.TECHNICAL,
+            'technical': ConflictType.TECHNICAL,
+            'requirement_contradiction': ConflictType.BUSINESS,
+            'requirement': ConflictType.BUSINESS,
+            'timeline': ConflictType.TIMELINE,
+            'resource': ConflictType.RESOURCE,
+            'scope': ConflictType.SCOPE
+        }
+        return type_mapping.get(conflict_type_str, ConflictType.TECHNICAL)
 
     @require_project_access
     @log_agent_action
