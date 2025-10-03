@@ -129,6 +129,7 @@ except ImportError:
             for k, v in kwargs.items():
                 setattr(self, k, v)
 
+
     class GeneratedCodebase:
         def __init__(self, **kwargs):
             for k, v in kwargs.items():
@@ -1106,6 +1107,7 @@ footer {
             'created_at': DateTimeHelper.to_iso_string(spec.created_at),
             'updated_at': DateTimeHelper.to_iso_string(spec.updated_at)
         }
+
 
 # ============================================================================
 # MODULE EXPORTS
