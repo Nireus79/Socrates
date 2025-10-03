@@ -19,7 +19,9 @@ import os
 import time
 from pathlib import Path
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from typing import Optional, Any
+from src.core import DateTimeHelper
+
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -317,7 +319,7 @@ def test_cache_refresh_after_threshold(results: TestResults, agent: Any, project
         results.add_pass("Retrieved cached context")
 
         # Manually set last_analyzed_at to 61 minutes ago
-        old_time = datetime.now() - timedelta(minutes=61)
+        old_time = DateTimeHelper.now() - timedelta(minutes=61)
         cached_context.last_analyzed_at = old_time
         agent.project_context_repo.update(cached_context)
 
