@@ -931,6 +931,8 @@ class ProjectContext(BaseModel):
     team_structure: Dict[str, Any] = field(default_factory=dict)
     budget_constraints: Dict[str, Any] = field(default_factory=dict)
     timeline_constraints: Dict[str, Any] = field(default_factory=dict)
+    # Cache metadata
+    last_analyzed_at: Optional[datetime] = None
 
     def __post_init__(self):
         """Validate context data"""
@@ -954,6 +956,8 @@ class ModuleContext(BaseModel):
     related_modules: List[str] = field(default_factory=list)
     related_requirements: List[str] = field(default_factory=list)
     related_constraints: List[str] = field(default_factory=list)
+    # Cache metadata
+    last_analyzed_at: Optional[datetime] = None
 
 
 @dataclass
@@ -972,6 +976,8 @@ class TaskContext(BaseModel):
     # Dependencies
     prerequisite_tasks: List[str] = field(default_factory=list)
     dependent_tasks: List[str] = field(default_factory=list)
+    # Cache metadata
+    last_analyzed_at: Optional[datetime] = None
 
 
 # ============================================================================

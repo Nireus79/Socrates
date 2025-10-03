@@ -1553,6 +1553,500 @@ class TechnicalSpecificationRepository(BaseRepository[TechnicalSpec]):
             )
         except Exception as e:
             self.logger.error(f"Error converting row to TechnicalSpec: {e}")
+
+            class ProjectContextRepository(BaseRepository[ProjectContext]):
+                """Repository for managing project context analysis"""
+
+                def create(self, context: ProjectContext) -> bool:
+                    """Create new project context"""
+                    try:
+                        data = self._model_to_dict(context)
+                        query = """
+                            INSERT INTO project_contexts (
+                                id, project_id, business_domain, target_audience, business_goals,
+                                existing_systems, integration_requirements, performance_requirements,
+                                team_structure, budget_constraints, timeline_constraints,
+                                last_analyzed_at, created_at, updated_at
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """
+
+                        params = (
+                            data.get('id'),
+                            data.get('project_id'),
+                            data.get('business_domain'),
+                            data.get('target_audience'),
+                            json.dumps(data.get('business_goals', [])),
+                            json.dumps(data.get('existing_systems', [])),
+                            json.dumps(data.get('integration_requirements', [])),
+                            json.dumps(data.get('performance_requirements', {})),
+                            json.dumps(data.get('team_structure', {})),
+                            json.dumps(data.get('budget_constraints', {})),
+                            json.dumps(data.get('timeline_constraints', {})),
+                            DateTimeHelper.to_iso_string(data.get('last_analyzed_at')) if data.get(
+                                'last_analyzed_at') else None,
+                            DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
+                            DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                        )
+
+                        self.db_manager.execute_update(query, params)
+                        self.logger.info(f"Created project context: {context.id}")
+                        return True
+
+                    except Exception as e:
+                        self.logger.error(f"Error creating project context: {e}")
+                        return False
+
+                def get_by_id(self, context_id: str) -> Optional[ProjectContext]:
+                    """Get project context by ID"""
+                    try:
+                        query = "SELECT * FROM project_contexts WHERE id = ?"
+                        results = self.db_manager.execute_query(query, (context_id,))
+                        if results:
+                            return self._row_to_model(results[0])
+                        return None
+                    except Exception as e:
+                        self.logger.error(f"Error getting project context {context_id}: {e}")
+                        return None
+
+                def get_by_project_id(self, project_id: str) -> Optional[ProjectContext]:
+                    """Get context by project ID"""
+                    try:
+                        query = "SELECT * FROM project_contexts WHERE project_id = ?"
+                        results = self.db_manager.execute_query(query, (project_id,))
+                        if results:
+                            return self._row_to_model(results[0])
+                        return None
+                    except Exception as e:
+                        self.logger.error(f"Error getting context for project {project_id}: {e}")
+                        return None
+
+                def update(self, context: ProjectContext) -> bool:
+                    """Update existing project context"""
+                    try:
+                        data = self._model_to_dict(context)
+                        query = """
+                            UPDATE project_contexts SET
+                                business_domain = ?,
+                                target_audience = ?,
+                                business_goals = ?,
+                                existing_systems = ?,
+                                integration_requirements = ?,
+                                performance_requirements = ?,
+                                team_structure = ?,
+                                budget_constraints = ?,
+                                timeline_constraints = ?,
+                                last_analyzed_at = ?,
+                                updated_at = ?
+                            WHERE id = ?
+                        """
+
+                        params = (
+                            data.get('business_domain'),
+                            data.get('target_audience'),
+                            json.dumps(data.get('business_goals', [])),
+                            json.dumps(data.get('existing_systems', [])),
+                            json.dumps(data.get('integration_requirements', [])),
+                            json.dumps(data.get('performance_requirements', {})),
+                            json.dumps(data.get('team_structure', {})),
+                            json.dumps(data.get('budget_constraints', {})),
+                            json.dumps(data.get('timeline_constraints', {})),
+                            DateTimeHelper.to_iso_string(data.get('last_analyzed_at')) if data.get(
+                                'last_analyzed_at') else None,
+                            DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                            data.get('id')
+                        )
+
+                        self.db_manager.execute_update(query, params)
+                        self.logger.info(f"Updated project context: {context.id}")
+                        return True
+
+                    except Exception as e:
+                        self.logger.error(f"Error updating project context {context.id}: {e}")
+                        return False
+
+                def delete(self, context_id: str) -> bool:
+                    """Delete project context"""
+                    try:
+                        query = "DELETE FROM project_contexts WHERE id = ?"
+                        self.db_manager.execute_update(query, (context_id,))
+                        self.logger.info(f"Deleted project context: {context_id}")
+                        return True
+                    except Exception as e:
+                        self.logger.error(f"Error deleting project context {context_id}: {e}")
+                        return False
+
+                def upsert(self, context: ProjectContext) -> bool:
+                    """Update if exists, create if not"""
+                    existing = self.get_by_project_id(context.project_id)
+                    if existing:
+                        context.id = existing.id
+                        return self.update(context)
+                    else:
+                        return self.create(context)
+
+                def _row_to_model(self, row: Dict[str, Any]) -> ProjectContext:
+                    """Convert database row to ProjectContext model"""
+                    try:
+                        created_at = DateTimeHelper.from_iso_string(row['created_at']) if row.get(
+                            'created_at') else DateTimeHelper.now()
+                        updated_at = DateTimeHelper.from_iso_string(row['updated_at']) if row.get(
+                            'updated_at') else DateTimeHelper.now()
+                        last_analyzed_at = DateTimeHelper.from_iso_string(row['last_analyzed_at']) if row.get(
+                            'last_analyzed_at') else None
+
+                        return ProjectContext(
+                            id=row.get('id', ''),
+                            project_id=row.get('project_id', ''),
+                            business_domain=row.get('business_domain', ''),
+                            target_audience=row.get('target_audience', ''),
+                            business_goals=json.loads(row['business_goals']) if row.get('business_goals') else [],
+                            existing_systems=json.loads(row['existing_systems']) if row.get('existing_systems') else [],
+                            integration_requirements=json.loads(row['integration_requirements']) if row.get(
+                                'integration_requirements') else [],
+                            performance_requirements=json.loads(row['performance_requirements']) if row.get(
+                                'performance_requirements') else {},
+                            team_structure=json.loads(row['team_structure']) if row.get('team_structure') else {},
+                            budget_constraints=json.loads(row['budget_constraints']) if row.get(
+                                'budget_constraints') else {},
+                            timeline_constraints=json.loads(row['timeline_constraints']) if row.get(
+                                'timeline_constraints') else {},
+                            last_analyzed_at=last_analyzed_at,
+                            created_at=created_at,
+                            updated_at=updated_at
+                        )
+                    except Exception as e:
+                        self.logger.error(f"Error converting row to ProjectContext: {e}")
+                        return ProjectContext()
+
+            class ModuleContextRepository(BaseRepository[ModuleContext]):
+                """Repository for managing module context analysis"""
+
+                def create(self, context: ModuleContext) -> bool:
+                    """Create new module context"""
+                    try:
+                        data = self._model_to_dict(context)
+                        query = """
+                            INSERT INTO module_contexts (
+                                id, module_id, project_id, business_context, technical_context,
+                                dependencies_context, related_modules, related_requirements,
+                                related_constraints, last_analyzed_at, created_at, updated_at
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """
+
+                        params = (
+                            data.get('id'),
+                            data.get('module_id'),
+                            data.get('project_id'),
+                            data.get('business_context'),
+                            data.get('technical_context'),
+                            data.get('dependencies_context'),
+                            json.dumps(data.get('related_modules', [])),
+                            json.dumps(data.get('related_requirements', [])),
+                            json.dumps(data.get('related_constraints', [])),
+                            DateTimeHelper.to_iso_string(data.get('last_analyzed_at')) if data.get(
+                                'last_analyzed_at') else None,
+                            DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
+                            DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                        )
+
+                        self.db_manager.execute_update(query, params)
+                        self.logger.info(f"Created module context: {context.id}")
+                        return True
+
+                    except Exception as e:
+                        self.logger.error(f"Error creating module context: {e}")
+                        return False
+
+                def get_by_id(self, context_id: str) -> Optional[ModuleContext]:
+                    """Get module context by ID"""
+                    try:
+                        query = "SELECT * FROM module_contexts WHERE id = ?"
+                        results = self.db_manager.execute_query(query, (context_id,))
+                        if results:
+                            return self._row_to_model(results[0])
+                        return None
+                    except Exception as e:
+                        self.logger.error(f"Error getting module context {context_id}: {e}")
+                        return None
+
+                def get_by_module_id(self, module_id: str) -> Optional[ModuleContext]:
+                    """Get context by module ID"""
+                    try:
+                        query = "SELECT * FROM module_contexts WHERE module_id = ?"
+                        results = self.db_manager.execute_query(query, (module_id,))
+                        if results:
+                            return self._row_to_model(results[0])
+                        return None
+                    except Exception as e:
+                        self.logger.error(f"Error getting context for module {module_id}: {e}")
+                        return None
+
+                def get_by_project_id(self, project_id: str) -> List[ModuleContext]:
+                    """Get all module contexts for a project"""
+                    try:
+                        query = "SELECT * FROM module_contexts WHERE project_id = ?"
+                        results = self.db_manager.execute_query(query, (project_id,))
+                        return [self._row_to_model(row) for row in results]
+                    except Exception as e:
+                        self.logger.error(f"Error getting module contexts for project {project_id}: {e}")
+                        return []
+
+                def update(self, context: ModuleContext) -> bool:
+                    """Update existing module context"""
+                    try:
+                        data = self._model_to_dict(context)
+                        query = """
+                            UPDATE module_contexts SET
+                                business_context = ?,
+                                technical_context = ?,
+                                dependencies_context = ?,
+                                related_modules = ?,
+                                related_requirements = ?,
+                                related_constraints = ?,
+                                last_analyzed_at = ?,
+                                updated_at = ?
+                            WHERE id = ?
+                        """
+
+                        params = (
+                            data.get('business_context'),
+                            data.get('technical_context'),
+                            data.get('dependencies_context'),
+                            json.dumps(data.get('related_modules', [])),
+                            json.dumps(data.get('related_requirements', [])),
+                            json.dumps(data.get('related_constraints', [])),
+                            DateTimeHelper.to_iso_string(data.get('last_analyzed_at')) if data.get(
+                                'last_analyzed_at') else None,
+                            DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                            data.get('id')
+                        )
+
+                        self.db_manager.execute_update(query, params)
+                        self.logger.info(f"Updated module context: {context.id}")
+                        return True
+
+                    except Exception as e:
+                        self.logger.error(f"Error updating module context {context.id}: {e}")
+                        return False
+
+                def delete(self, context_id: str) -> bool:
+                    """Delete module context"""
+                    try:
+                        query = "DELETE FROM module_contexts WHERE id = ?"
+                        self.db_manager.execute_update(query, (context_id,))
+                        self.logger.info(f"Deleted module context: {context_id}")
+                        return True
+                    except Exception as e:
+                        self.logger.error(f"Error deleting module context {context_id}: {e}")
+                        return False
+
+                def upsert(self, context: ModuleContext) -> bool:
+                    """Update if exists, create if not"""
+                    existing = self.get_by_module_id(context.module_id)
+                    if existing:
+                        context.id = existing.id
+                        return self.update(context)
+                    else:
+                        return self.create(context)
+
+                def _row_to_model(self, row: Dict[str, Any]) -> ModuleContext:
+                    """Convert database row to ModuleContext model"""
+                    try:
+                        created_at = DateTimeHelper.from_iso_string(row['created_at']) if row.get(
+                            'created_at') else DateTimeHelper.now()
+                        updated_at = DateTimeHelper.from_iso_string(row['updated_at']) if row.get(
+                            'updated_at') else DateTimeHelper.now()
+                        last_analyzed_at = DateTimeHelper.from_iso_string(row['last_analyzed_at']) if row.get(
+                            'last_analyzed_at') else None
+
+                        return ModuleContext(
+                            id=row.get('id', ''),
+                            module_id=row.get('module_id', ''),
+                            project_id=row.get('project_id', ''),
+                            business_context=row.get('business_context', ''),
+                            technical_context=row.get('technical_context', ''),
+                            dependencies_context=row.get('dependencies_context', ''),
+                            related_modules=json.loads(row['related_modules']) if row.get('related_modules') else [],
+                            related_requirements=json.loads(row['related_requirements']) if row.get(
+                                'related_requirements') else [],
+                            related_constraints=json.loads(row['related_constraints']) if row.get(
+                                'related_constraints') else [],
+                            last_analyzed_at=last_analyzed_at,
+                            created_at=created_at,
+                            updated_at=updated_at
+                        )
+                    except Exception as e:
+                        self.logger.error(f"Error converting row to ModuleContext: {e}")
+                        return ModuleContext()
+
+            class TaskContextRepository(BaseRepository[TaskContext]):
+                """Repository for managing task context analysis"""
+
+                def create(self, context: TaskContext) -> bool:
+                    """Create new task context"""
+                    try:
+                        data = self._model_to_dict(context)
+                        query = """
+                            INSERT INTO task_contexts (
+                                id, task_id, module_id, project_id, task_context,
+                                implementation_notes, testing_requirements, prerequisite_tasks,
+                                dependent_tasks, last_analyzed_at, created_at, updated_at
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """
+
+                        params = (
+                            data.get('id'),
+                            data.get('task_id'),
+                            data.get('module_id'),
+                            data.get('project_id'),
+                            data.get('task_context'),
+                            data.get('implementation_notes'),
+                            data.get('testing_requirements'),
+                            json.dumps(data.get('prerequisite_tasks', [])),
+                            json.dumps(data.get('dependent_tasks', [])),
+                            DateTimeHelper.to_iso_string(data.get('last_analyzed_at')) if data.get(
+                                'last_analyzed_at') else None,
+                            DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
+                            DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                        )
+
+                        self.db_manager.execute_update(query, params)
+                        self.logger.info(f"Created task context: {context.id}")
+                        return True
+
+                    except Exception as e:
+                        self.logger.error(f"Error creating task context: {e}")
+                        return False
+
+                def get_by_id(self, context_id: str) -> Optional[TaskContext]:
+                    """Get task context by ID"""
+                    try:
+                        query = "SELECT * FROM task_contexts WHERE id = ?"
+                        results = self.db_manager.execute_query(query, (context_id,))
+                        if results:
+                            return self._row_to_model(results[0])
+                        return None
+                    except Exception as e:
+                        self.logger.error(f"Error getting task context {context_id}: {e}")
+                        return None
+
+                def get_by_task_id(self, task_id: str) -> Optional[TaskContext]:
+                    """Get context by task ID"""
+                    try:
+                        query = "SELECT * FROM task_contexts WHERE task_id = ?"
+                        results = self.db_manager.execute_query(query, (task_id,))
+                        if results:
+                            return self._row_to_model(results[0])
+                        return None
+                    except Exception as e:
+                        self.logger.error(f"Error getting context for task {task_id}: {e}")
+                        return None
+
+                def get_by_module_id(self, module_id: str) -> List[TaskContext]:
+                    """Get all task contexts for a module"""
+                    try:
+                        query = "SELECT * FROM task_contexts WHERE module_id = ?"
+                        results = self.db_manager.execute_query(query, (module_id,))
+                        return [self._row_to_model(row) for row in results]
+                    except Exception as e:
+                        self.logger.error(f"Error getting task contexts for module {module_id}: {e}")
+                        return []
+
+                def get_by_project_id(self, project_id: str) -> List[TaskContext]:
+                    """Get all task contexts for a project"""
+                    try:
+                        query = "SELECT * FROM task_contexts WHERE project_id = ?"
+                        results = self.db_manager.execute_query(query, (project_id,))
+                        return [self._row_to_model(row) for row in results]
+                    except Exception as e:
+                        self.logger.error(f"Error getting task contexts for project {project_id}: {e}")
+                        return []
+
+                def update(self, context: TaskContext) -> bool:
+                    """Update existing task context"""
+                    try:
+                        data = self._model_to_dict(context)
+                        query = """
+                            UPDATE task_contexts SET
+                                task_context = ?,
+                                implementation_notes = ?,
+                                testing_requirements = ?,
+                                prerequisite_tasks = ?,
+                                dependent_tasks = ?,
+                                last_analyzed_at = ?,
+                                updated_at = ?
+                            WHERE id = ?
+                        """
+
+                        params = (
+                            data.get('task_context'),
+                            data.get('implementation_notes'),
+                            data.get('testing_requirements'),
+                            json.dumps(data.get('prerequisite_tasks', [])),
+                            json.dumps(data.get('dependent_tasks', [])),
+                            DateTimeHelper.to_iso_string(data.get('last_analyzed_at')) if data.get(
+                                'last_analyzed_at') else None,
+                            DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                            data.get('id')
+                        )
+
+                        self.db_manager.execute_update(query, params)
+                        self.logger.info(f"Updated task context: {context.id}")
+                        return True
+
+                    except Exception as e:
+                        self.logger.error(f"Error updating task context {context.id}: {e}")
+                        return False
+
+                def delete(self, context_id: str) -> bool:
+                    """Delete task context"""
+                    try:
+                        query = "DELETE FROM task_contexts WHERE id = ?"
+                        self.db_manager.execute_update(query, (context_id,))
+                        self.logger.info(f"Deleted task context: {context_id}")
+                        return True
+                    except Exception as e:
+                        self.logger.error(f"Error deleting task context {context_id}: {e}")
+                        return False
+
+                def upsert(self, context: TaskContext) -> bool:
+                    """Update if exists, create if not"""
+                    existing = self.get_by_task_id(context.task_id)
+                    if existing:
+                        context.id = existing.id
+                        return self.update(context)
+                    else:
+                        return self.create(context)
+
+                def _row_to_model(self, row: Dict[str, Any]) -> ProjectContext:
+                    """Convert database row to TaskContext model"""
+                    try:
+                        created_at = DateTimeHelper.from_iso_string(row['created_at']) if row.get(
+                            'created_at') else DateTimeHelper.now()
+                        updated_at = DateTimeHelper.from_iso_string(row['updated_at']) if row.get(
+                            'updated_at') else DateTimeHelper.now()
+                        last_analyzed_at = DateTimeHelper.from_iso_string(row['last_analyzed_at']) if row.get(
+                            'last_analyzed_at') else None
+
+                        return TaskContext(
+                            id=row.get('id', ''),
+                            task_id=row.get('task_id', ''),
+                            module_id=row.get('module_id', ''),
+                            project_id=row.get('project_id', ''),
+                            task_context=row.get('task_context', ''),
+                            implementation_notes=row.get('implementation_notes', ''),
+                            testing_requirements=row.get('testing_requirements', ''),
+                            prerequisite_tasks=json.loads(row['prerequisite_tasks']) if row.get(
+                                'prerequisite_tasks') else [],
+                            dependent_tasks=json.loads(row['dependent_tasks']) if row.get('dependent_tasks') else [],
+                            last_analyzed_at=last_analyzed_at,
+                            created_at=created_at,
+                            updated_at=updated_at
+                        )
+                    except Exception as e:
+                        self.logger.error(f"Error converting row to TaskContext: {e}")
+                        return TaskContext()
+
             return TechnicalSpec()
 
 
@@ -1768,7 +2262,67 @@ class DatabaseManager:
                                         FOREIGN KEY (session_id) REFERENCES socratic_sessions(id)
                                     )
                                 """)
+                # Project contexts table
+                conn.execute("""
+                                    CREATE TABLE IF NOT EXISTS project_contexts (
+                                        id TEXT PRIMARY KEY,
+                                        project_id TEXT NOT NULL UNIQUE,
+                                        business_domain TEXT,
+                                        target_audience TEXT,
+                                        business_goals TEXT,
+                                        existing_systems TEXT,
+                                        integration_requirements TEXT,
+                                        performance_requirements TEXT,
+                                        team_structure TEXT,
+                                        budget_constraints TEXT,
+                                        timeline_constraints TEXT,
+                                        last_analyzed_at TEXT,
+                                        created_at TEXT NOT NULL,
+                                        updated_at TEXT NOT NULL,
+                                        FOREIGN KEY (project_id) REFERENCES projects(id)
+                                    )
+                                """)
 
+                # Module contexts table
+                conn.execute("""
+                                    CREATE TABLE IF NOT EXISTS module_contexts (
+                                        id TEXT PRIMARY KEY,
+                                        module_id TEXT NOT NULL UNIQUE,
+                                        project_id TEXT NOT NULL,
+                                        business_context TEXT,
+                                        technical_context TEXT,
+                                        dependencies_context TEXT,
+                                        related_modules TEXT,
+                                        related_requirements TEXT,
+                                        related_constraints TEXT,
+                                        last_analyzed_at TEXT,
+                                        created_at TEXT NOT NULL,
+                                        updated_at TEXT NOT NULL,
+                                        FOREIGN KEY (module_id) REFERENCES modules(id),
+                                        FOREIGN KEY (project_id) REFERENCES projects(id)
+                                    )
+                                """)
+
+                # Task contexts table
+                conn.execute("""
+                                    CREATE TABLE IF NOT EXISTS task_contexts (
+                                        id TEXT PRIMARY KEY,
+                                        task_id TEXT NOT NULL UNIQUE,
+                                        module_id TEXT NOT NULL,
+                                        project_id TEXT NOT NULL,
+                                        task_context TEXT,
+                                        implementation_notes TEXT,
+                                        testing_requirements TEXT,
+                                        prerequisite_tasks TEXT,
+                                        dependent_tasks TEXT,
+                                        last_analyzed_at TEXT,
+                                        created_at TEXT NOT NULL,
+                                        updated_at TEXT NOT NULL,
+                                        FOREIGN KEY (task_id) REFERENCES tasks(id),
+                                        FOREIGN KEY (module_id) REFERENCES modules(id),
+                                        FOREIGN KEY (project_id) REFERENCES projects(id)
+                                    )
+                                """)
                 conn.commit()
                 self.logger.info("Database schema initialized successfully")
 
@@ -1856,6 +2410,9 @@ class DatabaseService:
         self.generated_files = GeneratedFileRepository(self.db_manager, GeneratedFile)
         self.project_collaborators = ProjectCollaboratorRepository(self.db_manager, ProjectCollaborator)
         self.technical_specifications = TechnicalSpecificationRepository(self.db_manager, TechnicalSpec)
+        self.project_contexts = ProjectContextRepository(self.db_manager, ProjectContext)
+        self.module_contexts = ModuleContextRepository(self.db_manager, ModuleContext)
+        self.task_contexts = TaskContextRepository(self.db_manager, TaskContext)
 
         # Add other repositories as needed
         # self.modules = ModuleRepository(self.db_manager, Module)

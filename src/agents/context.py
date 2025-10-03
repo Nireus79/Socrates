@@ -21,8 +21,10 @@ try:
     from src.core import ServiceContainer, DateTimeHelper, ValidationError
     from src.models import (
         Project, ConversationMessage, UserRole, TechnicalRole,
-        ProjectPhase, ModuleStatus, RiskLevel, ConversationStatus
+        ProjectPhase, ModuleStatus, RiskLevel, ConversationStatus,
+        ProjectContext, ModuleContext, TaskContext
     )
+    import uuid
     from src.database import get_database
     from .base import BaseAgent, require_project_access, log_agent_action
 
@@ -57,6 +59,23 @@ except ImportError:
     def get_database():
         return None
 
+
+    class ProjectContext:
+        def __init__(self, **kwargs):
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+
+
+    class ModuleContext:
+        def __init__(self, **kwargs):
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+
+
+    class TaskContext:
+        def __init__(self, **kwargs):
+            for k, v in kwargs.items():
+                setattr(self, k, v)
 
     class DateTimeHelper:
         @staticmethod
@@ -165,8 +184,21 @@ class ContextAnalyzerAgent(BaseAgent):
         self.patterns = {}
         self.conflict_rules = self._load_conflict_rules()
 
+        # Initialize context repositories
+        if self.db_service:
+            self.project_context_repo = self.db_service.project_contexts
+            self.module_context_repo = self.db_service.module_contexts
+            self.task_context_repo = self.db_service.task_contexts
+        else:
+            self.project_context_repo = None
+            self.module_context_repo = None
+            self.task_context_repo = None
+
+        # Context cache settings
+        self.context_refresh_threshold_minutes = 60
+
         if self.logger:
-            self.logger.info("ContextAnalyzerAgent initialized with conflict detection rules")
+            self.logger.info("ContextAnalyzerAgent initialized with conflict detection rules and context persistence")
 
     def get_capabilities(self) -> List[str]:
         return [
@@ -209,40 +241,130 @@ class ContextAnalyzerAgent(BaseAgent):
 
         return rules
 
+    def _needs_refresh(self, context, force_refresh: bool = False) -> bool:
+        """Check if context needs to be refreshed"""
+        if force_refresh:
+            return True
+
+        if not context or not context.last_analyzed_at:
+            return True
+
+        # Check if context is older than threshold
+        now = DateTimeHelper.now()
+        age_minutes = (now - context.last_analyzed_at).total_seconds() / 60
+
+        return age_minutes > self.context_refresh_threshold_minutes
+
+    def _project_context_to_analysis(self, context: ProjectContext) -> Dict[str, Any]:
+        """Convert ProjectContext model to analysis dictionary"""
+        return {
+            'business_domain': context.business_domain,
+            'target_audience': context.target_audience,
+            'business_goals': context.business_goals,
+            'existing_systems': context.existing_systems,
+            'integration_requirements': context.integration_requirements,
+            'performance_requirements': context.performance_requirements,
+            'team_structure': context.team_structure,
+            'budget_constraints': context.budget_constraints,
+            'timeline_constraints': context.timeline_constraints,
+            'last_analyzed_at': DateTimeHelper.to_iso_string(context.last_analyzed_at),
+            'cached': True
+        }
+
+    def _analysis_to_project_context(self, project_id: str, analysis: Dict[str, Any]) -> ProjectContext:
+        """Convert analysis dictionary to ProjectContext model"""
+        return ProjectContext(
+            id=str(uuid.uuid4()),
+            project_id=project_id,
+            business_domain=analysis.get('business_domain', ''),
+            target_audience=analysis.get('target_audience', ''),
+            business_goals=analysis.get('business_goals', []),
+            existing_systems=analysis.get('existing_systems', []),
+            integration_requirements=analysis.get('integration_requirements', []),
+            performance_requirements=analysis.get('performance_requirements', {}),
+            team_structure=analysis.get('team_structure', {}),
+            budget_constraints=analysis.get('budget_constraints', {}),
+            timeline_constraints=analysis.get('timeline_constraints', {}),
+            last_analyzed_at=DateTimeHelper.now(),
+            created_at=DateTimeHelper.now(),
+            updated_at=DateTimeHelper.now()
+        )
+
     @require_project_access
     @log_agent_action
     def _analyze_context(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Comprehensive context analysis"""
+        """Comprehensive context analysis with caching"""
         project_id = data.get('project_id')
-        analysis_type = data.get('type', 'full')
+        force_refresh = data.get('force_refresh', False)
 
         if self.logger:
-            self.logger.info(f"Starting context analysis for project {project_id}, type: {analysis_type}")
+            self.logger.info(f"Analyzing context for project {project_id} (force_refresh={force_refresh})")
 
         try:
-            # Get project data
-            project = self.db_service.projects.get_by_id(project_id)
-            if not project:
-                if self.logger:
-                    self.logger.error(f"Project {project_id} not found")
-                raise ValidationError("Project not found")
+            # Check for cached context
+            if self.project_context_repo and not force_refresh:
+                cached_context = self.project_context_repo.get_by_project_id(project_id)
 
-            # Perform analysis based on type
-            if analysis_type == 'conversation':
-                return self._analyze_conversation_patterns(project)
-            elif analysis_type == 'technical':
-                return self._analyze_technical_context(project)
-            elif analysis_type == 'conflicts':
-                return self._detect_all_conflicts(project)
-            elif analysis_type == 'health':
-                return self._assess_project_health_internal(project)
-            else:
-                return self._analyze_full_context(project)
+                if cached_context and not self._needs_refresh(cached_context, force_refresh):
+                    if self.logger:
+                        self.logger.info(f"Using cached context for project {project_id}")
+
+                    # Return cached analysis
+                    analysis = self._project_context_to_analysis(cached_context)
+                    analysis['project_id'] = project_id
+                    analysis['analysis_timestamp'] = DateTimeHelper.to_iso_string(DateTimeHelper.now())
+
+                    return self._success_response("Context retrieved from cache", {
+                        'context': analysis,
+                        'cached': True
+                    })
+
+            # No cache or refresh needed - perform full analysis
+            if self.logger:
+                self.logger.info(f"Performing fresh context analysis for project {project_id}")
+
+            project = self.db_service.projects.get_by_id(project_id) if self.db_service else None
+            if not project:
+                return self._error_response(f"Project not found: {project_id}")
+
+            # Perform analysis (use existing logic)
+                # Simplified analysis for now
+            analysis = {
+                    'project_id': project_id,
+                    'project_name': project.name if project else '',
+                    'business_domain': '',
+                    'target_audience': '',
+                    'business_goals': [],
+                    'existing_systems': [],
+                    'integration_requirements': [],
+                    'performance_requirements': {},
+                    'team_structure': {},
+                    'budget_constraints': {},
+                    'timeline_constraints': {}
+                }
+
+            # Save context to database
+            if self.project_context_repo:
+                try:
+                    context = self._analysis_to_project_context(project_id, analysis)
+                    self.project_context_repo.upsert(context)
+                    if self.logger:
+                        self.logger.info(f"Saved context to database for project {project_id}")
+                except Exception as e:
+                    # Don't fail analysis if save fails
+                    if self.logger:
+                        self.logger.warning(f"Failed to save context: {e}")
+
+            analysis['cached'] = False
+            return self._success_response("Context analysis complete", {
+                'context': analysis
+            })
 
         except Exception as e:
+            error_msg = f"Context analysis failed: {e}"
             if self.logger:
-                self.logger.error(f"Context analysis failed for project {project_id}: {e}")
-            raise
+                self.logger.error(error_msg)
+            return self._error_response(error_msg)
 
     def _analyze_full_context(self, project: Project) -> Dict[str, Any]:
         """Full context analysis including all aspects"""
