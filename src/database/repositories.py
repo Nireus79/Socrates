@@ -1529,7 +1529,13 @@ class ConflictRepository(BaseRepository[Conflict]):
 
     def get_by_id(self, conflict_id: str) -> Optional[Conflict]:
         try:
-            query = "SELECT * FROM conflicts WHERE id = ?"
+            query = """
+                SELECT id, project_id, session_id, conflict_type, description, severity,
+                       first_requirement, second_requirement, conflicting_roles, is_resolved,
+                       resolution_strategy, resolution_notes, resolved_by, resolved_at,
+                       affected_modules, estimated_impact_hours, created_at, updated_at
+                FROM conflicts WHERE id = ?
+            """
             results = self.db_manager.execute_query(query, (conflict_id,))
             return self._row_to_model(results[0]) if results else None
         except Exception as e:
@@ -1538,7 +1544,13 @@ class ConflictRepository(BaseRepository[Conflict]):
 
     def get_by_project_id(self, project_id: str) -> List[Conflict]:
         try:
-            query = "SELECT * FROM conflicts WHERE project_id = ? ORDER BY created_at DESC"
+            query = """
+                SELECT id, project_id, session_id, conflict_type, description, severity,
+                       first_requirement, second_requirement, conflicting_roles, is_resolved,
+                       resolution_strategy, resolution_notes, resolved_by, resolved_at,
+                       affected_modules, estimated_impact_hours, created_at, updated_at
+                FROM conflicts WHERE project_id = ? ORDER BY created_at DESC
+            """
             results = self.db_manager.execute_query(query, (project_id,))
             return [self._row_to_model(row) for row in results]
         except Exception as e:
@@ -1547,7 +1559,13 @@ class ConflictRepository(BaseRepository[Conflict]):
 
     def get_by_session_id(self, session_id: str) -> List[Conflict]:
         try:
-            query = "SELECT * FROM conflicts WHERE session_id = ? ORDER BY created_at DESC"
+            query = """
+                SELECT id, project_id, session_id, conflict_type, description, severity,
+                       first_requirement, second_requirement, conflicting_roles, is_resolved,
+                       resolution_strategy, resolution_notes, resolved_by, resolved_at,
+                       affected_modules, estimated_impact_hours, created_at, updated_at
+                FROM conflicts WHERE session_id = ? ORDER BY created_at DESC
+            """
             results = self.db_manager.execute_query(query, (session_id,))
             return [self._row_to_model(row) for row in results]
         except Exception as e:
@@ -1556,7 +1574,14 @@ class ConflictRepository(BaseRepository[Conflict]):
 
     def get_unresolved(self, project_id: str) -> List[Conflict]:
         try:
-            query = "SELECT * FROM conflicts WHERE project_id = ? AND is_resolved = 0 ORDER BY severity DESC, created_at DESC"
+            query = """
+                SELECT id, project_id, session_id, conflict_type, description, severity,
+                       first_requirement, second_requirement, conflicting_roles, is_resolved,
+                       resolution_strategy, resolution_notes, resolved_by, resolved_at,
+                       affected_modules, estimated_impact_hours, created_at, updated_at
+                FROM conflicts WHERE project_id = ? AND is_resolved = 0 
+                ORDER BY severity DESC, created_at DESC
+            """
             results = self.db_manager.execute_query(query, (project_id,))
             return [self._row_to_model(row) for row in results]
         except Exception as e:
