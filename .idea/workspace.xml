@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="ph2">
-      <change afterPath="$PROJECT_DIR$/tests/test_specification_persistence.py" afterDir="false" />
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="tech specs">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/code.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/code.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_specification_persistence.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_specification_persistence.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -153,14 +152,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00069" summary="login">
-      <option name="closed" value="true" />
-      <created>1759200104715</created>
-      <option name="number" value="00069" />
-      <option name="presentableId" value="LOCAL-00069" />
-      <option name="project" value="LOCAL" />
-      <updated>1759200104716</updated>
     </task>
     <task id="LOCAL-00070" summary="login">
       <option name="closed" value="true" />
@@ -546,11 +537,18 @@
       <option name="project" value="LOCAL" />
       <updated>1759466057470</updated>
     </task>
-    <option name="localTasksCounter" value="118" />
+    <task id="LOCAL-00118" summary="tech specs">
+      <option name="closed" value="true" />
+      <created>1759467532558</created>
+      <option name="number" value="00118" />
+      <option name="presentableId" value="LOCAL-00118" />
+      <option name="project" value="LOCAL" />
+      <updated>1759467532558</updated>
+    </task>
+    <option name="localTasksCounter" value="119" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="run.py" />
     <MESSAGE value="debug" />
     <MESSAGE value="working" />
     <MESSAGE value="key" />
@@ -575,6 +573,7 @@
     <MESSAGE value="api key" />
     <MESSAGE value="sessions" />
     <MESSAGE value="ph2" />
-    <option name="LAST_COMMIT_MESSAGE" value="ph2" />
+    <MESSAGE value="tech specs" />
+    <option name="LAST_COMMIT_MESSAGE" value="tech specs" />
   </component>
 </project>

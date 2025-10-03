@@ -1855,7 +1855,7 @@ class DatabaseService:
         self.generated_codebases = GeneratedCodebaseRepository(self.db_manager, GeneratedCodebase)
         self.generated_files = GeneratedFileRepository(self.db_manager, GeneratedFile)
         self.project_collaborators = ProjectCollaboratorRepository(self.db_manager, ProjectCollaborator)
-        self.technical_specifications = TechnicalSpecificationRepository(self.db_manager, self.logger)
+        self.technical_specifications = TechnicalSpecificationRepository(self.db_manager, TechnicalSpec)
 
         # Add other repositories as needed
         # self.modules = ModuleRepository(self.db_manager, Module)
