@@ -10,6 +10,7 @@ from datetime import datetime
 
 # Import base repository
 from .base import BaseRepository, parse_json_field, dump_json_field
+from src.models import Conflict
 
 # Core imports with fallbacks
 try:
@@ -130,6 +131,28 @@ except ImportError:
     class TaskContext:
         id: str = ""
         task_id: str = ""
+
+
+def load_json_field(json_str, default=None):
+    """Load JSON field from database"""
+    if json_str is None:
+        return default if default is not None else []
+    try:
+        import json
+        return json.loads(json_str)
+    except:
+        return default if default is not None else []
+
+
+def dump_json_field(data):
+    """Dump data to JSON string for database"""
+    if data is None:
+        return None
+    try:
+        import json
+        return json.dumps(data)
+    except:
+        return None
 
 
 # ==============================================================================
@@ -1457,3 +1480,189 @@ class TaskContextRepository(BaseRepository[TaskContext]):
         except Exception as e:
             self.logger.error(f"Error converting row to TaskContext: {e}")
             return TaskContext()
+
+
+# ==============================================================================
+# CONFLICT REPOSITORY
+# ==============================================================================
+
+class ConflictRepository(BaseRepository[Conflict]):
+    """Repository for conflict management"""
+
+    def create(self, conflict: Conflict) -> bool:
+        try:
+            data = self._model_to_dict(conflict)
+            query = """
+                INSERT INTO conflicts 
+                (id, project_id, session_id, conflict_type, description, severity,
+                 first_requirement, second_requirement, conflicting_roles, is_resolved,
+                 resolution_strategy, resolution_notes, resolved_by, resolved_at,
+                 affected_modules, estimated_impact_hours, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            params = (
+                data.get('id'),
+                data.get('project_id'),
+                data.get('session_id'),
+                data.get('conflict_type', 'TECHNICAL'),
+                data.get('description', ''),
+                data.get('severity', 'medium'),
+                data.get('first_requirement', ''),
+                data.get('second_requirement', ''),
+                dump_json_field(data.get('conflicting_roles', [])),
+                1 if data.get('is_resolved', False) else 0,
+                data.get('resolution_strategy', ''),
+                data.get('resolution_notes', ''),
+                data.get('resolved_by'),
+                DateTimeHelper.to_iso_string(data.get('resolved_at')) if data.get('resolved_at') else None,
+                dump_json_field(data.get('affected_modules', [])),
+                data.get('estimated_impact_hours'),
+                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
+                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+            )
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error creating conflict: {e}")
+            return False
+
+    def get_by_id(self, conflict_id: str) -> Optional[Conflict]:
+        try:
+            query = "SELECT * FROM conflicts WHERE id = ?"
+            results = self.db_manager.execute_query(query, (conflict_id,))
+            return self._row_to_model(results[0]) if results else None
+        except Exception as e:
+            self.logger.error(f"Error getting conflict {conflict_id}: {e}")
+            return None
+
+    def get_by_project_id(self, project_id: str) -> List[Conflict]:
+        try:
+            query = "SELECT * FROM conflicts WHERE project_id = ? ORDER BY created_at DESC"
+            results = self.db_manager.execute_query(query, (project_id,))
+            return [self._row_to_model(row) for row in results]
+        except Exception as e:
+            self.logger.error(f"Error getting conflicts for project {project_id}: {e}")
+            return []
+
+    def get_by_session_id(self, session_id: str) -> List[Conflict]:
+        try:
+            query = "SELECT * FROM conflicts WHERE session_id = ? ORDER BY created_at DESC"
+            results = self.db_manager.execute_query(query, (session_id,))
+            return [self._row_to_model(row) for row in results]
+        except Exception as e:
+            self.logger.error(f"Error getting conflicts for session {session_id}: {e}")
+            return []
+
+    def get_unresolved(self, project_id: str) -> List[Conflict]:
+        try:
+            query = "SELECT * FROM conflicts WHERE project_id = ? AND is_resolved = 0 ORDER BY severity DESC, created_at DESC"
+            results = self.db_manager.execute_query(query, (project_id,))
+            return [self._row_to_model(row) for row in results]
+        except Exception as e:
+            self.logger.error(f"Error getting unresolved conflicts for project {project_id}: {e}")
+            return []
+
+    def mark_resolved(self, conflict_id: str, resolution: str, resolved_by: str = None) -> bool:
+        try:
+            query = """
+                UPDATE conflicts 
+                SET is_resolved = 1, 
+                    resolution_notes = ?,
+                    resolved_by = ?,
+                    resolved_at = ?,
+                    updated_at = ?
+                WHERE id = ?
+            """
+            params = (
+                resolution,
+                resolved_by,
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                conflict_id
+            )
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error marking conflict {conflict_id} as resolved: {e}")
+            return False
+
+    def update(self, conflict: Conflict) -> bool:
+        try:
+            data = self._model_to_dict(conflict)
+            query = """
+                UPDATE conflicts 
+                SET description = ?,
+                    severity = ?,
+                    first_requirement = ?,
+                    second_requirement = ?,
+                    conflicting_roles = ?,
+                    is_resolved = ?,
+                    resolution_strategy = ?,
+                    resolution_notes = ?,
+                    resolved_by = ?,
+                    resolved_at = ?,
+                    affected_modules = ?,
+                    estimated_impact_hours = ?,
+                    updated_at = ?
+                WHERE id = ?
+            """
+            params = (
+                data.get('description'),
+                data.get('severity'),
+                data.get('first_requirement'),
+                data.get('second_requirement'),
+                dump_json_field(data.get('conflicting_roles', [])),
+                1 if data.get('is_resolved', False) else 0,
+                data.get('resolution_strategy'),
+                data.get('resolution_notes'),
+                data.get('resolved_by'),
+                DateTimeHelper.to_iso_string(data.get('resolved_at')) if data.get('resolved_at') else None,
+                dump_json_field(data.get('affected_modules', [])),
+                data.get('estimated_impact_hours'),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                data.get('id')
+            )
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error updating conflict: {e}")
+            return False
+
+    def delete(self, conflict_id: str) -> bool:
+        try:
+            query = "DELETE FROM conflicts WHERE id = ?"
+            self.db_manager.execute_update(query, (conflict_id,))
+            return True
+        except Exception as e:
+            self.logger.error(f"Error deleting conflict {conflict_id}: {e}")
+            return False
+
+    def _row_to_model(self, row: tuple) -> Conflict:
+        from src.models import Conflict, ConflictType
+        """Convert database row to Conflict model"""
+        if not CORE_AVAILABLE:
+            @dataclass
+            class Conflict:
+                id: str = ""
+                project_id: str = ""
+
+        return Conflict(
+            id=row[0],
+            project_id=row[1],
+            session_id=row[2] if row[2] else "",
+            conflict_type=ConflictType(row[3]) if row[3] else ConflictType.TECHNICAL,
+            description=row[4] if row[4] else "",
+            severity=row[5] if row[5] else "medium",
+            first_requirement=row[6] if row[6] else "",
+            second_requirement=row[7] if row[7] else "",
+            conflicting_roles=load_json_field(row[8], []),
+            is_resolved=bool(row[9]),
+            resolution_strategy=row[10] if row[10] else "",
+            resolution_notes=row[11] if row[11] else "",
+            resolved_by=row[12] if row[12] else None,
+            resolved_at=DateTimeHelper.from_iso_string(row[13]) if row[13] else None,
+            affected_modules=load_json_field(row[14], []),
+            estimated_impact_hours=row[15] if row[15] else None,
+            created_at=DateTimeHelper.from_iso_string(row[16]),
+            updated_at=DateTimeHelper.from_iso_string(row[17])
+        )
