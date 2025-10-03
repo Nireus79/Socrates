@@ -373,33 +373,156 @@ class BaseAgent(ABC):
 # ============================================================================
 
 def require_authentication(func):
-    """Decorator to require authentication for agent methods"""
+    """
+    Decorator to require authentication for agent methods.
+
+    Validates that:
+    - user_id is provided in data
+    - User exists in database
+    - User status is 'active'
+
+    Adds _authenticated_user to data dict for use in wrapped method.
+    """
 
     @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        # For now, just log the requirement
-        if hasattr(self, 'logger') and self.logger:
-            self.logger.debug(f"Authentication required for {func.__name__}")
+    def wrapper(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        user_id = data.get('user_id')
 
-        # TODO: Implement actual authentication check
-        return func(self, *args, **kwargs)
+        # Check if user_id is provided
+        if not user_id:
+            return self._error_response("Authentication required", "AUTH_REQUIRED")
+
+        # Get database service
+        db_service = None
+        if hasattr(self, 'db_manager') and self.db_manager:
+            # Use new pattern
+            try:
+                from src.database import DatabaseService
+                db_service = DatabaseService(self.db_manager)
+            except:
+                pass
+        elif hasattr(self, 'db_service') and self.db_service:
+            # Fallback to old pattern
+            db_service = self.db_service
+
+        if not db_service:
+            return self._error_response("Database service unavailable", "DB_UNAVAILABLE")
+
+        # Verify user exists
+        try:
+            user = db_service.users.get_by_id(user_id)
+            if not user:
+                return self._error_response("Invalid user", "INVALID_USER")
+
+            # Check if user is active
+            user_status = user.status.value if hasattr(user.status, 'value') else user.status
+            if user_status != 'active':
+                return self._error_response("User account inactive", "USER_INACTIVE")
+
+            # Add authenticated user to data for use in method
+            data['_authenticated_user'] = user
+
+            # Log authentication success if logger available
+            if hasattr(self, 'logger') and self.logger:
+                self.logger.debug(f"User {user_id} authenticated for {func.__name__}")
+
+            return func(self, data)
+
+        except Exception as e:
+            if hasattr(self, 'logger') and self.logger:
+                self.logger.error(f"Authentication error in {func.__name__}: {e}")
+            return self._error_response(f"Authentication failed: {str(e)}", "AUTH_ERROR")
 
     return wrapper
 
 
 def require_project_access(func):
-    """Decorator to require project access for agent methods"""
+    """
+    Decorator to require project access for agent methods.
+    Automatically applies require_authentication first.
+
+    Validates that:
+    - User is authenticated (via require_authentication)
+    - project_id is provided in data
+    - Project exists in database
+    - User is either project owner or active collaborator
+
+    Adds _project_role and _project to data dict for use in wrapped method.
+    Roles: 'owner', 'editor', 'viewer', etc.
+    """
 
     @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        # For now, just log the requirement
-        if hasattr(self, 'logger') and self.logger:
-            self.logger.debug(f"Project access required for {func.__name__}")
+    def inner_wrapper(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        user_id = data.get('user_id')
+        project_id = data.get('project_id')
 
-        # TODO: Implement actual project access check
-        return func(self, *args, **kwargs)
+        # Check if project_id is provided
+        if not project_id:
+            return self._error_response("Project ID required", "PROJECT_ID_REQUIRED")
 
-    return wrapper
+        # Get database service
+        db_service = None
+        if hasattr(self, 'db_manager') and self.db_manager:
+            # Use new pattern
+            try:
+                from src.database import DatabaseService
+                db_service = DatabaseService(self.db_manager)
+            except:
+                pass
+        elif hasattr(self, 'db_service') and self.db_service:
+            # Fallback to old pattern
+            db_service = self.db_service
+
+        if not db_service:
+            return self._error_response("Database service unavailable", "DB_UNAVAILABLE")
+
+        try:
+            # Get project
+            project = db_service.projects.get_by_id(project_id)
+            if not project:
+                return self._error_response("Project not found", "PROJECT_NOT_FOUND")
+
+            # Check if user is owner
+            if project.owner_id == user_id:
+                data['_project_role'] = 'owner'
+                data['_project'] = project
+
+                if hasattr(self, 'logger') and self.logger:
+                    self.logger.debug(f"User {user_id} authorized as owner for project {project_id}")
+
+                return func(self, data)
+
+            # Check if user is collaborator
+            collaborators = db_service.project_collaborators.get_by_project_id(project_id)
+            user_collab = next(
+                (c for c in collaborators if c.user_id == user_id and c.is_active),
+                None
+            )
+
+            if user_collab:
+                # Get role as string
+                role = user_collab.role.value if hasattr(user_collab.role, 'value') else user_collab.role
+                data['_project_role'] = role
+                data['_project'] = project
+
+                if hasattr(self, 'logger') and self.logger:
+                    self.logger.debug(f"User {user_id} authorized as {role} for project {project_id}")
+
+                return func(self, data)
+
+            # User has no access to this project
+            if hasattr(self, 'logger') and self.logger:
+                self.logger.warning(f"User {user_id} denied access to project {project_id}")
+
+            return self._error_response("Access denied", "ACCESS_DENIED")
+
+        except Exception as e:
+            if hasattr(self, 'logger') and self.logger:
+                self.logger.error(f"Project access check error in {func.__name__}: {e}")
+            return self._error_response(f"Access check failed: {str(e)}", "ACCESS_CHECK_ERROR")
+
+    # Apply authentication decorator first
+    return require_authentication(inner_wrapper)
 
 
 def log_agent_action(func):

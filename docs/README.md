@@ -201,7 +201,7 @@ SOCRATIC_DEBUG=true
 
 ### **Run All Tests**
 ```bash
-python tests/all_agents_tests.py
+python tests/test_agents_.py
 ```
 
 ### **Expected Output**
