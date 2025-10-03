@@ -705,6 +705,7 @@ class TechnicalSpec(BaseModel):
     """Complete technical specification for a project"""
 
     project_id: str = ""
+    session_id: Optional[str] = None
     version: str = "1.0.0"
 
     # Architecture specification

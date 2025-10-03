@@ -24,7 +24,7 @@ import os
 try:
     from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper
     from src.models import (
-        Project, TechnicalSpecification, GeneratedCodebase, GeneratedFile,
+        Project, TechnicalSpecification, TechnicalSpec, GeneratedCodebase, GeneratedFile,
         TestResult, FileType, TestType, ProjectPhase, ModelValidator
     )
     from src.database import get_database
@@ -124,6 +124,11 @@ except ImportError:
                 setattr(self, k, v)
 
 
+    class TechnicalSpec:
+        def __init__(self, **kwargs):
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+
     class GeneratedCodebase:
         def __init__(self, **kwargs):
             for k, v in kwargs.items():
@@ -215,6 +220,11 @@ class CodeGeneratorAgent(BaseAgent):
 
         # Code templates
         self.code_templates = self._initialize_code_templates()
+        # Initialize specification repository
+        if self.db_service:
+            self.spec_repository = self.db_service.technical_specifications
+        else:
+            self.spec_repository = None
 
         if self.logger:
             self.logger.info("CodeGeneratorAgent initialized successfully")
@@ -225,8 +235,121 @@ class CodeGeneratorAgent(BaseAgent):
             "generate_codebase", "design_architecture", "generate_files",
             "create_tests", "analyze_code_quality", "optimize_performance",
             "generate_documentation", "setup_deployment", "validate_code",
-            "extract_requirements", "estimate_complexity", "suggest_improvements"
+            "extract_requirements", "estimate_complexity", "suggest_improvements",
+            "get_specification", "save_specification", "list_specifications",
         ]
+
+    def _get_specification(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Get technical specification for a project"""
+        try:
+            project_id = data.get('project_id')
+            spec_id = data.get('spec_id')
+
+            if not project_id and not spec_id:
+                return self._error_response("Either project_id or spec_id is required")
+
+            if not self.spec_repository:
+                return self._error_response("Specification repository not available")
+
+            # Get by spec_id if provided
+            if spec_id:
+                spec = self.spec_repository.get_by_id(spec_id)
+                if not spec:
+                    return self._error_response(f"Specification not found: {spec_id}")
+
+                return self._success_response("Specification retrieved", {
+                    'specification': self._spec_to_dict(spec)
+                })
+
+            # Get latest for project
+            spec = self.spec_repository.get_latest(project_id)
+            if not spec:
+                return self._error_response(f"No specifications found for project: {project_id}")
+
+            # Also get version list
+            versions = self.spec_repository.list_versions(project_id)
+
+            return self._success_response("Specification retrieved", {
+                'specification': self._spec_to_dict(spec),
+                'available_versions': versions,
+                'is_latest': True
+            })
+
+        except Exception as e:
+            error_msg = f"Failed to retrieve specification: {e}"
+            self.logger.error(error_msg) if self.logger else None
+            return self._error_response(error_msg)
+
+    def _save_specification(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Save a technical specification"""
+        try:
+            if not self.spec_repository:
+                return self._error_response("Specification repository not available")
+
+            # Extract specification data
+            spec_data = data.get('specification', {})
+            project_id = spec_data.get('project_id') or data.get('project_id')
+            session_id = data.get('session_id')
+
+            if not project_id:
+                return self._error_response("project_id is required")
+
+            # Check for existing specs to determine version
+            existing_versions = self.spec_repository.list_versions(project_id)
+            if existing_versions:
+                # Increment version
+                latest_version = existing_versions[0]
+                major, minor, patch = latest_version.split('.')
+                new_version = f"{major}.{int(minor) + 1}.0"
+            else:
+                new_version = "1.0.0"
+
+            # Create TechnicalSpec object
+            import uuid
+            spec = TechnicalSpec(
+                id=str(uuid.uuid4()),
+                project_id=project_id,
+                session_id=session_id,
+                version=new_version,
+                architecture_type=spec_data.get('architecture_type', ''),
+                technology_stack=spec_data.get('technology_stack', {}),
+                functional_requirements=spec_data.get('functional_requirements', []),
+                non_functional_requirements=spec_data.get('non_functional_requirements', []),
+                system_components=spec_data.get('system_components', []),
+                data_models=spec_data.get('data_models', []),
+                api_specifications=spec_data.get('api_specifications', []),
+                performance_requirements=spec_data.get('performance_requirements', {}),
+                security_requirements=spec_data.get('security_requirements', []),
+                scalability_requirements=spec_data.get('scalability_requirements', {}),
+                deployment_strategy=spec_data.get('deployment_strategy', ''),
+                infrastructure_requirements=spec_data.get('infrastructure_requirements', {}),
+                monitoring_requirements=spec_data.get('monitoring_requirements', []),
+                testing_strategy=spec_data.get('testing_strategy', {}),
+                acceptance_criteria=spec_data.get('acceptance_criteria', []),
+                documentation_requirements=spec_data.get('documentation_requirements', []),
+                created_at=DateTimeHelper.now(),
+                updated_at=DateTimeHelper.now()
+            )
+
+            # Save to database
+            success = self.spec_repository.create(spec)
+
+            if not success:
+                return self._error_response("Failed to save specification to database")
+
+            if self.logger:
+                self.logger.info(f"Saved specification {spec.id} v{new_version} for project {project_id}")
+
+            return self._success_response(f"Specification saved successfully as version {new_version}", {
+                'specification_id': spec.id,
+                'version': new_version,
+                'project_id': project_id
+            })
+
+        except Exception as e:
+            error_msg = f"Failed to save specification: {e}"
+            self.logger.error(error_msg) if self.logger else None
+            return self._error_response(error_msg)
 
     def _initialize_code_templates(self) -> Dict[str, str]:
         """Initialize code generation templates"""
@@ -344,6 +467,21 @@ def sample_data():
             # Get technical specifications
             specs_data = data.get('technical_specifications', {})
             specs = TechnicalSpecification(**specs_data) if specs_data else None
+
+            # Save specification if provided and repository available
+            if specs and self.spec_repository and specs_data:
+                try:
+                    # Save the specification
+                    save_result = self._save_specification({
+                        'project_id': project_id,
+                        'session_id': data.get('session_id'),
+                        'specification': specs_data
+                    })
+                    if save_result.get('success'):
+                        self.logger.info(f"Saved specification for project {project_id}") if self.logger else None
+                except Exception as e:
+                    # Don't fail codebase generation if spec save fails
+                    self.logger.warning(f"Failed to save specification: {e}") if self.logger else None
 
             # Design architecture
             architecture = self._design_architecture(project, specs, data.get('requirements', []))
@@ -569,7 +707,7 @@ def sample_data():
         return file_structure
 
     def _generate_all_files(self, project: Project, specs: Optional[TechnicalSpecification],
-                           architecture: Dict[str, Any], file_structure: Dict[str, List[str]]) -> List[GeneratedFile]:
+                            architecture: Dict[str, Any], file_structure: Dict[str, List[str]]) -> List[GeneratedFile]:
         """Generate content for all files"""
         generated_files = []
 
@@ -803,7 +941,7 @@ Generated by Socratic RAG Enhanced Code Generator.
         }, indent=2)
 
     def _generate_css_content(self, project: Project, specs: Optional[TechnicalSpecification],
-                             architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
+                              architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
         """Generate CSS styling"""
         return '''/* Generated CSS for application */
 
@@ -938,6 +1076,36 @@ footer {
 
         return health
 
+    def _spec_to_dict(self, spec: TechnicalSpec) -> Dict[str, Any]:
+        """Convert TechnicalSpec to dictionary"""
+        return {
+            'id': spec.id,
+            'project_id': spec.project_id,
+            'session_id': spec.session_id,
+            'version': spec.version,
+            'architecture_type': spec.architecture_type,
+            'technology_stack': spec.technology_stack,
+            'functional_requirements': spec.functional_requirements,
+            'non_functional_requirements': spec.non_functional_requirements,
+            'system_components': spec.system_components,
+            'data_models': spec.data_models,
+            'api_specifications': spec.api_specifications,
+            'performance_requirements': spec.performance_requirements,
+            'security_requirements': spec.security_requirements,
+            'scalability_requirements': spec.scalability_requirements,
+            'deployment_strategy': spec.deployment_strategy,
+            'infrastructure_requirements': spec.infrastructure_requirements,
+            'monitoring_requirements': spec.monitoring_requirements,
+            'testing_strategy': spec.testing_strategy,
+            'acceptance_criteria': spec.acceptance_criteria,
+            'documentation_requirements': spec.documentation_requirements,
+            'is_approved': spec.is_approved,
+            'approved_by': spec.approved_by,
+            'approved_at': DateTimeHelper.to_iso_string(spec.approved_at) if spec.approved_at else None,
+            'approval_notes': spec.approval_notes,
+            'created_at': DateTimeHelper.to_iso_string(spec.created_at),
+            'updated_at': DateTimeHelper.to_iso_string(spec.updated_at)
+        }
 
 # ============================================================================
 # MODULE EXPORTS
