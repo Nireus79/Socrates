@@ -329,7 +329,7 @@ class ContextAnalyzerAgent(BaseAgent):
 
             # Perform analysis (use existing logic)
                 # Simplified analysis for now
-            analysis = self._analyze_full_context_internal(project)
+            analysis = self._analyze_full_context(project)
 
             # Save context to database
             if self.project_context_repo:
