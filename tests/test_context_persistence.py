@@ -139,6 +139,20 @@ def setup_test_environment(results: TestResults) -> Optional[tuple]:
 
         results.add_pass("Database service initialized")
 
+        # Create test user
+        from src.models import User, UserRole
+        test_user = User(
+            id='test-user',
+            username='test_user',
+            email='test@example.com',
+            password_hash='test_hash',
+            role=UserRole.DEVELOPER,
+        )
+        db_service.users.create(test_user)
+        results.add_pass("Test user created")
+
+        # Create ContextAnalyzerAgent
+
         # Create ContextAnalyzerAgent
         agent = ContextAnalyzerAgent(services)
         if not agent:
