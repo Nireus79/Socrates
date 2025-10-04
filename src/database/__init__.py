@@ -32,6 +32,8 @@ from .base import BaseRepository, parse_json_field, dump_json_field
 from .repositories import (
     UserRepository,
     ProjectRepository,
+    ModuleRepository,
+    TaskRepository,
     GeneratedCodebaseRepository,
     GeneratedFileRepository,
     ProjectCollaboratorRepository,
@@ -41,7 +43,8 @@ from .repositories import (
     TechnicalSpecificationRepository,
     ProjectContextRepository,
     ModuleContextRepository,
-    TaskContextRepository
+    TaskContextRepository,
+    ConflictRepository
 )
 
 # Service and factory functions
