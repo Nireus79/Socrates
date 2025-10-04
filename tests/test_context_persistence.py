@@ -140,14 +140,17 @@ def setup_test_environment(results: TestResults) -> Optional[tuple]:
         results.add_pass("Database service initialized")
 
         # Create test user
-        from src.models import User, UserRole
+        from src.models import User, UserRole, UserStatus
         test_user = User(
             id='test-user',
             username='test_user',
             email='test@example.com',
             password_hash='test_hash',
             role=UserRole.DEVELOPER,
+            status=UserStatus.ACTIVE
         )
+        db_service.users.create(test_user)
+        results.add_pass("Test user created")
         db_service.users.create(test_user)
         results.add_pass("Test user created")
 
