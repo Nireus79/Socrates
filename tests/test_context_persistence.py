@@ -140,19 +140,20 @@ def setup_test_environment(results: TestResults) -> Optional[tuple]:
         results.add_pass("Database service initialized")
 
         # Create test user
-        from src.models import User, UserRole, UserStatus
+        from src.models import User, UserRole
         test_user = User(
             id='test-user',
             username='test_user',
             email='test@example.com',
             password_hash='test_hash',
-            role=UserRole.DEVELOPER,
-            status=UserStatus.ACTIVE
+            role=UserRole.DEVELOPER
         )
         db_service.users.create(test_user)
-        results.add_pass("Test user created")
-        db_service.users.create(test_user)
-        results.add_pass("Test user created")
+
+        # Manually update status to active in database
+        update_query = "UPDATE users SET status = ? WHERE id = ?"
+        db_service.db_manager.execute_update(update_query, ('active', 'test-user'))
+        results.add_pass("Test user created and activated")
 
         # Create ContextAnalyzerAgent
 
