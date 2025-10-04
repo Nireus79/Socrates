@@ -204,7 +204,8 @@ def test_context_saves_to_database(results: TestResults, agent: Any, project_id:
         # Perform context analysis
         result = agent._analyze_context({
             'project_id': project_id,
-            'force_refresh': True
+            'force_refresh': True,
+            'user_id': 'test-user'
         })
 
         if not result.get('success'):
@@ -254,7 +255,8 @@ def test_context_reused_from_cache(results: TestResults, agent: Any, project_id:
         print_info("Performing first analysis...")
         result1 = agent._analyze_context({
             'project_id': project_id,
-            'force_refresh': True
+            'force_refresh': True,
+            'user_id': 'test-user'
         })
 
         if not result1.get('success'):
@@ -273,7 +275,8 @@ def test_context_reused_from_cache(results: TestResults, agent: Any, project_id:
         print_info("Performing second analysis (should use cache)...")
         result2 = agent._analyze_context({
             'project_id': project_id,
-            'force_refresh': False
+            'force_refresh': False,
+            'user_id': 'test-user'
         })
 
         if not result2.get('success'):
@@ -328,7 +331,8 @@ def test_cache_refresh_after_threshold(results: TestResults, agent: Any, project
         print_info("Requesting analysis with stale cache...")
         result = agent._analyze_context({
             'project_id': project_id,
-            'force_refresh': False
+            'force_refresh': False,
+            'user_id': 'test-user'
         })
 
         if not result.get('success'):
@@ -368,7 +372,8 @@ def test_force_refresh_bypasses_cache(results: TestResults, agent: Any, project_
         # Ensure we have fresh cache
         result1 = agent._analyze_context({
             'project_id': project_id,
-            'force_refresh': True
+            'force_refresh': True,
+            'user_id': 'test-user'
         })
 
         if not result1.get('success'):
@@ -388,7 +393,8 @@ def test_force_refresh_bypasses_cache(results: TestResults, agent: Any, project_
         print_info("Forcing refresh...")
         result2 = agent._analyze_context({
             'project_id': project_id,
-            'force_refresh': True
+            'force_refresh': True,
+            'user_id': 'test-user'
         })
 
         if not result2.get('success'):

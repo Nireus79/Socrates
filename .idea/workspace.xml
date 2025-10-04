@@ -7,6 +7,7 @@
     <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="clean up">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/agents/context.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/context.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_context_persistence.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_context_persistence.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -151,22 +152,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00105" summary="tests">
-      <option name="closed" value="true" />
-      <created>1759412286279</created>
-      <option name="number" value="00105" />
-      <option name="presentableId" value="LOCAL-00105" />
-      <option name="project" value="LOCAL" />
-      <updated>1759412286279</updated>
-    </task>
-    <task id="LOCAL-00106" summary="tests">
-      <option name="closed" value="true" />
-      <created>1759412334313</created>
-      <option name="number" value="00106" />
-      <option name="presentableId" value="LOCAL-00106" />
-      <option name="project" value="LOCAL" />
-      <updated>1759412334313</updated>
     </task>
     <task id="LOCAL-00107" summary="tests">
       <option name="closed" value="true" />
@@ -544,7 +529,23 @@
       <option name="project" value="LOCAL" />
       <updated>1759545989018</updated>
     </task>
-    <option name="localTasksCounter" value="154" />
+    <task id="LOCAL-00154" summary="clean up">
+      <option name="closed" value="true" />
+      <created>1759561650494</created>
+      <option name="number" value="00154" />
+      <option name="presentableId" value="LOCAL-00154" />
+      <option name="project" value="LOCAL" />
+      <updated>1759561650494</updated>
+    </task>
+    <task id="LOCAL-00155" summary="clean up">
+      <option name="closed" value="true" />
+      <created>1759561753148</created>
+      <option name="number" value="00155" />
+      <option name="presentableId" value="LOCAL-00155" />
+      <option name="project" value="LOCAL" />
+      <updated>1759561753148</updated>
+    </task>
+    <option name="localTasksCounter" value="156" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
