@@ -319,6 +319,161 @@ class ContextAnalyzerAgent(BaseAgent):
             updated_at=DateTimeHelper.now()
         )
 
+    def _extract_business_domain(self, project: Project) -> str:
+        """Extract business domain from project description"""
+        if not project.description:
+            return "General Software Development"
+
+        # Simple keyword-based extraction
+        description_lower = project.description.lower()
+
+        domains = {
+            'e-commerce': ['shop', 'store', 'ecommerce', 'e-commerce', 'retail', 'marketplace'],
+            'healthcare': ['health', 'medical', 'patient', 'hospital', 'clinic'],
+            'finance': ['finance', 'banking', 'payment', 'trading', 'investment'],
+            'education': ['education', 'learning', 'course', 'student', 'school'],
+            'social': ['social', 'community', 'network', 'messaging', 'chat'],
+            'productivity': ['task', 'project management', 'productivity', 'workflow'],
+            'analytics': ['analytics', 'data', 'dashboard', 'reporting', 'metrics']
+        }
+
+        for domain, keywords in domains.items():
+            if any(keyword in description_lower for keyword in keywords):
+                return domain.title()
+
+        return "General Software Development"
+
+    def _extract_target_audience(self, project: Project) -> str:
+        """Extract target audience from project description"""
+        if not project.description:
+            return "General users"
+
+        description_lower = project.description.lower()
+
+        audiences = {
+            'developers': ['developer', 'programmer', 'engineer', 'coder'],
+            'business users': ['business', 'enterprise', 'corporate', 'professional'],
+            'consumers': ['consumer', 'customer', 'user', 'public'],
+            'students': ['student', 'learner', 'education'],
+            'administrators': ['admin', 'administrator', 'manager']
+        }
+
+        for audience, keywords in audiences.items():
+            if any(keyword in description_lower for keyword in keywords):
+                return audience.title()
+
+        return "General users"
+
+    def _extract_business_goals(self, project: Project) -> List[str]:
+        """Extract business goals from project description"""
+        goals = []
+
+        if project.description:
+            description_lower = project.description.lower()
+
+            goal_keywords = {
+                'Improve user experience': ['user experience', 'ux', 'usability', 'user-friendly'],
+                'Increase efficiency': ['efficiency', 'productivity', 'automate', 'streamline'],
+                'Reduce costs': ['cost', 'reduce', 'save', 'efficient'],
+                'Scale operations': ['scale', 'growth', 'expand', 'scalability'],
+                'Enhance security': ['security', 'secure', 'protect', 'encryption'],
+                'Improve performance': ['performance', 'speed', 'fast', 'optimize']
+            }
+
+            for goal, keywords in goal_keywords.items():
+                if any(keyword in description_lower for keyword in keywords):
+                    goals.append(goal)
+
+        return goals if goals else ['Deliver high-quality software solution']
+
+    def _extract_existing_systems(self, project: Project) -> List[str]:
+        """Extract existing systems from project data"""
+        systems = []
+
+        if project.technology_stack:
+            # Check for database
+            if 'database' in project.technology_stack:
+                systems.append(f"Database: {project.technology_stack['database']}")
+
+            # Check for backend
+            if 'backend' in project.technology_stack:
+                systems.append(f"Backend: {project.technology_stack['backend']}")
+
+            # Check for frontend
+            if 'frontend' in project.technology_stack:
+                systems.append(f"Frontend: {project.technology_stack['frontend']}")
+
+        return systems
+
+    def _extract_integration_requirements(self, project: Project) -> List[str]:
+        """Extract integration requirements"""
+        requirements = []
+
+        if project.description:
+            description_lower = project.description.lower()
+
+            integrations = {
+                'API integration': ['api', 'rest', 'graphql', 'endpoint'],
+                'Database integration': ['database', 'sql', 'nosql', 'data storage'],
+                'Authentication system': ['auth', 'login', 'authentication', 'oauth'],
+                'Payment processing': ['payment', 'checkout', 'stripe', 'paypal'],
+                'Email system': ['email', 'notification', 'smtp'],
+                'Cloud storage': ['s3', 'storage', 'file upload', 'cloud']
+            }
+
+            for integration, keywords in integrations.items():
+                if any(keyword in description_lower for keyword in keywords):
+                    requirements.append(integration)
+
+        return requirements
+
+    def _extract_performance_requirements(self, project: Project) -> Dict[str, Any]:
+        """Extract performance requirements"""
+        requirements = {
+            'response_time': 'Standard (< 3s)',
+            'concurrent_users': 'Medium (100-1000)',
+            'uptime': '99%'
+        }
+
+        if project.description:
+            description_lower = project.description.lower()
+
+            # Check for high performance needs
+            if any(word in description_lower for word in ['real-time', 'realtime', 'instant', 'fast']):
+                requirements['response_time'] = 'High performance (< 500ms)'
+
+            # Check for scalability needs
+            if any(word in description_lower for word in ['scale', 'large', 'enterprise', 'millions']):
+                requirements['concurrent_users'] = 'High (1000+)'
+                requirements['uptime'] = '99.9%'
+
+        return requirements
+
+    def _extract_team_structure(self, project: Project) -> Dict[str, Any]:
+        """Extract team structure information"""
+        # Default structure
+        return {
+            'size': 'Small (1-5)',
+            'roles': ['Full-stack Developer'],
+            'experience_level': 'Mixed'
+        }
+
+    def _extract_budget_constraints(self, project: Project) -> Dict[str, Any]:
+        """Extract budget constraints"""
+        # Default constraints
+        return {
+            'level': 'Standard',
+            'preferences': ['Open-source tools', 'Cost-effective solutions']
+        }
+
+    def _extract_timeline_constraints(self, project: Project) -> Dict[str, Any]:
+        """Extract timeline constraints"""
+        # Default timeline
+        return {
+            'duration': 'Medium-term (3-6 months)',
+            'urgency': 'Normal'
+        }
+
     @require_project_access
     @log_agent_action
     def _analyze_context(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -390,10 +545,30 @@ class ContextAnalyzerAgent(BaseAgent):
             self.logger.info(f"Performing full context analysis for project {project.name}")
 
         try:
+            # Extract business context from project data
+            business_domain = self._extract_business_domain(project)
+            target_audience = self._extract_target_audience(project)
+            business_goals = self._extract_business_goals(project)
+            existing_systems = self._extract_existing_systems(project)
+            integration_requirements = self._extract_integration_requirements(project)
+            performance_requirements = self._extract_performance_requirements(project)
+            team_structure = self._extract_team_structure(project)
+            budget_constraints = self._extract_budget_constraints(project)
+            timeline_constraints = self._extract_timeline_constraints(project)
+
             analysis = {
                 'project_id': project.id,
                 'project_name': project.name,
                 'analysis_timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                'business_domain': business_domain,
+                'target_audience': target_audience,
+                'business_goals': business_goals,
+                'existing_systems': existing_systems,
+                'integration_requirements': integration_requirements,
+                'performance_requirements': performance_requirements,
+                'team_structure': team_structure,
+                'budget_constraints': budget_constraints,
+                'timeline_constraints': timeline_constraints,
                 'project_health': self._assess_project_health_internal(project),
                 'conversation_insights': self._analyze_conversation_patterns(project),
                 'technical_assessment': self._analyze_technical_context(project),
@@ -415,8 +590,8 @@ class ContextAnalyzerAgent(BaseAgent):
 
         except Exception as e:
             if self.logger:
-                self.logger.error(f"Full context analysis failed for project {project.name}: {e}")
-            raise
+                self.logger.error(f"Full context analysis error: {e}")
+            return {}
 
     @require_project_access
     @log_agent_action
