@@ -173,6 +173,59 @@ class DatabaseManager:
                     )
                 """)
 
+                # Modules table
+                conn.execute("""
+                                    CREATE TABLE IF NOT EXISTS modules (
+                                        id TEXT PRIMARY KEY,
+                                        project_id TEXT NOT NULL,
+                                        name TEXT NOT NULL,
+                                        description TEXT,
+                                        module_type TEXT NOT NULL DEFAULT 'feature',
+                                        status TEXT NOT NULL DEFAULT 'planned',
+                                        file_path TEXT,
+                                        dependencies TEXT,
+                                        api_endpoints TEXT,
+                                        database_tables TEXT,
+                                        assigned_to TEXT,
+                                        priority TEXT NOT NULL DEFAULT 'medium',
+                                        blocked_by TEXT,
+                                        start_date TEXT,
+                                        due_date TEXT,
+                                        completed_at TEXT,
+                                        estimated_hours REAL DEFAULT 0.0,
+                                        actual_hours REAL DEFAULT 0.0,
+                                        completion_percentage REAL DEFAULT 0.0,
+                                        quality_score REAL DEFAULT 0.0,
+                                        test_coverage REAL DEFAULT 0.0,
+                                        created_at TEXT NOT NULL,
+                                        updated_at TEXT NOT NULL,
+                                        FOREIGN KEY (project_id) REFERENCES projects(id)
+                                    )
+                                """)
+
+                # Tasks table
+                conn.execute("""
+                                    CREATE TABLE IF NOT EXISTS tasks (
+                                        id TEXT PRIMARY KEY,
+                                        module_id TEXT NOT NULL,
+                                        project_id TEXT NOT NULL,
+                                        title TEXT NOT NULL,
+                                        description TEXT,
+                                        status TEXT NOT NULL DEFAULT 'todo',
+                                        priority TEXT NOT NULL DEFAULT 'medium',
+                                        assigned_to TEXT,
+                                        dependencies TEXT,
+                                        estimated_hours REAL DEFAULT 0.0,
+                                        actual_hours REAL DEFAULT 0.0,
+                                        due_date TEXT,
+                                        completed_at TEXT,
+                                        created_at TEXT NOT NULL,
+                                        updated_at TEXT NOT NULL,
+                                        FOREIGN KEY (module_id) REFERENCES modules(id),
+                                        FOREIGN KEY (project_id) REFERENCES projects(id)
+                                    )
+                                """)
+
                 # Generated codebases table
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS generated_codebases (
@@ -422,6 +475,11 @@ class DatabaseManager:
         indexes = [
             "CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner_id)",
             "CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status)",
+            "CREATE INDEX IF NOT EXISTS idx_modules_project ON modules(project_id)",
+            "CREATE INDEX IF NOT EXISTS idx_modules_status ON modules(status)",
+            "CREATE INDEX IF NOT EXISTS idx_tasks_module ON tasks(module_id)",
+            "CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id)",
+            "CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)",
             "CREATE INDEX IF NOT EXISTS idx_sessions_project ON socratic_sessions(project_id)",
             "CREATE INDEX IF NOT EXISTS idx_sessions_user ON socratic_sessions(initiated_by)",
             "CREATE INDEX IF NOT EXISTS idx_sessions_status ON socratic_sessions(status)",
@@ -434,7 +492,10 @@ class DatabaseManager:
             "CREATE INDEX IF NOT EXISTS idx_collaborators_user ON project_collaborators(user_id)",
             "CREATE INDEX IF NOT EXISTS idx_project_contexts_project ON project_contexts(project_id)",
             "CREATE INDEX IF NOT EXISTS idx_module_contexts_project ON module_contexts(project_id)",
+            "CREATE INDEX IF NOT EXISTS idx_module_contexts_module ON module_contexts(module_id)",
             "CREATE INDEX IF NOT EXISTS idx_task_contexts_project ON task_contexts(project_id)",
+            "CREATE INDEX IF NOT EXISTS idx_task_contexts_module ON task_contexts(module_id)",
+            "CREATE INDEX IF NOT EXISTS idx_task_contexts_task ON task_contexts(task_id)",
             "CREATE INDEX IF NOT EXISTS idx_conflicts_project ON conflicts(project_id)",
             "CREATE INDEX IF NOT EXISTS idx_conflicts_session ON conflicts(session_id)",
             "CREATE INDEX IF NOT EXISTS idx_conflicts_resolved ON conflicts(is_resolved)",

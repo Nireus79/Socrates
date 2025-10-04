@@ -8,10 +8,130 @@ All concrete repository implementations for the Socratic RAG Enhanced system.
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 from dataclasses import dataclass
-
-# Import base repository
 from .base import BaseRepository, parse_json_field, dump_json_field
 from src.models import Conflict
+
+try:
+    from src.models import (
+        User, Project, Module, Task, GeneratedCodebase, GeneratedFile,
+        ProjectCollaborator, SocraticSession, Question, ConversationMessage,
+        TechnicalSpec, ProjectContext, ModuleContext, TaskContext, Conflict,
+        UserRole, ProjectStatus, ModuleType, ModuleStatus, TaskStatus, Priority,
+        ConflictType
+    )
+    from src.core import DateTimeHelper
+
+    CORE_AVAILABLE = True
+except ImportError:
+    CORE_AVAILABLE = False
+    import logging
+
+
+    def get_logger(name):
+        return logging.getLogger(name)
+
+
+    def parse_json_field(data, default=None):
+        return default
+
+
+    def dump_json_field(data):
+        return None
+
+
+    # Fallback DateTimeHelper
+    class DateTimeHelper:
+        @staticmethod
+        def now():
+            from datetime import datetime
+            return datetime.now()
+
+        @staticmethod
+        def to_iso_string(dt):
+            return dt.isoformat() if dt else None
+
+        @staticmethod
+        def from_iso_string(iso_str):
+            if not iso_str:
+                return None
+            from datetime import datetime
+            return datetime.fromisoformat(iso_str)
+
+
+    # Fallback model classes
+    @dataclass
+    class User:
+        id: str = ""
+
+
+    @dataclass
+    class Project:
+        id: str = ""
+
+
+    @dataclass
+    class Module:
+        id: str = ""
+
+
+    @dataclass
+    class Task:
+        id: str = ""
+
+
+    @dataclass
+    class GeneratedCodebase:
+        id: str = ""
+
+
+    @dataclass
+    class GeneratedFile:
+        id: str = ""
+
+
+    @dataclass
+    class ProjectCollaborator:
+        id: str = ""
+
+
+    @dataclass
+    class SocraticSession:
+        id: str = ""
+
+
+    @dataclass
+    class Question:
+        id: str = ""
+
+
+    @dataclass
+    class ConversationMessage:
+        id: str = ""
+
+
+    @dataclass
+    class TechnicalSpec:
+        id: str = ""
+
+
+    @dataclass
+    class ProjectContext:
+        id: str = ""
+
+
+    @dataclass
+    class ModuleContext:
+        id: str = ""
+
+
+    @dataclass
+    class TaskContext:
+        id: str = ""
+
+
+    @dataclass
+    class Conflict:
+        id: str = ""
 
 # Core imports with fallbacks
 try:
@@ -316,6 +436,295 @@ class ProjectRepository(BaseRepository[Project]):
         except Exception as e:
             self.logger.error(f"Error deleting project {project_id}: {e}")
             return False
+
+    # ==============================================================================
+    # MODULE REPOSITORY
+    # ==============================================================================
+
+    class ModuleRepository(BaseRepository[Module]):
+        """Repository for module management"""
+
+        def create(self, module: Module) -> bool:
+            try:
+                data = self._model_to_dict(module)
+                query = """
+                    INSERT INTO modules 
+                    (id, project_id, name, description, module_type, status, file_path,
+                     dependencies, api_endpoints, database_tables, assigned_to, priority,
+                     blocked_by, start_date, due_date, completed_at, estimated_hours,
+                     actual_hours, completion_percentage, quality_score, test_coverage,
+                     created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """
+                params = (
+                    data.get('id'), data.get('project_id'), data.get('name'),
+                    data.get('description'), data.get('module_type', 'feature'),
+                    data.get('status', 'planned'), data.get('file_path'),
+                    dump_json_field(data.get('dependencies')),
+                    dump_json_field(data.get('api_endpoints')),
+                    dump_json_field(data.get('database_tables')),
+                    data.get('assigned_to'), data.get('priority', 'medium'),
+                    dump_json_field(data.get('blocked_by')),
+                    DateTimeHelper.to_iso_string(data.get('start_date')),
+                    DateTimeHelper.to_iso_string(data.get('due_date')),
+                    DateTimeHelper.to_iso_string(data.get('completed_at')),
+                    data.get('estimated_hours', 0.0),
+                    data.get('actual_hours', 0.0),
+                    data.get('completion_percentage', 0.0),
+                    data.get('quality_score', 0.0),
+                    data.get('test_coverage', 0.0),
+                    DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
+                    DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                )
+                self.db_manager.execute_update(query, params)
+                return True
+            except Exception as e:
+                self.logger.error(f"Error creating module: {e}")
+                return False
+
+        def get_by_id(self, module_id: str) -> Optional[Module]:
+            try:
+                query = "SELECT * FROM modules WHERE id = ?"
+                results = self.db_manager.execute_query(query, (module_id,))
+                return self._row_to_model(results[0]) if results else None
+            except Exception as e:
+                self.logger.error(f"Error getting module {module_id}: {e}")
+                return None
+
+        def get_by_project_id(self, project_id: str) -> List[Module]:
+            try:
+                query = "SELECT * FROM modules WHERE project_id = ? ORDER BY created_at"
+                results = self.db_manager.execute_query(query, (project_id,))
+                return [self._row_to_model(row) for row in results]
+            except Exception as e:
+                self.logger.error(f"Error getting modules for project {project_id}: {e}")
+                return []
+
+        def get_by_status(self, status: str) -> List[Module]:
+            try:
+                query = "SELECT * FROM modules WHERE status = ? ORDER BY created_at"
+                results = self.db_manager.execute_query(query, (status,))
+                return [self._row_to_model(row) for row in results]
+            except Exception as e:
+                self.logger.error(f"Error getting modules by status {status}: {e}")
+                return []
+
+        def get_active_modules(self, project_id: str) -> List[Module]:
+            try:
+                query = "SELECT * FROM modules WHERE project_id = ? AND status = 'in_progress' ORDER BY created_at"
+                results = self.db_manager.execute_query(query, (project_id,))
+                return [self._row_to_model(row) for row in results]
+            except Exception as e:
+                self.logger.error(f"Error getting active modules for project {project_id}: {e}")
+                return []
+
+        def update(self, module: Module) -> bool:
+            try:
+                data = self._model_to_dict(module)
+                query = """
+                    UPDATE modules 
+                    SET name = ?, description = ?, module_type = ?, status = ?,
+                        file_path = ?, dependencies = ?, api_endpoints = ?,
+                        database_tables = ?, assigned_to = ?, priority = ?,
+                        blocked_by = ?, start_date = ?, due_date = ?, completed_at = ?,
+                        estimated_hours = ?, actual_hours = ?, completion_percentage = ?,
+                        quality_score = ?, test_coverage = ?, updated_at = ?
+                    WHERE id = ?
+                """
+                params = (
+                    data.get('name'), data.get('description'), data.get('module_type'),
+                    data.get('status'), data.get('file_path'),
+                    dump_json_field(data.get('dependencies')),
+                    dump_json_field(data.get('api_endpoints')),
+                    dump_json_field(data.get('database_tables')),
+                    data.get('assigned_to'), data.get('priority'),
+                    dump_json_field(data.get('blocked_by')),
+                    DateTimeHelper.to_iso_string(data.get('start_date')),
+                    DateTimeHelper.to_iso_string(data.get('due_date')),
+                    DateTimeHelper.to_iso_string(data.get('completed_at')),
+                    data.get('estimated_hours'), data.get('actual_hours'),
+                    data.get('completion_percentage'), data.get('quality_score'),
+                    data.get('test_coverage'),
+                    DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                    data.get('id')
+                )
+                self.db_manager.execute_update(query, params)
+                return True
+            except Exception as e:
+                self.logger.error(f"Error updating module: {e}")
+                return False
+
+        def delete(self, module_id: str) -> bool:
+            try:
+                query = "DELETE FROM modules WHERE id = ?"
+                self.db_manager.execute_update(query, (module_id,))
+                return True
+            except Exception as e:
+                self.logger.error(f"Error deleting module {module_id}: {e}")
+                return False
+
+        def _row_to_model(self, row: Dict[str, Any]) -> Module:
+            """Convert database row to Module model"""
+            try:
+                return Module(
+                    id=row.get('id', ''),
+                    project_id=row.get('project_id', ''),
+                    name=row.get('name', ''),
+                    description=row.get('description', ''),
+                    module_type=ModuleType(row.get('module_type', 'feature')),
+                    status=ModuleStatus(row.get('status', 'planned')),
+                    file_path=row.get('file_path', ''),
+                    dependencies=parse_json_field(row.get('dependencies'), []),
+                    api_endpoints=parse_json_field(row.get('api_endpoints'), []),
+                    database_tables=parse_json_field(row.get('database_tables'), []),
+                    assigned_to=row.get('assigned_to'),
+                    priority=Priority(row.get('priority', 'medium')),
+                    blocked_by=parse_json_field(row.get('blocked_by'), []),
+                    start_date=DateTimeHelper.from_iso_string(row.get('start_date')),
+                    due_date=DateTimeHelper.from_iso_string(row.get('due_date')),
+                    completed_at=DateTimeHelper.from_iso_string(row.get('completed_at')),
+                    estimated_hours=row.get('estimated_hours', 0.0),
+                    actual_hours=row.get('actual_hours', 0.0),
+                    completion_percentage=row.get('completion_percentage', 0.0),
+                    quality_score=row.get('quality_score', 0.0),
+                    test_coverage=row.get('test_coverage', 0.0),
+                    created_at=DateTimeHelper.from_iso_string(row.get('created_at')),
+                    updated_at=DateTimeHelper.from_iso_string(row.get('updated_at'))
+                )
+            except Exception as e:
+                self.logger.error(f"Error converting row to Module: {e}")
+                return Module()
+
+    # ==============================================================================
+    # TASK REPOSITORY
+    # ==============================================================================
+
+    class TaskRepository(BaseRepository[Task]):
+        """Repository for task management"""
+
+        def create(self, task: Task) -> bool:
+            try:
+                data = self._model_to_dict(task)
+                query = """
+                    INSERT INTO tasks 
+                    (id, module_id, project_id, title, description, status, priority,
+                     assigned_to, dependencies, estimated_hours, actual_hours,
+                     due_date, completed_at, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """
+                params = (
+                    data.get('id'), data.get('module_id'), data.get('project_id'),
+                    data.get('title'), data.get('description'),
+                    data.get('status', 'todo'), data.get('priority', 'medium'),
+                    data.get('assigned_to'),
+                    dump_json_field(data.get('dependencies')),
+                    data.get('estimated_hours', 0.0),
+                    data.get('actual_hours', 0.0),
+                    DateTimeHelper.to_iso_string(data.get('due_date')),
+                    DateTimeHelper.to_iso_string(data.get('completed_at')),
+                    DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
+                    DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                )
+                self.db_manager.execute_update(query, params)
+                return True
+            except Exception as e:
+                self.logger.error(f"Error creating task: {e}")
+                return False
+
+        def get_by_id(self, task_id: str) -> Optional[Task]:
+            try:
+                query = "SELECT * FROM tasks WHERE id = ?"
+                results = self.db_manager.execute_query(query, (task_id,))
+                return self._row_to_model(results[0]) if results else None
+            except Exception as e:
+                self.logger.error(f"Error getting task {task_id}: {e}")
+                return None
+
+        def get_by_project_id(self, project_id: str) -> List[Task]:
+            try:
+                query = "SELECT * FROM tasks WHERE project_id = ? ORDER BY created_at"
+                results = self.db_manager.execute_query(query, (project_id,))
+                return [self._row_to_model(row) for row in results]
+            except Exception as e:
+                self.logger.error(f"Error getting tasks for project {project_id}: {e}")
+                return []
+
+        def get_by_module_id(self, module_id: str) -> List[Task]:
+            try:
+                query = "SELECT * FROM tasks WHERE module_id = ? ORDER BY created_at"
+                results = self.db_manager.execute_query(query, (module_id,))
+                return [self._row_to_model(row) for row in results]
+            except Exception as e:
+                self.logger.error(f"Error getting tasks for module {module_id}: {e}")
+                return []
+
+        def get_by_status(self, status: str) -> List[Task]:
+            try:
+                query = "SELECT * FROM tasks WHERE status = ? ORDER BY created_at"
+                results = self.db_manager.execute_query(query, (status,))
+                return [self._row_to_model(row) for row in results]
+            except Exception as e:
+                self.logger.error(f"Error getting tasks by status {status}: {e}")
+                return []
+
+        def update(self, task: Task) -> bool:
+            try:
+                data = self._model_to_dict(task)
+                query = """
+                    UPDATE tasks 
+                    SET title = ?, description = ?, status = ?, priority = ?,
+                        assigned_to = ?, dependencies = ?, estimated_hours = ?,
+                        actual_hours = ?, due_date = ?, completed_at = ?, updated_at = ?
+                    WHERE id = ?
+                """
+                params = (
+                    data.get('title'), data.get('description'), data.get('status'),
+                    data.get('priority'), data.get('assigned_to'),
+                    dump_json_field(data.get('dependencies')),
+                    data.get('estimated_hours'), data.get('actual_hours'),
+                    DateTimeHelper.to_iso_string(data.get('due_date')),
+                    DateTimeHelper.to_iso_string(data.get('completed_at')),
+                    DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                    data.get('id')
+                )
+                self.db_manager.execute_update(query, params)
+                return True
+            except Exception as e:
+                self.logger.error(f"Error updating task: {e}")
+                return False
+
+        def delete(self, task_id: str) -> bool:
+            try:
+                query = "DELETE FROM tasks WHERE id = ?"
+                self.db_manager.execute_update(query, (task_id,))
+                return True
+            except Exception as e:
+                self.logger.error(f"Error deleting task {task_id}: {e}")
+                return False
+
+        def _row_to_model(self, row: Dict[str, Any]) -> Task:
+            """Convert database row to Task model"""
+            try:
+                return Task(
+                    id=row.get('id', ''),
+                    module_id=row.get('module_id', ''),
+                    project_id=row.get('project_id', ''),
+                    title=row.get('title', ''),
+                    description=row.get('description', ''),
+                    status=TaskStatus(row.get('status', 'todo')),
+                    priority=Priority(row.get('priority', 'medium')),
+                    assigned_to=row.get('assigned_to'),
+                    dependencies=parse_json_field(row.get('dependencies'), []),
+                    estimated_hours=row.get('estimated_hours', 0.0),
+                    actual_hours=row.get('actual_hours', 0.0),
+                    due_date=DateTimeHelper.from_iso_string(row.get('due_date')),
+                    completed_at=DateTimeHelper.from_iso_string(row.get('completed_at')),
+                    created_at=DateTimeHelper.from_iso_string(row.get('created_at')),
+                    updated_at=DateTimeHelper.from_iso_string(row.get('updated_at'))
+                )
+            except Exception as e:
+                self.logger.error(f"Error converting row to Task: {e}")
+                return Task()
 
 
 # ==============================================================================
@@ -1739,4 +2148,3 @@ class ConflictRepository(BaseRepository[Conflict]):
                 created_at=DateTimeHelper.from_iso_string(r[16]),
                 updated_at=DateTimeHelper.from_iso_string(r[17])
             )
-
