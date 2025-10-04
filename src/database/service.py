@@ -12,6 +12,8 @@ from .manager import DatabaseManager
 from .repositories import (
     UserRepository,
     ProjectRepository,
+    ModuleRepository,
+    TaskRepository,
     GeneratedCodebaseRepository,
     GeneratedFileRepository,
     ProjectCollaboratorRepository,
@@ -45,9 +47,9 @@ except ImportError:
 # Model imports with fallbacks
 try:
     from src.models import (
-        User, Project, GeneratedCodebase, GeneratedFile, ProjectCollaborator,
-        SocraticSession, Question, ConversationMessage, TechnicalSpec,
-        ProjectContext, ModuleContext, TaskContext, Conflict
+        User, Project, Module, Task, GeneratedCodebase, GeneratedFile,
+        ProjectCollaborator, SocraticSession, Question, ConversationMessage,
+        TechnicalSpec, ProjectContext, ModuleContext, TaskContext, Conflict
     )
 
     MODELS_AVAILABLE = True
@@ -122,6 +124,14 @@ except ImportError:
         project_id: str = ""
 
 
+    class Module:
+        pass
+
+
+    class Task:
+        pass
+
+
 # ==============================================================================
 # DATABASE SERVICE
 # ==============================================================================
@@ -157,6 +167,8 @@ class DatabaseService:
         # Core repositories
         self.users = UserRepository(self.db_manager, User)
         self.projects = ProjectRepository(self.db_manager, Project)
+        self.modules = ModuleRepository(self.db_manager, Module)
+        self.tasks = TaskRepository(self.db_manager, Task)
         self.generated_codebases = GeneratedCodebaseRepository(self.db_manager, GeneratedCodebase)
         self.generated_files = GeneratedFileRepository(self.db_manager, GeneratedFile)
         self.project_collaborators = ProjectCollaboratorRepository(self.db_manager, ProjectCollaborator)
