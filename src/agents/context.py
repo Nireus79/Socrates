@@ -159,7 +159,6 @@ except ImportError:
             self.name = name
             self.services = services
             self.logger = get_logger(agent_id)
-            self.db_service = get_database()
             self.events = None
 
         def _error_response(self, message, error_code=None):
