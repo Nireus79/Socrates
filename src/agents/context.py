@@ -775,34 +775,34 @@ class ContextAnalyzerAgent(BaseAgent):
         conflicts = []
 
         try:
-            # TODO TASK 6.2: Add ModuleRepository and TaskRepository to DatabaseService
-            # Currently disabled because DatabaseService doesn't have .modules or .tasks repositories
-            # See: src/database/service.py - ModuleRepository and TaskRepository are missing
-            #
-            # Original code attempted:
-            # db = get_database()
-            # modules = db.modules.get_by_project_id(project.id)  # AttributeError: no 'modules'
-            #
-            # To fix:
-            # 1. Create ModuleRepository(BaseRepository[Module]) in src/database/repositories.py
-            # 2. Create TaskRepository(BaseRepository[Task]) in src/database/repositories.py
-            # 3. Add self.modules and self.tasks to DatabaseService._init_repositories()
-            # 4. Export repositories in src/database/__init__.py
-            # 5. Re-enable this conflict detection logic
+            # Get modules for the project
+            from src.database import get_database
+            db = get_database()
+            modules = db.modules.get_by_project_id(project.id) if db else []
+
+            # Check for too many active modules
+            active_modules = [m for m in modules if m.status == ModuleStatus.IN_PROGRESS]
+            if len(active_modules) > 5:
+                conflict = {
+                    'type': 'timeline_overload',
+                    'active_modules': len(active_modules),
+                    'message': f'Too many concurrent active modules: {len(active_modules)}',
+                    'severity': 'medium',
+                    'suggestion': 'Focus on completing modules sequentially or in smaller groups'
+                }
+                conflicts.append(conflict)
+
+                if self.logger:
+                    self.logger.warning(f"Too many concurrent modules: {len(active_modules)}")
 
             if self.logger:
-                self.logger.warning(
-                    "Timeline conflict detection disabled - ModuleRepository not yet implemented. "
-                    "See TODO in _detect_timeline_conflicts method."
-                )
-
-            # Return empty conflicts until repositories are added
-            return []
+                self.logger.debug(f"Timeline conflict detection completed: {len(conflicts)} conflicts found")
 
         except Exception as e:
             if self.logger:
                 self.logger.error(f"Timeline conflict detection failed: {e}")
-            return []
+
+        return conflicts
 
     def _detect_resource_conflicts(self, project: Project) -> List[Dict[str, Any]]:
         """Detect resource allocation conflicts"""
@@ -812,37 +812,35 @@ class ContextAnalyzerAgent(BaseAgent):
         conflicts = []
 
         try:
-            # TODO TASK 6.2: Add ModuleRepository and TaskRepository to DatabaseService
-            # Currently disabled because DatabaseService doesn't have .modules repository
-            # See: src/database/service.py - ModuleRepository missing
-            #
-            # Original code attempted:
-            # db = get_database()
-            # modules = db.modules.get_by_project_id(project.id)  # AttributeError: no 'modules'
-            # team_members = getattr(project, 'team_members', [])
-            # team_size = len(team_members)
-            #
-            # Conflict logic would check:
-            # - if team_size < 2 and len(modules) > 8: too few team members for scope
-            #
-            # To fix:
-            # 1. Create ModuleRepository in src/database/repositories.py
-            # 2. Add self.modules to DatabaseService
-            # 3. Re-enable this conflict detection logic
+            team_members = getattr(project, 'team_members', [])
+            team_size = len(team_members)
+            from src.database import get_database
+            db = get_database()
+            modules = db.modules.get_by_project_id(project.id) if db else []
+
+            # Check team capacity vs project complexity
+            if team_size < 2 and len(modules) > 8:
+                conflict = {
+                    'type': 'team_capacity',
+                    'team_size': team_size,
+                    'module_count': len(modules),
+                    'message': f'Small team relative to project scope',
+                    'severity': 'medium',
+                    'suggestion': 'Consider adding team members or reducing initial scope'
+                }
+                conflicts.append(conflict)
+
+                if self.logger:
+                    self.logger.warning(f"Team capacity conflict: {team_size} team members for {len(modules)} modules")
 
             if self.logger:
-                self.logger.warning(
-                    "Resource conflict detection disabled - ModuleRepository not yet implemented. "
-                    "See TODO in _detect_resource_conflicts method."
-                )
-
-            # Return empty conflicts until repositories are added
-            return []
+                self.logger.debug(f"Resource conflict detection completed: {len(conflicts)} conflicts found")
 
         except Exception as e:
             if self.logger:
                 self.logger.error(f"Resource conflict detection failed: {e}")
-            return []
+
+        return conflicts
 
     def _save_conflicts_to_db(self, project_id: str, session_id: str, conflict_data: Dict[str, Any]) -> List[str]:
         """

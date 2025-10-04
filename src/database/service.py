@@ -350,6 +350,8 @@ class RepositoryManager:
         return {
             'users': self.db_service.users,
             'projects': self.db_service.projects,
+            'modules': self.db_service.modules,
+            'tasks': self.db_service.tasks,
             'generated_codebases': self.db_service.generated_codebases,
             'generated_files': self.db_service.generated_files,
             'project_collaborators': self.db_service.project_collaborators,
@@ -359,7 +361,8 @@ class RepositoryManager:
             'technical_specifications': self.db_service.technical_specifications,
             'project_contexts': self.db_service.project_contexts,
             'module_contexts': self.db_service.module_contexts,
-            'task_contexts': self.db_service.task_contexts
+            'task_contexts': self.db_service.task_contexts,
+            'conflicts': self.db_service.conflicts
         }
 
 
