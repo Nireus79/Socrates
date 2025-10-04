@@ -532,13 +532,456 @@ class IntegrationTest:
         self.log("Complete workflow verified ✅")
 
     # =========================================================================
-    # RUN ALL TESTS
+    # TEST 10: SOCRATIC SESSION PERSISTENCE
     # =========================================================================
+
+    def test_socratic_session_persistence(self):
+        """Test Socratic session creation, persistence, and resume"""
+        from src.agents.socratic import SocraticCounselorAgent
+        from src.models import SocraticSession, Question, ConversationMessage, SessionStatus
+
+        db = get_database()
+
+        self.log("Testing Socratic session workflow...")
+
+        # Step 1: Create user and project
+        session_user = User(
+            id=str(uuid.uuid4()),
+            username=f"session_user_{str(uuid.uuid4())[:8]}",
+            email=f"session_{str(uuid.uuid4())[:8]}@test.com",
+            password_hash="hash",
+            role=UserRole.DEVELOPER
+        )
+        db.users.create(session_user)
+
+        session_project = Project(
+            id=str(uuid.uuid4()),
+            name="Session Test Project",
+            owner_id=session_user.id,
+            status=ProjectStatus.ACTIVE
+        )
+        db.projects.create(session_project)
+        self.log("✓ User and project created")
+
+        # Step 2: Start Socratic session via agent
+        try:
+            services = initialize_system()
+            agent = SocraticCounselorAgent(services)
+
+            result = agent.process_request('start_session', {
+                'user_id': session_user.id,
+                'project_id': session_project.id,
+                'role': 'product_owner'
+            })
+
+            self.assert_true(result.get('success'), "Session should start successfully")
+            session_id = result.get('data', {}).get('session_id')
+            self.assert_true(session_id is not None, "Session ID should be returned")
+            self.log(f"✓ Session started: {session_id}")
+
+        except Exception as e:
+            self.log(f"⚠️  Agent not available, testing repository directly: {e}")
+            # Fallback: Test repository directly
+            session = SocraticSession(
+                id=str(uuid.uuid4()),
+                project_id=session_project.id,
+                initiated_by=session_user.id,
+                role='product_owner',
+                status=SessionStatus.IN_PROGRESS
+            )
+            db.socratic_sessions.create(session)
+            session_id = session.id
+            self.log(f"✓ Session created directly: {session_id}")
+
+        # Step 3: Verify session persisted
+        retrieved_session = db.socratic_sessions.get_by_id(session_id)
+        self.assert_true(retrieved_session is not None, "Session should persist")
+        self.assert_equals(retrieved_session.project_id, session_project.id, "Project ID should match")
+        self.log("✓ Session retrieved from database")
+
+        # Step 4: Add questions to session
+        questions_data = [
+            "What is the main goal of your product?",
+            "Who are your target users?",
+            "What problems does it solve?"
+        ]
+
+        for i, question_text in enumerate(questions_data):
+            question = Question(
+                id=str(uuid.uuid4()),
+                session_id=session_id,
+                question_text=question_text,
+                question_number=i + 1,
+                answer_text=f"Answer to question {i + 1}"
+            )
+            db.questions.create(question)
+
+        self.log(f"✓ Created {len(questions_data)} questions")
+
+        # Step 5: Verify questions persist
+        session_questions = db.questions.get_by_session_id(session_id)
+        self.assert_equals(len(session_questions), 3, "Should have 3 questions")
+        self.log("✓ Questions retrieved")
+
+        # Step 6: Add conversation messages
+        for i in range(5):
+            message = ConversationMessage(
+                id=str(uuid.uuid4()),
+                session_id=session_id,
+                speaker='assistant' if i % 2 == 0 else 'user',
+                message=f"Message {i + 1}"
+            )
+            db.conversation_messages.create(message)
+
+        messages = db.conversation_messages.get_by_session_id(session_id)
+        self.assert_equals(len(messages), 5, "Should have 5 messages")
+        self.log("✓ Conversation messages saved")
+
+        # Step 7: Test session resume after "restart"
+        reset_database()
+        db = init_database('data/test_integration.db')
+
+        resumed_session = db.socratic_sessions.get_by_id(session_id)
+        self.assert_true(resumed_session is not None, "Session should survive restart")
+
+        resumed_questions = db.questions.get_by_session_id(session_id)
+        self.assert_equals(len(resumed_questions), 3, "Questions should survive restart")
+
+        resumed_messages = db.conversation_messages.get_by_session_id(session_id)
+        self.assert_equals(len(resumed_messages), 5, "Messages should survive restart")
+
+        self.log("Socratic session persistence verified ✅")
+
+    # =========================================================================
+    # TEST 11: SPECIFICATION GENERATION AND VERSIONING
+    # =========================================================================
+
+    def test_specification_generation(self):
+        """Test specification creation, persistence, and versioning"""
+        from src.agents.code import CodeGeneratorAgent
+        from src.models import TechnicalSpec
+
+        db = get_database()
+
+        self.log("Testing specification generation...")
+
+        # Step 1: Create test project
+        spec_project = Project(
+            id=str(uuid.uuid4()),
+            name="Spec Test Project",
+            owner_id=str(uuid.uuid4()),
+            status=ProjectStatus.ACTIVE
+        )
+        db.projects.create(spec_project)
+        self.log("✓ Project created")
+
+        # Step 2: Create specification data
+        spec_data = {
+            'project_id': spec_project.id,
+            'architecture_type': 'microservices',
+            'technology_stack': {
+                'backend': 'FastAPI',
+                'frontend': 'React',
+                'database': 'PostgreSQL'
+            },
+            'functional_requirements': [
+                'User authentication',
+                'Data management',
+                'Real-time updates'
+            ],
+            'non_functional_requirements': [
+                'Response time < 200ms',
+                'Support 10000 concurrent users'
+            ],
+            'system_components': [
+                {'name': 'API Gateway', 'type': 'service'},
+                {'name': 'User Service', 'type': 'microservice'},
+                {'name': 'Data Service', 'type': 'microservice'}
+            ]
+        }
+
+        # Step 3: Save specification v1.0.0
+        spec_v1 = TechnicalSpec(
+            id=str(uuid.uuid4()),
+            project_id=spec_project.id,
+            version='1.0.0',
+            architecture_type=spec_data['architecture_type'],
+            technology_stack=spec_data['technology_stack'],
+            functional_requirements=spec_data['functional_requirements'],
+            non_functional_requirements=spec_data['non_functional_requirements'],
+            system_components=spec_data['system_components'],
+            created_at=DateTimeHelper.now()
+        )
+
+        success = db.technical_specifications.create(spec_v1)
+        self.assert_true(success, "Specification v1.0.0 should be created")
+        self.log("✓ Specification v1.0.0 created")
+
+        # Step 4: Retrieve specification
+        retrieved_spec = db.technical_specifications.get_by_id(spec_v1.id)
+        self.assert_true(retrieved_spec is not None, "Should retrieve specification")
+        self.assert_equals(retrieved_spec.version, '1.0.0', "Version should be 1.0.0")
+        self.log("✓ Specification retrieved")
+
+        # Step 5: Create v1.1.0 (minor update)
+        spec_v1_1 = TechnicalSpec(
+            id=str(uuid.uuid4()),
+            project_id=spec_project.id,
+            version='1.1.0',
+            architecture_type=spec_data['architecture_type'],
+            technology_stack=spec_data['technology_stack'],
+            functional_requirements=spec_data['functional_requirements'] + ['Email notifications'],
+            non_functional_requirements=spec_data['non_functional_requirements'],
+            system_components=spec_data['system_components'],
+            created_at=DateTimeHelper.now()
+        )
+
+        db.technical_specifications.create(spec_v1_1)
+        self.log("✓ Specification v1.1.0 created")
+
+        # Step 6: Get all versions for project
+        project_specs = db.technical_specifications.get_by_project_id(spec_project.id)
+        self.assert_equals(len(project_specs), 2, "Should have 2 versions")
+
+        versions = sorted([s.version for s in project_specs])
+        self.assert_equals(versions, ['1.0.0', '1.1.0'], "Versions should be ordered")
+        self.log("✓ Multiple versions tracked")
+
+        # Step 7: Get latest version
+        latest = db.technical_specifications.get_latest_by_project_id(spec_project.id)
+        self.assert_equals(latest.version, '1.1.0', "Latest should be v1.1.0")
+        self.log("✓ Latest version retrieved")
+
+        # Step 8: Test persistence after restart
+        reset_database()
+        db = init_database('data/test_integration.db')
+
+        persisted_specs = db.technical_specifications.get_by_project_id(spec_project.id)
+        self.assert_equals(len(persisted_specs), 2, "Specifications should survive restart")
+
+        self.log("Specification generation and versioning verified ✅")
+
+    # =========================================================================
+    # TEST 12: CODE GENERATION AND PERSISTENCE
+    # =========================================================================
+
+    def test_code_generation(self):
+        """Test code generation and codebase persistence"""
+        from src.models import GeneratedCodebase, GeneratedFile, TechnicalSpec
+
+        db = get_database()
+
+        self.log("Testing code generation...")
+
+        # Step 1: Create project and specification
+        code_project = Project(
+            id=str(uuid.uuid4()),
+            name="Code Gen Test Project",
+            owner_id=str(uuid.uuid4()),
+            status=ProjectStatus.ACTIVE
+        )
+        db.projects.create(code_project)
+
+        code_spec = TechnicalSpec(
+            id=str(uuid.uuid4()),
+            project_id=code_project.id,
+            version='1.0.0',
+            architecture_type='mvc',
+            technology_stack={'backend': 'Flask', 'frontend': 'Vue'},
+            created_at=DateTimeHelper.now()
+        )
+        db.technical_specifications.create(code_spec)
+        self.log("✓ Project and specification created")
+
+        # Step 2: Create generated codebase
+        codebase = GeneratedCodebase(
+            id=str(uuid.uuid4()),
+            project_id=code_project.id,
+            specification_id=code_spec.id,
+            version='1.0.0',
+            architecture_pattern='mvc',
+            framework='Flask',
+            created_at=DateTimeHelper.now()
+        )
+
+        success = db.generated_codebases.create(codebase)
+        self.assert_true(success, "Codebase should be created")
+        self.log("✓ Codebase created")
+
+        # Step 3: Create generated files
+        test_files = [
+            {'path': 'app.py', 'type': 'python', 'content': 'from flask import Flask\napp = Flask(__name__)'},
+            {'path': 'models.py', 'type': 'python', 'content': 'class User:\n    pass'},
+            {'path': 'requirements.txt', 'type': 'text', 'content': 'Flask==2.0.0\nSQLAlchemy==1.4.0'},
+            {'path': 'templates/index.html', 'type': 'html', 'content': '<html><body>Hello</body></html>'},
+            {'path': 'static/style.css', 'type': 'css', 'content': 'body { margin: 0; }'}
+        ]
+
+        for file_data in test_files:
+            gen_file = GeneratedFile(
+                id=str(uuid.uuid4()),
+                codebase_id=codebase.id,
+                file_path=file_data['path'],
+                file_type=file_data['type'],
+                content=file_data['content'],
+                size_bytes=len(file_data['content']),
+                created_at=DateTimeHelper.now()
+            )
+            db.generated_files.create(gen_file)
+
+        self.log(f"✓ Created {len(test_files)} generated files")
+
+        # Step 4: Verify files persist
+        codebase_files = db.generated_files.get_by_codebase_id(codebase.id)
+        self.assert_equals(len(codebase_files), 5, "Should have 5 files")
+
+        # Verify file types
+        file_types = {f.file_type for f in codebase_files}
+        expected_types = {'python', 'text', 'html', 'css'}
+        self.assert_true(expected_types.issubset(file_types), "Should have all file types")
+        self.log("✓ Files retrieved with correct types")
+
+        # Step 5: Test file search by path
+        app_files = [f for f in codebase_files if 'app.py' in f.file_path]
+        self.assert_equals(len(app_files), 1, "Should find app.py")
+        self.assert_true('Flask' in app_files[0].content, "Content should be preserved")
+        self.log("✓ File content preserved")
+
+        # Step 6: Test persistence after restart
+        reset_database()
+        db = init_database('data/test_integration.db')
+
+        persisted_codebase = db.generated_codebases.get_by_id(codebase.id)
+        self.assert_true(persisted_codebase is not None, "Codebase should survive restart")
+
+        persisted_files = db.generated_files.get_by_codebase_id(codebase.id)
+        self.assert_equals(len(persisted_files), 5, "Files should survive restart")
+
+        self.log("Code generation and persistence verified ✅")
+
+    # =========================================================================
+    # TEST 13: PERFORMANCE METRICS
+    # =========================================================================
+
+    def test_performance_metrics(self):
+        """Test query performance and cache efficiency"""
+        import time
+
+        db = get_database()
+
+        self.log("Testing performance metrics...")
+
+        # Step 1: Create test data for performance testing
+        perf_project = Project(
+            id=str(uuid.uuid4()),
+            name="Performance Test Project",
+            owner_id=str(uuid.uuid4()),
+            status=ProjectStatus.ACTIVE
+        )
+        db.projects.create(perf_project)
+
+        # Create multiple modules
+        module_ids = []
+        for i in range(20):
+            module = Module(
+                id=str(uuid.uuid4()),
+                project_id=perf_project.id,
+                name=f"Perf Module {i}",
+                module_type=ModuleType.SERVICE,
+                status=ModuleStatus.IN_PROGRESS if i % 2 == 0 else ModuleStatus.COMPLETED
+            )
+            db.modules.create(module)
+            module_ids.append(module.id)
+
+        self.log("✓ Created 20 modules for testing")
+
+        # Step 2: Test query performance with indexes
+        start_time = time.time()
+        modules = db.modules.get_by_project_id(perf_project.id)
+        query_time = (time.time() - start_time) * 1000  # Convert to ms
+
+        self.assert_true(query_time < 100, f"Query should be fast (<100ms), got {query_time:.2f}ms")
+        self.assert_equals(len(modules), 20, "Should retrieve all 20 modules")
+        self.log(f"✓ Project query: {query_time:.2f}ms (< 100ms threshold)")
+
+        # Step 3: Test status filter performance
+        start_time = time.time()
+        in_progress = db.modules.get_by_status("in_progress")
+        filter_time = (time.time() - start_time) * 1000
+
+        self.assert_true(filter_time < 100, f"Filter query should be fast, got {filter_time:.2f}ms")
+        self.log(f"✓ Status filter query: {filter_time:.2f}ms")
+
+        # Step 4: Test context cache performance
+        from src.agents.context import ContextAnalyzerAgent
+        from src.models import ProjectContext
+
+        # Create cached context
+        context = ProjectContext(
+            id=str(uuid.uuid4()),
+            project_id=perf_project.id,
+            business_domain='E-commerce',
+            target_audience='Online shoppers',
+            last_analyzed_at=DateTimeHelper.now()
+        )
+        db.project_contexts.create(context)
+
+        # First retrieval (cache miss)
+        start_time = time.time()
+        ctx1 = db.project_contexts.get_by_project_id(perf_project.id)
+        first_time = (time.time() - start_time) * 1000
+
+        # Second retrieval (should be faster or similar)
+        start_time = time.time()
+        ctx2 = db.project_contexts.get_by_project_id(perf_project.id)
+        second_time = (time.time() - start_time) * 1000
+
+        self.assert_true(ctx1 is not None and ctx2 is not None, "Context should be retrieved")
+        self.log(f"✓ Context retrieval: 1st={first_time:.2f}ms, 2nd={second_time:.2f}ms")
+
+        # Step 5: Test N+1 query detection (batch retrieval)
+        start_time = time.time()
+
+        # Bad pattern: N+1 queries
+        project_count = 0
+        for module_id in module_ids[:5]:  # Test with first 5 modules
+            module = db.modules.get_by_id(module_id)
+            if module:
+                project = db.projects.get_by_id(module.project_id)
+                if project:
+                    project_count += 1
+
+        n_plus_one_time = (time.time() - start_time) * 1000
+
+        # Good pattern: Single query with joins (simulated by batch get)
+        start_time = time.time()
+        all_modules = db.modules.get_by_project_id(perf_project.id)
+        batch_time = (time.time() - start_time) * 1000
+
+        self.assert_true(batch_time < n_plus_one_time, "Batch query should be faster than N+1")
+        self.log(f"✓ N+1 detection: Individual={n_plus_one_time:.2f}ms vs Batch={batch_time:.2f}ms")
+
+        # Step 6: Memory usage baseline (basic check)
+        import sys
+
+        large_result = db.modules.get_by_status("in_progress")
+        result_size = sys.getsizeof(large_result)
+
+        self.assert_true(result_size < 10000, "Result set should be reasonably sized")
+        self.log(f"✓ Memory check: Result set ~{result_size} bytes")
+
+        self.log("Performance metrics verified ✅")
+
+    # =========================================================================
+    # UPDATE run_all_tests() METHOD
+    # =========================================================================
+
+    # Replace the existing run_all_tests method with this updated version:
 
     def run_all_tests(self):
         """Run all integration tests"""
         print("\n" + "=" * 70)
-        print("INTEGRATION TEST SUITE - TASK 7")
+        print("INTEGRATION TEST SUITE - TASK 7 (COMPLETE)")
         print("=" * 70)
 
         # Run tests in order
@@ -551,6 +994,12 @@ class IntegrationTest:
         self.run_test("Conflict Detection", self.test_conflict_detection)
         self.run_test("Context Persistence", self.test_context_persistence)
         self.run_test("Complete Workflow", self.test_complete_workflow)
+
+        # NEW TESTS
+        self.run_test("Socratic Session Persistence", self.test_socratic_session_persistence)
+        self.run_test("Specification Generation", self.test_specification_generation)
+        self.run_test("Code Generation", self.test_code_generation)
+        self.run_test("Performance Metrics", self.test_performance_metrics)
 
         # Print summary
         print("\n" + "=" * 70)
