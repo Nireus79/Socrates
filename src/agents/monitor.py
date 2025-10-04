@@ -137,7 +137,8 @@ class SystemMonitorAgent(BaseAgent):
 
     def __init__(self, services: Optional[ServiceContainer] = None):
         super().__init__("system_monitor", "System Monitor Agent", services)
-        from src.database import get_database
+
+        # Get database and event bus (imports already at top of file)
         self.db = get_database()
         self.event_bus = get_event_bus()
 
