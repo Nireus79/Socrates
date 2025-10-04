@@ -593,6 +593,7 @@ class ContextAnalyzerAgent(BaseAgent):
                 self.logger.error(f"Full context analysis error: {e}")
             return {}
 
+
     @require_project_access
     @log_agent_action
     def _analyze_conversation(self, data: Dict[str, Any]) -> Dict[str, Any]:
