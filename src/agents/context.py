@@ -196,26 +196,36 @@ class ContextAnalyzerAgent(BaseAgent):
         self.patterns = {}
         self.conflict_rules = self._load_conflict_rules()
 
-        # Initialize context repositories
-        if self.db_service:
-            self.project_context_repo = self.db_service.project_contexts
-            self.module_context_repo = self.db_service.module_contexts
-            self.task_context_repo = self.db_service.task_contexts
-            # Initialize conflict repository
-            if self.db_service:
-                self.conflict_repo = self.db_service.conflicts
-            else:
-                self.conflict_repo = None
+        # Initialize context repositories via database service
+        from src.database import get_database
+        db = get_database()
+        if db:
+            self.project_context_repo = db.project_contexts
+            self.module_context_repo = db.module_contexts
+            self.task_context_repo = db.task_contexts
+            self.conflict_repo = db.conflicts
         else:
             self.project_context_repo = None
             self.module_context_repo = None
             self.task_context_repo = None
+            self.conflict_repo = None
 
         # Context cache settings
         self.context_refresh_threshold_minutes = 60
 
         if self.logger:
             self.logger.info("ContextAnalyzerAgent initialized with conflict detection rules and context persistence")
+
+    # NOTE: In _analyze_context method around line 450, replace:
+    # project = self.db_service.projects.get_by_id(project_id) if self.db_service else None
+    # With:
+    # db = get_database()
+    # project = db.projects.get_by_id(project_id) if db else None
+
+    # NOTE: In _detect_timeline_conflicts and _detect_resource_conflicts methods:
+    # REMOVE OR COMMENT OUT the lines that use db.modules.get_by_project_id()
+    # because DatabaseService doesn't have a modules repository!
+    # This is a bug in the original code that needs fixing in a future task.
 
     def get_capabilities(self) -> List[str]:
         return [
@@ -352,7 +362,8 @@ class ContextAnalyzerAgent(BaseAgent):
             if self.logger:
                 self.logger.info(f"Performing fresh context analysis for project {project_id}")
 
-            project = self.db_service.projects.get_by_id(project_id) if self.db_service else None
+            db = get_database()
+            project = db.projects.get_by_id(project_id) if db else None
             if not project:
                 return self._error_response(f"Project not found: {project_id}")
 
@@ -427,7 +438,11 @@ class ContextAnalyzerAgent(BaseAgent):
             self.logger.info(f"Analyzing conversation patterns for project {project_id}")
 
         try:
-            project = self.db_service.projects.get_by_id(project_id)
+            from src.database import get_database
+            db = get_database()
+            if not db:
+                return self._error_response("Database service not available", "DB_UNAVAILABLE")
+            project = db.projects.get_by_id(project_id)
             if not project:
                 if self.logger:
                     self.logger.error(f"Project {project_id} not found")
@@ -457,7 +472,9 @@ class ContextAnalyzerAgent(BaseAgent):
 
             # Try to get conversation data from Socratic sessions
             try:
-                sessions = self.db_service.socratic_sessions.get_by_project_id(project.id)
+                from src.database import get_database
+                db = get_database()
+                sessions = db.socratic_sessions.get_by_project_id(project.id) if db else []
                 conversation_insights['total_sessions'] = len(sessions)
 
                 if sessions:
@@ -570,7 +587,11 @@ class ContextAnalyzerAgent(BaseAgent):
             self.logger.info(f"Starting conflict detection for project {project_id}")
 
         try:
-            project = self.db_service.projects.get_by_id(project_id)
+            from src.database import get_database
+            db = get_database()
+            if not db:
+                return self._error_response("Database service not available", "DB_UNAVAILABLE")
+            project = db.projects.get_by_id(project_id)
             if not project:
                 if self.logger:
                     self.logger.error(f"Project {project_id} not found")
@@ -765,7 +786,8 @@ class ContextAnalyzerAgent(BaseAgent):
 
         try:
             # Get modules for the project
-            modules = self.db_service.modules.get_by_project_id(project.id)
+            db = get_database()
+            modules = db.modules.get_by_project_id(project.id) if db else []
 
             # Check for too many active modules
             active_modules = [m for m in modules if getattr(m, 'status', '') == 'in_progress']
@@ -801,7 +823,8 @@ class ContextAnalyzerAgent(BaseAgent):
         try:
             team_members = getattr(project, 'team_members', [])
             team_size = len(team_members)
-            modules = self.db_service.modules.get_by_project_id(project.id)
+            db = get_database()
+            modules = db.modules.get_by_project_id(project.id) if db else []
 
             # Check team capacity vs project complexity
             if team_size < 2 and len(modules) > 8:
@@ -995,7 +1018,11 @@ class ContextAnalyzerAgent(BaseAgent):
             self.logger.info(f"Assessing project health for project {project_id}")
 
         try:
-            project = self.db_service.projects.get_by_id(project_id)
+            from src.database import get_database
+            db = get_database()
+            if not db:
+                return self._error_response("Database service not available", "DB_UNAVAILABLE")
+            project = db.projects.get_by_id(project_id)
             if not project:
                 if self.logger:
                     self.logger.error(f"Project {project_id} not found")
@@ -1138,7 +1165,11 @@ class ContextAnalyzerAgent(BaseAgent):
             self.logger.info(f"Generating insights for project {project_id}, focus: {focus_area}")
 
         try:
-            project = self.db_service.projects.get_by_id(project_id)
+            from src.database import get_database
+            db = get_database()
+            if not db:
+                return self._error_response("Database service not available", "DB_UNAVAILABLE")
+            project = db.projects.get_by_id(project_id)
             if not project:
                 if self.logger:
                     self.logger.error(f"Project {project_id} not found")

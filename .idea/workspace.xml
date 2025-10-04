@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="authorizations" />
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="clean up">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/context.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/context.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/user.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/user.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -148,14 +152,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00094" summary="delete">
-      <option name="closed" value="true" />
-      <created>1759328053486</created>
-      <option name="number" value="00094" />
-      <option name="presentableId" value="LOCAL-00094" />
-      <option name="project" value="LOCAL" />
-      <updated>1759328053487</updated>
     </task>
     <task id="LOCAL-00095" summary="health">
       <option name="closed" value="true" />
@@ -541,11 +537,18 @@
       <option name="project" value="LOCAL" />
       <updated>1759521130897</updated>
     </task>
-    <option name="localTasksCounter" value="143" />
+    <task id="LOCAL-00143" summary="clean up">
+      <option name="closed" value="true" />
+      <created>1759521718550</created>
+      <option name="number" value="00143" />
+      <option name="presentableId" value="LOCAL-00143" />
+      <option name="project" value="LOCAL" />
+      <updated>1759521718550</updated>
+    </task>
+    <option name="localTasksCounter" value="144" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="key" />
     <MESSAGE value="texts" />
     <MESSAGE value="ui" />
     <MESSAGE value="full" />
@@ -570,6 +573,7 @@
     <MESSAGE value="database dir" />
     <MESSAGE value="tests" />
     <MESSAGE value="authorizations" />
-    <option name="LAST_COMMIT_MESSAGE" value="authorizations" />
+    <MESSAGE value="clean up" />
+    <option name="LAST_COMMIT_MESSAGE" value="clean up" />
   </component>
 </project>
