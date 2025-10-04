@@ -105,7 +105,6 @@ except ImportError:
             self.name = name
             self.services = services
             self.logger = get_logger(agent_id)
-            self.db_service = get_database()
             self.events = None
 
         def _error_response(self, message, error_code=None):
@@ -246,11 +245,14 @@ class DocumentProcessorAgent(BaseAgent):
                     self.logger.error(f"Error processing file {file_path}: {e}")
 
             # Store knowledge entries in database
-            if results['knowledge_entries'] and self.db_service:
+            if results['knowledge_entries']:
                 try:
-                    for entry in results['knowledge_entries']:
-                        if hasattr(self.db_service, 'knowledge'):
-                            self.db_service.knowledge.create(entry)
+                    from src.database import get_database
+                    db = get_database()
+                    if db:
+                        for entry in results['knowledge_entries']:
+                            if hasattr(db, 'knowledge'):
+                                db.knowledge.create(entry)
                 except Exception as e:
                     self.logger.error(f"Error storing knowledge entries: {e}")
 

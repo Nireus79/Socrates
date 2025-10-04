@@ -49,9 +49,6 @@ class UserManagerAgent(BaseAgent):
         """Initialize UserManagerAgent"""
         super().__init__("user_manager", "User Manager", services)
 
-        if self.logger:
-            self.logger.info("UserManagerAgent initialized successfully")
-
     def get_capabilities(self) -> List[str]:
         """Return list of capabilities this agent provides"""
         return [

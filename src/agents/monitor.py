@@ -137,7 +137,8 @@ class SystemMonitorAgent(BaseAgent):
 
     def __init__(self, services: Optional[ServiceContainer] = None):
         super().__init__("system_monitor", "System Monitor Agent", services)
-        self.db_service = get_database()
+        from src.database import get_database
+        self.db = get_database()
         self.event_bus = get_event_bus()
 
         # Monitoring settings
@@ -749,8 +750,8 @@ class SystemMonitorAgent(BaseAgent):
             }
 
             # Check database connectivity
-            if self.db_service:
-                health_check = self.db_service.health_check()
+            if self.db:
+                health_check = self.db.health_check()
                 db_health['status'] = health_check.get('status', 'unknown')
                 db_health['response_time'] = self._measure_db_response_time()
 
@@ -869,7 +870,7 @@ class SystemMonitorAgent(BaseAgent):
     def _check_database_health(self) -> Dict[str, Any]:
         """Check database connectivity and performance"""
         try:
-            if not self.db_service:
+            if not self.db:
                 return {
                     'status': 'warning',
                     'message': 'Database service not available',
@@ -879,14 +880,14 @@ class SystemMonitorAgent(BaseAgent):
             start_time = time.time()
 
             # Test database connection with health check
-            if hasattr(self.db_service, 'health_check'):
-                health = self.db_service.health_check()
+            if hasattr(self.db, 'health_check'):
+                health = self.db.health_check()
                 status = health.get('status', 'unknown')
             else:
                 # Fallback test - try to access a simple operation
                 try:
-                    if hasattr(self.db_service, 'users'):
-                        self.db_service.users.list_all(limit=1)
+                    if hasattr(self.db, 'users'):
+                        self.db.users.list_all(limit=1)
                     status = 'healthy'
                 except (RuntimeError, ValueError, AttributeError):
                     status = 'warning'
@@ -1163,24 +1164,24 @@ class SystemMonitorAgent(BaseAgent):
         }
 
         try:
-            if self.db_service and hasattr(self.db_service, 'get_stats'):
-                db_stats = self.db_service.get_stats()
+            if self.db and hasattr(self.db, 'get_stats'):
+                db_stats = self.db.get_stats()
                 stats.update(db_stats)
                 stats['accessible'] = True
-            elif self.db_service:
+            elif self.db:
                 # Manual counting if get_stats not available
                 stats['accessible'] = True
 
-                if hasattr(self.db_service, 'projects'):
+                if hasattr(self.db, 'projects'):
                     try:
-                        projects = self.db_service.projects.list_all(limit=1000)
+                        projects = self.db.projects.list_all(limit=1000)
                         stats['projects_count'] = len(projects)
                     except (RuntimeError, AttributeError):
                         pass
 
-                if hasattr(self.db_service, 'users'):
+                if hasattr(self.db, 'users'):
                     try:
-                        users = self.db_service.users.list_all(limit=1000)
+                        users = self.db.users.list_all(limit=1000)
                         stats['users_count'] = len(users)
                     except (RuntimeError, AttributeError):
                         pass
@@ -1199,7 +1200,7 @@ class SystemMonitorAgent(BaseAgent):
         }
 
         try:
-            if self.db_service:
+            if self.db:
                 # Get table counts
                 stats = self._get_database_stats()
                 details['table_statistics'] = {
@@ -1227,17 +1228,17 @@ class SystemMonitorAgent(BaseAgent):
 
     def _measure_db_response_time(self) -> float:
         """Measure database response time in milliseconds"""
-        if not self.db_service:
+        if not self.db:
             return 0.0
 
         try:
             start_time = time.time()
 
             # Simple query to measure response time
-            if hasattr(self.db_service, 'users'):
-                self.db_service.users.list_all(limit=1)
-            elif hasattr(self.db_service, 'health_check'):
-                self.db_service.health_check()
+            if hasattr(self.db, 'users'):
+                self.db.users.list_all(limit=1)
+            elif hasattr(self.db, 'health_check'):
+                self.db.health_check()
 
             return (time.time() - start_time) * 1000  # Convert to ms
 
@@ -1473,11 +1474,11 @@ class SystemMonitorAgent(BaseAgent):
 
         try:
             # Database-related alerts
-            if self.db_service:
+            if self.db:
                 try:
                     # Check project count
-                    if hasattr(self.db_service, 'projects'):
-                        projects = self.db_service.projects.list_all(limit=200)
+                    if hasattr(self.db, 'projects'):
+                        projects = self.db.projects.list_all(limit=200)
                         project_count = len(projects)
 
                         if project_count > self.alert_thresholds['projects_critical']:
@@ -1660,8 +1661,8 @@ class SystemMonitorAgent(BaseAgent):
         }
 
         try:
-            if self.db_service and hasattr(self.db_service, 'users'):
-                users = self.db_service.users.list_all(limit=1000)
+            if self.db and hasattr(self.db, 'users'):
+                users = self.db.users.list_all(limit=1000)
                 summary['total_users'] = len(users)
                 summary['active_users'] = len([u for u in users if getattr(u, 'status', None) == 'active'])
 
@@ -1700,16 +1701,16 @@ class SystemMonitorAgent(BaseAgent):
         }
 
         try:
-            if self.db_service:
-                if hasattr(self.db_service, 'projects'):
-                    projects = self.db_service.projects.list_all(limit=1000)
+            if self.db:
+                if hasattr(self.db, 'projects'):
+                    projects = self.db.projects.list_all(limit=1000)
                     stats['total_projects'] = len(projects)
                     stats['active_projects'] = len([p for p in projects if getattr(p, 'status', None) == 'active'])
                     stats['completed_projects'] = len(
                         [p for p in projects if getattr(p, 'status', None) == 'completed'])
 
-                if hasattr(self.db_service, 'generated_files'):
-                    files = self.db_service.generated_files.list_all(limit=2000)
+                if hasattr(self.db, 'generated_files'):
+                    files = self.db.generated_files.list_all(limit=2000)
                     stats['total_generated_files'] = len(files)
 
         except (RuntimeError, AttributeError) as e:
@@ -1727,13 +1728,13 @@ class SystemMonitorAgent(BaseAgent):
         }
 
         try:
-            if self.db_service and hasattr(self.db_service, 'projects'):
-                project = self.db_service.projects.get_by_id(project_id)
+            if self.db and hasattr(self.db, 'projects'):
+                project = self.db.projects.get_by_id(project_id)
                 if project:
                     metrics['last_updated'] = DateTimeHelper.to_iso_string(getattr(project, 'updated_at', None))
 
-            if self.db_service and hasattr(self.db_service, 'generated_files'):
-                files = self.db_service.generated_files.list_all(limit=5000)
+            if self.db and hasattr(self.db, 'generated_files'):
+                files = self.db.generated_files.list_all(limit=5000)
                 project_files = [f for f in files if getattr(f, 'project_id', None) == project_id]
                 metrics['files_generated'] = len(project_files)
 
