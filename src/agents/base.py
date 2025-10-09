@@ -230,7 +230,7 @@ class BaseAgent(ABC):
         """Create standardized error response"""
         return {
             'success': False,
-            'error': message,
+            'message': message,
             'error_code': error_code,
             'agent_id': self.agent_id,
             'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())

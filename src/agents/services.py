@@ -104,36 +104,6 @@ except ImportError:
             for k, v in kwargs.items():
                 setattr(self, k, v)
 
-
-    class BaseAgent:
-        def __init__(self, agent_id, name, services=None):
-            self.agent_id = agent_id
-            self.name = name
-            self.services = services
-            self.logger = get_logger(agent_id)
-            self.events = None
-
-        def _error_response(self, message: str, error_code: Optional[str] = None) -> Dict[str, Any]:
-            """Create standardized error response"""
-            return {
-                'success': False,
-                'error': message,
-                'error_code': error_code,
-                'agent_id': self.agent_id,
-                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-            }
-
-        def _success_response(self, message: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-            """Create standardized success response"""
-            return {
-                'success': True,
-                'message': message,
-                'data': data or {},
-                'agent_id': self.agent_id,
-                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
-            }
-
-
     def require_authentication(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -164,7 +134,7 @@ class ServicesAgent(BaseAgent):
     def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize ServicesAgent with ServiceContainer dependency injection"""
         super().__init__("services", "Services Agent", services)
-
+        self.db = get_database()
         # Service configuration
         self.supported_export_formats = ['zip', 'json', 'docker', 'pdf']
         self.supported_git_operations = ['init', 'commit', 'push', 'pull', 'branch', 'status', 'clone']
@@ -511,8 +481,8 @@ class ServicesAgent(BaseAgent):
                 return self._error_response(f"Unsupported export format: {export_format}", "INVALID_FORMAT")
 
             # Get project data
-            if self.db_service and hasattr(self.db_service, 'projects'):
-                project = self.db_service.projects.get_by_id(project_id)
+            if self.db and hasattr(self.db, 'projects'):
+                project = self.db.projects.get_by_id(project_id)
                 if not project:
                     return self._error_response("Project not found", "PROJECT_NOT_FOUND")
             else:
@@ -521,9 +491,9 @@ class ServicesAgent(BaseAgent):
 
             # Get generated codebase
             codebase = None
-            if self.db_service and hasattr(self.db_service, 'codebases'):
+            if self.db and hasattr(self.db, 'codebases'):
                 try:
-                    codebase = self.db_service.codebases.get_by_project_id(project_id)
+                    codebase = self.db.codebases.get_by_project_id(project_id)
                 except:
                     pass
 
