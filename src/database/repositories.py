@@ -408,6 +408,15 @@ class ProjectRepository(BaseRepository[Project]):
             self.logger.error(f"Error getting projects for owner {owner_id}: {e}")
             return []
 
+    def get_by_status(self, status: str) -> List[Project]:
+        try:
+            query = "SELECT * FROM projects WHERE status = ? ORDER BY created_at"
+            results = self.db_manager.execute_query(query, (status,))
+            return [self._row_to_model(row) for row in results]
+        except Exception as e:
+            self.logger.error(f"Error getting projects by status {status}: {e}")
+            return []
+
     def update(self, project: Project) -> bool:
         try:
             data = self._model_to_dict(project)

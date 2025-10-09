@@ -16,8 +16,10 @@ Capabilities:
 import logging
 from typing import Dict, List, Any, Optional, TYPE_CHECKING
 
-if TYPE_CHECKING:
+try:
     from src.core import ServiceContainer
+except ImportError:
+    ServiceContainer = None
 
 
 # Define get_logger fallback FIRST (always available)
