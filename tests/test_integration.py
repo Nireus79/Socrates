@@ -16,13 +16,40 @@ import sys
 import os
 import time
 import uuid
-from typing import Dict, Any, List
+from src.agents.context import ContextAnalyzerAgent
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from src.database import get_database, init_database, reset_database
-from src.core import DateTimeHelper, initialize_system
+# Ensure database is properly initialized
+from src.database import init_database, get_database, reset_database
+init_database('data/test_integration.db')
+
+# Create context analyzer
+try:
+    from src.core import get_services
+    services = get_services()
+    agent = ContextAnalyzerAgent(services)
+except ImportError:
+    agent = ContextAnalyzerAgent()
+
+# Force agent to refresh database connection
+agent.db = get_database()
+if agent.db:
+    agent.project_context_repo = agent.db.project_contexts
+    agent.module_context_repo = agent.db.module_contexts
+    agent.task_context_repo = agent.db.task_contexts
+    agent.conflict_repo = agent.db.conflicts
+else:
+    raise Exception("Failed to get database instance")
+
+# Debug: Verify agent has database access
+print(f"DEBUG: agent.db = {agent.db}")
+print(f"DEBUG: agent.project_context_repo = {agent.project_context_repo}")
+
+# Verify agent has database access
+if not agent.db or not agent.project_context_repo:
+    raise Exception(f"Agent database not initialized: db={agent.db}, repo={agent.project_context_repo}")
 from src.models import (
     User, Project, Module, Task, UserRole, ModuleType, ModuleStatus,
     TaskStatus, Priority, ProjectStatus, ProjectContext, SocraticSession,
@@ -237,10 +264,22 @@ class IntegrationTest:
         """Test ModuleRepository methods"""
         db = get_database()
 
-        # Get test project from previous tests
-        projects = db.projects.get_by_status("active")
-        self.assert_true(len(projects) > 0, "Test projects should exist")
-        project = projects[0]
+        # Create test project for context analysis
+        self.log("Creating test project for context analysis...")
+        project = Project(
+            id=str(uuid.uuid4()),
+            name="Context Persistence Test Project",
+            description="Test project for context persistence",
+            owner_id="test-user",
+            status=ProjectStatus.ACTIVE,
+            technology_stack={
+                'backend': 'python',
+                'frontend': 'react',
+                'database': 'postgresql'
+            }
+        )
+        db.projects.create(project)
+        self.log(f"Test project created: {project.id}")
 
         # Create modules with different statuses
         self.log("Creating modules with different statuses...")
@@ -370,13 +409,17 @@ class IntegrationTest:
 
         db = get_database()
 
-        # Get test project - find one from existing modules
-        modules = db.modules.get_by_status("planned")
-        if not modules:
-            modules = db.modules.get_by_status("in_progress")
-
-        self.assert_true(len(modules) > 0, "Should have test modules")
-        project = db.projects.get_by_id(modules[0].project_id)
+        # Create test project for conflict detection
+        self.log("Creating test project for conflict detection...")
+        project = Project(
+            id=str(uuid.uuid4()),
+            name="Conflict Detection Test Project",
+            description="Test project for conflict detection",
+            owner_id="test-user",
+            status=ProjectStatus.ACTIVE
+        )
+        db.projects.create(project)
+        self.log(f"Test project created: {project.id}")
 
         # Create many active modules to trigger timeline conflict
         self.log("Creating 6+ active modules to trigger conflict...")
@@ -430,10 +473,22 @@ class IntegrationTest:
 
         db = get_database()
 
-        # Get test project
-        projects = db.projects.get_by_status("active")
-        self.assert_true(len(projects) > 0, "Test projects should exist")
-        project = projects[0]
+        # Create test project for context analysis
+        self.log("Creating test project for context analysis...")
+        project = Project(
+            id=str(uuid.uuid4()),
+            name="Context Persistence Test Project",
+            description="Test project for context persistence",
+            owner_id="test-user",
+            status=ProjectStatus.ACTIVE,
+            technology_stack={
+                'backend': 'python',
+                'frontend': 'react',
+                'database': 'postgresql'
+            }
+        )
+        db.projects.create(project)
+        self.log(f"Test project created: {project.id}")
 
         # Create context analyzer
         # Ensure database is properly initialized
@@ -456,8 +511,16 @@ class IntegrationTest:
         self.log("Running first context analysis...")
         result1 = agent._analyze_context({
             'project_id': project.id,
-            'force_refresh': True
+            'force_refresh': True,
+            'user_id': 'test-user'  # ← ADD THIS
         })
+
+        # DEBUG: Print the actual result to see what's failing
+        print(f"DEBUG: Context analysis result = {result1}")
+
+        if not result1.get('success', False):
+            error_msg = result1.get('message', result1.get('error', 'Unknown error'))
+            print(f"DEBUG: Context analysis failed with: {error_msg}")
 
         self.assert_true(result1.get('success', False), "First context analysis should succeed")
 
@@ -470,7 +533,8 @@ class IntegrationTest:
         self.log("Running second context analysis...")
         result2 = agent._analyze_context({
             'project_id': project.id,
-            'force_refresh': False
+            'force_refresh': False,
+            'user_id': 'test-user'  # ← ADD THIS
         })
 
         self.assert_true(result2.get('success', False), "Second context analysis should succeed")
@@ -557,10 +621,22 @@ class IntegrationTest:
         """Test Socratic session and conversation persistence"""
         db = get_database()
 
-        # Get test project
-        projects = db.projects.get_by_status("active")
-        self.assert_true(len(projects) > 0, "Test projects should exist")
-        project = projects[0]
+        # Create test project for context analysis
+        self.log("Creating test project for context analysis...")
+        project = Project(
+            id=str(uuid.uuid4()),
+            name="Context Persistence Test Project",
+            description="Test project for context persistence",
+            owner_id="test-user",
+            status=ProjectStatus.ACTIVE,
+            technology_stack={
+                'backend': 'python',
+                'frontend': 'react',
+                'database': 'postgresql'
+            }
+        )
+        db.projects.create(project)
+        self.log(f"Test project created: {project.id}")
 
         # Step 1: Create session with CORRECT constructor
         self.log("Creating Socratic session...")
@@ -649,10 +725,22 @@ class IntegrationTest:
 
         db = get_database()
 
-        # Get test project
-        projects = db.projects.get_by_status("active")
-        self.assert_true(len(projects) > 0, "Test projects should exist")
-        project = projects[0]
+        # Create test project for context analysis
+        self.log("Creating test project for context analysis...")
+        project = Project(
+            id=str(uuid.uuid4()),
+            name="Context Persistence Test Project",
+            description="Test project for context persistence",
+            owner_id="test-user",
+            status=ProjectStatus.ACTIVE,
+            technology_stack={
+                'backend': 'python',
+                'frontend': 'react',
+                'database': 'postgresql'
+            }
+        )
+        db.projects.create(project)
+        self.log(f"Test project created: {project.id}")
 
         # Step 1: Create initial specification with CORRECT constructor
         self.log("Creating technical specification...")
@@ -697,10 +785,22 @@ class IntegrationTest:
         """Test code generation and file persistence"""
         db = get_database()
 
-        # Get test project
-        projects = db.projects.get_by_status("active")
-        self.assert_true(len(projects) > 0, "Test projects should exist")
-        project = projects[0]
+        # Create test project for context analysis
+        self.log("Creating test project for context analysis...")
+        project = Project(
+            id=str(uuid.uuid4()),
+            name="Context Persistence Test Project",
+            description="Test project for context persistence",
+            owner_id="test-user",
+            status=ProjectStatus.ACTIVE,
+            technology_stack={
+                'backend': 'python',
+                'frontend': 'react',
+                'database': 'postgresql'
+            }
+        )
+        db.projects.create(project)
+        self.log(f"Test project created: {project.id}")
 
         # Step 1: Create codebase with CORRECT constructor
         self.log("Creating generated codebase...")
