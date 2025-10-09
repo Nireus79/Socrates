@@ -938,7 +938,7 @@ class GeneratedFileRepository(BaseRepository[GeneratedFile]):
                 codebase_id=row.get('codebase_id', ''),
                 project_id=row.get('project_id', ''),
                 file_path=row.get('file_path', ''),
-                file_type=file_type,
+                file_type=file_type,  # ✅ Use mapped enum instead of string
                 file_purpose=row.get('file_purpose', ''),
                 content=row.get('content', ''),
                 size_bytes=row.get('size_bytes', 0),
@@ -1213,14 +1213,22 @@ class SocraticSessionRepository(BaseRepository[SocraticSession]):
             phase_value = row.get('current_phase', 'discovery')
             current_role = phase_to_role_map.get(phase_value, TechnicalRole.PROJECT_MANAGER)
 
+            # ✅ FIX: Map database status values to valid ConversationStatus enum values
+            status_value = row.get('status', 'active')
+            status_map = {
+                'active': ConversationStatus.ACTIVE,
+                'paused': ConversationStatus.PAUSED,
+                'completed': ConversationStatus.COMPLETED,
+                'cancelled': ConversationStatus.CANCELLED
+            }
+            conversation_status = status_map.get(status_value, ConversationStatus.ACTIVE)
+
             return SocraticSession(
                 id=row.get('id', ''),
-                project_id=row.get('project_id', ''),
-                user_id=row.get('initiated_by', ''),
-                current_role=current_role,
-                status=ConversationStatus(row.get('status', 'active')) if hasattr(ConversationStatus,
-                                                                                  '__call__') else row.get('status',
-                                                                                                           'active'),
+                project_id=row.get('project_id', ''),  # ✅ This should work now
+                user_id=row.get('initiated_by', ''),  # Map initiated_by to user_id
+                current_role=current_role,  # ✅ Use mapped role instead of direct conversion
+                status=conversation_status,  # ✅ Use mapped status instead of direct conversion
                 roles_to_cover=parse_json_field(row.get('session_data', '{}'), {}).get('roles_to_cover', []),
                 completed_roles=parse_json_field(row.get('session_data', '{}'), {}).get('completed_roles', []),
                 total_questions=row.get('total_questions', 0),

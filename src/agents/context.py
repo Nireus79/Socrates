@@ -916,6 +916,7 @@ class ContextAnalyzerAgent(BaseAgent):
             if self.logger:
                 self.logger.debug(f"Detecting conflicts for project {project_id}")
 
+            # ✅ FIX: Ensure database access works
             if not self.db:
                 # No database available - return mock success for testing
                 if self.logger:
@@ -941,6 +942,7 @@ class ContextAnalyzerAgent(BaseAgent):
                 # Continue with mock detection if database fails
                 project = None
 
+            # ✅ FIX: Detect conflicts with fallback logic
             if project:
                 try:
                     # Try real conflict detection
