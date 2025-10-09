@@ -1140,26 +1140,23 @@ class ContextAnalyzerAgent(BaseAgent):
         resolved_by = data.get('resolved_by')
 
         if not conflict_id:
-            return self._error_response("Conflict ID required")
-
-        if self.logger:
-            self.logger.info(f"Resolving conflict {conflict_id}")
+            return self._error_response("Conflict ID required", "MISSING_CONFLICT_ID")
 
         try:
             if not self.conflict_repo:
-                return self._error_response("Conflict repository not available")
+                return self._error_response("Conflict repository not available", "REPOSITORY_UNAVAILABLE")
 
             success = self.conflict_repo.mark_resolved(conflict_id, resolution_notes, resolved_by)
 
             if success:
                 return self._success_response("Conflict marked as resolved")
             else:
-                return self._error_response("Failed to mark conflict as resolved")
+                return self._error_response("Failed to mark conflict as resolved", "RESOLUTION_FAILED")
 
         except Exception as e:
             if self.logger:
                 self.logger.error(f"Error resolving conflict: {e}")
-            return self._error_response(f"Failed to resolve conflict: {e}")
+            return self._error_response(f"Failed to resolve conflict: {e}", "CONFLICT_RESOLUTION_ERROR")
 
     def _map_conflict_type(self, conflict_type_str: str) -> ConflictType:
         """Map string conflict type to ConflictType enum"""

@@ -4,9 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="clean up">
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="IntegrationTest">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_integration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/context.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/context.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/orchestrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/orchestrator.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -151,14 +152,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00113" summary="sessions">
-      <option name="closed" value="true" />
-      <created>1759430908955</created>
-      <option name="number" value="00113" />
-      <option name="presentableId" value="LOCAL-00113" />
-      <option name="project" value="LOCAL" />
-      <updated>1759430908956</updated>
     </task>
     <task id="LOCAL-00114" summary="sessions">
       <option name="closed" value="true" />
@@ -544,11 +537,18 @@
       <option name="project" value="LOCAL" />
       <updated>1759565758790</updated>
     </task>
-    <option name="localTasksCounter" value="162" />
+    <task id="LOCAL-00162" summary="IntegrationTest">
+      <option name="closed" value="true" />
+      <created>1759566831227</created>
+      <option name="number" value="00162" />
+      <option name="presentableId" value="LOCAL-00162" />
+      <option name="project" value="LOCAL" />
+      <updated>1759566831227</updated>
+    </task>
+    <option name="localTasksCounter" value="163" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="texts" />
     <MESSAGE value="ui" />
     <MESSAGE value="full" />
     <MESSAGE value="agents" />
@@ -573,6 +573,7 @@
     <MESSAGE value="tests" />
     <MESSAGE value="authorizations" />
     <MESSAGE value="clean up" />
-    <option name="LAST_COMMIT_MESSAGE" value="clean up" />
+    <MESSAGE value="IntegrationTest" />
+    <option name="LAST_COMMIT_MESSAGE" value="IntegrationTest" />
   </component>
 </project>

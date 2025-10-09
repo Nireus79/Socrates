@@ -59,7 +59,8 @@ class AgentOrchestrator:
     8. SystemMonitorAgent - System monitoring
     """
 
-    def __init__(self, services: Optional['ServiceContainer'] = None):
+    def __init__(self, services: Optional[ServiceContainer] = None):
+        super().__init__("orchestrator", "Agent Orchestrator", services)
         """Initialize orchestrator and all agents
 
         Args:
@@ -266,7 +267,8 @@ class AgentOrchestrator:
 
                 return {
                     'success': False,
-                    'error': error_msg,
+                    'error': f"Unknown agent: {agent_id}",
+                    'error_code': 'UNKNOWN_AGENT',
                     'available_agents': available,
                     'requested_agent': agent_id
                 }
@@ -288,11 +290,13 @@ class AgentOrchestrator:
 
                         return {
                             'success': False,
-                            'error': error_msg,
+                            'error': f"Agent {agent_id} does not support action: {action}",
+                            'error_code': 'UNSUPPORTED_ACTION',
                             'supported_actions': capabilities,
                             'requested_action': action,
                             'agent_id': agent_id
                         }
+
             except (RuntimeError, AttributeError) as e:
                 self.logger.warning(
                     f"Could not verify capabilities for {agent_id}: {e}"
@@ -328,7 +332,8 @@ class AgentOrchestrator:
 
             return {
                 'success': False,
-                'error': error_msg,
+                'error': f"Error routing request to {agent_id}.{action}: {str(e)}",
+                'error_code': 'ROUTING_ERROR',
                 'agent_id': agent_id,
                 'action': action,
                 'exception_type': type(e).__name__
