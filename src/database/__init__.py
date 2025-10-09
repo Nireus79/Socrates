@@ -38,6 +38,7 @@ from .repositories import (
     GeneratedFileRepository,
     ProjectCollaboratorRepository,
     SocraticSessionRepository,
+    ChatSessionRepository,
     QuestionRepository,
     ConversationMessageRepository,
     TechnicalSpecificationRepository,
@@ -95,12 +96,14 @@ __all__ = [
     'GeneratedFileRepository',
     'ProjectCollaboratorRepository',
     'SocraticSessionRepository',
+    'ChatSessionRepository',
     'QuestionRepository',
     'ConversationMessageRepository',
     'TechnicalSpecificationRepository',
     'ProjectContextRepository',
     'ModuleContextRepository',
     'TaskContextRepository',
+    'ConflictRepository',
 
     # Version
     '__version__',

@@ -755,7 +755,7 @@ class Question(BaseModel):
 class ConversationMessage(BaseModel):
     """Individual conversation message"""
 
-    session_id: str = ""  # Link to specific Socratic session
+    session_id: str = ""  # Link to specific Socratic or Chat session
     project_id: str = ""
     timestamp: datetime = field(default_factory=DateTimeHelper.now)
     message_type: str = "user"  # user, agent, system
@@ -766,10 +766,32 @@ class ConversationMessage(BaseModel):
     question_number: Optional[int] = None
     insights_extracted: Dict[str, Any] = field(default_factory=dict)
 
+    # NEW FIELD - Add this line:
+    conversation_type: str = "socratic"  # socratic | chat
+
     def __post_init__(self):
         """Validate message data"""
         if not self.content.strip():
             raise ValidationError("Message content cannot be empty")
+
+    # NEW METHODS - Add these helper methods:
+    @property
+    def is_chat_message(self) -> bool:
+        """Check if this is a chat message vs socratic message"""
+        return self.conversation_type == "chat"
+
+    @property
+    def is_socratic_message(self) -> bool:
+        """Check if this is a socratic message vs chat message"""
+        return self.conversation_type == "socratic"
+
+    def set_as_chat_message(self) -> None:
+        """Mark this message as belonging to a chat conversation"""
+        self.conversation_type = "chat"
+
+    def set_as_socratic_message(self) -> None:
+        """Mark this message as belonging to a socratic conversation"""
+        self.conversation_type = "socratic"
 
 
 @dataclass
@@ -1313,6 +1335,7 @@ class ModelRegistry:
 
         # Socratic conversation models
         'socratic_session': SocraticSession,
+        'chat_session': ChatSession,
         'question': Question,
         'conversation_message': ConversationMessage,
         'conflict': Conflict,
@@ -1418,7 +1441,7 @@ __all__ = [
     'Project', 'Module', 'Task', 'ProjectContext', 'ModuleContext', 'TaskContext',
 
     # Socratic conversation models
-    'SocraticSession', 'Question', 'Conflict', 'ConversationMessage',
+    'SocraticSession', 'ChatSession', 'Question', 'Conflict', 'ConversationMessage',
 
     # Technical specification models
     'TechnicalSpec', 'TechnicalSpecification',
@@ -1429,9 +1452,11 @@ __all__ = [
     # Analytics and reporting models
     'ProjectMetrics', 'UserActivity', 'KnowledgeEntry',
 
+    # Validation and factory classes
+    'ValidationError', 'ValidationHelper', 'ModelValidator', 'ModelFactory',
+
     # Utilities
-    'ModelFactory', 'ModelValidator', 'ModelRegistry', 'ValidationHelper',
-    'serialize_model', 'deserialize_model'
+    'ModelRegistry', 'serialize_model', 'deserialize_model'
 ]
 
 if __name__ == "__main__":
