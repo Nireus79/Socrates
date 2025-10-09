@@ -113,11 +113,25 @@ except ImportError:
             self.logger = get_logger(agent_id)
             self.events = None
 
-        def _error_response(self, message, error_code=None):
-            return {'success': False, 'error': message, 'error_code': error_code}
+        def _error_response(self, message: str, error_code: Optional[str] = None) -> Dict[str, Any]:
+            """Create standardized error response"""
+            return {
+                'success': False,
+                'error': message,
+                'error_code': error_code,
+                'agent_id': self.agent_id,
+                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            }
 
-        def _success_response(self, message, data=None):
-            return {'success': True, 'message': message, 'data': data or {}}
+        def _success_response(self, message: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+            """Create standardized success response"""
+            return {
+                'success': True,
+                'message': message,
+                'data': data or {},
+                'agent_id': self.agent_id,
+                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            }
 
 
     def require_authentication(func):

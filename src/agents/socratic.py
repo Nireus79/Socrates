@@ -114,14 +114,27 @@ except ImportError:
             self.name = name
             self.services = services
             self.logger = get_logger(agent_id)
-            self.db_service = get_database()
             self.events = None
 
-        def _error_response(self, message, error_code=None):
-            return {'success': False, 'error': message}
+        def _error_response(self, message: str, error_code: Optional[str] = None) -> Dict[str, Any]:
+            """Create standardized error response"""
+            return {
+                'success': False,
+                'error': message,
+                'error_code': error_code,
+                'agent_id': self.agent_id,
+                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            }
 
-        def _success_response(self, message, data=None):
-            return {'success': True, 'message': message, 'data': data or {}}
+        def _success_response(self, message: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+            """Create standardized success response"""
+            return {
+                'success': True,
+                'message': message,
+                'data': data or {},
+                'agent_id': self.agent_id,
+                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            }
 
 
     def require_authentication(func):
@@ -179,16 +192,26 @@ class SocraticCounselorAgent(BaseAgent):
         self.message_repo = None
 
         # Get repositories from database service
-        if self.db_service:
-            try:
-                self.session_repo = self.db_service.socratic_sessions
-                self.question_repo = self.db_service.questions
-                self.message_repo = self.db_service.conversation_messages
+        # Get repositories from database service
+        try:
+            from src.database import get_database
+            db = get_database()
+            if db:
+                self.session_repo = db.socratic_sessions
+                self.question_repo = db.questions
+                self.message_repo = db.conversation_messages
                 if self.logger:
                     self.logger.info("Session persistence repositories initialized")
-            except AttributeError as e:
-                if self.logger:
-                    self.logger.warning(f"Session repositories not available: {e}")
+            else:
+                self.session_repo = None
+                self.question_repo = None
+                self.message_repo = None
+        except Exception as e:
+            if self.logger:
+                self.logger.warning(f"Session repositories not available: {e}")
+            self.session_repo = None
+            self.question_repo = None
+            self.message_repo = None
 
         if self.logger:
             self.logger.info("SocraticCounselorAgent initialized successfully")
@@ -1200,10 +1223,32 @@ class SocraticCounselorAgent(BaseAgent):
                     }
                     active_sessions.append(session_summary)
 
-            # TODO: Also query database for historical sessions when session repository is implemented
-            # For now, return only active in-memory sessions
-            all_sessions = active_sessions
+            all_sessions = active_sessions.copy()  # Start with active sessions
 
+            if self.session_repo:
+                try:
+                    # Get historical sessions from database
+                    db_sessions = self.session_repo.get_by_user_id(user_id)
+                    for db_session in db_sessions:
+                        # Avoid duplicates with active sessions
+                        session_ids = [s['session_id'] for s in all_sessions]
+                        if db_session.id not in session_ids:
+                            session_summary = {
+                                'session_id': db_session.id,
+                                'project_id': db_session.project_id,
+                                'role': db_session.current_role.value if hasattr(db_session.current_role,
+                                                                                 'value') else str(
+                                    db_session.current_role),
+                                'status': db_session.status.value if hasattr(db_session.status, 'value') else str(
+                                    db_session.status),
+                                'created_at': DateTimeHelper.to_iso_string(db_session.created_at),
+                                'questions_count': db_session.total_questions,
+                                'responses_count': db_session.questions_answered
+                            }
+                            all_sessions.append(session_summary)
+                except Exception as e:
+                    if self.logger:
+                        self.logger.warning(f"Could not retrieve historical sessions: {e}")
             # Apply status filter if provided
             if status_filter:
                 all_sessions = [s for s in all_sessions if s.get('status') == status_filter]

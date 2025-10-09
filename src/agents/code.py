@@ -154,14 +154,27 @@ except ImportError:
             self.name = name
             self.services = services
             self.logger = get_logger(agent_id)
-            self.db_service = get_database()
             self.events = None
 
-        def _error_response(self, message, error_code=None):
-            return {'success': False, 'error': message}
+        def _error_response(self, message: str, error_code: Optional[str] = None) -> Dict[str, Any]:
+            """Create standardized error response"""
+            return {
+                'success': False,
+                'error': message,
+                'error_code': error_code,
+                'agent_id': self.agent_id,
+                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            }
 
-        def _success_response(self, message, data=None):
-            return {'success': True, 'message': message, 'data': data or {}}
+        def _success_response(self, message: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+            """Create standardized success response"""
+            return {
+                'success': True,
+                'message': message,
+                'data': data or {},
+                'agent_id': self.agent_id,
+                'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            }
 
 
     def require_authentication(func):
@@ -222,10 +235,18 @@ class CodeGeneratorAgent(BaseAgent):
         # Code templates
         self.code_templates = self._initialize_code_templates()
         # Initialize specification repository
-        if self.db_service:
-            self.spec_repository = self.db_service.technical_specifications
-        else:
+        # Initialize specification repository
+        try:
+            from src.database import get_database
+            db = get_database()
+            if db:
+                self.spec_repository = db.technical_specifications
+            else:
+                self.spec_repository = None
+        except Exception as e:
             self.spec_repository = None
+            if self.logger:
+                self.logger.warning(f"Could not initialize specification repository: {e}")
 
         if self.logger:
             self.logger.info("CodeGeneratorAgent initialized successfully")
@@ -454,16 +475,26 @@ def sample_data():
                 return self._error_response("Project ID is required")
 
             # Get project details
-            if self.db_service:
-                project = self.db_service.projects.get_by_id(project_id)
+            # Get project from database if available
+            project = None
+            try:
+                from src.database import get_database
+                db = get_database()
+                if db:
+                    project = db.projects.get_by_id(project_id)
+                    if not project:
+                        return self._error_response(f"Project not found: {project_id}", "PROJECT_NOT_FOUND")
+            except Exception as e:
+                if self.logger:
+                    self.logger.warning(f"Could not retrieve project from database: {e}")
+
                 if not project:
-                    return self._error_response(f"Project not found: {project_id}")
-            else:
-                project = Project(
-                    id=project_id,
-                    name=data.get('project_name', 'Generated Project'),
-                    description=data.get('description', 'Auto-generated project')
-                )
+                    # Fallback project creation
+                    project = Project(
+                        id=project_id,
+                        name=data.get('project_name', 'Generated Project'),
+                        description=data.get('description', 'Auto-generated project')
+                    )
 
             # Get technical specifications
             specs_data = data.get('technical_specifications', {})
@@ -505,10 +536,17 @@ def sample_data():
             )
 
             # Save to database
-            if self.db_service:
-                saved_codebase = self.db_service.codebases.create(codebase)
-                codebase_id = saved_codebase.id if saved_codebase else codebase.id
-            else:
+            try:
+                from src.database import get_database
+                db = get_database()
+                if db:
+                    saved_codebase = db.codebases.create(codebase)
+                    codebase_id = saved_codebase.id if saved_codebase else codebase.id
+                else:
+                    codebase_id = codebase.id
+            except Exception as e:
+                if self.logger:
+                    self.logger.warning(f"Could not save codebase to database: {e}")
                 codebase_id = codebase.id
 
             # Update file references
@@ -516,9 +554,16 @@ def sample_data():
                 file.codebase_id = codebase_id
 
             # Save files to database
-            if self.db_service:
-                for file in generated_files:
-                    self.db_service.generated_files.create(file)
+            # Save files to database
+            try:
+                from src.database import get_database
+                db = get_database()
+                if db:
+                    for file in generated_files:
+                        db.generated_files.create(file)
+            except Exception as e:
+                if self.logger:
+                    self.logger.warning(f"Could not save generated files to database: {e}")
 
             # Emit codebase generation event
             if self.events:
