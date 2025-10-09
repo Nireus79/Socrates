@@ -1017,6 +1017,11 @@ class SocraticSessionRepository(BaseRepository[SocraticSession]):
     def create(self, session: SocraticSession) -> bool:
         try:
             data = self._model_to_dict(session)
+
+            # ✅ FIX: Map model field to database field
+            # Model has 'user_id' but database expects 'initiated_by'
+            initiated_by = data.get('user_id', '')
+
             query = """
                 INSERT INTO socratic_sessions 
                 (id, project_id, initiated_by, session_type, status, current_phase,
@@ -1025,10 +1030,14 @@ class SocraticSessionRepository(BaseRepository[SocraticSession]):
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
             params = (
-                data.get('id'), data.get('project_id'), data.get('initiated_by'),
-                data.get('session_type', 'discovery'), data.get('status', 'active'),
+                data.get('id'),
+                data.get('project_id'),
+                initiated_by,  # ✅ Use mapped field instead of data.get('initiated_by')
+                data.get('session_type', 'discovery'),
+                data.get('status', 'active'),
                 data.get('current_phase', 'discovery'),
-                data.get('total_questions', 0), data.get('answered_questions', 0),
+                data.get('total_questions', 0),
+                data.get('answered_questions', 0),
                 dump_json_field(data.get('session_data', {})),
                 DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
                 DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now())),
