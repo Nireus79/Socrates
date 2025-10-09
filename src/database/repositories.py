@@ -893,6 +893,63 @@ class GeneratedFileRepository(BaseRepository[GeneratedFile]):
             self.logger.error(f"Error deleting file {file_id}: {e}")
             return False
 
+    def _row_to_model(self, row: Dict[str, Any]) -> GeneratedFile:
+        """Convert row with enum handling"""
+        try:
+            # Import FileType enum
+            try:
+                from src.models import FileType
+            except ImportError:
+                # Fallback if enum not available
+                class FileType:
+                    @staticmethod
+                    def from_string(s):
+                        return s
+
+            # ✅ FIX: Convert string file_type back to enum
+            file_type_str = row.get('file_type', 'python')
+            file_type_map = {
+                'python': FileType.PYTHON,
+                'javascript': FileType.JAVASCRIPT,
+                'typescript': FileType.TYPESCRIPT,
+                'html': FileType.HTML,
+                'css': FileType.CSS,
+                'json': FileType.JSON,
+                'yaml': FileType.YAML,
+                'markdown': FileType.MARKDOWN,
+                'sql': FileType.SQL,
+                'dockerfile': FileType.DOCKERFILE,
+                'config': FileType.CONFIG,
+                'test': FileType.TEST
+            }
+            file_type = file_type_map.get(file_type_str, FileType.PYTHON)
+
+            return GeneratedFile(
+                id=row.get('id', ''),
+                codebase_id=row.get('codebase_id', ''),
+                project_id=row.get('project_id', ''),
+                file_path=row.get('file_path', ''),
+                file_type=file_type,
+                file_purpose=row.get('file_purpose', ''),
+                content=row.get('content', ''),
+                size_bytes=row.get('size_bytes', 0),
+                line_count=row.get('line_count', 0),
+                imports=parse_json_field(row.get('imports'), []),
+                dependencies=parse_json_field(row.get('dependencies'), []),
+                complexity_score=row.get('complexity_score', 0.0),
+                test_coverage=row.get('test_coverage', 0.0),
+                documentation_coverage=row.get('documentation_coverage', 0.0),
+                syntax_errors=parse_json_field(row.get('syntax_errors'), []),
+                style_issues=parse_json_field(row.get('style_issues'), []),
+                security_issues=parse_json_field(row.get('security_issues'), []),
+                generated_by_agent=row.get('generated_by_agent'),
+                generation_metadata=parse_json_field(row.get('generation_metadata'), {}),
+                created_at=DateTimeHelper.from_iso_string(row.get('created_at')),
+                updated_at=DateTimeHelper.from_iso_string(row.get('updated_at'))
+            )
+        except Exception as e:
+            self.logger.error(f"Error converting row to GeneratedFile: {e}")
+            return GeneratedFile()
 
 # ==============================================================================
 # PROJECT COLLABORATOR REPOSITORY
@@ -1126,13 +1183,31 @@ class SocraticSessionRepository(BaseRepository[SocraticSession]):
                     def from_string(s):
                         return s
 
+            # ✅ FIX: Map database phase values to valid TechnicalRole enum values
+            phase_to_role_map = {
+                'discovery': TechnicalRole.BUSINESS_ANALYST,
+                'design': TechnicalRole.UX_DESIGNER,
+                'development': TechnicalRole.BACKEND_DEVELOPER,
+                'testing': TechnicalRole.QA_TESTER,
+                'deployment': TechnicalRole.DEVOPS_ENGINEER,
+                'project_manager': TechnicalRole.PROJECT_MANAGER,
+                'business_analyst': TechnicalRole.BUSINESS_ANALYST,
+                'frontend_developer': TechnicalRole.FRONTEND_DEVELOPER,
+                'backend_developer': TechnicalRole.BACKEND_DEVELOPER,
+                'ux_designer': TechnicalRole.UX_DESIGNER,
+                'qa_tester': TechnicalRole.QA_TESTER,
+                'devops_engineer': TechnicalRole.DEVOPS_ENGINEER,
+                'security_engineer': TechnicalRole.SECURITY_ENGINEER
+            }
+
+            phase_value = row.get('current_phase', 'discovery')
+            current_role = phase_to_role_map.get(phase_value, TechnicalRole.PROJECT_MANAGER)
+
             return SocraticSession(
                 id=row.get('id', ''),
                 project_id=row.get('project_id', ''),
-                user_id=row.get('initiated_by', ''),  # Map initiated_by to user_id
-                current_role=TechnicalRole(row.get('current_phase', 'discovery')) if hasattr(TechnicalRole,
-                                                                                             '__call__') else row.get(
-                    'current_phase', 'discovery'),
+                user_id=row.get('initiated_by', ''),
+                current_role=current_role,
                 status=ConversationStatus(row.get('status', 'active')) if hasattr(ConversationStatus,
                                                                                   '__call__') else row.get('status',
                                                                                                            'active'),
