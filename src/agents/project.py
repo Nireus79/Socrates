@@ -131,7 +131,6 @@ except ImportError:
             self.name = name
             self.services = services
             self.logger = get_logger(agent_id)
-            self.db_service = get_database()
             self.events = get_event_bus()
 
         def _error_response(self, message, error_code=None):
@@ -232,7 +231,14 @@ class ProjectManagerAgent(BaseAgent):
 
             # Create project in database
             project = Project(**project_data)
-            created_project = self.db_service.projects.create(project)
+            try:
+                from src.database import get_database
+                db = get_database()
+                if not db:
+                    return self._error_response("Database service not available", "DB_UNAVAILABLE")
+                created_project = db.projects.create(project)
+            except Exception as e:
+                return self._error_response(f"Failed to create project: {e}", "DB_ERROR")
 
             # Check if creation was successful
             if not created_project:
@@ -551,20 +557,29 @@ class ProjectManagerAgent(BaseAgent):
             if not module_id:
                 raise ValidationError("Module ID is required")
 
-            module = self.db_service.modules.get_by_id(module_id)
-            if not module:
-                raise ValidationError("Module not found")
+            try:
+                from src.database import get_database
+                db = get_database()
+                if not db:
+                    return self._error_response("Database service not available", "DB_UNAVAILABLE")
+                module = db.modules.get_by_id(module_id)
+                if not module:
+                    raise ValidationError("Module not found")
 
-            # Update fields
-            updates = data.get('updates', {})
-            allowed_fields = ['name', 'description', 'order', 'phase', 'estimated_hours', 'dependencies']
+                # Update fields
+                updates = data.get('updates', {})
+                allowed_fields = ['name', 'description', 'order', 'phase', 'estimated_hours', 'dependencies']
 
-            for field in allowed_fields:
-                if field in updates:
-                    setattr(module, field, updates[field])
+                for field in allowed_fields:
+                    if field in updates:
+                        setattr(module, field, updates[field])
 
-            module.updated_at = DateTimeHelper.now()
-            updated_module = self.db_service.modules.update(module)
+                module.updated_at = DateTimeHelper.now()
+                updated_module = db.modules.update(module)
+            except Exception as e:
+                if isinstance(e, ValidationError):
+                    raise
+                return self._error_response(f"Database error: {e}", "DB_ERROR")
 
             return self._success_response(
                 "Module updated successfully",
@@ -586,7 +601,14 @@ class ProjectManagerAgent(BaseAgent):
                 raise ValidationError("Module ID is required")
 
             # Delete module
-            deleted = self.db_service.modules.delete(module_id)
+            try:
+                from src.database import get_database
+                db = get_database()
+                if not db:
+                    return self._error_response("Database service not available", "DB_UNAVAILABLE")
+                deleted = db.modules.delete(module_id)
+            except Exception as e:
+                return self._error_response(f"Failed to delete module: {e}", "DB_ERROR")
 
             if deleted:
                 return self._success_response("Module deleted successfully", {'module_id': module_id})
@@ -607,7 +629,14 @@ class ProjectManagerAgent(BaseAgent):
             if not project_id:
                 raise ValidationError("Project ID is required")
 
-            modules = self.db_service.modules.get_by_project_id(project_id)
+            try:
+                from src.database import get_database
+                db = get_database()
+                if not db:
+                    return self._error_response("Database service not available", "DB_UNAVAILABLE")
+                modules = db.modules.get_by_project_id(project_id)
+            except Exception as e:
+                return self._error_response(f"Failed to retrieve modules: {e}", "DB_ERROR")
 
             module_list = []
             for module in modules:
