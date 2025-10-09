@@ -164,19 +164,15 @@ class IntegrationTest:
         """Test project CRUD operations"""
         db = get_database()
 
-        # Get or create test user
-        users = db.users.get_by_role(UserRole.DEVELOPER)
-        if not users:
-            user = User(
-                id=str(uuid.uuid4()),
-                username=f"project_owner_{str(uuid.uuid4())[:8]}",
-                email=f"owner_{str(uuid.uuid4())[:8]}@example.com",
-                password_hash="test_hash",
-                role=UserRole.DEVELOPER
-            )
-            db.users.create(user)
-        else:
-            user = users[0]
+        # Create test user
+        user = User(
+            id=str(uuid.uuid4()),
+            username=f"project_owner_{str(uuid.uuid4())[:8]}",
+            email=f"owner_{str(uuid.uuid4())[:8]}@example.com",
+            password_hash="test_hash",
+            role=UserRole.DEVELOPER
+        )
+        db.users.create(user)
 
         # Create project
         project = Project(
@@ -196,7 +192,7 @@ class IntegrationTest:
         self.assert_equals(retrieved.name, "Test Project", "Name should match")
 
         # Test status filtering
-        active_projects = db.projects.get_by_status(ProjectStatus.ACTIVE)
+        active_projects = db.projects.get_by_status(ProjectStatus.ACTIVE.value)
         project_ids = [p.id for p in active_projects]
         self.assert_true(project.id in project_ids, "Project should be in active list")
 
@@ -206,28 +202,24 @@ class IntegrationTest:
         """Test module CRUD operations"""
         db = get_database()
 
-        # Get or create test project
-        projects = db.projects.get_by_status(ProjectStatus.ACTIVE)
-        if not projects:
-            user = User(
-                id=str(uuid.uuid4()),
-                username=f"module_user_{str(uuid.uuid4())[:8]}",
-                email=f"module_{str(uuid.uuid4())[:8]}@example.com",
-                password_hash="test_hash",
-                role=UserRole.DEVELOPER
-            )
-            db.users.create(user)
+        # Create test user and project
+        user = User(
+            id=str(uuid.uuid4()),
+            username=f"module_user_{str(uuid.uuid4())[:8]}",
+            email=f"module_{str(uuid.uuid4())[:8]}@example.com",
+            password_hash="test_hash",
+            role=UserRole.DEVELOPER
+        )
+        db.users.create(user)
 
-            project = Project(
-                id=str(uuid.uuid4()),
-                name="Module Test Project",
-                description="Test project for module testing",
-                owner_id=user.id,
-                status=ProjectStatus.ACTIVE
-            )
-            db.projects.create(project)
-        else:
-            project = projects[0]
+        project = Project(
+            id=str(uuid.uuid4()),
+            name="Module Test Project",
+            description="Test project for module testing",
+            owner_id=user.id,
+            status=ProjectStatus.ACTIVE
+        )
+        db.projects.create(project)
 
         # Create modules
         modules = []
@@ -257,28 +249,24 @@ class IntegrationTest:
         """Test task CRUD operations"""
         db = get_database()
 
-        # Get or create test project and module
-        projects = db.projects.get_by_status(ProjectStatus.ACTIVE)
-        if not projects:
-            user = User(
-                id=str(uuid.uuid4()),
-                username=f"task_user_{str(uuid.uuid4())[:8]}",
-                email=f"task_{str(uuid.uuid4())[:8]}@example.com",
-                password_hash="test_hash",
-                role=UserRole.DEVELOPER
-            )
-            db.users.create(user)
+        # Create test user and project
+        user = User(
+            id=str(uuid.uuid4()),
+            username=f"task_user_{str(uuid.uuid4())[:8]}",
+            email=f"task_{str(uuid.uuid4())[:8]}@example.com",
+            password_hash="test_hash",
+            role=UserRole.DEVELOPER
+        )
+        db.users.create(user)
 
-            project = Project(
-                id=str(uuid.uuid4()),
-                name="Task Test Project",
-                description="Test project for task testing",
-                owner_id=user.id,
-                status=ProjectStatus.ACTIVE
-            )
-            db.projects.create(project)
-        else:
-            project = projects[0]
+        project = Project(
+            id=str(uuid.uuid4()),
+            name="Task Test Project",
+            description="Test project for task testing",
+            owner_id=user.id,
+            status=ProjectStatus.ACTIVE
+        )
+        db.projects.create(project)
 
         # Get or create module
         modules = db.modules.get_by_project_id(project.id)
@@ -395,28 +383,24 @@ class IntegrationTest:
         """Test technical specification persistence"""
         db = get_database()
 
-        # Get or create test project
-        projects = db.projects.get_by_status(ProjectStatus.ACTIVE)
-        if not projects:
-            user = User(
-                id=str(uuid.uuid4()),
-                username=f"spec_user_{str(uuid.uuid4())[:8]}",
-                email=f"spec_{str(uuid.uuid4())[:8]}@example.com",
-                password_hash="test_hash",
-                role=UserRole.PROJECT_MANAGER
-            )
-            db.users.create(user)
+        # Create test user and project
+        user = User(
+            id=str(uuid.uuid4()),
+            username=f"spec_user_{str(uuid.uuid4())[:8]}",
+            email=f"spec_{str(uuid.uuid4())[:8]}@example.com",
+            password_hash="test_hash",
+            role=UserRole.PROJECT_MANAGER
+        )
+        db.users.create(user)
 
-            project = Project(
-                id=str(uuid.uuid4()),
-                name="Specification Test Project",
-                description="Test project for specification testing",
-                owner_id=user.id,
-                status=ProjectStatus.ACTIVE
-            )
-            db.projects.create(project)
-        else:
-            project = projects[0]
+        project = Project(
+            id=str(uuid.uuid4()),
+            name="Specification Test Project",
+            description="Test project for specification testing",
+            owner_id=user.id,
+            status=ProjectStatus.ACTIVE
+        )
+        db.projects.create(project)
 
         # Create technical specification
         spec = TechnicalSpec(
@@ -455,28 +439,24 @@ class IntegrationTest:
         """Test generated code persistence"""
         db = get_database()
 
-        # Get or create test project
-        projects = db.projects.get_by_status(ProjectStatus.ACTIVE)
-        if not projects:
-            user = User(
-                id=str(uuid.uuid4()),
-                username=f"code_user_{str(uuid.uuid4())[:8]}",
-                email=f"code_{str(uuid.uuid4())[:8]}@example.com",
-                password_hash="test_hash",
-                role=UserRole.DEVELOPER
-            )
-            db.users.create(user)
+        # Create test user and project
+        user = User(
+            id=str(uuid.uuid4()),
+            username=f"code_user_{str(uuid.uuid4())[:8]}",
+            email=f"code_{str(uuid.uuid4())[:8]}@example.com",
+            password_hash="test_hash",
+            role=UserRole.DEVELOPER
+        )
+        db.users.create(user)
 
-            project = Project(
-                id=str(uuid.uuid4()),
-                name="Code Generation Test Project",
-                description="Test project for code generation",
-                owner_id=user.id,
-                status=ProjectStatus.ACTIVE
-            )
-            db.projects.create(project)
-        else:
-            project = projects[0]
+        project = Project(
+            id=str(uuid.uuid4()),
+            name="Code Generation Test Project",
+            description="Test project for code generation",
+            owner_id=user.id,
+            status=ProjectStatus.ACTIVE
+        )
+        db.projects.create(project)
 
         # Create codebase
         codebase = GeneratedCodebase(
