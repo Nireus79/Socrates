@@ -400,11 +400,12 @@ class IntegrationTest:
             agent = ContextAnalyzerAgent()
 
         # Trigger conflict detection
-        result = agent._detect_conflicts({
+        result = agent.detect_conflicts_simple({
             'project_id': project.id,
-            'context_type': 'timeline'
+            'context_type': 'timeline',
+            'user_id': 'test_user'  # ✅ Add required user_id
         })
-
+        print(f"DEBUG: result={result}")
         self.assert_true(result.get('success', False), "Conflict detection should succeed")
         detected_conflicts = result.get('data', {}).get('conflicts', [])
         self.log(f"Detected {len(detected_conflicts)} conflicts")

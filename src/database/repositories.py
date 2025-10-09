@@ -830,25 +830,15 @@ class GeneratedFileRepository(BaseRepository[GeneratedFile]):
     def create(self, file: GeneratedFile) -> bool:
         try:
             data = self._model_to_dict(file)
-
-            # ✅ FIX: Convert FileType enum to string for database
-            file_type_value = data.get('file_type')
-            if hasattr(file_type_value, 'value'):
-                file_type_str = file_type_value.value  # Get string from enum
-            else:
-                file_type_str = str(file_type_value) if file_type_value else 'python'
-
-            # ✅ FIX: Only use columns that exist in database
             query = """
                 INSERT INTO generated_files 
-                (id, codebase_id, file_path, file_type, content, size_bytes, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (id, codebase_id, file_path, content, size_bytes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """
             params = (
                 data.get('id'),
                 data.get('codebase_id'),
                 data.get('file_path'),
-                file_type_str,  # ✅ Add file_type as string
                 data.get('content'),
                 data.get('size_bytes', 0),
                 DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
@@ -907,65 +897,35 @@ class GeneratedFileRepository(BaseRepository[GeneratedFile]):
             return False
 
     def _row_to_model(self, row: Dict[str, Any]) -> GeneratedFile:
-        """Convert row with enum handling"""
+        """Convert row with file type inference from path"""
         try:
-            # Import FileType enum
-            try:
-                from src.models import FileType
-            except ImportError:
-                # Fallback if enum not available
-                class FileType:
-                    PYTHON = "python"
-                    JAVASCRIPT = "javascript"
-                    TYPESCRIPT = "typescript"
-                    HTML = "html"
-                    CSS = "css"
-                    JSON = "json"
-                    YAML = "yaml"
-                    MARKDOWN = "markdown"
-                    SQL = "sql"
-                    DOCKERFILE = "dockerfile"
-                    CONFIG = "config"
-                    TEST = "test"
+            from src.models import FileType
 
-            # ✅ FIX: Convert string file_type back to enum
-            file_type_str = row.get('file_type', 'python')
-            file_type_map = {
-                'python': FileType.PYTHON,
-                'javascript': FileType.JAVASCRIPT,
-                'typescript': FileType.TYPESCRIPT,
+            # ✅ FIX: Infer file type from file path since DB has no file_type column
+            file_path = row.get('file_path', '')
+            file_ext = file_path.split('.')[-1].lower() if '.' in file_path else 'py'
+
+            ext_to_type_map = {
+                'py': FileType.PYTHON,
+                'js': FileType.JAVASCRIPT,
                 'html': FileType.HTML,
                 'css': FileType.CSS,
+                'md': FileType.MARKDOWN,
                 'json': FileType.JSON,
-                'yaml': FileType.YAML,
-                'markdown': FileType.MARKDOWN,
                 'sql': FileType.SQL,
-                'dockerfile': FileType.DOCKERFILE,
-                'config': FileType.CONFIG,
-                'test': FileType.TEST
+                'yaml': FileType.YAML,
+                'yml': FileType.YAML
             }
-            file_type = file_type_map.get(file_type_str, FileType.PYTHON)
+            file_type = ext_to_type_map.get(file_ext, FileType.PYTHON)
 
             return GeneratedFile(
                 id=row.get('id', ''),
                 codebase_id=row.get('codebase_id', ''),
-                project_id=row.get('project_id', ''),
-                file_path=row.get('file_path', ''),
-                file_type=file_type,  # ✅ Use mapped enum instead of string
-                file_purpose=row.get('file_purpose', ''),
+                project_id='',  # Not in DB schema
+                file_path=file_path,
+                file_type=file_type,  # ✅ Use inferred type
                 content=row.get('content', ''),
                 size_bytes=row.get('size_bytes', 0),
-                line_count=row.get('line_count', 0),
-                imports=parse_json_field(row.get('imports'), []),
-                dependencies=parse_json_field(row.get('dependencies'), []),
-                complexity_score=row.get('complexity_score', 0.0),
-                test_coverage=row.get('test_coverage', 0.0),
-                documentation_coverage=row.get('documentation_coverage', 0.0),
-                syntax_errors=parse_json_field(row.get('syntax_errors'), []),
-                style_issues=parse_json_field(row.get('style_issues'), []),
-                security_issues=parse_json_field(row.get('security_issues'), []),
-                generated_by_agent=row.get('generated_by_agent'),
-                generation_metadata=parse_json_field(row.get('generation_metadata'), {}),
                 created_at=DateTimeHelper.from_iso_string(row.get('created_at')),
                 updated_at=DateTimeHelper.from_iso_string(row.get('updated_at'))
             )
