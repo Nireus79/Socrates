@@ -902,9 +902,18 @@ class GeneratedFileRepository(BaseRepository[GeneratedFile]):
             except ImportError:
                 # Fallback if enum not available
                 class FileType:
-                    @staticmethod
-                    def from_string(s):
-                        return s
+                    PYTHON = "python"
+                    JAVASCRIPT = "javascript"
+                    TYPESCRIPT = "typescript"
+                    HTML = "html"
+                    CSS = "css"
+                    JSON = "json"
+                    YAML = "yaml"
+                    MARKDOWN = "markdown"
+                    SQL = "sql"
+                    DOCKERFILE = "dockerfile"
+                    CONFIG = "config"
+                    TEST = "test"
 
             # ✅ FIX: Convert string file_type back to enum
             file_type_str = row.get('file_type', 'python')
@@ -950,6 +959,7 @@ class GeneratedFileRepository(BaseRepository[GeneratedFile]):
         except Exception as e:
             self.logger.error(f"Error converting row to GeneratedFile: {e}")
             return GeneratedFile()
+
 
 # ==============================================================================
 # PROJECT COLLABORATOR REPOSITORY
