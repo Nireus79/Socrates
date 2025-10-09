@@ -154,21 +154,6 @@ except ImportError:
                 setattr(self, k, v)
 
 
-    class BaseAgent:
-        def __init__(self, agent_id, name, services=None):
-            self.agent_id = agent_id
-            self.name = name
-            self.services = services
-            self.logger = get_logger(agent_id)
-            self.events = None
-
-        def _error_response(self, message, error_code=None):
-            return {'success': False, 'error': message}
-
-        def _success_response(self, message, data=None):
-            return {'success': True, 'message': message, 'data': data or {}}
-
-
     def require_project_access(func):
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)

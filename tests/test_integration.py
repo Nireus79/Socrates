@@ -391,13 +391,21 @@ class IntegrationTest:
             db.modules.create(module)
 
         # Create context analyzer with proper services
+        # Ensure database is properly initialized
+        from src.database import init_database
+        init_database('data/test_integration.db')  # Reinitialize to ensure consistency
+
+        # Create context analyzer
         try:
             from src.core import get_services
             services = get_services()
             agent = ContextAnalyzerAgent(services)
         except ImportError:
-            # Fallback - create agent without services
             agent = ContextAnalyzerAgent()
+
+        # Verify agent has database access
+        if not agent.db or not agent.project_context_repo:
+            raise Exception(f"Agent database not initialized: db={agent.db}, repo={agent.project_context_repo}")
 
         # Trigger conflict detection
         result = agent.detect_conflicts_simple({
@@ -428,12 +436,21 @@ class IntegrationTest:
         project = projects[0]
 
         # Create context analyzer
+        # Ensure database is properly initialized
+        from src.database import init_database
+        init_database('data/test_integration.db')  # Reinitialize to ensure consistency
+
+        # Create context analyzer
         try:
             from src.core import get_services
             services = get_services()
             agent = ContextAnalyzerAgent(services)
         except ImportError:
             agent = ContextAnalyzerAgent()
+
+        # Verify agent has database access
+        if not agent.db or not agent.project_context_repo:
+            raise Exception(f"Agent database not initialized: db={agent.db}, repo={agent.project_context_repo}")
 
         # First analysis - should create context
         self.log("Running first context analysis...")
