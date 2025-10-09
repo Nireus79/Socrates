@@ -172,7 +172,7 @@ class SocraticCounselorAgent(BaseAgent):
     def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize SocraticCounselorAgent with ServiceContainer dependency injection"""
         super().__init__("socratic_counselor", "Socratic Counselor", services)
-
+        self.db = get_database()
         # Question types and templates
         self.question_templates = self._initialize_question_templates()
         self.role_strategies = self._initialize_role_strategies()
@@ -192,14 +192,11 @@ class SocraticCounselorAgent(BaseAgent):
         self.message_repo = None
 
         # Get repositories from database service
-        # Get repositories from database service
         try:
-            from src.database import get_database
-            db = get_database()
-            if db:
-                self.session_repo = db.socratic_sessions
-                self.question_repo = db.questions
-                self.message_repo = db.conversation_messages
+            if self.db:
+                self.session_repo = self.db.socratic_sessions
+                self.question_repo = self.db.questions
+                self.message_repo = self.db.conversation_messages
                 if self.logger:
                     self.logger.info("Session persistence repositories initialized")
             else:

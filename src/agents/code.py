@@ -207,7 +207,7 @@ class CodeGeneratorAgent(BaseAgent):
     def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize CodeGeneratorAgent with ServiceContainer dependency injection"""
         super().__init__("code_generator", "Code Generator Agent", services)
-
+        self.db = get_database()
         # Code generation settings
         self.supported_frameworks = {
             'backend': ['flask', 'fastapi', 'django', 'express'],
@@ -237,10 +237,8 @@ class CodeGeneratorAgent(BaseAgent):
         # Initialize specification repository
         # Initialize specification repository
         try:
-            from src.database import get_database
-            db = get_database()
-            if db:
-                self.spec_repository = db.technical_specifications
+            if self.db:
+                self.spec_repository = self.db.technical_specifications
             else:
                 self.spec_repository = None
         except Exception as e:
@@ -478,10 +476,8 @@ def sample_data():
             # Get project from database if available
             project = None
             try:
-                from src.database import get_database
-                db = get_database()
-                if db:
-                    project = db.projects.get_by_id(project_id)
+                if self.db:
+                    project = self.db.projects.get_by_id(project_id)
                     if not project:
                         return self._error_response(f"Project not found: {project_id}", "PROJECT_NOT_FOUND")
             except Exception as e:
@@ -537,10 +533,8 @@ def sample_data():
 
             # Save to database
             try:
-                from src.database import get_database
-                db = get_database()
-                if db:
-                    saved_codebase = db.codebases.create(codebase)
+                if self.db:
+                    saved_codebase = self.db.codebases.create(codebase)
                     codebase_id = saved_codebase.id if saved_codebase else codebase.id
                 else:
                     codebase_id = codebase.id
@@ -556,11 +550,9 @@ def sample_data():
             # Save files to database
             # Save files to database
             try:
-                from src.database import get_database
-                db = get_database()
-                if db:
+                if self.db:
                     for file in generated_files:
-                        db.generated_files.create(file)
+                        self.db.generated_files.create(file)
             except Exception as e:
                 if self.logger:
                     self.logger.warning(f"Could not save generated files to database: {e}")

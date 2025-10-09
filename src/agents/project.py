@@ -175,6 +175,7 @@ class ProjectManagerAgent(BaseAgent):
     def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize ProjectManagerAgent with ServiceContainer dependency injection"""
         super().__init__("project_manager", "Project Manager", services)
+        self.db = get_database()
 
         if self.logger:
             self.logger.info("ProjectManagerAgent initialized successfully")
@@ -232,11 +233,9 @@ class ProjectManagerAgent(BaseAgent):
             # Create project in database
             project = Project(**project_data)
             try:
-                from src.database import get_database
-                db = get_database()
-                if not db:
+                if not self.db:
                     return self._error_response("Database service not available", "DB_UNAVAILABLE")
-                created_project = db.projects.create(project)
+                created_project = self.db.projects.create(project)
             except Exception as e:
                 return self._error_response(f"Failed to create project: {e}", "DB_ERROR")
 
@@ -321,7 +320,7 @@ class ProjectManagerAgent(BaseAgent):
                 raise ValidationError("Project ID is required")
 
             # Get existing project
-            project = self.db_service.projects.get_by_id(project_id)
+            project = self.db.projects.get_by_id(project_id)
             if not project:
                 self.logger.warning(f"Project update failed: Project {project_id} not found")
                 raise ValidationError("Project not found")
@@ -344,11 +343,9 @@ class ProjectManagerAgent(BaseAgent):
 
             # Save updated project
             try:
-                from src.database import get_database
-                db = get_database()
-                if not db:
+                if not self.db:
                     return self._error_response("Database service not available", "DB_UNAVAILABLE")
-                updated_project = db.projects.update(project)
+                updated_project = self.db.projects.update(project)
             except Exception as e:
                 return self._error_response(f"Failed to update project: {e}", "DB_ERROR")
 
@@ -391,11 +388,9 @@ class ProjectManagerAgent(BaseAgent):
 
             # Get project
             try:
-                from src.database import get_database
-                db = get_database()
-                if not db:
+                if not self.db:
                     return self._error_response("Database service not available", "DB_UNAVAILABLE")
-                project = db.projects.get_by_id(project_id)
+                project = self.db.projects.get_by_id(project_id)
                 if not project:
                     raise ValidationError("Project not found")
 
@@ -404,7 +399,7 @@ class ProjectManagerAgent(BaseAgent):
                 project.updated_at = DateTimeHelper.now()
 
                 # Save changes
-                db.projects.update(project)
+                self.db.projects.update(project)
             except Exception as e:
                 if isinstance(e, ValidationError):
                     raise
@@ -445,7 +440,7 @@ class ProjectManagerAgent(BaseAgent):
                 raise ValidationError("Project ID is required")
 
             # Get project
-            project = self.db_service.projects.get_by_id(project_id)
+            project = self.db.projects.get_by_id(project_id)
             if not project:
                 raise ValidationError("Project not found")
 
@@ -454,7 +449,7 @@ class ProjectManagerAgent(BaseAgent):
                 raise ValidationError("Only the project owner can delete this project")
 
             # Delete the project (cascade handled by database if foreign keys exist)
-            deleted = self.db_service.projects.delete(project_id)
+            deleted = self.db.projects.delete(project_id)
 
             if not deleted:
                 raise ValidationError("Failed to delete project")
@@ -530,7 +525,7 @@ class ProjectManagerAgent(BaseAgent):
 
             # Create module
             module = Module(**module_data)
-            created_module = self.db_service.modules.create(module)
+            created_module = self.db.modules.create(module)
 
             self.logger.info(f"Module created: {created_module.id} in project {module_data['project_id']}")
 
@@ -558,11 +553,9 @@ class ProjectManagerAgent(BaseAgent):
                 raise ValidationError("Module ID is required")
 
             try:
-                from src.database import get_database
-                db = get_database()
-                if not db:
+                if not self.db:
                     return self._error_response("Database service not available", "DB_UNAVAILABLE")
-                module = db.modules.get_by_id(module_id)
+                module = self.db.modules.get_by_id(module_id)
                 if not module:
                     raise ValidationError("Module not found")
 
@@ -575,7 +568,7 @@ class ProjectManagerAgent(BaseAgent):
                         setattr(module, field, updates[field])
 
                 module.updated_at = DateTimeHelper.now()
-                updated_module = db.modules.update(module)
+                updated_module = self.db.modules.update(module)
             except Exception as e:
                 if isinstance(e, ValidationError):
                     raise
@@ -602,11 +595,9 @@ class ProjectManagerAgent(BaseAgent):
 
             # Delete module
             try:
-                from src.database import get_database
-                db = get_database()
-                if not db:
+                if not self.db:
                     return self._error_response("Database service not available", "DB_UNAVAILABLE")
-                deleted = db.modules.delete(module_id)
+                deleted = self.db.modules.delete(module_id)
             except Exception as e:
                 return self._error_response(f"Failed to delete module: {e}", "DB_ERROR")
 
@@ -630,11 +621,9 @@ class ProjectManagerAgent(BaseAgent):
                 raise ValidationError("Project ID is required")
 
             try:
-                from src.database import get_database
-                db = get_database()
-                if not db:
+                if not self.db:
                     return self._error_response("Database service not available", "DB_UNAVAILABLE")
-                modules = db.modules.get_by_project_id(project_id)
+                modules = self.db.modules.get_by_project_id(project_id)
             except Exception as e:
                 return self._error_response(f"Failed to retrieve modules: {e}", "DB_ERROR")
 
@@ -676,14 +665,12 @@ class ProjectManagerAgent(BaseAgent):
 
             # Update project with calculated progress
             try:
-                from src.database import get_database
-                db = get_database()
-                if db:
-                    project = db.projects.get_by_id(project_id)
+                if self.db:
+                    project = self.db.projects.get_by_id(project_id)
                     if project:
                         project.progress_percentage = progress.get('completion_percentage', 0.0)
                         project.updated_at = DateTimeHelper.now()
-                        db.projects.update(project)
+                        self.db.projects.update(project)
             except Exception as e:
                 self.logger.warning(f"Could not update project progress: {e}")
 
@@ -719,12 +706,10 @@ class ProjectManagerAgent(BaseAgent):
 
             # Get modules data
             try:
-                from src.database import get_database
-                db = get_database()
-                if not db:
+                if not self.db:
                     return {'error': 'Database not available', 'completion_percentage': 0.0}
-                modules = db.modules.get_by_project_id(project_id)
-                tasks = db.tasks.get_by_project_id(project_id)
+                modules = self.db.modules.get_by_project_id(project_id)
+                tasks = self.db.tasks.get_by_project_id(project_id)
             except Exception as e:
                 self.logger.error(f"Error getting project data: {e}")
                 return {'error': str(e), 'completion_percentage': 0.0}
@@ -773,11 +758,9 @@ class ProjectManagerAgent(BaseAgent):
 
             # Get all projects for user
             try:
-                from src.database import get_database
-                db = get_database()
-                if not db:
+                if not self.db:
                     return self._error_response("Database service not available", "DB_UNAVAILABLE")
-                all_projects = db.projects.get_by_owner(username)
+                all_projects = self.db.projects.get_by_owner(username)
             except Exception as e:
                 return self._error_response(f"Failed to retrieve projects: {e}", "DB_ERROR")
 
@@ -851,11 +834,9 @@ class ProjectManagerAgent(BaseAgent):
                 raise ValidationError("Project ID is required")
 
             try:
-                from src.database import get_database
-                db = get_database()
-                if not db:
+                if not self.db:
                     return self._error_response("Database service not available", "DB_UNAVAILABLE")
-                project = db.projects.get_by_id(project_id)
+                project = self.db.projects.get_by_id(project_id)
             except Exception as e:
                 return self._error_response(f"Database error: {e}", "DB_ERROR")
 
@@ -868,8 +849,8 @@ class ProjectManagerAgent(BaseAgent):
 
             # Get related data
             try:
-                modules = db.modules.get_by_project_id(project_id)
-                tasks = db.tasks.get_by_project_id(project_id)
+                modules = self.db.modules.get_by_project_id(project_id)
+                tasks = self.db.tasks.get_by_project_id(project_id)
             except Exception as e:
                 return self._error_response(f"Failed to retrieve project data: {e}", "DB_ERROR")
 
@@ -920,7 +901,7 @@ class ProjectManagerAgent(BaseAgent):
             if not project_id:
                 raise ValidationError("Project ID is required")
 
-            project = self.db_service.projects.get_by_id(project_id)
+            project = self.db.projects.get_by_id(project_id)
             if not project:
                 raise ValidationError("Project not found")
 

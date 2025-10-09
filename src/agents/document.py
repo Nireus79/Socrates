@@ -158,7 +158,7 @@ class DocumentProcessorAgent(BaseAgent):
     def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize DocumentProcessorAgent with ServiceContainer dependency injection"""
         super().__init__("document_processor", "Document Processor Agent", services)
-
+        self.db = get_database()
         # Initialize file processing utilities
         self.file_processor = get_file_processor()
         self.text_processor = get_text_processor()
@@ -261,12 +261,10 @@ class DocumentProcessorAgent(BaseAgent):
             # Store knowledge entries in database
             if results['knowledge_entries']:
                 try:
-                    from src.database import get_database
-                    db = get_database()
-                    if db:
+                    if self.db:
                         for entry in results['knowledge_entries']:
-                            if hasattr(db, 'knowledge'):
-                                db.knowledge.create(entry)
+                            if hasattr(self.db, 'knowledge'):
+                                self.db.knowledge.create(entry)
                 except Exception as e:
                     self.logger.error(f"Error storing knowledge entries: {e}")
 
