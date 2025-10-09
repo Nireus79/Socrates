@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="repo">
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="test_integration.py 100%">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/context.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/context.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/database/repositories.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/repositories.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_integration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/models.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -153,14 +152,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00127" summary="tests">
-      <option name="closed" value="true" />
-      <created>1759485404753</created>
-      <option name="number" value="00127" />
-      <option name="presentableId" value="LOCAL-00127" />
-      <option name="project" value="LOCAL" />
-      <updated>1759485404754</updated>
     </task>
     <task id="LOCAL-00128" summary="tests">
       <option name="closed" value="true" />
@@ -546,11 +537,18 @@
       <option name="project" value="LOCAL" />
       <updated>1760005570253</updated>
     </task>
-    <option name="localTasksCounter" value="176" />
+    <task id="LOCAL-00176" summary="test_integration.py 100%">
+      <option name="closed" value="true" />
+      <created>1760006718089</created>
+      <option name="number" value="00176" />
+      <option name="presentableId" value="LOCAL-00176" />
+      <option name="project" value="LOCAL" />
+      <updated>1760006718089</updated>
+    </task>
+    <option name="localTasksCounter" value="177" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="services" />
     <MESSAGE value="refinement" />
     <MESSAGE value="web" />
     <MESSAGE value="from src import get_config" />
@@ -575,6 +573,7 @@
     <MESSAGE value="project.py" />
     <MESSAGE value="import database" />
     <MESSAGE value="repo" />
-    <option name="LAST_COMMIT_MESSAGE" value="repo" />
+    <MESSAGE value="test_integration.py 100%" />
+    <option name="LAST_COMMIT_MESSAGE" value="test_integration.py 100%" />
   </component>
 </project>

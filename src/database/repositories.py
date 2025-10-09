@@ -17,7 +17,7 @@ try:
         ProjectCollaborator, SocraticSession, Question, ConversationMessage,
         TechnicalSpec, ProjectContext, ModuleContext, TaskContext, Conflict,
         UserRole, ProjectStatus, ModuleType, ModuleStatus, TaskStatus, Priority,
-        ConflictType
+        ConflictType, ChatSession
     )
     from src.core import DateTimeHelper
 
@@ -1219,6 +1219,216 @@ class SocraticSessionRepository(BaseRepository[SocraticSession]):
             self.logger.error(f"Error converting row to SocraticSession: {e}")
             return SocraticSession()
 
+
+class ChatSessionRepository(BaseRepository[ChatSession]):
+    """Repository for chat session management"""
+
+    def create(self, session: ChatSession) -> bool:
+        try:
+            data = self._model_to_dict(session)
+
+            query = """
+                INSERT INTO chat_sessions 
+                (id, project_id, user_id, session_type, conversation_context,
+                 message_count, last_activity, status, chat_mode, topics_discussed,
+                 current_topic, insights_extracted, action_items, decisions_made,
+                 session_notes, engagement_score, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            params = (
+                data.get('id'),
+                data.get('project_id'),
+                data.get('user_id'),
+                data.get('session_type', 'chat'),
+                data.get('conversation_context', ''),
+                data.get('message_count', 0),
+                DateTimeHelper.to_iso_string(data.get('last_activity', DateTimeHelper.now())),
+                data.get('status', 'active'),
+                data.get('chat_mode', 'project_focused'),
+                dump_json_field(data.get('topics_discussed', [])),
+                data.get('current_topic', ''),
+                dump_json_field(data.get('insights_extracted', {})),
+                dump_json_field(data.get('action_items', [])),
+                dump_json_field(data.get('decisions_made', [])),
+                data.get('session_notes', ''),
+                data.get('engagement_score', 0.0),
+                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
+                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+            )
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error creating chat session: {e}")
+            return False
+
+    def get_by_id(self, session_id: str) -> Optional[ChatSession]:
+        try:
+            query = "SELECT * FROM chat_sessions WHERE id = ?"
+            results = self.db_manager.execute_query(query, (session_id,))
+            return self._row_to_model(results[0]) if results else None
+        except Exception as e:
+            self.logger.error(f"Error getting chat session {session_id}: {e}")
+            return None
+
+    def get_by_project_id(self, project_id: str) -> List[ChatSession]:
+        try:
+            query = "SELECT * FROM chat_sessions WHERE project_id = ? ORDER BY created_at DESC"
+            results = self.db_manager.execute_query(query, (project_id,))
+            return [self._row_to_model(row) for row in results]
+        except Exception as e:
+            self.logger.error(f"Error getting chat sessions for project {project_id}: {e}")
+            return []
+
+    def get_by_user_id(self, user_id: str) -> List[ChatSession]:
+        try:
+            query = "SELECT * FROM chat_sessions WHERE user_id = ? ORDER BY created_at DESC"
+            results = self.db_manager.execute_query(query, (user_id,))
+            return [self._row_to_model(row) for row in results]
+        except Exception as e:
+            self.logger.error(f"Error getting chat sessions for user {user_id}: {e}")
+            return []
+
+    def get_active_sessions(self, user_id: str = None, project_id: str = None) -> List[ChatSession]:
+        """Get active chat sessions with optional filtering"""
+        try:
+            query = "SELECT * FROM chat_sessions WHERE status = 'active'"
+            params = []
+
+            if user_id:
+                query += " AND user_id = ?"
+                params.append(user_id)
+
+            if project_id:
+                query += " AND project_id = ?"
+                params.append(project_id)
+
+            query += " ORDER BY last_activity DESC"
+
+            results = self.db_manager.execute_query(query, tuple(params))
+            return [self._row_to_model(row) for row in results]
+        except Exception as e:
+            self.logger.error(f"Error getting active chat sessions: {e}")
+            return []
+
+    def update(self, session: ChatSession) -> bool:
+        try:
+            data = self._model_to_dict(session)
+            query = """
+                UPDATE chat_sessions 
+                SET conversation_context = ?, message_count = ?, last_activity = ?,
+                    status = ?, chat_mode = ?, topics_discussed = ?, current_topic = ?,
+                    insights_extracted = ?, action_items = ?, decisions_made = ?,
+                    session_notes = ?, engagement_score = ?, updated_at = ?
+                WHERE id = ?
+            """
+            params = (
+                data.get('conversation_context'),
+                data.get('message_count'),
+                DateTimeHelper.to_iso_string(data.get('last_activity', DateTimeHelper.now())),
+                data.get('status'),
+                data.get('chat_mode'),
+                dump_json_field(data.get('topics_discussed', [])),
+                data.get('current_topic'),
+                dump_json_field(data.get('insights_extracted', {})),
+                dump_json_field(data.get('action_items', [])),
+                dump_json_field(data.get('decisions_made', [])),
+                data.get('session_notes'),
+                data.get('engagement_score'),
+                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                data.get('id')
+            )
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error updating chat session: {e}")
+            return False
+
+    def delete(self, session_id: str) -> bool:
+        try:
+            query = "DELETE FROM chat_sessions WHERE id = ?"
+            self.db_manager.execute_update(query, (session_id,))
+            return True
+        except Exception as e:
+            self.logger.error(f"Error deleting chat session {session_id}: {e}")
+            return False
+
+    def increment_message_count(self, session_id: str) -> bool:
+        """Increment message count and update last activity"""
+        try:
+            query = """
+                UPDATE chat_sessions 
+                SET message_count = message_count + 1, 
+                    last_activity = ?,
+                    updated_at = ?
+                WHERE id = ?
+            """
+            now = DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            params = (now, now, session_id)
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error incrementing message count for session {session_id}: {e}")
+            return False
+
+    def end_session(self, session_id: str) -> bool:
+        """Mark a chat session as ended"""
+        try:
+            query = """
+                UPDATE chat_sessions 
+                SET status = 'completed', updated_at = ?
+                WHERE id = ?
+            """
+            params = (DateTimeHelper.to_iso_string(DateTimeHelper.now()), session_id)
+            self.db_manager.execute_update(query, params)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error ending chat session {session_id}: {e}")
+            return False
+
+    def _row_to_model(self, row: Dict[str, Any]) -> ChatSession:
+        """Convert row with JSON and datetime parsing"""
+        try:
+            # Import ConversationStatus enum
+            try:
+                from src.models import ConversationStatus
+            except ImportError:
+                # Fallback if enum not available
+                class ConversationStatus:
+                    ACTIVE = "active"
+                    PAUSED = "paused"
+                    COMPLETED = "completed"
+                    CANCELLED = "cancelled"
+
+            # Map status string to enum
+            status_str = row.get('status', 'active')
+            if hasattr(ConversationStatus, status_str.upper()):
+                status = getattr(ConversationStatus, status_str.upper())
+            else:
+                status = ConversationStatus.ACTIVE
+
+            return ChatSession(
+                id=row.get('id', ''),
+                project_id=row.get('project_id', ''),
+                user_id=row.get('user_id', ''),
+                session_type=row.get('session_type', 'chat'),
+                conversation_context=row.get('conversation_context', ''),
+                message_count=row.get('message_count', 0),
+                last_activity=DateTimeHelper.from_iso_string(row.get('last_activity')),
+                status=status,
+                chat_mode=row.get('chat_mode', 'project_focused'),
+                topics_discussed=parse_json_field(row.get('topics_discussed'), []),
+                current_topic=row.get('current_topic', ''),
+                insights_extracted=parse_json_field(row.get('insights_extracted'), {}),
+                action_items=parse_json_field(row.get('action_items'), []),
+                decisions_made=parse_json_field(row.get('decisions_made'), []),
+                session_notes=row.get('session_notes', ''),
+                engagement_score=row.get('engagement_score', 0.0),
+                created_at=DateTimeHelper.from_iso_string(row.get('created_at')),
+                updated_at=DateTimeHelper.from_iso_string(row.get('updated_at'))
+            )
+        except Exception as e:
+            self.logger.error(f"Error converting row to ChatSession: {e}")
+            return ChatSession()
 
 # ==============================================================================
 # QUESTION REPOSITORY

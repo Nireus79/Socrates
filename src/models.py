@@ -622,6 +622,111 @@ class SocraticSession(BaseModel):
 
 
 @dataclass
+class ChatSession(BaseModel):
+    """Chat conversation session for free-form AI interaction"""
+
+    project_id: str = ""
+    user_id: str = ""
+    session_type: str = "chat"  # vs "socratic"
+
+    # Chat-specific properties
+    conversation_context: str = ""  # Overall context for the conversation
+    message_count: int = 0
+    last_activity: datetime = field(default_factory=DateTimeHelper.now)
+
+    # Chat status and flow
+    status: ConversationStatus = ConversationStatus.ACTIVE
+    chat_mode: str = "project_focused"  # project_focused, general, brainstorming
+
+    # Topic tracking
+    topics_discussed: List[str] = field(default_factory=list)
+    current_topic: str = ""
+
+    # Insights and outcomes
+    insights_extracted: Dict[str, Any] = field(default_factory=dict)
+    action_items: List[str] = field(default_factory=list)
+    decisions_made: List[str] = field(default_factory=list)
+
+    # Chat session metadata
+    session_notes: str = ""
+    engagement_score: float = 0.0  # 0.0-1.0 based on conversation quality
+
+    def __post_init__(self):
+        """Initialize chat session"""
+        if not self.conversation_context and hasattr(self, 'project_id') and self.project_id:
+            self.conversation_context = f"Chat session for project {self.project_id}"
+
+    @property
+    def is_active(self) -> bool:
+        """Check if chat session is active"""
+        return self.status == ConversationStatus.ACTIVE
+
+    @property
+    def duration_minutes(self) -> int:
+        """Calculate session duration in minutes"""
+        if self.created_at and self.last_activity:
+            delta = self.last_activity - self.created_at
+            return int(delta.total_seconds() / 60)
+        return 0
+
+    def add_topic(self, topic: str) -> None:
+        """Add a topic to the discussion"""
+        if topic and topic not in self.topics_discussed:
+            self.topics_discussed.append(topic)
+            self.current_topic = topic
+
+    def add_insight(self, category: str, insight: str) -> None:
+        """Add an extracted insight"""
+        if category not in self.insights_extracted:
+            self.insights_extracted[category] = []
+        self.insights_extracted[category].append({
+            'insight': insight,
+            'timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now())
+        })
+
+    def add_action_item(self, action: str) -> None:
+        """Add an action item from the conversation"""
+        if action and action not in self.action_items:
+            self.action_items.append(action)
+
+    def add_decision(self, decision: str) -> None:
+        """Add a decision made during the conversation"""
+        if decision and decision not in self.decisions_made:
+            self.decisions_made.append(decision)
+
+
+# Update to ConversationMessage model - add conversation_type field
+# Replace the existing conversation_type line in ConversationMessage with:
+
+# In ConversationMessage class, add this field:
+conversation_type: str = "socratic"  # socratic | chat
+
+
+# Also add helper methods to ConversationMessage:
+
+@property
+def is_chat_message(self) -> bool:
+    """Check if this is a chat message vs socratic message"""
+    return self.conversation_type == "chat"
+
+
+@property
+def is_socratic_message(self) -> bool:
+    """Check if this is a socratic message vs chat message"""
+    return self.conversation_type == "socratic"
+
+
+def set_as_chat_message(self) -> None:
+    """Mark this message as belonging to a chat conversation"""
+    self.conversation_type = "chat"
+
+
+def set_as_socratic_message(self) -> None:
+    """Mark this message as belonging to a socratic conversation"""
+    self.conversation_type = "socratic"
+
+
+@dataclass
 class Question(BaseModel):
     """Individual Socratic question"""
 

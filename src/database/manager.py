@@ -459,7 +459,68 @@ class DatabaseManager:
                                         FOREIGN KEY (session_id) REFERENCES socratic_sessions(id)
                                     )
                                 """)
+                # Chat sessions table
+                conn.execute("""
+                                    CREATE TABLE IF NOT EXISTS chat_sessions (
+                                        id TEXT PRIMARY KEY,
+                                        project_id TEXT NOT NULL,
+                                        user_id TEXT NOT NULL,
+                                        session_type TEXT NOT NULL DEFAULT 'chat',
+                                        conversation_context TEXT,
+                                        message_count INTEGER DEFAULT 0,
+                                        last_activity TEXT NOT NULL,
+                                        status TEXT NOT NULL DEFAULT 'active',
+                                        chat_mode TEXT DEFAULT 'project_focused',
+                                        topics_discussed TEXT,
+                                        current_topic TEXT,
+                                        insights_extracted TEXT,
+                                        action_items TEXT,
+                                        decisions_made TEXT,
+                                        session_notes TEXT,
+                                        engagement_score REAL DEFAULT 0.0,
+                                        created_at TEXT NOT NULL,
+                                        updated_at TEXT NOT NULL,
+                                        FOREIGN KEY (project_id) REFERENCES projects(id),
+                                        FOREIGN KEY (user_id) REFERENCES users(id)
+                                    )
+                                """)
 
+                # Add conversation_type column to existing conversation_messages table
+                try:
+                    conn.execute("""
+                                        ALTER TABLE conversation_messages 
+                                        ADD COLUMN conversation_type TEXT DEFAULT 'socratic'
+                                    """)
+                except Exception:
+                    # Column might already exist, check if it's there
+                    cursor = conn.execute("PRAGMA table_info(conversation_messages)")
+                    columns = [row[1] for row in cursor.fetchall()]
+                    if 'conversation_type' not in columns:
+                        # Re-raise error if column doesn't exist and we couldn't add it
+                        raise
+
+                # Create indexes for better chat session performance
+                conn.execute("""
+                                    CREATE INDEX IF NOT EXISTS idx_chat_sessions_project_id 
+                                    ON chat_sessions(project_id)
+                                """)
+
+                conn.execute("""
+                                    CREATE INDEX IF NOT EXISTS idx_chat_sessions_user_id 
+                                    ON chat_sessions(user_id)
+                                """)
+
+                conn.execute("""
+                                    CREATE INDEX IF NOT EXISTS idx_chat_sessions_status 
+                                    ON chat_sessions(status)
+                                """)
+
+                conn.execute("""
+                                    CREATE INDEX IF NOT EXISTS idx_conversation_messages_type 
+                                    ON conversation_messages(conversation_type)
+                                """)
+
+                self.logger.info("Chat tables and indexes created successfully")
                 # Create indexes for performance
                 self._create_indexes(conn)
 
