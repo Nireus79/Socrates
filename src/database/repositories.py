@@ -1249,6 +1249,25 @@ class QuestionRepository(BaseRepository[Question]):
     def create(self, question: Question) -> bool:
         try:
             data = self._model_to_dict(question)
+
+            # ✅ FIX: Generate question_number if not provided
+            question_number = data.get('question_number')
+            if question_number is None:
+                # Get the next question number for this session
+                session_id = data.get('session_id')
+                if session_id:
+                    try:
+                        # Count existing questions in this session
+                        count_query = "SELECT COUNT(*) FROM questions WHERE session_id = ?"
+                        result = self.db_manager.execute_query(count_query, (session_id,))
+                        question_number = (result[0][0] if result and result[0] else 0) + 1
+                    except Exception as e:
+                        if self.logger:
+                            self.logger.warning(f"Could not count questions for session {session_id}: {e}")
+                        question_number = 1
+                else:
+                    question_number = 1
+
             query = """
                 INSERT INTO questions 
                 (id, session_id, question_number, phase, question_text, answer_text,
@@ -1256,8 +1275,12 @@ class QuestionRepository(BaseRepository[Question]):
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
             params = (
-                data.get('id'), data.get('session_id'), data.get('question_number'),
-                data.get('phase'), data.get('question_text'), data.get('answer_text'),
+                data.get('id'),
+                data.get('session_id'),
+                question_number,
+                data.get('phase', 'discovery'),
+                data.get('question_text'),
+                data.get('answer_text'),
                 1 if data.get('is_answered', False) else 0,
                 data.get('context'),
                 DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
