@@ -15,6 +15,7 @@ Capabilities:
 - Context-aware recommendations
 """
 import uuid
+import json
 from typing import Dict, List, Any, Optional
 
 try:
@@ -1055,6 +1056,14 @@ class ContextAnalyzerAgent(BaseAgent):
 
         try:
             tech_stack = getattr(project, 'technology_stack', {})
+            if isinstance(tech_stack, str):
+                try:
+
+                    tech_stack = json.loads(tech_stack) if tech_stack.strip() else {}
+                except (json.JSONDecodeError, ValueError):
+                    tech_stack = {}
+            elif not isinstance(tech_stack, dict):
+                tech_stack = {}
             requirements = getattr(project, 'requirements', [])
 
             if not tech_stack:
@@ -1432,6 +1441,14 @@ class ContextAnalyzerAgent(BaseAgent):
 
             # Technology stack
             tech_stack = getattr(project, 'technology_stack', {})
+            if isinstance(tech_stack, str):
+                try:
+
+                    tech_stack = json.loads(tech_stack) if tech_stack.strip() else {}
+                except (json.JSONDecodeError, ValueError):
+                    tech_stack = {}
+            elif not isinstance(tech_stack, dict):
+                tech_stack = {}
             if tech_stack and len(tech_stack) > 0:
                 score_factors.append(20)
                 health['factors'].append('Technology stack defined')
@@ -1646,6 +1663,14 @@ class ContextAnalyzerAgent(BaseAgent):
                 success_factors.append("Good team size enables collaboration and knowledge sharing")
 
             tech_stack = getattr(project, 'technology_stack', {})
+            if isinstance(tech_stack, str):
+                try:
+
+                    tech_stack = json.loads(tech_stack) if tech_stack.strip() else {}
+                except (json.JSONDecodeError, ValueError):
+                    tech_stack = {}
+            elif not isinstance(tech_stack, dict):
+                tech_stack = {}
             if tech_stack and len(tech_stack) >= 3:
                 success_factors.append("Defined technology stack provides clear implementation path")
 
