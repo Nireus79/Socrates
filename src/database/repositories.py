@@ -1258,21 +1258,22 @@ class QuestionRepository(BaseRepository[Question]):
         try:
             data = self._model_to_dict(question)
 
-            # ✅ FIX: Generate question_number if not provided
             question_number = data.get('question_number')
             if question_number is None:
-                # Get the next question number for this session
                 session_id = data.get('session_id')
                 if session_id:
                     try:
-                        # Count existing questions in this session
-                        count_query = "SELECT COUNT(*) FROM questions WHERE session_id = ?"
-                        result = self.db_manager.execute_query(count_query, (session_id,))
-                        question_number = (result[0][0] if result and len(result[0]) > 0 else 0) + 1
+                        # Use MAX instead of COUNT to avoid issues
+                        max_query = "SELECT COALESCE(MAX(question_number), 0) FROM questions WHERE session_id = ?"
+                        result = self.db_manager.execute_query(max_query, (session_id,))
+                        max_num = result[0][0] if result and result[0] and result[0][0] is not None else 0
+                        question_number = max_num + 1
                     except Exception as e:
                         if self.logger:
-                            self.logger.warning(f"Could not count questions for session {session_id}: {e}")
-                        question_number = 1
+                            self.logger.warning(f"Could not get max question_number for session {session_id}: {e}")
+                        # Fallback to random number to avoid conflicts
+                        import random
+                        question_number = random.randint(1000, 9999)
                 else:
                     question_number = 1
 

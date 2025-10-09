@@ -728,6 +728,7 @@ class IntegrationTest:
         # Verify file types
         file_types = {f.file_type for f in codebase_files}
         expected_types = {FileType.PYTHON, FileType.MARKDOWN, FileType.HTML, FileType.CSS}
+        print(f"DEBUG: file_types={file_types}, expected_types={expected_types}")
         self.assert_true(expected_types.issubset(file_types), "Should have all file types")
         self.log("✓ Files retrieved with correct types")
 

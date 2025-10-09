@@ -8,6 +8,7 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/agents/context.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/context.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/database/repositories.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/repositories.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_integration.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -152,14 +153,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00124" summary="database dir">
-      <option name="closed" value="true" />
-      <created>1759484087316</created>
-      <option name="number" value="00124" />
-      <option name="presentableId" value="LOCAL-00124" />
-      <option name="project" value="LOCAL" />
-      <updated>1759484087316</updated>
     </task>
     <task id="LOCAL-00125" summary="tests">
       <option name="closed" value="true" />
@@ -545,7 +538,15 @@
       <option name="project" value="LOCAL" />
       <updated>1760004156917</updated>
     </task>
-    <option name="localTasksCounter" value="173" />
+    <task id="LOCAL-00173" summary="repo">
+      <option name="closed" value="true" />
+      <created>1760004710224</created>
+      <option name="number" value="00173" />
+      <option name="presentableId" value="LOCAL-00173" />
+      <option name="project" value="LOCAL" />
+      <updated>1760004710224</updated>
+    </task>
+    <option name="localTasksCounter" value="174" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
