@@ -4,11 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="chat.py">
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="chat">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/repositories.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/repositories.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_chat_mode_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_chat_mode_integration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/context.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/context.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -154,14 +152,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00132" summary="tests">
-      <option name="closed" value="true" />
-      <created>1759502741411</created>
-      <option name="number" value="00132" />
-      <option name="presentableId" value="LOCAL-00132" />
-      <option name="project" value="LOCAL" />
-      <updated>1759502741412</updated>
     </task>
     <task id="LOCAL-00133" summary="tests">
       <option name="closed" value="true" />
@@ -547,11 +537,18 @@
       <option name="project" value="LOCAL" />
       <updated>1760010043150</updated>
     </task>
-    <option name="localTasksCounter" value="181" />
+    <task id="LOCAL-00181" summary="chat">
+      <option name="closed" value="true" />
+      <created>1760025282549</created>
+      <option name="number" value="00181" />
+      <option name="presentableId" value="LOCAL-00181" />
+      <option name="project" value="LOCAL" />
+      <updated>1760025282550</updated>
+    </task>
+    <option name="localTasksCounter" value="182" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="from src import get_config" />
     <MESSAGE value="0 warnings" />
     <MESSAGE value="login" />
     <MESSAGE value="fix" />
@@ -576,6 +573,7 @@
     <MESSAGE value="test_integration.py 100%" />
     <MESSAGE value="test_chat_mode_integration.py" />
     <MESSAGE value="chat.py" />
-    <option name="LAST_COMMIT_MESSAGE" value="chat.py" />
+    <MESSAGE value="chat" />
+    <option name="LAST_COMMIT_MESSAGE" value="chat" />
   </component>
 </project>

@@ -393,42 +393,42 @@ class ContextAnalyzerAgent(BaseAgent):
         """Extract business goals from project description"""
         goals = []
 
-        if project.description:
-            description_lower = project.description.lower()
+        if not project.description:
+            return ["Develop functional software solution"]
 
-            goal_keywords = {
-                'Improve user experience': ['user experience', 'ux', 'usability', 'user-friendly'],
-                'Increase efficiency': ['efficiency', 'productivity', 'automate', 'streamline'],
-                'Reduce costs': ['cost', 'reduce', 'save', 'efficient'],
-                'Scale operations': ['scale', 'growth', 'expand', 'scalability'],
-                'Enhance security': ['security', 'secure', 'protect', 'encryption'],
-                'Improve performance': ['performance', 'speed', 'fast', 'optimize']
-            }
+        description_lower = project.description.lower()
 
-            for goal, keywords in goal_keywords.items():
-                if any(keyword in description_lower for keyword in keywords):
-                    goals.append(goal)
+        # Common goal patterns
+        goal_patterns = {
+            "improve efficiency": ["efficiency", "automate", "streamline", "optimize"],
+            "increase revenue": ["revenue", "sales", "profit", "monetize"],
+            "enhance user experience": ["user experience", "ux", "usability", "interface"],
+            "scale operations": ["scale", "growth", "expand", "volume"],
+            "reduce costs": ["cost", "budget", "save", "reduce expenses"],
+            "data insights": ["analytics", "insights", "data", "reporting"],
+            "collaboration": ["collaborate", "team", "communication", "share"]
+        }
 
-        return goals if goals else ['Deliver high-quality software solution']
+        for goal, keywords in goal_patterns.items():
+            if any(keyword in description_lower for keyword in keywords):
+                goals.append(goal)
+
+        return goals if goals else ["Develop functional software solution"]
 
     def _extract_existing_systems(self, project: Project) -> List[str]:
         """Extract existing systems from project data"""
         systems = []
 
-        if project.technology_stack:
-            # Check for database
-            if 'database' in project.technology_stack:
-                systems.append(f"Database: {project.technology_stack['database']}")
+        # Check technology stack
+        if hasattr(project, 'technology_stack') and project.technology_stack:
+            if isinstance(project.technology_stack, dict):
+                for category, tech in project.technology_stack.items():
+                    if tech:
+                        systems.append(f"{category}: {tech}")
+            elif isinstance(project.technology_stack, str):
+                systems.append(project.technology_stack)
 
-            # Check for backend
-            if 'backend' in project.technology_stack:
-                systems.append(f"Backend: {project.technology_stack['backend']}")
-
-            # Check for frontend
-            if 'frontend' in project.technology_stack:
-                systems.append(f"Frontend: {project.technology_stack['frontend']}")
-
-        return systems
+        return systems if systems else ["Legacy system integration to be defined"]
 
     def _extract_integration_requirements(self, project: Project) -> List[str]:
         """Extract integration requirements"""
@@ -437,67 +437,87 @@ class ContextAnalyzerAgent(BaseAgent):
         if project.description:
             description_lower = project.description.lower()
 
-            integrations = {
-                'API integration': ['api', 'rest', 'graphql', 'endpoint'],
-                'Database integration': ['database', 'sql', 'nosql', 'data storage'],
-                'Authentication system': ['auth', 'login', 'authentication', 'oauth'],
-                'Payment processing': ['payment', 'checkout', 'stripe', 'paypal'],
-                'Email system': ['email', 'notification', 'smtp'],
-                'Cloud storage': ['s3', 'storage', 'file upload', 'cloud']
+            integration_keywords = {
+                "API integration": ["api", "rest", "graphql", "endpoint"],
+                "Database integration": ["database", "db", "sql", "nosql"],
+                "Third-party services": ["third party", "external", "service", "integration"],
+                "Authentication": ["auth", "login", "sso", "oauth"],
+                "Payment processing": ["payment", "billing", "stripe", "paypal"]
             }
 
-            for integration, keywords in integrations.items():
+            for requirement, keywords in integration_keywords.items():
                 if any(keyword in description_lower for keyword in keywords):
-                    requirements.append(integration)
+                    requirements.append(requirement)
 
-        return requirements
+        return requirements if requirements else ["Standard web application integrations"]
 
     def _extract_performance_requirements(self, project: Project) -> Dict[str, Any]:
         """Extract performance requirements"""
         requirements = {
-            'response_time': 'Standard (< 3s)',
-            'concurrent_users': 'Medium (100-1000)',
-            'uptime': '99%'
+            "response_time_ms": 500,
+            "concurrent_users": 100,
+            "availability": "99.9%",
+            "scalability": "horizontal"
         }
 
         if project.description:
             description_lower = project.description.lower()
 
-            # Check for high performance needs
-            if any(word in description_lower for word in ['real-time', 'realtime', 'instant', 'fast']):
-                requirements['response_time'] = 'High performance (< 500ms)'
-
-            # Check for scalability needs
-            if any(word in description_lower for word in ['scale', 'large', 'enterprise', 'millions']):
-                requirements['concurrent_users'] = 'High (1000+)'
-                requirements['uptime'] = '99.9%'
+            # Adjust based on project type
+            if any(word in description_lower for word in ["enterprise", "large", "scale"]):
+                requirements["concurrent_users"] = 1000
+                requirements["availability"] = "99.99%"
+            elif any(word in description_lower for word in ["real-time", "live", "instant"]):
+                requirements["response_time_ms"] = 100
 
         return requirements
 
     def _extract_team_structure(self, project: Project) -> Dict[str, Any]:
         """Extract team structure information"""
-        # Default structure
-        return {
-            'size': 'Small (1-5)',
-            'roles': ['Full-stack Developer'],
-            'experience_level': 'Mixed'
+        structure = {
+            "size": "small",
+            "roles": ["developer", "designer"],
+            "methodology": "agile",
+            "remote": True
         }
+
+        # Get actual collaborators if available
+        if self.db and hasattr(self.db, 'project_collaborators'):
+            collaborators = self.db.project_collaborators.get_by_project_id(project.id)
+            if collaborators:
+                structure["size"] = "large" if len(collaborators) > 5 else "medium" if len(
+                    collaborators) > 2 else "small"
+                structure["roles"] = list(set([c.role for c in collaborators if hasattr(c, 'role')]))
+
+        return structure
 
     def _extract_budget_constraints(self, project: Project) -> Dict[str, Any]:
         """Extract budget constraints"""
-        # Default constraints
         return {
-            'level': 'Standard',
-            'preferences': ['Open-source tools', 'Cost-effective solutions']
+            "level": "moderate",
+            "hosting": "cloud",
+            "timeline": "flexible",
+            "resources": "standard"
         }
 
     def _extract_timeline_constraints(self, project: Project) -> Dict[str, Any]:
         """Extract timeline constraints"""
-        # Default timeline
-        return {
-            'duration': 'Medium-term (3-6 months)',
-            'urgency': 'Normal'
+        constraints = {
+            "urgency": "normal",
+            "phases": ["planning", "development", "testing", "deployment"],
+            "milestones": [],
+            "deadline": None
         }
+
+        if project.description:
+            description_lower = project.description.lower()
+
+            if any(word in description_lower for word in ["urgent", "asap", "rush", "deadline"]):
+                constraints["urgency"] = "high"
+            elif any(word in description_lower for word in ["flexible", "no rush", "when ready"]):
+                constraints["urgency"] = "low"
+
+        return constraints
 
     def _perform_fresh_analysis(self, project: Any, context_type: str) -> Dict[str, Any]:
         """Perform fresh context analysis on project"""
@@ -597,25 +617,31 @@ class ContextAnalyzerAgent(BaseAgent):
         }
 
     def _save_context_to_cache(self, project_id: str, analysis_result: Dict[str, Any]) -> bool:
-        """Save context analysis results to cache"""
+        """Save context analysis results to cache using correct ProjectContext schema"""
         try:
             if not self.project_context_repo:
                 return False
 
-            # Create or update project context
+            # Create ProjectContext using the correct schema fields
             context = ProjectContext(
                 id=str(uuid.uuid4()),
                 project_id=project_id,
-                insights=analysis_result.get('insights', []),
-                patterns=analysis_result.get('patterns', []),
-                recommendations=analysis_result.get('recommendations', []),
+                business_domain=analysis_result.get('business_domain', ''),
+                target_audience=analysis_result.get('target_audience', ''),
+                business_goals=analysis_result.get('business_goals', []),
+                existing_systems=analysis_result.get('existing_systems', []),
+                integration_requirements=analysis_result.get('integration_requirements', []),
+                performance_requirements=analysis_result.get('performance_requirements', {}),
+                team_structure=analysis_result.get('team_structure', {}),
+                budget_constraints=analysis_result.get('budget_constraints', {}),
+                timeline_constraints=analysis_result.get('timeline_constraints', {}),
                 last_analyzed_at=DateTimeHelper.now(),
-                analysis_metadata=analysis_result,
                 created_at=DateTimeHelper.now(),
                 updated_at=DateTimeHelper.now()
             )
 
-            return self.project_context_repo.create(context)
+            # Use upsert to update if exists, create if not
+            return self.project_context_repo.upsert(context)
 
         except Exception as e:
             if self.logger:
@@ -849,31 +875,81 @@ class ContextAnalyzerAgent(BaseAgent):
         except Exception as e:
             return self._error_response(f"Conflict detection failed: {e}")
 
+    @require_project_access
     @log_agent_action
     def _analyze_context(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze project context with caching and persistence"""
+        """
+        Analyze project context and cache results
+
+        Args:
+            data: {
+                'project_id': str,
+                'force_refresh': bool (optional),
+                'user_id': str (optional)
+            }
+
+        Returns:
+            Dict with success status and context analysis
+        """
         try:
             project_id = data.get('project_id')
             force_refresh = data.get('force_refresh', False)
-            context_type = data.get('context_type', 'project')
 
             if not project_id:
-                return self._error_response("Project ID is required")
+                return self._error_response("Project ID is required", "MISSING_PROJECT_ID")
 
-            # Return mock success for testing
-            return self._success_response("Context analysis completed", {
-                'project_id': project_id,
-                'context_type': context_type,
-                'analysis_timestamp': DateTimeHelper.to_iso_string(DateTimeHelper.now()),
-                'insights': ['Project structure analysis completed'],
-                'patterns': ['Standard development workflow detected'],
-                'recommendations': ['Continue with current approach'],
-                'cached': False,
-                'cache_hit': False
-            })
+            # Check if we have database access
+            if not self.db or not self.project_context_repo:
+                return self._error_response("Database not available", "DB_UNAVAILABLE")
+
+            # Get cached context
+            cached_context = self.project_context_repo.get_by_project_id(project_id)
+
+            # Check if we need to refresh
+            if not self._needs_refresh(cached_context, force_refresh):
+                if self.logger:
+                    self.logger.debug(f"Using cached context for project {project_id}")
+
+                # Return cached context
+                analysis_dict = self._project_context_to_analysis(cached_context)
+                analysis_dict['cache_hit'] = True
+
+                return self._success_response(
+                    "Context analysis retrieved from cache",
+                    {'context': analysis_dict}
+                )
+
+            # Need fresh analysis - get project
+            project = self.db.projects.get_by_id(project_id)
+            if not project:
+                return self._error_response(f"Project not found: {project_id}", "PROJECT_NOT_FOUND")
+
+            if self.logger:
+                self.logger.info(f"Performing fresh context analysis for project {project.name}")
+
+            # Perform full context analysis
+            analysis_result = self._analyze_full_context(project)
+
+            # Save to cache
+            saved = self._save_context_to_cache(project_id, analysis_result)
+            if not saved:
+                if self.logger:
+                    self.logger.warning(f"Failed to save context analysis to cache for project {project_id}")
+
+            # Add cache metadata
+            analysis_result['cached'] = False
+            analysis_result['cache_hit'] = False
+            analysis_result['saved_to_cache'] = saved
+
+            return self._success_response(
+                "Context analysis completed successfully",
+                {'context': analysis_result}
+            )
 
         except Exception as e:
-            return self._error_response(f"Context analysis failed: {e}")
+            if self.logger:
+                self.logger.error(f"Error in context analysis: {e}")
+            return self._error_response(f"Context analysis failed: {str(e)}", "ANALYSIS_FAILED")
 
     def _fallback_conflict_detection(self, project_id: str, context_type: str) -> Dict[str, Any]:
         """Fallback conflict detection when full detection fails"""
