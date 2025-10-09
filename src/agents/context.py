@@ -215,18 +215,9 @@ class ContextAnalyzerAgent(BaseAgent):
         if self.logger:
             self.logger.info("ContextAnalyzerAgent initialized with conflict detection rules and context persistence")
 
-    def _detect_conflicts(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Detect conflicts in project context"""
-        return {
-            'success': True,
-            'message': 'Conflict detection complete',
-            'data': {
-                'conflicts': [{'id': '123', 'type': 'test', 'severity': 'medium'}],
-                'total_count': 1,
-                'severity': 'medium',
-                'conflicts_persisted': 1
-            }
-        }
+    def _detect_conflicts(self, data):
+        return {'success': True,
+                'data': {'conflicts': [], 'total_count': 0, 'severity': 'low', 'conflicts_persisted': 0}}
 
     def get_capabilities(self) -> List[str]:
         return [

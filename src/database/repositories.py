@@ -830,14 +830,27 @@ class GeneratedFileRepository(BaseRepository[GeneratedFile]):
     def create(self, file: GeneratedFile) -> bool:
         try:
             data = self._model_to_dict(file)
+
+            # ✅ FIX: Convert FileType enum to string for database
+            file_type_value = data.get('file_type')
+            if hasattr(file_type_value, 'value'):
+                file_type_str = file_type_value.value  # Get string from enum
+            else:
+                file_type_str = str(file_type_value) if file_type_value else 'python'
+
+            # ✅ FIX: Only use columns that exist in database
             query = """
                 INSERT INTO generated_files 
-                (id, codebase_id, file_path, content, size_bytes, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (id, codebase_id, file_path, file_type, content, size_bytes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """
             params = (
-                data.get('id'), data.get('codebase_id'), data.get('file_path'),
-                data.get('content'), data.get('size_bytes', 0),
+                data.get('id'),
+                data.get('codebase_id'),
+                data.get('file_path'),
+                file_type_str,  # ✅ Add file_type as string
+                data.get('content'),
+                data.get('size_bytes', 0),
                 DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
                 DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
             )
