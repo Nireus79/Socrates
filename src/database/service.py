@@ -18,6 +18,7 @@ from .repositories import (
     GeneratedFileRepository,
     ProjectCollaboratorRepository,
     SocraticSessionRepository,
+    ChatSessionRepository,
     QuestionRepository,
     ConversationMessageRepository,
     TechnicalSpecificationRepository,
@@ -48,7 +49,7 @@ except ImportError:
 try:
     from src.models import (
         User, Project, Module, Task, GeneratedCodebase, GeneratedFile,
-        ProjectCollaborator, SocraticSession, Question, ConversationMessage,
+        ProjectCollaborator, SocraticSession, ChatSession, Question, ConversationMessage,  # ← ADD ChatSession
         TechnicalSpec, ProjectContext, ModuleContext, TaskContext, Conflict
     )
 
@@ -175,6 +176,7 @@ class DatabaseService:
 
         # Session repositories
         self.socratic_sessions = SocraticSessionRepository(self.db_manager, SocraticSession)
+        self.chat_sessions = ChatSessionRepository(self.db_manager, ChatSession)
         self.questions = QuestionRepository(self.db_manager, Question)
         self.conversation_messages = ConversationMessageRepository(self.db_manager, ConversationMessage)
 
@@ -326,6 +328,7 @@ class RepositoryManager:
             'project_collaborator': self.db_service.project_collaborators,
             'collaborator': self.db_service.project_collaborators,
             'socratic_session': self.db_service.socratic_sessions,
+            'chat_session': self.db_service.chat_sessions,
             'session': self.db_service.socratic_sessions,
             'question': self.db_service.questions,
             'conversation_message': self.db_service.conversation_messages,
@@ -356,6 +359,7 @@ class RepositoryManager:
             'generated_files': self.db_service.generated_files,
             'project_collaborators': self.db_service.project_collaborators,
             'socratic_sessions': self.db_service.socratic_sessions,
+            'chat_sessions': self.db_service.chat_sessions,  # ← ADD THIS LINE
             'questions': self.db_service.questions,
             'conversation_messages': self.db_service.conversation_messages,
             'technical_specifications': self.db_service.technical_specifications,

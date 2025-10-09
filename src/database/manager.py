@@ -485,7 +485,6 @@ class DatabaseManager:
                                     )
                                 """)
 
-                # Add conversation_type column to existing conversation_messages table
                 try:
                     conn.execute("""
                                         ALTER TABLE conversation_messages 
