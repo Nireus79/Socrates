@@ -1601,8 +1601,8 @@ class ConversationMessageRepository(BaseRepository[ConversationMessage]):
             query = """
                 INSERT INTO conversation_messages 
                 (id, session_id, project_id, timestamp, message_type, content, phase,
-                 role, author, question_number, insights_extracted, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 role, author, question_number, insights_extracted, conversation_type, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
             params = (
                 data.get('id'), data.get('session_id'), data.get('project_id'),
@@ -1610,6 +1610,7 @@ class ConversationMessageRepository(BaseRepository[ConversationMessage]):
                 data.get('message_type'), data.get('content'), data.get('phase'),
                 data.get('role'), data.get('author'), data.get('question_number'),
                 dump_json_field(data.get('insights_extracted', {})),
+                data.get('conversation_type', 'socratic'),  # ← ADD THIS LINE
                 DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
                 DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
             )
@@ -1680,6 +1681,7 @@ class ConversationMessageRepository(BaseRepository[ConversationMessage]):
                 author=row.get('author'),
                 question_number=row.get('question_number'),
                 insights_extracted=parse_json_field(row.get('insights_extracted'), {}),
+                conversation_type=row.get('conversation_type', 'socratic'),  # ← ADD THIS LINE
                 created_at=DateTimeHelper.from_iso_string(row.get('created_at')),
                 updated_at=DateTimeHelper.from_iso_string(row.get('updated_at'))
             )
@@ -2430,60 +2432,33 @@ class ConflictRepository(BaseRepository[Conflict]):
             self.logger.error(f"Error deleting conflict {conflict_id}: {e}")
             return False
 
-    def _row_to_model(self, row) -> Conflict:
-        """Convert database row to Conflict model"""
-        from dataclasses import dataclass
-        if not CORE_AVAILABLE:
-            # Fallback model
-            @dataclass
-            class Conflict:
-                id: str = ""
-                project_id: str = ""
+    # In src/database/repositories.py, replace the ConflictRepository._row_to_model method with:
 
+    def _row_to_model(self, row: Dict[str, Any]) -> Conflict:
+        """Convert database row to Conflict model"""
         from src.models import Conflict, ConflictType
 
-        # Handle both dict and tuple formats
-        if isinstance(row, dict):
+        try:
             return Conflict(
-                id=row['id'],
-                project_id=row['project_id'],
-                session_id=row['session_id'] if row['session_id'] else "",
-                conflict_type=ConflictType(row['conflict_type']) if row['conflict_type'] else ConflictType.TECHNICAL,
-                description=row['description'] if row['description'] else "",
-                severity=row['severity'] if row['severity'] else "medium",
-                first_requirement=row['first_requirement'] if row['first_requirement'] else "",
-                second_requirement=row['second_requirement'] if row['second_requirement'] else "",
-                conflicting_roles=load_json_field(row['conflicting_roles'], []),
-                is_resolved=bool(row['is_resolved']),
-                resolution_strategy=row['resolution_strategy'] if row['resolution_strategy'] else "",
-                resolution_notes=row['resolution_notes'] if row['resolution_notes'] else "",
-                resolved_by=row['resolved_by'] if row['resolved_by'] else None,
-                resolved_at=DateTimeHelper.from_iso_string(row['resolved_at']) if row['resolved_at'] else None,
-                affected_modules=load_json_field(row['affected_modules'], []),
-                estimated_impact_hours=row['estimated_impact_hours'] if row['estimated_impact_hours'] else None,
-                created_at=DateTimeHelper.from_iso_string(row['created_at']),
-                updated_at=DateTimeHelper.from_iso_string(row['updated_at'])
+                id=row.get('id', ''),
+                project_id=row.get('project_id', ''),
+                session_id=row.get('session_id', ''),
+                conflict_type=ConflictType(row.get('conflict_type', 'TECHNICAL')),
+                description=row.get('description', ''),
+                severity=row.get('severity', 'medium'),
+                first_requirement=row.get('first_requirement', ''),
+                second_requirement=row.get('second_requirement', ''),
+                conflicting_roles=parse_json_field(row.get('conflicting_roles'), []),
+                is_resolved=bool(row.get('is_resolved', 0)),
+                resolution_strategy=row.get('resolution_strategy', ''),
+                resolution_notes=row.get('resolution_notes', ''),
+                resolved_by=row.get('resolved_by'),
+                resolved_at=DateTimeHelper.from_iso_string(row.get('resolved_at')) if row.get('resolved_at') else None,
+                affected_modules=parse_json_field(row.get('affected_modules'), []),
+                estimated_impact_hours=row.get('estimated_impact_hours'),
+                created_at=DateTimeHelper.from_iso_string(row.get('created_at')),
+                updated_at=DateTimeHelper.from_iso_string(row.get('updated_at'))
             )
-        else:
-            # Tuple format - access by index
-            r = row  # Alias to make it clear this is tuple/list
-            return Conflict(
-                id=r[0],
-                project_id=r[1],
-                session_id=r[2] if r[2] else "",
-                conflict_type=ConflictType(r[3]) if r[3] else ConflictType.TECHNICAL,
-                description=r[4] if r[4] else "",
-                severity=r[5] if r[5] else "medium",
-                first_requirement=r[6] if r[6] else "",
-                second_requirement=r[7] if r[7] else "",
-                conflicting_roles=load_json_field(r[8], []),
-                is_resolved=bool(r[9]),
-                resolution_strategy=r[10] if r[10] else "",
-                resolution_notes=r[11] if r[11] else "",
-                resolved_by=r[12] if r[12] else None,
-                resolved_at=DateTimeHelper.from_iso_string(r[13]) if r[13] else None,
-                affected_modules=load_json_field(r[14], []),
-                estimated_impact_hours=r[15] if r[15] else None,
-                created_at=DateTimeHelper.from_iso_string(r[16]),
-                updated_at=DateTimeHelper.from_iso_string(r[17])
-            )
+        except Exception as e:
+            self.logger.error(f"Error converting row to Conflict: {e}")
+            return Conflict()

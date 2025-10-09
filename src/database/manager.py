@@ -493,7 +493,7 @@ class DatabaseManager:
                 except Exception:
                     # Column might already exist, check if it's there
                     cursor = conn.execute("PRAGMA table_info(conversation_messages)")
-                    columns = [row[1] for row in cursor.fetchall()]
+                    columns = [row['name'] for row in cursor.fetchall()]
                     if 'conversation_type' not in columns:
                         # Re-raise error if column doesn't exist and we couldn't add it
                         raise

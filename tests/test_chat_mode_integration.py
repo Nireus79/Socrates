@@ -46,7 +46,7 @@ def test_chat_mode_integration():
 
         # Test 2: Verify conversation_type column exists
         cursor_result = db.db_manager.execute_query("PRAGMA table_info(conversation_messages)")
-        columns = [row[1] for row in cursor_result]
+        columns = [row['name'] for row in cursor_result]
         assert 'conversation_type' in columns, "conversation_type column should exist"
         print("✓ conversation_type column exists")
 
