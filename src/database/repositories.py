@@ -1225,7 +1225,7 @@ class SocraticSessionRepository(BaseRepository[SocraticSession]):
 
             return SocraticSession(
                 id=row.get('id', ''),
-                project_id=row.get('project_id', ''),  # ✅ This should work now
+                project_id=row.get('project_id', ''),
                 user_id=row.get('initiated_by', ''),  # Map initiated_by to user_id
                 current_role=current_role,  # ✅ Use mapped role instead of direct conversion
                 status=conversation_status,  # ✅ Use mapped status instead of direct conversion
@@ -1268,7 +1268,7 @@ class QuestionRepository(BaseRepository[Question]):
                         # Count existing questions in this session
                         count_query = "SELECT COUNT(*) FROM questions WHERE session_id = ?"
                         result = self.db_manager.execute_query(count_query, (session_id,))
-                        question_number = (result[0][0] if result and result[0] else 0) + 1
+                        question_number = (result[0][0] if result and len(result[0]) > 0 else 0) + 1
                     except Exception as e:
                         if self.logger:
                             self.logger.warning(f"Could not count questions for session {session_id}: {e}")
@@ -1285,8 +1285,8 @@ class QuestionRepository(BaseRepository[Question]):
             params = (
                 data.get('id'),
                 data.get('session_id'),
-                question_number,
-                data.get('phase', 'discovery'),
+                question_number,  # ✅ Use generated question_number
+                data.get('phase', 'discovery'),  # ✅ Provide default phase
                 data.get('question_text'),
                 data.get('answer_text'),
                 1 if data.get('is_answered', False) else 0,
@@ -1361,11 +1361,30 @@ class QuestionRepository(BaseRepository[Question]):
                     def from_string(s):
                         return s
 
+            # ✅ FIX: Map database phase values to valid TechnicalRole enum values
+            phase_to_role_map = {
+                'discovery': TechnicalRole.BUSINESS_ANALYST,
+                'design': TechnicalRole.UX_DESIGNER,
+                'development': TechnicalRole.BACKEND_DEVELOPER,
+                'testing': TechnicalRole.QA_TESTER,
+                'deployment': TechnicalRole.DEVOPS_ENGINEER,
+                'project_manager': TechnicalRole.PROJECT_MANAGER,
+                'business_analyst': TechnicalRole.BUSINESS_ANALYST,
+                'frontend_developer': TechnicalRole.FRONTEND_DEVELOPER,
+                'backend_developer': TechnicalRole.BACKEND_DEVELOPER,
+                'ux_designer': TechnicalRole.UX_DESIGNER,
+                'qa_tester': TechnicalRole.QA_TESTER,
+                'devops_engineer': TechnicalRole.DEVOPS_ENGINEER,
+                'security_engineer': TechnicalRole.SECURITY_ENGINEER
+            }
+
+            phase_value = row.get('phase', 'discovery')
+            role = phase_to_role_map.get(phase_value, TechnicalRole.PROJECT_MANAGER)
+
             return Question(
                 id=row.get('id', ''),
                 session_id=row.get('session_id', ''),
-                role=TechnicalRole(row.get('phase', 'discovery')) if hasattr(TechnicalRole, '__call__') else row.get(
-                    'phase', 'discovery'),
+                role=role,  # ✅ Use mapped role instead of direct conversion
                 question_text=row.get('question_text', ''),
                 context=row.get('context', ''),
                 is_follow_up=False,  # Not in old schema
