@@ -79,14 +79,17 @@ except ImportError as e:
     SYSTEM_AVAILABLE = False
     logger.warning(f"System components not available: {e}")
 
+
     # Define all fallback functions and classes
     def get_config():
         """Fallback config function"""
         return {}
 
+
     def get_logger(name: str):
         """Fallback logger function"""
         return logging.getLogger(name)
+
 
     def get_services_status():
         """Fallback services status function"""
@@ -97,21 +100,26 @@ except ImportError as e:
             'total_services': 0
         }
 
+
     def get_repository_manager():
         """Fallback repository manager"""
         return None
+
 
     def get_orchestrator():
         """Fallback orchestrator"""
         return None
 
+
     def get_event_bus():
         """Fallback event bus"""
         return None
 
+
     def get_system_status():
         """Fallback system status"""
         return {'status': 'unavailable'}
+
 
     class DateTimeHelper:
         @staticmethod
@@ -129,6 +137,7 @@ except ImportError as e:
 
 class WorkingUser(UserMixin):
     """Simple User class for authentication"""
+
     def __init__(self, user_id: str, username: str, email: str, role: str = 'developer'):
         self.id = user_id
         self.username = username
@@ -138,6 +147,7 @@ class WorkingUser(UserMixin):
 
 class UserDB:
     """Working database class that bypasses broken src imports"""
+
     def __init__(self, db_path: str = 'data/app.db'):
         self.db_path = db_path
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
@@ -451,7 +461,7 @@ class UserDB:
 
     # Session methods
     def create_session(self, owner_id: str, session_name: str, role: str,
-                      project_id: str = None, session_data: dict = None):
+                       project_id: str = None, session_data: dict = None):
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -587,7 +597,7 @@ class UserDB:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             cursor.execute('DELETE FROM sessions WHERE id = ? AND owner_id = ?',
-                          (session_id, user_id))
+                           (session_id, user_id))
 
             success = cursor.rowcount > 0
             conn.commit()
@@ -599,9 +609,9 @@ class UserDB:
 
     # Code generation methods
     def create_generation(self, project_id: str, generation_name: str,
-                         architecture_pattern: str, generation_type: str = 'full_stack',
-                         session_id: str = None, technology_stack: dict = None,
-                         generation_config: dict = None):
+                          architecture_pattern: str, generation_type: str = 'full_stack',
+                          session_id: str = None, technology_stack: dict = None,
+                          generation_config: dict = None):
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -738,7 +748,7 @@ class UserDB:
 
             # Build update query dynamically
             allowed_fields = ['generation_name', 'status', 'progress', 'technology_stack',
-                             'file_structure', 'generation_config', 'completed_at']
+                              'file_structure', 'generation_config', 'completed_at']
             update_fields = []
             values = []
 
@@ -794,7 +804,7 @@ class UserDB:
             return False
 
     def add_generated_file(self, generation_id: str, file_path: str, file_name: str,
-                          file_type: str, file_content: str = None):
+                           file_type: str, file_content: str = None):
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -816,6 +826,285 @@ class UserDB:
         except Exception as e:
             logger.error(f"Error adding generated file: {e}")
             return None
+
+
+# =================================================================
+# Project Templates Configuration
+# =================================================================
+PROJECT_TEMPLATES = {
+    'web_app': {
+        'name': 'Web Application',
+        'description': 'Full-stack web application with frontend and backend',
+        'icon': 'bi-globe',
+        'framework': 'flask',
+        'project_type': 'solo',
+        'status': 'draft',
+        'default_name': 'My Web App',
+        'default_description': 'A modern web application with user authentication, dashboard, and responsive design.',
+        'requirements': """User authentication and authorization
+Admin dashboard with analytics
+Responsive design for mobile and desktop
+Database integration with ORM
+REST API endpoints
+Email notifications
+User profile management
+Search and filtering functionality
+Data export capabilities
+Security features (CSRF, rate limiting)""",
+        'estimated_hours': '80',
+        'priority': 'medium',
+        'tech_stack': ['Flask', 'SQLAlchemy', 'Bootstrap', 'JavaScript'],
+        'use_cases': [
+            'Content Management Systems',
+            'Business Applications',
+            'E-commerce Platforms',
+            'Customer Portals'
+        ]
+    },
+
+    'api_service': {
+        'name': 'API Service',
+        'description': 'High-performance REST API with documentation',
+        'icon': 'bi-cloud-arrow-up',
+        'framework': 'fastapi',
+        'project_type': 'solo',
+        'status': 'draft',
+        'default_name': 'API Service',
+        'default_description': 'A scalable REST API service with automatic documentation, authentication, and database integration.',
+        'requirements': """REST API endpoints with OpenAPI documentation
+Authentication and authorization (JWT)
+Database models and migrations
+Input validation and error handling
+Rate limiting and security measures
+Automated testing suite
+Docker containerization
+Health check endpoints
+Logging and monitoring
+API versioning support""",
+        'estimated_hours': '60',
+        'priority': 'high',
+        'tech_stack': ['FastAPI', 'Pydantic', 'SQLAlchemy', 'PostgreSQL'],
+        'use_cases': [
+            'Microservices Architecture',
+            'Mobile App Backend',
+            'Third-party Integrations',
+            'Data Processing Services'
+        ]
+    },
+
+    'frontend_spa': {
+        'name': 'Single Page Application',
+        'description': 'Modern frontend application with React',
+        'icon': 'bi-window-desktop',
+        'framework': 'react',
+        'project_type': 'solo',
+        'status': 'draft',
+        'default_name': 'React Dashboard',
+        'default_description': 'A modern single-page application with React, featuring responsive design and interactive components.',
+        'requirements': """Component-based architecture
+State management (Redux/Context)
+Responsive design system
+API integration
+User authentication flow
+Real-time data updates
+Form validation and handling
+Navigation and routing
+Performance optimization
+Testing setup (Jest, Testing Library)""",
+        'estimated_hours': '70',
+        'priority': 'medium',
+        'tech_stack': ['React', 'TypeScript', 'Tailwind CSS', 'Axios'],
+        'use_cases': [
+            'Admin Dashboards',
+            'Data Visualization Tools',
+            'Customer Portals',
+            'Progressive Web Apps'
+        ]
+    },
+
+    'data_science': {
+        'name': 'Data Science Project',
+        'description': 'Data analysis and machine learning project',
+        'icon': 'bi-graph-up',
+        'framework': '',
+        'project_type': 'solo',
+        'status': 'draft',
+        'default_name': 'Data Analysis Project',
+        'default_description': 'A comprehensive data science project for analysis, visualization, and machine learning.',
+        'requirements': """Data collection and preprocessing
+Exploratory data analysis (EDA)
+Statistical analysis and hypothesis testing
+Data visualization and reporting
+Machine learning model development
+Model evaluation and validation
+Feature engineering
+Data pipeline automation
+Interactive dashboards
+Documentation and reproducibility""",
+        'estimated_hours': '100',
+        'priority': 'medium',
+        'tech_stack': ['Python', 'Pandas', 'NumPy', 'Scikit-learn', 'Matplotlib'],
+        'use_cases': [
+            'Business Intelligence',
+            'Predictive Analytics',
+            'Research Projects',
+            'Process Optimization'
+        ]
+    },
+
+    'mobile_app': {
+        'name': 'Mobile Application',
+        'description': 'Cross-platform mobile app with React Native',
+        'icon': 'bi-phone',
+        'framework': 'react',
+        'project_type': 'team',
+        'status': 'draft',
+        'default_name': 'Mobile App',
+        'default_description': 'A cross-platform mobile application with native performance and modern user experience.',
+        'requirements': """Cross-platform compatibility (iOS/Android)
+Native navigation and gestures
+Push notifications
+Offline functionality
+Camera and media integration
+User authentication
+Local data storage
+API integration
+App store optimization
+Performance monitoring""",
+        'estimated_hours': '120',
+        'priority': 'high',
+        'tech_stack': ['React Native', 'Expo', 'AsyncStorage', 'Firebase'],
+        'use_cases': [
+            'Business Apps',
+            'E-commerce Apps',
+            'Social Platforms',
+            'Productivity Tools'
+        ]
+    },
+
+    'microservice': {
+        'name': 'Microservice',
+        'description': 'Containerized microservice with Docker',
+        'icon': 'bi-boxes',
+        'framework': 'fastapi',
+        'project_type': 'team',
+        'status': 'draft',
+        'default_name': 'Microservice',
+        'default_description': 'A containerized microservice designed for scalability and distributed architecture.',
+        'requirements': """Service-oriented architecture design
+Docker containerization
+API gateway integration
+Service discovery and load balancing
+Database per service pattern
+Event-driven communication
+Health checks and monitoring
+CI/CD pipeline setup
+Security and authentication
+Documentation and testing""",
+        'estimated_hours': '90',
+        'priority': 'high',
+        'tech_stack': ['FastAPI', 'Docker', 'PostgreSQL', 'Redis', 'Kubernetes'],
+        'use_cases': [
+            'Large-scale Applications',
+            'Cloud-native Services',
+            'Enterprise Systems',
+            'Distributed Platforms'
+        ]
+    },
+
+    'automation_tool': {
+        'name': 'Automation Tool',
+        'description': 'Python automation and scripting project',
+        'icon': 'bi-gear-fill',
+        'framework': '',
+        'project_type': 'solo',
+        'status': 'draft',
+        'default_name': 'Automation Tool',
+        'default_description': 'A Python-based automation tool for streamlining repetitive tasks and workflows.',
+        'requirements': """Task automation framework
+File processing and manipulation
+Web scraping capabilities
+Email automation
+Report generation
+Error handling and logging
+Configuration management
+Scheduled task execution
+User interface (CLI or GUI)
+Testing and validation""",
+        'estimated_hours': '40',
+        'priority': 'medium',
+        'tech_stack': ['Python', 'Selenium', 'BeautifulSoup', 'Schedule', 'Click'],
+        'use_cases': [
+            'Business Process Automation',
+            'Data Processing',
+            'Report Generation',
+            'System Administration'
+        ]
+    },
+
+    'cms_platform': {
+        'name': 'Content Management System',
+        'description': 'Full-featured CMS with admin interface',
+        'icon': 'bi-file-earmark-text',
+        'framework': 'django',
+        'project_type': 'team',
+        'status': 'draft',
+        'default_name': 'CMS Platform',
+        'default_description': 'A comprehensive content management system with user roles, media management, and customizable themes.',
+        'requirements': """User roles and permissions system
+Content creation and editing interface
+Media library and file management
+Theme and template system
+SEO optimization features
+Multi-language support
+Comment and review system
+Search functionality
+Backup and restore capabilities
+Performance optimization""",
+        'estimated_hours': '150',
+        'priority': 'medium',
+        'tech_stack': ['Django', 'PostgreSQL', 'Redis', 'Celery', 'Bootstrap'],
+        'use_cases': [
+            'Corporate Websites',
+            'Blog Platforms',
+            'News Sites',
+            'Portfolio Sites'
+        ]
+    }
+}
+
+
+def get_template_by_id(template_id):
+    """Get template configuration by ID."""
+    return PROJECT_TEMPLATES.get(template_id)
+
+
+def get_all_templates():
+    """Get all available project templates."""
+    return PROJECT_TEMPLATES
+
+
+def apply_template_to_wizard_data(template_id, wizard_data):
+    """Apply template configuration to wizard session data."""
+    template = get_template_by_id(template_id)
+    if not template:
+        return wizard_data
+
+    # Apply template defaults to wizard data
+    wizard_data.update({
+        'name': template['default_name'],
+        'description': template['default_description'],
+        'project_type': template['project_type'],
+        'framework': template['framework'],
+        'status': template['status'],
+        'requirements': template['requirements'],
+        'estimated_hours': template['estimated_hours'],
+        'priority': template['priority'],
+        'template_id': template_id,
+        'template_name': template['name']
+    })
+
+    return wizard_data
 
 
 # =================================================================
@@ -1562,9 +1851,9 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
             return redirect(url_for('continue_session', session_id=session_id))
 
         return render_template('sessions/continue.html',
-                             session=session,
-                             question_form=question_form,
-                             answer_form=answer_form)
+                               session=session,
+                               question_form=question_form,
+                               answer_form=answer_form)
 
     @flask_app.route('/sessions/<session_id>/config', methods=['GET', 'POST'])
     @login_required
@@ -1631,8 +1920,8 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         project_sessions = [s for s in all_sessions if s['project_id'] == project_id]
 
         return render_template('sessions/project_sessions.html',
-                             project=project,
-                             sessions=project_sessions)
+                               project=project,
+                               sessions=project_sessions)
 
     @flask_app.route('/sessions/history')
     @login_required
@@ -1661,8 +1950,8 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         recent_generations = recent_generations[:10]  # Show last 10
 
         return render_template('code.html',
-                             projects=user_projects,
-                             recent_generations=recent_generations)
+                               projects=user_projects,
+                               recent_generations=recent_generations)
 
     @flask_app.route('/projects/<project_id>/generate', methods=['GET', 'POST'])
     @login_required
@@ -1716,7 +2005,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
 
                 # Update generation as completed
                 user_db.update_generation(generation_id, current_user.id,
-                                        status='completed', progress=100)
+                                          status='completed', progress=100)
 
                 flash(f'Code generation "{form.generation_name.data}" completed successfully!', 'success')
                 return redirect(url_for('view_generation', generation_id=generation_id))
@@ -1743,9 +2032,9 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         files = generation.get('files', [])
 
         return render_template('code/viewer.html',
-                             generation=generation,
-                             project=project,
-                             files=files)
+                               generation=generation,
+                               project=project,
+                               files=files)
 
     @flask_app.route('/generations/<generation_id>/download')
     @login_required
@@ -1822,8 +2111,8 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         generations = user_db.get_project_generations(project_id, current_user.id)
 
         return render_template('code/project_code.html',
-                             project=project,
-                             generations=generations)
+                               project=project,
+                               generations=generations)
 
     @flask_app.route('/api/files/<file_id>')
     @login_required
@@ -2126,7 +2415,6 @@ __all__ = [
     'api_response',
     'with_agent_orchestration',
 ]
-
 
 # =================================================================
 # DEVELOPMENT SERVER RUNNER

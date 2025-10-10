@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="database">
-      <change afterPath="$PROJECT_DIR$/web/templates/projects/wizard.html" afterDir="false" />
-    </list>
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="wizard" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -136,14 +134,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00171" summary="repo">
-      <option name="closed" value="true" />
-      <created>1760003725076</created>
-      <option name="number" value="00171" />
-      <option name="presentableId" value="LOCAL-00171" />
-      <option name="project" value="LOCAL" />
-      <updated>1760003725076</updated>
     </task>
     <task id="LOCAL-00172" summary="repo">
       <option name="closed" value="true" />
@@ -529,11 +519,18 @@
       <option name="project" value="LOCAL" />
       <updated>1760124150490</updated>
     </task>
-    <option name="localTasksCounter" value="220" />
+    <task id="LOCAL-00220" summary="wizard">
+      <option name="closed" value="true" />
+      <created>1760124763754</created>
+      <option name="number" value="00220" />
+      <option name="presentableId" value="LOCAL-00220" />
+      <option name="project" value="LOCAL" />
+      <updated>1760124763754</updated>
+    </task>
+    <option name="localTasksCounter" value="221" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="health" />
     <MESSAGE value="database.py" />
     <MESSAGE value="socratic.py" />
     <MESSAGE value="api key" />
@@ -558,6 +555,7 @@
     <MESSAGE value="ui" />
     <MESSAGE value="run.py" />
     <MESSAGE value="database" />
-    <option name="LAST_COMMIT_MESSAGE" value="database" />
+    <MESSAGE value="wizard" />
+    <option name="LAST_COMMIT_MESSAGE" value="wizard" />
   </component>
 </project>
