@@ -6,10 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="ui">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/projects/dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/projects/dashboard.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/projects/detail.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/projects/detail.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/projects/edit.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/projects/edit.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,21 +45,21 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultHtmlFileTemplate": "HTML File",
-    "Python tests.Python tests in all_agents_testing.py.executor": "Run",
-    "Python tests.Python tests in all_agents_tests.py.executor": "Run",
-    "Python tests.Python tests in test_all_agents.py.executor": "Run",
-    "Python tests.Python tests in test_chat_mode_integration.py.executor": "Run",
-    "Python tests.Python tests in test_flask.py.executor": "Run",
-    "Python.run.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;Python tests.Python tests in all_agents_testing.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in all_agents_tests.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in test_all_agents.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in test_chat_mode_integration.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in test_flask.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\themi\PycharmProjects\Socrates\tests" />
@@ -139,14 +136,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00152" summary="clean up">
-      <option name="closed" value="true" />
-      <created>1759545432652</created>
-      <option name="number" value="00152" />
-      <option name="presentableId" value="LOCAL-00152" />
-      <option name="project" value="LOCAL" />
-      <updated>1759545432652</updated>
     </task>
     <task id="LOCAL-00153" summary="clean up">
       <option name="closed" value="true" />
@@ -532,7 +521,15 @@
       <option name="project" value="LOCAL" />
       <updated>1760078208601</updated>
     </task>
-    <option name="localTasksCounter" value="201" />
+    <task id="LOCAL-00201" summary="ui">
+      <option name="closed" value="true" />
+      <created>1760078775143</created>
+      <option name="number" value="00201" />
+      <option name="presentableId" value="LOCAL-00201" />
+      <option name="project" value="LOCAL" />
+      <updated>1760078775143</updated>
+    </task>
+    <option name="localTasksCounter" value="202" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
