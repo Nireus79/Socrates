@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Start Socratic Session - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('projects') }}">Projects</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a></li>
+                    <li class="breadcrumb-item active">Start Session</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-chat-dots text-primary"></i> Start Socratic Session</h2>
+                    <p class="text-muted mb-0">Begin guided questioning for project: <strong>{{ project.name }}</strong></p>
+                </div>
+                <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Project
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Form -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-person-badge"></i> Session Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('create_session', project_id=project.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        
+                        <!-- Session Name -->
+                        <div class="mb-4">
+                            <label for="session_name" class="form-label">Session Name <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="session_name" 
+                                   name="session_name" 
+                                   placeholder="e.g., Initial Requirements Review, Architecture Discussion"
+                                   required>
+                            <div class="form-text">Give this session a descriptive name for future reference</div>
+                        </div>
+
+                        <!-- Role Selection -->
+                        <div class="mb-4">
+                            <label class="form-label">Select Your Role <span class="text-danger">*</span></label>
+                            <div class="form-text mb-3">Choose the perspective that best matches your current focus. This will customize the questions asked during the session.</div>
+                            
+                            <div class="row">
+                                {% for role_id, role_name, role_description in roles %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card role-card h-100">
+                                        <div class="card-body">
+                                            <div class="form-check">
+                                                <input class="form-check-input" 
+                                                       type="radio" 
+                                                       name="role" 
+                                                       id="role_{{ role_id }}" 
+                                                       value="{{ role_id }}"
+                                                       required>
+                                                <label class="form-check-label w-100" for="role_{{ role_id }}">
+                                                    <div class="d-flex align-items-start">
+                                                        <div class="me-3">
+                                                            {% if role_id == 'project_manager' %}
+                                                                <i class="bi bi-diagram-3 text-primary fs-4"></i>
+                                                            {% elif role_id == 'business_analyst' %}
+                                                                <i class="bi bi-graph-up text-success fs-4"></i>
+                                                            {% elif role_id == 'ux_designer' %}
+                                                                <i class="bi bi-palette text-info fs-4"></i>
+                                                            {% elif role_id == 'frontend_developer' %}
+                                                                <i class="bi bi-code-slash text-warning fs-4"></i>
+                                                            {% elif role_id == 'backend_developer' %}
+                                                                <i class="bi bi-server text-dark fs-4"></i>
+                                                            {% elif role_id == 'devops_engineer' %}
+                                                                <i class="bi bi-gear text-secondary fs-4"></i>
+                                                            {% elif role_id == 'qa_tester' %}
+                                                                <i class="bi bi-bug text-danger fs-4"></i>
+                                                            {% elif role_id == 'security_engineer' %}
+                                                                <i class="bi bi-shield-check text-primary fs-4"></i>
+                                                            {% endif %}
+                                                        </div>
+                                                        <div>
+                                                            <h6 class="mb-1">{{ role_name }}</h6>
+                                                            <small class="text-muted">{{ role_description }}</small>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-play-circle"></i> Start Socratic Session
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- About Socratic Method -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-lightbulb"></i> About Socratic Sessions</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-3">The Socratic method uses targeted questions to help you:</p>
+                    <ul class="small mb-3">
+                        <li>Clarify project requirements</li>
+                        <li>Identify potential challenges</li>
+                        <li>Explore design alternatives</li>
+                        <li>Define success criteria</li>
+                        <li>Plan implementation strategy</li>
+                    </ul>
+                    <div class="alert alert-info small">
+                        <i class="bi bi-info-circle"></i> Sessions are automatically saved and can be resumed later.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Context -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-folder"></i> Project Context</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Project:</strong> {{ project.name }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Type:</strong> 
+                        <span class="badge bg-secondary">{{ project.project_type.replace('_', ' ').title() }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Framework:</strong> 
+                        <span class="badge bg-info">{{ project.framework.title() }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Status:</strong>
+                        {% if project.status == 'planning' %}
+                            <span class="badge bg-warning">Planning</span>
+                        {% elif project.status == 'active' %}
+                            <span class="badge bg-success">Active</span>
+                        {% elif project.status == 'paused' %}
+                            <span class="badge bg-secondary">Paused</span>
+                        {% elif project.status == 'completed' %}
+                            <span class="badge bg-primary">Completed</span>
+                        {% else %}
+                            <span class="badge bg-light text-dark">{{ project.status.title() }}</span>
+                        {% endif %}
+                    </div>
+                    {% if project.description %}
+                    <div class="mb-0">
+                        <strong>Description:</strong>
+                        <p class="small text-muted mt-1">{{ project.description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.role-card {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.role-card:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
+}
+
+.role-card .form-check-input:checked + .form-check-label .card {
+    border-color: #0d6efd;
+    background-color: #f8f9ff;
+}
+
+.form-check-input {
+    margin-top: 0.1rem;
+}
+
+.form-check-label {
+    cursor: pointer;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Make entire role card clickable
+    const roleCards = document.querySelectorAll('.role-card');
+    roleCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const radio = card.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+                
+                // Update visual state
+                document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+            }
+        });
+    });
+    
+    // Handle radio button changes
+    const radioButtons = document.querySelectorAll('input[name="role"]');
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
+            this.closest('.role-card').classList.add('selected');
+        });
+    });
+});
+</script>
+{% endblock %}

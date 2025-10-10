@@ -1,0 +1,594 @@
+{% extends "base.html" %}
+
+{% block title %}{{ generation.generation_name }} - Code Viewer{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-3">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('projects') }}">Projects</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('project_code', project_id=project.id) }}">Code Generation</a></li>
+                    <li class="breadcrumb-item active">{{ generation.generation_name }}</li>
+                </ol>
+            </nav>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-code-slash text-primary"></i> {{ generation.generation_name }}</h2>
+                    <p class="text-muted mb-0">
+                        Architecture: <strong>{{ generation.architecture_pattern.replace('_', ' ').title() }}</strong> |
+                        Status:
+                        {% if generation.status == 'completed' %}
+                            <span class="badge bg-success">Completed</span>
+                        {% elif generation.status == 'generating' %}
+                            <span class="badge bg-warning">Generating</span>
+                        {% elif generation.status == 'pending' %}
+                            <span class="badge bg-secondary">Pending</span>
+                        {% else %}
+                            <span class="badge bg-danger">{{ generation.status.title() }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div>
+                    {% if generation.status == 'completed' and files %}
+                    <a href="{{ url_for('download_generation', generation_id=generation.id) }}" class="btn btn-success me-2">
+                        <i class="bi bi-download"></i> Download All
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('project_code', project_id=project.id) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Generations
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if files %}
+    <!-- Main Content -->
+    <div class="row">
+        <!-- File Tree -->
+        <div class="col-lg-3">
+            <div class="card file-explorer">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="bi bi-folder-open"></i> Project Files</h6>
+                        <span class="badge bg-primary">{{ files|length }}</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="file-tree" id="fileTree">
+                        <!-- File tree will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Viewer -->
+        <div class="col-lg-9">
+            <div class="card code-viewer">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0" id="currentFileName">
+                            <i class="bi bi-file-code"></i> Select a file to view
+                        </h6>
+                        <small class="text-muted" id="currentFilePath"></small>
+                    </div>
+                    <div class="btn-group btn-group-sm" id="fileActions" style="display: none;">
+                        <button class="btn btn-outline-primary" onclick="copyCode()" title="Copy Code">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="downloadFile()" title="Download File">
+                            <i class="bi bi-download"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Welcome State -->
+                    <div id="welcomeState" class="text-center py-5">
+                        <i class="bi bi-folder-open display-1 text-muted mb-4"></i>
+                        <h4>Project Structure Generated</h4>
+                        <p class="text-muted mb-0">Select a file from the tree on the left to view its contents.</p>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="loadingState" class="text-center py-5" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted mt-3 mb-0">Loading file content...</p>
+                    </div>
+
+                    <!-- Code Content -->
+                    <div id="codeContent" style="display: none;">
+                        <pre><code id="codeDisplay" class="language-python"></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card text-center">
+                <div class="card-body py-5">
+                    {% if generation.status == 'generating' %}
+                        <div class="spinner-border text-primary mb-4" role="status">
+                            <span class="visually-hidden">Generating...</span>
+                        </div>
+                        <h4>Code Generation In Progress</h4>
+                        <p class="text-muted mb-4">
+                            Your code is being generated. This usually takes 30-60 seconds.
+                        </p>
+                        <div class="progress mb-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 role="progressbar"
+                                 style="width: {{ (generation.completed_files / generation.total_files * 100) if generation.total_files > 0 else 25 }}%">
+                            </div>
+                        </div>
+                        <p class="small text-muted">{{ generation.completed_files }}/{{ generation.total_files }} files generated</p>
+                        <button class="btn btn-outline-primary" onclick="location.reload()">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    {% elif generation.status == 'pending' %}
+                        <i class="bi bi-clock display-1 text-muted mb-4"></i>
+                        <h4>Generation Pending</h4>
+                        <p class="text-muted mb-4">
+                            Your code generation is queued and will start shortly.
+                        </p>
+                        <button class="btn btn-outline-primary" onclick="location.reload()">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    {% elif generation.status == 'failed' %}
+                        <i class="bi bi-exclamation-triangle display-1 text-danger mb-4"></i>
+                        <h4>Generation Failed</h4>
+                        <p class="text-muted mb-4">
+                            There was an error generating your code. Please try creating a new generation.
+                        </p>
+                        <a href="{{ url_for('new_generation', project_id=project.id) }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Create New Generation
+                        </a>
+                    {% else %}
+                        <i class="bi bi-file-code display-1 text-muted mb-4"></i>
+                        <h4>No Files Generated</h4>
+                        <p class="text-muted mb-4">
+                            This generation doesn't have any files yet.
+                        </p>
+                        <a href="{{ url_for('project_code', project_id=project.id) }}" class="btn btn-primary">
+                            <i class="bi bi-arrow-left"></i> Back to Generations
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Generation Details Modal -->
+<div class="modal fade" id="generationDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Generation Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Basic Information</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Name:</strong></td>
+                                <td>{{ generation.generation_name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Architecture:</strong></td>
+                                <td>{{ generation.architecture_pattern.replace('_', ' ').title() }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Type:</strong></td>
+                                <td>{{ generation.generation_type.replace('_', ' ').title() }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    {% if generation.status == 'completed' %}
+                                        <span class="badge bg-success">Completed</span>
+                                    {% elif generation.status == 'generating' %}
+                                        <span class="badge bg-warning">Generating</span>
+                                    {% elif generation.status == 'pending' %}
+                                        <span class="badge bg-secondary">Pending</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ generation.status.title() }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Progress</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Files Generated:</strong></td>
+                                <td>{{ generation.completed_files }}/{{ generation.total_files }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Created:</strong></td>
+                                <td>{{ generation.created_at.strftime('%b %d, %Y at %I:%M %p') if generation.created_at else 'Recently' }}</td>
+                            </tr>
+                            {% if generation.completed_at %}
+                            <tr>
+                                <td><strong>Completed:</strong></td>
+                                <td>{{ generation.completed_at.strftime('%b %d, %Y at %I:%M %p') }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+
+                {% if generation.specifications %}
+                <hr>
+                <h6>Project Specifications</h6>
+                <div class="bg-light p-3 rounded">
+                    <pre class="mb-0" style="white-space: pre-wrap;">{{ generation.specifications }}</pre>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.file-explorer {
+    height: calc(100vh - 200px);
+    overflow: hidden;
+}
+
+.file-tree {
+    height: calc(100vh - 280px);
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.code-viewer {
+    height: calc(100vh - 200px);
+    overflow: hidden;
+}
+
+#codeContent {
+    height: calc(100vh - 280px);
+    overflow: auto;
+}
+
+.file-item {
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 2px 0;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.file-item:hover {
+    background-color: #f8f9fa;
+}
+
+.file-item.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.file-item.active:hover {
+    background-color: #0056b3;
+}
+
+.folder-item {
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 2px 0;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.folder-item:hover {
+    background-color: #e9ecef;
+}
+
+.folder-children {
+    margin-left: 20px;
+    border-left: 1px solid #dee2e6;
+    padding-left: 10px;
+}
+
+.folder-children.collapsed {
+    display: none;
+}
+
+.folder-toggle {
+    margin-right: 5px;
+    font-size: 0.8rem;
+}
+
+pre {
+    margin: 0;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border: none;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+code {
+    background-color: transparent !important;
+    color: inherit;
+    padding: 0;
+}
+
+.language-python { color: #333; }
+.language-html { color: #333; }
+.language-css { color: #333; }
+.language-javascript { color: #333; }
+.language-json { color: #333; }
+.language-yaml { color: #333; }
+.language-markdown { color: #333; }
+.language-sql { color: #333; }
+.language-dockerfile { color: #333; }
+.language-text { color: #333; }
+
+/* Auto-refresh indicator */
+.auto-refresh {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+}
+</style>
+
+<script>
+let currentFileData = null;
+const generationId = {{ generation.id }};
+
+// File data from server
+const filesData = {{ files|tojson }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    buildFileTree();
+
+    // Auto-refresh for generating status
+    {% if generation.status == 'generating' %}
+    setTimeout(() => {
+        showAutoRefreshNotification();
+        setTimeout(() => location.reload(), 3000);
+    }, 5000);
+    {% endif %}
+});
+
+function buildFileTree() {
+    const fileTree = document.getElementById('fileTree');
+    const treeStructure = organizeFiles(filesData);
+
+    fileTree.innerHTML = renderTree(treeStructure);
+
+    // Add click handlers
+    document.querySelectorAll('.file-item').forEach(item => {
+        item.addEventListener('click', () => loadFile(parseInt(item.dataset.fileId)));
+    });
+
+    document.querySelectorAll('.folder-item').forEach(item => {
+        item.addEventListener('click', () => toggleFolder(item));
+    });
+}
+
+function organizeFiles(files) {
+    const tree = {};
+
+    files.forEach(file => {
+        const pathParts = file.file_path.split('/');
+        let currentLevel = tree;
+
+        // Build directory structure
+        for (let i = 0; i < pathParts.length - 1; i++) {
+            const part = pathParts[i];
+            if (!currentLevel[part]) {
+                currentLevel[part] = { type: 'folder', children: {} };
+            }
+            currentLevel = currentLevel[part].children;
+        }
+
+        // Add file
+        const fileName = pathParts[pathParts.length - 1];
+        currentLevel[fileName] = { type: 'file', data: file };
+    });
+
+    return tree;
+}
+
+function renderTree(tree, level = 0) {
+    let html = '';
+
+    // Sort: folders first, then files
+    const entries = Object.entries(tree).sort(([a, aData], [b, bData]) => {
+        if (aData.type !== bData.type) {
+            return aData.type === 'folder' ? -1 : 1;
+        }
+        return a.localeCompare(b);
+    });
+
+    entries.forEach(([name, data]) => {
+        if (data.type === 'folder') {
+            html += `
+                <div class="folder-item" data-folder="${name}">
+                    <span class="folder-toggle">
+                        <i class="bi bi-chevron-right"></i>
+                    </span>
+                    <i class="bi bi-folder me-2 text-warning"></i>
+                    ${name}
+                </div>
+                <div class="folder-children" data-folder-children="${name}">
+                    ${renderTree(data.children, level + 1)}
+                </div>
+            `;
+        } else {
+            const iconClass = getFileIcon(data.data.file_type);
+            html += `
+                <div class="file-item" data-file-id="${data.data.id}">
+                    <i class="bi ${iconClass} me-2"></i>
+                    ${name}
+                </div>
+            `;
+        }
+    });
+
+    return html;
+}
+
+function getFileIcon(fileType) {
+    const icons = {
+        'python': 'bi-filetype-py text-success',
+        'html': 'bi-filetype-html text-danger',
+        'css': 'bi-filetype-css text-primary',
+        'javascript': 'bi-filetype-js text-warning',
+        'json': 'bi-filetype-json text-info',
+        'yaml': 'bi-filetype-yml text-secondary',
+        'markdown': 'bi-filetype-md text-dark',
+        'sql': 'bi-filetype-sql text-info',
+        'dockerfile': 'bi-file-code text-primary',
+        'text': 'bi-file-text text-muted'
+    };
+    return icons[fileType] || 'bi-file-code text-muted';
+}
+
+function toggleFolder(folderItem) {
+    const folderName = folderItem.dataset.folder;
+    const children = document.querySelector(`[data-folder-children="${folderName}"]`);
+    const toggle = folderItem.querySelector('.folder-toggle i');
+
+    if (children.classList.contains('collapsed')) {
+        children.classList.remove('collapsed');
+        toggle.className = 'bi bi-chevron-down';
+    } else {
+        children.classList.add('collapsed');
+        toggle.className = 'bi bi-chevron-right';
+    }
+}
+
+async function loadFile(fileId) {
+    try {
+        // Show loading state
+        document.getElementById('welcomeState').style.display = 'none';
+        document.getElementById('loadingState').style.display = 'block';
+        document.getElementById('codeContent').style.display = 'none';
+
+        // Clear previous selection
+        document.querySelectorAll('.file-item').forEach(item => item.classList.remove('active'));
+
+        // Mark current selection
+        document.querySelector(`[data-file-id="${fileId}"]`).classList.add('active');
+
+        // Fetch file content
+        const response = await fetch(`/generations/${generationId}/file/${fileId}`);
+        const fileData = await response.json();
+
+        if (response.ok) {
+            currentFileData = fileData;
+            displayFileContent(fileData);
+        } else {
+            throw new Error(fileData.error || 'Failed to load file');
+        }
+
+    } catch (error) {
+        console.error('Error loading file:', error);
+        alert('Error loading file: ' + error.message);
+
+        // Reset to welcome state
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('welcomeState').style.display = 'block';
+    }
+}
+
+function displayFileContent(fileData) {
+    // Update header
+    document.getElementById('currentFileName').innerHTML = `
+        <i class="bi ${getFileIcon(fileData.file_type)}"></i> ${fileData.file_name}
+    `;
+    document.getElementById('currentFilePath').textContent = fileData.file_path;
+
+    // Show file actions
+    document.getElementById('fileActions').style.display = 'block';
+
+    // Display content
+    const codeDisplay = document.getElementById('codeDisplay');
+    codeDisplay.textContent = fileData.content;
+    codeDisplay.className = `language-${fileData.file_type}`;
+
+    // Show content
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('codeContent').style.display = 'block';
+}
+
+function copyCode() {
+    if (currentFileData) {
+        navigator.clipboard.writeText(currentFileData.content).then(() => {
+            // Show success feedback
+            const button = event.target.closest('button');
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-check"></i>';
+            button.classList.add('btn-success');
+            button.classList.remove('btn-outline-primary');
+
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-primary');
+            }, 1000);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            alert('Failed to copy code to clipboard');
+        });
+    }
+}
+
+function downloadFile() {
+    if (currentFileData) {
+        const blob = new Blob([currentFileData.content], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = currentFileData.file_name;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    }
+}
+
+function showAutoRefreshNotification() {
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-info alert-dismissible fade show auto-refresh';
+    notification.innerHTML = `
+        <i class="bi bi-arrow-clockwise"></i> Auto-refreshing in 3 seconds...
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(notification);
+}
+
+function showGenerationDetails() {
+    const modal = new bootstrap.Modal(document.getElementById('generationDetailsModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

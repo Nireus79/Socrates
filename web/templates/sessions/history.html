@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+
+{% block title %}Session History - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('projects') }}">Projects</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a></li>
+                    <li class="breadcrumb-item active">Session History</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-clock-history text-primary"></i> Session History</h2>
+                    <p class="text-muted mb-0">All Socratic sessions for project: <strong>{{ project.name }}</strong></p>
+                </div>
+                <div>
+                    <a href="{{ url_for('new_session', project_id=project.id) }}" class="btn btn-primary me-2">
+                        <i class="bi bi-plus-circle"></i> Start New Session
+                    </a>
+                    <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Project
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sessions Content -->
+    {% if sessions %}
+    <div class="row">
+        <div class="col-lg-9">
+            <!-- Sessions List -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-list"></i> Sessions ({{ sessions|length }})</h5>
+                    <div class="d-flex gap-2">
+                        <select class="form-select form-select-sm" id="statusFilter" onchange="filterSessions()">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                        <select class="form-select form-select-sm" id="roleFilter" onchange="filterSessions()">
+                            <option value="">All Roles</option>
+                            <option value="project_manager">Project Manager</option>
+                            <option value="business_analyst">Business Analyst</option>
+                            <option value="ux_designer">UX Designer</option>
+                            <option value="frontend_developer">Frontend Developer</option>
+                            <option value="backend_developer">Backend Developer</option>
+                            <option value="devops_engineer">DevOps Engineer</option>
+                            <option value="qa_tester">QA Tester</option>
+                            <option value="security_engineer">Security Engineer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Session Name</th>
+                                    <th>Role</th>
+                                    <th>Progress</th>
+                                    <th>Status</th>
+                                    <th>Questions</th>
+                                    <th>Last Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sessionsTableBody">
+                                {% for session in sessions %}
+                                <tr class="session-row" 
+                                    data-status="{{ session.status }}" 
+                                    data-role="{{ session.role }}">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-chat-dots text-primary me-2"></i>
+                                            <div>
+                                                <div class="fw-medium">{{ session.session_name }}</div>
+                                                <small class="text-muted">
+                                                    Created {{ session.created_at.strftime('%b %d, %Y') if session.created_at else 'Recently' }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if session.role == 'project_manager' %}
+                                                <i class="bi bi-diagram-3 text-primary me-1"></i>
+                                            {% elif session.role == 'business_analyst' %}
+                                                <i class="bi bi-graph-up text-success me-1"></i>
+                                            {% elif session.role == 'ux_designer' %}
+                                                <i class="bi bi-palette text-info me-1"></i>
+                                            {% elif session.role == 'frontend_developer' %}
+                                                <i class="bi bi-code-slash text-warning me-1"></i>
+                                            {% elif session.role == 'backend_developer' %}
+                                                <i class="bi bi-server text-dark me-1"></i>
+                                            {% elif session.role == 'devops_engineer' %}
+                                                <i class="bi bi-gear text-secondary me-1"></i>
+                                            {% elif session.role == 'qa_tester' %}
+                                                <i class="bi bi-bug text-danger me-1"></i>
+                                            {% elif session.role == 'security_engineer' %}
+                                                <i class="bi bi-shield-check text-primary me-1"></i>
+                                            {% endif %}
+                                            <small>{{ session.role.replace('_', ' ').title() }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar" 
+                                                 role="progressbar" 
+                                                 style="width: {{ session.progress_percentage }}%">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">{{ session.progress_percentage }}%</small>
+                                    </td>
+                                    <td>
+                                        {% if session.status == 'active' %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif session.status == 'completed' %}
+                                            <span class="badge bg-primary">Completed</span>
+                                        {% elif session.status == 'paused' %}
+                                            <span class="badge bg-warning">Paused</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ session.status.title() }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-info">{{ session.questions_asked }} asked</span>
+                                            <span class="badge bg-success">{{ session.questions_answered }} answered</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ session.updated_at.strftime('%b %d, %I:%M %p') if session.updated_at else 'Recently' }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('session_chat', session_id=session.id) }}" 
+                                               class="btn btn-outline-primary" 
+                                               title="{% if session.status == 'active' %}Continue Session{% else %}View Session{% endif %}">
+                                                <i class="bi bi-{% if session.status == 'active' %}play{% else %}eye{% endif %}"></i>
+                                            </a>
+                                            {% if session.status == 'active' %}
+                                            <button class="btn btn-outline-success" 
+                                                    onclick="completeSession({{ session.id }})"
+                                                    title="Complete Session">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            <!-- Summary Statistics -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Summary</h6>
+                </div>
+                <div class="card-body">
+                    {% set total_sessions = sessions|length %}
+                    {% set active_sessions = sessions|selectattr('status', 'equalto', 'active')|list|length %}
+                    {% set completed_sessions = sessions|selectattr('status', 'equalto', 'completed')|list|length %}
+                    {% set total_questions = sessions|sum(attribute='questions_asked') %}
+                    {% set total_answers = sessions|sum(attribute='questions_answered') %}
+                    
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-number text-primary">{{ total_sessions }}</div>
+                                <div class="stat-label">Total Sessions</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-number text-success">{{ active_sessions }}</div>
+                                <div class="stat-label">Active</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-number text-info">{{ total_questions }}</div>
+                                <div class="stat-label">Questions</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-number text-warning">{{ total_answers }}</div>
+                                <div class="stat-label">Answers</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Role Distribution -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-pie-chart"></i> Roles Used</h6>
+                </div>
+                <div class="card-body">
+                    {% set role_counts = {} %}
+                    {% for session in sessions %}
+                        {% set _ = role_counts.update({session.role: role_counts.get(session.role, 0) + 1}) %}
+                    {% endfor %}
+                    
+                    {% for role, count in role_counts.items() %}
+                    <div class="role-stat mb-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="small">{{ role.replace('_', ' ').title() }}</span>
+                            <span class="badge bg-secondary">{{ count }}</span>
+                        </div>
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar" 
+                                 style="width: {{ (count / total_sessions * 100)|round }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Project Info -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-folder"></i> Project Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Name:</strong> {{ project.name }}
+                    </div>
+                    <div class="mb-2">
+                        <strong>Type:</strong> 
+                        <span class="badge bg-secondary">{{ project.project_type.replace('_', ' ').title() }}</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Framework:</strong> 
+                        <span class="badge bg-info">{{ project.framework.title() }}</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Status:</strong>
+                        {% if project.status == 'planning' %}
+                            <span class="badge bg-warning">Planning</span>
+                        {% elif project.status == 'active' %}
+                            <span class="badge bg-success">Active</span>
+                        {% elif project.status == 'paused' %}
+                            <span class="badge bg-secondary">Paused</span>
+                        {% elif project.status == 'completed' %}
+                            <span class="badge bg-primary">Completed</span>
+                        {% else %}
+                            <span class="badge bg-light text-dark">{{ project.status.title() }}</span>
+                        {% endif %}
+                    </div>
+                    {% if project.description %}
+                    <div class="mb-0">
+                        <strong>Description:</strong>
+                        <p class="small text-muted mt-1">{{ project.description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card text-center">
+                <div class="card-body py-5">
+                    <i class="bi bi-chat-dots display-1 text-muted mb-4"></i>
+                    <h4>No Socratic Sessions Yet</h4>
+                    <p class="text-muted mb-4">
+                        Start your first Socratic session to begin exploring your project requirements and design decisions through guided questioning.
+                    </p>
+                    <a href="{{ url_for('new_session', project_id=project.id) }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-circle"></i> Start Your First Session
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Complete Session Modal -->
+<div class="modal fade" id="completeSessionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Complete Session</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to complete this session?</p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Once completed, you won't be able to add more messages to this session.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmCompleteBtn">
+                    <i class="bi bi-check-circle"></i> Complete Session
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-card {
+    padding: 15px 0;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    margin-top: 5px;
+}
+
+.role-stat {
+    font-size: 0.9rem;
+}
+
+.session-row {
+    transition: background-color 0.2s ease;
+}
+
+.session-row:hover {
+    background-color: #f8f9fa;
+}
+
+.progress {
+    margin-bottom: 2px;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+</style>
+
+<script>
+let currentSessionId = null;
+
+function filterSessions() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const roleFilter = document.getElementById('roleFilter').value;
+    const rows = document.querySelectorAll('.session-row');
+    
+    rows.forEach(row => {
+        const status = row.dataset.status;
+        const role = row.dataset.role;
+        
+        const statusMatch = !statusFilter || status === statusFilter;
+        const roleMatch = !roleFilter || role === roleFilter;
+        
+        if (statusMatch && roleMatch) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function completeSession(sessionId) {
+    currentSessionId = sessionId;
+    const modal = new bootstrap.Modal(document.getElementById('completeSessionModal'));
+    modal.show();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmCompleteBtn = document.getElementById('confirmCompleteBtn');
+    
+    if (confirmCompleteBtn) {
+        confirmCompleteBtn.addEventListener('click', function() {
+            if (currentSessionId) {
+                // Create and submit form
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/sessions/${currentSessionId}/complete`;
+                
+                const csrfToken = document.createElement('input');
+                csrfToken.type = 'hidden';
+                csrfToken.name = 'csrf_token';
+                csrfToken.value = '{{ csrf_token() }}';
+                
+                form.appendChild(csrfToken);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

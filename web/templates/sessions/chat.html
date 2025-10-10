@@ -1,0 +1,495 @@
+{% extends "base.html" %}
+
+{% block title %}{{ session.session_name }} - Socratic Session{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Session Header -->
+    <div class="row mb-3">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('projects') }}">Projects</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a></li>
+                    <li class="breadcrumb-item active">{{ session.session_name }}</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-chat-dots text-primary"></i> {{ session.session_name }}</h2>
+                    <p class="text-muted mb-0">
+                        Role: <strong>{{ session.role.replace('_', ' ').title() }}</strong> | 
+                        Status: 
+                        {% if session.status == 'active' %}
+                            <span class="badge bg-success">Active</span>
+                        {% elif session.status == 'completed' %}
+                            <span class="badge bg-primary">Completed</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ session.status.title() }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('project_sessions', project_id=project.id) }}" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-clock-history"></i> Session History
+                    </a>
+                    {% if session.status == 'active' %}
+                    <button class="btn btn-success" onclick="completeSession()">
+                        <i class="bi bi-check-circle"></i> Complete Session
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Chat Area -->
+        <div class="col-lg-8">
+            <div class="card chat-container">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-chat-text"></i> Conversation</h5>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-info me-2">{{ session.questions_asked }} questions asked</span>
+                        <span class="badge bg-success">{{ session.questions_answered }} answered</span>
+                    </div>
+                </div>
+                
+                <!-- Messages Area -->
+                <div class="card-body chat-messages" id="chat-messages">
+                    {% for message in messages %}
+                    <div class="message-bubble {{ 'assistant' if message.role == 'assistant' else 'user' }}">
+                        <div class="message-header">
+                            <strong>
+                                {% if message.role == 'assistant' %}
+                                    <i class="bi bi-robot text-primary"></i> AI Facilitator
+                                {% else %}
+                                    <i class="bi bi-person text-success"></i> {{ current_user.username }}
+                                {% endif %}
+                            </strong>
+                            <small class="text-muted">{{ message.timestamp.strftime('%I:%M %p') if message.timestamp else 'Now' }}</small>
+                        </div>
+                        <div class="message-content">{{ message.content }}</div>
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Typing indicator (hidden by default) -->
+                    <div class="message-bubble assistant typing-indicator" id="typing-indicator" style="display: none;">
+                        <div class="message-header">
+                            <strong><i class="bi bi-robot text-primary"></i> AI Facilitator</strong>
+                            <small class="text-muted">typing...</small>
+                        </div>
+                        <div class="message-content">
+                            <div class="typing-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Message Input -->
+                {% if session.status == 'active' %}
+                <div class="card-footer">
+                    <form id="message-form" class="d-flex">
+                        <div class="flex-grow-1 me-2">
+                            <textarea class="form-control" 
+                                      id="user-message" 
+                                      placeholder="Type your response here..." 
+                                      rows="2"
+                                      required></textarea>
+                        </div>
+                        <div class="d-flex flex-column">
+                            <button type="submit" class="btn btn-primary mb-1" id="send-button">
+                                <i class="bi bi-send"></i> Send
+                            </button>
+                            <small class="text-muted">Enter to send</small>
+                        </div>
+                    </form>
+                </div>
+                {% else %}
+                <div class="card-footer text-center">
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> This session has been completed. 
+                        <a href="{{ url_for('new_session', project_id=project.id) }}">Start a new session</a> to continue the conversation.
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Progress Tracking -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Session Progress</h6>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-3">
+                        <div class="progress-bar" 
+                             role="progressbar" 
+                             style="width: {{ session.progress_percentage }}%"
+                             id="progress-bar">
+                            {{ session.progress_percentage }}%
+                        </div>
+                    </div>
+                    
+                    <!-- Phase Indicators -->
+                    <div class="phases">
+                        {% for phase_id, phase_name in phases %}
+                        <div class="phase-item {{ 'active' if phase_id == session.current_phase else '' }}">
+                            <div class="d-flex align-items-center">
+                                <div class="phase-indicator me-2">
+                                    {% if phase_id == session.current_phase %}
+                                        <i class="bi bi-arrow-right-circle-fill text-primary"></i>
+                                    {% else %}
+                                        <i class="bi bi-circle text-muted"></i>
+                                    {% endif %}
+                                </div>
+                                <span class="phase-name">{{ phase_name }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Session Statistics -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-graph-up"></i> Statistics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <div class="stat-number text-primary">{{ session.questions_asked }}</div>
+                                <div class="stat-label">Questions</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <div class="stat-number text-success">{{ session.questions_answered }}</div>
+                                <div class="stat-label">Responses</div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="small text-muted">
+                        <div><strong>Started:</strong> {{ session.created_at.strftime('%b %d, %Y at %I:%M %p') if session.created_at else 'Recently' }}</div>
+                        <div><strong>Last Update:</strong> {{ session.updated_at.strftime('%b %d, %Y at %I:%M %p') if session.updated_at else 'Recently' }}</div>
+                        {% if session.completed_at %}
+                        <div><strong>Completed:</strong> {{ session.completed_at.strftime('%b %d, %Y at %I:%M %p') }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Context -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-folder"></i> Project Context</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Project:</strong> <a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Type:</strong> 
+                        <span class="badge bg-secondary">{{ project.project_type.replace('_', ' ').title() }}</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Framework:</strong> 
+                        <span class="badge bg-info">{{ project.framework.title() }}</span>
+                    </div>
+                    {% if project.description %}
+                    <div class="mb-0">
+                        <strong>Description:</strong>
+                        <p class="small text-muted mt-1">{{ project.description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Complete Session Modal -->
+<div class="modal fade" id="completeSessionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Complete Session</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to complete this Socratic session?</p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Once completed, you won't be able to add more messages to this session, but you can start a new one.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('complete_session', session_id=session.id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Complete Session
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.chat-container {
+    height: calc(100vh - 200px);
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(100vh - 350px);
+    padding-bottom: 20px;
+}
+
+.message-bubble {
+    margin-bottom: 15px;
+    padding: 12px;
+    border-radius: 10px;
+    max-width: 80%;
+}
+
+.message-bubble.assistant {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    margin-right: auto;
+}
+
+.message-bubble.user {
+    background-color: #007bff;
+    color: white;
+    margin-left: auto;
+}
+
+.message-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.message-content {
+    line-height: 1.4;
+}
+
+.typing-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.typing-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #6c757d;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typing {
+    0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+.phase-item {
+    padding: 8px 0;
+    border-left: 2px solid #dee2e6;
+    padding-left: 15px;
+    margin-left: 10px;
+    position: relative;
+}
+
+.phase-item.active {
+    border-left-color: #007bff;
+    background-color: #f8f9ff;
+    margin-left: 5px;
+    padding-left: 20px;
+    border-radius: 5px;
+}
+
+.phase-indicator {
+    position: absolute;
+    left: -8px;
+    background: white;
+}
+
+.stat-item {
+    padding: 10px 0;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-transform: uppercase;
+}
+
+#user-message {
+    resize: none;
+    border-radius: 20px;
+}
+
+#send-button {
+    border-radius: 20px;
+    min-width: 80px;
+}
+</style>
+
+<script>
+const sessionId = {{ session.id }};
+let isSubmitting = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const messageForm = document.getElementById('message-form');
+    const userMessageInput = document.getElementById('user-message');
+    const sendButton = document.getElementById('send-button');
+    const chatMessages = document.getElementById('chat-messages');
+    const typingIndicator = document.getElementById('typing-indicator');
+    const progressBar = document.getElementById('progress-bar');
+
+    // Auto-scroll to bottom
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // Initial scroll
+    scrollToBottom();
+
+    // Handle form submission
+    if (messageForm) {
+        messageForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (isSubmitting) return;
+            
+            const message = userMessageInput.value.trim();
+            if (!message) return;
+            
+            isSubmitting = true;
+            sendButton.disabled = true;
+            sendButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Sending...';
+            
+            // Add user message to chat immediately
+            addMessageToChat(message, 'user', '{{ current_user.username }}', 'Now');
+            userMessageInput.value = '';
+            
+            // Show typing indicator
+            typingIndicator.style.display = 'block';
+            scrollToBottom();
+            
+            try {
+                const response = await fetch(`/sessions/${sessionId}/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Hide typing indicator
+                    typingIndicator.style.display = 'none';
+                    
+                    // Add AI response
+                    addMessageToChat(data.ai_response, 'assistant', 'AI Facilitator', 'Now');
+                    
+                    // Update progress bar
+                    progressBar.style.width = data.progress + '%';
+                    progressBar.textContent = data.progress + '%';
+                    
+                    // Update statistics
+                    updateStats();
+                    
+                } else {
+                    throw new Error(data.error || 'Failed to send message');
+                }
+                
+            } catch (error) {
+                console.error('Error sending message:', error);
+                typingIndicator.style.display = 'none';
+                alert('Error sending message. Please try again.');
+            } finally {
+                isSubmitting = false;
+                sendButton.disabled = false;
+                sendButton.innerHTML = '<i class="bi bi-send"></i> Send';
+                userMessageInput.focus();
+            }
+        });
+        
+        // Handle Enter key
+        userMessageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                messageForm.dispatchEvent(new Event('submit'));
+            }
+        });
+    }
+
+    function addMessageToChat(content, role, sender, time) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message-bubble ${role}`;
+        
+        const icon = role === 'assistant' ? 'bi-robot text-primary' : 'bi-person text-success';
+        
+        messageDiv.innerHTML = `
+            <div class="message-header">
+                <strong><i class="bi ${icon}"></i> ${sender}</strong>
+                <small class="text-muted">${time}</small>
+            </div>
+            <div class="message-content">${content}</div>
+        `;
+        
+        chatMessages.insertBefore(messageDiv, typingIndicator);
+        scrollToBottom();
+    }
+    
+    function updateStats() {
+        // This would typically fetch updated stats from the server
+        // For now, we'll just increment the display counters
+        const questionsElement = document.querySelector('.stat-number.text-primary');
+        const responsesElement = document.querySelector('.stat-number.text-success');
+        
+        if (questionsElement) {
+            const current = parseInt(questionsElement.textContent);
+            questionsElement.textContent = current + 1;
+        }
+        
+        if (responsesElement) {
+            const current = parseInt(responsesElement.textContent);
+            responsesElement.textContent = current + 1;
+        }
+    }
+});
+
+function completeSession() {
+    const modal = new bootstrap.Modal(document.getElementById('completeSessionModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

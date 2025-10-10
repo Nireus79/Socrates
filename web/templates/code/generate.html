@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Code - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('projects') }}">Projects</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('project_code', project_id=project.id) }}">Code Generation</a></li>
+                    <li class="breadcrumb-item active">New Generation</li>
+                </ol>
+            </nav>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-gear text-primary"></i> Generate Code</h2>
+                    <p class="text-muted mb-0">Create a new code generation for project: <strong>{{ project.name }}</strong></p>
+                </div>
+                <a href="{{ url_for('project_code', project_id=project.id) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Code Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Form -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-gear"></i> Generation Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('create_generation', project_id=project.id) }}" id="generationForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                        <!-- Generation Name -->
+                        <div class="mb-4">
+                            <label for="generation_name" class="form-label">Generation Name <span class="text-danger">*</span></label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="generation_name"
+                                   name="generation_name"
+                                   placeholder="e.g., Initial MVP, Version 2.0, API Refactor"
+                                   required>
+                            <div class="form-text">Give this generation a descriptive name for future reference</div>
+                        </div>
+
+                        <!-- Architecture Pattern Selection -->
+                        <div class="mb-4">
+                            <label class="form-label">Architecture Pattern <span class="text-danger">*</span></label>
+                            <div class="form-text mb-3">Choose the architectural pattern that best fits your project needs</div>
+
+                            <div class="row">
+                                {% for pattern_id, pattern_name, pattern_description in patterns %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card pattern-card h-100">
+                                        <div class="card-body">
+                                            <div class="form-check">
+                                                <input class="form-check-input"
+                                                       type="radio"
+                                                       name="architecture_pattern"
+                                                       id="pattern_{{ pattern_id }}"
+                                                       value="{{ pattern_id }}"
+                                                       required
+                                                       {% if pattern_id == 'mvc' %}checked="checked"{% endif %}>
+                                                <label class="form-check-label w-100" for="pattern_{{ pattern_id }}">
+                                                    <span class="d-flex align-items-start">
+                                                        <span class="me-3">
+                                                            {% if pattern_id == 'mvc' %}
+                                                                <i class="bi bi-diagram-3 text-primary fs-4"></i>
+                                                            {% elif pattern_id == 'mvp' %}
+                                                                <i class="bi bi-layers text-success fs-4"></i>
+                                                            {% elif pattern_id == 'mvvm' %}
+                                                                <i class="bi bi-arrow-left-right text-info fs-4"></i>
+                                                            {% elif pattern_id == 'layered' %}
+                                                                <i class="bi bi-stack text-warning fs-4"></i>
+                                                            {% elif pattern_id == 'microservices' %}
+                                                                <i class="bi bi-grid text-danger fs-4"></i>
+                                                            {% elif pattern_id == 'clean' %}
+                                                                <i class="bi bi-circle text-success fs-4"></i>
+                                                            {% elif pattern_id == 'hexagonal' %}
+                                                                <i class="bi bi-hexagon text-info fs-4"></i>
+                                                            {% elif pattern_id == 'modular' %}
+                                                                <i class="bi bi-box text-secondary fs-4"></i>
+                                                            {% endif %}
+                                                        </span>
+                                                        <span class="flex-grow-1">
+                                                            <strong class="d-block mb-1">{{ pattern_name }}</strong>
+                                                            <small class="text-muted">{{ pattern_description }}</small>
+                                                        </span>
+                                                    </span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Project Specifications -->
+                        <div class="mb-4">
+                            <label for="specifications" class="form-label">Project Specifications <span class="text-danger">*</span></label>
+                            <textarea class="form-control"
+                                      id="specifications"
+                                      name="specifications"
+                                      rows="8"
+                                      placeholder="Describe your project requirements, features, and technical details..."
+                                      required></textarea>
+                            <div class="form-text">
+                                Provide detailed specifications including:
+                                <ul class="mb-0 mt-1">
+                                    <li>Core features and functionality</li>
+                                    <li>User roles and permissions</li>
+                                    <li>Database requirements</li>
+                                    <li>API endpoints needed</li>
+                                    <li>UI/UX requirements</li>
+                                    <li>Third-party integrations</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Generation Options -->
+                        <div class="mb-4">
+                            <h6>Generation Options</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="includeTests" name="include_tests" checked>
+                                        <label class="form-check-label" for="includeTests">
+                                            Include Unit Tests
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="includeDocumentation" name="include_documentation" checked>
+                                        <label class="form-check-label" for="includeDocumentation">
+                                            Generate Documentation
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="includeDocker" name="include_docker" checked>
+                                        <label class="form-check-label" for="includeDocker">
+                                            Include Docker Configuration
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="includeDatabase" name="include_database" checked>
+                                        <label class="form-check-label" for="includeDatabase">
+                                            Database Migration Scripts
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="includeApi" name="include_api" checked>
+                                        <label class="form-check-label" for="includeApi">
+                                            REST API Documentation
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="includeSecurity" name="include_security" checked>
+                                        <label class="form-check-label" for="includeSecurity">
+                                            Security Configuration
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('project_code', project_id=project.id) }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg" id="generateButton">
+                                <i class="bi bi-gear"></i> Generate Code
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Generation Process -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Generation Process</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-3">The code generation process includes:</p>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-1-circle text-primary me-2"></i>
+                        <span class="small">Analyze specifications</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-2-circle text-primary me-2"></i>
+                        <span class="small">Design architecture</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-3-circle text-primary me-2"></i>
+                        <span class="small">Generate project structure</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-4-circle text-primary me-2"></i>
+                        <span class="small">Create application code</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-5-circle text-primary me-2"></i>
+                        <span class="small">Add tests & documentation</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-6-circle text-primary me-2"></i>
+                        <span class="small">Package for deployment</span>
+                    </div>
+                    <div class="alert alert-info small mb-0">
+                        <i class="bi bi-clock"></i> Typical generation time: 30-60 seconds
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Context -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-folder"></i> Project Context</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Project:</strong> {{ project.name }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Type:</strong>
+                        <span class="badge bg-secondary">{{ project.project_type.replace('_', ' ').title() }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Framework:</strong>
+                        <span class="badge bg-info">{{ project.framework.title() }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Status:</strong>
+                        {% if project.status == 'planning' %}
+                            <span class="badge bg-warning">Planning</span>
+                        {% elif project.status == 'active' %}
+                            <span class="badge bg-success">Active</span>
+                        {% elif project.status == 'paused' %}
+                            <span class="badge bg-secondary">Paused</span>
+                        {% elif project.status == 'completed' %}
+                            <span class="badge bg-primary">Completed</span>
+                        {% else %}
+                            <span class="badge bg-light text-dark">{{ project.status.title() }}</span>
+                        {% endif %}
+                    </div>
+                    {% if project.description %}
+                    <div class="mb-0">
+                        <strong>Description:</strong>
+                        <p class="small text-muted mt-1">{{ project.description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Framework Guidelines -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-lightbulb"></i> {{ project.framework.title() }} Best Practices</h6>
+                </div>
+                <div class="card-body">
+                    {% if project.framework == 'flask' %}
+                    <ul class="small mb-0">
+                        <li>Use application factory pattern</li>
+                        <li>Organize code with blueprints</li>
+                        <li>Implement proper error handling</li>
+                        <li>Use Flask-SQLAlchemy for database</li>
+                        <li>Include CSRF protection</li>
+                        <li>Follow RESTful API conventions</li>
+                    </ul>
+                    {% elif project.framework == 'django' %}
+                    <ul class="small mb-0">
+                        <li>Follow Django project structure</li>
+                        <li>Use Django REST framework for APIs</li>
+                        <li>Implement proper middleware</li>
+                        <li>Use Django ORM effectively</li>
+                        <li>Include admin interface</li>
+                        <li>Follow security best practices</li>
+                    </ul>
+                    {% elif project.framework == 'fastapi' %}
+                    <ul class="small mb-0">
+                        <li>Use dependency injection</li>
+                        <li>Implement async/await patterns</li>
+                        <li>Include automatic documentation</li>
+                        <li>Use Pydantic for validation</li>
+                        <li>Follow OpenAPI standards</li>
+                        <li>Include proper error responses</li>
+                    </ul>
+                    {% else %}
+                    <ul class="small mb-0">
+                        <li>Follow framework conventions</li>
+                        <li>Implement proper structure</li>
+                        <li>Include error handling</li>
+                        <li>Use best practices</li>
+                        <li>Include security measures</li>
+                        <li>Add comprehensive tests</li>
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.pattern-card {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.pattern-card:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
+}
+
+.pattern-card .form-check-input:checked + .form-check-label {
+    color: #0d6efd;
+}
+
+.form-check-input {
+    margin-top: 0.1rem;
+}
+
+.form-check-label {
+    cursor: pointer;
+}
+
+#specifications {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    resize: vertical;
+    min-height: 200px;
+}
+
+.alert {
+    border-radius: 8px;
+}
+
+.card {
+    border-radius: 10px;
+}
+
+.btn-lg {
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('generationForm');
+    const generateButton = document.getElementById('generateButton');
+    const specificationsTextarea = document.getElementById('specifications');
+
+    // Make entire pattern card clickable
+    const patternCards = document.querySelectorAll('.pattern-card');
+    patternCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const radio = card.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+
+                // Update visual state
+                document.querySelectorAll('.pattern-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+            }
+        });
+    });
+
+    // Handle radio button changes
+    const radioButtons = document.querySelectorAll('input[name="architecture_pattern"]');
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.pattern-card').forEach(card => card.classList.remove('selected'));
+            this.closest('.pattern-card').classList.add('selected');
+        });
+    });
+
+    // Form submission with loading state
+    form.addEventListener('submit', function(e) {
+        generateButton.disabled = true;
+        generateButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Starting Generation...';
+    });
+
+    // Auto-resize textarea
+    specificationsTextarea.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+
+    // Character counter for specifications
+    const charCount = document.createElement('div');
+    charCount.className = 'text-muted small mt-1';
+    charCount.style.textAlign = 'right';
+    specificationsTextarea.parentNode.appendChild(charCount);
+
+    function updateCharCount() {
+        const length = specificationsTextarea.value.length;
+        charCount.textContent = `${length} characters`;
+
+        if (length < 100) {
+            charCount.className = 'text-warning small mt-1';
+            charCount.textContent += ' (recommend at least 100 characters for best results)';
+        } else {
+            charCount.className = 'text-muted small mt-1';
+        }
+    }
+
+    specificationsTextarea.addEventListener('input', updateCharCount);
+    updateCharCount();
+
+    // Set initial selected state for default pattern
+    const defaultPattern = document.querySelector('input[name="architecture_pattern"]:checked');
+    if (defaultPattern) {
+        defaultPattern.closest('.pattern-card').classList.add('selected');
+    }
+});
+</script>
+{% endblock %}

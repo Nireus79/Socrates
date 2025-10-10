@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+
+{% block title %}Code Generation - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('projects') }}">Projects</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a></li>
+                    <li class="breadcrumb-item active">Code Generation</li>
+                </ol>
+            </nav>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-code-slash text-primary"></i> Code Generation</h2>
+                    <p class="text-muted mb-0">Generate and manage code for project: <strong>{{ project.name }}</strong></p>
+                </div>
+                <div>
+                    <a href="{{ url_for('new_generation', project_id=project.id) }}" class="btn btn-primary me-2">
+                        <i class="bi bi-plus-circle"></i> New Generation
+                    </a>
+                    <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Project
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if latest_generation %}
+    <!-- Latest Generation Quick View -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-star"></i> Latest Generation: {{ latest_generation.generation_name }}</h5>
+                    <div>
+                        {% if latest_generation.status == 'completed' %}
+                            <span class="badge bg-light text-dark">Completed</span>
+                        {% elif latest_generation.status == 'generating' %}
+                            <span class="badge bg-warning">Generating</span>
+                        {% elif latest_generation.status == 'pending' %}
+                            <span class="badge bg-secondary">Pending</span>
+                        {% else %}
+                            <span class="badge bg-danger">{{ latest_generation.status.title() }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-calendar text-muted me-2"></i>
+                                        <span class="small">Created: {{ latest_generation.created_at.strftime('%b %d, %Y at %I:%M %p') if latest_generation.created_at else 'Recently' }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-diagram-3 text-muted me-2"></i>
+                                        <span class="small">Architecture: {{ latest_generation.architecture_pattern.replace('_', ' ').title() }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-files text-muted me-2"></i>
+                                        <span class="small">Files: {{ latest_generation.completed_files }}/{{ latest_generation.total_files }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-gear text-muted me-2"></i>
+                                        <span class="small">Type: {{ latest_generation.generation_type.replace('_', ' ').title() }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if latest_generation.status == 'generating' %}
+                            <div class="progress mt-3">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                     role="progressbar"
+                                     style="width: {{ (latest_generation.completed_files / latest_generation.total_files * 100) if latest_generation.total_files > 0 else 0 }}%">
+                                    {{ (latest_generation.completed_files / latest_generation.total_files * 100)|round if latest_generation.total_files > 0 else 0 }}%
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="btn-group-vertical d-grid gap-2">
+                                <a href="{{ url_for('view_generation', generation_id=latest_generation.id) }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-eye"></i> View Files
+                                </a>
+                                {% if latest_generation.status == 'completed' and latest_files %}
+                                <a href="{{ url_for('download_generation', generation_id=latest_generation.id) }}" class="btn btn-outline-success">
+                                    <i class="bi bi-download"></i> Download
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Generations History -->
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Generation History ({{ generations|length }})</h5>
+                    <div class="d-flex gap-2">
+                        <select class="form-select form-select-sm" id="statusFilter" onchange="filterGenerations()">
+                            <option value="">All Status</option>
+                            <option value="completed">Completed</option>
+                            <option value="generating">Generating</option>
+                            <option value="pending">Pending</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                        <select class="form-select form-select-sm" id="architectureFilter" onchange="filterGenerations()">
+                            <option value="">All Architectures</option>
+                            <option value="mvc">MVC</option>
+                            <option value="mvp">MVP</option>
+                            <option value="mvvm">MVVM</option>
+                            <option value="layered">Layered</option>
+                            <option value="microservices">Microservices</option>
+                            <option value="clean">Clean Architecture</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if generations %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Generation Name</th>
+                                    <th>Architecture</th>
+                                    <th>Progress</th>
+                                    <th>Status</th>
+                                    <th>Files</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="generationsTableBody">
+                                {% for generation in generations %}
+                                <tr class="generation-row"
+                                    data-status="{{ generation.status }}"
+                                    data-architecture="{{ generation.architecture_pattern }}">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-code-slash text-primary me-2"></i>
+                                            <div>
+                                                <div class="fw-medium">{{ generation.generation_name }}</div>
+                                                <small class="text-muted">{{ generation.generation_type.replace('_', ' ').title() }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ generation.architecture_pattern.replace('_', ' ').title() }}</span>
+                                    </td>
+                                    <td>
+                                        {% if generation.total_files > 0 %}
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar {% if generation.status == 'generating' %}progress-bar-striped progress-bar-animated{% endif %}"
+                                                 role="progressbar"
+                                                 style="width: {{ (generation.completed_files / generation.total_files * 100) }}%">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">{{ generation.completed_files }}/{{ generation.total_files }} files</small>
+                                        {% else %}
+                                        <small class="text-muted">Preparing...</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if generation.status == 'completed' %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% elif generation.status == 'generating' %}
+                                            <span class="badge bg-warning">Generating</span>
+                                        {% elif generation.status == 'pending' %}
+                                            <span class="badge bg-secondary">Pending</span>
+                                        {% elif generation.status == 'failed' %}
+                                            <span class="badge bg-danger">Failed</span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark">{{ generation.status.title() }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="text-primary fw-medium">{{ generation.completed_files }}</span>
+                                        <span class="text-muted">/ {{ generation.total_files }}</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ generation.created_at.strftime('%b %d, %I:%M %p') if generation.created_at else 'Recently' }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('view_generation', generation_id=generation.id) }}"
+                                               class="btn btn-outline-primary"
+                                               title="View Files">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            {% if generation.status == 'completed' %}
+                                            <a href="{{ url_for('download_generation', generation_id=generation.id) }}"
+                                               class="btn btn-outline-success"
+                                               title="Download">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-code-slash display-1 text-muted mb-4"></i>
+                        <h4>No Code Generated Yet</h4>
+                        <p class="text-muted mb-4">
+                            Start your first code generation to create a complete project structure based on your specifications.
+                        </p>
+                        <a href="{{ url_for('new_generation', project_id=project.id) }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-plus-circle"></i> Generate Your First Project
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            {% if generations %}
+            <!-- Summary Statistics -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Statistics</h6>
+                </div>
+                <div class="card-body">
+                    {% set total_generations = generations|length %}
+                    {% set completed_generations = generations|selectattr('status', 'equalto', 'completed')|list|length %}
+                    {% set total_files = generations|sum(attribute='completed_files') %}
+
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-number text-primary">{{ total_generations }}</div>
+                                <div class="stat-label">Total</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card">
+                                <div class="stat-number text-success">{{ completed_generations }}</div>
+                                <div class="stat-label">Completed</div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="stat-card">
+                                <div class="stat-number text-info">{{ total_files }}</div>
+                                <div class="stat-label">Files Generated</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Architecture Distribution -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-pie-chart"></i> Architecture Patterns</h6>
+                </div>
+                <div class="card-body">
+                    {% set arch_counts = {} %}
+                    {% for generation in generations %}
+                        {% set _ = arch_counts.update({generation.architecture_pattern: arch_counts.get(generation.architecture_pattern, 0) + 1}) %}
+                    {% endfor %}
+
+                    {% for arch, count in arch_counts.items() %}
+                    <div class="arch-stat mb-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="small">{{ arch.replace('_', ' ').title() }}</span>
+                            <span class="badge bg-secondary">{{ count }}</span>
+                        </div>
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar"
+                                 style="width: {{ (count / total_generations * 100)|round }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Project Info -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-folder"></i> Project Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Name:</strong> {{ project.name }}
+                    </div>
+                    <div class="mb-2">
+                        <strong>Type:</strong>
+                        <span class="badge bg-secondary">{{ project.project_type.replace('_', ' ').title() }}</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Framework:</strong>
+                        <span class="badge bg-info">{{ project.framework.title() }}</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Status:</strong>
+                        {% if project.status == 'planning' %}
+                            <span class="badge bg-warning">Planning</span>
+                        {% elif project.status == 'active' %}
+                            <span class="badge bg-success">Active</span>
+                        {% elif project.status == 'paused' %}
+                            <span class="badge bg-secondary">Paused</span>
+                        {% elif project.status == 'completed' %}
+                            <span class="badge bg-primary">Completed</span>
+                        {% else %}
+                            <span class="badge bg-light text-dark">{{ project.status.title() }}</span>
+                        {% endif %}
+                    </div>
+                    {% if project.description %}
+                    <div class="mb-0">
+                        <strong>Description:</strong>
+                        <p class="small text-muted mt-1">{{ project.description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-card {
+    padding: 15px 0;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    margin-top: 5px;
+}
+
+.arch-stat {
+    font-size: 0.9rem;
+}
+
+.generation-row {
+    transition: background-color 0.2s ease;
+}
+
+.generation-row:hover {
+    background-color: #f8f9fa;
+}
+
+.progress {
+    margin-bottom: 2px;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+</style>
+
+<script>
+function filterGenerations() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const architectureFilter = document.getElementById('architectureFilter').value;
+    const rows = document.querySelectorAll('.generation-row');
+
+    rows.forEach(row => {
+        const status = row.dataset.status;
+        const architecture = row.dataset.architecture;
+
+        const statusMatch = !statusFilter || status === statusFilter;
+        const architectureMatch = !architectureFilter || architecture === architectureFilter;
+
+        if (statusMatch && architectureMatch) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Auto-refresh for generating status
+document.addEventListener('DOMContentLoaded', function() {
+    const generatingRows = document.querySelectorAll('[data-status="generating"]');
+
+    if (generatingRows.length > 0) {
+        setTimeout(() => {
+            location.reload();
+        }, 5000); // Refresh every 5 seconds if there are generating items
+    }
+});
+</script>
+{% endblock %}
