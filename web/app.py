@@ -21,6 +21,11 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 from functools import wraps
 
+try:
+    from wtforms.validators import ValidationError
+except ImportError:
+    ValidationError = Exception
+
 # Flask and related imports
 try:
     from flask import (
@@ -112,6 +117,7 @@ except ImportError as e:
             'total_available': 0,
             'total_services': 0
         }
+
 
     def get_event_bus():
         """Fallback event bus function"""
@@ -218,6 +224,40 @@ if FLASK_AVAILABLE:
         password = StringField('Password', validators=[DataRequired(), Length(min=6)])
         remember = BooleanField('Remember Me')
         submit = SubmitField('Log In')
+
+
+    class RegisterForm(FlaskForm):
+        """User registration form."""
+        username = StringField('Username', validators=[
+            DataRequired(),
+            Length(min=3, max=50, message="Username must be 3-50 characters")
+        ])
+        email = StringField('Email', validators=[
+            OptionalValidator(),
+            Email(message="Please enter a valid email address")
+        ])
+        first_name = StringField('First Name', validators=[
+            OptionalValidator(),
+            Length(max=50)
+        ])
+        last_name = StringField('Last Name', validators=[
+            OptionalValidator(),
+            Length(max=50)
+        ])
+        password = StringField('Password', validators=[
+            DataRequired(),
+            Length(min=6, message="Password must be at least 6 characters")
+        ])
+        confirm_password = StringField('Confirm Password', validators=[
+            DataRequired()
+        ])
+        terms = BooleanField('Accept Terms of Service', validators=[DataRequired()])
+        submit = SubmitField('Create Account')
+
+        def validate_confirm_password(self, field):
+            """Custom validator for password confirmation."""
+            if field.data != self.password.data:
+                raise ValidationError('Passwords must match')
 
 
     class ProjectForm(FlaskForm):
@@ -414,9 +454,9 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         if not FLASK_AVAILABLE:
             return "Flask not available", 503
 
-        form = LoginForm() if FLASK_AVAILABLE else None
+        form = LoginForm()
 
-        if form and form.validate_on_submit():
+        if form.validate_on_submit():
             username = form.username.data
             password = form.password.data
 
@@ -438,7 +478,8 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 logger.error(f"Login error: {e}")
                 flash('Login system unavailable', 'error')
 
-        return render_template('auth.html', form=form, mode='login')
+        # Fix: Use 'page' instead of 'mode' to match template expectations
+        return render_template('auth.html', form=form, page='login')
 
     @flask_app.route('/logout')
     @login_required
@@ -451,94 +492,130 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
     @flask_app.route('/register', methods=['GET', 'POST'])
     def register():
         """User registration page."""
-        if request.method == 'POST':
+        form = RegisterForm()
+
+        if form.validate_on_submit():
             try:
-                # Get form data
-                username = request.form.get('username', '').strip()
-                email = request.form.get('email', '').strip()
-                password = request.form.get('password', '')
-                confirm_password = request.form.get('confirm_password', '')
-                first_name = request.form.get('first_name', '').strip()
-                last_name = request.form.get('last_name', '').strip()
-                terms = request.form.get('terms') == 'on'
-
-                # Basic validation
-                errors = []
-                if not username or len(username) < 3:
-                    errors.append('Username must be at least 3 characters')
-                if email and '@' not in email:
-                    errors.append('Valid email address format required')
-                if not password or len(password) < 6:
-                    errors.append('Password must be at least 6 characters')
-                if password != confirm_password:
-                    errors.append('Passwords do not match')
-                if not terms:
-                    errors.append('You must accept the Terms of Service')
-
-                if errors:
-                    for error in errors:
-                        flash(error, 'error')
-                    return render_template('auth.html', page='register')
-
                 # Check system availability
                 repo_manager = get_repository_manager()
                 if not repo_manager:
                     flash('Registration system unavailable', 'error')
-                    return render_template('auth.html', page='register')
+                    return render_template('auth.html', form=form, page='register')
 
                 # Check if username exists
                 user_repo = repo_manager.get_repository('user')
-                if user_repo.get_by_username(username):
+                if user_repo.get_by_username(form.username.data):
                     flash('Username already exists', 'error')
-                    return render_template('auth.html', page='register')
+                    return render_template('auth.html', form=form, page='register')
 
-                # Create user directly via repository
-                try:
-                    from src.models import User, UserRole, UserStatus
-                    from src.core import DateTimeHelper
+                # Create user via repository
+                from src.models import User, UserRole, UserStatus
+                from src.core import DateTimeHelper
 
-                    user_email = email if email else f"{username}@example.com"
+                # Use email if provided, otherwise create a placeholder
+                user_email = form.email.data if form.email.data else f"{form.username.data}@example.com"
 
-                    # Create user model
-                    new_user = User(
-                        username=username,
-                        email=user_email,
-                        password_hash=generate_password_hash(password),
-                        first_name=first_name,
-                        last_name=last_name,
-                        role=UserRole.DEVELOPER,
-                        status=UserStatus.ACTIVE,
-                        created_at=DateTimeHelper.now()
-                    )
+                new_user = User(
+                    username=form.username.data,
+                    email=user_email,
+                    password_hash=generate_password_hash(form.password.data),
+                    first_name=form.first_name.data or '',
+                    last_name=form.last_name.data or '',
+                    role=UserRole.DEVELOPER,
+                    status=UserStatus.ACTIVE,
+                    created_at=DateTimeHelper.now()
+                )
 
-                    # Save to database using repository
-                    # Save to database using repository
-                    print(f"DEBUG: Attempting to create user: {username}")
-                    print(f"DEBUG: User object before conversion: {new_user}")
+                # Convert enum fields to string values for database
+                new_user.role = new_user.role.value if hasattr(new_user.role, 'value') else new_user.role
+                new_user.status = new_user.status.value if hasattr(new_user.status, 'value') else new_user.status
 
-                    # Convert enum fields to string values
-                    new_user.role = new_user.role.value if hasattr(new_user.role, 'value') else new_user.role
-                    new_user.status = new_user.status.value if hasattr(new_user.status, 'value') else new_user.status
+                created_user = user_repo.create(new_user)
 
-                    print(f"DEBUG: User object after conversion: {new_user}")
-                    created_user = user_repo.create(new_user)
-
-                    if created_user:
-                        flash('Account created successfully! Please log in.', 'success')
-                        return redirect(url_for('login'))
-                    else:
-                        flash('Registration failed: Could not create user', 'error')
-                        print("DEBUG: user_repo.create() returned None or False")
-
-                except Exception as e:
-                    logger.error(f"Registration error: {e}")
-                    flash(f'Registration failed: {str(e)}', 'error')
+                if created_user:
+                    flash('Account created successfully! Please log in.', 'success')
+                    return redirect(url_for('login'))
+                else:
+                    flash('Registration failed: Could not create user', 'error')
 
             except Exception as e:
                 logger.error(f"Registration error: {e}")
                 flash('An error occurred during registration', 'error')
 
-        return render_template('auth.html', page='register')
+        return render_template('auth.html', form=form, page='register')
+
+    @flask_app.route('/forgot-password', methods=['GET', 'POST'])
+    def forgot_password():
+        """Password reset request page."""
+        if request.method == 'POST':
+            email = request.form.get('email', '').strip()
+
+            if not email:
+                flash('Please enter your email address', 'error')
+                return render_template('auth.html', page='forgot_password')
+
+            # In a real app, you'd send an email here
+            # For now, just show a success message
+            flash('If an account with that email exists, you will receive password reset instructions.', 'info')
+            return redirect(url_for('login'))
+
+        return render_template('auth.html', page='forgot_password')
+
+    @flask_app.route('/reset-password/<token>')
+    def reset_password(token):
+        """Password reset confirmation page."""
+        # In a real app, you'd validate the token here
+        return render_template('auth.html', page='reset_password', token=token)
+
+    @flask_app.route('/profile', methods=['GET', 'POST'])
+    @login_required
+    def profile():
+        """User profile management page."""
+        if request.method == 'POST':
+            try:
+                # Get updated profile data
+                email = request.form.get('email', '').strip()
+                first_name = request.form.get('first_name', '').strip()
+                last_name = request.form.get('last_name', '').strip()
+                new_password = request.form.get('new_password', '')
+
+                # Basic validation
+                if email and '@' not in email:
+                    flash('Please enter a valid email address', 'error')
+                    return render_template('auth.html', page='profile')
+
+                # Update user profile
+                repo_manager = get_repository_manager()
+                if repo_manager:
+                    user_repo = repo_manager.get_repository('user')
+                    user = user_repo.get_by_id(current_user.id)
+
+                    if user:
+                        # Update fields
+                        if email:
+                            user.email = email
+                        if first_name:
+                            user.first_name = first_name
+                        if last_name:
+                            user.last_name = last_name
+                        if new_password and len(new_password) >= 6:
+                            user.password_hash = generate_password_hash(new_password)
+
+                        # Update in database
+                        if user_repo.update(user):
+                            flash('Profile updated successfully!', 'success')
+                        else:
+                            flash('Failed to update profile', 'error')
+                    else:
+                        flash('User not found', 'error')
+                else:
+                    flash('Profile update unavailable', 'error')
+
+            except Exception as e:
+                logger.error(f"Profile update error: {e}")
+                flash('An error occurred while updating your profile', 'error')
+
+        return render_template('auth.html', page='profile')
 
     @flask_app.route('/dashboard')
     @login_required
@@ -920,6 +997,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         """Document upload page - placeholder."""
         flash('Document upload feature coming soon!', 'info')
         return redirect(url_for('dashboard'))
+
     # =================================================================
     # API ROUTES
     # =================================================================
