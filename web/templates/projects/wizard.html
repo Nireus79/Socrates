@@ -1,0 +1,607 @@
+{% extends "base.html" %}
+
+{% block title %}Create New Project - Socratic RAG{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <!-- Wizard Header -->
+            <div class="text-center mb-4">
+                <h2 class="fw-bold text-gradient bg-gradient-primary">
+                    <i class="bi bi-magic"></i> Create New Project
+                </h2>
+                <p class="text-muted mb-0">Follow our guided wizard to set up your project perfectly</p>
+            </div>
+
+            <!-- Progress Indicator -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <div class="progress-wizard">
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <div class="step-item {{ 'active' if current_step == 1 else ('completed' if current_step > 1 else '') }}">
+                                    <div class="step-circle">
+                                        <i class="bi {{ 'bi-check-lg' if current_step > 1 else 'bi-info-circle' }}"></i>
+                                    </div>
+                                    <div class="step-title">Project Details</div>
+                                    <div class="step-subtitle">Basic information</div>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="step-item {{ 'active' if current_step == 2 else ('completed' if current_step > 2 else '') }}">
+                                    <div class="step-circle">
+                                        <i class="bi {{ 'bi-check-lg' if current_step > 2 else 'bi-gear' }}"></i>
+                                    </div>
+                                    <div class="step-title">Framework</div>
+                                    <div class="step-subtitle">Technology stack</div>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="step-item {{ 'active' if current_step == 3 else ('completed' if current_step > 3 else '') }}">
+                                    <div class="step-circle">
+                                        <i class="bi {{ 'bi-check-lg' if current_step > 3 else 'bi-list-check' }}"></i>
+                                    </div>
+                                    <div class="step-title">Requirements</div>
+                                    <div class="step-subtitle">Planning & goals</div>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="step-item {{ 'active' if current_step == 4 else '' }}">
+                                    <div class="step-circle">
+                                        <i class="bi bi-flag"></i>
+                                    </div>
+                                    <div class="step-title">Review</div>
+                                    <div class="step-subtitle">Finalize & create</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="progress-line">
+                            <div class="progress-fill" style="width: {{ ((current_step - 1) / 3 * 100)|round }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wizard Content -->
+            <div class="card border-0 shadow-lg">
+                <div class="card-body p-5">
+                    <form method="POST" id="wizardForm" novalidate>
+                        {{ form.hidden_tag() }}
+                        <input type="hidden" name="step" value="{{ current_step }}">
+
+                        <!-- Step 1: Project Details -->
+                        {% if current_step == 1 %}
+                        <div class="wizard-step" id="step1">
+                            <div class="text-center mb-4">
+                                <h4 class="fw-bold">
+                                    <i class="bi bi-info-circle text-primary"></i> Project Details
+                                </h4>
+                                <p class="text-muted">Let's start with the basics about your project</p>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="form-floating mb-4">
+                                        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Project Name", autofocus=true) }}
+                                        <label><i class="bi bi-folder me-2"></i>Project Name *</label>
+                                        {% if form.name.errors %}
+                                            <div class="invalid-feedback">
+                                                {% for error in form.name.errors %}{{ error }}{% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <div class="form-text">Choose a descriptive name for your project</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-floating mb-4">
+                                        {{ form.project_type(class="form-select") }}
+                                        <label><i class="bi bi-people me-2"></i>Project Type</label>
+                                        <div class="form-text">Will you work alone or with a team?</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-floating mb-4">
+                                {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), placeholder="Project Description", rows="4") }}
+                                <label><i class="bi bi-file-text me-2"></i>Project Description</label>
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.description.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="form-text">Describe what you're building and its main purpose</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-floating mb-4">
+                                {{ form.status(class="form-select") }}
+                                <label><i class="bi bi-flag me-2"></i>Initial Status</label>
+                                <div class="form-text">What stage is your project in right now?</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Step 2: Framework Selection -->
+                        {% if current_step == 2 %}
+                        <div class="wizard-step" id="step2">
+                            <div class="text-center mb-4">
+                                <h4 class="fw-bold">
+                                    <i class="bi bi-gear text-primary"></i> Framework Selection
+                                </h4>
+                                <p class="text-muted">Choose the technology stack that fits your project best</p>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-4">
+                                        {{ form.framework(class="form-select", id="frameworkSelect") }}
+                                        <label><i class="bi bi-code-slash me-2"></i>Primary Framework</label>
+                                        <div class="form-text">Select the main framework for your project</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="framework-info p-3 bg-light rounded" id="frameworkInfo">
+                                        <h6 class="fw-bold mb-2">
+                                            <i class="bi bi-lightbulb text-warning"></i> Framework Guide
+                                        </h6>
+                                        <p class="small text-muted mb-0">Select a framework to see recommendations and details</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Framework Recommendations -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="framework-recommendations">
+                                        <h6 class="fw-bold mb-3">
+                                            <i class="bi bi-stars text-primary"></i> Popular Choices
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <div class="recommendation-card p-3 border rounded h-100" data-framework="flask">
+                                                    <h6 class="fw-bold">Flask</h6>
+                                                    <p class="small text-muted mb-2">Lightweight Python web framework</p>
+                                                    <span class="badge bg-primary">Backend</span>
+                                                    <span class="badge bg-secondary">API</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <div class="recommendation-card p-3 border rounded h-100" data-framework="react">
+                                                    <h6 class="fw-bold">React</h6>
+                                                    <p class="small text-muted mb-2">Modern frontend library</p>
+                                                    <span class="badge bg-info">Frontend</span>
+                                                    <span class="badge bg-secondary">SPA</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <div class="recommendation-card p-3 border rounded h-100" data-framework="fastapi">
+                                                    <h6 class="fw-bold">FastAPI</h6>
+                                                    <p class="small text-muted mb-2">High-performance Python API framework</p>
+                                                    <span class="badge bg-success">API</span>
+                                                    <span class="badge bg-secondary">Fast</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Step 3: Requirements -->
+                        {% if current_step == 3 %}
+                        <div class="wizard-step" id="step3">
+                            <div class="text-center mb-4">
+                                <h4 class="fw-bold">
+                                    <i class="bi bi-list-check text-primary"></i> Requirements & Planning
+                                </h4>
+                                <p class="text-muted">Define your project requirements and initial planning</p>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-list-ul me-2"></i>Project Requirements
+                                </label>
+                                <textarea class="form-control" name="requirements" rows="4" placeholder="Enter your project requirements (one per line or comma-separated)&#10;Example:&#10;- User authentication system&#10;- Dashboard with analytics&#10;- Mobile responsive design&#10;- Integration with third-party APIs"></textarea>
+                                <div class="form-text">List the key features and functionality you need</div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-4">
+                                        <input type="number" class="form-control" name="estimated_hours" placeholder="Estimated Hours" min="1" max="1000">
+                                        <label><i class="bi bi-clock me-2"></i>Estimated Hours</label>
+                                        <div class="form-text">Rough estimate for project completion</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-4">
+                                        <select class="form-select" name="priority">
+                                            <option value="medium" selected>Medium Priority</option>
+                                            <option value="low">Low Priority</option>
+                                            <option value="high">High Priority</option>
+                                            <option value="urgent">Urgent</option>
+                                        </select>
+                                        <label><i class="bi bi-exclamation-triangle me-2"></i>Priority Level</label>
+                                        <div class="form-text">How important is this project?</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-light rounded p-3">
+                                <h6 class="fw-bold mb-2">
+                                    <i class="bi bi-lightbulb text-warning"></i> Planning Tips
+                                </h6>
+                                <ul class="small text-muted mb-0">
+                                    <li>Break down complex features into smaller requirements</li>
+                                    <li>Consider technical constraints early in planning</li>
+                                    <li>Include testing and deployment in your estimates</li>
+                                    <li>Think about maintenance and future enhancements</li>
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Step 4: Review -->
+                        {% if current_step == 4 %}
+                        <div class="wizard-step" id="step4">
+                            <div class="text-center mb-4">
+                                <h4 class="fw-bold">
+                                    <i class="bi bi-flag text-primary"></i> Review & Create
+                                </h4>
+                                <p class="text-muted">Review your project configuration and create your project</p>
+                            </div>
+
+                            <div class="review-section">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="review-card p-4 bg-light rounded mb-3">
+                                            <h6 class="fw-bold text-primary">
+                                                <i class="bi bi-info-circle"></i> Project Details
+                                            </h6>
+                                            <table class="table table-sm table-borderless mb-0">
+                                                <tr>
+                                                    <td class="fw-bold">Name:</td>
+                                                    <td id="reviewName">{{ wizard_data.name if wizard_data else form.name.data }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="fw-bold">Type:</td>
+                                                    <td id="reviewType">{{ wizard_data.project_type if wizard_data else form.project_type.data }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="fw-bold">Status:</td>
+                                                    <td id="reviewStatus">{{ wizard_data.status if wizard_data else form.status.data }}</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="review-card p-4 bg-light rounded mb-3">
+                                            <h6 class="fw-bold text-primary">
+                                                <i class="bi bi-gear"></i> Technology
+                                            </h6>
+                                            <table class="table table-sm table-borderless mb-0">
+                                                <tr>
+                                                    <td class="fw-bold">Framework:</td>
+                                                    <td id="reviewFramework">{{ wizard_data.framework if wizard_data else form.framework.data or 'None selected' }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="fw-bold">Priority:</td>
+                                                    <td id="reviewPriority">{{ wizard_data.priority if wizard_data else 'Medium' }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="fw-bold">Est. Hours:</td>
+                                                    <td id="reviewHours">{{ wizard_data.estimated_hours if wizard_data else 'Not specified' }}</td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {% if wizard_data and wizard_data.description %}
+                                <div class="review-card p-4 bg-light rounded mb-3">
+                                    <h6 class="fw-bold text-primary">
+                                        <i class="bi bi-file-text"></i> Description
+                                    </h6>
+                                    <p class="mb-0">{{ wizard_data.description }}</p>
+                                </div>
+                                {% endif %}
+
+                                {% if wizard_data and wizard_data.requirements %}
+                                <div class="review-card p-4 bg-light rounded mb-3">
+                                    <h6 class="fw-bold text-primary">
+                                        <i class="bi bi-list-check"></i> Requirements
+                                    </h6>
+                                    <p class="mb-0">{{ wizard_data.requirements }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Ready to create!</strong> Your project will be created with these settings. You can always modify these details later from the project settings.
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Navigation Buttons -->
+                        <div class="wizard-navigation mt-5 pt-4 border-top">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    {% if current_step > 1 %}
+                                    <button type="submit" name="action" value="back" class="btn btn-outline-secondary btn-lg">
+                                        <i class="bi bi-arrow-left"></i> Back
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    {% if current_step < 4 %}
+                                    <button type="submit" name="action" value="next" class="btn btn-primary btn-lg">
+                                        Next <i class="bi bi-arrow-right"></i>
+                                    </button>
+                                    {% else %}
+                                    <button type="submit" name="action" value="create" class="btn btn-success btn-lg">
+                                        <i class="bi bi-check-lg"></i> Create Project
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Wizard-specific styles */
+.progress-wizard {
+    position: relative;
+}
+
+.step-item {
+    position: relative;
+    z-index: 2;
+}
+
+.step-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #e9ecef;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.step-item.active .step-circle {
+    background: var(--bs-primary);
+    color: white;
+    transform: scale(1.1);
+}
+
+.step-item.completed .step-circle {
+    background: var(--bs-success);
+    color: white;
+}
+
+.step-title {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 2px;
+}
+
+.step-item.active .step-title {
+    color: var(--bs-primary);
+}
+
+.step-item.completed .step-title {
+    color: var(--bs-success);
+}
+
+.step-subtitle {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.progress-line {
+    position: absolute;
+    top: 25px;
+    left: 12.5%;
+    right: 12.5%;
+    height: 2px;
+    background: #e9ecef;
+    z-index: 1;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--bs-primary);
+    transition: width 0.5s ease;
+}
+
+.recommendation-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-color: #dee2e6 !important;
+}
+
+.recommendation-card:hover {
+    border-color: var(--bs-primary) !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.recommendation-card.selected {
+    border-color: var(--bs-primary) !important;
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.framework-info {
+    min-height: 120px;
+    transition: all 0.3s ease;
+}
+
+.review-card {
+    border: 1px solid #e9ecef;
+}
+
+.wizard-step {
+    min-height: 400px;
+}
+
+@media (max-width: 768px) {
+    .step-title, .step-subtitle {
+        font-size: 0.8rem;
+    }
+
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    .progress-line {
+        top: 20px;
+    }
+}
+</style>
+
+<script>
+// Framework selection functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const frameworkSelect = document.getElementById('frameworkSelect');
+    const frameworkInfo = document.getElementById('frameworkInfo');
+    const recommendationCards = document.querySelectorAll('.recommendation-card');
+
+    // Framework information
+    const frameworkData = {
+        'flask': {
+            title: 'Flask',
+            description: 'Flask is a lightweight and flexible Python web framework that gives you the tools to build web applications quickly.',
+            pros: ['Easy to learn', 'Minimal setup', 'Highly customizable', 'Great for APIs'],
+            useCase: 'Perfect for web APIs, small to medium web apps, and rapid prototyping.'
+        },
+        'django': {
+            title: 'Django',
+            description: 'Django is a high-level Python web framework that encourages rapid development and clean, pragmatic design.',
+            pros: ['Full-featured', 'Admin interface', 'ORM included', 'Security-focused'],
+            useCase: 'Ideal for content management systems, e-commerce sites, and large web applications.'
+        },
+        'fastapi': {
+            title: 'FastAPI',
+            description: 'FastAPI is a modern, fast web framework for building APIs with Python based on standard Python type hints.',
+            pros: ['High performance', 'Auto documentation', 'Type hints', 'Async support'],
+            useCase: 'Excellent for building high-performance APIs and microservices.'
+        },
+        'react': {
+            title: 'React',
+            description: 'React is a JavaScript library for building user interfaces, especially single-page applications.',
+            pros: ['Component-based', 'Virtual DOM', 'Large ecosystem', 'Mobile support'],
+            useCase: 'Great for interactive web applications, dashboards, and mobile apps (React Native).'
+        },
+        'vue': {
+            title: 'Vue.js',
+            description: 'Vue.js is a progressive JavaScript framework for building user interfaces and single-page applications.',
+            pros: ['Gentle learning curve', 'Flexible', 'Great documentation', 'Small size'],
+            useCase: 'Perfect for adding interactivity to existing sites or building new SPAs.'
+        },
+        'angular': {
+            title: 'Angular',
+            description: 'Angular is a platform and framework for building single-page client applications using HTML and TypeScript.',
+            pros: ['Full framework', 'TypeScript', 'Enterprise-ready', 'CLI tools'],
+            useCase: 'Best for large-scale enterprise applications with complex requirements.'
+        }
+    };
+
+    // Update framework info when selection changes
+    if (frameworkSelect) {
+        frameworkSelect.addEventListener('change', function() {
+            updateFrameworkInfo(this.value);
+        });
+
+        // Initialize with current value
+        updateFrameworkInfo(frameworkSelect.value);
+    }
+
+    // Handle recommendation card clicks
+    recommendationCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const framework = this.dataset.framework;
+            if (frameworkSelect) {
+                frameworkSelect.value = framework;
+                updateFrameworkInfo(framework);
+            }
+
+            // Update visual selection
+            recommendationCards.forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+    });
+
+    function updateFrameworkInfo(framework) {
+        if (!framework || !frameworkData[framework]) {
+            frameworkInfo.innerHTML = `
+                <h6 class="fw-bold mb-2">
+                    <i class="bi bi-lightbulb text-warning"></i> Framework Guide
+                </h6>
+                <p class="small text-muted mb-0">Select a framework to see recommendations and details</p>
+            `;
+            return;
+        }
+
+        const data = frameworkData[framework];
+        frameworkInfo.innerHTML = `
+            <h6 class="fw-bold mb-2 text-primary">
+                <i class="bi bi-gear"></i> ${data.title}
+            </h6>
+            <p class="small mb-2">${data.description}</p>
+            <div class="mb-2">
+                <strong class="small">Key Benefits:</strong>
+                <ul class="small mb-0 ps-3">
+                    ${data.pros.map(pro => `<li>${pro}</li>`).join('')}
+                </ul>
+            </div>
+            <div class="small">
+                <strong>Best For:</strong> ${data.useCase}
+            </div>
+        `;
+
+        // Update recommendation card selection
+        recommendationCards.forEach(card => {
+            card.classList.toggle('selected', card.dataset.framework === framework);
+        });
+    }
+
+    // Form validation before advancing steps
+    const wizardForm = document.getElementById('wizardForm');
+    if (wizardForm) {
+        wizardForm.addEventListener('submit', function(e) {
+            const action = e.submitter.value;
+
+            if (action === 'next') {
+                // Validate current step before advancing
+                const currentStep = parseInt(document.querySelector('input[name="step"]').value);
+
+                if (currentStep === 1) {
+                    const projectName = document.querySelector('input[name="name"]');
+                    if (!projectName.value.trim()) {
+                        e.preventDefault();
+                        projectName.focus();
+                        projectName.classList.add('is-invalid');
+                        return;
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

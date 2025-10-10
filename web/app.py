@@ -1917,6 +1917,150 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         }), 400
 
     logger.info("Flask application created successfully")
+
+    @flask_app.route('/projects/new', methods=['GET', 'POST'])
+    @login_required
+    def new_project():
+        """Create new project with wizard interface."""
+        form = ProjectForm()
+
+        # Get current step (default to 1)
+        current_step = int(request.form.get('step', request.args.get('step', 1)))
+
+        # Initialize wizard data in session if not exists
+        if 'wizard_data' not in session:
+            session['wizard_data'] = {}
+
+        wizard_data = session['wizard_data']
+
+        if request.method == 'POST':
+            action = request.form.get('action')
+
+            if action == 'back':
+                # Go back to previous step
+                current_step = max(1, current_step - 1)
+
+            elif action == 'next':
+                # Validate current step and advance
+                step_valid = True
+
+                if current_step == 1:
+                    # Validate Step 1: Project Details
+                    if form.name.validate(form) and form.project_type.validate(form):
+                        wizard_data.update({
+                            'name': form.name.data,
+                            'description': form.description.data,
+                            'project_type': form.project_type.data,
+                            'status': form.status.data
+                        })
+                    else:
+                        step_valid = False
+                        flash('Please fill in all required fields.', 'error')
+
+                elif current_step == 2:
+                    # Validate Step 2: Framework Selection
+                    wizard_data.update({
+                        'framework': form.framework.data
+                    })
+
+                elif current_step == 3:
+                    # Validate Step 3: Requirements
+                    wizard_data.update({
+                        'requirements': request.form.get('requirements', ''),
+                        'estimated_hours': request.form.get('estimated_hours', ''),
+                        'priority': request.form.get('priority', 'medium')
+                    })
+
+                if step_valid:
+                    current_step = min(4, current_step + 1)
+
+                session['wizard_data'] = wizard_data
+
+            elif action == 'create':
+                # Final step: Create the project
+                if current_step == 4:
+                    try:
+                        # Create project with wizard data
+                        project_id = user_db.create_project(
+                            owner_id=current_user.id,
+                            name=wizard_data.get('name', ''),
+                            description=wizard_data.get('description', ''),
+                            project_type=wizard_data.get('project_type', 'solo'),
+                            framework=wizard_data.get('framework', '')
+                        )
+
+                        if project_id:
+                            # Store additional wizard data if needed
+                            # (requirements, estimated_hours, priority could be stored in project_metadata)
+                            additional_data = {
+                                'requirements': wizard_data.get('requirements', ''),
+                                'estimated_hours': wizard_data.get('estimated_hours', ''),
+                                'priority': wizard_data.get('priority', 'medium'),
+                                'created_via': 'wizard'
+                            }
+
+                            # Clear wizard data from session
+                            session.pop('wizard_data', None)
+
+                            flash(f'Project "{wizard_data.get("name")}" created successfully!', 'success')
+                            return redirect(url_for('project_detail', project_id=project_id))
+                        else:
+                            flash('Error creating project. Please try again.', 'error')
+
+                    except Exception as e:
+                        flash(f'Error creating project: {str(e)}', 'error')
+
+        # GET request or form errors - show wizard
+        else:
+            # On GET request, reset wizard if starting fresh
+            if current_step == 1 and not request.args.get('step'):
+                session.pop('wizard_data', None)
+                wizard_data = {}
+
+        # Pre-populate form with wizard data for current step
+        if current_step == 1 and wizard_data:
+            form.name.data = wizard_data.get('name', '')
+            form.description.data = wizard_data.get('description', '')
+            form.project_type.data = wizard_data.get('project_type', 'solo')
+            form.status.data = wizard_data.get('status', 'draft')
+        elif current_step == 2 and wizard_data:
+            form.framework.data = wizard_data.get('framework', '')
+
+        return render_template('projects/wizard.html',
+                               form=form,
+                               current_step=current_step,
+                               wizard_data=wizard_data)
+
+    # Optional: Add a route to clear wizard data if user cancels
+    @flask_app.route('/projects/wizard/cancel', methods=['POST'])
+    @login_required
+    def cancel_wizard():
+        """Cancel wizard and clear session data."""
+        session.pop('wizard_data', None)
+        flash('Project creation cancelled.', 'info')
+        return redirect(url_for('projects'))
+
+    # Optional: Add direct step navigation for completed steps
+    @flask_app.route('/projects/new/<int:step>')
+    @login_required
+    def wizard_step(step):
+        """Navigate directly to a specific wizard step."""
+        if step < 1 or step > 4:
+            return redirect(url_for('new_project'))
+
+        # Only allow direct navigation if previous steps are completed
+        wizard_data = session.get('wizard_data', {})
+
+        if step > 1 and not wizard_data.get('name'):
+            # Step 1 not completed, redirect to step 1
+            return redirect(url_for('new_project', step=1))
+
+        if step > 2 and not wizard_data.get('name'):
+            # Previous steps not completed
+            return redirect(url_for('new_project', step=1))
+
+        return redirect(url_for('new_project', step=step))
+
     return flask_app
 
 
