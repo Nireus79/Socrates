@@ -102,7 +102,34 @@ def create_working_app():
             if field.data != self.password.data:
                 raise ValidationError('Passwords must match')
 
-    # Simple database - UPDATED VERSION
+    class ProjectForm(FlaskForm):
+        name = StringField('Project Name', validators=[DataRequired(), Length(min=2, max=100)])
+        description = TextAreaField('Description', validators=[Length(max=500)])
+        project_type = SelectField('Project Type',
+                                   choices=[('solo', 'Solo Project'), ('team', 'Team Project')],
+                                   default='solo')
+        framework = SelectField('Framework',
+                                choices=[
+                                    ('', 'Select Framework (Optional)'),
+                                    ('flask', 'Flask (Python Web)'),
+                                    ('django', 'Django (Python Web)'),
+                                    ('react', 'React (JavaScript)'),
+                                    ('vue', 'Vue.js (JavaScript)'),
+                                    ('nodejs', 'Node.js (Backend)'),
+                                    ('python-cli', 'Python CLI'),
+                                    ('other', 'Other')
+                                ],
+                                default='')
+        status = SelectField('Status',
+                             choices=[
+                                 ('draft', 'Draft'),
+                                 ('active', 'Active'),
+                                 ('completed', 'Completed'),
+                                 ('archived', 'Archived')
+                             ],
+                             default='draft')
+        submit = SubmitField('Save Project')
+
     class UserDB:
         def __init__(self, db_path: str = 'data/app.db'):
             self.db_path = db_path
@@ -583,6 +610,90 @@ def create_working_app():
         '''
 
     return app
+
+    @app.route('/projects')
+    @login_required
+    def projects():
+        user_projects = user_db.get_user_projects(current_user.id)
+        return render_template('projects/dashboard.html', projects=user_projects)
+
+    @app.route('/projects/new', methods=['GET', 'POST'])
+    @login_required
+    def new_project():
+        form = ProjectForm()
+        if form.validate_on_submit():
+            project_id = user_db.create_project(
+                owner_id=current_user.id,
+                name=form.name.data,
+                description=form.description.data,
+                project_type=form.project_type.data,
+                framework=form.framework.data
+            )
+            if project_id:
+                # Update status if not draft
+                if form.status.data != 'draft':
+                    user_db.update_project(project_id, current_user.id, status=form.status.data)
+
+                flash(f'Project "{form.name.data}" created successfully!', 'success')
+                return redirect(url_for('projects'))
+            else:
+                flash('Error creating project. Please try again.', 'error')
+
+        return render_template('projects/new.html', form=form)
+
+    @app.route('/projects/<project_id>')
+    @login_required
+    def project_detail(project_id):
+        project = user_db.get_project(project_id, current_user.id)
+        if not project:
+            flash('Project not found.', 'error')
+            return redirect(url_for('projects'))
+
+        return render_template('projects/detail.html', project=project)
+
+    @app.route('/projects/<project_id>/edit', methods=['GET', 'POST'])
+    @login_required
+    def edit_project(project_id):
+        project = user_db.get_project(project_id, current_user.id)
+        if not project:
+            flash('Project not found.', 'error')
+            return redirect(url_for('projects'))
+
+        form = ProjectForm(obj=type('obj', (object,), project)())
+
+        if form.validate_on_submit():
+            success = user_db.update_project(
+                project_id,
+                current_user.id,
+                name=form.name.data,
+                description=form.description.data,
+                project_type=form.project_type.data,
+                framework=form.framework.data,
+                status=form.status.data
+            )
+
+            if success:
+                flash(f'Project "{form.name.data}" updated successfully!', 'success')
+                return redirect(url_for('project_detail', project_id=project_id))
+            else:
+                flash('Error updating project. Please try again.', 'error')
+
+        return render_template('projects/edit.html', form=form, project=project)
+
+    @app.route('/projects/<project_id>/delete', methods=['POST'])
+    @login_required
+    def delete_project(project_id):
+        project = user_db.get_project(project_id, current_user.id)
+        if not project:
+            flash('Project not found.', 'error')
+            return redirect(url_for('projects'))
+
+        if user_db.delete_project(project_id, current_user.id):
+            flash(f'Project "{project["name"]}" deleted successfully.', 'success')
+        else:
+            flash('Error deleting project. Please try again.', 'error')
+
+        return redirect(url_for('projects'))
 
 
 def main():
