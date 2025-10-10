@@ -104,7 +104,7 @@ def create_working_app():
 
     # Simple database
     class SimpleUserDB:
-        def __init__(self, db_path: str = 'data/working_users.db'):
+        def __init__(self, db_path: str = 'data/users.db'):
             self.db_path = db_path
             os.makedirs(os.path.dirname(db_path), exist_ok=True)
             self.init_db()
