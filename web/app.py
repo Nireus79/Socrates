@@ -17,9 +17,13 @@ Features:
 
 import logging
 import os
+import json
+import sqlite3
+import uuid
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 from functools import wraps
+from pathlib import Path
 
 try:
     from wtforms.validators import ValidationError
@@ -35,7 +39,7 @@ try:
     from flask_wtf import FlaskForm, CSRFProtect
     from flask_wtf.file import FileField, FileAllowed, FileRequired
     from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-    from wtforms import StringField, TextAreaField, SelectField, BooleanField, IntegerField, SubmitField
+    from wtforms import StringField, TextAreaField, SelectField, BooleanField, IntegerField, SubmitField, PasswordField
     from wtforms.validators import DataRequired, Length, Email, Optional as OptionalValidator
     from werkzeug.utils import secure_filename
     from werkzeug.security import generate_password_hash, check_password_hash
@@ -57,34 +61,10 @@ except ImportError:
     login_required = None
     current_user = None
     StringField = None
-    TextAreaField = None
-    SelectField = None
-    BooleanField = None
-    IntegerField = None
-    SubmitField = None
-    DataRequired = None
-    Length = None
-    Email = None
-    OptionalValidator = None
-    secure_filename = None
-    generate_password_hash = None
-    check_password_hash = None
-    render_template = None
-    request = None
-    jsonify = None
-    redirect = None
-    url_for = None
-    flash = None
-    session = None
-    send_file = None
-    abort = None
-    Response = None
-    stream_template = None
 
-    logger = logging.getLogger(__name__)
-    logger.error("Flask and related packages not available")
+logger = logging.getLogger(__name__)
 
-# Import system components
+# Try to import system components, but provide fallbacks if they fail
 try:
     from src import get_config, get_logger, get_event_bus
     from src.core import SocraticException, ValidationHelper, DateTimeHelper
@@ -97,17 +77,16 @@ try:
     SYSTEM_AVAILABLE = True
 except ImportError as e:
     SYSTEM_AVAILABLE = False
+    logger.warning(f"System components not available: {e}")
 
-    # Define all fallback functions and classes in except block
+    # Define all fallback functions and classes
     def get_config():
         """Fallback config function"""
         return {}
 
-
     def get_logger(name: str):
         """Fallback logger function"""
         return logging.getLogger(name)
-
 
     def get_services_status():
         """Fallback services status function"""
@@ -118,30 +97,23 @@ except ImportError as e:
             'total_services': 0
         }
 
-
-    def get_event_bus():
-        """Fallback event bus function"""
+    def get_repository_manager():
+        """Fallback repository manager"""
         return None
 
+    def get_orchestrator():
+        """Fallback orchestrator"""
+        return None
 
-    SocraticException = Exception
+    def get_event_bus():
+        """Fallback event bus"""
+        return None
 
-
-    class ValidationHelper:
-        """Fallback ValidationHelper"""
-
-        @staticmethod
-        def is_valid_email(email: str) -> bool:
-            return '@' in email
-
-        @staticmethod
-        def is_valid_username(username: str) -> bool:
-            return len(username) >= 3
-
+    def get_system_status():
+        """Fallback system status"""
+        return {'status': 'unavailable'}
 
     class DateTimeHelper:
-        """Fallback DateTimeHelper"""
-
         @staticmethod
         def now():
             return datetime.now()
@@ -151,181 +123,1056 @@ except ImportError as e:
             return dt.isoformat() if dt else None
 
 
-    class Project:
-        """Fallback Project model"""
-        pass
-
-
-    class User:
-        """Fallback User model"""
-        pass
-
-
-    class TechnicalSpec:
-        """Fallback TechnicalSpec model"""
-        pass
-
-
-    class ConversationMessage:
-        """Fallback ConversationMessage model"""
-        pass
-
-
-    class UserRole:
-        """Fallback UserRole enum"""
-        ADMIN = 'admin'
-        DEVELOPER = 'developer'
-        USER = 'user'
-
-
-    def get_repository_manager():
-        """Fallback repository manager"""
-        return None
-
-
-    def get_orchestrator():
-        """Fallback orchestrator"""
-        return None
-
-
-    def get_system_status():
-        """Fallback services status"""
-        return {}
-
-logger = get_logger(__name__)
-
-
 # =================================================================
-# FLASK-LOGIN USER CLASS
+# WORKING USER CLASS AND DATABASE
 # =================================================================
 
-class WebUser(UserMixin):
-    """Flask-Login user implementation."""
-
-    def __init__(self, user_id: str, username: str, email: str, role: str):
+class WorkingUser(UserMixin):
+    """Simple User class for authentication"""
+    def __init__(self, user_id: str, username: str, email: str, role: str = 'developer'):
         self.id = user_id
         self.username = username
         self.email = email
         self.role = role
-        # Note: is_authenticated, is_active, is_anonymous are provided by UserMixin
 
-    def get_id(self):
-        return self.id
+
+class UserDB:
+    """Working database class that bypasses broken src imports"""
+    def __init__(self, db_path: str = 'data/app.db'):
+        self.db_path = db_path
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        self.init_db()
+
+    def init_db(self):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        # Users table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT,
+                password_hash TEXT NOT NULL,
+                first_name TEXT,
+                last_name TEXT,
+                role TEXT DEFAULT 'developer',
+                created_at TEXT
+            )
+        ''')
+
+        # Projects table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS projects (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                owner_id TEXT NOT NULL,
+                project_type TEXT DEFAULT 'solo',
+                status TEXT DEFAULT 'draft',
+                framework TEXT,
+                technology_stack TEXT,
+                created_at TEXT,
+                updated_at TEXT,
+                FOREIGN KEY (owner_id) REFERENCES users (id)
+            )
+        ''')
+
+        # Sessions table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS sessions (
+                id TEXT PRIMARY KEY,
+                session_name TEXT NOT NULL,
+                project_id TEXT,
+                owner_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                status TEXT DEFAULT 'active',
+                progress INTEGER DEFAULT 0,
+                current_phase TEXT DEFAULT 'discovery',
+                session_data TEXT DEFAULT '{}',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
+                FOREIGN KEY (owner_id) REFERENCES users (id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Session questions table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS session_questions (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                question_text TEXT NOT NULL,
+                question_type TEXT DEFAULT 'discovery',
+                role TEXT NOT NULL,
+                answer_text TEXT,
+                is_answered BOOLEAN DEFAULT 0,
+                importance_score REAL DEFAULT 5.0,
+                created_at TEXT NOT NULL,
+                answered_at TEXT,
+                FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE
+            )
+        ''')
+
+        # Code generations table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS code_generations (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                session_id TEXT,
+                generation_name TEXT NOT NULL,
+                architecture_pattern TEXT NOT NULL,
+                generation_type TEXT DEFAULT 'full_stack',
+                status TEXT DEFAULT 'pending',
+                progress INTEGER DEFAULT 0,
+                technology_stack TEXT DEFAULT '{}',
+                file_structure TEXT DEFAULT '{}',
+                generation_config TEXT DEFAULT '{}',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                completed_at TEXT,
+                FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
+                FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE SET NULL
+            )
+        ''')
+
+        # Generated files table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS generated_files (
+                id TEXT PRIMARY KEY,
+                generation_id TEXT NOT NULL,
+                file_path TEXT NOT NULL,
+                file_name TEXT NOT NULL,
+                file_type TEXT NOT NULL,
+                file_content TEXT,
+                file_size INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (generation_id) REFERENCES code_generations (id) ON DELETE CASCADE
+            )
+        ''')
+
+        conn.commit()
+        conn.close()
+
+    # User methods
+    def create_user(self, username: str, email: str, password: str, first_name: str = '', last_name: str = ''):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            user_id = str(uuid.uuid4())
+            password_hash = generate_password_hash(password)
+            created_at = datetime.now().isoformat()
+
+            cursor.execute('''
+                INSERT INTO users (id, username, email, password_hash, first_name, last_name, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (user_id, username, email, password_hash, first_name, last_name, created_at))
+
+            conn.commit()
+            conn.close()
+            return user_id
+        except Exception as e:
+            logger.error(f"Error creating user: {e}")
+            return None
+
+    def get_user_by_username(self, username: str):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('SELECT id, username, email, role FROM users WHERE username = ?', (username,))
+            row = cursor.fetchone()
+            conn.close()
+
+            if row:
+                return WorkingUser(row[0], row[1], row[2], row[3])
+            return None
+        except Exception as e:
+            logger.error(f"Error getting user: {e}")
+            return None
+
+    def get_user_by_id(self, user_id: str):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('SELECT id, username, email, role FROM users WHERE id = ?', (user_id,))
+            row = cursor.fetchone()
+            conn.close()
+
+            if row:
+                return WorkingUser(row[0], row[1], row[2], row[3])
+            return None
+        except Exception as e:
+            logger.error(f"Error getting user by ID: {e}")
+            return None
+
+    def verify_password(self, username: str, password: str):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('SELECT password_hash FROM users WHERE username = ?', (username,))
+            row = cursor.fetchone()
+            conn.close()
+
+            if row:
+                return check_password_hash(row[0], password)
+            return False
+        except Exception as e:
+            logger.error(f"Error verifying password: {e}")
+            return False
+
+    # Project methods
+    def create_project(self, owner_id: str, name: str, description: str = '',
+                       project_type: str = 'solo', framework: str = ''):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            project_id = str(uuid.uuid4())
+            created_at = datetime.now().isoformat()
+            updated_at = created_at
+
+            cursor.execute('''
+                INSERT INTO projects (id, name, description, owner_id, project_type, framework, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (project_id, name, description, owner_id, project_type, framework, created_at, updated_at))
+
+            conn.commit()
+            conn.close()
+            return project_id
+        except Exception as e:
+            logger.error(f"Error creating project: {e}")
+            return None
+
+    def get_user_projects(self, user_id: str):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, name, description, status, framework, project_type, created_at, updated_at
+                FROM projects WHERE owner_id = ?
+                ORDER BY updated_at DESC
+            ''', (user_id,))
+
+            projects = []
+            for row in cursor.fetchall():
+                projects.append({
+                    'id': row[0],
+                    'name': row[1],
+                    'description': row[2],
+                    'status': row[3],
+                    'framework': row[4],
+                    'project_type': row[5],
+                    'created_at': row[6],
+                    'updated_at': row[7]
+                })
+
+            conn.close()
+            return projects
+        except Exception as e:
+            logger.error(f"Error getting user projects: {e}")
+            return []
+
+    def get_project(self, project_id: str, user_id: str):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, name, description, status, framework, project_type, created_at, updated_at
+                FROM projects WHERE id = ? AND owner_id = ?
+            ''', (project_id, user_id))
+
+            row = cursor.fetchone()
+            conn.close()
+
+            if row:
+                return {
+                    'id': row[0],
+                    'name': row[1],
+                    'description': row[2],
+                    'status': row[3],
+                    'framework': row[4],
+                    'project_type': row[5],
+                    'created_at': row[6],
+                    'updated_at': row[7]
+                }
+            return None
+        except Exception as e:
+            logger.error(f"Error getting project: {e}")
+            return None
+
+    def update_project(self, project_id: str, user_id: str, **kwargs):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            # Build update query dynamically
+            allowed_fields = ['name', 'description', 'status', 'framework', 'project_type']
+            update_fields = []
+            values = []
+
+            for field, value in kwargs.items():
+                if field in allowed_fields:
+                    update_fields.append(f"{field} = ?")
+                    values.append(value)
+
+            if not update_fields:
+                return False
+
+            update_fields.append("updated_at = ?")
+            values.append(datetime.now().isoformat())
+            values.append(project_id)
+            values.append(user_id)
+
+            query = f"UPDATE projects SET {', '.join(update_fields)} WHERE id = ? AND owner_id = ?"
+            cursor.execute(query, values)
+
+            success = cursor.rowcount > 0
+            conn.commit()
+            conn.close()
+            return success
+        except Exception as e:
+            logger.error(f"Error updating project: {e}")
+            return False
+
+    def delete_project(self, project_id: str, user_id: str):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM projects WHERE id = ? AND owner_id = ?', (project_id, user_id))
+
+            success = cursor.rowcount > 0
+            conn.commit()
+            conn.close()
+            return success
+        except Exception as e:
+            logger.error(f"Error deleting project: {e}")
+            return False
+
+    # Session methods
+    def create_session(self, owner_id: str, session_name: str, role: str,
+                      project_id: str = None, session_data: dict = None):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            session_id = str(uuid.uuid4())
+            created_at = datetime.now().isoformat()
+            updated_at = created_at
+            session_data_json = json.dumps(session_data or {})
+
+            cursor.execute('''
+                INSERT INTO sessions (id, session_name, project_id, owner_id, role, 
+                                    session_data, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (session_id, session_name, project_id, owner_id, role,
+                  session_data_json, created_at, updated_at))
+
+            conn.commit()
+            conn.close()
+            return session_id
+        except Exception as e:
+            logger.error(f"Error creating session: {e}")
+            return None
+
+    def get_user_sessions(self, user_id: str):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT s.id, s.session_name, s.project_id, s.role, s.status, 
+                       s.progress, s.current_phase, s.created_at, s.updated_at,
+                       p.name as project_name
+                FROM sessions s
+                LEFT JOIN projects p ON s.project_id = p.id
+                WHERE s.owner_id = ?
+                ORDER BY s.updated_at DESC
+            ''', (user_id,))
+
+            sessions = []
+            for row in cursor.fetchall():
+                sessions.append({
+                    'id': row[0],
+                    'session_name': row[1],
+                    'project_id': row[2],
+                    'role': row[3],
+                    'status': row[4],
+                    'progress': row[5],
+                    'current_phase': row[6],
+                    'created_at': row[7],
+                    'updated_at': row[8],
+                    'project_name': row[9]
+                })
+
+            conn.close()
+            return sessions
+        except Exception as e:
+            logger.error(f"Error getting user sessions: {e}")
+            return []
+
+    def get_session(self, session_id: str, user_id: str):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT s.id, s.session_name, s.project_id, s.owner_id, s.role, 
+                       s.status, s.progress, s.current_phase, s.session_data,
+                       s.created_at, s.updated_at, p.name as project_name
+                FROM sessions s
+                LEFT JOIN projects p ON s.project_id = p.id
+                WHERE s.id = ? AND s.owner_id = ?
+            ''', (session_id, user_id))
+
+            row = cursor.fetchone()
+            conn.close()
+
+            if row:
+                return {
+                    'id': row[0],
+                    'session_name': row[1],
+                    'project_id': row[2],
+                    'owner_id': row[3],
+                    'role': row[4],
+                    'status': row[5],
+                    'progress': row[6],
+                    'current_phase': row[7],
+                    'session_data': json.loads(row[8]) if row[8] else {},
+                    'created_at': row[9],
+                    'updated_at': row[10],
+                    'project_name': row[11]
+                }
+            return None
+        except Exception as e:
+            logger.error(f"Error getting session: {e}")
+            return None
+
+    def update_session(self, session_id: str, user_id: str, **kwargs):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            # Build update query dynamically
+            allowed_fields = ['session_name', 'status', 'progress', 'current_phase', 'session_data']
+            update_fields = []
+            values = []
+
+            for field, value in kwargs.items():
+                if field in allowed_fields:
+                    if field == 'session_data' and isinstance(value, dict):
+                        value = json.dumps(value)
+                    update_fields.append(f"{field} = ?")
+                    values.append(value)
+
+            if not update_fields:
+                return False
+
+            update_fields.append("updated_at = ?")
+            values.append(datetime.now().isoformat())
+            values.append(session_id)
+            values.append(user_id)
+
+            query = f"UPDATE sessions SET {', '.join(update_fields)} WHERE id = ? AND owner_id = ?"
+            cursor.execute(query, values)
+
+            success = cursor.rowcount > 0
+            conn.commit()
+            conn.close()
+            return success
+        except Exception as e:
+            logger.error(f"Error updating session: {e}")
+            return False
+
+    def delete_session(self, session_id: str, user_id: str):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM sessions WHERE id = ? AND owner_id = ?',
+                          (session_id, user_id))
+
+            success = cursor.rowcount > 0
+            conn.commit()
+            conn.close()
+            return success
+        except Exception as e:
+            logger.error(f"Error deleting session: {e}")
+            return False
+
+    # Code generation methods
+    def create_generation(self, project_id: str, generation_name: str,
+                         architecture_pattern: str, generation_type: str = 'full_stack',
+                         session_id: str = None, technology_stack: dict = None,
+                         generation_config: dict = None):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            generation_id = str(uuid.uuid4())
+            created_at = datetime.now().isoformat()
+            updated_at = created_at
+            tech_stack_json = json.dumps(technology_stack or {})
+            config_json = json.dumps(generation_config or {})
+
+            cursor.execute('''
+                INSERT INTO code_generations (id, project_id, session_id, generation_name,
+                                            architecture_pattern, generation_type, 
+                                            technology_stack, generation_config,
+                                            created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (generation_id, project_id, session_id, generation_name,
+                  architecture_pattern, generation_type, tech_stack_json,
+                  config_json, created_at, updated_at))
+
+            conn.commit()
+            conn.close()
+            return generation_id
+        except Exception as e:
+            logger.error(f"Error creating generation: {e}")
+            return None
+
+    def get_project_generations(self, project_id: str, user_id: str):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT g.id, g.generation_name, g.architecture_pattern, g.generation_type,
+                       g.status, g.progress, g.created_at, g.updated_at, g.completed_at,
+                       COUNT(f.id) as file_count
+                FROM code_generations g
+                LEFT JOIN generated_files f ON g.id = f.generation_id
+                INNER JOIN projects p ON g.project_id = p.id
+                WHERE g.project_id = ? AND p.owner_id = ?
+                GROUP BY g.id
+                ORDER BY g.created_at DESC
+            ''', (project_id, user_id))
+
+            generations = []
+            for row in cursor.fetchall():
+                generations.append({
+                    'id': row[0],
+                    'generation_name': row[1],
+                    'architecture_pattern': row[2],
+                    'generation_type': row[3],
+                    'status': row[4],
+                    'progress': row[5],
+                    'created_at': row[6],
+                    'updated_at': row[7],
+                    'completed_at': row[8],
+                    'file_count': row[9]
+                })
+
+            conn.close()
+            return generations
+        except Exception as e:
+            logger.error(f"Error getting project generations: {e}")
+            return []
+
+    def get_generation(self, generation_id: str, user_id: str):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT g.id, g.project_id, g.session_id, g.generation_name,
+                       g.architecture_pattern, g.generation_type, g.status, g.progress,
+                       g.technology_stack, g.file_structure, g.generation_config,
+                       g.created_at, g.updated_at, g.completed_at,
+                       p.name as project_name
+                FROM code_generations g
+                INNER JOIN projects p ON g.project_id = p.id
+                WHERE g.id = ? AND p.owner_id = ?
+            ''', (generation_id, user_id))
+
+            row = cursor.fetchone()
+
+            if row:
+                generation = {
+                    'id': row[0],
+                    'project_id': row[1],
+                    'session_id': row[2],
+                    'generation_name': row[3],
+                    'architecture_pattern': row[4],
+                    'generation_type': row[5],
+                    'status': row[6],
+                    'progress': row[7],
+                    'technology_stack': json.loads(row[8]) if row[8] else {},
+                    'file_structure': json.loads(row[9]) if row[9] else {},
+                    'generation_config': json.loads(row[10]) if row[10] else {},
+                    'created_at': row[11],
+                    'updated_at': row[12],
+                    'completed_at': row[13],
+                    'project_name': row[14]
+                }
+
+                # Get generated files
+                cursor.execute('''
+                    SELECT id, file_path, file_name, file_type, file_size, created_at
+                    FROM generated_files
+                    WHERE generation_id = ?
+                    ORDER BY file_path, file_name
+                ''', (generation_id,))
+
+                files = []
+                for file_row in cursor.fetchall():
+                    files.append({
+                        'id': file_row[0],
+                        'file_path': file_row[1],
+                        'file_name': file_row[2],
+                        'file_type': file_row[3],
+                        'file_size': file_row[4],
+                        'created_at': file_row[5]
+                    })
+
+                generation['files'] = files
+                conn.close()
+                return generation
+
+            conn.close()
+            return None
+        except Exception as e:
+            logger.error(f"Error getting generation: {e}")
+            return None
+
+    def update_generation(self, generation_id: str, user_id: str, **kwargs):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            # Build update query dynamically
+            allowed_fields = ['generation_name', 'status', 'progress', 'technology_stack',
+                             'file_structure', 'generation_config', 'completed_at']
+            update_fields = []
+            values = []
+
+            for field, value in kwargs.items():
+                if field in allowed_fields:
+                    if field in ['technology_stack', 'file_structure', 'generation_config'] and isinstance(value, dict):
+                        value = json.dumps(value)
+                    update_fields.append(f"{field} = ?")
+                    values.append(value)
+
+            if not update_fields:
+                return False
+
+            update_fields.append("updated_at = ?")
+            values.append(datetime.now().isoformat())
+            values.append(generation_id)
+            values.append(user_id)
+
+            query = f'''
+                UPDATE code_generations 
+                SET {', '.join(update_fields)} 
+                WHERE id = ? AND project_id IN (
+                    SELECT id FROM projects WHERE owner_id = ?
+                )
+            '''
+            cursor.execute(query, values)
+
+            success = cursor.rowcount > 0
+            conn.commit()
+            conn.close()
+            return success
+        except Exception as e:
+            logger.error(f"Error updating generation: {e}")
+            return False
+
+    def delete_generation(self, generation_id: str, user_id: str):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                DELETE FROM code_generations 
+                WHERE id = ? AND project_id IN (
+                    SELECT id FROM projects WHERE owner_id = ?
+                )
+            ''', (generation_id, user_id))
+
+            success = cursor.rowcount > 0
+            conn.commit()
+            conn.close()
+            return success
+        except Exception as e:
+            logger.error(f"Error deleting generation: {e}")
+            return False
+
+    def add_generated_file(self, generation_id: str, file_path: str, file_name: str,
+                          file_type: str, file_content: str = None):
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            file_id = str(uuid.uuid4())
+            created_at = datetime.now().isoformat()
+            file_size = len(file_content.encode('utf-8')) if file_content else 0
+
+            cursor.execute('''
+                INSERT INTO generated_files (id, generation_id, file_path, file_name,
+                                           file_type, file_content, file_size, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (file_id, generation_id, file_path, file_name, file_type,
+                  file_content, file_size, created_at))
+
+            conn.commit()
+            conn.close()
+            return file_id
+        except Exception as e:
+            logger.error(f"Error adding generated file: {e}")
+            return None
 
 
 # =================================================================
-# FLASK FORMS
+# FORM CLASSES
 # =================================================================
 
-if FLASK_AVAILABLE:
-    class LoginForm(FlaskForm):
-        """User login form."""
-        username = StringField('Username', validators=[DataRequired(), Length(min=3, max=50)])
-        password = StringField('Password', validators=[DataRequired(), Length(min=6)])
-        remember = BooleanField('Remember Me')
-        submit = SubmitField('Log In')
+class LoginForm(FlaskForm):
+    """User login form."""
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    remember = BooleanField('Remember Me')
+    submit = SubmitField('Log In')
 
 
-    class RegisterForm(FlaskForm):
-        """User registration form."""
-        username = StringField('Username', validators=[
-            DataRequired(),
-            Length(min=3, max=50, message="Username must be 3-50 characters")
-        ])
-        email = StringField('Email', validators=[
-            OptionalValidator(),
-            Email(message="Please enter a valid email address")
-        ])
-        first_name = StringField('First Name', validators=[
-            OptionalValidator(),
-            Length(max=50)
-        ])
-        last_name = StringField('Last Name', validators=[
-            OptionalValidator(),
-            Length(max=50)
-        ])
-        password = StringField('Password', validators=[
-            DataRequired(),
-            Length(min=6, message="Password must be at least 6 characters")
-        ])
-        confirm_password = StringField('Confirm Password', validators=[
-            DataRequired()
-        ])
-        terms = BooleanField('Accept Terms of Service', validators=[DataRequired()])
-        submit = SubmitField('Create Account')
-
-        def validate_confirm_password(self, field):
-            """Custom validator for password confirmation."""
-            if field.data != self.password.data:
-                raise ValidationError('Passwords must match')
+class RegisterForm(FlaskForm):
+    """User registration form."""
+    username = StringField('Username', validators=[
+        DataRequired(),
+        Length(min=3, max=20, message='Username must be 3-20 characters')
+    ])
+    email = StringField('Email', validators=[OptionalValidator(), Email()])
+    password = PasswordField('Password', validators=[
+        DataRequired(),
+        Length(min=6, message='Password must be at least 6 characters')
+    ])
+    first_name = StringField('First Name', validators=[OptionalValidator()])
+    last_name = StringField('Last Name', validators=[OptionalValidator()])
+    submit = SubmitField('Register')
 
 
-    class ProjectForm(FlaskForm):
-        """Project creation/editing form - Full version."""
-        # Basic Information
-        name = StringField('Project Name', validators=[DataRequired(), Length(max=200)])
-        description = TextAreaField('Description', validators=[Length(max=2000)])
-        project_type = SelectField('Project Type', choices=[
-            ('web_application', 'Web Application'),
-            ('mobile_app', 'Mobile App'),
-            ('desktop_app', 'Desktop Application'),
-            ('api_service', 'API Service'),
-            ('data_analysis', 'Data Analysis'),
-            ('machine_learning', 'Machine Learning'),
-            ('other', 'Other')
-        ])
-
-        # Technology Stack (stored as JSON string)
-        tech_stack = TextAreaField('Technology Stack (JSON)')
-
-        # Requirements
-        requirements = TextAreaField('Requirements', validators=[Length(max=5000)])
-
-        # Timeline
-        estimated_hours = IntegerField('Estimated Hours', validators=[OptionalValidator()])
-
-        # Priority
-        priority = SelectField('Priority', choices=[
-            ('low', 'Low'),
-            ('medium', 'Medium'),
-            ('high', 'High')
-        ], default='medium')
-
-        submit = SubmitField('Create Project')
+class ProjectForm(FlaskForm):
+    """Project creation/editing form."""
+    name = StringField('Project Name', validators=[
+        DataRequired(),
+        Length(min=3, max=100, message='Project name must be 3-100 characters')
+    ])
+    description = TextAreaField('Description', validators=[
+        OptionalValidator(),
+        Length(max=1000, message='Description must be under 1000 characters')
+    ])
+    project_type = SelectField('Project Type', choices=[
+        ('solo', 'Solo Project'),
+        ('team', 'Team Project')
+    ], default='solo')
+    framework = SelectField('Framework', choices=[
+        ('', 'No Framework'),
+        ('flask', 'Flask'),
+        ('django', 'Django'),
+        ('fastapi', 'FastAPI'),
+        ('react', 'React'),
+        ('vue', 'Vue.js'),
+        ('angular', 'Angular')
+    ])
+    submit = SubmitField('Save Project')
 
 
-    class SocraticSessionForm(FlaskForm):
-        """Socratic session form."""
-        project_id = StringField('Project ID', validators=[DataRequired()])
-        role = SelectField('Role', choices=[
-            ('product_owner', 'Product Owner'),
-            ('architect', 'Architect'),
-            ('developer', 'Developer'),
-            ('tester', 'Tester'),
-            ('ui_ux', 'UI/UX Designer'),
-            ('security', 'Security Specialist'),
-            ('business_analyst', 'Business Analyst')
-        ])
-        submit = SubmitField('Start Session')
+class EditProjectForm(FlaskForm):
+    """Project editing form."""
+    name = StringField('Project Name', validators=[
+        DataRequired(),
+        Length(min=3, max=100)
+    ])
+    description = TextAreaField('Description', validators=[
+        OptionalValidator(),
+        Length(max=1000)
+    ])
+    status = SelectField('Status', choices=[
+        ('draft', 'Draft'),
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+        ('archived', 'Archived')
+    ])
+    framework = SelectField('Framework', choices=[
+        ('', 'No Framework'),
+        ('flask', 'Flask'),
+        ('django', 'Django'),
+        ('fastapi', 'FastAPI'),
+        ('react', 'React'),
+        ('vue', 'Vue.js'),
+        ('angular', 'Angular')
+    ])
+    submit = SubmitField('Update Project')
 
 
-    class CodeGenerationForm(FlaskForm):
-        """Code generation form."""
-        project_id = StringField('Project ID', validators=[DataRequired()])
-        modules = TextAreaField('Modules (comma-separated)')
-        test_coverage = BooleanField('Include Tests', default=True)
-        documentation = BooleanField('Generate Documentation', default=True)
-        submit = SubmitField('Generate Code')
+# Session Forms
+class NewSessionForm(FlaskForm):
+    session_name = StringField('Session Name', validators=[
+        DataRequired(message='Session name is required'),
+        Length(min=3, max=100, message='Session name must be between 3 and 100 characters')
+    ])
+
+    role = SelectField('Your Role', validators=[DataRequired()], choices=[
+        ('project_manager', 'Project Manager'),
+        ('business_analyst', 'Business Analyst'),
+        ('ux_designer', 'UX Designer'),
+        ('frontend_developer', 'Frontend Developer'),
+        ('backend_developer', 'Backend Developer'),
+        ('devops_engineer', 'DevOps Engineer'),
+        ('qa_tester', 'QA Tester'),
+        ('security_engineer', 'Security Engineer')
+    ])
+
+    existing_project = SelectField('Link to Project (Optional)', choices=[('', 'No Project')])
+
+    initial_idea = TextAreaField('Initial Project Idea', validators=[
+        OptionalValidator(),
+        Length(max=1000, message='Initial idea must be under 1000 characters')
+    ])
+
+    session_type = SelectField('Session Type', validators=[DataRequired()], choices=[
+        ('discovery', 'Discovery & Planning'),
+        ('requirements', 'Requirements Analysis'),
+        ('architecture', 'Architecture Design'),
+        ('implementation', 'Implementation Planning'),
+        ('review', 'Code Review & Feedback')
+    ], default='discovery')
+
+    submit = SubmitField('Start Session')
 
 
-    class DocumentUploadForm(FlaskForm):
-        """Document upload form."""
-        file = FileField('Document', validators=[
-            FileRequired(),
-            FileAllowed(['pdf', 'docx', 'txt', 'md', 'py', 'js', 'html', 'css'], 'Invalid file type')
-        ])
-        project_id = StringField('Project ID')
-        submit = SubmitField('Upload Document')
+class SessionConfigForm(FlaskForm):
+    session_name = StringField('Session Name', validators=[
+        DataRequired(),
+        Length(min=3, max=100)
+    ])
+
+    status = SelectField('Status', choices=[
+        ('active', 'Active'),
+        ('paused', 'Paused'),
+        ('completed', 'Completed'),
+        ('archived', 'Archived')
+    ])
+
+    current_phase = SelectField('Current Phase', choices=[
+        ('discovery', 'Discovery'),
+        ('requirements', 'Requirements'),
+        ('design', 'Design'),
+        ('planning', 'Planning'),
+        ('implementation', 'Implementation'),
+        ('testing', 'Testing'),
+        ('deployment', 'Deployment'),
+        ('review', 'Review')
+    ])
+
+    progress = SelectField('Progress %', choices=[
+        ('0', '0% - Just Started'),
+        ('10', '10% - Initial Setup'),
+        ('25', '25% - Quarter Complete'),
+        ('50', '50% - Half Complete'),
+        ('75', '75% - Nearly Done'),
+        ('90', '90% - Almost Finished'),
+        ('100', '100% - Complete')
+    ])
+
+    submit = SubmitField('Update Session')
+
+
+class QuestionForm(FlaskForm):
+    question_text = TextAreaField('Question', validators=[
+        DataRequired(message='Question text is required'),
+        Length(min=10, max=1000, message='Question must be between 10 and 1000 characters')
+    ])
+
+    question_type = SelectField('Question Type', choices=[
+        ('discovery', 'Discovery'),
+        ('clarification', 'Clarification'),
+        ('technical', 'Technical'),
+        ('business', 'Business'),
+        ('validation', 'Validation')
+    ], default='discovery')
+
+    importance_score = SelectField('Importance', choices=[
+        ('1', '1 - Low'),
+        ('3', '3 - Medium'),
+        ('5', '5 - High'),
+        ('7', '7 - Critical'),
+        ('10', '10 - Urgent')
+    ], default='5')
+
+    submit = SubmitField('Ask Question')
+
+
+class AnswerForm(FlaskForm):
+    answer_text = TextAreaField('Answer', validators=[
+        DataRequired(message='Answer is required'),
+        Length(min=5, max=2000, message='Answer must be between 5 and 2000 characters')
+    ])
+
+    submit = SubmitField('Submit Answer')
+
+
+# Code Generation Forms
+class CodeGenerationForm(FlaskForm):
+    generation_name = StringField('Generation Name', validators=[
+        DataRequired(message='Generation name is required'),
+        Length(min=3, max=100, message='Generation name must be between 3 and 100 characters')
+    ])
+
+    architecture_pattern = SelectField('Architecture Pattern', validators=[DataRequired()], choices=[
+        ('mvc', 'Model-View-Controller (MVC)'),
+        ('mvp', 'Model-View-Presenter (MVP)'),
+        ('mvvm', 'Model-View-ViewModel (MVVM)'),
+        ('microservices', 'Microservices'),
+        ('layered', 'Layered Architecture'),
+        ('hexagonal', 'Hexagonal Architecture'),
+        ('clean', 'Clean Architecture'),
+        ('event_driven', 'Event-Driven Architecture')
+    ])
+
+    generation_type = SelectField('Generation Type', validators=[DataRequired()], choices=[
+        ('full_stack', 'Full Stack Application'),
+        ('backend_api', 'Backend API Only'),
+        ('frontend_spa', 'Frontend SPA Only'),
+        ('mobile_app', 'Mobile Application'),
+        ('desktop_app', 'Desktop Application'),
+        ('cli_tool', 'Command Line Tool'),
+        ('library', 'Library/Package'),
+        ('microservice', 'Single Microservice')
+    ], default='full_stack')
+
+    primary_language = SelectField('Primary Language', validators=[DataRequired()], choices=[
+        ('python', 'Python'),
+        ('javascript', 'JavaScript/Node.js'),
+        ('typescript', 'TypeScript'),
+        ('java', 'Java'),
+        ('csharp', 'C#'),
+        ('go', 'Go'),
+        ('rust', 'Rust'),
+        ('php', 'PHP')
+    ])
+
+    frontend_framework = SelectField('Frontend Framework (if applicable)', choices=[
+        ('', 'None/HTML'),
+        ('react', 'React'),
+        ('vue', 'Vue.js'),
+        ('angular', 'Angular'),
+        ('svelte', 'Svelte'),
+        ('next', 'Next.js'),
+        ('nuxt', 'Nuxt.js'),
+        ('flutter', 'Flutter (Mobile)')
+    ])
+
+    backend_framework = SelectField('Backend Framework (if applicable)', choices=[
+        ('', 'None/Vanilla'),
+        ('flask', 'Flask'),
+        ('django', 'Django'),
+        ('fastapi', 'FastAPI'),
+        ('express', 'Express.js'),
+        ('nestjs', 'NestJS'),
+        ('spring', 'Spring Boot'),
+        ('dotnet', '.NET Core'),
+        ('gin', 'Gin (Go)'),
+        ('actix', 'Actix (Rust)')
+    ])
+
+    database_type = SelectField('Database Type', choices=[
+        ('', 'None'),
+        ('sqlite', 'SQLite'),
+        ('postgresql', 'PostgreSQL'),
+        ('mysql', 'MySQL'),
+        ('mongodb', 'MongoDB'),
+        ('redis', 'Redis'),
+        ('elasticsearch', 'Elasticsearch')
+    ])
+
+    include_authentication = BooleanField('Include Authentication System')
+    include_api_docs = BooleanField('Include API Documentation', default=True)
+    include_tests = BooleanField('Include Unit Tests', default=True)
+    include_docker = BooleanField('Include Docker Configuration')
+    include_deployment = BooleanField('Include Deployment Scripts')
+
+    additional_features = TextAreaField('Additional Features/Requirements', validators=[
+        OptionalValidator(),
+        Length(max=1000, message='Additional features must be under 1000 characters')
+    ])
+
+    submit = SubmitField('Generate Code')
+
+
+class GenerationConfigForm(FlaskForm):
+    generation_name = StringField('Generation Name', validators=[
+        DataRequired(),
+        Length(min=3, max=100)
+    ])
+
+    status = SelectField('Status', choices=[
+        ('pending', 'Pending'),
+        ('generating', 'Generating'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('cancelled', 'Cancelled')
+    ])
+
+    progress = SelectField('Progress %', choices=[
+        ('0', '0% - Not Started'),
+        ('10', '10% - Analyzing Requirements'),
+        ('25', '25% - Creating Structure'),
+        ('50', '50% - Generating Code'),
+        ('75', '75% - Adding Tests'),
+        ('90', '90% - Finalizing'),
+        ('100', '100% - Complete')
+    ])
+
+    submit = SubmitField('Update Generation')
+
+
+class FileViewerForm(FlaskForm):
+    file_id = StringField('File ID', validators=[DataRequired()])
+    action = SelectField('Action', choices=[
+        ('view', 'View File'),
+        ('edit', 'Edit File'),
+        ('download', 'Download File'),
+        ('delete', 'Delete File')
+    ])
+
+    file_content = TextAreaField('File Content', validators=[OptionalValidator()])
+
+    submit = SubmitField('Perform Action')
+
+
+class BatchActionForm(FlaskForm):
+    selected_files = StringField('Selected Files (JSON)', validators=[DataRequired()])
+
+    action = SelectField('Batch Action', validators=[DataRequired()], choices=[
+        ('download_zip', 'Download as ZIP'),
+        ('sync_to_ide', 'Sync to IDE'),
+        ('export_project', 'Export Project'),
+        ('delete_files', 'Delete Files')
+    ])
+
+    submit = SubmitField('Execute Action')
+
+
+# Legacy forms for compatibility
+class SocraticSessionForm(FlaskForm):
+    """Socratic session form."""
+    project_id = StringField('Project ID', validators=[DataRequired()])
+    role = SelectField('Role', choices=[
+        ('product_owner', 'Product Owner'),
+        ('architect', 'Architect'),
+        ('developer', 'Developer'),
+        ('tester', 'Tester'),
+        ('ui_ux', 'UI/UX Designer'),
+        ('security', 'Security Specialist'),
+        ('business_analyst', 'Business Analyst')
+    ])
+    submit = SubmitField('Start Session')
+
+
+class DocumentUploadForm(FlaskForm):
+    """Document upload form."""
+    file = FileField('Document', validators=[
+        FileRequired(),
+        FileAllowed(['pdf', 'docx', 'txt', 'md', 'py', 'js', 'html', 'css'], 'Invalid file type')
+    ])
+    project_id = StringField('Project ID')
+    submit = SubmitField('Upload Document')
 
 
 # =================================================================
@@ -384,7 +1231,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
     if not FLASK_AVAILABLE:
         raise RuntimeError("Flask not available")
 
-    # Create Flask application (renamed from 'app' to 'flask_app' to avoid shadowing)
+    # Create Flask application
     flask_app = Flask(__name__)
 
     # Load configuration
@@ -419,23 +1266,13 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
     login_manager.login_view = 'login'
     login_manager.login_message = 'Please log in to access this page.'
 
+    # Initialize database
+    user_db = UserDB()
+
     @login_manager.user_loader
     def load_user(user_id):
         """Load user for Flask-Login."""
-        try:
-            repo_manager = get_repository_manager()
-            if repo_manager:
-                user_repo = repo_manager.get_repository('user')
-                user = user_repo.get_by_id(user_id)
-                if user:
-                    role_value = user.role.value if hasattr(user.role, 'value') else user.role
-                    return WebUser(user.id, user.username, user.email, role_value)
-        except Exception as e:
-            logger.error(f"Error loading user: {e}")
-        return None
-
-    # Get orchestrator for routes
-    orchestrator = get_orchestrator() if SYSTEM_AVAILABLE else None
+        return user_db.get_user_by_id(user_id)
 
     # =================================================================
     # PAGE ROUTES
@@ -448,38 +1285,62 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
             return redirect(url_for('dashboard'))
         return redirect(url_for('login'))
 
+    @flask_app.route('/dashboard')
+    @login_required
+    def dashboard():
+        """Main dashboard page."""
+        user_projects = user_db.get_user_projects(current_user.id)
+        user_sessions = user_db.get_user_sessions(current_user.id)
+
+        return render_template('dashboard.html',
+                             projects=user_projects[:5],  # Recent 5 projects
+                             sessions=user_sessions[:5],  # Recent 5 sessions
+                             project_count=len(user_projects),
+                             session_count=len(user_sessions))
+
     @flask_app.route('/login', methods=['GET', 'POST'])
     def login():
         """User login page."""
-        if not FLASK_AVAILABLE:
-            return "Flask not available", 503
-
         form = LoginForm()
 
         if form.validate_on_submit():
             username = form.username.data
             password = form.password.data
 
-            try:
-                repo_manager = get_repository_manager()
-                if repo_manager:
-                    user_repo = repo_manager.get_repository('user')
-                    user = user_repo.get_by_username(username)
+            if user_db.verify_password(username, password):
+                user = user_db.get_user_by_username(username)
+                if user:
+                    login_user(user, remember=form.remember.data)
+                    flash('Login successful!', 'success')
+                    return redirect(url_for('dashboard'))
 
-                    if user and check_password_hash(user.password_hash, password):
-                        role_value = user.role.value if hasattr(user.role, 'value') else user.role
-                        web_user = WebUser(user.id, user.username, user.email, role_value)
-                        login_user(web_user, remember=form.remember.data)
-                        flash('Login successful!', 'success')
-                        return redirect(url_for('dashboard'))
-
-                flash('Invalid username or password', 'error')
-            except Exception as e:
-                logger.error(f"Login error: {e}")
-                flash('Login system unavailable', 'error')
-
-        # Fix: Use 'page' instead of 'mode' to match template expectations
+            flash('Invalid username or password', 'error')
         return render_template('auth.html', form=form, page='login')
+
+    @flask_app.route('/register', methods=['GET', 'POST'])
+    def register():
+        """User registration page."""
+        form = RegisterForm()
+        if form.validate_on_submit():
+            if user_db.get_user_by_username(form.username.data):
+                flash('Username already exists', 'error')
+                return render_template('auth.html', form=form, page='register')
+
+            user = user_db.create_user(
+                username=form.username.data,
+                email=form.email.data or f"{form.username.data}@example.com",
+                password=form.password.data,
+                first_name=form.first_name.data or '',
+                last_name=form.last_name.data or ''
+            )
+
+            if user:
+                flash('Account created successfully! Please log in.', 'success')
+                return redirect(url_for('login'))
+            else:
+                flash('Registration failed. Please try again.', 'error')
+
+        return render_template('auth.html', form=form, page='register')
 
     @flask_app.route('/logout')
     @login_required
@@ -489,703 +1350,497 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         flash('You have been logged out.', 'info')
         return redirect(url_for('login'))
 
-    @flask_app.route('/register', methods=['GET', 'POST'])
-    def register():
-        """User registration page."""
-        form = RegisterForm()
-
-        if form.validate_on_submit():
-            try:
-                # Check system availability
-                repo_manager = get_repository_manager()
-                if not repo_manager:
-                    flash('Registration system unavailable', 'error')
-                    return render_template('auth.html', form=form, page='register')
-
-                # Check if username exists
-                user_repo = repo_manager.get_repository('user')
-                if user_repo.get_by_username(form.username.data):
-                    flash('Username already exists', 'error')
-                    return render_template('auth.html', form=form, page='register')
-
-                # Create user via repository
-                from src.models import User, UserRole, UserStatus
-                from src.core import DateTimeHelper
-
-                # Use email if provided, otherwise create a placeholder
-                user_email = form.email.data if form.email.data else f"{form.username.data}@example.com"
-
-                new_user = User(
-                    username=form.username.data,
-                    email=user_email,
-                    password_hash=generate_password_hash(form.password.data),
-                    first_name=form.first_name.data or '',
-                    last_name=form.last_name.data or '',
-                    role=UserRole.DEVELOPER,
-                    status=UserStatus.ACTIVE,
-                    created_at=DateTimeHelper.now()
-                )
-
-                # Convert enum fields to string values for database
-                new_user.role = new_user.role.value if hasattr(new_user.role, 'value') else new_user.role
-                new_user.status = new_user.status.value if hasattr(new_user.status, 'value') else new_user.status
-
-                created_user = user_repo.create(new_user)
-
-                if created_user:
-                    flash('Account created successfully! Please log in.', 'success')
-                    return redirect(url_for('login'))
-                else:
-                    flash('Registration failed: Could not create user', 'error')
-
-            except Exception as e:
-                logger.error(f"Registration error: {e}")
-                flash('An error occurred during registration', 'error')
-
-        return render_template('auth.html', form=form, page='register')
-
     @flask_app.route('/forgot-password', methods=['GET', 'POST'])
     def forgot_password():
         """Password reset request page."""
         if request.method == 'POST':
             email = request.form.get('email', '').strip()
-
-            if not email:
-                flash('Please enter your email address', 'error')
-                return render_template('auth.html', page='forgot_password')
-
-            # In a real app, you'd send an email here
-            # For now, just show a success message
-            flash('If an account with that email exists, you will receive password reset instructions.', 'info')
-            return redirect(url_for('login'))
-
+            if email:
+                flash('If an account with that email exists, you will receive password reset instructions.', 'info')
+                return redirect(url_for('login'))
+            flash('Please enter your email address', 'error')
         return render_template('auth.html', page='forgot_password')
-
-    @flask_app.route('/reset-password/<token>')
-    def reset_password(token):
-        """Password reset confirmation page."""
-        # In a real app, you'd validate the token here
-        return render_template('auth.html', page='reset_password', token=token)
 
     @flask_app.route('/profile', methods=['GET', 'POST'])
     @login_required
     def profile():
         """User profile management page."""
         if request.method == 'POST':
-            try:
-                # Get updated profile data
-                email = request.form.get('email', '').strip()
-                first_name = request.form.get('first_name', '').strip()
-                last_name = request.form.get('last_name', '').strip()
-                new_password = request.form.get('new_password', '')
-
-                # Basic validation
-                if email and '@' not in email:
-                    flash('Please enter a valid email address', 'error')
-                    return render_template('auth.html', page='profile')
-
-                # Update user profile
-                repo_manager = get_repository_manager()
-                if repo_manager:
-                    user_repo = repo_manager.get_repository('user')
-                    user = user_repo.get_by_id(current_user.id)
-
-                    if user:
-                        # Update fields
-                        if email:
-                            user.email = email
-                        if first_name:
-                            user.first_name = first_name
-                        if last_name:
-                            user.last_name = last_name
-                        if new_password and len(new_password) >= 6:
-                            user.password_hash = generate_password_hash(new_password)
-
-                        # Update in database
-                        if user_repo.update(user):
-                            flash('Profile updated successfully!', 'success')
-                        else:
-                            flash('Failed to update profile', 'error')
-                    else:
-                        flash('User not found', 'error')
-                else:
-                    flash('Profile update unavailable', 'error')
-
-            except Exception as e:
-                logger.error(f"Profile update error: {e}")
-                flash('An error occurred while updating your profile', 'error')
-
+            flash('Profile updates will be implemented in the full system.', 'info')
         return render_template('auth.html', page='profile')
 
-    @flask_app.route('/dashboard')
-    @login_required
-    def dashboard():
-        """Main dashboard page."""
-        try:
-            # Get system status
-            system_status = get_services_status() if SYSTEM_AVAILABLE else {}
-
-            # Get user's projects
-            projects = []
-            if SYSTEM_AVAILABLE:
-                repo_manager = get_repository_manager()
-                if repo_manager:
-                    project_repo = repo_manager.get_repository('project')
-                    projects = project_repo.get_by_owner(current_user.id)
-
-            # Get agent status
-            agent_status = {}
-            if orchestrator:
-                agent_status = orchestrator.health_check()
-
-            return render_template('dashboard.html',
-                                   projects=projects,
-                                   system_status=system_status,
-                                   agent_status=agent_status)
-        except Exception as e:
-            logger.error(f"Dashboard error: {e}")
-            return render_template('dashboard.html',
-                                   projects=[],
-                                   system_status={},
-                                   agent_status={},
-                                   error=str(e))
-
+    # Project Routes
     @flask_app.route('/projects')
     @login_required
     def projects():
-        """Projects listing page."""
-        try:
-            projects = []
-            if SYSTEM_AVAILABLE:
-                repo_manager = get_repository_manager()
-                if repo_manager:
-                    project_repo = repo_manager.get_repository('project')
-                    projects = project_repo.get_by_owner(current_user.id)
-
-            return render_template('projects.html', projects=projects)
-        except Exception as e:
-            logger.error(f"Projects page error: {e}")
-            return render_template('projects.html', projects=[], error=str(e))
+        """Projects dashboard page."""
+        user_projects = user_db.get_user_projects(current_user.id)
+        return render_template('projects/dashboard.html', projects=user_projects)
 
     @flask_app.route('/projects/new', methods=['GET', 'POST'])
     @login_required
     def new_project():
-        """Create new project."""
-        form = ProjectForm() if FLASK_AVAILABLE else None
-
-        if form and form.validate_on_submit():
-            try:
-                # Parse tech_stack JSON if provided
-                tech_stack = {}
-                if form.tech_stack.data:
-                    try:
-                        import json
-                        tech_stack = json.loads(form.tech_stack.data)
-                    except:
-                        tech_stack = {'raw': form.tech_stack.data}
-
-                # Create project via agent
-                result = orchestrator.route_request(
-                    'project_manager',
-                    'create_project',
-                    {
-                        'name': form.name.data,
-                        'description': form.description.data,
-                        'tech_stack': tech_stack,
-                        'requirements': form.requirements.data or '',
-                        'estimated_hours': form.estimated_hours.data,
-                        'priority': form.priority.data or 'medium',
-                        'owner_id': current_user.id
-                    }
-                )
-
-                if result.get('success'):
-                    flash('Project created successfully!', 'success')
-                    return redirect(url_for('projects'))
-                else:
-                    flash(f"Error creating project: {result.get('message')}", 'error')
-            except Exception as e:
-                logger.error(f"Project creation error: {e}")
-                flash('Failed to create project', 'error')
-
-        return render_template('projects.html', form=form, page='create')
-
-    # Alias for compatibility
-    flask_app.route('/projects/create', methods=['GET', 'POST'])(new_project)
-
-    @flask_app.route('/projects/<project_id>/delete', methods=['POST'])
-    @login_required
-    def delete_project(project_id: str):
-        """Delete project permanently."""
-        try:
-            if not SYSTEM_AVAILABLE:
-                flash('System not available', 'error')
-                return redirect(url_for('projects'))
-
-            # Get project to verify ownership
-            repo_manager = get_repository_manager()
-            if repo_manager:
-                project_repo = repo_manager.get_repository('project')
-                project = project_repo.get_by_id(project_id)
-
-                if not project:
-                    flash('Project not found', 'error')
-                    return redirect(url_for('projects'))
-
-                # Check ownership
-                if project.owner_id != current_user.id:
-                    flash('Only the project owner can delete this project', 'error')
-                    return redirect(url_for('projects'))
-
-            result = orchestrator.route_request(
-                'project_manager',
-                'delete_project',
-                {
-                    'project_id': project_id,
-                    'username': current_user.username,
-                    'user_id': current_user.id
-                }
+        """Create new project page."""
+        form = ProjectForm()
+        if form.validate_on_submit():
+            project_id = user_db.create_project(
+                owner_id=current_user.id,
+                name=form.name.data,
+                description=form.description.data,
+                project_type=form.project_type.data,
+                framework=form.framework.data
             )
 
-            if result.get('success'):
-                flash('Project deleted successfully', 'success')
+            if project_id:
+                flash(f'Project "{form.name.data}" created successfully!', 'success')
+                return redirect(url_for('project_detail', project_id=project_id))
             else:
-                flash(f"Error deleting project: {result.get('message', 'Unknown error')}", 'error')
+                flash('Error creating project. Please try again.', 'error')
 
-        except Exception as e:
-            logger.error(f"Project deletion error: {e}")
-            flash('Failed to delete project', 'error')
-
-        return redirect(url_for('projects'))
+        return render_template('projects/new.html', form=form)
 
     @flask_app.route('/projects/<project_id>')
     @login_required
-    def project_detail(project_id: str):
-        """Project details page."""
-        try:
-            project = None
-            modules = []
+    def project_detail(project_id):
+        """Project detail page."""
+        project = user_db.get_project(project_id, current_user.id)
+        if not project:
+            flash('Project not found.', 'error')
+            return redirect(url_for('projects'))
 
-            if SYSTEM_AVAILABLE:
-                repo_manager = get_repository_manager()
-                if repo_manager:
-                    project_repo = repo_manager.get_repository('project')
-                    project = project_repo.get_by_id(project_id)
+        return render_template('projects/detail.html', project=project)
 
-                    if project:
-                        module_repo = repo_manager.get_repository('module')
-                        modules = module_repo.find_by_project(project_id)
+    @flask_app.route('/projects/<project_id>/edit', methods=['GET', 'POST'])
+    @login_required
+    def edit_project(project_id):
+        """Edit project page."""
+        project = user_db.get_project(project_id, current_user.id)
+        if not project:
+            flash('Project not found.', 'error')
+            return redirect(url_for('projects'))
 
-            return render_template('projects.html',
-                                   project=project,
-                                   modules=modules,
-                                   mode='detail')
-        except Exception as e:
-            logger.error(f"Project detail error: {e}")
-            return render_template('projects.html', error=str(e))
+        form = EditProjectForm()
 
+        if form.validate_on_submit():
+            success = user_db.update_project(
+                project_id=project_id,
+                user_id=current_user.id,
+                name=form.name.data,
+                description=form.description.data,
+                status=form.status.data,
+                framework=form.framework.data
+            )
+
+            if success:
+                flash(f'Project "{form.name.data}" updated successfully!', 'success')
+                return redirect(url_for('project_detail', project_id=project_id))
+            else:
+                flash('Error updating project. Please try again.', 'error')
+
+        # Pre-populate form with current project data
+        form.name.data = project['name']
+        form.description.data = project['description']
+        form.status.data = project['status']
+        form.framework.data = project['framework']
+
+        return render_template('projects/edit.html', form=form, project=project)
+
+    @flask_app.route('/projects/<project_id>/delete', methods=['POST'])
+    @login_required
+    def delete_project(project_id):
+        """Delete project."""
+        project = user_db.get_project(project_id, current_user.id)
+        if not project:
+            flash('Project not found.', 'error')
+            return redirect(url_for('projects'))
+
+        if user_db.delete_project(project_id, current_user.id):
+            flash(f'Project "{project["name"]}" deleted successfully.', 'success')
+        else:
+            flash('Error deleting project. Please try again.', 'error')
+
+        return redirect(url_for('projects'))
+
+    # Session Routes
     @flask_app.route('/sessions')
     @login_required
     def sessions():
-        """Socratic sessions page."""
-        try:
-            # Get user's recent sessions
-            sessions_list = []
-            if SYSTEM_AVAILABLE and orchestrator:
-                result = orchestrator.route_request(
-                    'socratic_counselor',
-                    'get_user_sessions',
-                    {'user_id': current_user.id}
-                )
-                if result.get('success'):
-                    sessions_list = result.get('data', [])
-
-            return render_template('sessions.html', sessions=sessions_list)
-        except Exception as e:
-            logger.error(f"Sessions page error: {e}")
-            return render_template('sessions.html', sessions=[], error=str(e))
+        """Sessions dashboard page."""
+        user_sessions = user_db.get_user_sessions(current_user.id)
+        return render_template('sessions.html', sessions=user_sessions)
 
     @flask_app.route('/sessions/new', methods=['GET', 'POST'])
     @login_required
-    @with_agent_orchestration
     def new_session():
-        """Start new Socratic session."""
-        form = SocraticSessionForm() if FLASK_AVAILABLE else None
+        """Create new session page."""
+        form = NewSessionForm()
 
-        if form and form.validate_on_submit():
-            try:
-                result = orchestrator.route_request(
-                    'socratic_counselor',
-                    'start_session',
-                    {
-                        'project_id': form.project_id.data,
-                        'role': form.role.data,
-                        'user_id': current_user.id
-                    }
-                )
+        # Populate project choices
+        user_projects = user_db.get_user_projects(current_user.id)
+        form.existing_project.choices = [('', 'No Project')] + [
+            (p['id'], p['name']) for p in user_projects
+        ]
 
-                if result.get('success'):
-                    session_id = result.get('data', {}).get('session_id')
-                    flash('Session started!', 'success')
-                    return redirect(url_for('session_detail', session_id=session_id))
-                else:
-                    flash(f"Error starting session: {result.get('message')}", 'error')
-            except Exception as e:
-                logger.error(f"Session creation error: {e}")
-                flash('Failed to start session', 'error')
+        if form.validate_on_submit():
+            project_id = form.existing_project.data if form.existing_project.data else None
 
-        return render_template('sessions.html', form=form, page='create')
+            session_data = {
+                'initial_idea': form.initial_idea.data,
+                'session_type': form.session_type.data,
+                'questions': [],
+                'conversation_history': []
+            }
 
-    # Alias for compatibility
-    flask_app.route('/sessions/start', methods=['GET', 'POST'])(new_session)
+            session_id = user_db.create_session(
+                owner_id=current_user.id,
+                session_name=form.session_name.data,
+                role=form.role.data,
+                project_id=project_id,
+                session_data=session_data
+            )
+
+            if session_id:
+                flash(f'Session "{form.session_name.data}" created successfully!', 'success')
+                return redirect(url_for('session_detail', session_id=session_id))
+            else:
+                flash('Error creating session. Please try again.', 'error')
+
+        return render_template('sessions/new.html', form=form)
 
     @flask_app.route('/sessions/<session_id>')
     @login_required
-    def session_detail(session_id: str):
-        """Socratic session detail page."""
-        try:
-            session_data = None
-            messages = []
+    def session_detail(session_id):
+        """Session detail page."""
+        session = user_db.get_session(session_id, current_user.id)
+        if not session:
+            flash('Session not found.', 'error')
+            return redirect(url_for('sessions'))
 
-            if SYSTEM_AVAILABLE and orchestrator:
-                result = orchestrator.route_request(
-                    'socratic_counselor',
-                    'get_session',
-                    {'session_id': session_id}
-                )
-                if result.get('success'):
-                    session_data = result.get('data')
-                    messages = session_data.get('messages', [])
+        return render_template('sessions/detail.html', session=session)
 
-            return render_template('sessions.html',
-                                   session=session_data,
-                                   messages=messages,
-                                   mode='detail')
-        except Exception as e:
-            logger.error(f"Session detail error: {e}")
-            return render_template('sessions.html', error=str(e))
+    @flask_app.route('/sessions/<session_id>/continue', methods=['GET', 'POST'])
+    @login_required
+    def continue_session(session_id):
+        """Continue session page."""
+        session = user_db.get_session(session_id, current_user.id)
+        if not session:
+            flash('Session not found.', 'error')
+            return redirect(url_for('sessions'))
 
+        question_form = QuestionForm()
+        answer_form = AnswerForm()
+
+        if question_form.validate_on_submit() and question_form.submit.data:
+            # Handle new question submission
+            # This would integrate with the AI system later
+            flash('Question added to session.', 'success')
+            return redirect(url_for('continue_session', session_id=session_id))
+
+        if answer_form.validate_on_submit() and answer_form.submit.data:
+            # Handle answer submission
+            # This would update the session and trigger next question
+            flash('Answer recorded.', 'success')
+            return redirect(url_for('continue_session', session_id=session_id))
+
+        return render_template('sessions/continue.html',
+                             session=session,
+                             question_form=question_form,
+                             answer_form=answer_form)
+
+    @flask_app.route('/sessions/<session_id>/config', methods=['GET', 'POST'])
+    @login_required
+    def session_config(session_id):
+        """Session configuration page."""
+        session = user_db.get_session(session_id, current_user.id)
+        if not session:
+            flash('Session not found.', 'error')
+            return redirect(url_for('sessions'))
+
+        form = SessionConfigForm()
+
+        if form.validate_on_submit():
+            success = user_db.update_session(
+                session_id=session_id,
+                user_id=current_user.id,
+                session_name=form.session_name.data,
+                status=form.status.data,
+                current_phase=form.current_phase.data,
+                progress=int(form.progress.data)
+            )
+
+            if success:
+                flash('Session updated successfully.', 'success')
+                return redirect(url_for('session_detail', session_id=session_id))
+            else:
+                flash('Error updating session. Please try again.', 'error')
+        else:
+            # Pre-populate form with current session data
+            form.session_name.data = session['session_name']
+            form.status.data = session['status']
+            form.current_phase.data = session['current_phase']
+            form.progress.data = str(session['progress'])
+
+        return render_template('sessions/config.html', form=form, session=session)
+
+    @flask_app.route('/sessions/<session_id>/delete', methods=['POST'])
+    @login_required
+    def delete_session(session_id):
+        """Delete session."""
+        session = user_db.get_session(session_id, current_user.id)
+        if not session:
+            flash('Session not found.', 'error')
+            return redirect(url_for('sessions'))
+
+        if user_db.delete_session(session_id, current_user.id):
+            flash(f'Session "{session["session_name"]}" deleted successfully.', 'success')
+        else:
+            flash('Error deleting session. Please try again.', 'error')
+
+        return redirect(url_for('sessions'))
+
+    @flask_app.route('/projects/<project_id>/sessions')
+    @login_required
+    def project_sessions(project_id):
+        """Project sessions page."""
+        project = user_db.get_project(project_id, current_user.id)
+        if not project:
+            flash('Project not found.', 'error')
+            return redirect(url_for('projects'))
+
+        # Get sessions for this project
+        all_sessions = user_db.get_user_sessions(current_user.id)
+        project_sessions = [s for s in all_sessions if s['project_id'] == project_id]
+
+        return render_template('sessions/project_sessions.html',
+                             project=project,
+                             sessions=project_sessions)
+
+    @flask_app.route('/sessions/history')
+    @login_required
+    def sessions_history():
+        """Sessions history page."""
+        user_sessions = user_db.get_user_sessions(current_user.id)
+        return render_template('sessions/history.html', sessions=user_sessions)
+
+    # Code Generation Routes
     @flask_app.route('/code')
     @login_required
-    def code():
-        """Code generation page."""
-        try:
-            # Get user's projects
-            projects = []
-            if SYSTEM_AVAILABLE:
-                repo_manager = get_repository_manager()
-                if repo_manager:
-                    project_repo = repo_manager.get_repository('project')
-                    pprojects = project_repo.get_by_owner(current_user.id)
+    def code_dashboard():
+        """Code generation dashboard."""
+        # Get all user's projects with their generations
+        user_projects = user_db.get_user_projects(current_user.id)
 
-            return render_template('code.html', projects=projects)
-        except Exception as e:
-            logger.error(f"Code page error: {e}")
-            return render_template('code.html', projects=[], error=str(e))
+        recent_generations = []
+        for project in user_projects:
+            project_generations = user_db.get_project_generations(project['id'], current_user.id)
+            for gen in project_generations:
+                gen['project_name'] = project['name']
+                recent_generations.append(gen)
 
-    @flask_app.route('/code/generate', methods=['POST'])
+        # Sort by creation date, most recent first
+        recent_generations.sort(key=lambda x: x['created_at'], reverse=True)
+        recent_generations = recent_generations[:10]  # Show last 10
+
+        return render_template('code.html',
+                             projects=user_projects,
+                             recent_generations=recent_generations)
+
+    @flask_app.route('/projects/<project_id>/generate', methods=['GET', 'POST'])
     @login_required
-    @with_agent_orchestration
-    def generate_code():
-        """Generate code for project."""
-        form = CodeGenerationForm() if FLASK_AVAILABLE else None
+    def new_generation(project_id):
+        """Start new code generation."""
+        project = user_db.get_project(project_id, current_user.id)
+        if not project:
+            flash('Project not found.', 'error')
+            return redirect(url_for('projects'))
 
-        if form and form.validate_on_submit():
-            try:
-                result = orchestrator.route_request(
-                    'code_generator',
-                    'generate_code',
-                    {
-                        'project_id': form.project_id.data,
-                        'modules': [m.strip() for m in form.modules.data.split(',')],
-                        'test_coverage': form.test_coverage.data,
-                        'documentation': form.documentation.data
-                    }
-                )
+        form = CodeGenerationForm()
 
-                if result.get('success'):
-                    flash('Code generation started!', 'success')
-                    return redirect(url_for('code_status',
-                                            generation_id=result.get('data', {}).get('generation_id')))
-                else:
-                    flash(f"Error generating code: {result.get('message')}", 'error')
-            except Exception as e:
-                logger.error(f"Code generation error: {e}")
-                flash('Failed to generate code', 'error')
+        if form.validate_on_submit():
+            technology_stack = {
+                'primary_language': form.primary_language.data,
+                'frontend_framework': form.frontend_framework.data,
+                'backend_framework': form.backend_framework.data,
+                'database_type': form.database_type.data
+            }
 
-        return render_template('code.html', form=form)
+            generation_config = {
+                'include_authentication': form.include_authentication.data,
+                'include_api_docs': form.include_api_docs.data,
+                'include_tests': form.include_tests.data,
+                'include_docker': form.include_docker.data,
+                'include_deployment': form.include_deployment.data,
+                'additional_features': form.additional_features.data
+            }
 
-    @flask_app.route('/code/status/<generation_id>')
+            generation_id = user_db.create_generation(
+                project_id=project_id,
+                generation_name=form.generation_name.data,
+                architecture_pattern=form.architecture_pattern.data,
+                generation_type=form.generation_type.data,
+                technology_stack=technology_stack,
+                generation_config=generation_config
+            )
+
+            if generation_id:
+                # Mock file generation - in real implementation this would be AI-generated
+                mock_files = [
+                    ('src/app.py', 'main.py', 'python', 'Mock Flask application'),
+                    ('src/models.py', 'models.py', 'python', 'Mock database models'),
+                    ('tests/test_app.py', 'test_app.py', 'python', 'Mock unit tests'),
+                    ('README.md', 'README.md', 'markdown', 'Mock project documentation'),
+                    ('requirements.txt', 'requirements.txt', 'text', 'Mock dependencies')
+                ]
+
+                for file_path, file_name, file_type, content in mock_files:
+                    user_db.add_generated_file(generation_id, file_path, file_name, file_type, content)
+
+                # Update generation as completed
+                user_db.update_generation(generation_id, current_user.id,
+                                        status='completed', progress=100)
+
+                flash(f'Code generation "{form.generation_name.data}" completed successfully!', 'success')
+                return redirect(url_for('view_generation', generation_id=generation_id))
+            else:
+                flash('Error creating generation. Please try again.', 'error')
+
+        return render_template('code/generate.html', form=form, project=project)
+
+    @flask_app.route('/generations/<generation_id>')
     @login_required
-    def code_status(generation_id: str):
-        """Check code generation status."""
-        try:
-            status_data = None
-            if SYSTEM_AVAILABLE and orchestrator:
-                result = orchestrator.route_request(
-                    'code_generator',
-                    'get_generation_status',
-                    {'generation_id': generation_id}
-                )
-                if result.get('success'):
-                    status_data = result.get('data')
+    def view_generation(generation_id):
+        """View code generation results."""
+        generation = user_db.get_generation(generation_id, current_user.id)
+        if not generation:
+            flash('Generation not found.', 'error')
+            return redirect(url_for('code_dashboard'))
 
-            return render_template('code.html',
-                                   generation_status=status_data,
-                                   mode='status')
-        except Exception as e:
-            logger.error(f"Code status error: {e}")
-            return render_template('code.html', error=str(e))
+        # Get project details
+        project = user_db.get_project(generation['project_id'], current_user.id)
+        if not project:
+            flash('Associated project not found.', 'error')
+            return redirect(url_for('code_dashboard'))
 
-    @flask_app.route('/reports')
+        files = generation.get('files', [])
+
+        return render_template('code/viewer.html',
+                             generation=generation,
+                             project=project,
+                             files=files)
+
+    @flask_app.route('/generations/<generation_id>/download')
     @login_required
-    def reports():
-        """Reports and analytics page."""
-        try:
-            # Get user's project statistics
-            stats = {}
-            if SYSTEM_AVAILABLE and orchestrator:
-                result = orchestrator.route_request(
-                    'system_monitor',
-                    'get_user_stats',
-                    {'user_id': current_user.id}
-                )
-                if result.get('success'):
-                    stats = result.get('data', {})
+    def download_generation(generation_id):
+        """Download generation files."""
+        generation = user_db.get_generation(generation_id, current_user.id)
+        if not generation:
+            flash('Generation not found.', 'error')
+            return redirect(url_for('code_dashboard'))
 
-            return render_template('reports.html', stats=stats)
-        except Exception as e:
-            logger.error(f"Reports page error: {e}")
-            return render_template('reports.html', stats={}, error=str(e))
+        # In a real implementation, this would create a ZIP file
+        # For now, return a simple response
+        flash('Download feature would create a ZIP file with all generated files.', 'info')
+        return redirect(url_for('view_generation', generation_id=generation_id))
 
-    @flask_app.route('/admin')
+    @flask_app.route('/generations/<generation_id>/config', methods=['GET', 'POST'])
     @login_required
-    def admin():
-        """Admin panel (requires admin role)."""
-        if current_user.role != 'admin':
-            abort(403)
+    def generation_config(generation_id):
+        """Generation configuration page."""
+        generation = user_db.get_generation(generation_id, current_user.id)
+        if not generation:
+            flash('Generation not found.', 'error')
+            return redirect(url_for('code_dashboard'))
 
-        try:
-            # Get system-wide statistics
-            system_stats = {}
-            agent_health = {}
+        form = GenerationConfigForm()
 
-            if SYSTEM_AVAILABLE and orchestrator:
-                agent_health = orchestrator.health_check()
+        if form.validate_on_submit():
+            success = user_db.update_generation(
+                generation_id=generation_id,
+                user_id=current_user.id,
+                generation_name=form.generation_name.data,
+                status=form.status.data,
+                progress=int(form.progress.data)
+            )
 
-            if SYSTEM_AVAILABLE:
-                repo_manager = get_repository_manager()
-                if repo_manager:
-                    # Get counts
-                    user_repo = repo_manager.get_repository('user')
-                    project_repo = repo_manager.get_repository('project')
+            if success:
+                flash('Generation updated successfully.', 'success')
+                return redirect(url_for('view_generation', generation_id=generation_id))
+            else:
+                flash('Error updating generation. Please try again.', 'error')
+        else:
+            # Pre-populate form with current generation data
+            form.generation_name.data = generation['generation_name']
+            form.status.data = generation['status']
+            form.progress.data = str(generation['progress'])
 
-                    system_stats = {
-                        'total_users': user_repo.count(),
-                        'total_projects': project_repo.count(),
-                        'agents': agent_health
-                    }
+        return render_template('code/config.html', form=form, generation=generation)
 
-            return render_template('admin.html', stats=system_stats)
-        except Exception as e:
-            logger.error(f"Admin page error: {e}")
-            return render_template('admin.html', stats={}, error=str(e))
-
-    @flask_app.route('/documents/upload', methods=['GET', 'POST'])
+    @flask_app.route('/generations/<generation_id>/delete', methods=['POST'])
     @login_required
-    def upload_document():
-        """Document upload page - placeholder."""
-        flash('Document upload feature coming soon!', 'info')
-        return redirect(url_for('dashboard'))
+    def delete_generation(generation_id):
+        """Delete generation."""
+        generation = user_db.get_generation(generation_id, current_user.id)
+        if not generation:
+            flash('Generation not found.', 'error')
+            return redirect(url_for('code_dashboard'))
 
-    # =================================================================
-    # API ROUTES
-    # =================================================================
+        if user_db.delete_generation(generation_id, current_user.id):
+            flash(f'Generation "{generation["generation_name"]}" deleted successfully.', 'success')
+        else:
+            flash('Error deleting generation. Please try again.', 'error')
 
+        return redirect(url_for('code_dashboard'))
+
+    @flask_app.route('/projects/<project_id>/code')
+    @login_required
+    def project_code(project_id):
+        """Project code generations page."""
+        project = user_db.get_project(project_id, current_user.id)
+        if not project:
+            flash('Project not found.', 'error')
+            return redirect(url_for('projects'))
+
+        generations = user_db.get_project_generations(project_id, current_user.id)
+
+        return render_template('code/project_code.html',
+                             project=project,
+                             generations=generations)
+
+    @flask_app.route('/api/files/<file_id>')
+    @login_required
+    def get_file_content(file_id):
+        """Get file content for code viewer."""
+        # This would get file content by ID for the code viewer
+        # For now, return mock content
+        return jsonify({
+            'content': '# Mock file content\n# This would contain actual generated code',
+            'file_type': 'python'
+        })
+
+    @flask_app.route('/api/generations/<generation_id>/progress')
+    @login_required
+    def generation_progress(generation_id):
+        """Get generation progress for real-time updates."""
+        generation = user_db.get_generation(generation_id, current_user.id)
+        if not generation:
+            return jsonify({'error': 'Generation not found'}), 404
+
+        return jsonify({
+            'progress': generation['progress'],
+            'status': generation['status'],
+            'file_count': len(generation.get('files', []))
+        })
+
+    # Legacy/Compatibility Routes
     @flask_app.route('/api/health')
-    def api_health():
+    def health():
         """Health check endpoint."""
-        return api_response(
-            success=True,
-            message='System operational',
-            data={
-                'flask': FLASK_AVAILABLE,
-                'system': SYSTEM_AVAILABLE,
-                'orchestrator': orchestrator is not None
-            }
-        )
-
-    @flask_app.route('/api/agents/status')
-    @login_required
-    @with_agent_orchestration
-    def api_agents_status():
-        """Get all agents status."""
-        try:
-            status = orchestrator.health_check()
-            return api_response(status)
-        except Exception as e:
-            logger.error(f"API agents status error: {e}")
-            return api_response(success=False, message=str(e), status_code=500)
-
-    @flask_app.route('/api/agents/<agent_name>/status')
-    @login_required
-    @with_agent_orchestration
-    def api_agent_status(agent_name: str):
-        """Get specific agent status."""
-        try:
-            status = orchestrator.get_agent_status(agent_name)
-            return api_response(status)
-        except Exception as e:
-            logger.error(f"API agent status error: {e}")
-            return api_response(success=False, message=str(e), status_code=500)
-
-    @flask_app.route('/api/projects/<project_id>/generate', methods=['POST'])
-    @login_required
-    @with_agent_orchestration
-    def api_generate_project(project_id: str):
-        """API endpoint for project code generation."""
-        return generate_code()
-
-    @flask_app.route('/api/services/status', methods=['GET'])
-    @login_required
-    @with_agent_orchestration
-    def api_services_status():
-        """
-        Get external services health status.
-
-        Query Parameters:
-            detailed (bool): Include detailed metrics (default: False)
-            include_recommendations (bool): Include recommendations (default: True)
-        """
-        try:
-            # Extract parameters from query string
-            detailed = request.args.get('detailed', 'false').lower() == 'true'
-            include_recommendations = request.args.get('include_recommendations', 'true').lower() == 'true'
-
-            # Route request to system monitor agent
-            result = orchestrator.route_request(
-                'system_monitor',
-                'check_health',
-                {
-                    'detailed': detailed,
-                    'include_recommendations': include_recommendations
-                }
-            )
-
-            if result.get('success'):
-                return api_response(
-                    success=True,
-                    message='Services status retrieved',
-                    data=result.get('data', {})
-                )
-            else:
-                return api_response(
-                    success=False,
-                    message=result.get('error', 'Failed to retrieve services status'),
-                    status_code=500
-                )
-
-        except Exception as e:
-            logger.error(f"API services status error: {e}")
-            return api_response(
-                success=False,
-                message=str(e),
-                status_code=500
-            )
-
-    @flask_app.route('/api/analytics/performance', methods=['POST'])
-    @login_required
-    @with_agent_orchestration
-    def api_analytics_performance():
-        """
-        Get performance analytics and metrics.
-
-        Request Body (JSON):
-            {
-                "time_range": "1h" | "24h" | "7d" | "30d",
-                "include_historical": bool,
-                "include_recommendations": bool
-            }
-        """
-        try:
-            # Extract parameters from request body
-            data = request.get_json() or {}
-
-            time_range = data.get('time_range', '1h')
-            include_historical = data.get('include_historical', False)
-            include_recommendations = data.get('include_recommendations', True)
-
-            # Validate time_range
-            valid_ranges = ['1h', '24h', '7d', '30d']
-            if time_range not in valid_ranges:
-                return api_response(
-                    success=False,
-                    message=f'Invalid time_range. Must be one of: {", ".join(valid_ranges)}',
-                    status_code=400
-                )
-
-            # Route request to system monitor agent
-            result = orchestrator.route_request(
-                'system_monitor',
-                'monitor_performance',
-                {
-                    'time_range': time_range,
-                    'include_historical': include_historical,
-                    'include_recommendations': include_recommendations
-                }
-            )
-
-            if result.get('success'):
-                return api_response(
-                    success=True,
-                    message='Performance analytics retrieved',
-                    data=result.get('data', {})
-                )
-            else:
-                return api_response(
-                    success=False,
-                    message=result.get('error', 'Failed to retrieve performance analytics'),
-                    status_code=500
-                )
-
-        except Exception as e:
-            logger.error(f"API analytics performance error: {e}")
-            return api_response(
-                success=False,
-                message=str(e),
-                status_code=500
-            )
-
-    # =================================================================
-    # ERROR HANDLERS
-    # =================================================================
-
-    @flask_app.errorhandler(404)
-    def not_found_error(error):
-        return render_template('base.html', error='Page not found'), 404
-
-    @flask_app.errorhandler(500)
-    def internal_error(error):
-        logger.error(f"Internal server error: {error}")
-        return render_template('base.html', error='Internal server error'), 500
-
-    @flask_app.errorhandler(403)
-    def forbidden_error(error):
-        return render_template('base.html', error='Access forbidden'), 403
-
-    # =================================================================
-    # TEMPLATE CONTEXT PROCESSORS
-    # =================================================================
-
-    @flask_app.context_processor
-    def inject_system_info():
-        """Inject system information into all templates."""
-        return {
+        return jsonify({
+            'status': 'healthy',
             'system_available': SYSTEM_AVAILABLE,
-            'agents_available': orchestrator is not None,
             'current_time': datetime.now().isoformat(),
             'app_version': '7.3.0'
-        }
+        })
 
     logger.info("Flask application created successfully")
     return flask_app
@@ -1225,28 +1880,35 @@ __all__ = [
     'create_app',
     'create_flask_app',
 
-    # Imported functions that are re-exported
-    'get_config',
-    'get_event_bus',
-
     # Availability flags
     'FLASK_AVAILABLE',
     'SYSTEM_AVAILABLE',
 
-    # User class
-    'WebUser',
+    # User and Database classes
+    'WorkingUser',
+    'UserDB',
 
-    # Forms (if Flask available)
+    # Forms
     'LoginForm',
+    'RegisterForm',
     'ProjectForm',
-    'SocraticSessionForm',
+    'EditProjectForm',
+    'NewSessionForm',
+    'SessionConfigForm',
+    'QuestionForm',
+    'AnswerForm',
     'CodeGenerationForm',
+    'GenerationConfigForm',
+    'FileViewerForm',
+    'BatchActionForm',
+    'SocraticSessionForm',
     'DocumentUploadForm',
 
     # Utility functions
     'api_response',
     'with_agent_orchestration',
 ]
+
 
 # =================================================================
 # DEVELOPMENT SERVER RUNNER

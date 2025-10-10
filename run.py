@@ -6,7 +6,6 @@ import logging
 import webbrowser
 from pathlib import Path
 from threading import Timer
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 
 # Add project root to Python path
 project_root = Path(__file__).parent
@@ -57,11 +56,11 @@ def check_flask_availability():
     return True
 
 
-def create_working_app():
+def create_app():
     """Create a working Flask app that bypasses broken src imports"""
 
     # Import Flask components
-    from flask import Flask, render_template, request, redirect, url_for, flash
+    from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
     from flask_wtf import FlaskForm, CSRFProtect
     from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
     from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField, SelectField
@@ -1916,7 +1915,7 @@ def main():
     logger.info("")
 
     try:
-        app = create_working_app()
+        app = create_app()
 
         logger.info("✅ Flask application created successfully")
         logger.info("=" * 70)
