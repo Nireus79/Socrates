@@ -239,18 +239,26 @@ class CodeQualityLevel(Enum):
 # ============================================================================
 # BASE MODELS
 # ============================================================================
+def _generate_id():
+    """Safe UUID generation for dataclass default_factory"""
+    return str(uuid.uuid4())
 
-@dataclass
+
+def _current_time():
+    """Safe datetime generation for dataclass default_factory"""
+    return datetime.now()
+
+
 class BaseModel:
-    """Base class for all data models"""
+    """Base class for all data models - Fixed initialization"""
 
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: datetime = field(default_factory=DateTimeHelper.now)
-    updated_at: datetime = field(default_factory=DateTimeHelper.now)
+    id: str = field(default_factory=_generate_id)
+    created_at: datetime = field(default_factory=_current_time)
+    updated_at: datetime = field(default_factory=_current_time)
 
     def update_timestamp(self) -> None:
         """Update the last modified timestamp"""
-        self.updated_at = DateTimeHelper.now()
+        self.updated_at = datetime.now()
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert model to dictionary"""
@@ -261,7 +269,7 @@ class BaseModel:
 
         def json_serializer(obj):
             if isinstance(obj, datetime):
-                return DateTimeHelper.to_iso_string(obj)
+                return obj.isoformat()
             elif isinstance(obj, Enum):
                 return obj.value
             return str(obj)
