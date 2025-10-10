@@ -249,8 +249,9 @@ def _current_time():
     return datetime.now()
 
 
+@dataclass
 class BaseModel:
-    """Base class for all data models - Fixed initialization"""
+    """Base class for all data models - Simple and reliable"""
 
     id: str = field(default_factory=_generate_id)
     created_at: datetime = field(default_factory=_current_time)
@@ -259,22 +260,6 @@ class BaseModel:
     def update_timestamp(self) -> None:
         """Update the last modified timestamp"""
         self.updated_at = datetime.now()
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert model to dictionary"""
-        return asdict(self)
-
-    def to_json(self) -> str:
-        """Convert model to JSON string"""
-
-        def json_serializer(obj):
-            if isinstance(obj, datetime):
-                return obj.isoformat()
-            elif isinstance(obj, Enum):
-                return obj.value
-            return str(obj)
-
-        return json.dumps(self.to_dict(), default=json_serializer, indent=2)
 
 
 # ============================================================================
