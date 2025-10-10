@@ -54,23 +54,6 @@ def check_flask_availability():
 
     return True
 
-    # Create Flask app
-    app = Flask(__name__, template_folder='web/templates', static_folder='web/static')
-    app.config['SECRET_KEY'] = 'working-socratic-rag-secret-key-change-in-production'
-    app.config['WTF_CSRF_ENABLED'] = True
-
-    # Initialize extensions
-    csrf = CSRFProtect()
-    csrf.init_app(app)
-
-    login_manager = LoginManager()
-    login_manager.init_app(app)
-    login_manager.login_view = 'login'
-    login_manager.login_message = 'Please log in to access this page.'
-
-    # Initialize database
-    user_db = UserDB()
-
 
 def main():
     """Main entry point"""
@@ -97,7 +80,7 @@ def main():
     logger.info("")
 
     try:
-        app = create_app
+        app = create_app()
 
         logger.info("✅ Flask application created successfully")
         logger.info("=" * 70)
