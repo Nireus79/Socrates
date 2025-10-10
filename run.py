@@ -102,19 +102,19 @@ def create_working_app():
             if field.data != self.password.data:
                 raise ValidationError('Passwords must match')
 
-        # Simple database - UPDATED VERSION
-        class UserDB:
-            def __init__(self, db_path: str = 'data/app.db'):
-                self.db_path = db_path
-                os.makedirs(os.path.dirname(db_path), exist_ok=True)
-                self.init_db()
+    # Simple database - UPDATED VERSION
+    class UserDB:
+        def __init__(self, db_path: str = 'data/app.db'):
+            self.db_path = db_path
+            os.makedirs(os.path.dirname(db_path), exist_ok=True)
+            self.init_db()
 
-            def init_db(self):
-                conn = sqlite3.connect(self.db_path)
-                cursor = conn.cursor()
+        def init_db(self):
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
 
-                # Users table (existing)
-                cursor.execute('''
+            # Users table (existing)
+            cursor.execute('''
                     CREATE TABLE IF NOT EXISTS users (
                         id TEXT PRIMARY KEY,
                         username TEXT UNIQUE NOT NULL,
@@ -127,8 +127,8 @@ def create_working_app():
                     )
                 ''')
 
-                # Projects table (new)
-                cursor.execute('''
+            # Projects table (new)
+            cursor.execute('''
                     CREATE TABLE IF NOT EXISTS projects (
                         id TEXT PRIMARY KEY,
                         name TEXT NOT NULL,
@@ -144,8 +144,8 @@ def create_working_app():
                     )
                 ''')
 
-                # Project modules table (new)
-                cursor.execute('''
+            # Project modules table (new)
+            cursor.execute('''
                     CREATE TABLE IF NOT EXISTS project_modules (
                         id TEXT PRIMARY KEY,
                         project_id TEXT NOT NULL,
@@ -158,8 +158,8 @@ def create_working_app():
                     )
                 ''')
 
-                # Project templates table (new)
-                cursor.execute('''
+            # Project templates table (new)
+            cursor.execute('''
                     CREATE TABLE IF NOT EXISTS project_templates (
                         id TEXT PRIMARY KEY,
                         name TEXT NOT NULL,
@@ -171,235 +171,235 @@ def create_working_app():
                     )
                 ''')
 
-                conn.commit()
-                conn.close()
+            conn.commit()
+            conn.close()
 
-            # Existing user methods (unchanged)
-            def create_user(self, username: str, email: str, password: str,
-                            first_name: str = '', last_name: str = ''):
-                try:
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
+        # Existing user methods (unchanged)
+        def create_user(self, username: str, email: str, password: str,
+                        first_name: str = '', last_name: str = ''):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
 
-                    user_id = str(uuid.uuid4())
-                    password_hash = generate_password_hash(password)
-                    created_at = datetime.now().isoformat()
+                user_id = str(uuid.uuid4())
+                password_hash = generate_password_hash(password)
+                created_at = datetime.now().isoformat()
 
-                    cursor.execute('''
+                cursor.execute('''
                         INSERT INTO users (id, username, email, password_hash, first_name, last_name, created_at)
                         VALUES (?, ?, ?, ?, ?, ?, ?)
                     ''', (user_id, username, email, password_hash, first_name, last_name, created_at))
 
-                    conn.commit()
-                    conn.close()
-                    return WorkingUser(user_id, username, email)
-                except sqlite3.IntegrityError:
-                    return None
-                except Exception as e:
-                    logger.error(f"Error creating user: {e}")
-                    return None
+                conn.commit()
+                conn.close()
+                return WorkingUser(user_id, username, email)
+            except sqlite3.IntegrityError:
+                return None
+            except Exception as e:
+                logger.error(f"Error creating user: {e}")
+                return None
 
-            def get_user_by_username(self, username: str):
-                try:
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-                    cursor.execute('SELECT id, username, email, role FROM users WHERE username = ?', (username,))
-                    row = cursor.fetchone()
-                    conn.close()
+        def get_user_by_username(self, username: str):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute('SELECT id, username, email, role FROM users WHERE username = ?', (username,))
+                row = cursor.fetchone()
+                conn.close()
 
-                    if row:
-                        return WorkingUser(row[0], row[1], row[2], row[3])
-                    return None
-                except Exception as e:
-                    logger.error(f"Error getting user: {e}")
-                    return None
+                if row:
+                    return WorkingUser(row[0], row[1], row[2], row[3])
+                return None
+            except Exception as e:
+                logger.error(f"Error getting user: {e}")
+                return None
 
-            def get_user_by_id(self, user_id: str):
-                try:
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-                    cursor.execute('SELECT id, username, email, role FROM users WHERE id = ?', (user_id,))
-                    row = cursor.fetchone()
-                    conn.close()
+        def get_user_by_id(self, user_id: str):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute('SELECT id, username, email, role FROM users WHERE id = ?', (user_id,))
+                row = cursor.fetchone()
+                conn.close()
 
-                    if row:
-                        return WorkingUser(row[0], row[1], row[2], row[3])
-                    return None
-                except Exception as e:
-                    logger.error(f"Error getting user by ID: {e}")
-                    return None
+                if row:
+                    return WorkingUser(row[0], row[1], row[2], row[3])
+                return None
+            except Exception as e:
+                logger.error(f"Error getting user by ID: {e}")
+                return None
 
-            def verify_password(self, username: str, password: str):
-                try:
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-                    cursor.execute('SELECT password_hash FROM users WHERE username = ?', (username,))
-                    row = cursor.fetchone()
-                    conn.close()
+        def verify_password(self, username: str, password: str):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute('SELECT password_hash FROM users WHERE username = ?', (username,))
+                row = cursor.fetchone()
+                conn.close()
 
-                    if row:
-                        return check_password_hash(row[0], password)
-                    return False
-                except Exception as e:
-                    logger.error(f"Error verifying password: {e}")
-                    return False
+                if row:
+                    return check_password_hash(row[0], password)
+                return False
+            except Exception as e:
+                logger.error(f"Error verifying password: {e}")
+                return False
 
-            # NEW PROJECT METHODS
-            def create_project(self, owner_id: str, name: str, description: str = '',
-                               project_type: str = 'solo', framework: str = ''):
-                try:
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
+        # NEW PROJECT METHODS
+        def create_project(self, owner_id: str, name: str, description: str = '',
+                           project_type: str = 'solo', framework: str = ''):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
 
-                    project_id = str(uuid.uuid4())
-                    created_at = datetime.now().isoformat()
-                    updated_at = created_at
+                project_id = str(uuid.uuid4())
+                created_at = datetime.now().isoformat()
+                updated_at = created_at
 
-                    cursor.execute('''
+                cursor.execute('''
                         INSERT INTO projects (id, name, description, owner_id, project_type, framework, created_at, updated_at)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (project_id, name, description, owner_id, project_type, framework, created_at, updated_at))
 
-                    conn.commit()
-                    conn.close()
-                    return project_id
-                except Exception as e:
-                    logger.error(f"Error creating project: {e}")
-                    return None
+                conn.commit()
+                conn.close()
+                return project_id
+            except Exception as e:
+                logger.error(f"Error creating project: {e}")
+                return None
 
-            def get_user_projects(self, user_id: str):
-                try:
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-                    cursor.execute('''
+        def get_user_projects(self, user_id: str):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute('''
                         SELECT id, name, description, status, framework, project_type, created_at, updated_at
                         FROM projects WHERE owner_id = ? 
                         ORDER BY updated_at DESC
                     ''', (user_id,))
-                    rows = cursor.fetchall()
-                    conn.close()
+                rows = cursor.fetchall()
+                conn.close()
 
-                    projects = []
-                    for row in rows:
-                        projects.append({
-                            'id': row[0],
-                            'name': row[1],
-                            'description': row[2],
-                            'status': row[3],
-                            'framework': row[4],
-                            'project_type': row[5],
-                            'created_at': row[6],
-                            'updated_at': row[7]
-                        })
-                    return projects
-                except Exception as e:
-                    logger.error(f"Error getting user projects: {e}")
-                    return []
+                projects = []
+                for row in rows:
+                    projects.append({
+                        'id': row[0],
+                        'name': row[1],
+                        'description': row[2],
+                        'status': row[3],
+                        'framework': row[4],
+                        'project_type': row[5],
+                        'created_at': row[6],
+                        'updated_at': row[7]
+                    })
+                return projects
+            except Exception as e:
+                logger.error(f"Error getting user projects: {e}")
+                return []
 
-            def get_project(self, project_id: str, user_id: str = None):
-                try:
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
+        def get_project(self, project_id: str, user_id: str = None):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
 
-                    if user_id:
-                        cursor.execute('''
+                if user_id:
+                    cursor.execute('''
                             SELECT id, name, description, owner_id, status, framework, project_type, created_at, updated_at
                             FROM projects WHERE id = ? AND owner_id = ?
                         ''', (project_id, user_id))
-                    else:
-                        cursor.execute('''
+                else:
+                    cursor.execute('''
                             SELECT id, name, description, owner_id, status, framework, project_type, created_at, updated_at
                             FROM projects WHERE id = ?
                         ''', (project_id,))
 
-                    row = cursor.fetchone()
-                    conn.close()
+                row = cursor.fetchone()
+                conn.close()
 
-                    if row:
-                        return {
-                            'id': row[0],
-                            'name': row[1],
-                            'description': row[2],
-                            'owner_id': row[3],
-                            'status': row[4],
-                            'framework': row[5],
-                            'project_type': row[6],
-                            'created_at': row[7],
-                            'updated_at': row[8]
-                        }
-                    return None
-                except Exception as e:
-                    logger.error(f"Error getting project: {e}")
-                    return None
+                if row:
+                    return {
+                        'id': row[0],
+                        'name': row[1],
+                        'description': row[2],
+                        'owner_id': row[3],
+                        'status': row[4],
+                        'framework': row[5],
+                        'project_type': row[6],
+                        'created_at': row[7],
+                        'updated_at': row[8]
+                    }
+                return None
+            except Exception as e:
+                logger.error(f"Error getting project: {e}")
+                return None
 
-            def update_project(self, project_id: str, user_id: str, **kwargs):
-                try:
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
+        def update_project(self, project_id: str, user_id: str, **kwargs):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
 
-                    # Build update query dynamically
-                    allowed_fields = ['name', 'description', 'status', 'framework', 'project_type']
-                    updates = []
-                    values = []
+                # Build update query dynamically
+                allowed_fields = ['name', 'description', 'status', 'framework', 'project_type']
+                updates = []
+                values = []
 
-                    for field, value in kwargs.items():
-                        if field in allowed_fields:
-                            updates.append(f"{field} = ?")
-                            values.append(value)
+                for field, value in kwargs.items():
+                    if field in allowed_fields:
+                        updates.append(f"{field} = ?")
+                        values.append(value)
 
-                    if updates:
-                        updates.append("updated_at = ?")
-                        values.append(datetime.now().isoformat())
-                        values.extend([project_id, user_id])
+                if updates:
+                    updates.append("updated_at = ?")
+                    values.append(datetime.now().isoformat())
+                    values.extend([project_id, user_id])
 
-                        query = f"UPDATE projects SET {', '.join(updates)} WHERE id = ? AND owner_id = ?"
-                        cursor.execute(query, values)
-                        conn.commit()
-
-                    conn.close()
-                    return True
-                except Exception as e:
-                    logger.error(f"Error updating project: {e}")
-                    return False
-
-            def delete_project(self, project_id: str, user_id: str):
-                try:
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-                    cursor.execute('DELETE FROM projects WHERE id = ? AND owner_id = ?', (project_id, user_id))
-                    deleted = cursor.rowcount > 0
+                    query = f"UPDATE projects SET {', '.join(updates)} WHERE id = ? AND owner_id = ?"
+                    cursor.execute(query, values)
                     conn.commit()
-                    conn.close()
-                    return deleted
-                except Exception as e:
-                    logger.error(f"Error deleting project: {e}")
-                    return False
 
-            def get_project_templates(self):
-                try:
-                    conn = sqlite3.connect(self.db_path)
-                    cursor = conn.cursor()
-                    cursor.execute('''
+                conn.close()
+                return True
+            except Exception as e:
+                logger.error(f"Error updating project: {e}")
+                return False
+
+        def delete_project(self, project_id: str, user_id: str):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute('DELETE FROM projects WHERE id = ? AND owner_id = ?', (project_id, user_id))
+                deleted = cursor.rowcount > 0
+                conn.commit()
+                conn.close()
+                return deleted
+            except Exception as e:
+                logger.error(f"Error deleting project: {e}")
+                return False
+
+        def get_project_templates(self):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute('''
                         SELECT id, name, description, framework, technology_stack
                         FROM project_templates WHERE is_public = 1
                         ORDER BY name
                     ''')
-                    rows = cursor.fetchall()
-                    conn.close()
+                rows = cursor.fetchall()
+                conn.close()
 
-                    templates = []
-                    for row in rows:
-                        templates.append({
-                            'id': row[0],
-                            'name': row[1],
-                            'description': row[2],
-                            'framework': row[3],
-                            'technology_stack': row[4]
-                        })
-                    return templates
-                except Exception as e:
-                    logger.error(f"Error getting templates: {e}")
-                    return []
+                templates = []
+                for row in rows:
+                    templates.append({
+                        'id': row[0],
+                        'name': row[1],
+                        'description': row[2],
+                        'framework': row[3],
+                        'technology_stack': row[4]
+                    })
+                return templates
+            except Exception as e:
+                logger.error(f"Error getting templates: {e}")
+                return []
 
     # Create Flask app
     app = Flask(__name__, template_folder='web/templates', static_folder='web/static')
