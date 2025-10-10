@@ -1852,6 +1852,61 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
             'app_version': '7.3.0'
         })
 
+    @flask_app.route('/upload-document', methods=['POST'])
+    @login_required
+    def upload_document():
+        """Handle document upload."""
+        form = DocumentUploadForm()
+
+        if form.validate_on_submit():
+            try:
+                file = form.file.data
+                project_id = form.project_id.data or None
+
+                # Generate secure filename
+                filename = secure_filename(file.filename)
+                if not filename:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Invalid filename'
+                    }), 400
+
+                # Save file
+                file_path = os.path.join(flask_app.config['UPLOAD_FOLDER'], filename)
+                file.save(file_path)
+
+                # TODO: Process document content (extract text, add to knowledge base)
+                # For now, just return success
+
+                return jsonify({
+                    'success': True,
+                    'message': f'Document "{filename}" uploaded successfully',
+                    'data': {
+                        'filename': filename,
+                        'project_id': project_id,
+                        'file_size': os.path.getsize(file_path)
+                    }
+                })
+
+            except Exception as e:
+                logger.error(f"File upload error: {e}")
+                return jsonify({
+                    'success': False,
+                    'message': 'Upload failed. Please try again.'
+                }), 500
+
+        # Form validation failed
+        errors = []
+        for field, field_errors in form.errors.items():
+            for error in field_errors:
+                errors.append(f"{field}: {error}")
+
+        return jsonify({
+            'success': False,
+            'message': 'Validation failed',
+            'errors': errors
+        }), 400
+
     logger.info("Flask application created successfully")
     return flask_app
 
