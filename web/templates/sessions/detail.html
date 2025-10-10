@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+
+{% block title %}{{ session.name }} - {{ session.project.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('projects') }}">Projects</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('project_detail', project_id=session.project.id) }}">{{ session.project.name }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('sessions') }}">Sessions</a></li>
+                    <li class="breadcrumb-item active">{{ session.name }}</li>
+                </ol>
+            </nav>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-chat-dots text-primary"></i> {{ session.name }}</h2>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-folder"></i> {{ session.project.name }}
+                        <span class="mx-2">•</span>
+                        <i class="bi bi-person-badge"></i> {{ session.role|title }} Role
+                        <span class="mx-2">•</span>
+                        <span class="badge bg-{{ 'success' if session.status == 'active' else 'secondary' }}">{{ session.status|title }}</span>
+                    </p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('sessions') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> All Sessions
+                    </a>
+                    {% if session.status == 'active' %}
+                    <button class="btn btn-success" onclick="continueSession()">
+                        <i class="bi bi-play-fill"></i> Continue
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Conversation Area -->
+        <div class="col-lg-8">
+            <div class="card bg-dark border h-100">
+                <!-- Session Header -->
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-chat-text"></i> Conversation History
+                        </h5>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-info me-2">{{ session.messages|length }} messages</span>
+                            <span class="text-muted small">
+                                <i class="bi bi-clock"></i> {{ session.created_at.strftime('%m/%d/%Y %I:%M %p') }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages Container -->
+                <div class="card-body p-0" style="height: 600px; overflow-y: auto;" id="messagesContainer">
+                    {% if session.messages %}
+                        {% for message in session.messages %}
+                        <div class="message-item p-3 border-bottom border-secondary">
+                            <div class="d-flex align-items-start">
+                                <!-- Message Icon -->
+                                <div class="flex-shrink-0 me-3">
+                                    {% if message.message_type == 'question' %}
+                                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-question-circle text-white"></i>
+                                    </div>
+                                    {% else %}
+                                    <div class="bg-success rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-person text-white"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Message Content -->
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0 {{ 'text-primary' if message.message_type == 'question' else 'text-success' }}">
+                                            {% if message.message_type == 'question' %}
+                                                Socratic Question
+                                            {% else %}
+                                                Your Response
+                                            {% endif %}
+                                        </h6>
+                                        <small class="text-muted">
+                                            {{ message.created_at.strftime('%I:%M %p') }}
+                                        </small>
+                                    </div>
+
+                                    <div class="message-content">
+                                        {{ message.content|safe }}
+                                    </div>
+
+                                    {% if message.context %}
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="bi bi-lightbulb"></i> Context: {{ message.context }}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Empty State -->
+                        <div class="text-center py-5">
+                            <i class="bi bi-chat-dots display-4 text-muted mb-3"></i>
+                            <h5>Session Ready to Begin</h5>
+                            <p class="text-muted">No messages yet. Start the conversation by clicking Continue below.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Input Area (if session is active) -->
+                {% if session.status == 'active' %}
+                <div class="card-footer">
+                    <form id="responseForm" onsubmit="submitResponse(event)">
+                        <div class="input-group">
+                            <textarea class="form-control"
+                                      id="responseInput"
+                                      placeholder="Type your response to continue the Socratic dialogue..."
+                                      rows="2"
+                                      style="resize: none;"></textarea>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-send"></i> Send
+                            </button>
+                        </div>
+                        <div class="form-text mt-2">
+                            <i class="bi bi-info-circle"></i> Press Ctrl+Enter to send quickly
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Session Sidebar -->
+        <div class="col-lg-4">
+            <!-- Session Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Session Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <div class="text-muted small">Status</div>
+                            <span class="badge bg-{{ 'success' if session.status == 'active' else 'secondary' }} w-100">
+                                {{ session.status|title }}
+                            </span>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-muted small">Role</div>
+                            <span class="badge bg-info w-100">{{ session.role|title }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="text-muted small">Created</div>
+                        <div>{{ session.created_at.strftime('%B %d, %Y at %I:%M %p') }}</div>
+                    </div>
+
+                    {% if session.updated_at != session.created_at %}
+                    <div class="mb-3">
+                        <div class="text-muted small">Last Activity</div>
+                        <div>{{ session.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <div class="text-muted small">Messages</div>
+                        <div>{{ session.messages|length }} total</div>
+                    </div>
+
+                    {% if session.focus_areas %}
+                    <div class="mb-3">
+                        <div class="text-muted small">Focus Areas</div>
+                        <div class="mt-1">
+                            {% for area in session.focus_areas %}
+                            <span class="badge bg-outline-primary me-1 mb-1">{{ area }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Session Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-gear"></i> Actions</h6>
+                </div>
+                <div class="card-body">
+                    {% if session.status == 'active' %}
+                    <button class="btn btn-success w-100 mb-2" onclick="continueSession()">
+                        <i class="bi bi-play-fill"></i> Continue Session
+                    </button>
+                    <button class="btn btn-warning w-100 mb-2" onclick="pauseSession()">
+                        <i class="bi bi-pause-fill"></i> Pause Session
+                    </button>
+                    {% elif session.status == 'paused' %}
+                    <button class="btn btn-success w-100 mb-2" onclick="resumeSession()">
+                        <i class="bi bi-play-fill"></i> Resume Session
+                    </button>
+                    {% endif %}
+
+                    {% if session.status in ['active', 'paused'] %}
+                    <button class="btn btn-info w-100 mb-2" onclick="completeSession()">
+                        <i class="bi bi-check-circle"></i> Mark Complete
+                    </button>
+                    {% endif %}
+
+                    <div class="dropdown w-100">
+                        <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots"></i> More Options
+                        </button>
+                        <ul class="dropdown-menu w-100">
+                            <li><a class="dropdown-item" href="#" onclick="exportSession()">
+                                <i class="bi bi-download"></i> Export Conversation
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="shareSession()">
+                                <i class="bi bi-share"></i> Share Session
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="archiveSession()">
+                                <i class="bi bi-archive"></i> Archive Session
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Tracker -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-graph-up"></i> Session Progress</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small">Exploration Depth</span>
+                            <span class="small">{{ ((session.messages|length / 20) * 100)|round|int }}%</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-primary" style="width: {{ ((session.messages|length / 20) * 100)|round|int }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="small text-muted">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Questions Asked:</span>
+                            <span>{{ session.messages|selectattr('message_type', 'equalto', 'question')|list|length }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Responses Given:</span>
+                            <span>{{ session.messages|selectattr('message_type', 'equalto', 'response')|list|length }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Avg. Response Length:</span>
+                            <span>
+                                {% set responses = session.messages|selectattr('message_type', 'equalto', 'response')|list %}
+                                {% if responses %}
+                                    {{ (responses|map(attribute='content')|map('length')|sum / responses|length)|round|int }} chars
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session Action Modals -->
+<div class="modal fade" id="sessionActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sessionActionTitle">Confirm Action</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="sessionActionBody">
+                <!-- Dynamic content -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="sessionActionConfirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-scroll to bottom of messages
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('messagesContainer');
+    if (container) {
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // Focus on input if session is active
+    const responseInput = document.getElementById('responseInput');
+    if (responseInput) {
+        responseInput.focus();
+    }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('responseForm')?.dispatchEvent(new Event('submit'));
+    }
+});
+
+// Session Actions
+function continueSession() {
+    // If there's an active input, focus it. Otherwise redirect to continue URL
+    const responseInput = document.getElementById('responseInput');
+    if (responseInput) {
+        responseInput.focus();
+    } else {
+        window.location.href = "{{ url_for('continue_session', session_id=session.id) }}";
+    }
+}
+
+function submitResponse(event) {
+    event.preventDefault();
+    const form = event.target;
+    const input = form.querySelector('#responseInput');
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    if (!input.value.trim()) {
+        input.focus();
+        return;
+    }
+
+    // Disable form while submitting
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending...';
+
+    // Submit via AJAX or form
+    const formData = new FormData();
+    formData.append('response', input.value);
+    formData.append('csrf_token', '{{ csrf_token() }}');
+
+    fetch("{{ url_for('submit_response', session_id=session.id) }}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload page to show new messages
+            window.location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to submit response'));
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-send"></i> Send';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to submit response. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-send"></i> Send';
+    });
+}
+
+function pauseSession() {
+    showSessionActionModal('Pause Session',
+        'Are you sure you want to pause this session? You can resume it later.',
+        'warning',
+        function() {
+            updateSessionStatus('paused');
+        });
+}
+
+function resumeSession() {
+    updateSessionStatus('active');
+}
+
+function completeSession() {
+    showSessionActionModal('Complete Session',
+        'Mark this session as complete? This will end the Socratic dialogue.',
+        'info',
+        function() {
+            updateSessionStatus('completed');
+        });
+}
+
+function archiveSession() {
+    showSessionActionModal('Archive Session',
+        'Archive this session? It will be moved to your archived sessions.',
+        'danger',
+        function() {
+            updateSessionStatus('archived');
+        });
+}
+
+function exportSession() {
+    window.open("{{ url_for('export_session', session_id=session.id) }}", '_blank');
+}
+
+function shareSession() {
+    // Copy share link to clipboard
+    navigator.clipboard.writeText(window.location.href)
+        .then(() => alert('Session link copied to clipboard!'))
+        .catch(() => alert('Failed to copy link'));
+}
+
+function showSessionActionModal(title, message, type, confirmCallback) {
+    const modal = new bootstrap.Modal(document.getElementById('sessionActionModal'));
+    document.getElementById('sessionActionTitle').textContent = title;
+    document.getElementById('sessionActionBody').textContent = message;
+
+    const confirmBtn = document.getElementById('sessionActionConfirm');
+    confirmBtn.className = `btn btn-${type}`;
+    confirmBtn.onclick = function() {
+        modal.hide();
+        confirmCallback();
+    };
+
+    modal.show();
+}
+
+function updateSessionStatus(status) {
+    const formData = new FormData();
+    formData.append('status', status);
+    formData.append('csrf_token', '{{ csrf_token() }}');
+
+    fetch("{{ url_for('update_session_status', session_id=session.id) }}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to update session'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to update session status');
+    });
+}
+</script>
+{% endblock %}
