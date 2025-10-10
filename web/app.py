@@ -1292,11 +1292,21 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         user_projects = user_db.get_user_projects(current_user.id)
         user_sessions = user_db.get_user_sessions(current_user.id)
 
+        # Create system status for dashboard
+        system_status = {
+            'agents_available': SYSTEM_AVAILABLE,
+            'total_available': 0,  # Services count (will be updated when services integrated)
+            'total_projects': len(user_projects),
+            'generated_files': 0  # Will be counted from code generations later
+        }
+
         return render_template('dashboard.html',
-                             projects=user_projects[:5],  # Recent 5 projects
-                             sessions=user_sessions[:5],  # Recent 5 sessions
-                             project_count=len(user_projects),
-                             session_count=len(user_sessions))
+                               projects=user_projects[:5],  # Recent 5 projects
+                               sessions=user_sessions[:5],  # Recent 5 sessions
+                               project_count=len(user_projects),
+                               session_count=len(user_sessions),
+                               current_time=datetime.now().isoformat(),
+                               system_status=system_status)
 
     @flask_app.route('/login', methods=['GET', 'POST'])
     def login():
