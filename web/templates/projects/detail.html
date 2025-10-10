@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - Socratic RAG Enhanced{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Project Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center mb-2">
+                <h2 class="me-3">
+                    <i class="bi bi-{{ 'people-fill' if project.project_type == 'team' else 'person-fill' }}"></i>
+                    {{ project.name }}
+                </h2>
+                <span class="badge bg-{{ 'success' if project.status == 'active' else 'warning' if project.status == 'draft' else 'info' if project.status == 'completed' else 'secondary' }} fs-6">
+                    {{ project.status.title() }}
+                </span>
+            </div>
+            {% if project.description %}
+                <p class="text-muted">{{ project.description }}</p>
+            {% else %}
+                <p class="text-muted fst-italic">No description provided</p>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('edit_project', project_id=project.id) }}" class="btn btn-outline-primary">
+                    <i class="bi bi-pencil"></i> Edit
+                </a>
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+            </div>
+            <br>
+            <a href="{{ url_for('projects') }}" class="btn btn-outline-secondary mt-2">
+                <i class="bi bi-arrow-left"></i> Back to Projects
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Project Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle"></i> Project Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Type:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-light text-dark">
+                                        <i class="bi bi-{{ 'people' if project.project_type == 'team' else 'person' }}"></i>
+                                        {{ project.project_type.title() }} Project
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-4">Framework:</dt>
+                                <dd class="col-sm-8">
+                                    {% if project.framework %}
+                                        <span class="badge bg-secondary">{{ project.framework.title() }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Not specified</span>
+                                    {% endif %}
+                                </dd>
+
+                                <dt class="col-sm-4">Status:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-{{ 'success' if project.status == 'active' else 'warning' if project.status == 'draft' else 'info' if project.status == 'completed' else 'secondary' }}">
+                                        {{ project.status.title() }}
+                                    </span>
+                                </dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Created:</dt>
+                                <dd class="col-sm-8">
+                                    <i class="bi bi-calendar"></i> {{ project.created_at[:10] }}
+                                </dd>
+
+                                <dt class="col-sm-4">Updated:</dt>
+                                <dd class="col-sm-8">
+                                    <i class="bi bi-pencil"></i> {{ project.updated_at[:10] }}
+                                    {% if project.updated_at[:10] != project.created_at[:10] %}
+                                        <small class="text-muted">({{ project.updated_at[:10] }})</small>
+                                    {% endif %}
+                                </dd>
+
+                                <dt class="col-sm-4">Owner:</dt>
+                                <dd class="col-sm-8">
+                                    <i class="bi bi-person-badge"></i> {{ current_user.username }}
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-play-circle"></i> Available Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card bg-light h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-question-circle display-4 text-primary mb-3"></i>
+                                    <h6>Start Socratic Session</h6>
+                                    <p class="small text-muted">Begin guided questioning to define or refine project requirements</p>
+                                    <button class="btn btn-primary" disabled>
+                                        <i class="bi bi-chat-dots"></i> Start Session
+                                        <small class="d-block">(Coming in Phase B3)</small>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-code-slash display-4 text-success mb-3"></i>
+                                    <h6>Generate Code</h6>
+                                    <p class="small text-muted">Create application code based on current project specifications</p>
+                                    <button class="btn btn-success" disabled>
+                                        <i class="bi bi-gear"></i> Generate
+                                        <small class="d-block">(Coming in Phase B4)</small>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-file-earmark-text display-4 text-info mb-3"></i>
+                                    <h6>View Documentation</h6>
+                                    <p class="small text-muted">Review generated documentation and specifications</p>
+                                    <button class="btn btn-info" disabled>
+                                        <i class="bi bi-book"></i> Documentation
+                                        <small class="d-block">(Coming in Phase B4)</small>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-download display-4 text-warning mb-3"></i>
+                                    <h6>Export Project</h6>
+                                    <p class="small text-muted">Download generated code and documentation</p>
+                                    <button class="btn btn-warning" disabled>
+                                        <i class="bi bi-download"></i> Export
+                                        <small class="d-block">(Coming in Phase B4)</small>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Modules/Components -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-diagram-3"></i> Project Modules
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <i class="bi bi-puzzle display-3 text-muted mb-3"></i>
+                        <h6 class="text-muted">No Modules Defined Yet</h6>
+                        <p class="text-muted small">
+                            Project modules will be created during the Socratic discovery process.
+                            Start a session to begin defining your project structure.
+                        </p>
+                        <button class="btn btn-outline-primary" disabled>
+                            <i class="bi bi-plus-circle"></i> Add Module (Coming Soon)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Quick Stats -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-graph-up"></i> Project Overview
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-primary">0</h4>
+                                <small class="text-muted">Sessions</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">0</h4>
+                            <small class="text-muted">Files Generated</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-info">0</h4>
+                                <small class="text-muted">Modules</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-warning">{{ ((project.updated_at[:10] | replace('-', '') | int) - (project.created_at[:10] | replace('-', '') | int)) | abs }}</h4>
+                            <small class="text-muted">Days Active</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Timeline -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-clock-history"></i> Recent Activity
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <div class="bg-success rounded-circle d-flex align-items-center justify-content-center" style="width: 2rem; height: 2rem;">
+                                    <i class="bi bi-plus text-white small"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="small">
+                                    <strong>Project Created</strong><br>
+                                    <span class="text-muted">{{ project.created_at[:10] }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% if project.updated_at[:10] != project.created_at[:10] %}
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 2rem; height: 2rem;">
+                                    <i class="bi bi-pencil text-white small"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="small">
+                                    <strong>Project Updated</strong><br>
+                                    <span class="text-muted">{{ project.updated_at[:10] }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="text-center">
+                            <small class="text-muted">More activity will appear as you work on the project</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-lightbulb"></i> Suggested Next Steps
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if project.status == 'draft' %}
+                        <ol class="mb-0">
+                            <li class="mb-2">Start a Socratic discovery session</li>
+                            <li class="mb-2">Define project requirements through guided questions</li>
+                            <li class="mb-2">Review and refine specifications</li>
+                            <li>Generate initial code structure</li>
+                        </ol>
+                    {% elif project.status == 'active' %}
+                        <ol class="mb-0">
+                            <li class="mb-2">Continue Socratic sessions to refine requirements</li>
+                            <li class="mb-2">Generate code for defined modules</li>
+                            <li class="mb-2">Test and iterate on generated code</li>
+                            <li>Prepare for deployment</li>
+                        </ol>
+                    {% elif project.status == 'completed' %}
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2"><i class="bi bi-check-circle text-success"></i> Project completed!</li>
+                            <li class="mb-2"><i class="bi bi-download"></i> Export final code</li>
+                            <li><i class="bi bi-share"></i> Share or archive project</li>
+                        </ul>
+                    {% else %}
+                        <p class="mb-0 text-muted">Set project to "Active" to see personalized next steps.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the project <strong>"{{ project.name }}"</strong>?</p>
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This action cannot be undone. All project data, including:
+                    <ul class="mb-0 mt-2">
+                        <li>Project specifications and requirements</li>
+                        <li>Generated code and documentation</li>
+                        <li>Session history and conversations</li>
+                        <li>Module definitions and structure</li>
+                    </ul>
+                    will be permanently lost.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                <form method="POST" action="{{ url_for('delete_project', project_id=project.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete Project Permanently
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+    // Auto-refresh page data (future enhancement)
+    document.addEventListener('DOMContentLoaded', function() {
+        // Could add periodic updates for project statistics
+        // or real-time collaboration features
+    });
+</script>
+{% endblock %}
+{% endblock %

@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ project.name }} - Socratic RAG Enhanced{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="bi bi-pencil"></i> Edit Project</h2>
+            <p class="text-muted">Update project details and configuration</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Project
+            </a>
+        </div>
+    </div>
+
+    <!-- Current Project Info Bar -->
+    <div class="alert alert-info d-flex align-items-center mb-4">
+        <i class="bi bi-info-circle me-2"></i>
+        <div>
+            <strong>Editing:</strong> {{ project.name }}
+            <span class="badge bg-{{ 'success' if project.status == 'active' else 'warning' if project.status == 'draft' else 'info' if project.status == 'completed' else 'secondary' }} ms-2">
+                {{ project.status.title() }}
+            </span>
+            <br>
+            <small class="text-muted">Last updated: {{ project.updated_at[:10] }}</small>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Project Edit Form -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-form-check"></i> Project Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+
+                        <!-- Project Name -->
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label fw-bold") }}
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Enter a descriptive project name") }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i> Changing the name won't affect existing sessions or generated code
+                            </div>
+                        </div>
+
+                        <!-- Project Description -->
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label fw-bold") }}
+                            {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="4", placeholder="Describe what your project will accomplish...") }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-lightbulb"></i> Updated descriptions help improve future Socratic sessions
+                            </div>
+                        </div>
+
+                        <!-- Project Type and Framework Row -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.project_type.label(class="form-label fw-bold") }}
+                                    {{ form.project_type(class="form-select" + (" is-invalid" if form.project_type.errors else "")) }}
+                                    {% if form.project_type.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.project_type.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        {% if project.project_type == 'team' %}
+                                            <i class="bi bi-exclamation-triangle text-warning"></i> Changing from team to solo will remove collaborator access
+                                        {% else %}
+                                            <i class="bi bi-people"></i> Changing to team project will enable collaboration features
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.framework.label(class="form-label fw-bold") }}
+                                    {{ form.framework(class="form-select" + (" is-invalid" if form.framework.errors else "")) }}
+                                    {% if form.framework.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.framework.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        {% if project.framework %}
+                                            <i class="bi bi-arrow-repeat"></i> Current: {{ project.framework.title() }}. Changes may require code regeneration
+                                        {% else %}
+                                            <i class="bi bi-gear"></i> Setting a framework will help guide future code generation
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Project Status -->
+                        <div class="mb-4">
+                            {{ form.status.label(class="form-label fw-bold") }}
+                            {{ form.status(class="form-select" + (" is-invalid" if form.status.errors else "")) }}
+                            {% if form.status.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.status.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-flag"></i>
+                                {% if project.status == 'draft' %}
+                                    Current: Draft. Consider setting to "Active" when ready to begin development
+                                {% elif project.status == 'active' %}
+                                    Current: Active. Mark as "Completed" when development is finished
+                                {% elif project.status == 'completed' %}
+                                    Current: Completed. You can reactivate if changes are needed
+                                {% else %}
+                                    Current: {{ project.status.title() }}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Change Warning -->
+                        {% if project.status == 'active' %}
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>Active Project Notice:</strong>
+                                This project has active sessions or generated code. Some changes may require regenerating content or restarting sessions.
+                            </div>
+                        {% endif %}
+
+                        <!-- Form Actions -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-outline-secondary me-md-2">
+                                <i class="bi bi-x-circle"></i> Cancel Changes
+                            </a>
+                            {{ form.submit(class="btn btn-success") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Sidebar -->
+        <div class="col-lg-4">
+            <!-- Edit Tips -->
+            <div class="card bg-light mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-lightbulb text-warning"></i> Editing Tips
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i>
+                            <strong>Safe Changes:</strong> Name and description updates don't affect generated content
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-exclamation-triangle text-warning"></i>
+                            <strong>Framework Changes:</strong> May require regenerating code to match new framework
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-people text-info"></i>
+                            <strong>Project Type:</strong> Team ↔ Solo changes affect collaboration features
+                        </li>
+                        <li class="mb-0">
+                            <i class="bi bi-flag text-primary"></i>
+                            <strong>Status Updates:</strong> Help track project progress and determine available actions
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Current Project Summary -->
+            <div class="card border-info mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-clipboard-data"></i> Current Settings
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-6">Name:</dt>
+                        <dd class="col-6">{{ project.name }}</dd>
+
+                        <dt class="col-6">Type:</dt>
+                        <dd class="col-6">
+                            <span class="badge bg-light text-dark">
+                                {{ project.project_type.title() }}
+                            </span>
+                        </dd>
+
+                        <dt class="col-6">Framework:</dt>
+                        <dd class="col-6">
+                            {% if project.framework %}
+                                <span class="badge bg-secondary">{{ project.framework.title() }}</span>
+                            {% else %}
+                                <span class="text-muted">None</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-6">Status:</dt>
+                        <dd class="col-6">
+                            <span class="badge bg-{{ 'success' if project.status == 'active' else 'warning' if project.status == 'draft' else 'info' if project.status == 'completed' else 'secondary' }}">
+                                {{ project.status.title() }}
+                            </span>
+                        </dd>
+
+                        <dt class="col-6">Created:</dt>
+                        <dd class="col-6">{{ project.created_at[:10] }}</dd>
+
+                        <dt class="col-6">Updated:</dt>
+                        <dd class="col-6">{{ project.updated_at[:10] }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Impact of Changes -->
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Impact of Changes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="accordion accordion-flush" id="impactAccordion">
+                        <div class="accordion-item">
+                            <h6 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#name-impact">
+                                    <i class="bi bi-tag"></i>&nbsp; Name Changes
+                                </button>
+                            </h6>
+                            <div id="name-impact" class="accordion-collapse collapse" data-bs-parent="#impactAccordion">
+                                <div class="accordion-body small">
+                                    <span class="badge bg-success">Safe</span> Name changes only affect the display. Existing sessions, files, and data remain unchanged.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h6 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#framework-impact">
+                                    <i class="bi bi-gear"></i>&nbsp; Framework Changes
+                                </button>
+                            </h6>
+                            <div id="framework-impact" class="accordion-collapse collapse" data-bs-parent="#impactAccordion">
+                                <div class="accordion-body small">
+                                    <span class="badge bg-warning">Caution</span> Framework changes may require regenerating code and updating specifications. Existing generated files may become inconsistent.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h6 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#status-impact">
+                                    <i class="bi bi-flag"></i>&nbsp; Status Changes
+                                </button>
+                            </h6>
+                            <div id="status-impact" class="accordion-collapse collapse" data-bs-parent="#impactAccordion">
+                                <div class="accordion-body small">
+                                    <span class="badge bg-info">Workflow</span> Status changes affect available actions and suggested next steps. No data is lost when changing status.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+    // Auto-resize textarea
+    document.addEventListener('DOMContentLoaded', function() {
+        const textarea = document.querySelector('textarea[name="description"]');
+        if (textarea) {
+            // Initial resize
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight) + 'px';
+
+            // Resize on input
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        }
+    });
+
+    // Framework change warning
+    const originalFramework = '{{ project.framework }}';
+    document.querySelector('select[name="framework"]').addEventListener('change', function() {
+        const helpText = this.nextElementSibling;
+        const selectedOption = this.options[this.selectedIndex];
+
+        if (selectedOption.value !== originalFramework) {
+            if (originalFramework && selectedOption.value) {
+                helpText.innerHTML = '<i class="bi bi-exclamation-triangle text-warning"></i> Framework change from ' +
+                                   (originalFramework || 'none') + ' to ' + selectedOption.text +
+                                   '. Code regeneration may be required.';
+                helpText.className = 'form-text text-warning';
+            } else if (selectedOption.value) {
+                helpText.innerHTML = '<i class="bi bi-gear text-success"></i> Setting framework to ' + selectedOption.text +
+                                   '. This will help guide future code generation.';
+                helpText.className = 'form-text text-success';
+            }
+        } else {
+            helpText.innerHTML = '<i class="bi bi-gear"></i> Current framework maintained.';
+            helpText.className = 'form-text';
+        }
+    });
+
+    // Project type change warning
+    const originalType = '{{ project.project_type }}';
+    document.querySelector('select[name="project_type"]').addEventListener('change', function() {
+        const helpText = this.nextElementSibling;
+        const selectedValue = this.value;
+
+        if (selectedValue !== originalType) {
+            if (originalType === 'team' && selectedValue === 'solo') {
+                helpText.innerHTML = '<i class="bi bi-exclamation-triangle text-warning"></i> Changing from team to solo will remove collaborator access';
+                helpText.className = 'form-text text-warning';
+            } else if (originalType === 'solo' && selectedValue === 'team') {
+                helpText.innerHTML = '<i class="bi bi-people text-success"></i> Changing to team project will enable collaboration features';
+                helpText.className = 'form-text text-success';
+            }
+        } else {
+            if (selectedValue === 'team') {
+                helpText.innerHTML = '<i class="bi bi-people"></i> Team project - collaboration features enabled';
+            } else {
+                helpText.innerHTML = '<i class="bi bi-person"></i> Solo project - simpler management';
+            }
+            helpText.className = 'form-text';
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %

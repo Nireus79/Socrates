@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Create New Project - Socratic RAG Enhanced{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="bi bi-plus-circle"></i> Create New Project</h2>
+            <p class="text-muted">Start your journey with the Socratic method for project discovery</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('projects') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Projects
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Project Creation Form -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-form-check"></i> Project Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+
+                        <!-- Project Name -->
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label fw-bold") }}
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Enter a descriptive project name") }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i> Choose a clear, descriptive name for your project
+                            </div>
+                        </div>
+
+                        <!-- Project Description -->
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label fw-bold") }}
+                            {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="4", placeholder="Describe what your project will accomplish...") }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-lightbulb"></i> A good description helps the Socratic questioning process
+                            </div>
+                        </div>
+
+                        <!-- Project Type and Framework Row -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.project_type.label(class="form-label fw-bold") }}
+                                    {{ form.project_type(class="form-select" + (" is-invalid" if form.project_type.errors else "")) }}
+                                    {% if form.project_type.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.project_type.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        <i class="bi bi-people"></i> Solo projects are simpler to manage
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.framework.label(class="form-label fw-bold") }}
+                                    {{ form.framework(class="form-select" + (" is-invalid" if form.framework.errors else "")) }}
+                                    {% if form.framework.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.framework.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        <i class="bi bi-gear"></i> Can be changed later during Socratic sessions
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Project Status -->
+                        <div class="mb-4">
+                            {{ form.status.label(class="form-label fw-bold") }}
+                            {{ form.status(class="form-select" + (" is-invalid" if form.status.errors else "")) }}
+                            {% if form.status.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.status.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="bi bi-flag"></i> Most projects start as "Draft" until requirements are defined
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('projects') }}" class="btn btn-outline-secondary me-md-2">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-success") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Sidebar -->
+        <div class="col-lg-4">
+            <!-- Project Creation Tips -->
+            <div class="card bg-light mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-lightbulb text-warning"></i> Project Creation Tips
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i>
+                            <strong>Clear Names:</strong> Use descriptive names that explain the project's purpose
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i>
+                            <strong>Good Descriptions:</strong> Include the problem you're solving and target users
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i>
+                            <strong>Start Simple:</strong> Begin with "Solo" projects until you need collaboration
+                        </li>
+                        <li class="mb-0">
+                            <i class="bi bi-check-circle text-success"></i>
+                            <strong>Framework Choice:</strong> Don't worry too much - this can be refined later
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- What Happens Next -->
+            <div class="card border-primary mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-arrow-right-circle"></i> What Happens Next?
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li class="mb-2">
+                            <strong>Project Created:</strong> Your project will be saved to your dashboard
+                        </li>
+                        <li class="mb-2">
+                            <strong>Socratic Discovery:</strong> Begin guided questioning to define requirements
+                        </li>
+                        <li class="mb-2">
+                            <strong>Code Generation:</strong> Generate complete applications based on your needs
+                        </li>
+                        <li class="mb-0">
+                            <strong>Iterative Improvement:</strong> Refine and enhance through multiple iterations
+                        </li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Framework Information -->
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-info-circle"></i> Framework Guide
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="accordion accordion-flush" id="frameworkAccordion">
+                        <div class="accordion-item">
+                            <h6 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flask-info">
+                                    <i class="bi bi-python"></i>&nbsp; Flask (Python Web)
+                                </button>
+                            </h6>
+                            <div id="flask-info" class="accordion-collapse collapse" data-bs-parent="#frameworkAccordion">
+                                <div class="accordion-body small">
+                                    Lightweight Python web framework. Great for APIs, web apps, and rapid prototyping.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h6 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#react-info">
+                                    <i class="bi bi-braces"></i>&nbsp; React (JavaScript)
+                                </button>
+                            </h6>
+                            <div id="react-info" class="accordion-collapse collapse" data-bs-parent="#frameworkAccordion">
+                                <div class="accordion-body small">
+                                    Popular JavaScript library for building user interfaces. Excellent for interactive web apps.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h6 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cli-info">
+                                    <i class="bi bi-terminal"></i>&nbsp; Python CLI
+                                </button>
+                            </h6>
+                            <div id="cli-info" class="accordion-collapse collapse" data-bs-parent="#frameworkAccordion">
+                                <div class="accordion-body small">
+                                    Command-line applications and tools. Perfect for automation, data processing, and utilities.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+    // Auto-resize textarea
+    document.addEventListener('DOMContentLoaded', function() {
+        const textarea = document.querySelector('textarea[name="description"]');
+        if (textarea) {
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        }
+    });
+
+    // Framework selection helper
+    document.querySelector('select[name="framework"]').addEventListener('change', function() {
+        const helpText = this.nextElementSibling;
+        const selectedOption = this.options[this.selectedIndex];
+
+        if (selectedOption.value) {
+            helpText.innerHTML = '<i class="bi bi-info-circle"></i> Great choice! The Socratic process will help define specific requirements for ' + selectedOption.text;
+        } else {
+            helpText.innerHTML = '<i class="bi bi-gear"></i> Can be changed later during Socratic sessions';
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}
