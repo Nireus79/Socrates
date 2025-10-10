@@ -430,7 +430,7 @@ function initializeMetricsChart() {
 
 function refreshDashboard() {
     // Refresh system status
-    fetch('{{ url_for("api_health") }}')
+    fetch('{{ url_for("health") }}')
         .then(response => response.json())
         .then(data => {
             console.log('Dashboard refreshed', data);
