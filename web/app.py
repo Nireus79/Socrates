@@ -847,19 +847,18 @@ class RegisterForm(FlaskForm):
 
 
 class ProjectForm(FlaskForm):
-    """Project creation/editing form."""
     name = StringField('Project Name', validators=[
         DataRequired(),
-        Length(min=3, max=100, message='Project name must be 3-100 characters')
+        Length(min=3, max=100)
     ])
     description = TextAreaField('Description', validators=[
         OptionalValidator(),
-        Length(max=1000, message='Description must be under 1000 characters')
+        Length(max=1000)
     ])
     project_type = SelectField('Project Type', choices=[
         ('solo', 'Solo Project'),
         ('team', 'Team Project')
-    ], default='solo')
+    ])
     framework = SelectField('Framework', choices=[
         ('', 'No Framework'),
         ('flask', 'Flask'),
@@ -869,7 +868,13 @@ class ProjectForm(FlaskForm):
         ('vue', 'Vue.js'),
         ('angular', 'Angular')
     ])
-    submit = SubmitField('Save Project')
+    status = SelectField('Status', choices=[
+        ('draft', 'Draft'),
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+        ('archived', 'Archived')
+    ])
+    submit = SubmitField('Create Project')
 
 
 class EditProjectForm(FlaskForm):
