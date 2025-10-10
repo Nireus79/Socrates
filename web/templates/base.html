@@ -1,471 +1,155 @@
-{% extends "base.html" %}
-
-{% block title %}
-{% if page == 'login' or not page %}Login - Socratic RAG Enhanced
-{% elif page == 'register' %}Register - Socratic RAG Enhanced
-{% elif page == 'profile' %}Profile - Socratic RAG Enhanced
-{% elif page == 'forgot_password' %}Forgot Password - Socratic RAG Enhanced
-{% elif page == 'reset_password' %}Reset Password - Socratic RAG Enhanced
-{% else %}Authentication - Socratic RAG Enhanced
-{% endif %}
-{% endblock %}
-
-{% block extra_head %}
-<style>
-.auth-container {
-    min-height: calc(100vh - 200px);
-}
-.auth-card {
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-.auth-header {
-    background: linear-gradient(135deg, #0d6efd, #6610f2);
-    border-radius: 0.75rem 0.75rem 0 0;
-}
-.form-floating input:focus, .form-floating select:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-}
-.password-strength {
-    height: 4px;
-    border-radius: 2px;
-    margin-top: 5px;
-    transition: all 0.3s ease;
-}
-.strength-weak { background: #dc3545; width: 25%; }
-.strength-fair { background: #fd7e14; width: 50%; }
-.strength-good { background: #ffc107; width: 75%; }
-.strength-strong { background: #198754; width: 100%; }
-.is-invalid {
-    border-color: #dc3545;
-}
-.field-error {
-    color: #dc3545;
-    font-size: 0.875rem;
-    margin-top: 0.25rem;
-}
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="auth-container d-flex align-items-center justify-content-center py-5">
-    <div class="row w-100 justify-content-center">
-        <div class="col-md-6 col-lg-5">
-
-            {% if page == 'login' or not page %}
-            <!-- Login Form -->
-            <div class="card auth-card">
-                <div class="auth-header text-white text-center py-4">
-                    <i class="bi bi-box-arrow-in-right display-4 mb-2"></i>
-                    <h3 class="mb-0">Welcome Back</h3>
-                    <p class="mb-0 opacity-75">Sign in to continue</p>
-                </div>
-                <div class="card-body p-4">
-                    <form method="POST" id="loginForm">
-                        {{ form.hidden_tag() }}
-                        
-                        <!-- Username Field -->
-                        <div class="form-floating mb-3">
-                            {{ form.username(class="form-control", placeholder="Username", autofocus=true) }}
-                            <label>
-                                <i class="bi bi-person-circle"></i> Username
-                            </label>
-                            {% if form.username.errors %}
-                                <div class="field-error">{{ form.username.errors[0] }}</div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Password Field -->
-                        <div class="form-floating mb-3">
-                            {{ form.password(class="form-control", placeholder="Password") }}
-                            <label>
-                                <i class="bi bi-lock"></i> Password
-                            </label>
-                            {% if form.password.errors %}
-                                <div class="field-error">{{ form.password.errors[0] }}</div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Remember Me -->
-                        <div class="form-check mb-3">
-                            {{ form.remember(class="form-check-input") }}
-                            {{ form.remember.label(class="form-check-label") }}
-                        </div>
-
-                        <!-- Submit Button -->
-                        {{ form.submit(class="btn btn-primary w-100 mb-3") }}
-
-                        <!-- Links -->
-                        <div class="text-center">
-                            <a href="{{ url_for('register') }}" class="text-primary text-decoration-none me-3">
-                                <i class="bi bi-person-plus"></i> Create Account
-                            </a>
-                            <a href="{{ url_for('forgot_password') }}" class="text-primary text-decoration-none">
-                                <i class="bi bi-question-circle"></i> Forgot Password?
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            {% elif page == 'register' %}
-            <!-- Registration Form -->
-            <div class="card auth-card">
-                <div class="auth-header text-white text-center py-4">
-                    <i class="bi bi-person-plus display-4 mb-2"></i>
-                    <h3 class="mb-0">Create Account</h3>
-                    <p class="mb-0 opacity-75">Join Socratic RAG Enhanced</p>
-                </div>
-                <div class="card-body p-4">
-                    <form method="POST" id="registerForm">
-                        {{ form.hidden_tag() }}
-
-                        <!-- Username Field -->
-                        <div class="form-floating mb-3">
-                            {{ form.username(class="form-control", placeholder="Username", autofocus=true) }}
-                            <label>
-                                <i class="bi bi-person-circle"></i> Username *
-                            </label>
-                            {% if form.username.errors %}
-                                <div class="field-error">{{ form.username.errors[0] }}</div>
-                            {% else %}
-                                <div class="form-text">At least 3 characters</div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Email Field -->
-                        <div class="form-floating mb-3">
-                            {{ form.email(class="form-control", placeholder="Email") }}
-                            <label>
-                                <i class="bi bi-envelope"></i> Email (optional)
-                            </label>
-                            {% if form.email.errors %}
-                                <div class="field-error">{{ form.email.errors[0] }}</div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Name Fields Row -->
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    {{ form.first_name(class="form-control", placeholder="First Name") }}
-                                    <label>
-                                        <i class="bi bi-person"></i> First Name
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    {{ form.last_name(class="form-control", placeholder="Last Name") }}
-                                    <label>
-                                        <i class="bi bi-person"></i> Last Name
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Password Field -->
-                        <div class="form-floating mb-3">
-                            {{ form.password(class="form-control", placeholder="Password") }}
-                            <label>
-                                <i class="bi bi-lock"></i> Password *
-                            </label>
-                            <div class="password-strength" id="password-strength"></div>
-                            {% if form.password.errors %}
-                                <div class="field-error">{{ form.password.errors[0] }}</div>
-                            {% else %}
-                                <div class="form-text">Minimum 6 characters</div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Confirm Password Field -->
-                        <div class="form-floating mb-3">
-                            {{ form.confirm_password(class="form-control", placeholder="Confirm Password") }}
-                            <label>
-                                <i class="bi bi-lock-fill"></i> Confirm Password *
-                            </label>
-                            {% if form.confirm_password.errors %}
-                                <div class="field-error">{{ form.confirm_password.errors[0] }}</div>
-                            {% endif %}
-                            <div id="password-match-message" class="form-text"></div>
-                        </div>
-
-                        <!-- Terms Acceptance -->
-                        <div class="form-check mb-3">
-                            {{ form.terms(class="form-check-input") }}
-                            <label class="form-check-label">
-                                I accept the <a href="#" class="text-primary">Terms of Service</a>
-                                and <a href="#" class="text-primary">Privacy Policy</a> *
-                            </label>
-                            {% if form.terms.errors %}
-                                <div class="field-error">{{ form.terms.errors[0] }}</div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Submit Button -->
-                        {{ form.submit(class="btn btn-primary w-100 mb-3") }}
-
-                        <!-- Links -->
-                        <div class="text-center">
-                            <a href="{{ url_for('login') }}" class="text-primary text-decoration-none">
-                                <i class="bi bi-box-arrow-in-right"></i> Already have an account? Sign In
-                            </a>
-                        </div>
-
-                        <div class="text-center mt-2">
-                            <small class="text-muted">* Required fields</small>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            {% elif page == 'forgot_password' %}
-            <!-- Forgot Password Form -->
-            <div class="card auth-card">
-                <div class="auth-header text-white text-center py-4">
-                    <i class="bi bi-question-circle display-4 mb-2"></i>
-                    <h3 class="mb-0">Forgot Password</h3>
-                    <p class="mb-0 opacity-75">Enter your email to reset your password</p>
-                </div>
-                <div class="card-body p-4">
-                    <form method="POST" id="forgotPasswordForm">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
-                        <!-- Email Field -->
-                        <div class="form-floating mb-3">
-                            <input type="email" class="form-control" id="forgot_email" name="email"
-                                   placeholder="Email Address" required autofocus>
-                            <label>
-                                <i class="bi bi-envelope"></i> Email Address
-                            </label>
-                        </div>
-
-                        <!-- Submit Button -->
-                        <button type="submit" class="btn btn-primary w-100 mb-3">
-                            <i class="bi bi-envelope-arrow-up"></i> Send Reset Instructions
-                        </button>
-
-                        <!-- Links -->
-                        <div class="text-center">
-                            <a href="{{ url_for('login') }}" class="text-primary text-decoration-none">
-                                <i class="bi bi-arrow-left"></i> Back to Login
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            {% elif page == 'reset_password' %}
-            <!-- Reset Password Form -->
-            <div class="card auth-card">
-                <div class="auth-header text-white text-center py-4">
-                    <i class="bi bi-key display-4 mb-2"></i>
-                    <h3 class="mb-0">Reset Password</h3>
-                    <p class="mb-0 opacity-75">Enter your new password</p>
-                </div>
-                <div class="card-body p-4">
-                    <form method="POST" id="resetPasswordForm">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <input type="hidden" name="token" value="{{ token }}">
-
-                        <!-- New Password Field -->
-                        <div class="form-floating mb-3">
-                            <input type="password" class="form-control" id="reset_new_password" name="new_password"
-                                   placeholder="New Password" required autofocus>
-                            <label>
-                                <i class="bi bi-lock"></i> New Password
-                            </label>
-                            <div class="form-text">Minimum 6 characters</div>
-                        </div>
-
-                        <!-- Confirm New Password Field -->
-                        <div class="form-floating mb-3">
-                            <input type="password" class="form-control" id="reset_confirm_new_password"
-                                   name="confirm_new_password" placeholder="Confirm New Password" required>
-                            <label>
-                                <i class="bi bi-lock-fill"></i> Confirm New Password
-                            </label>
-                        </div>
-
-                        <!-- Submit Button -->
-                        <button type="submit" class="btn btn-primary w-100 mb-3">
-                            <i class="bi bi-check-circle"></i> Update Password
-                        </button>
-
-                        <!-- Links -->
-                        <div class="text-center">
-                            <a href="{{ url_for('login') }}" class="text-primary text-decoration-none">
-                                <i class="bi bi-arrow-left"></i> Back to Login
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            {% elif page == 'profile' %}
-            <!-- User Profile -->
-            <div class="card auth-card">
-                <div class="auth-header text-white text-center py-4">
-                    <i class="bi bi-person-circle display-4 mb-2"></i>
-                    <h3 class="mb-0">{{ current_user.username if current_user else 'User' }}</h3>
-                    <p class="mb-0 opacity-75">Profile Settings</p>
-                </div>
-                <div class="card-body p-4">
-                    <form method="POST" id="profileForm">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
-                        <!-- Username (Read-only) -->
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="profile_username"
-                                   value="{{ current_user.username if current_user else '' }}" readonly>
-                            <label>Username</label>
-                        </div>
-
-                        <!-- Email -->
-                        <div class="form-floating mb-3">
-                            <input type="email" class="form-control" id="profile_email" name="email"
-                                   value="{{ current_user.email if current_user else '' }}">
-                            <label>Email Address</label>
-                        </div>
-
-                        <!-- Name Fields -->
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="text" class="form-control" id="profile_first_name"
-                                           name="first_name" value="">
-                                    <label>First Name</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="text" class="form-control" id="profile_last_name"
-                                           name="last_name" value="">
-                                    <label>Last Name</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- New Password (Optional) -->
-                        <div class="form-floating mb-3">
-                            <input type="password" class="form-control" id="profile_new_password" name="new_password"
-                                   placeholder="New Password">
-                            <label>New Password (leave blank to keep current)</label>
-                            <div class="form-text">Minimum 6 characters if changing</div>
-                        </div>
-
-                        <!-- Buttons -->
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary flex-fill">
-                                <i class="bi bi-check-circle"></i> Update Profile
-                            </button>
-                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Dashboard
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            {% endif %}
-
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    initializeValidation();
-
-    // Auto-focus first input
-    const firstInput = document.querySelector('input:not([disabled]):not([readonly])');
-    if (firstInput) {
-        firstInput.focus();
-    }
-});
-
-function initializeValidation() {
-    // Password strength indicator for registration
-    const passwordInput = document.getElementById('password');
-    if (passwordInput) {
-        passwordInput.addEventListener('input', checkPasswordStrength);
-    }
-
-    // Password confirmation matching
-    const confirmPasswordInput = document.getElementById('confirm_password');
-    if (confirmPasswordInput && passwordInput) {
-        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
-        passwordInput.addEventListener('input', checkPasswordMatch);
-    }
-
-    // Reset password form validation
-    const resetForm = document.getElementById('resetPasswordForm');
-    if (resetForm) {
-        const newPass = resetForm.querySelector('#reset_new_password');
-        const confirmPass = resetForm.querySelector('#reset_confirm_new_password');
-        
-        if (newPass && confirmPass) {
-            confirmPass.addEventListener('input', function() {
-                if (newPass.value !== confirmPass.value) {
-                    confirmPass.setCustomValidity('Passwords do not match');
-                } else {
-                    confirmPass.setCustomValidity('');
-                }
-            });
-        }
-    }
-}
-
-function checkPasswordStrength() {
-    const password = document.getElementById('password').value;
-    const strengthBar = document.getElementById('password-strength');
-
-    if (!strengthBar) return;
-
-    if (password.length === 0) {
-        strengthBar.className = 'password-strength';
-        return;
-    }
-
-    let strength = 0;
-    if (password.length >= 6) strength++;
-    if (password.length >= 10) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/[0-9]/.test(password)) strength++;
-    if (/[^A-Za-z0-9]/.test(password)) strength++;
-
-    const classes = ['strength-weak', 'strength-fair', 'strength-good', 'strength-strong'];
-    const strengthClass = classes[Math.min(Math.floor(strength / 1.25), 3)];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Socratic RAG Enhanced{% endblock %}</title>
     
-    strengthBar.className = `password-strength ${strengthClass}`;
-}
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .navbar-brand {
+            font-weight: 600;
+        }
+        
+        .footer {
+            background-color: rgba(0, 0, 0, 0.1);
+            color: white;
+            text-align: center;
+            padding: 1rem 0;
+            margin-top: auto;
+        }
+        
+        .main-content {
+            flex: 1;
+        }
+        
+        .wrapper {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Flash message styling */
+        .alert {
+            border-radius: 0.75rem;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .alert-success {
+            background-color: rgba(34, 197, 94, 0.9);
+            color: white;
+        }
+        
+        .alert-error, .alert-danger {
+            background-color: rgba(239, 68, 68, 0.9);
+            color: white;
+        }
+        
+        .alert-info {
+            background-color: rgba(59, 130, 246, 0.9);
+            color: white;
+        }
+        
+        .alert-warning {
+            background-color: rgba(245, 158, 11, 0.9);
+            color: white;
+        }
+    </style>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+            <div class="container">
+                <a class="navbar-brand" href="{{ url_for('index') }}">
+                    <i class="bi bi-lightbulb"></i> Socratic RAG Enhanced
+                </a>
+                
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        {% if current_user.is_authenticated %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('dashboard') }}">
+                                    <i class="bi bi-speedometer2"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('profile') }}">
+                                    <i class="bi bi-person"></i> {{ current_user.username }}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('logout') }}">
+                                    <i class="bi bi-box-arrow-right"></i> Logout
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('login') }}">
+                                    <i class="bi bi-box-arrow-in-right"></i> Login
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('register') }}">
+                                    <i class="bi bi-person-plus"></i> Register
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
 
-function checkPasswordMatch() {
-    const password = document.getElementById('password');
-    const confirmPassword = document.getElementById('confirm_password');
-    const message = document.getElementById('password-match-message');
+        <!-- Flash Messages -->
+        <div class="container mt-3">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
 
-    if (!password || !confirmPassword || !message) return;
+        <!-- Main Content -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
 
-    if (confirmPassword.value === '') {
-        message.textContent = '';
-        confirmPassword.classList.remove('is-invalid');
-        return;
-    }
+        <!-- Footer -->
+        <footer class="footer mt-5">
+            <div class="container">
+                <p class="mb-0">
+                    <i class="bi bi-lightbulb"></i> Socratic RAG Enhanced v7.3.0 - Phase B1 Authentication UI
+                    <span class="text-muted">|</span>
+                    <span class="badge bg-success">Working</span>
+                </p>
+            </div>
+        </footer>
+    </div>
 
-    if (password.value === confirmPassword.value) {
-        message.textContent = '✓ Passwords match';
-        message.className = 'form-text text-success';
-        confirmPassword.classList.remove('is-invalid');
-    } else {
-        message.textContent = '✗ Passwords do not match';
-        message.className = 'form-text text-danger';
-        confirmPassword.classList.add('is-invalid');
-    }
-}
-</script>
-{% endblock %}
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
