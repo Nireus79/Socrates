@@ -1685,27 +1685,6 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         user_projects = user_db.get_user_projects(current_user.id)
         return render_template('projects/dashboard.html', projects=user_projects)
 
-    @flask_app.route('/projects/new', methods=['GET', 'POST'])
-    @login_required
-    def new_project():
-        """Create new project page."""
-        form = ProjectForm()
-        if form.validate_on_submit():
-            project_id = user_db.create_project(
-                owner_id=current_user.id,
-                name=form.name.data,
-                description=form.description.data,
-                project_type=form.project_type.data,
-                framework=form.framework.data
-            )
-
-            if project_id:
-                flash(f'Project "{form.name.data}" created successfully!', 'success')
-                return redirect(url_for('project_detail', project_id=project_id))
-            else:
-                flash('Error creating project. Please try again.', 'error')
-
-        return render_template('projects/new.html', form=form)
 
     @flask_app.route('/projects/<project_id>')
     @login_required
@@ -2210,11 +2189,11 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
     @flask_app.route('/projects/new', methods=['GET', 'POST'])
     @login_required
     def new_project():
-        """Create new project with wizard interface."""
+        """Create new project with wizard interface and templates."""
         form = ProjectForm()
 
-        # Get current step (default to 1)
-        current_step = int(request.form.get('step', request.args.get('step', 1)))
+        # Get current step (default to 0 for template selection)
+        current_step = int(request.form.get('step', request.args.get('step', 0)))
 
         # Initialize wizard data in session if not exists
         if 'wizard_data' not in session:
@@ -2227,7 +2206,26 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
 
             if action == 'back':
                 # Go back to previous step
-                current_step = max(1, current_step - 1)
+                current_step = max(0, current_step - 1)
+
+            elif action == 'template_select':
+                # Handle template selection from step 0
+                template_id = request.form.get('template_id')
+
+                if template_id == 'custom':
+                    # Start from scratch - go to step 1
+                    current_step = 1
+                    wizard_data = {'template_id': 'custom'}
+                else:
+                    # Apply template and go to step 1
+                    template = get_template_by_id(template_id)
+                    if template:
+                        wizard_data = apply_template_to_wizard_data(template_id, {})
+                        current_step = 1
+                    else:
+                        flash('Invalid template selected.', 'error')
+
+                session['wizard_data'] = wizard_data
 
             elif action == 'next':
                 # Validate current step and advance
@@ -2280,11 +2278,12 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
 
                         if project_id:
                             # Store additional wizard data if needed
-                            # (requirements, estimated_hours, priority could be stored in project_metadata)
                             additional_data = {
                                 'requirements': wizard_data.get('requirements', ''),
                                 'estimated_hours': wizard_data.get('estimated_hours', ''),
                                 'priority': wizard_data.get('priority', 'medium'),
+                                'template_id': wizard_data.get('template_id', 'custom'),
+                                'template_name': wizard_data.get('template_name', ''),
                                 'created_via': 'wizard'
                             }
 
@@ -2302,7 +2301,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         # GET request or form errors - show wizard
         else:
             # On GET request, reset wizard if starting fresh
-            if current_step == 1 and not request.args.get('step'):
+            if current_step == 0 and not request.args.get('step'):
                 session.pop('wizard_data', None)
                 wizard_data = {}
 
@@ -2315,10 +2314,14 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         elif current_step == 2 and wizard_data:
             form.framework.data = wizard_data.get('framework', '')
 
+        # Get available templates for step 0
+        available_templates = get_all_templates()
+
         return render_template('projects/wizard.html',
                                form=form,
                                current_step=current_step,
-                               wizard_data=wizard_data)
+                               wizard_data=wizard_data,
+                               available_templates=available_templates)
 
     # Optional: Add a route to clear wizard data if user cancels
     @flask_app.route('/projects/wizard/cancel', methods=['POST'])
