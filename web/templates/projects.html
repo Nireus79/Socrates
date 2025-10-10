@@ -235,8 +235,8 @@
                 <div class="btn-group btn-group-sm">
                     <a href="{{ url_for('sessions') }}?project_id={{ project.id }}" class="btn btn-outline-success">
                         <i class="bi bi-chat-dots"></i> Start Session
-                    </a>
-                    <a href="{{ url_for('code') }}?project_id={{ project.id }}" class="btn btn-outline-info">
+                    </a>  <!-- ADD THIS CLOSING TAG -->
+                    <a href="{{ url_for('code_dashboard') }}?project_id={{ project.id }}" class="btn btn-outline-info">
                         <i class="bi bi-code-slash"></i> Generate Code
                     </a>
                 </div>
@@ -299,7 +299,7 @@
                     <a href="{{ url_for('sessions') }}?project_id={{ project.id }}" class="btn btn-success">
                         <i class="bi bi-chat-dots"></i> Socratic Session
                     </a>
-                    <a href="{{ url_for('code') }}?project_id={{ project.id }}" class="btn btn-info">
+                    <a href="{{ url_for('code_dashboard') }}?project_id={{ project.id }}" class="btn btn-info">
                         <i class="bi bi-code-slash"></i> Generate Code
                     </a>
                     <button class="btn btn-outline-secondary" disabled>
@@ -362,8 +362,8 @@
                                        class="btn btn-outline-success">
                                         <i class="bi bi-chat-dots"></i>
                                     </a>
-                                    <a href="{{ url_for('code') }}?project_id={{ project.id }}"
-                                       class="btn btn-outline-info">
+                                    <a href="{{ url_for('code_dashboard') }}?project_id={{ project.id }}"
+                                        class="btn btn-outline-info">
                                         <i class="bi bi-code-slash"></i>
                                     </a>
                                     {% if project.owner_id == current_user.id %}
