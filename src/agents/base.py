@@ -13,6 +13,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 from datetime import datetime
 from functools import wraps
+from src.database import get_database
 
 # Import core system components with proper fallbacks
 try:
@@ -109,12 +110,14 @@ class BaseAgent(ABC):
             self.logger = services.get_logger(f"agent.{agent_id}")
             self.events = services.get_event_bus()
             self.db_manager = services.get_db_manager()
+            self.db = get_database()
         else:
             # Fallback when no services provided
             self.config = {}
             self.logger = logging.getLogger(f"agent.{agent_id}")
             self.events = None
             self.db_manager = None
+            self.db = get_database()
 
         # Claude API client setup
         self.claude_client = None

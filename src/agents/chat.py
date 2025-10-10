@@ -11,7 +11,6 @@ from functools import wraps
 try:
     from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper
     from src.models import ChatSession, ConversationMessage, Project, ConversationStatus
-    from src.database import get_database
     from .base import BaseAgent, require_authentication, require_project_access, log_agent_action
 
     CORE_AVAILABLE = True
@@ -25,11 +24,6 @@ except ImportError:
 
     def get_logger(name):
         return logging.getLogger(name)
-
-
-    def get_database():
-        return None
-
 
     class ServiceContainer:
         def get_logger(self, name):
@@ -64,11 +58,8 @@ class ChatAgent(BaseAgent):
     - Flexible topic switching
     """
 
-    def __init__(self, service_container: Optional[ServiceContainer] = None):
-        super().__init__(service_container)
-
-        # Get database and repositories
-        self.db = get_database()
+    def __init__(self, services: Optional[ServiceContainer] = None):
+        super().__init__("chat_agent", "Chat Agent", services)
         self.chat_repo = self.db.chat_sessions if self.db else None
         self.message_repo = self.db.conversation_messages if self.db else None
 
@@ -338,8 +329,14 @@ class ChatAgent(BaseAgent):
             prompt = self._create_chat_prompt(session, message, context)
 
             # Get AI response
-            if self.claude_service:
-                response = self.claude_service.send_message(
+            # Get Claude service from ServiceContainer
+            claude_service = None
+            if self.services:
+                # Assuming ServiceContainer provides Claude service access
+                claude_service = getattr(self.services, 'claude_service', None)
+
+            if claude_service:
+                response = claude_service.send_message(
                     message=prompt,
                     conversation_history=[],  # Context is in the prompt
                     temperature=0.7  # More creative for chat

@@ -27,7 +27,6 @@ from src import get_logger, get_event_bus
 
 try:
     from src.models import UserActivity, ProjectMetrics
-    from src.database import get_database
     from .base import BaseAgent, require_authentication, log_agent_action
 
     CORE_AVAILABLE = True
@@ -44,11 +43,6 @@ except ImportError:
 
     def get_event_bus():
         return None
-
-
-    def get_database():
-        return None
-
 
     class DateTimeHelper:
         @staticmethod
@@ -137,9 +131,6 @@ class SystemMonitorAgent(BaseAgent):
 
     def __init__(self, services: Optional[ServiceContainer] = None):
         super().__init__("system_monitor", "System Monitor Agent", services)
-
-        # Get database and event bus (imports already at top of file)
-        self.db = get_database()
         self.event_bus = get_event_bus()
 
         # Monitoring settings

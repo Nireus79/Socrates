@@ -25,7 +25,6 @@ try:
         ProjectPhase, ModuleStatus, RiskLevel, ConversationStatus,
         ProjectContext, ModuleContext, TaskContext, Conflict, ConflictType
     )
-    from src.database import get_database
     from .base import BaseAgent, require_project_access, log_agent_action
 
     CORE_AVAILABLE = True
@@ -68,11 +67,6 @@ except ImportError:
 
         def get_db_manager(self):
             return None
-
-
-    def get_database():
-        return None
-
 
     class ProjectContext:
         def __init__(self, **kwargs):
@@ -179,7 +173,6 @@ class ContextAnalyzerAgent(BaseAgent):
     def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize ContextAnalyzerAgent with ServiceContainer dependency injection"""
         super().__init__("context_analyzer", "Context Analyzer", services)
-        self.db = get_database()
         self.patterns = {}
         self.conflict_rules = self._load_conflict_rules()
 

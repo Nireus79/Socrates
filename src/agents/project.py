@@ -21,7 +21,6 @@ from functools import wraps
 try:
     from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper
     from src.models import Project, Module, Task, ProjectStatus, ProjectPhase, TaskPriority, ModelValidator
-    from src.database import get_database
     from .base import BaseAgent, require_authentication, require_project_access, log_agent_action
 
     CORE_AVAILABLE = True
@@ -39,11 +38,6 @@ except ImportError:
 
     def get_event_bus():
         return None
-
-
-    def get_database():
-        return None
-
 
     class ServiceContainer:
         def get_logger(self, name):
@@ -160,8 +154,6 @@ class ProjectManagerAgent(BaseAgent):
     def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize ProjectManagerAgent with ServiceContainer dependency injection"""
         super().__init__("project_manager", "Project Manager", services)
-        self.db = get_database()
-
         if self.logger:
             self.logger.info("ProjectManagerAgent initialized successfully")
 

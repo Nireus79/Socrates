@@ -14,9 +14,6 @@ from .base import BaseAgent, require_authentication, log_agent_action
 # Import ServiceContainer from correct location
 from src.core import ServiceContainer
 
-# Import database service
-from src.database import get_database
-
 # Import models with proper fallbacks
 try:
     from src.models import User, UserRole, UserStatus
@@ -58,9 +55,6 @@ class UserManagerAgent(BaseAgent):
     def __init__(self, services: ServiceContainer):
         """Initialize UserManagerAgent"""
         super().__init__("user_manager", "User Manager", services)
-
-        # Get database service (returns DatabaseService with all repositories)
-        self.db = get_database()
 
     def get_capabilities(self) -> List[str]:
         """Return list of agent capabilities"""

@@ -27,7 +27,6 @@ try:
         Project, TechnicalSpecification, TechnicalSpec, GeneratedCodebase, GeneratedFile,
         TestResult, FileType, TestType, ProjectPhase, ModelValidator
     )
-    from src.database import get_database
     from .base import BaseAgent, require_authentication, require_project_access, log_agent_action
 
     CORE_AVAILABLE = True
@@ -56,11 +55,6 @@ except ImportError:
 
         def get_db_manager(self):
             return None
-
-
-    def get_database():
-        return None
-
 
     class DateTimeHelper:
         @staticmethod
@@ -207,7 +201,6 @@ class CodeGeneratorAgent(BaseAgent):
     def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize CodeGeneratorAgent with ServiceContainer dependency injection"""
         super().__init__("code_generator", "Code Generator Agent", services)
-        self.db = get_database()
         # Code generation settings
         self.supported_frameworks = {
             'backend': ['flask', 'fastapi', 'django', 'express'],

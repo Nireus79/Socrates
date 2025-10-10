@@ -6,7 +6,16 @@
   <component name="ChangeListManager">
     <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="run.py">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/chat.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/code.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/code.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/context.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/context.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/document.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/document.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/monitor.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/monitor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/project.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/project.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/services.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/socratic.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/socratic.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/user.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/user.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -16,8 +25,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Python Script" />
         <option value="HTML File" />
+        <option value="Python Script" />
       </list>
     </option>
   </component>
@@ -62,6 +71,7 @@
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\themi\PycharmProjects\Socrates\web" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\tests" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\docs" />
     </key>
@@ -136,14 +146,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00166" summary="import database">
-      <option name="closed" value="true" />
-      <created>1759993776285</created>
-      <option name="number" value="00166" />
-      <option name="presentableId" value="LOCAL-00166" />
-      <option name="project" value="LOCAL" />
-      <updated>1759993776285</updated>
     </task>
     <task id="LOCAL-00167" summary="import database">
       <option name="closed" value="true" />
@@ -529,7 +531,15 @@
       <option name="project" value="LOCAL" />
       <updated>1760108446035</updated>
     </task>
-    <option name="localTasksCounter" value="215" />
+    <task id="LOCAL-00215" summary="run.py">
+      <option name="closed" value="true" />
+      <created>1760108959492</created>
+      <option name="number" value="00215" />
+      <option name="presentableId" value="LOCAL-00215" />
+      <option name="project" value="LOCAL" />
+      <updated>1760108959493</updated>
+    </task>
+    <option name="localTasksCounter" value="216" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">

@@ -24,7 +24,6 @@ from urllib.parse import urlparse
 try:
     from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper
     from src.models import KnowledgeEntry, ModelFactory
-    from src.database import get_database
     from src.utils import get_file_processor, get_text_processor
     from .base import BaseAgent, require_authentication, require_project_access, log_agent_action
 
@@ -53,11 +52,6 @@ except ImportError:
 
         def get_db_manager(self):
             return None
-
-
-    def get_database():
-        return None
-
 
     def get_file_processor():
         return None
@@ -158,7 +152,6 @@ class DocumentProcessorAgent(BaseAgent):
     def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize DocumentProcessorAgent with ServiceContainer dependency injection"""
         super().__init__("document_processor", "Document Processor Agent", services)
-        self.db = get_database()
         # Initialize file processing utilities
         self.file_processor = get_file_processor()
         self.text_processor = get_text_processor()

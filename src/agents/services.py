@@ -27,7 +27,6 @@ from pathlib import Path
 try:
     from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper
     from src.models import Project, GeneratedCodebase, GeneratedFile, ProjectContext
-    from src.database import get_database
     from .base import BaseAgent, require_authentication, require_project_access, log_agent_action
 
     CORE_AVAILABLE = True
@@ -55,11 +54,6 @@ except ImportError:
 
         def get_db_manager(self):
             return None
-
-
-    def get_database():
-        return None
-
 
     class DateTimeHelper:
         @staticmethod
@@ -134,7 +128,6 @@ class ServicesAgent(BaseAgent):
     def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize ServicesAgent with ServiceContainer dependency injection"""
         super().__init__("services", "Services Agent", services)
-        self.db = get_database()
         # Service configuration
         self.supported_export_formats = ['zip', 'json', 'docker', 'pdf']
         self.supported_git_operations = ['init', 'commit', 'push', 'pull', 'branch', 'status', 'clone']
