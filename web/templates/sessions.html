@@ -830,7 +830,7 @@ function exportSession() {
 
 function generateFromSession() {
     // Generate code from current session insights
-    window.location.href = `{{ url_for('code') }}?session_id=${currentSessionId}`;
+    window.location.href = `{{ url_for('code_dashboard') }}?session_id=${currentSessionId}`;
 }
 
 function pauseSession() {
