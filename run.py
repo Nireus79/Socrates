@@ -1,9 +1,6 @@
-# Fixed Run Script - Bypasses Broken Imports
-# File: run.py
-# This replaces the main run.py to get the system working
-
 import os
 import sys
+import json
 import argparse
 import logging
 import webbrowser
@@ -130,6 +127,245 @@ def create_working_app():
                              default='draft')
         submit = SubmitField('Save Project')
 
+    class NewSessionForm(FlaskForm):
+        session_name = StringField('Session Name', validators=[
+            DataRequired(message='Session name is required'),
+            Length(min=3, max=100, message='Session name must be between 3 and 100 characters')
+        ])
+
+        role = SelectField('Your Role', validators=[DataRequired()], choices=[
+            ('project_manager', 'Project Manager'),
+            ('business_analyst', 'Business Analyst'),
+            ('ux_designer', 'UX Designer'),
+            ('frontend_developer', 'Frontend Developer'),
+            ('backend_developer', 'Backend Developer'),
+            ('devops_engineer', 'DevOps Engineer'),
+            ('qa_tester', 'QA Tester'),
+            ('security_engineer', 'Security Engineer')
+        ])
+
+        existing_project = SelectField('Link to Project (Optional)', choices=[('', 'No Project')])
+
+        initial_idea = TextAreaField('Initial Project Idea', validators=[
+            OptionalValidator(),
+            Length(max=1000, message='Initial idea must be under 1000 characters')
+        ])
+
+        session_type = SelectField('Session Type', validators=[DataRequired()], choices=[
+            ('discovery', 'Discovery & Planning'),
+            ('requirements', 'Requirements Analysis'),
+            ('architecture', 'Architecture Design'),
+            ('implementation', 'Implementation Planning'),
+            ('review', 'Code Review & Feedback')
+        ], default='discovery')
+
+        submit = SubmitField('Start Session')
+
+    class SessionConfigForm(FlaskForm):
+        session_name = StringField('Session Name', validators=[
+            DataRequired(),
+            Length(min=3, max=100)
+        ])
+
+        status = SelectField('Status', choices=[
+            ('active', 'Active'),
+            ('paused', 'Paused'),
+            ('completed', 'Completed'),
+            ('archived', 'Archived')
+        ])
+
+        current_phase = SelectField('Current Phase', choices=[
+            ('discovery', 'Discovery'),
+            ('requirements', 'Requirements'),
+            ('design', 'Design'),
+            ('planning', 'Planning'),
+            ('implementation', 'Implementation'),
+            ('testing', 'Testing'),
+            ('deployment', 'Deployment'),
+            ('review', 'Review')
+        ])
+
+        progress = SelectField('Progress %', choices=[
+            ('0', '0% - Just Started'),
+            ('10', '10% - Initial Setup'),
+            ('25', '25% - Quarter Complete'),
+            ('50', '50% - Half Complete'),
+            ('75', '75% - Nearly Done'),
+            ('90', '90% - Almost Finished'),
+            ('100', '100% - Complete')
+        ])
+
+        submit = SubmitField('Update Session')
+
+    class QuestionForm(FlaskForm):
+        question_text = TextAreaField('Question', validators=[
+            DataRequired(message='Question text is required'),
+            Length(min=10, max=1000, message='Question must be between 10 and 1000 characters')
+        ])
+
+        question_type = SelectField('Question Type', choices=[
+            ('discovery', 'Discovery'),
+            ('clarification', 'Clarification'),
+            ('technical', 'Technical'),
+            ('business', 'Business'),
+            ('validation', 'Validation')
+        ], default='discovery')
+
+        importance_score = SelectField('Importance', choices=[
+            ('1', '1 - Low'),
+            ('3', '3 - Medium'),
+            ('5', '5 - High'),
+            ('7', '7 - Critical'),
+            ('10', '10 - Urgent')
+        ], default='5')
+
+        submit = SubmitField('Ask Question')
+
+    class AnswerForm(FlaskForm):
+        answer_text = TextAreaField('Answer', validators=[
+            DataRequired(message='Answer is required'),
+            Length(min=5, max=2000, message='Answer must be between 5 and 2000 characters')
+        ])
+
+        submit = SubmitField('Submit Answer')
+
+    class CodeGenerationForm(FlaskForm):
+        generation_name = StringField('Generation Name', validators=[
+            DataRequired(message='Generation name is required'),
+            Length(min=3, max=100, message='Generation name must be between 3 and 100 characters')
+        ])
+
+        architecture_pattern = SelectField('Architecture Pattern', validators=[DataRequired()], choices=[
+            ('mvc', 'Model-View-Controller (MVC)'),
+            ('mvp', 'Model-View-Presenter (MVP)'),
+            ('mvvm', 'Model-View-ViewModel (MVVM)'),
+            ('microservices', 'Microservices'),
+            ('layered', 'Layered Architecture'),
+            ('hexagonal', 'Hexagonal Architecture'),
+            ('clean', 'Clean Architecture'),
+            ('event_driven', 'Event-Driven Architecture')
+        ])
+
+        generation_type = SelectField('Generation Type', validators=[DataRequired()], choices=[
+            ('full_stack', 'Full Stack Application'),
+            ('backend_api', 'Backend API Only'),
+            ('frontend_spa', 'Frontend SPA Only'),
+            ('mobile_app', 'Mobile Application'),
+            ('desktop_app', 'Desktop Application'),
+            ('cli_tool', 'Command Line Tool'),
+            ('library', 'Library/Package'),
+            ('microservice', 'Single Microservice')
+        ], default='full_stack')
+
+        primary_language = SelectField('Primary Language', validators=[DataRequired()], choices=[
+            ('python', 'Python'),
+            ('javascript', 'JavaScript/Node.js'),
+            ('typescript', 'TypeScript'),
+            ('java', 'Java'),
+            ('csharp', 'C#'),
+            ('go', 'Go'),
+            ('rust', 'Rust'),
+            ('php', 'PHP')
+        ])
+
+        frontend_framework = SelectField('Frontend Framework (if applicable)', choices=[
+            ('', 'None/HTML'),
+            ('react', 'React'),
+            ('vue', 'Vue.js'),
+            ('angular', 'Angular'),
+            ('svelte', 'Svelte'),
+            ('next', 'Next.js'),
+            ('nuxt', 'Nuxt.js'),
+            ('flutter', 'Flutter (Mobile)')
+        ])
+
+        backend_framework = SelectField('Backend Framework (if applicable)', choices=[
+            ('', 'None/Vanilla'),
+            ('flask', 'Flask'),
+            ('django', 'Django'),
+            ('fastapi', 'FastAPI'),
+            ('express', 'Express.js'),
+            ('nestjs', 'NestJS'),
+            ('spring', 'Spring Boot'),
+            ('dotnet', '.NET Core'),
+            ('gin', 'Gin (Go)'),
+            ('actix', 'Actix (Rust)')
+        ])
+
+        database_type = SelectField('Database Type', choices=[
+            ('', 'None'),
+            ('sqlite', 'SQLite'),
+            ('postgresql', 'PostgreSQL'),
+            ('mysql', 'MySQL'),
+            ('mongodb', 'MongoDB'),
+            ('redis', 'Redis'),
+            ('elasticsearch', 'Elasticsearch')
+        ])
+
+        include_authentication = BooleanField('Include Authentication System')
+        include_api_docs = BooleanField('Include API Documentation', default=True)
+        include_tests = BooleanField('Include Unit Tests', default=True)
+        include_docker = BooleanField('Include Docker Configuration')
+        include_deployment = BooleanField('Include Deployment Scripts')
+
+        additional_features = TextAreaField('Additional Features/Requirements', validators=[
+            OptionalValidator(),
+            Length(max=1000, message='Additional features must be under 1000 characters')
+        ])
+
+        submit = SubmitField('Generate Code')
+
+    class GenerationConfigForm(FlaskForm):
+        generation_name = StringField('Generation Name', validators=[
+            DataRequired(),
+            Length(min=3, max=100)
+        ])
+
+        status = SelectField('Status', choices=[
+            ('pending', 'Pending'),
+            ('generating', 'Generating'),
+            ('completed', 'Completed'),
+            ('failed', 'Failed'),
+            ('cancelled', 'Cancelled')
+        ])
+
+        progress = SelectField('Progress %', choices=[
+            ('0', '0% - Not Started'),
+            ('10', '10% - Analyzing Requirements'),
+            ('25', '25% - Creating Structure'),
+            ('50', '50% - Generating Code'),
+            ('75', '75% - Adding Tests'),
+            ('90', '90% - Finalizing'),
+            ('100', '100% - Complete')
+        ])
+
+        submit = SubmitField('Update Generation')
+
+    class FileViewerForm(FlaskForm):
+        file_id = StringField('File ID', validators=[DataRequired()])
+        action = SelectField('Action', choices=[
+            ('view', 'View File'),
+            ('edit', 'Edit File'),
+            ('download', 'Download File'),
+            ('delete', 'Delete File')
+        ])
+
+        file_content = TextAreaField('File Content', validators=[OptionalValidator()])
+
+        submit = SubmitField('Perform Action')
+
+    class BatchActionForm(FlaskForm):
+        selected_files = StringField('Selected Files (JSON)', validators=[DataRequired()])
+
+        action = SelectField('Batch Action', validators=[DataRequired()], choices=[
+            ('download_zip', 'Download as ZIP'),
+            ('sync_to_ide', 'Sync to IDE'),
+            ('export_project', 'Export Project'),
+            ('delete_files', 'Delete Files')
+        ])
+
+        submit = SubmitField('Execute Action')
+
     class UserDB:
         def __init__(self, db_path: str = 'data/app.db'):
             self.db_path = db_path
@@ -195,6 +431,42 @@ def create_working_app():
                     technology_stack TEXT,
                     is_public INTEGER DEFAULT 1,
                     created_at TEXT
+                )
+            ''')
+
+            # Sessions table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS sessions (
+                    id TEXT PRIMARY KEY,
+                    session_name TEXT NOT NULL,
+                    project_id TEXT,
+                    owner_id TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    status TEXT DEFAULT 'active',
+                    progress INTEGER DEFAULT 0,
+                    current_phase TEXT DEFAULT 'discovery',
+                    session_data TEXT DEFAULT '{}',
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
+                    FOREIGN KEY (owner_id) REFERENCES users (id) ON DELETE CASCADE
+                )
+            ''')
+
+            # Session questions table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS session_questions (
+                    id TEXT PRIMARY KEY,
+                    session_id TEXT NOT NULL,
+                    question_text TEXT NOT NULL,
+                    question_type TEXT DEFAULT 'discovery',
+                    role TEXT NOT NULL,
+                    answer_text TEXT,
+                    is_answered BOOLEAN DEFAULT 0,
+                    importance_score REAL DEFAULT 5.0,
+                    created_at TEXT NOT NULL,
+                    answered_at TEXT,
+                    FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE
                 )
             ''')
 
@@ -427,6 +699,373 @@ def create_working_app():
             except Exception as e:
                 logger.error(f"Error getting templates: {e}")
                 return []
+
+        def create_session(self, owner_id: str, session_name: str, role: str,
+                           project_id: str = None, session_data: dict = None):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+
+                session_id = str(uuid.uuid4())
+                created_at = datetime.now().isoformat()
+                updated_at = created_at
+                session_data_json = json.dumps(session_data or {})
+
+                cursor.execute('''
+                    INSERT INTO sessions (id, session_name, project_id, owner_id, role, 
+                                        session_data, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (session_id, session_name, project_id, owner_id, role,
+                      session_data_json, created_at, updated_at))
+
+                conn.commit()
+                conn.close()
+                return session_id
+            except Exception as e:
+                logger.error(f"Error creating session: {e}")
+                return None
+
+        def get_user_sessions(self, user_id: str):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT s.id, s.session_name, s.project_id, s.role, s.status, 
+                           s.progress, s.current_phase, s.created_at, s.updated_at,
+                           p.name as project_name
+                    FROM sessions s
+                    LEFT JOIN projects p ON s.project_id = p.id
+                    WHERE s.owner_id = ?
+                    ORDER BY s.updated_at DESC
+                ''', (user_id,))
+
+                sessions = []
+                for row in cursor.fetchall():
+                    sessions.append({
+                        'id': row[0],
+                        'session_name': row[1],
+                        'project_id': row[2],
+                        'role': row[3],
+                        'status': row[4],
+                        'progress': row[5],
+                        'current_phase': row[6],
+                        'created_at': row[7],
+                        'updated_at': row[8],
+                        'project_name': row[9]
+                    })
+
+                conn.close()
+                return sessions
+            except Exception as e:
+                logger.error(f"Error getting user sessions: {e}")
+                return []
+
+        def get_session(self, session_id: str, user_id: str):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT s.id, s.session_name, s.project_id, s.owner_id, s.role, 
+                           s.status, s.progress, s.current_phase, s.session_data,
+                           s.created_at, s.updated_at, p.name as project_name
+                    FROM sessions s
+                    LEFT JOIN projects p ON s.project_id = p.id
+                    WHERE s.id = ? AND s.owner_id = ?
+                ''', (session_id, user_id))
+
+                row = cursor.fetchone()
+                conn.close()
+
+                if row:
+                    return {
+                        'id': row[0],
+                        'session_name': row[1],
+                        'project_id': row[2],
+                        'owner_id': row[3],
+                        'role': row[4],
+                        'status': row[5],
+                        'progress': row[6],
+                        'current_phase': row[7],
+                        'session_data': json.loads(row[8]) if row[8] else {},
+                        'created_at': row[9],
+                        'updated_at': row[10],
+                        'project_name': row[11]
+                    }
+                return None
+            except Exception as e:
+                logger.error(f"Error getting session: {e}")
+                return None
+
+        def update_session(self, session_id: str, user_id: str, **kwargs):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+
+                # Build update query dynamically
+                allowed_fields = ['session_name', 'status', 'progress', 'current_phase', 'session_data']
+                update_fields = []
+                values = []
+
+                for field, value in kwargs.items():
+                    if field in allowed_fields:
+                        if field == 'session_data' and isinstance(value, dict):
+                            value = json.dumps(value)
+                        update_fields.append(f"{field} = ?")
+                        values.append(value)
+
+                if not update_fields:
+                    return False
+
+                update_fields.append("updated_at = ?")
+                values.append(datetime.now().isoformat())
+                values.append(session_id)
+                values.append(user_id)
+
+                query = f"UPDATE sessions SET {', '.join(update_fields)} WHERE id = ? AND owner_id = ?"
+                cursor.execute(query, values)
+
+                success = cursor.rowcount > 0
+                conn.commit()
+                conn.close()
+                return success
+            except Exception as e:
+                logger.error(f"Error updating session: {e}")
+                return False
+
+        def delete_session(self, session_id: str, user_id: str):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute('DELETE FROM sessions WHERE id = ? AND owner_id = ?',
+                               (session_id, user_id))
+
+                success = cursor.rowcount > 0
+                conn.commit()
+                conn.close()
+                return success
+            except Exception as e:
+                logger.error(f"Error deleting session: {e}")
+                return False
+
+        def create_generation(self, project_id: str, generation_name: str,
+                              architecture_pattern: str, generation_type: str = 'full_stack',
+                              session_id: str = None, technology_stack: dict = None,
+                              generation_config: dict = None):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+
+                generation_id = str(uuid.uuid4())
+                created_at = datetime.now().isoformat()
+                updated_at = created_at
+                tech_stack_json = json.dumps(technology_stack or {})
+                config_json = json.dumps(generation_config or {})
+
+                cursor.execute('''
+                    INSERT INTO code_generations (id, project_id, session_id, generation_name,
+                                                architecture_pattern, generation_type, 
+                                                technology_stack, generation_config,
+                                                created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (generation_id, project_id, session_id, generation_name,
+                      architecture_pattern, generation_type, tech_stack_json,
+                      config_json, created_at, updated_at))
+
+                conn.commit()
+                conn.close()
+                return generation_id
+            except Exception as e:
+                logger.error(f"Error creating generation: {e}")
+                return None
+
+        def get_project_generations(self, project_id: str, user_id: str):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT g.id, g.generation_name, g.architecture_pattern, g.generation_type,
+                           g.status, g.progress, g.created_at, g.updated_at, g.completed_at,
+                           COUNT(f.id) as file_count
+                    FROM code_generations g
+                    LEFT JOIN generated_files f ON g.id = f.generation_id
+                    INNER JOIN projects p ON g.project_id = p.id
+                    WHERE g.project_id = ? AND p.owner_id = ?
+                    GROUP BY g.id
+                    ORDER BY g.created_at DESC
+                ''', (project_id, user_id))
+
+                generations = []
+                for row in cursor.fetchall():
+                    generations.append({
+                        'id': row[0],
+                        'generation_name': row[1],
+                        'architecture_pattern': row[2],
+                        'generation_type': row[3],
+                        'status': row[4],
+                        'progress': row[5],
+                        'created_at': row[6],
+                        'updated_at': row[7],
+                        'completed_at': row[8],
+                        'file_count': row[9]
+                    })
+
+                conn.close()
+                return generations
+            except Exception as e:
+                logger.error(f"Error getting project generations: {e}")
+                return []
+
+        def get_generation(self, generation_id: str, user_id: str):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT g.id, g.project_id, g.session_id, g.generation_name,
+                           g.architecture_pattern, g.generation_type, g.status, g.progress,
+                           g.technology_stack, g.file_structure, g.generation_config,
+                           g.created_at, g.updated_at, g.completed_at,
+                           p.name as project_name
+                    FROM code_generations g
+                    INNER JOIN projects p ON g.project_id = p.id
+                    WHERE g.id = ? AND p.owner_id = ?
+                ''', (generation_id, user_id))
+
+                row = cursor.fetchone()
+
+                if row:
+                    generation = {
+                        'id': row[0],
+                        'project_id': row[1],
+                        'session_id': row[2],
+                        'generation_name': row[3],
+                        'architecture_pattern': row[4],
+                        'generation_type': row[5],
+                        'status': row[6],
+                        'progress': row[7],
+                        'technology_stack': json.loads(row[8]) if row[8] else {},
+                        'file_structure': json.loads(row[9]) if row[9] else {},
+                        'generation_config': json.loads(row[10]) if row[10] else {},
+                        'created_at': row[11],
+                        'updated_at': row[12],
+                        'completed_at': row[13],
+                        'project_name': row[14]
+                    }
+
+                    # Get generated files
+                    cursor.execute('''
+                        SELECT id, file_path, file_name, file_type, file_size, created_at
+                        FROM generated_files
+                        WHERE generation_id = ?
+                        ORDER BY file_path, file_name
+                    ''', (generation_id,))
+
+                    files = []
+                    for file_row in cursor.fetchall():
+                        files.append({
+                            'id': file_row[0],
+                            'file_path': file_row[1],
+                            'file_name': file_row[2],
+                            'file_type': file_row[3],
+                            'file_size': file_row[4],
+                            'created_at': file_row[5]
+                        })
+
+                    generation['files'] = files
+                    conn.close()
+                    return generation
+
+                conn.close()
+                return None
+            except Exception as e:
+                logger.error(f"Error getting generation: {e}")
+                return None
+
+        def update_generation(self, generation_id: str, user_id: str, **kwargs):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+
+                # Build update query dynamically
+                allowed_fields = ['generation_name', 'status', 'progress', 'technology_stack',
+                                  'file_structure', 'generation_config', 'completed_at']
+                update_fields = []
+                values = []
+
+                for field, value in kwargs.items():
+                    if field in allowed_fields:
+                        if field in ['technology_stack', 'file_structure', 'generation_config'] and isinstance(value,
+                                                                                                               dict):
+                            value = json.dumps(value)
+                        update_fields.append(f"{field} = ?")
+                        values.append(value)
+
+                if not update_fields:
+                    return False
+
+                update_fields.append("updated_at = ?")
+                values.append(datetime.now().isoformat())
+                values.append(generation_id)
+                values.append(user_id)
+
+                query = f'''
+                    UPDATE code_generations 
+                    SET {', '.join(update_fields)} 
+                    WHERE id = ? AND project_id IN (
+                        SELECT id FROM projects WHERE owner_id = ?
+                    )
+                '''
+                cursor.execute(query, values)
+
+                success = cursor.rowcount > 0
+                conn.commit()
+                conn.close()
+                return success
+            except Exception as e:
+                logger.error(f"Error updating generation: {e}")
+                return False
+
+        def delete_generation(self, generation_id: str, user_id: str):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute('''
+                    DELETE FROM code_generations 
+                    WHERE id = ? AND project_id IN (
+                        SELECT id FROM projects WHERE owner_id = ?
+                    )
+                ''', (generation_id, user_id))
+
+                success = cursor.rowcount > 0
+                conn.commit()
+                conn.close()
+                return success
+            except Exception as e:
+                logger.error(f"Error deleting generation: {e}")
+                return False
+
+        def add_generated_file(self, generation_id: str, file_path: str, file_name: str,
+                               file_type: str, file_content: str = None):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+
+                file_id = str(uuid.uuid4())
+                created_at = datetime.now().isoformat()
+                file_size = len(file_content.encode('utf-8')) if file_content else 0
+
+                cursor.execute('''
+                    INSERT INTO generated_files (id, generation_id, file_path, file_name,
+                                               file_type, file_content, file_size, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (file_id, generation_id, file_path, file_name, file_type,
+                      file_content, file_size, created_at))
+
+                conn.commit()
+                conn.close()
+                return file_id
+            except Exception as e:
+                logger.error(f"Error adding generated file: {e}")
+                return None
 
     # Create Flask app
     app = Flask(__name__, template_folder='web/templates', static_folder='web/static')
@@ -697,6 +1336,158 @@ def create_working_app():
             flash('Error deleting project. Please try again.', 'error')
 
         return redirect(url_for('projects'))
+
+    @app.route('/sessions')
+    @login_required
+    def sessions():
+        user_sessions = user_db.get_user_sessions(current_user.id)
+        return render_template('sessions.html', sessions=user_sessions)
+
+    @app.route('/sessions/new', methods=['GET', 'POST'])
+    @login_required
+    def new_session():
+        form = NewSessionForm()
+
+        # Populate project choices
+        user_projects = user_db.get_user_projects(current_user.id)
+        form.existing_project.choices = [('', 'No Project')] + [
+            (p['id'], p['name']) for p in user_projects
+        ]
+
+        if form.validate_on_submit():
+            project_id = form.existing_project.data if form.existing_project.data else None
+
+            session_data = {
+                'initial_idea': form.initial_idea.data,
+                'session_type': form.session_type.data,
+                'questions': [],
+                'conversation_history': []
+            }
+
+            session_id = user_db.create_session(
+                owner_id=current_user.id,
+                session_name=form.session_name.data,
+                role=form.role.data,
+                project_id=project_id,
+                session_data=session_data
+            )
+
+            if session_id:
+                flash(f'Session "{form.session_name.data}" created successfully!', 'success')
+                return redirect(url_for('session_detail', session_id=session_id))
+            else:
+                flash('Error creating session. Please try again.', 'error')
+
+        return render_template('sessions/new.html', form=form)
+
+    @app.route('/sessions/<session_id>')
+    @login_required
+    def session_detail(session_id):
+        session = user_db.get_session(session_id, current_user.id)
+        if not session:
+            flash('Session not found.', 'error')
+            return redirect(url_for('sessions'))
+
+        return render_template('sessions/detail.html', session=session)
+
+    @app.route('/sessions/<session_id>/continue', methods=['GET', 'POST'])
+    @login_required
+    def continue_session(session_id):
+        session = user_db.get_session(session_id, current_user.id)
+        if not session:
+            flash('Session not found.', 'error')
+            return redirect(url_for('sessions'))
+
+        question_form = QuestionForm()
+        answer_form = AnswerForm()
+
+        if question_form.validate_on_submit() and question_form.submit.data:
+            # Handle new question submission
+            # This would integrate with the AI system later
+            flash('Question added to session.', 'success')
+            return redirect(url_for('continue_session', session_id=session_id))
+
+        if answer_form.validate_on_submit() and answer_form.submit.data:
+            # Handle answer submission
+            # This would update the session and trigger next question
+            flash('Answer recorded.', 'success')
+            return redirect(url_for('continue_session', session_id=session_id))
+
+        return render_template('sessions/continue.html',
+                               session=session,
+                               question_form=question_form,
+                               answer_form=answer_form)
+
+    @app.route('/sessions/<session_id>/config', methods=['GET', 'POST'])
+    @login_required
+    def session_config(session_id):
+        session = user_db.get_session(session_id, current_user.id)
+        if not session:
+            flash('Session not found.', 'error')
+            return redirect(url_for('sessions'))
+
+        form = SessionConfigForm()
+
+        if form.validate_on_submit():
+            success = user_db.update_session(
+                session_id=session_id,
+                user_id=current_user.id,
+                session_name=form.session_name.data,
+                status=form.status.data,
+                current_phase=form.current_phase.data,
+                progress=int(form.progress.data)
+            )
+
+            if success:
+                flash('Session updated successfully.', 'success')
+                return redirect(url_for('session_detail', session_id=session_id))
+            else:
+                flash('Error updating session. Please try again.', 'error')
+        else:
+            # Pre-populate form with current session data
+            form.session_name.data = session['session_name']
+            form.status.data = session['status']
+            form.current_phase.data = session['current_phase']
+            form.progress.data = str(session['progress'])
+
+        return render_template('sessions/config.html', form=form, session=session)
+
+    @app.route('/sessions/<session_id>/delete', methods=['POST'])
+    @login_required
+    def delete_session(session_id):
+        session = user_db.get_session(session_id, current_user.id)
+        if not session:
+            flash('Session not found.', 'error')
+            return redirect(url_for('sessions'))
+
+        if user_db.delete_session(session_id, current_user.id):
+            flash(f'Session "{session["session_name"]}" deleted successfully.', 'success')
+        else:
+            flash('Error deleting session. Please try again.', 'error')
+
+        return redirect(url_for('sessions'))
+
+    @app.route('/projects/<project_id>/sessions')
+    @login_required
+    def project_sessions(project_id):
+        project = user_db.get_project(project_id, current_user.id)
+        if not project:
+            flash('Project not found.', 'error')
+            return redirect(url_for('projects'))
+
+        # Get sessions for this project
+        all_sessions = user_db.get_user_sessions(current_user.id)
+        project_sessions = [s for s in all_sessions if s['project_id'] == project_id]
+
+        return render_template('sessions/project_sessions.html',
+                               project=project,
+                               sessions=project_sessions)
+
+    @app.route('/sessions/history')
+    @login_required
+    def sessions_history():
+        user_sessions = user_db.get_user_sessions(current_user.id)
+        return render_template('sessions/history.html', sessions=user_sessions)
 
     return app
 
