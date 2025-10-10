@@ -4,18 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="run.py">
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="database">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/base.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/chat.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/code.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/code.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/context.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/context.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/document.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/document.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/monitor.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/monitor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/project.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/project.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/services.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/socratic.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/socratic.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/user.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/user.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -146,14 +137,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00167" summary="import database">
-      <option name="closed" value="true" />
-      <created>1760002126485</created>
-      <option name="number" value="00167" />
-      <option name="presentableId" value="LOCAL-00167" />
-      <option name="project" value="LOCAL" />
-      <updated>1760002126485</updated>
     </task>
     <task id="LOCAL-00168" summary="import database">
       <option name="closed" value="true" />
@@ -539,11 +522,18 @@
       <option name="project" value="LOCAL" />
       <updated>1760108959493</updated>
     </task>
-    <option name="localTasksCounter" value="216" />
+    <task id="LOCAL-00216" summary="database">
+      <option name="closed" value="true" />
+      <created>1760121501255</created>
+      <option name="number" value="00216" />
+      <option name="presentableId" value="LOCAL-00216" />
+      <option name="project" value="LOCAL" />
+      <updated>1760121501255</updated>
+    </task>
+    <option name="localTasksCounter" value="217" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="delete" />
     <MESSAGE value="health" />
     <MESSAGE value="database.py" />
     <MESSAGE value="socratic.py" />
@@ -568,6 +558,7 @@
     <MESSAGE value="test integration" />
     <MESSAGE value="ui" />
     <MESSAGE value="run.py" />
-    <option name="LAST_COMMIT_MESSAGE" value="run.py" />
+    <MESSAGE value="database" />
+    <option name="LAST_COMMIT_MESSAGE" value="database" />
   </component>
 </project>

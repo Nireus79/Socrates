@@ -902,6 +902,10 @@ class EditProjectForm(FlaskForm):
         ('vue', 'Vue.js'),
         ('angular', 'Angular')
     ])
+    project_type = SelectField('Project Type', choices=[
+        ('solo', 'Solo Project'),
+        ('team', 'Team Project')
+    ])
     submit = SubmitField('Update Project')
 
 
