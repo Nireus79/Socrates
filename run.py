@@ -1,5 +1,5 @@
 # Fixed Run Script - Bypasses Broken Imports
-# File: run_working.py
+# File: run.py
 # This replaces the main run.py to get the system working
 
 import os
@@ -66,7 +66,7 @@ def create_working_app():
     from flask import Flask, render_template, request, redirect, url_for, flash
     from flask_wtf import FlaskForm, CSRFProtect
     from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-    from wtforms import StringField, PasswordField, BooleanField, SubmitField
+    from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField, SelectField
     from wtforms.validators import DataRequired, Length, Email, Optional as OptionalValidator, ValidationError
     from werkzeug.security import generate_password_hash, check_password_hash
     import sqlite3
@@ -142,66 +142,66 @@ def create_working_app():
 
             # Users table (existing)
             cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS users (
-                        id TEXT PRIMARY KEY,
-                        username TEXT UNIQUE NOT NULL,
-                        email TEXT,
-                        password_hash TEXT NOT NULL,
-                        first_name TEXT,
-                        last_name TEXT,
-                        role TEXT DEFAULT 'developer',
-                        created_at TEXT
-                    )
-                ''')
+                CREATE TABLE IF NOT EXISTS users (
+                    id TEXT PRIMARY KEY,
+                    username TEXT UNIQUE NOT NULL,
+                    email TEXT,
+                    password_hash TEXT NOT NULL,
+                    first_name TEXT,
+                    last_name TEXT,
+                    role TEXT DEFAULT 'developer',
+                    created_at TEXT
+                )
+            ''')
 
             # Projects table (new)
             cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS projects (
-                        id TEXT PRIMARY KEY,
-                        name TEXT NOT NULL,
-                        description TEXT,
-                        owner_id TEXT NOT NULL,
-                        project_type TEXT DEFAULT 'solo',
-                        status TEXT DEFAULT 'draft',
-                        framework TEXT,
-                        technology_stack TEXT,
-                        created_at TEXT,
-                        updated_at TEXT,
-                        FOREIGN KEY (owner_id) REFERENCES users (id)
-                    )
-                ''')
+                CREATE TABLE IF NOT EXISTS projects (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    owner_id TEXT NOT NULL,
+                    project_type TEXT DEFAULT 'solo',
+                    status TEXT DEFAULT 'draft',
+                    framework TEXT,
+                    technology_stack TEXT,
+                    created_at TEXT,
+                    updated_at TEXT,
+                    FOREIGN KEY (owner_id) REFERENCES users (id)
+                )
+            ''')
 
             # Project modules table (new)
             cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS project_modules (
-                        id TEXT PRIMARY KEY,
-                        project_id TEXT NOT NULL,
-                        name TEXT NOT NULL,
-                        description TEXT,
-                        module_type TEXT,
-                        status TEXT DEFAULT 'planned',
-                        created_at TEXT,
-                        FOREIGN KEY (project_id) REFERENCES projects (id)
-                    )
-                ''')
+                CREATE TABLE IF NOT EXISTS project_modules (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    module_type TEXT,
+                    status TEXT DEFAULT 'planned',
+                    created_at TEXT,
+                    FOREIGN KEY (project_id) REFERENCES projects (id)
+                )
+            ''')
 
             # Project templates table (new)
             cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS project_templates (
-                        id TEXT PRIMARY KEY,
-                        name TEXT NOT NULL,
-                        description TEXT,
-                        framework TEXT,
-                        technology_stack TEXT,
-                        is_public INTEGER DEFAULT 1,
-                        created_at TEXT
-                    )
-                ''')
+                CREATE TABLE IF NOT EXISTS project_templates (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    framework TEXT,
+                    technology_stack TEXT,
+                    is_public INTEGER DEFAULT 1,
+                    created_at TEXT
+                )
+            ''')
 
             conn.commit()
             conn.close()
 
-        # Existing user methods (unchanged)
+        # User methods
         def create_user(self, username: str, email: str, password: str,
                         first_name: str = '', last_name: str = ''):
             try:
@@ -213,9 +213,9 @@ def create_working_app():
                 created_at = datetime.now().isoformat()
 
                 cursor.execute('''
-                        INSERT INTO users (id, username, email, password_hash, first_name, last_name, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ''', (user_id, username, email, password_hash, first_name, last_name, created_at))
+                    INSERT INTO users (id, username, email, password_hash, first_name, last_name, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (user_id, username, email, password_hash, first_name, last_name, created_at))
 
                 conn.commit()
                 conn.close()
@@ -271,7 +271,7 @@ def create_working_app():
                 logger.error(f"Error verifying password: {e}")
                 return False
 
-        # NEW PROJECT METHODS
+        # Project methods
         def create_project(self, owner_id: str, name: str, description: str = '',
                            project_type: str = 'solo', framework: str = ''):
             try:
@@ -283,9 +283,9 @@ def create_working_app():
                 updated_at = created_at
 
                 cursor.execute('''
-                        INSERT INTO projects (id, name, description, owner_id, project_type, framework, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (project_id, name, description, owner_id, project_type, framework, created_at, updated_at))
+                    INSERT INTO projects (id, name, description, owner_id, project_type, framework, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (project_id, name, description, owner_id, project_type, framework, created_at, updated_at))
 
                 conn.commit()
                 conn.close()
@@ -299,10 +299,10 @@ def create_working_app():
                 conn = sqlite3.connect(self.db_path)
                 cursor = conn.cursor()
                 cursor.execute('''
-                        SELECT id, name, description, status, framework, project_type, created_at, updated_at
-                        FROM projects WHERE owner_id = ? 
-                        ORDER BY updated_at DESC
-                    ''', (user_id,))
+                    SELECT id, name, description, status, framework, project_type, created_at, updated_at
+                    FROM projects WHERE owner_id = ? 
+                    ORDER BY updated_at DESC
+                ''', (user_id,))
                 rows = cursor.fetchall()
                 conn.close()
 
@@ -330,14 +330,14 @@ def create_working_app():
 
                 if user_id:
                     cursor.execute('''
-                            SELECT id, name, description, owner_id, status, framework, project_type, created_at, updated_at
-                            FROM projects WHERE id = ? AND owner_id = ?
-                        ''', (project_id, user_id))
+                        SELECT id, name, description, owner_id, status, framework, project_type, created_at, updated_at
+                        FROM projects WHERE id = ? AND owner_id = ?
+                    ''', (project_id, user_id))
                 else:
                     cursor.execute('''
-                            SELECT id, name, description, owner_id, status, framework, project_type, created_at, updated_at
-                            FROM projects WHERE id = ?
-                        ''', (project_id,))
+                        SELECT id, name, description, owner_id, status, framework, project_type, created_at, updated_at
+                        FROM projects WHERE id = ?
+                    ''', (project_id,))
 
                 row = cursor.fetchone()
                 conn.close()
@@ -407,10 +407,10 @@ def create_working_app():
                 conn = sqlite3.connect(self.db_path)
                 cursor = conn.cursor()
                 cursor.execute('''
-                        SELECT id, name, description, framework, technology_stack
-                        FROM project_templates WHERE is_public = 1
-                        ORDER BY name
-                    ''')
+                    SELECT id, name, description, framework, technology_stack
+                    FROM project_templates WHERE is_public = 1
+                    ORDER BY name
+                ''')
                 rows = cursor.fetchall()
                 conn.close()
 
@@ -449,7 +449,7 @@ def create_working_app():
     def load_user(user_id):
         return user_db.get_user_by_id(user_id)
 
-    # Routes
+    # Authentication Routes
     @app.route('/')
     def index():
         if current_user.is_authenticated:
@@ -533,6 +533,7 @@ def create_working_app():
                 <div class="container">
                     <a class="navbar-brand" href="#"><i class="bi bi-lightbulb"></i> Socratic RAG Enhanced</a>
                     <div class="navbar-nav ms-auto">
+                        <a class="nav-link" href="{url_for('projects')}"><i class="bi bi-folder"></i> Projects</a>
                         <a class="nav-link" href="{url_for('profile')}"><i class="bi bi-person"></i> {current_user.username}</a>
                         <a class="nav-link" href="{url_for('logout')}"><i class="bi bi-box-arrow-right"></i> Logout</a>
                     </div>
@@ -560,6 +561,7 @@ def create_working_app():
                                     <li>✅ Flash message system</li>
                                     <li>✅ Profile management page</li>
                                     <li>✅ Password reset flow</li>
+                                    <li>✅ Database consolidated to app.db</li>
                                 </ul>
                             </div>
                         </div>
@@ -568,19 +570,18 @@ def create_working_app():
                     <div class="col-md-4">
                         <div class="card">
                             <div class="card-body">
-                                <h6>Next Phase: B2</h6>
-                                <p class="small text-muted">Project Management UI</p>
+                                <h6>Phase B2: Project Management</h6>
+                                <p class="small text-muted">Now Available!</p>
                                 <ul class="list-unstyled small">
-                                    <li>• Project creation wizard</li>
-                                    <li>• Project dashboard</li>
-                                    <li>• Module/Task hierarchy</li>
-                                    <li>• Framework selection</li>
+                                    <li>✅ Project creation wizard</li>
+                                    <li>✅ Project dashboard</li>
+                                    <li>✅ Framework selection</li>
+                                    <li>✅ Status management</li>
                                 </ul>
 
-                                <hr>
-
-                                <h6>Test Account</h6>
-                                <p class="small">You can create additional test accounts to verify the registration system.</p>
+                                <a href="{url_for('projects')}" class="btn btn-success btn-sm">
+                                    <i class="bi bi-folder-plus"></i> View Projects
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -591,15 +592,18 @@ def create_working_app():
                         <div class="card">
                             <div class="card-body">
                                 <h6>Quick Actions:</h6>
+                                <a href="{url_for('projects')}" class="btn btn-primary me-2">
+                                    <i class="bi bi-folder"></i> Projects
+                                </a>
+                                <a href="{url_for('new_project')}" class="btn btn-success me-2">
+                                    <i class="bi bi-plus-circle"></i> Create Project
+                                </a>
                                 <a href="{url_for('profile')}" class="btn btn-outline-primary me-2">
                                     <i class="bi bi-person-gear"></i> Profile Settings
                                 </a>
                                 <a href="{url_for('logout')}" class="btn btn-outline-secondary">
                                     <i class="bi bi-box-arrow-right"></i> Logout
                                 </a>
-                                <button class="btn btn-outline-success" disabled>
-                                    <i class="bi bi-plus-circle"></i> Create Project (Coming in B2)
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -609,8 +613,7 @@ def create_working_app():
         </html>
         '''
 
-    return app
-
+    # Project Management Routes
     @app.route('/projects')
     @login_required
     def projects():
@@ -695,6 +698,8 @@ def create_working_app():
 
         return redirect(url_for('projects'))
 
+    return app
+
 
 def main():
     """Main entry point"""
@@ -717,7 +722,7 @@ def main():
     logger.info("=" * 70)
     logger.info("✅ All Flask dependencies available")
     logger.info("🔧 Bypassing broken src module imports")
-    logger.info("🎯 Phase B1 Authentication UI - Ready for testing")
+    logger.info("🎯 Phase B2 Project Management UI - Ready for testing")
     logger.info("")
 
     try:
@@ -732,6 +737,7 @@ def main():
         logger.info("   - User login/logout with sessions")
         logger.info("   - Profile management")
         logger.info("   - Password reset flow")
+        logger.info("   - Project creation and management")
         logger.info("   - Responsive design")
         logger.info("=" * 70)
         logger.info("")
