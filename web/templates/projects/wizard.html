@@ -19,16 +19,25 @@
                 <div class="card-body p-4">
                     <div class="progress-wizard">
                         <div class="row text-center">
-                            <div class="col-3">
+                            <div class="col-5th">
+                                <div class="step-item {{ 'active' if current_step == 0 else ('completed' if current_step > 0 else '') }}">
+                                    <div class="step-circle">
+                                        <i class="bi {{ 'bi-check-lg' if current_step > 0 else 'bi-magic' }}"></i>
+                                    </div>
+                                    <div class="step-title">Template</div>
+                                    <div class="step-subtitle">Choose starting point</div>
+                                </div>
+                            </div>
+                            <div class="col-5th">
                                 <div class="step-item {{ 'active' if current_step == 1 else ('completed' if current_step > 1 else '') }}">
                                     <div class="step-circle">
                                         <i class="bi {{ 'bi-check-lg' if current_step > 1 else 'bi-info-circle' }}"></i>
                                     </div>
-                                    <div class="step-title">Project Details</div>
+                                    <div class="step-title">Details</div>
                                     <div class="step-subtitle">Basic information</div>
                                 </div>
                             </div>
-                            <div class="col-3">
+                            <div class="col-5th">
                                 <div class="step-item {{ 'active' if current_step == 2 else ('completed' if current_step > 2 else '') }}">
                                     <div class="step-circle">
                                         <i class="bi {{ 'bi-check-lg' if current_step > 2 else 'bi-gear' }}"></i>
@@ -37,7 +46,7 @@
                                     <div class="step-subtitle">Technology stack</div>
                                 </div>
                             </div>
-                            <div class="col-3">
+                            <div class="col-5th">
                                 <div class="step-item {{ 'active' if current_step == 3 else ('completed' if current_step > 3 else '') }}">
                                     <div class="step-circle">
                                         <i class="bi {{ 'bi-check-lg' if current_step > 3 else 'bi-list-check' }}"></i>
@@ -46,7 +55,7 @@
                                     <div class="step-subtitle">Planning & goals</div>
                                 </div>
                             </div>
-                            <div class="col-3">
+                            <div class="col-5th">
                                 <div class="step-item {{ 'active' if current_step == 4 else '' }}">
                                     <div class="step-circle">
                                         <i class="bi bi-flag"></i>
@@ -57,7 +66,7 @@
                             </div>
                         </div>
                         <div class="progress-line">
-                            <div class="progress-fill" style="width: {{ ((current_step - 1) / 3 * 100)|round }}%"></div>
+                            <div class="progress-fill" style="width: {{ (current_step / 4 * 100)|round }}%"></div>
                         </div>
                     </div>
                 </div>
@@ -69,6 +78,100 @@
                     <form method="POST" id="wizardForm" novalidate>
                         {{ form.hidden_tag() }}
                         <input type="hidden" name="step" value="{{ current_step }}">
+
+                        <!-- Step 0: Template Selection -->
+                        {% if current_step == 0 %}
+                        <div class="wizard-step" id="step0">
+                            <div class="text-center mb-4">
+                                <h4 class="fw-bold">
+                                    <i class="bi bi-magic text-primary"></i> Choose Your Starting Point
+                                </h4>
+                                <p class="text-muted">Select a template to get started quickly, or create from scratch</p>
+                            </div>
+
+                            <!-- Template Grid -->
+                            <div class="template-selection">
+                                <div class="row">
+                                    <!-- Start from Scratch Option -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="template-card h-100" data-template="custom">
+                                            <div class="card h-100 template-option border-2">
+                                                <div class="card-body text-center p-4">
+                                                    <div class="template-icon mb-3">
+                                                        <i class="bi bi-plus-circle display-4 text-primary"></i>
+                                                    </div>
+                                                    <h5 class="card-title fw-bold">Start from Scratch</h5>
+                                                    <p class="card-text text-muted">Create a custom project with your own specifications</p>
+                                                    <div class="template-tags mt-3">
+                                                        <span class="badge bg-primary">Custom</span>
+                                                        <span class="badge bg-secondary">Flexible</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Project Templates -->
+                                    {% for template_id, template in available_templates.items() %}
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="template-card h-100" data-template="{{ template_id }}">
+                                            <div class="card h-100 template-option border-2">
+                                                <div class="card-body p-4">
+                                                    <div class="template-icon text-center mb-3">
+                                                        <i class="bi {{ template.icon }} display-5 text-primary"></i>
+                                                    </div>
+                                                    <h5 class="card-title fw-bold">{{ template.name }}</h5>
+                                                    <p class="card-text text-muted small">{{ template.description }}</p>
+
+                                                    <!-- Tech Stack -->
+                                                    <div class="template-tags mb-3">
+                                                        {% for tech in template.tech_stack[:3] %}
+                                                        <span class="badge bg-secondary small">{{ tech }}</span>
+                                                        {% endfor %}
+                                                        {% if template.tech_stack|length > 3 %}
+                                                        <span class="badge bg-light text-dark small">+{{ template.tech_stack|length - 3 }} more</span>
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <!-- Estimated Time -->
+                                                    <div class="template-meta">
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-clock"></i> ~{{ template.estimated_hours }}h
+                                                            <span class="ms-2">
+                                                                <i class="bi bi-flag"></i> {{ template.priority.title() }}
+                                                            </span>
+                                                        </small>
+                                                    </div>
+
+                                                    <!-- Expand Details Button -->
+                                                    <button type="button" class="btn btn-outline-primary btn-sm mt-2 w-100"
+                                                            onclick="showTemplateDetails('{{ template_id }}')">
+                                                        <i class="bi bi-info-circle"></i> View Details
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Template Details Modal -->
+                            <div class="template-details mt-4" id="templateDetails" style="display: none;">
+                                <div class="card border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-info-circle"></i> Template Details
+                                            <button type="button" class="btn-close btn-close-white float-end" onclick="hideTemplateDetails()"></button>
+                                        </h6>
+                                    </div>
+                                    <div class="card-body" id="templateDetailsContent">
+                                        <!-- Content populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
 
                         <!-- Step 1: Project Details -->
                         {% if current_step == 1 %}
@@ -330,14 +433,18 @@
                         <div class="wizard-navigation mt-5 pt-4 border-top">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    {% if current_step > 1 %}
+                                    {% if current_step > 0 %}
                                     <button type="submit" name="action" value="back" class="btn btn-outline-secondary btn-lg">
                                         <i class="bi bi-arrow-left"></i> Back
                                     </button>
                                     {% endif %}
                                 </div>
                                 <div>
-                                    {% if current_step < 4 %}
+                                    {% if current_step == 0 %}
+                                    <button type="submit" name="action" value="template_select" class="btn btn-primary btn-lg" id="templateSelectBtn" disabled>
+                                        <i class="bi bi-arrow-right"></i> Continue with Template
+                                    </button>
+                                    {% elif current_step < 4 %}
                                     <button type="submit" name="action" value="next" class="btn btn-primary btn-lg">
                                         Next <i class="bi bi-arrow-right"></i>
                                     </button>
@@ -457,6 +564,59 @@
     min-height: 400px;
 }
 
+.wizard-step {
+    min-height: 400px;
+}
+
+.col-5th {
+    flex: 0 0 20%;
+    max-width: 20%;
+}
+
+.template-option {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-color: #dee2e6 !important;
+}
+
+.template-option:hover {
+    border-color: var(--bs-primary) !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.template-option.selected {
+    border-color: var(--bs-primary) !important;
+    background-color: rgba(13, 110, 253, 0.05);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.template-icon {
+    transition: color 0.3s ease;
+}
+
+.template-option:hover .template-icon i {
+    color: var(--bs-primary) !important;
+}
+
+.template-tags .badge {
+    margin-right: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.template-meta {
+    border-top: 1px solid #eee;
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+@media (max-width: 992px) {
+    .col-5th {
+        flex: 0 0 33.333333%;
+        max-width: 33.333333%;
+    }
+}
+
 @media (max-width: 768px) {
     .step-title, .step-subtitle {
         font-size: 0.8rem;
@@ -471,15 +631,58 @@
     .progress-line {
         top: 20px;
     }
+
+    .col-5th {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
 }
 </style>
 
 <script>
-// Framework selection functionality
+// Template and Framework selection functionality
 document.addEventListener('DOMContentLoaded', function() {
     const frameworkSelect = document.getElementById('frameworkSelect');
     const frameworkInfo = document.getElementById('frameworkInfo');
     const recommendationCards = document.querySelectorAll('.recommendation-card');
+    const templateCards = document.querySelectorAll('.template-card');
+    const templateSelectBtn = document.getElementById('templateSelectBtn');
+
+    // Template data for detailed view
+    const templateData = {{ available_templates|tojson }};
+
+    // Template selection functionality
+    templateCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const templateId = this.dataset.template;
+
+            // Update visual selection
+            templateCards.forEach(c => c.querySelector('.template-option').classList.remove('selected'));
+            this.querySelector('.template-option').classList.add('selected');
+
+            // Enable continue button and update text
+            if (templateSelectBtn) {
+                templateSelectBtn.disabled = false;
+                if (templateId === 'custom') {
+                    templateSelectBtn.innerHTML = '<i class="bi bi-arrow-right"></i> Start from Scratch';
+                } else {
+                    const templateName = templateData[templateId] ? templateData[templateId].name : 'Template';
+                    templateSelectBtn.innerHTML = `<i class="bi bi-arrow-right"></i> Use ${templateName}`;
+                }
+            }
+
+            // Add hidden input for selected template
+            let templateInput = document.getElementById('selectedTemplate');
+            if (!templateInput) {
+                templateInput = document.createElement('input');
+                templateInput.type = 'hidden';
+                templateInput.name = 'template_id';
+                templateInput.id = 'selectedTemplate';
+                document.getElementById('wizardForm').appendChild(templateInput);
+            }
+            templateInput.value = templateId;
+        });
+    });
 
     // Framework information
     const frameworkData = {
@@ -547,6 +750,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function updateFrameworkInfo(framework) {
+        if (!frameworkInfo) return;
+
         if (!framework || !frameworkData[framework]) {
             frameworkInfo.innerHTML = `
                 <h6 class="fw-bold mb-2">
@@ -603,5 +808,71 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Template details functionality
+function showTemplateDetails(templateId) {
+    const templateData = {{ available_templates|tojson }};
+    const template = templateData[templateId];
+    if (!template) return;
+
+    const detailsContent = document.getElementById('templateDetailsContent');
+    const detailsContainer = document.getElementById('templateDetails');
+
+    detailsContent.innerHTML = `
+        <div class="row">
+            <div class="col-md-8">
+                <h5 class="text-primary">
+                    <i class="bi ${template.icon}"></i> ${template.name}
+                </h5>
+                <p class="mb-3">${template.description}</p>
+
+                <h6 class="fw-bold">Key Features:</h6>
+                <div class="requirements-list mb-3">
+                    ${template.requirements.split('\n').map(req =>
+                        req.trim() ? `<div class="small mb-1"><i class="bi bi-check text-success"></i> ${req.trim()}</div>` : ''
+                    ).join('')}
+                </div>
+
+                <h6 class="fw-bold">Use Cases:</h6>
+                <div class="use-cases">
+                    ${template.use_cases.map(useCase =>
+                        `<span class="badge bg-info me-1 mb-1">${useCase}</span>`
+                    ).join('')}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="template-stats bg-light p-3 rounded">
+                    <h6 class="fw-bold mb-3">Project Stats</h6>
+                    <div class="stat-item mb-2">
+                        <strong>Framework:</strong> ${template.framework || 'Flexible'}
+                    </div>
+                    <div class="stat-item mb-2">
+                        <strong>Type:</strong> ${template.project_type === 'solo' ? 'Solo Project' : 'Team Project'}
+                    </div>
+                    <div class="stat-item mb-2">
+                        <strong>Estimated Time:</strong> ${template.estimated_hours} hours
+                    </div>
+                    <div class="stat-item mb-3">
+                        <strong>Priority:</strong> ${template.priority.charAt(0).toUpperCase() + template.priority.slice(1)}
+                    </div>
+
+                    <h6 class="fw-bold mb-2">Tech Stack:</h6>
+                    <div class="tech-stack">
+                        ${template.tech_stack.map(tech =>
+                            `<span class="badge bg-secondary small me-1 mb-1">${tech}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    detailsContainer.style.display = 'block';
+    detailsContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function hideTemplateDetails() {
+    document.getElementById('templateDetails').style.display = 'none';
+}
 </script>
 {% endblock %}
