@@ -1804,19 +1804,19 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
     @login_required
     def session_detail(session_id):
         """Session detail page."""
-        session = user_db.get_session(session_id, current_user.id)
-        if not session:
+        user_session = user_db.get_session(session_id, current_user.id)
+        if not user_session:
             flash('Session not found.', 'error')
             return redirect(url_for('sessions'))
 
-        return render_template('sessions/detail.html', session=session)
+        return render_template('sessions/detail.html', session=user_session)
 
     @flask_app.route('/sessions/<session_id>/continue', methods=['GET', 'POST'])
     @login_required
     def continue_session(session_id):
         """Continue session page."""
-        session = user_db.get_session(session_id, current_user.id)
-        if not session:
+        user_session = user_db.get_session(session_id, current_user.id)
+        if not user_session:
             flash('Session not found.', 'error')
             return redirect(url_for('sessions'))
 
@@ -1836,7 +1836,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
             return redirect(url_for('continue_session', session_id=session_id))
 
         return render_template('sessions/continue.html',
-                               session=session,
+                               session=user_session,
                                question_form=question_form,
                                answer_form=answer_form)
 
@@ -1844,8 +1844,8 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
     @login_required
     def session_config(session_id):
         """Session configuration page."""
-        session = user_db.get_session(session_id, current_user.id)
-        if not session:
+        user_session = user_db.get_session(session_id, current_user.id)
+        if not user_session:
             flash('Session not found.', 'error')
             return redirect(url_for('sessions'))
 
@@ -1879,13 +1879,13 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
     @login_required
     def delete_session(session_id):
         """Delete session."""
-        session = user_db.get_session(session_id, current_user.id)
-        if not session:
+        user_session = user_db.get_session(session_id, current_user.id)
+        if not user_session:
             flash('Session not found.', 'error')
             return redirect(url_for('sessions'))
 
         if user_db.delete_session(session_id, current_user.id):
-            flash(f'Session "{session["session_name"]}" deleted successfully.', 'success')
+            flash(f'Session "{user_session["session_name"]}" deleted successfully.', 'success')
         else:
             flash('Error deleting session. Please try again.', 'error')
 
@@ -1902,11 +1902,11 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
 
         # Get sessions for this project
         all_sessions = user_db.get_user_sessions(current_user.id)
-        project_sessions = [s for s in all_sessions if s['project_id'] == project_id]
+        user_project_sessions = [s for s in all_sessions if s['project_id'] == project_id]
 
         return render_template('sessions/project_sessions.html',
                                project=project,
-                               sessions=project_sessions)
+                               sessions=user_project_sessions)
 
     @flask_app.route('/sessions/history')
     @login_required
@@ -1957,7 +1957,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 'database_type': form.database_type.data
             }
 
-            generation_config = {
+            user_generation_config = {
                 'include_authentication': form.include_authentication.data,
                 'include_api_docs': form.include_api_docs.data,
                 'include_tests': form.include_tests.data,
@@ -1972,7 +1972,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 architecture_pattern=form.architecture_pattern.data,
                 generation_type=form.generation_type.data,
                 technology_stack=technology_stack,
-                generation_config=generation_config
+                generation_config=user_generation_config
             )
 
             if generation_id:
