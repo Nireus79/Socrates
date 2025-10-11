@@ -1763,15 +1763,17 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         """Create new session page."""
         form = NewSessionForm()
 
-        # Get project if project_id provided
+        # Get project if project_id provided (URL param takes precedence over query param)
         project = None
-        if project_id:
-            project = user_db.get_project(project_id, current_user.id)
+        final_project_id = project_id or request.args.get('project_id')
+
+        if final_project_id:
+            project = user_db.get_project(final_project_id, current_user.id)
             if not project:
                 flash('Project not found.', 'error')
                 return redirect(url_for('projects'))
 
-        # Populate project choices
+        # Populate project choices for the form
         user_projects = user_db.get_user_projects(current_user.id)
         form.existing_project.choices = [('', 'No Project')] + [
             (p['id'], p['name']) for p in user_projects
@@ -1781,8 +1783,10 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         if project:
             form.existing_project.data = project['id']
 
+        # Handle form submission
         if form.validate_on_submit():
-            project_id = form.existing_project.data if form.existing_project.data else None
+            # Use project from form if selected, otherwise use URL/query param project
+            selected_project_id = form.existing_project.data if form.existing_project.data else final_project_id
 
             session_data = {
                 'initial_idea': form.initial_idea.data,
@@ -1795,7 +1799,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
                 owner_id=current_user.id,
                 session_name=form.session_name.data,
                 role=form.role.data,
-                project_id=project_id,
+                project_id=selected_project_id,
                 session_data=session_data
             )
 
@@ -1805,12 +1809,7 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
             else:
                 flash('Error creating session. Please try again.', 'error')
 
-        # Get project if project_id is provided in URL
-        project_id = request.args.get('project_id')
-        project = None
-        if project_id:
-            project = user_db.get_project(project_id, current_user.id)
-
+        # Render template with consistent data
         return render_template('sessions/new.html', form=form, project=project)
 
     @flask_app.route('/sessions/<session_id>')
