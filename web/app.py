@@ -1809,6 +1809,55 @@ def create_flask_app(config_override=None) -> Flask:
         if not message:
             return jsonify({'error': 'Message is required'}), 400
 
+        return jsonify({
+            'success': True,
+            'response': f"Thank you for your message: {message}",
+            'message_id': 'temp-id'
+        })
+
+    @flask_app.route('/sessions/<session_id>/export')
+    @login_required
+    def export_session(session_id):
+        """Export session data."""
+        user_session = user_db.get_session(session_id, current_user.id)
+        if not user_session:
+            flash('Session not found.', 'error')
+            return redirect(url_for('sessions'))
+
+        # For now, just return a simple text export
+        from flask import make_response
+        response = make_response(
+            f"Session Export: {user_session['session_name']}\nCreated: {user_session['created_at']}\n")
+        response.headers['Content-Disposition'] = f'attachment; filename=session_{session_id}.txt'
+        response.headers['Content-Type'] = 'text/plain'
+        return response
+
+    @flask_app.route('/sessions/<session_id>/share')
+    @login_required
+    def share_session(session_id):
+        """Generate shareable link for session."""
+        user_session = user_db.get_session(session_id, current_user.id)
+        if not user_session:
+            return jsonify({'error': 'Session not found'}), 404
+
+        # For now, just return the session URL
+        share_url = url_for('session_detail', session_id=session_id, _external=True)
+        return jsonify({'share_url': share_url})
+
+    @flask_app.route('/sessions/<session_id>/response', methods=['POST'])
+    @login_required
+    def submit_response(session_id):
+        """Handle session response submission."""
+        user_session = user_db.get_session(session_id, current_user.id)
+        if not user_session:
+            return jsonify({'error': 'Session not found'}), 404
+
+        data = request.get_json()
+        message = data.get('message', '')
+
+        if not message:
+            return jsonify({'error': 'Message is required'}), 400
+
         # For now, just return a success response
         # Later this will integrate with the AI agents
         return jsonify({
