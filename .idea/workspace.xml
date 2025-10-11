@@ -5,8 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="wizard">
-      <change afterPath="$PROJECT_DIR$/web/templates/sessions/detail.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/sessions/detail.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/sessions/detail.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/sessions/new.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/sessions/new.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -137,14 +139,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00175" summary="repo">
-      <option name="closed" value="true" />
-      <created>1760005570253</created>
-      <option name="number" value="00175" />
-      <option name="presentableId" value="LOCAL-00175" />
-      <option name="project" value="LOCAL" />
-      <updated>1760005570253</updated>
     </task>
     <task id="LOCAL-00176" summary="test_integration.py 100%">
       <option name="closed" value="true" />
@@ -530,7 +524,15 @@
       <option name="project" value="LOCAL" />
       <updated>1760125874544</updated>
     </task>
-    <option name="localTasksCounter" value="224" />
+    <task id="LOCAL-00224" summary="wizard">
+      <option name="closed" value="true" />
+      <created>1760127160280</created>
+      <option name="number" value="00224" />
+      <option name="presentableId" value="LOCAL-00224" />
+      <option name="project" value="LOCAL" />
+      <updated>1760127160280</updated>
+    </task>
+    <option name="localTasksCounter" value="225" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">

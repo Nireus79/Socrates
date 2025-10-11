@@ -1792,7 +1792,13 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
             else:
                 flash('Error creating session. Please try again.', 'error')
 
-        return render_template('sessions/new.html', form=form)
+        # Get project if project_id is provided in URL
+        project_id = request.args.get('project_id')
+        project = None
+        if project_id:
+            project = user_db.get_project(project_id, current_user.id)
+
+        return render_template('sessions/new.html', form=form, project=project)
 
     @flask_app.route('/sessions/<session_id>')
     @login_required

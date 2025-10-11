@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Start Socratic Session - {{ project.name }}{% endblock %}
+{% block title %}Start Socratic Session{% if project %} - {{ project.name }}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
