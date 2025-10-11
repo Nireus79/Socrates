@@ -4,8 +4,9 @@ import logging
 import webbrowser
 from pathlib import Path
 from threading import Timer
+print("🚀 Starting application...")
 from web.app import create_app
-
+print("📦 Imported create_app")
 # Add project root to Python path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
@@ -81,6 +82,7 @@ def main():
 
     try:
         app = create_app()
+        print(f"🌐 Flask app created: {app}")
 
         logger.info("✅ Flask application created successfully")
         logger.info("=" * 70)
@@ -99,10 +101,12 @@ def main():
         # Open browser automatically unless disabled
         if not args.no_browser:
             Timer(1.5, lambda: webbrowser.open(f'http://127.0.0.1:{args.port}')).start()
-
-        # Start the server
-        app.run(host='127.0.0.1', port=args.port, debug=args.debug, use_reloader=False)
-
+        if app:
+            # Start the server
+            print("▶️ Starting Flask server...")
+            app.run(host='127.0.0.1', port=args.port, debug=args.debug, use_reloader=False)
+        else:
+            print("❌ Failed to create Flask app")
     except Exception as e:
         logger.error(f"❌ Failed to start application: {e}")
         sys.exit(1)
