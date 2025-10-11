@@ -36,7 +36,7 @@
                     <h5 class="mb-0"><i class="bi bi-person-badge"></i> Session Configuration</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('create_session', project_id=project.id) }}">
+                    <form method="POST" action="{{ url_for('new_session') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         
                         <!-- Session Name -->

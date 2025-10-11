@@ -1757,16 +1757,29 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         return render_template('sessions.html', sessions=user_sessions)
 
     @flask_app.route('/sessions/new', methods=['GET', 'POST'])
+    @flask_app.route('/sessions/new/<project_id>', methods=['GET', 'POST'])
     @login_required
-    def new_session():
+    def new_session(project_id=None):
         """Create new session page."""
         form = NewSessionForm()
+
+        # Get project if project_id provided
+        project = None
+        if project_id:
+            project = user_db.get_project(project_id, current_user.id)
+            if not project:
+                flash('Project not found.', 'error')
+                return redirect(url_for('projects'))
 
         # Populate project choices
         user_projects = user_db.get_user_projects(current_user.id)
         form.existing_project.choices = [('', 'No Project')] + [
             (p['id'], p['name']) for p in user_projects
         ]
+
+        # Pre-select project if provided
+        if project:
+            form.existing_project.data = project['id']
 
         if form.validate_on_submit():
             project_id = form.existing_project.data if form.existing_project.data else None
