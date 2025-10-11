@@ -34,8 +34,8 @@ except ImportError:
 try:
     from flask import (
         Flask, render_template, request, jsonify, redirect, url_for,
-        flash, session, send_file, abort, Response, stream_template
-    )
+        flash, session, send_file, abort, Response, stream_template, get_flashed_messages
+)
     from flask_wtf import FlaskForm, CSRFProtect
     from flask_wtf.file import FileField, FileAllowed, FileRequired
     from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -1861,6 +1861,22 @@ def create_flask_app(config_override=None) -> Flask:
                 session_data=session_data
             )
             print(f"🔍 create_session returned: {session_id}")
+            print(f"🔍 session_id type: {type(session_id)}")
+            print(f"🔍 session_id bool: {bool(session_id)}")
+            print(f"🔍 session_id == None: {session_id is None}")
+            print(f"🔍 session_id == '': {session_id == ''}")
+
+            if session_id:
+                print(f"🔍 SUCCESS BRANCH: Creating success flash message")
+                flash(f'Session "{form.session_name.data}" created successfully!', 'success')
+                return redirect(url_for('session_detail', session_id=session_id))
+            else:
+                print(f"🔍 ERROR BRANCH: Creating error flash message")
+                flash('Failed to create session. Please try again.', 'error')
+                print(f"🔍 Flash messages after error:")
+                with flask_app.app_context():
+                    messages = session.get('_flashes', [])
+                    print(f"🔍 Raw flash messages in session: {messages}")
             if session_id:
                 flash(f'Session "{form.session_name.data}" created successfully!', 'success')
                 return redirect(url_for('session_detail', session_id=session_id))
@@ -1868,6 +1884,10 @@ def create_flask_app(config_override=None) -> Flask:
                 flash('Error creating session. Please try again.', 'error')
 
         # Render template with consistent data
+        print(f"🔍 All flash messages: {get_flashed_messages()}")
+        with flask_app.app_context():
+            all_messages = get_flashed_messages(with_categories=True)
+            print(f"🔍 Flash messages in session: {all_messages}")
         return render_template('sessions/new.html', form=form, project=project)
 
     @flask_app.route('/sessions/<session_id>')

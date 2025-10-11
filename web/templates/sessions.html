@@ -778,6 +778,25 @@ function startNewSession() {
     modal.show();
 }
 
+// FIND THIS FUNCTION in sessions.html:
+function createNewSession() {
+    // ... existing code ...
+
+    fetch('{{ url_for("new_session") }}', {
+        method: 'POST',
+        body: formDataToSend
+    })
+    .then(response => response.json())  // ← PROBLEM: Expects JSON but gets HTML redirect
+    .then(data => {
+        // Handle JSON response
+    })
+    .catch(error => {
+        console.error('Session creation error:', error);
+        alert('Failed to create session');  // ← This is the message you see!
+    });
+}
+
+// REPLACE WITH THIS:
 function createNewSession() {
     const form = document.getElementById('newSessionForm');
     const formData = new FormData(form);
@@ -804,21 +823,24 @@ function createNewSession() {
 
     fetch('{{ url_for("new_session") }}', {
         method: 'POST',
-        body: formDataToSend  // Send as FormData with CSRF token
+        body: formDataToSend
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+    .then(response => {
+        // Handle redirect response properly
+        if (response.redirected) {
             bootstrap.Modal.getInstance(document.getElementById('newSessionModal')).hide();
-            // Redirect to new session
-            window.location.href = data.redirect_url;
+            window.location.href = response.url;
+        } else if (response.ok) {
+            // Handle success case
+            bootstrap.Modal.getInstance(document.getElementById('newSessionModal')).hide();
+            window.location.reload();
         } else {
-            alert('Failed to create session: ' + data.message);
+            throw new Error('Session creation failed');
         }
     })
     .catch(error => {
         console.error('Session creation error:', error);
-        alert('Failed to create session');
+        alert('Failed to create session: ' + error.message);
     });
 }
 
