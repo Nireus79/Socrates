@@ -1795,6 +1795,28 @@ def create_flask_app(config_override=None) -> Flask:
         user_sessions = user_db.get_user_sessions(current_user.id)
         return render_template('sessions.html', sessions=user_sessions)
 
+    @flask_app.route('/sessions/<session_id>/response', methods=['POST'])
+    @login_required
+    def submit_response(session_id):
+        """Handle session response submission."""
+        user_session = user_db.get_session(session_id, current_user.id)
+        if not user_session:
+            return jsonify({'error': 'Session not found'}), 404
+
+        data = request.get_json()
+        message = data.get('message', '')
+
+        if not message:
+            return jsonify({'error': 'Message is required'}), 400
+
+        # For now, just return a success response
+        # Later this will integrate with the AI agents
+        return jsonify({
+            'success': True,
+            'response': f"Thank you for your message: {message}",
+            'message_id': 'temp-id'
+        })
+
     @flask_app.route('/sessions/new', methods=['GET', 'POST'])
     @flask_app.route('/sessions/new/<project_id>', methods=['GET', 'POST'])
     @login_required
