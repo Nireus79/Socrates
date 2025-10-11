@@ -1536,7 +1536,7 @@ def with_agent_orchestration(f):
 # FLASK APPLICATION FACTORY
 # =================================================================
 
-def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
+def create_flask_app(config_override=None) -> Flask:
     """
     Create and configure Flask application.
 
@@ -1711,7 +1711,6 @@ def create_flask_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         """Projects dashboard page."""
         user_projects = user_db.get_user_projects(current_user.id)
         return render_template('projects/dashboard.html', projects=user_projects)
-
 
     @flask_app.route('/projects/<project_id>')
     @login_required
