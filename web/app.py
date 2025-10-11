@@ -2429,6 +2429,50 @@ def create_flask_app(config_override=None) -> Flask:
 
         return redirect(url_for('new_project', step=step))
 
+    # Add ALL these routes to handle template references:
+
+    @flask_app.route('/sessions/<session_id>/response', methods=['POST'])
+    @login_required
+    def submit_response(session_id):
+        user_session = user_db.get_session(session_id, current_user.id)
+        if not user_session:
+            return jsonify({'error': 'Session not found'}), 404
+        data = request.get_json()
+        message = data.get('message', '')
+        return jsonify({'success': True, 'response': f"Received: {message}"})
+
+    @flask_app.route('/sessions/<session_id>/export')
+    @login_required
+    def export_session(session_id):
+        user_session = user_db.get_session(session_id, current_user.id)
+        if not user_session:
+            return redirect(url_for('sessions'))
+        from flask import make_response
+        response = make_response(f"Session: {user_session['session_name']}")
+        response.headers['Content-Disposition'] = f'attachment; filename=session_{session_id}.txt'
+        return response
+
+    @flask_app.route('/sessions/<session_id>/status', methods=['POST'])
+    @login_required
+    def update_session_status(session_id):
+        data = request.get_json()
+        status = data.get('status', 'active')
+        success = user_db.update_session(session_id=session_id, user_id=current_user.id, status=status)
+        return jsonify({'success': success, 'status': status})
+
+    @flask_app.route('/sessions/<session_id>/toggle-mode', methods=['POST'])
+    @login_required
+    def toggle_session_mode(session_id):
+        data = request.get_json()
+        mode = data.get('mode', 'socratic')
+        return jsonify({'success': True, 'mode': mode})
+
+    @flask_app.route('/sessions/<session_id>/archive', methods=['POST'])
+    @login_required
+    def archive_session(session_id):
+        success = user_db.update_session(session_id=session_id, user_id=current_user.id, status='archived')
+        return jsonify({'success': success})
+
     @flask_app.route('/sessions/<session_id>/response', methods=['POST'])
     @login_required
     def submit_response(session_id):
