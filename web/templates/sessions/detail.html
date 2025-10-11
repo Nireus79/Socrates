@@ -11,7 +11,11 @@
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
                     <li class="breadcrumb-item"><a href="{{ url_for('projects') }}">Projects</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('project_detail', project_id=session.project.id) }}">{{ session.project_name }}</a></li>
+                    {% if session.project_id %}
+                        <li class="breadcrumb-item"><a href="{{ url_for('project_detail', project_id=session.project_id) }}">{{ session.project_name }}</a></li>
+                        {% else %}
+                        <li class="breadcrumb-item">No Project</li>
+                    {% endif %}
                     <li class="breadcrumb-item"><a href="{{ url_for('sessions') }}">Sessions</a></li>
                     <li class="breadcrumb-item active">{{ session.session_name }}</li>
                 </ol>
@@ -171,13 +175,13 @@
 
                     <div class="mb-3">
                         <div class="text-muted small">Created</div>
-                        <div>{{ session.created_at.strftime('%B %d, %Y at %I:%M %p') }}</div>
+                        <div>{{ session.created_at }}</div>
                     </div>
 
                     {% if session.updated_at != session.created_at %}
                     <div class="mb-3">
                         <div class="text-muted small">Last Activity</div>
-                        <div>{{ session.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</div>
+                        <div>{{ session.updated_at }}</div>
                     </div>
                     {% endif %}
 

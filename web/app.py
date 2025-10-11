@@ -1240,14 +1240,13 @@ class NewSessionForm(FlaskForm):
     ])
 
     role = SelectField('Your Role', validators=[DataRequired()], choices=[
-        ('project_manager', 'Project Manager'),
+        ('developer', 'Software Developer'),
+        ('manager', 'Project Manager'),
+        ('designer', 'UI/UX Designer'),
+        ('tester', 'QA Tester'),
         ('business_analyst', 'Business Analyst'),
-        ('ux_designer', 'UX Designer'),
-        ('frontend_developer', 'Frontend Developer'),
-        ('backend_developer', 'Backend Developer'),
-        ('devops_engineer', 'DevOps Engineer'),
-        ('qa_tester', 'QA Tester'),
-        ('security_engineer', 'Security Engineer')
+        ('devops', 'DevOps Engineer'),
+        ('architect', 'Solution Architect')
     ])
 
     existing_project = SelectField('Link to Project (Optional)', choices=[('', 'No Project')])
@@ -1485,14 +1484,14 @@ class BatchActionForm(FlaskForm):
 class SocraticSessionForm(FlaskForm):
     """Socratic session form."""
     project_id = StringField('Project ID', validators=[DataRequired()])
-    role = SelectField('Role', choices=[
-        ('product_owner', 'Product Owner'),
-        ('architect', 'Architect'),
-        ('developer', 'Developer'),
-        ('tester', 'Tester'),
-        ('ui_ux', 'UI/UX Designer'),
-        ('security', 'Security Specialist'),
-        ('business_analyst', 'Business Analyst')
+    role = SelectField('Your Role', validators=[DataRequired()], choices=[
+        ('developer', 'Software Developer'),
+        ('manager', 'Project Manager'),
+        ('designer', 'UI/UX Designer'),
+        ('tester', 'QA Tester'),
+        ('business_analyst', 'Business Analyst'),
+        ('devops', 'DevOps Engineer'),
+        ('architect', 'Solution Architect')
     ])
     submit = SubmitField('Start Session')
 
@@ -1824,6 +1823,13 @@ def create_flask_app(config_override=None) -> Flask:
         # Pre-select project if provided
         if project:
             form.existing_project.data = project['id']
+
+        # ADD THIS DEBUG CODE:
+        if request.method == 'POST':
+            print(f"🔍 POST request received")
+            print(f"🔍 Form validation result: {form.validate_on_submit()}")
+            if not form.validate_on_submit():
+                print(f"🔍 Form errors: {form.errors}")
 
         # Handle form submission
         if form.validate_on_submit():
