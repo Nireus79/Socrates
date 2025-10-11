@@ -11,17 +11,17 @@
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
                     <li class="breadcrumb-item"><a href="{{ url_for('projects') }}">Projects</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('project_detail', project_id=session.project.id) }}">{{ session.project.name }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('project_detail', project_id=session.project.id) }}">{{ session.project_name }}</a></li>
                     <li class="breadcrumb-item"><a href="{{ url_for('sessions') }}">Sessions</a></li>
-                    <li class="breadcrumb-item active">{{ session.name }}</li>
+                    <li class="breadcrumb-item active">{{ session.session_name }}</li>
                 </ol>
             </nav>
 
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2><i class="bi bi-chat-dots text-primary"></i> {{ session.name }}</h2>
+                    <h2><i class="bi bi-chat-dots text-primary"></i> {{ session.session_name }}</h2>
                     <p class="text-muted mb-0">
-                        <i class="bi bi-folder"></i> {{ session.project.name }}
+                        <i class="bi bi-folder"></i> {{ session.project_name }}
                         <span class="mx-2">•</span>
                         <i class="bi bi-person-badge"></i> {{ session.role|title }} Role
                         <span class="mx-2">•</span>
