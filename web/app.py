@@ -482,6 +482,8 @@ class UserDB:
             conn.close()
             return session_id
         except Exception as e:
+            print(f"SESSION CREATION ERROR: {e}")
+            print(f"Error type: {type(e).__name__}")
             logger.error(f"Error creating session: {e}")
             return None
 

@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="session">
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="session new">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
     </list>
@@ -137,22 +137,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00180" summary="chat.py">
-      <option name="closed" value="true" />
-      <created>1760010043150</created>
-      <option name="number" value="00180" />
-      <option name="presentableId" value="LOCAL-00180" />
-      <option name="project" value="LOCAL" />
-      <updated>1760010043150</updated>
-    </task>
-    <task id="LOCAL-00181" summary="chat">
-      <option name="closed" value="true" />
-      <created>1760025282549</created>
-      <option name="number" value="00181" />
-      <option name="presentableId" value="LOCAL-00181" />
-      <option name="project" value="LOCAL" />
-      <updated>1760025282550</updated>
     </task>
     <task id="LOCAL-00182" summary="chat">
       <option name="closed" value="true" />
@@ -530,11 +514,26 @@
       <option name="project" value="LOCAL" />
       <updated>1760171187041</updated>
     </task>
-    <option name="localTasksCounter" value="229" />
+    <task id="LOCAL-00229" summary="session">
+      <option name="closed" value="true" />
+      <created>1760171796159</created>
+      <option name="number" value="00229" />
+      <option name="presentableId" value="LOCAL-00229" />
+      <option name="project" value="LOCAL" />
+      <updated>1760171796159</updated>
+    </task>
+    <task id="LOCAL-00230" summary="session new">
+      <option name="closed" value="true" />
+      <created>1760171995251</created>
+      <option name="number" value="00230" />
+      <option name="presentableId" value="LOCAL-00230" />
+      <option name="project" value="LOCAL" />
+      <updated>1760171995251</updated>
+    </task>
+    <option name="localTasksCounter" value="231" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="socratic.py" />
     <MESSAGE value="api key" />
     <MESSAGE value="sessions" />
     <MESSAGE value="ph2" />
@@ -559,6 +558,7 @@
     <MESSAGE value="database" />
     <MESSAGE value="wizard" />
     <MESSAGE value="session" />
-    <option name="LAST_COMMIT_MESSAGE" value="session" />
+    <MESSAGE value="session new" />
+    <option name="LAST_COMMIT_MESSAGE" value="session new" />
   </component>
 </project>
