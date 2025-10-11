@@ -10,20 +10,35 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    {% if project %}
                     <li class="breadcrumb-item"><a href="{{ url_for('projects') }}">Projects</a></li>
                     <li class="breadcrumb-item"><a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a></li>
                     <li class="breadcrumb-item active">Start Session</li>
+                    {% else %}
+                    <li class="breadcrumb-item"><a href="{{ url_for('sessions') }}">Sessions</a></li>
+                    <li class="breadcrumb-item active">New Session</li>
+                    {% endif %}
                 </ol>
             </nav>
-            
+
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h2><i class="bi bi-chat-dots text-primary"></i> Start Socratic Session</h2>
+                    {% if project %}
                     <p class="text-muted mb-0">Begin guided questioning for project: <strong>{{ project.name }}</strong></p>
+                    {% else %}
+                    <p class="text-muted mb-0">Create a new session to explore ideas with AI-powered questioning</p>
+                    {% endif %}
                 </div>
+                {% if project %}
                 <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i> Back to Project
                 </a>
+                {% else %}
+                <a href="{{ url_for('sessions') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Sessions
+                </a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -38,79 +53,53 @@
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('new_session') }}">
                         {{ form.hidden_tag() }}
-                        
+
                         <!-- Session Name -->
                         <div class="mb-4">
-                            <label for="session_name" class="form-label">Session Name <span class="text-danger">*</span></label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="session_name" 
-                                   name="session_name" 
-                                   placeholder="e.g., Initial Requirements Review, Architecture Discussion"
-                                   required>
+                            {{ form.session_name.label(class="form-label") }} <span class="text-danger">*</span>
+                            {{ form.session_name(class="form-control", placeholder="e.g., Initial Requirements Review, Architecture Discussion") }}
                             <div class="form-text">Give this session a descriptive name for future reference</div>
                         </div>
 
+                        <!-- Project Selection (only show if no project context) -->
+                        {% if not project %}
+                        <div class="mb-4">
+                            {{ form.existing_project.label(class="form-label") }}
+                            {{ form.existing_project(class="form-select") }}
+                            <div class="form-text">Optionally link this session to an existing project</div>
+                        </div>
+                        {% endif %}
+
                         <!-- Role Selection -->
                         <div class="mb-4">
-                            <label class="form-label">Select Your Role <span class="text-danger">*</span></label>
-                            <div class="form-text mb-3">Choose the perspective that best matches your current focus. This will customize the questions asked during the session.</div>
-                            
-                            <div class="row">
-                                {% for role_id, role_name, role_description in roles %}
-                                <div class="col-md-6 mb-3">
-                                    <div class="card role-card h-100">
-                                        <div class="card-body">
-                                            <div class="form-check">
-                                                <input class="form-check-input" 
-                                                       type="radio" 
-                                                       name="role" 
-                                                       id="role_{{ role_id }}" 
-                                                       value="{{ role_id }}"
-                                                       required>
-                                                <label class="form-check-label w-100" for="role_{{ role_id }}">
-                                                    <div class="d-flex align-items-start">
-                                                        <div class="me-3">
-                                                            {% if role_id == 'project_manager' %}
-                                                                <i class="bi bi-diagram-3 text-primary fs-4"></i>
-                                                            {% elif role_id == 'business_analyst' %}
-                                                                <i class="bi bi-graph-up text-success fs-4"></i>
-                                                            {% elif role_id == 'ux_designer' %}
-                                                                <i class="bi bi-palette text-info fs-4"></i>
-                                                            {% elif role_id == 'frontend_developer' %}
-                                                                <i class="bi bi-code-slash text-warning fs-4"></i>
-                                                            {% elif role_id == 'backend_developer' %}
-                                                                <i class="bi bi-server text-dark fs-4"></i>
-                                                            {% elif role_id == 'devops_engineer' %}
-                                                                <i class="bi bi-gear text-secondary fs-4"></i>
-                                                            {% elif role_id == 'qa_tester' %}
-                                                                <i class="bi bi-bug text-danger fs-4"></i>
-                                                            {% elif role_id == 'security_engineer' %}
-                                                                <i class="bi bi-shield-check text-primary fs-4"></i>
-                                                            {% endif %}
-                                                        </div>
-                                                        <div>
-                                                            <h6 class="mb-1">{{ role_name }}</h6>
-                                                            <small class="text-muted">{{ role_description }}</small>
-                                                        </div>
-                                                    </div>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
+                            {{ form.role.label(class="form-label") }} <span class="text-danger">*</span>
+                            {{ form.role(class="form-select") }}
+                            <div class="form-text">Choose the perspective that best matches your current focus</div>
                         </div>
 
-                        <!-- Actions -->
-                        <div class="d-flex justify-content-between">
-                            <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i> Cancel
-                            </a>
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-play-circle"></i> Start Socratic Session
-                            </button>
+                        <!-- Initial Idea -->
+                        <div class="mb-4">
+                            {{ form.initial_idea.label(class="form-label") }}
+                            {{ form.initial_idea(class="form-control", rows="3", placeholder="Describe your project idea, challenge, or topic you want to explore...") }}
+                            <div class="form-text">Share your initial thoughts to help guide the conversation</div>
+                        </div>
+
+                        <!-- Session Type -->
+                        {% if form.session_type %}
+                        <div class="mb-4">
+                            {{ form.session_type.label(class="form-label") }}
+                            {{ form.session_type(class="form-select") }}
+                        </div>
+                        {% endif %}
+
+                        <!-- Submit Button -->
+                        <div class="d-flex justify-content-end">
+                            {% if project %}
+                            <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-secondary me-2">Cancel</a>
+                            {% else %}
+                            <a href="{{ url_for('sessions') }}" class="btn btn-secondary me-2">Cancel</a>
+                            {% endif %}
+                            {{ form.submit(class="btn btn-primary") }}
                         </div>
                     </form>
                 </div>
@@ -119,58 +108,29 @@
 
         <!-- Sidebar -->
         <div class="col-lg-4">
-            <!-- About Socratic Method -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-lightbulb"></i> About Socratic Sessions</h6>
-                </div>
-                <div class="card-body">
-                    <p class="small mb-3">The Socratic method uses targeted questions to help you:</p>
-                    <ul class="small mb-3">
-                        <li>Clarify project requirements</li>
-                        <li>Identify potential challenges</li>
-                        <li>Explore design alternatives</li>
-                        <li>Define success criteria</li>
-                        <li>Plan implementation strategy</li>
-                    </ul>
-                    <div class="alert alert-info small">
-                        <i class="bi bi-info-circle"></i> Sessions are automatically saved and can be resumed later.
-                    </div>
-                </div>
-            </div>
-
+            {% if project %}
             <!-- Project Context -->
-            <div class="card">
+            <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="mb-0"><i class="bi bi-folder"></i> Project Context</h6>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <strong>Project:</strong> {{ project.name }}
+                    <div class="mb-2">
+                        <strong>Name:</strong> {{ project.name }}
                     </div>
-                    <div class="mb-3">
-                        <strong>Type:</strong> 
+                    {% if project.get('project_type') %}
+                    <div class="mb-2">
+                        <strong>Type:</strong>
                         <span class="badge bg-secondary">{{ project.project_type.replace('_', ' ').title() }}</span>
                     </div>
-                    <div class="mb-3">
-                        <strong>Framework:</strong> 
+                    {% endif %}
+                    {% if project.get('framework') %}
+                    <div class="mb-2">
+                        <strong>Framework:</strong>
                         <span class="badge bg-info">{{ project.framework.title() }}</span>
                     </div>
-                    <div class="mb-3">
-                        <strong>Status:</strong>
-                        {% if project.status == 'planning' %}
-                            <span class="badge bg-warning">Planning</span>
-                        {% elif project.status == 'active' %}
-                            <span class="badge bg-success">Active</span>
-                        {% elif project.status == 'paused' %}
-                            <span class="badge bg-secondary">Paused</span>
-                        {% elif project.status == 'completed' %}
-                            <span class="badge bg-primary">Completed</span>
-                        {% else %}
-                            <span class="badge bg-light text-dark">{{ project.status.title() }}</span>
-                        {% endif %}
-                    </div>
-                    {% if project.description %}
+                    {% endif %}
+                    {% if project.get('description') %}
                     <div class="mb-0">
                         <strong>Description:</strong>
                         <p class="small text-muted mt-1">{{ project.description }}</p>
@@ -178,60 +138,49 @@
                     {% endif %}
                 </div>
             </div>
+            {% else %}
+            <!-- General Session Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> About Socratic Sessions</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-2">Socratic sessions use AI-powered questioning to help you:</p>
+                    <ul class="small">
+                        <li>Explore requirements and specifications</li>
+                        <li>Identify potential challenges</li>
+                        <li>Clarify design decisions</li>
+                        <li>Discover edge cases</li>
+                        <li>Refine your project scope</li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Role Guide -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-person-gear"></i> Role Guidance</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-2">Select the role that matches your current focus:</p>
+                    <div class="small">
+                        <div class="mb-2">
+                            <strong>Project Manager:</strong> Planning, timelines, resources
+                        </div>
+                        <div class="mb-2">
+                            <strong>Business Analyst:</strong> Requirements, processes, stakeholders
+                        </div>
+                        <div class="mb-2">
+                            <strong>Developer:</strong> Architecture, implementation, code
+                        </div>
+                        <div class="mb-0">
+                            <strong>Designer:</strong> UX/UI, user experience, interfaces
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-
-<style>
-.role-card {
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.role-card:hover {
-    border-color: #0d6efd;
-    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
-}
-
-.role-card .form-check-input:checked + .form-check-label .card {
-    border-color: #0d6efd;
-    background-color: #f8f9ff;
-}
-
-.form-check-input {
-    margin-top: 0.1rem;
-}
-
-.form-check-label {
-    cursor: pointer;
-}
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Make entire role card clickable
-    const roleCards = document.querySelectorAll('.role-card');
-    roleCards.forEach(card => {
-        card.addEventListener('click', function() {
-            const radio = card.querySelector('input[type="radio"]');
-            if (radio) {
-                radio.checked = true;
-                
-                // Update visual state
-                document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
-            }
-        });
-    });
-    
-    // Handle radio button changes
-    const radioButtons = document.querySelectorAll('input[name="role"]');
-    radioButtons.forEach(radio => {
-        radio.addEventListener('change', function() {
-            document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
-            this.closest('.role-card').classList.add('selected');
-        });
-    });
-});
-</script>
 {% endblock %}
