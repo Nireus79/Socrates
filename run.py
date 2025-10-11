@@ -4,9 +4,7 @@ import logging
 import webbrowser
 from pathlib import Path
 from threading import Timer
-print("🚀 Starting application...")
 from web.app import create_app
-print("📦 Imported create_app")
 # Add project root to Python path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))

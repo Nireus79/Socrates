@@ -35,7 +35,7 @@ try:
     from flask import (
         Flask, render_template, request, jsonify, redirect, url_for,
         flash, session, send_file, abort, Response, stream_template, get_flashed_messages
-)
+    )
     from flask_wtf import FlaskForm, CSRFProtect
     from flask_wtf.file import FileField, FileAllowed, FileRequired
     from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -169,13 +169,10 @@ class UserDB:
 
     def init_db(self):
         try:
-            print(f"🔧 init_db() starting - path: {self.db_path}")
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            print("📡 Database connection established")
 
             # Users table
-            print("📝 Creating users table...")
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS users (
                     id TEXT PRIMARY KEY,
@@ -188,10 +185,8 @@ class UserDB:
                     created_at TEXT
                 )
             ''')
-            print("✅ Users table SQL executed")
 
             # Projects table
-            print("📝 Creating projects table...")
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS projects (
                     id TEXT PRIMARY KEY,
@@ -207,10 +202,8 @@ class UserDB:
                     FOREIGN KEY (owner_id) REFERENCES users (id)
                 )
             ''')
-            print("✅ Projects table SQL executed")
 
             # Sessions table
-            print("📝 Creating sessions table...")
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS sessions (
                     id TEXT PRIMARY KEY,
@@ -228,7 +221,6 @@ class UserDB:
                     FOREIGN KEY (owner_id) REFERENCES users (id) ON DELETE CASCADE
                 )
             ''')
-            print("✅ Sessions table SQL executed")
 
             # Session questions table
             cursor.execute('''
@@ -283,18 +275,11 @@ class UserDB:
                     FOREIGN KEY (generation_id) REFERENCES code_generations (id) ON DELETE CASCADE
                 )
             ''')
-            print("💾 Committing changes...")
             conn.commit()
-            print("✅ Changes committed")
-            print(f"✅ Database initialized successfully at: {self.db_path}")
-            print(f"✅ Database file exists: {os.path.exists(self.db_path)}")
             conn.close()
         except Exception as e:
             print(f"❌ DATABASE INIT ERROR: {e}")
             print(f"❌ Database path: {self.db_path}")
-            import traceback
-            print(traceback.print_exc())
-            print("=" * 50)
 
     # User methods
     def create_user(self, username: str, email: str, password: str, first_name: str = '', last_name: str = ''):
@@ -1559,16 +1544,12 @@ def create_flask_app(config_override=None) -> Flask:
     Returns:
         Configured Flask application
     """
-    import traceback
-    print("🏭 create_flask_app() called from: ", traceback.print_stack())
-    print("=" * 50)
     if not FLASK_AVAILABLE:
         print("❌ FLASK_AVAILABLE is False")
         raise RuntimeError("Flask not available")
     print("✅ Flask is available")
     # Create Flask application
     flask_app = Flask(__name__)
-    print("🌐 Flask app instance created")
 
     # Load configuration
     try:
@@ -1603,9 +1584,7 @@ def create_flask_app(config_override=None) -> Flask:
     login_manager.login_message = 'Please log in to access this page.'
 
     # Initialize database
-    print("💾 About to create UserDB...")
     user_db = get_user_db()
-    print("✅ UserDB created successfully")
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -1799,8 +1778,6 @@ def create_flask_app(config_override=None) -> Flask:
     @flask_app.route('/sessions/new/<project_id>', methods=['GET', 'POST'])
     @login_required
     def new_session(project_id=None):
-        print(f"🔍 Route using UserDB at: {user_db.db_path}")
-        print(f"🔍 UserDB instance: {id(user_db)}")
         """Create new session page."""
         form = NewSessionForm()
 
@@ -1824,20 +1801,8 @@ def create_flask_app(config_override=None) -> Flask:
         if project:
             form.existing_project.data = project['id']
 
-        # ADD THIS DEBUG CODE:
-        if request.method == 'POST':
-            print(f"🔍 POST request received")
-            print(f"🔍 Form validation result: {form.validate_on_submit()}")
-            if not form.validate_on_submit():
-                print(f"🔍 Form errors: {form.errors}")
-
         # Handle form submission
         if form.validate_on_submit():
-            print(f"🔍 Form data received:")
-            print(f"   session_name: {form.session_name.data}")
-            print(f"   role: {form.role.data}")
-            print(f"   existing_project: {form.existing_project.data}")
-            print(f"   initial_idea: {form.initial_idea.data}")
             # Use project from form if selected, otherwise use URL/query param project
             selected_project_id = form.existing_project.data if form.existing_project.data else final_project_id
 
@@ -1847,11 +1812,6 @@ def create_flask_app(config_override=None) -> Flask:
                 'questions': [],
                 'conversation_history': []
             }
-            print(f"🔍 Calling create_session with:")
-            print(f"   owner_id: {current_user.id}")
-            print(f"   session_name: {form.session_name.data}")
-            print(f"   role: {form.role.data}")
-            print(f"   project_id: {selected_project_id}")
 
             session_id = user_db.create_session(
                 owner_id=current_user.id,
@@ -1860,14 +1820,8 @@ def create_flask_app(config_override=None) -> Flask:
                 project_id=selected_project_id,
                 session_data=session_data
             )
-            print(f"🔍 create_session returned: {session_id}")
-            print(f"🔍 session_id type: {type(session_id)}")
-            print(f"🔍 session_id bool: {bool(session_id)}")
-            print(f"🔍 session_id == None: {session_id is None}")
-            print(f"🔍 session_id == '': {session_id == ''}")
 
             if session_id:
-                print(f"🔍 SUCCESS BRANCH: Creating success flash message")
                 flash(f'Session "{form.session_name.data}" created successfully!', 'success')
                 return redirect(url_for('session_detail', session_id=session_id))
             else:
@@ -1883,11 +1837,6 @@ def create_flask_app(config_override=None) -> Flask:
             else:
                 flash('Error creating session. Please try again.', 'error')
 
-        # Render template with consistent data
-        print(f"🔍 All flash messages: {get_flashed_messages()}")
-        with flask_app.app_context():
-            all_messages = get_flashed_messages(with_categories=True)
-            print(f"🔍 Flash messages in session: {all_messages}")
         return render_template('sessions/new.html', form=form, project=project)
 
     @flask_app.route('/sessions/<session_id>')
@@ -2549,143 +2498,6 @@ def create_flask_app(config_override=None) -> Flask:
         # For now, just return the session URL
         share_url = url_for('session_detail', session_id=session_id, _external=True)
         return jsonify({'share_url': share_url})
-
-    @flask_app.route('/debug/tables')
-    @login_required
-    def debug_tables():
-        """Debug: Show database tables and structure"""
-        import sqlite3
-        try:
-            user_db = get_user_db()
-            print(f"🔍 DEBUG ROUTE using UserDB at: {user_db.db_path}")
-            print(f"🔍 DEBUG ROUTE UserDB instance: {id(user_db)}")
-            conn = sqlite3.connect(user_db.db_path)
-            cursor = conn.cursor()
-
-            # Get all tables
-            print("🔍 Verifying tables...")
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-            tables = cursor.fetchall()
-            print(f"📊 Tables found: {[t[0] for t in tables]}")
-
-            result = "<h3>Database Tables:</h3><ul>"
-            for table in tables:
-                result += f"<li><strong>{table[0]}</strong></li>"
-
-                # Get table schema
-                cursor.execute(f"PRAGMA table_info({table[0]})")
-                columns = cursor.fetchall()
-                result += "<ul>"
-                for col in columns:
-                    result += f"<li>{col[1]} ({col[2]})</li>"
-                result += "</ul>"
-
-            result += "</ul>"
-            conn.close()
-            print("✅ Database initialization completed successfully")
-            print(result)
-            return result
-
-        except Exception as e:
-            return f"Error: {e}"
-
-    @flask_app.route('/debug/db-path')
-    @login_required
-    def debug_db_path():
-        return f"Database path: {user_db.db_path}<br>File exists: {os.path.exists(user_db.db_path)}"
-
-    @flask_app.route('/debug/create-tables')
-    @login_required
-    def debug_create_tables():
-        """Debug: Manually create tables and show result"""
-        import sqlite3
-        try:
-            user_db = get_user_db()
-            conn = sqlite3.connect(user_db.db_path)
-            cursor = conn.cursor()
-
-            # Try creating just the users table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS test_users (
-                    id TEXT PRIMARY KEY,
-                    username TEXT UNIQUE NOT NULL,
-                    email TEXT,
-                    created_at TEXT
-                )
-            ''')
-
-            conn.commit()
-
-            # Check if it was created
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='test_users'")
-            result = cursor.fetchone()
-
-            conn.close()
-
-            if result:
-                return f"✅ Table creation works! Created table: {result[0]}"
-            else:
-                return "❌ Table creation failed - no table found after creation"
-
-        except Exception as e:
-            return f"❌ Error during table creation: {e}"
-
-    @flask_app.route('/debug/test-session')
-    @login_required
-    def debug_test_session():
-        """Test session creation directly and show any errors"""
-        try:
-            user_db = get_user_db()
-
-            # Test session creation with debug info
-            print(f"🔍 Testing session creation...")
-            print(f"🔍 Current user ID: {current_user.id}")
-            print(f"🔍 UserDB instance: {id(user_db)}")
-            print(f"🔍 Database path: {user_db.db_path}")
-
-            session_id = user_db.create_session(
-                owner_id=current_user.id,
-                session_name="Debug Test Session",
-                role="developer"
-            )
-
-            print(f"🔍 Session creation result: {session_id}")
-
-            if session_id:
-                return f"✅ SUCCESS: Session created with ID: {session_id}"
-            else:
-                return "❌ FAILED: Session creation returned None"
-
-        except Exception as e:
-            print(f"❌ DEBUG EXCEPTION: {e}")
-            import traceback
-            traceback.print_exc()
-            return f"❌ EXCEPTION: {str(e)}"
-
-    @flask_app.route('/debug/form-validation', methods=['GET', 'POST'])
-    @login_required
-    def debug_form_validation():
-        """Debug form validation issues"""
-        form = NewSessionForm()
-
-        if request.method == 'POST':
-            print(f"🔍 POST request received")
-            print(f"🔍 Form data: {request.form}")
-            print(f"🔍 Form validation result: {form.validate_on_submit()}")
-            print(f"🔍 Form errors: {form.errors}")
-
-            # Check individual field validation
-            for field_name, field in form._fields.items():
-                if field.errors:
-                    print(f"🔍 Field '{field_name}' errors: {field.errors}")
-
-        # Populate choices for dropdown
-        user_projects = user_db.get_user_projects(current_user.id)
-        form.existing_project.choices = [('', 'No Project')] + [
-            (p['id'], p['name']) for p in user_projects
-        ]
-
-        return render_template('sessions/new.html', form=form, project=None)
 
     return flask_app
 
