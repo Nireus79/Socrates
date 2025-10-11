@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ session.name }} - {{ session.project.name }}{% endblock %}
+{% block title %}{{ session.session_name }}{% if session.project_id %} - Project Session{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">

@@ -2503,6 +2503,63 @@ def create_flask_app(config_override=None) -> Flask:
         except Exception as e:
             return f"❌ Error during table creation: {e}"
 
+    @flask_app.route('/debug/test-session')
+    @login_required
+    def debug_test_session():
+        """Test session creation directly and show any errors"""
+        try:
+            user_db = get_user_db()
+
+            # Test session creation with debug info
+            print(f"🔍 Testing session creation...")
+            print(f"🔍 Current user ID: {current_user.id}")
+            print(f"🔍 UserDB instance: {id(user_db)}")
+            print(f"🔍 Database path: {user_db.db_path}")
+
+            session_id = user_db.create_session(
+                owner_id=current_user.id,
+                session_name="Debug Test Session",
+                role="developer"
+            )
+
+            print(f"🔍 Session creation result: {session_id}")
+
+            if session_id:
+                return f"✅ SUCCESS: Session created with ID: {session_id}"
+            else:
+                return "❌ FAILED: Session creation returned None"
+
+        except Exception as e:
+            print(f"❌ DEBUG EXCEPTION: {e}")
+            import traceback
+            traceback.print_exc()
+            return f"❌ EXCEPTION: {str(e)}"
+
+    @flask_app.route('/debug/form-validation', methods=['GET', 'POST'])
+    @login_required
+    def debug_form_validation():
+        """Debug form validation issues"""
+        form = NewSessionForm()
+
+        if request.method == 'POST':
+            print(f"🔍 POST request received")
+            print(f"🔍 Form data: {request.form}")
+            print(f"🔍 Form validation result: {form.validate_on_submit()}")
+            print(f"🔍 Form errors: {form.errors}")
+
+            # Check individual field validation
+            for field_name, field in form._fields.items():
+                if field.errors:
+                    print(f"🔍 Field '{field_name}' errors: {field.errors}")
+
+        # Populate choices for dropdown
+        user_projects = user_db.get_user_projects(current_user.id)
+        form.existing_project.choices = [('', 'No Project')] + [
+            (p['id'], p['name']) for p in user_projects
+        ]
+
+        return render_template('sessions/new.html', form=form, project=None)
+
     return flask_app
 
 
