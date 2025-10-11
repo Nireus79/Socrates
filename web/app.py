@@ -130,6 +130,20 @@ except ImportError as e:
         def to_iso_string(dt):
             return dt.isoformat() if dt else None
 
+# =================================================================
+# GLOBAL DATABASE INSTANCE
+# =================================================================
+
+_user_db_instance = None
+
+
+def get_user_db():
+    """Get or create the single global UserDB instance."""
+    global _user_db_instance
+    if _user_db_instance is None:
+        _user_db_instance = UserDB('data/app.db')
+    return _user_db_instance
+
 
 # =================================================================
 # WORKING USER CLASS AND DATABASE
@@ -1591,7 +1605,7 @@ def create_flask_app(config_override=None) -> Flask:
 
     # Initialize database
     print("💾 About to create UserDB...")
-    user_db = UserDB()
+    user_db = get_user_db()
     print("✅ UserDB created successfully")
 
     @login_manager.user_loader
@@ -2413,11 +2427,12 @@ def create_flask_app(config_override=None) -> Flask:
     @login_required
     def debug_tables():
         """Debug: Show database tables and structure"""
-        print(f"🔍 DEBUG ROUTE using UserDB at: {user_db.db_path}")
-        print(f"🔍 DEBUG ROUTE UserDB instance: {id(user_db)}")
         import sqlite3
         try:
-            conn = sqlite3.connect('data/database.sqlite')
+            user_db = get_user_db()
+            print(f"🔍 DEBUG ROUTE using UserDB at: {user_db.db_path}")
+            print(f"🔍 DEBUG ROUTE UserDB instance: {id(user_db)}")
+            conn = sqlite3.connect(user_db.db_path)
             cursor = conn.cursor()
 
             # Get all tables
@@ -2441,6 +2456,7 @@ def create_flask_app(config_override=None) -> Flask:
             result += "</ul>"
             conn.close()
             print("✅ Database initialization completed successfully")
+            print(result)
             return result
 
         except Exception as e:
@@ -2457,7 +2473,8 @@ def create_flask_app(config_override=None) -> Flask:
         """Debug: Manually create tables and show result"""
         import sqlite3
         try:
-            conn = sqlite3.connect('data/app.db')
+            user_db = get_user_db()
+            conn = sqlite3.connect(user_db.db_path)
             cursor = conn.cursor()
 
             # Try creating just the users table
