@@ -37,7 +37,7 @@
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('new_session') }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        {{ form.hidden_tag() }}
                         
                         <!-- Session Name -->
                         <div class="mb-4">

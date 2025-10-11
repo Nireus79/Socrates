@@ -794,20 +794,24 @@ function createNewSession() {
         return;
     }
 
-    // In real implementation, this would call the API
+    // Create proper form data with CSRF token
+    const formDataToSend = new FormData();
+    formDataToSend.append('session_name', sessionData.name);
+    formDataToSend.append('role', sessionData.role);
+    formDataToSend.append('existing_project', sessionData.project);
+    formDataToSend.append('initial_idea', sessionData.initial_idea);
+    formDataToSend.append('csrf_token', '{{ csrf_token() }}');
+
     fetch('{{ url_for("new_session") }}', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(sessionData)
+        body: formDataToSend  // Send as FormData with CSRF token
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             bootstrap.Modal.getInstance(document.getElementById('newSessionModal')).hide();
-            // Reload or update sessions list
-            location.reload();
+            // Redirect to new session
+            window.location.href = data.redirect_url;
         } else {
             alert('Failed to create session: ' + data.message);
         }
