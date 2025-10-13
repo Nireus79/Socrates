@@ -6,12 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="CLEANUP">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/claude_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/claude_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/base.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dashboard.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/projects/edit.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/projects/edit.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/sessions/detail.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/sessions/detail.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -143,14 +137,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00198" summary="ui">
-      <option name="closed" value="true" />
-      <created>1760077394723</created>
-      <option name="number" value="00198" />
-      <option name="presentableId" value="LOCAL-00198" />
-      <option name="project" value="LOCAL" />
-      <updated>1760077394723</updated>
     </task>
     <task id="LOCAL-00199" summary="ui">
       <option name="closed" value="true" />
@@ -536,7 +522,15 @@
       <option name="project" value="LOCAL" />
       <updated>1760344183245</updated>
     </task>
-    <option name="localTasksCounter" value="247" />
+    <task id="LOCAL-00247" summary="CLEANUP">
+      <option name="closed" value="true" />
+      <created>1760391373553</created>
+      <option name="number" value="00247" />
+      <option name="presentableId" value="LOCAL-00247" />
+      <option name="project" value="LOCAL" />
+      <updated>1760391373553</updated>
+    </task>
+    <option name="localTasksCounter" value="248" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
