@@ -105,9 +105,9 @@ class DateTimeHelper:
         return dt.isoformat()
 
     @staticmethod
-    def from_iso_string(iso_string: str) -> datetime:
+    def from_iso_string(iso_str: str) -> datetime:
         """Parse ISO string to datetime"""
-        return datetime.fromisoformat(iso_string.replace('Z', '+00:00'))
+        return datetime.fromisoformat(iso_str.replace('Z', '+00:00'))
 
     @staticmethod
     def to_timestamp(dt: datetime) -> float:
@@ -154,9 +154,9 @@ class ValidationHelper:
     def validate_required_fields(data: Dict[str, Any], required_fields: List[str]) -> List[str]:
         """Validate required fields are present"""
         missing = []
-        for field in required_fields:
-            if field not in data or data[field] is None:
-                missing.append(field)
+        for f in required_fields:
+            if f not in data or data[f] is None:
+                missing.append(f)
         return missing
 
     @staticmethod
@@ -327,21 +327,21 @@ class SystemLogger:
         self._loggers = {}
         self._initialized = False
 
-    def initialize(self, config: SystemConfig):
+    def initialize(self, conf: SystemConfig):
         """Initialize logging system with configuration"""
         if self._initialized:
             return
 
-        self._config = config
+        self._config = conf
 
         # Create logs directory
-        log_path = config.get('logging.file.path', 'data/logs')
+        log_path = conf.get('logging.file.path', 'data/logs')
         log_dir = FileHelper.ensure_directory(log_path)
         log_file = log_dir / 'socratic.log'
 
         # Configure root logger
         root_logger = logging.getLogger()
-        root_logger.setLevel(self._get_log_level(config.get('logging.level', 'INFO')))
+        root_logger.setLevel(self._get_log_level(conf.get('logging.level', 'INFO')))
 
         # Clear existing handlers
         root_logger.handlers.clear()
@@ -349,7 +349,7 @@ class SystemLogger:
         # Console handler
         if config.get('logging.console.enabled', True):
             console_handler = logging.StreamHandler(sys.stdout)
-            console_handler.setLevel(self._get_log_level(config.get('logging.console.level', 'INFO')))
+            console_handler.setLevel(self._get_log_level(conf.get('logging.console.level', 'INFO')))
             console_formatter = logging.Formatter(
                 '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                 datefmt='%Y-%m-%d %H:%M:%S'
@@ -358,11 +358,11 @@ class SystemLogger:
             root_logger.addHandler(console_handler)
 
         # File handler with rotation
-        if config.get('logging.file.enabled', True):
+        if conf.get('logging.file.enabled', True):
             file_handler = logging.handlers.RotatingFileHandler(
                 log_file,
                 maxBytes=10 * 1024 * 1024,  # 10MB
-                backupCount=config.get('logging.file.backup_count', 5),
+                backupCount=conf.get('logging.file.backup_count', 5),
                 encoding='utf-8'
             )
             file_handler.setLevel(logging.DEBUG)
@@ -394,8 +394,7 @@ class SystemLogger:
     def get_logger(self, name: str) -> logging.Logger:
         """Get or create a logger instance"""
         if name not in self._loggers:
-            logger = logging.getLogger(name)
-            self._loggers[name] = logger
+            self._loggers[name] = logging.getLogger(name)
         return self._loggers[name]
 
     def _get_log_level(self, level_str: str) -> int:
@@ -445,9 +444,9 @@ class EventSystem:
         self._processing_thread = threading.Thread(target=self._process_events, daemon=True)
         self._processing_thread.start()
 
-    def set_logger(self, logger: logging.Logger):
+    def set_logger(self, logg: logging.Logger):
         """Set logger for event system"""
-        self._logger = logger
+        self._logger = logg
         if self._logger:
             self._logger.info("Event system initialized")
 
@@ -526,18 +525,18 @@ class DatabaseManager:
         self._pool_lock = threading.Lock()
         self._logger = None
 
-    def initialize(self, config: SystemConfig):
+    def initialize(self, conf: SystemConfig):
         """Initialize database manager"""
-        self._config = config
-        self._db_path = config.get('database.path', 'data/socratic.db')
+        self._config = conf
+        self._db_path = conf.get('database.path', 'data/socratic.db')
 
         # Ensure database directory exists
         db_dir = Path(self._db_path).parent
         FileHelper.ensure_directory(db_dir)
 
-    def set_logger(self, logger: logging.Logger):
+    def set_logger(self, logg: logging.Logger):
         """Set logger for database manager"""
-        self._logger = logger
+        self._logger = logg
 
     def get_connection(self) -> sqlite3.Connection:
         """Get database connection"""
@@ -601,7 +600,7 @@ class ServiceContainer:
 
     def __init__(
             self,
-            config: SystemConfig,
+            conf: SystemConfig,
             logger_system: SystemLogger,
             event_system: EventSystem,
             db_manager: DatabaseManager
@@ -609,12 +608,12 @@ class ServiceContainer:
         """Initialize service container with all required services
 
         Args:
-            config: System configuration instance
+            conf: System configuration instance
             logger_system: Logging system instance
             event_system: Event system instance
             db_manager: Database manager instance
         """
-        self.config: SystemConfig = config
+        self.config: SystemConfig = conf
         self.logger_system: SystemLogger = logger_system
         self.event_system: EventSystem = event_system
         self.db_manager: DatabaseManager = db_manager
@@ -648,13 +647,13 @@ class ServiceFactory:
         """Create and configure all services"""
         try:
             # 1. Load configuration
-            config = SystemConfig()
-            if not config.load_config(config_path):
+            conf = SystemConfig()
+            if not conf.load_config(config_path):
                 print("Warning: Using default configuration")
 
             # 2. Initialize logging
             logger_system = SystemLogger()
-            logger_system.initialize(config)
+            logger_system.initialize(conf)
             main_logger = logger_system.get_logger('system')
 
             # 3. Initialize event system
@@ -664,19 +663,19 @@ class ServiceFactory:
 
             # 4. Initialize database
             db_manager = DatabaseManager()
-            db_manager.initialize(config)
+            db_manager.initialize(conf)
             db_manager.set_logger(logger_system.get_logger('database'))
 
             # 5. Create required directories
-            data_path = config.get('system.data_path', 'data')
+            data_path = conf.get('system.data_path', 'data')
             for subdir in ['logs', 'uploads', 'exports', 'generated_projects', 'vector_db']:
                 FileHelper.ensure_directory(Path(data_path) / subdir)
 
             # 6. Create service container
-            services = ServiceContainer(config, logger_system, event_system, db_manager)
+            service = ServiceContainer(conf, logger_system, event_system, db_manager)
 
             main_logger.info("Service container initialized successfully")
-            return services
+            return service
 
         except Exception as e:
             print(f"Service initialization failed: {e}")
@@ -692,22 +691,22 @@ def initialize_system(config_path: Optional[str] = None) -> ServiceContainer:
     return ServiceFactory.create_services(config_path)
 
 
-def cleanup_system(services: ServiceContainer):
+def cleanup_system(service: ServiceContainer):
     """Cleanup system resources"""
-    logger = services.get_logger('system')
-    logger.info("Starting system cleanup...")
+    logg = service.get_logger('system')
+    logg.info("Starting system cleanup...")
 
     try:
         # Cleanup database connections
-        services.db_manager.cleanup()
+        service.db_manager.cleanup()
 
         # Shutdown event system
-        services.event_system.shutdown()
+        service.event_system.shutdown()
 
-        logger.info("System cleanup completed")
+        logg.info("System cleanup completed")
 
     except Exception as e:
-        logger.error(f"Error during system cleanup: {e}")
+        logg.error(f"Error during system cleanup: {e}")
 
 
 # ============================================================================

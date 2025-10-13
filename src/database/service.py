@@ -49,7 +49,7 @@ except ImportError:
 try:
     from src.models import (
         User, Project, Module, Task, GeneratedCodebase, GeneratedFile,
-        ProjectCollaborator, SocraticSession, ChatSession, Question, ConversationMessage,  # ← ADD ChatSession
+        ProjectCollaborator, SocraticSession, ChatSession, Question, ConversationMessage,
         TechnicalSpec, ProjectContext, ModuleContext, TaskContext, Conflict
     )
 

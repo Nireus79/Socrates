@@ -53,6 +53,7 @@ except ImportError:
         def get_db_manager(self):
             return None
 
+
     def get_file_processor():
         return None
 
@@ -334,7 +335,7 @@ class DocumentProcessorAgent(BaseAgent):
             content = ""
 
             if file_path_obj.suffix.lower() in ['.txt', '.md', '.py', '.js', '.html', '.css', '.json', '.yaml',
-                                                 '.yml']:
+                                                '.yml']:
                 with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                     content = f.read()
 
@@ -506,7 +507,6 @@ class DocumentProcessorAgent(BaseAgent):
             project_id = data.get('project_id')
             user_id = data.get('user_id')
             analysis_depth = data.get('analysis_depth', 'detailed')
-            include_code_analysis = data.get('include_code_analysis', True)
 
             if not all([repo_url, project_id, user_id]):
                 return self._error_response("Missing required parameters", "MISSING_PARAMS")

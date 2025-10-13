@@ -19,6 +19,8 @@ import os
 from dataclasses import dataclass
 from typing import Dict, Any, List, Optional
 from datetime import datetime
+import numpy as np
+import torch
 
 # ============================================================================
 # CHROMADB IMPORTS - Only import the main module, not types
@@ -69,14 +71,7 @@ class Collection:
         """Add documents to collection"""
         pass
 
-    def query(
-            self,
-            query_texts: Optional[List[str]] = None,
-            query_embeddings: Optional[List[List[float]]] = None,
-            n_results: int = 10,
-            where: Optional[Dict[str, Any]] = None,
-            include: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+    def query(self) -> Dict[str, Any]:
         """Query collection for similar documents"""
         return {
             'ids': [],
@@ -86,14 +81,7 @@ class Collection:
             'embeddings': []
         }
 
-    def get(
-            self,
-            ids: Optional[List[str]] = None,
-            where: Optional[Dict[str, Any]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            include: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+    def get(self) -> Dict[str, Any]:
         """Get documents from collection"""
         return {
             'ids': [],
@@ -120,7 +108,7 @@ class Collection:
         """Get count of documents in collection"""
         return 0
 
-    def peek(self, limit: int = 10) -> Dict[str, Any]:
+    def peek(self) -> Dict[str, Any]:
         """Peek at documents in collection"""
         return {
             'ids': [],
@@ -137,10 +125,10 @@ class EmbeddingFunction:
     def __init__(self) -> None:
         pass
 
-    def __call__(self, input: Documents) -> Embeddings:
+    def __call__(self, inp: Documents) -> Embeddings:
         """Generate embeddings for input documents"""
         # Return empty embeddings of appropriate shape
-        return [[0.0] * 384 for _ in input]  # 384 is common embedding dimension
+        return [[0.0] * 384 for _ in inp]  # 384 is common embedding dimension
 
 
 # ============================================================================
@@ -153,7 +141,6 @@ try:
     SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
     SENTENCE_TRANSFORMERS_AVAILABLE = False
-
 
     # Fallback SentenceTransformer class
     class SentenceTransformer:
@@ -168,14 +155,13 @@ except ImportError:
         def encode(self, sentences, convert_to_tensor=False, **kwargs):
             """Fallback encode method"""
             # Return dummy embeddings
-            import numpy as np
+
             if isinstance(sentences, str):
                 sentences = [sentences]
             # Return array of zeros with shape (n_sentences, 384)
             embeddings = np.zeros((len(sentences), 384))
             if convert_to_tensor:
                 try:
-                    import torch
                     return torch.from_numpy(embeddings)
                 except ImportError:
                     return embeddings
@@ -191,7 +177,6 @@ try:
     CORE_AVAILABLE = True
 except ImportError:
     CORE_AVAILABLE = False
-
 
     # Fallback exception class
     class SocraticException(Exception):
@@ -268,10 +253,10 @@ class CustomEmbeddingFunction:
         self.model_name = model_name
         logger.info(f"Initialized embedding model: {model_name}")
 
-    def __call__(self, input: Documents) -> Embeddings:
+    def __call__(self, inp: Documents) -> Embeddings:
         """Generate embeddings for input documents."""
         try:
-            embeddings = self.model.encode(input, convert_to_tensor=False)
+            embeddings = self.model.encode(inp, convert_to_tensor=False)
 
             # Convert to list format
             if hasattr(embeddings, 'tolist'):

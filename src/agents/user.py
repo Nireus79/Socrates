@@ -5,11 +5,11 @@ UserManagerAgent - User Lifecycle Management
 Handles all user-related operations including CRUD, authentication, and permissions.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from datetime import datetime
 
 # Import base agent and decorators
-from .base import BaseAgent, require_authentication, log_agent_action
+from .base import BaseAgent, log_agent_action
 
 # Import ServiceContainer from correct location
 from src.core import ServiceContainer

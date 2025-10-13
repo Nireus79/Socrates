@@ -496,7 +496,7 @@ class SystemMonitorAgent(BaseAgent):
 
             # Add chart data if requested
             if include_charts:
-                analytics['chart_data'] = self._prepare_chart_data(analytics)
+                analytics['chart_data'] = self._prepare_chart_data()
 
             # Fire event
             if self.event_bus:
@@ -1947,7 +1947,7 @@ class SystemMonitorAgent(BaseAgent):
             'action_items': []
         }
 
-    def _prepare_chart_data(self, analytics: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_chart_data(self) -> Dict[str, Any]:
         """Prepare data for charts and visualizations"""
         return {
             'performance_chart': {

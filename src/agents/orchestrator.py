@@ -14,7 +14,7 @@ Capabilities:
 - Event system integration
 """
 import logging
-from typing import Dict, List, Any, Optional, TYPE_CHECKING
+from typing import Dict, List, Any, Optional
 
 try:
     from src.core import ServiceContainer
@@ -260,7 +260,6 @@ class AgentOrchestrator:
             # Validate agent exists
             if agent_id not in self.agents:
                 available = list(self.agents.keys())
-                error_msg = f"Unknown agent: {agent_id}"
 
                 self.logger.warning(
                     f"Request for unknown agent '{agent_id}'. "
@@ -282,9 +281,6 @@ class AgentOrchestrator:
                 if hasattr(agent, 'get_capabilities'):
                     capabilities = agent.get_capabilities()
                     if action not in capabilities:
-                        error_msg = (
-                            f"Agent {agent_id} does not support action: {action}"
-                        )
 
                         self.logger.warning(
                             f"Unsupported action '{action}' for agent '{agent_id}'"

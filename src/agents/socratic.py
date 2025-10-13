@@ -481,7 +481,7 @@ class SocraticCounselorAgent(BaseAgent):
                 question_id = response_data.get('question_id')
                 response_text = response_data.get('response', '')
 
-                analysis = self._analyze_single_response(question_id, response_text, session)
+                analysis = self._analyze_single_response(question_id, response_text)
                 analysis_results.append(analysis)
 
                 # Persist the response as a conversation message
@@ -500,10 +500,10 @@ class SocraticCounselorAgent(BaseAgent):
                     self.question_repo.update_answer(question_id, response_text)
 
             # Generate overall insights
-            overall_insights = self._generate_session_insights(analysis_results, session)
+            overall_insights = self._generate_session_insights(analysis_results)
 
             # Suggest follow-up questions
-            follow_ups = self._suggest_follow_up_questions(analysis_results, session)
+            follow_ups = self._suggest_follow_up_questions(analysis_results)
 
             # Update session with analysis
             session['responses_analyzed'] = len(responses)
@@ -526,8 +526,7 @@ class SocraticCounselorAgent(BaseAgent):
             self.logger.error(error_msg)
             return self._error_response(error_msg)
 
-    def _analyze_single_response(self, question_id: str, response: str,
-                                 session: Dict[str, Any]) -> Dict[str, Any]:
+    def _analyze_single_response(self, question_id: str, response: str) -> Dict[str, Any]:
         """Analyze a single response"""
         analysis = {
             'question_id': question_id,
@@ -630,8 +629,7 @@ class SocraticCounselorAgent(BaseAgent):
 
         return needs
 
-    def _generate_session_insights(self, analysis_results: List[Dict[str, Any]],
-                                   session: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_session_insights(self, analysis_results: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Generate overall insights for the session"""
         if not analysis_results:
             return {}
@@ -697,8 +695,7 @@ class SocraticCounselorAgent(BaseAgent):
 
         return recommendations
 
-    def _suggest_follow_up_questions(self, analysis_results: List[Dict[str, Any]],
-                                     session: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _suggest_follow_up_questions(self, analysis_results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Suggest follow-up questions based on analysis"""
         follow_ups = []
 

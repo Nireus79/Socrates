@@ -47,7 +47,7 @@ def _fallback_get_services():
     return None
 
 
-def _fallback_initialize_system(config_path: str = None):
+def _fallback_initialize_system():
     """Fallback system initialization"""
     print("Warning: Core system initialization not available")
     return None
@@ -134,8 +134,6 @@ except ImportError as e:
     CORE_AVAILABLE = False
     _import_errors['core'] = str(e)
 
-
-    # ✅ FIX: Define fallback ServiceContainer class
     class ServiceContainer:
         """Fallback ServiceContainer when core is not available"""
 
@@ -200,11 +198,11 @@ try:
 
         # Repositories
         UserRepository, ProjectRepository, ModuleRepository,
-        GeneratedFileRepository, TestResultRepository,
+        GeneratedFileRepository,
         ProjectCollaboratorRepository,
 
         # Schema management
-        DatabaseSchema,
+        # DatabaseSchema, TestResultRepository,
 
         # Base classes
         BaseRepository
@@ -347,12 +345,12 @@ def initialize_package(config_path: Optional[str] = None) -> Optional[ServiceCon
 
         # Log successful initialization
         if _services:
-            logger = _services.get_logger('package')
-            logger.info(f"Socratic RAG Enhanced v{__version__} package initialized")
-            logger.info(f"Available modules: {[k for k, v in get_system_status()['module_availability'].items() if v]}")
+            logg = _services.get_logger('package')
+            logg.info(f"Socratic RAG Enhanced v{__version__} package initialized")
+            logg.info(f"Available modules: {[k for k, v in get_system_status()['module_availability'].items() if v]}")
 
             if _import_errors:
-                logger.warning(f"Some modules failed to import: {list(_import_errors.keys())}")
+                logg.warning(f"Some modules failed to import: {list(_import_errors.keys())}")
 
         return _services
 

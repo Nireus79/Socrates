@@ -9,7 +9,6 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 from dataclasses import dataclass
 from .base import BaseRepository, parse_json_field, dump_json_field
-from src.models import Conflict
 
 try:
     from src.models import (
@@ -37,7 +36,6 @@ except ImportError:
 
     def dump_json_field(data):
         return None
-
 
     # Fallback DateTimeHelper
     class DateTimeHelper:
@@ -1429,6 +1427,7 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
         except Exception as e:
             self.logger.error(f"Error converting row to ChatSession: {e}")
             return ChatSession()
+
 
 # ==============================================================================
 # QUESTION REPOSITORY

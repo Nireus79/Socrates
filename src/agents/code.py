@@ -505,7 +505,7 @@ def sample_data():
                     self.logger.warning(f"Failed to save specification: {e}") if self.logger else None
 
             # Design architecture
-            architecture = self._design_architecture(project, specs, data.get('requirements', []))
+            architecture = self._design_architecture(project, data.get('requirements', []))
 
             # Generate file structure
             file_structure = self._generate_file_structure(architecture, data.get('framework_preferences', {}))
@@ -588,7 +588,7 @@ def sample_data():
             self.logger.error(error_msg)
             return self._error_response(error_msg)
 
-    def _design_architecture(self, project: Project, specs: Optional[TechnicalSpecification],
+    def _design_architecture(self, specs: Optional[TechnicalSpecification],
                              requirements: List[str]) -> Dict[str, Any]:
         """Design system architecture based on project requirements"""
         try:
@@ -606,10 +606,10 @@ def sample_data():
 
             architecture = {
                 'pattern': pattern,
-                'components': self._define_components(pattern, requirements),
-                'data_layer': self._design_data_layer(specs),
+                'components': self._define_components(pattern),
+                'data_layer': self._design_data_layer(),
                 'api_structure': self._design_api_structure(requirements),
-                'security': self._design_security_measures(specs),
+                'security': self._design_security_measures(),
                 'scalability': scale_requirements,
                 'deployment': self._design_deployment_strategy(scale_requirements)
             }
@@ -639,7 +639,7 @@ def sample_data():
 
         return scale_indicators
 
-    def _define_components(self, pattern: str, requirements: List[str]) -> List[Dict[str, Any]]:
+    def _define_components(self, pattern: str) -> List[Dict[str, Any]]:
         """Define system components based on architecture pattern"""
         components = []
 
@@ -664,7 +664,7 @@ def sample_data():
 
         return components
 
-    def _design_data_layer(self, specs: Optional[TechnicalSpecification]) -> Dict[str, Any]:
+    def _design_data_layer(self) -> Dict[str, Any]:
         """Design data layer architecture"""
         return {
             'database_type': 'sqlite',
@@ -682,7 +682,7 @@ def sample_data():
             'documentation': 'swagger'
         }
 
-    def _design_security_measures(self, specs: Optional[TechnicalSpecification]) -> List[str]:
+    def _design_security_measures(self) -> List[str]:
         """Design security measures"""
         return [
             'Input validation and sanitization',
@@ -776,7 +776,7 @@ def sample_data():
 
             # Generate content based on file type and purpose
             if file_ext == '.py':
-                return self._generate_python_content(project, specs, architecture, file_name, file_purpose)
+                return self._generate_python_content(project, specs, architecture)
             elif file_ext == '.js':
                 return self._generate_javascript_content(project, specs, architecture, file_name, file_purpose)
             elif file_ext == '.html':
@@ -796,8 +796,7 @@ def sample_data():
             self.logger.error(f"Error generating content for {file_path}: {e}")
             return f"# Error generating content for {file_path}: {e}"
 
-    def _generate_python_content(self, project: Project, specs: Optional[TechnicalSpecification],
-                                 architecture: Dict[str, Any], file_name: str, file_purpose: str) -> str:
+    def _generate_python_content(self, project: Project, file_name: str, file_purpose: str) -> str:
         """Generate Python file content"""
         if file_name == 'app.py':
             return self.code_templates['flask_app']

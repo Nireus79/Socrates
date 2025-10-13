@@ -18,14 +18,14 @@ import uuid
 import json
 import sys
 from datetime import datetime
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional
 from enum import Enum
 
 # Core imports with fallbacks
 try:
-    from src import get_logger  # Backward compatibility function
-    from src.core import DateTimeHelper, ValidationError  # Core classes
+    from src import get_logger
+    from src.core import DateTimeHelper, ValidationError
 
     CORE_AVAILABLE = True
 except ImportError:
@@ -1135,105 +1135,105 @@ class ModelValidator:
     @staticmethod
     def validate_project_data(project_data: Dict[str, Any]) -> List[str]:
         """Validate project data dictionary"""
-        issues = []
+        issue = []
 
         # Required fields
         required_fields = ['name', 'owner_id']
-        for field in required_fields:
-            if field not in project_data or not project_data[field]:
-                issues.append(f"Required field '{field}' is missing or empty")
+        for f in required_fields:
+            if f not in project_data or not project_data[f]:
+                issue.append(f"Required field '{f}' is missing or empty")
 
         # Name length validation
         if 'name' in project_data:
             name = project_data['name']
             if len(name) < 2:
-                issues.append(f"Project name must be at least 2 characters long")
+                issue.append(f"Project name must be at least 2 characters long")
 
-        return issues
+        return issue
 
     @staticmethod
     def validate_module_data(module_data: Dict[str, Any]) -> List[str]:
         """Validate module data dictionary"""
-        issues = []
+        issue = []
 
         required_fields = ['project_id', 'name']
-        for field in required_fields:
-            if field not in module_data or not module_data[field]:
-                issues.append(f"Required field '{field}' is missing or empty")
+        for f in required_fields:
+            if f not in module_data or not module_data[f]:
+                issue.append(f"Required field '{f}' is missing or empty")
 
-        return issues
+        return issue
 
     @staticmethod
     def validate_user_data(user_data: Dict[str, Any]) -> List[str]:
         """Validate user data dictionary"""
-        issues = []
+        issue = []
 
         required_fields = ['username', 'email']
-        for field in required_fields:
-            if field not in user_data or not user_data[field]:
-                issues.append(f"Required field '{field}' is missing or empty")
+        for f in required_fields:
+            if f not in user_data or not user_data[f]:
+                issue.append(f"Required field '{f}' is missing or empty")
 
         # Email validation
         if 'email' in user_data:
             if not ValidationHelper.validate_email(user_data['email']):
-                issues.append(f"Invalid email format: {user_data['email']}")
+                issue.append(f"Invalid email format: {user_data['email']}")
 
-        return issues
+        return issue
 
     @staticmethod
     def validate_generated_file_data(file_data: Dict[str, Any]) -> List[str]:
         """Validate generated file data dictionary"""
-        issues = []
+        issue = []
 
         required_fields = ['codebase_id', 'file_path', 'content']
-        for field in required_fields:
-            if field not in file_data or not file_data[field]:
-                issues.append(f"Required field '{field}' is missing or empty")
+        for f in required_fields:
+            if f not in file_data or not file_data[f]:
+                issue.append(f"Required field '{f}' is missing or empty")
 
         # File type validation
         if 'file_type' in file_data:
             file_type = file_data['file_type']
             valid_types = [ft.value for ft in FileType]
             if file_type not in valid_types:
-                issues.append(f"Invalid file type: '{file_type}'. Must be one of: {valid_types}")
+                issue.append(f"Invalid file type: '{file_type}'. Must be one of: {valid_types}")
 
         # File path validation
         if 'file_path' in file_data:
             file_path = file_data['file_path']
             # Basic path validation
             if '..' in file_path or file_path.startswith('/'):
-                issues.append(f"Invalid file path: '{file_path}' (security concern)")
+                issue.append(f"Invalid file path: '{file_path}' (security concern)")
 
-        return issues
+        return issue
 
     @staticmethod
     def validate_generated_codebase_data(codebase_data: Dict[str, Any]) -> List[str]:
         """Validate generated codebase data dictionary"""
-        issues = []
+        issue = []
 
         # Required fields
         required_fields = ['project_id']
-        for field in required_fields:
-            if field not in codebase_data or not codebase_data[field]:
-                issues.append(f"Required field '{field}' is missing or empty")
+        for f in required_fields:
+            if f not in codebase_data or not codebase_data[f]:
+                issue.append(f"Required field '{f}' is missing or empty")
 
         # Numeric validation
         numeric_fields = ['total_files', 'total_lines_of_code', 'size_bytes']
-        for field in numeric_fields:
-            if field in codebase_data:
-                value = codebase_data[field]
+        for f in numeric_fields:
+            if f in codebase_data:
+                value = codebase_data[f]
                 if not isinstance(value, (int, float)) or value < 0:
-                    issues.append(f"Field '{field}' must be a non-negative number")
+                    issue.append(f"Field '{f}' must be a non-negative number")
 
         # Percentage validation
         percentage_fields = ['code_quality_score', 'test_coverage']
-        for field in percentage_fields:
-            if field in codebase_data:
-                value = codebase_data[field]
+        for f in percentage_fields:
+            if f in codebase_data:
+                value = codebase_data[f]
                 if not isinstance(value, (int, float)) or not (0 <= value <= 100):
-                    issues.append(f"Field '{field}' must be a percentage between 0 and 100")
+                    issue.append(f"Field '{f}' must be a percentage between 0 and 100")
 
-        return issues
+        return issue
 
     @classmethod
     def validate_model_by_type(cls, model_type: str, data: Dict[str, Any]) -> List[str]:
@@ -1265,9 +1265,9 @@ class ModelFactory:
         }
 
         # Validate before creation
-        issues = ModelValidator.validate_project_data(project_data)
-        if issues:
-            raise ValidationError(f"Project validation failed: {'; '.join(issues)}")
+        issue = ModelValidator.validate_project_data(project_data)
+        if issue:
+            raise ValidationError(f"Project validation failed: {'; '.join(issue)}")
 
         return Project(**project_data)
 
@@ -1281,9 +1281,9 @@ class ModelFactory:
         }
 
         # Validate before creation
-        issues = ModelValidator.validate_user_data(user_data)
-        if issues:
-            raise ValidationError(f"User validation failed: {'; '.join(issues)}")
+        issue = ModelValidator.validate_user_data(user_data)
+        if issue:
+            raise ValidationError(f"User validation failed: {'; '.join(issue)}")
 
         return User(**user_data)
 
@@ -1300,9 +1300,9 @@ class ModelFactory:
         }
 
         # Validate before creation
-        issues = ModelValidator.validate_generated_file_data(file_data)
-        if issues:
-            raise ValidationError(f"Generated file validation failed: {'; '.join(issues)}")
+        issue = ModelValidator.validate_generated_file_data(file_data)
+        if issue:
+            raise ValidationError(f"Generated file validation failed: {'; '.join(issue)}")
 
         return GeneratedFile(**file_data)
 
@@ -1363,9 +1363,9 @@ class ModelRegistry:
         return cls.MODELS.copy()
 
     @classmethod
-    def register_model(cls, name: str, model_class: type) -> None:
+    def register_model(cls, name: str, mdl_class: type) -> None:
         """Register a new model class"""
-        cls.MODELS[name] = model_class
+        cls.MODELS[name] = mdl_class
 
 
 # ============================================================================
@@ -1386,8 +1386,8 @@ def serialize_model(model: BaseModel) -> str:
 def deserialize_model(model_name: str, json_data: str) -> BaseModel:
     """Deserialize JSON string to model instance"""
     try:
-        model_class = ModelRegistry.get_model_class(model_name)
-        if not model_class:
+        mdl_class = ModelRegistry.get_model_class(model_name)
+        if not mdl_class:
             raise ValidationError(f"Unknown model type: {model_name}")
 
         data = json.loads(json_data)
@@ -1401,7 +1401,7 @@ def deserialize_model(model_name: str, json_data: str) -> BaseModel:
                     except (ValueError, AttributeError):
                         pass
 
-        return model_class(**data)
+        return mdl_class(**data)
 
     except Exception as e:
         if CORE_AVAILABLE:

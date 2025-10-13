@@ -11,7 +11,7 @@ This package replaces the old monolithic database.py file with a modular structu
 - service.py: Main database service interface
 
 Usage:
-    from src.database import get_database
+    from src.Database import get_database
 
     db = get_database()
     user = db.users.get_by_id(user_id)
@@ -104,6 +104,7 @@ __all__ = [
     'ModuleContextRepository',
     'TaskContextRepository',
     'ConflictRepository',
+    'ModuleRepository',
 
     # Version
     '__version__',

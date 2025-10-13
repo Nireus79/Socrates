@@ -6,7 +6,6 @@ Handles chat-mode conversations with context-aware responses and project insight
 """
 
 from typing import Dict, List, Any, Optional
-from functools import wraps
 
 try:
     from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper

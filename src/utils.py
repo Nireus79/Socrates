@@ -1100,9 +1100,9 @@ def validate_project_data(project_data: Dict[str, Any]) -> List[str]:
 
         # Required fields
         required_fields = ['name', 'owner_id']
-        for field in required_fields:
-            if field not in project_data or not str(project_data[field]).strip():
-                issues.append(f"Required field '{field}' is missing or empty")
+        for f in required_fields:
+            if f not in project_data or not str(project_data[f]).strip():
+                issues.append(f"Required field '{f}' is missing or empty")
 
         # Name validation
         if 'name' in project_data:

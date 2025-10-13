@@ -15,8 +15,8 @@ Components:
 """
 
 import logging
-from typing import Dict, Any, Optional
 from pathlib import Path
+from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,6 @@ def check_web_dependencies() -> Dict[str, bool]:
 
     # Check template engine dependencies
     try:
-        import jinja2
         dependencies['jinja2'] = True
     except ImportError:
         dependencies['jinja2'] = False
@@ -176,7 +175,6 @@ def get_web_status() -> Dict[str, Any]:
     }
 
     # Add agent status if available
-    get_agent_status = None
     try:
         from src.agents import get_agent_status
         if get_agent_status is not None:
@@ -184,14 +182,11 @@ def get_web_status() -> Dict[str, Any]:
         else:
             status['agents_status'] = {'available': False, 'error': 'Function not available'}
     except ImportError:
-        get_agent_status = None
         status['agents_status'] = {'available': False, 'error': 'Module not found'}
     except Exception as e:
-        get_agent_status = None
         status['agents_status'] = {'available': False, 'error': str(e)}
 
     # Add service status if available
-    get_services_status = None
     try:
         from src.services import get_services_status
         if get_services_status is not None:
@@ -199,10 +194,8 @@ def get_web_status() -> Dict[str, Any]:
         else:
             status['services_status'] = {'available': False, 'error': 'Function not available'}
     except ImportError:
-        get_services_status = None
         status['services_status'] = {'available': False, 'error': 'Module not found'}
     except Exception as e:
-        get_services_status = None
         status['services_status'] = {'available': False, 'error': str(e)}
 
     return status

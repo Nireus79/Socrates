@@ -173,7 +173,6 @@ class GitService:
             path.mkdir(parents=True, exist_ok=True)
 
             if GIT_PYTHON_AVAILABLE:
-                repo = Repo.init(str(path), initial_branch=initial_branch or self.default_branch)
                 logger.info(f"Initialized Git repository at {path}")
             else:
                 stdout, stderr, code = self._run_git_command(['init'], str(path))

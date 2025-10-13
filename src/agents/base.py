@@ -21,6 +21,7 @@ try:
         ServiceContainer, DateTimeHelper, ANTHROPIC_AVAILABLE,
         AgentError, ValidationError, DatabaseError
     )
+
     CORE_AVAILABLE = True
 except ImportError:
     CORE_AVAILABLE = False
@@ -48,7 +49,6 @@ except ImportError:
         def get_db_manager(self):
             return None
 
-
     # Fallback helper classes
     class DateTimeHelper:
         @staticmethod
@@ -59,7 +59,6 @@ except ImportError:
         @staticmethod
         def to_iso_string(dt):
             return dt.isoformat() if dt else None
-
 
     # Fallback exceptions
     class AgentError(Exception):
@@ -192,13 +191,13 @@ class BaseAgent(ABC):
             method_name = f"_{action}"
             if hasattr(self, method_name):
                 method = getattr(self, method_name)
-                result = method(data)
+                res = method(data)
 
                 # Update performance stats
                 duration = time.time() - start_time
                 self._update_response_time(duration)
 
-                return result
+                return res
             else:
                 return self._error_response(
                     f"Unknown action: {action}",
@@ -216,7 +215,7 @@ class BaseAgent(ABC):
         current_avg = self.stats['average_response_time']
         count = self.stats['requests_processed']
         self.stats['average_response_time'] = (
-            (current_avg * (count - 1) + duration) / count
+                (current_avg * (count - 1) + duration) / count
         )
 
     def _success_response(self, message: str, data: Dict[str, Any] = None) -> Dict[str, Any]:
@@ -494,7 +493,7 @@ def log_agent_action(func):
             self.logger.info(f"Starting action: {action_name}")
 
         try:
-            result = func(self, *args, **kwargs)
+            res = func(self, *args, **kwargs)
             duration = time.time() - start_time
 
             if hasattr(self, 'logger') and self.logger:
@@ -508,7 +507,7 @@ def log_agent_action(func):
                     'success': True
                 })
 
-            return result
+            return res
 
         except Exception as e:
             duration = time.time() - start_time
@@ -545,7 +544,7 @@ def monitor_performance(operation: str = None):
             start_time = time.time()
 
             try:
-                result = func(self, *args, **kwargs)
+                res = func(self, *args, **kwargs)
 
                 # Log performance
                 duration = time.time() - start_time
@@ -560,7 +559,7 @@ def monitor_performance(operation: str = None):
                         'success': True
                     })
 
-                return result
+                return res
 
             except Exception as e:
                 duration = time.time() - start_time
@@ -590,7 +589,7 @@ def monitor_performance(operation: str = None):
 # ============================================================================
 
 def create_agent_with_services(agent_class, agent_id: str, name: str,
-                                services: ServiceContainer) -> BaseAgent:
+                               services: ServiceContainer) -> BaseAgent:
     """Factory function to create agents with services"""
     try:
         return agent_class(agent_id, name, services)
@@ -631,11 +630,12 @@ if __name__ == "__main__":
     # Test base agent functionality
     print("Testing BaseAgent with ServiceContainer...")
 
+
     class TestAgent(BaseAgent):
         def get_capabilities(self) -> List[str]:
             return ['test']
 
-        def _test_action(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        def _test_action(self) -> Dict[str, Any]:
             return {'result': 'success'}
 
 
