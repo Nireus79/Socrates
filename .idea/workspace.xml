@@ -4,18 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="clean">
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="CLEANUP">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/base.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/chat.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/core.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/repositories.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/repositories.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/claude_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/claude_service.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/base.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dashboard.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/projects/edit.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/projects/edit.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/sessions/detail.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/sessions/detail.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,11 +58,12 @@
     &quot;Python tests.Python tests in test_all_agents.py.executor&quot;: &quot;Run&quot;,
     &quot;Python tests.Python tests in test_chat_mode_integration.py.executor&quot;: &quot;Run&quot;,
     &quot;Python tests.Python tests in test_flask.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python.claude_service.executor&quot;: &quot;Run&quot;,
     &quot;Python.run.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   }
 }</component>
   <component name="RecentsManager">
@@ -146,14 +143,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00197" summary="ui">
-      <option name="closed" value="true" />
-      <created>1760076476032</created>
-      <option name="number" value="00197" />
-      <option name="presentableId" value="LOCAL-00197" />
-      <option name="project" value="LOCAL" />
-      <updated>1760076476032</updated>
     </task>
     <task id="LOCAL-00198" summary="ui">
       <option name="closed" value="true" />
@@ -539,11 +528,18 @@
       <option name="project" value="LOCAL" />
       <updated>1760206458711</updated>
     </task>
-    <option name="localTasksCounter" value="246" />
+    <task id="LOCAL-00246" summary="CLEANUP">
+      <option name="closed" value="true" />
+      <created>1760344183245</created>
+      <option name="number" value="00246" />
+      <option name="presentableId" value="LOCAL-00246" />
+      <option name="project" value="LOCAL" />
+      <updated>1760344183245</updated>
+    </task>
+    <option name="localTasksCounter" value="247" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="sessions" />
     <MESSAGE value="ph2" />
     <MESSAGE value="tech specs" />
     <MESSAGE value="database dir" />
@@ -568,6 +564,7 @@
     <MESSAGE value="session" />
     <MESSAGE value="session new" />
     <MESSAGE value="clean" />
-    <option name="LAST_COMMIT_MESSAGE" value="clean" />
+    <MESSAGE value="CLEANUP" />
+    <option name="LAST_COMMIT_MESSAGE" value="CLEANUP" />
   </component>
 </project>

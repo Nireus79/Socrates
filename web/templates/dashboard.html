@@ -391,7 +391,7 @@
 
 {% block extra_scripts %}
 <script>
-// Dashboard-specific JavaScript
+// Dashboard-specific JavaScript v2.0 - Updated submitQuickSession
 let metricsChart;
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -467,30 +467,19 @@ function submitQuickSession() {
     const form = document.getElementById('quickSessionForm');
     const formData = new FormData(form);
 
-    // Submit quick session
-    fetch('{{ url_for("new_session") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            role: formData.get('role'),
-            project_idea: formData.get('project_idea')
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.href = `{{ url_for('sessions') }}?session_id=${data.data.session_id}`;
-        } else {
-            alert('Failed to start session: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Session start failed:', error);
-        alert('Failed to start session. Please try again.');
+    // Get form values
+    const role = formData.get('role');
+    const projectIdea = formData.get('project_idea');
+
+    // Redirect to new session page with query parameters
+    // The new_session route expects a project_id in the URL, but we can pass None
+    // and use query parameters for the role and project idea
+    const params = new URLSearchParams({
+        role: role,
+        project_idea: projectIdea || ''
     });
+
+    window.location.href = `{{ url_for('sessions') }}/new?${params.toString()}`;
 }
 
 function uploadDocument() {

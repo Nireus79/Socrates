@@ -291,6 +291,7 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
 {% block extra_scripts %}
 <script>
@@ -312,50 +313,55 @@
 
     // Framework change warning
     const originalFramework = '{{ project.framework }}';
-    document.querySelector('select[name="framework"]').addEventListener('change', function() {
-        const helpText = this.nextElementSibling;
-        const selectedOption = this.options[this.selectedIndex];
+    const frameworkSelect = document.querySelector('select[name="framework"]');
+    if (frameworkSelect) {
+        frameworkSelect.addEventListener('change', function() {
+            const helpText = this.nextElementSibling;
+            const selectedOption = this.options[this.selectedIndex];
 
-        if (selectedOption.value !== originalFramework) {
-            if (originalFramework && selectedOption.value) {
-                helpText.innerHTML = '<i class="bi bi-exclamation-triangle text-warning"></i> Framework change from ' +
-                                   (originalFramework || 'none') + ' to ' + selectedOption.text +
-                                   '. Code regeneration may be required.';
-                helpText.className = 'form-text text-warning';
-            } else if (selectedOption.value) {
-                helpText.innerHTML = '<i class="bi bi-gear text-success"></i> Setting framework to ' + selectedOption.text +
-                                   '. This will help guide future code generation.';
-                helpText.className = 'form-text text-success';
+            if (selectedOption.value !== originalFramework) {
+                if (originalFramework && selectedOption.value) {
+                    helpText.innerHTML = '<i class="bi bi-exclamation-triangle text-warning"></i> Framework change from ' +
+                                       (originalFramework || 'none') + ' to ' + selectedOption.text +
+                                       '. Code regeneration may be required.';
+                    helpText.className = 'form-text text-warning';
+                } else if (selectedOption.value) {
+                    helpText.innerHTML = '<i class="bi bi-gear text-success"></i> Setting framework to ' + selectedOption.text +
+                                       '. This will help guide future code generation.';
+                    helpText.className = 'form-text text-success';
+                }
+            } else {
+                helpText.innerHTML = '<i class="bi bi-gear"></i> Current framework maintained.';
+                helpText.className = 'form-text';
             }
-        } else {
-            helpText.innerHTML = '<i class="bi bi-gear"></i> Current framework maintained.';
-            helpText.className = 'form-text';
-        }
-    });
+        });
+    }
 
     // Project type change warning
     const originalType = '{{ project.project_type }}';
-    document.querySelector('select[name="project_type"]').addEventListener('change', function() {
-        const helpText = this.nextElementSibling;
-        const selectedValue = this.value;
+    const projectTypeSelect = document.querySelector('select[name="project_type"]');
+    if (projectTypeSelect) {
+        projectTypeSelect.addEventListener('change', function() {
+            const helpText = this.nextElementSibling;
+            const selectedValue = this.value;
 
-        if (selectedValue !== originalType) {
-            if (originalType === 'team' && selectedValue === 'solo') {
-                helpText.innerHTML = '<i class="bi bi-exclamation-triangle text-warning"></i> Changing from team to solo will remove collaborator access';
-                helpText.className = 'form-text text-warning';
-            } else if (originalType === 'solo' && selectedValue === 'team') {
-                helpText.innerHTML = '<i class="bi bi-people text-success"></i> Changing to team project will enable collaboration features';
-                helpText.className = 'form-text text-success';
-            }
-        } else {
-            if (selectedValue === 'team') {
-                helpText.innerHTML = '<i class="bi bi-people"></i> Team project - collaboration features enabled';
+            if (selectedValue !== originalType) {
+                if (originalType === 'team' && selectedValue === 'solo') {
+                    helpText.innerHTML = '<i class="bi bi-exclamation-triangle text-warning"></i> Changing from team to solo will remove collaborator access';
+                    helpText.className = 'form-text text-warning';
+                } else if (originalType === 'solo' && selectedValue === 'team') {
+                    helpText.innerHTML = '<i class="bi bi-people text-success"></i> Changing to team project will enable collaboration features';
+                    helpText.className = 'form-text text-success';
+                }
             } else {
-                helpText.innerHTML = '<i class="bi bi-person"></i> Solo project - simpler management';
+                if (selectedValue === 'team') {
+                    helpText.innerHTML = '<i class="bi bi-people"></i> Team project - collaboration features enabled';
+                } else {
+                    helpText.innerHTML = '<i class="bi bi-person"></i> Solo project - simpler management';
+                }
+                helpText.className = 'form-text';
             }
-            helpText.className = 'form-text';
-        }
-    });
+        });
+    }
 </script>
-{% endblock %}
 {% endblock %}

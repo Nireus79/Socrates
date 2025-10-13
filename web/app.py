@@ -2456,7 +2456,14 @@ def create_flask_app(config_override=None) -> Flask:
         if not user_session:
             return jsonify({'error': 'Session not found'}), 404
 
-        data = request.get_json()
+        # Try to get JSON data with force=True to bypass content-type checking
+        try:
+            data = request.get_json(force=True)
+            if not data:
+                return jsonify({'error': 'No JSON data received'}), 400
+        except Exception as e:
+            return jsonify({'error': f'Invalid JSON: {str(e)}'}), 400
+
         message = data.get('message', '')
 
         if not message:

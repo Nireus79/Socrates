@@ -319,9 +319,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Focus on input if session is active
-    const responseInput = document.getElementById('responseInput');
-    if (responseInput) {
-        responseInput.focus();
+    const messageInput = document.getElementById('messageInput');
+    if (messageInput) {
+        messageInput.focus();
     }
 });
 
@@ -336,9 +336,9 @@ document.addEventListener('keydown', function(e) {
 // Session Actions
 function continueSession() {
     // If there's an active input, focus it. Otherwise redirect to continue URL
-    const responseInput = document.getElementById('responseInput');
-    if (responseInput) {
-        responseInput.focus();
+    const messageInput = document.getElementById('messageInput');
+    if (messageInput) {
+        messageInput.focus();
     } else {
         window.location.href = "{{ url_for('continue_session', session_id=session.id) }}";
     }
@@ -347,11 +347,11 @@ function continueSession() {
 function submitResponse(event) {
     event.preventDefault();
     const form = event.target;
-    const input = form.querySelector('#responseInput');
+    const input = form.querySelector('#messageInput');
     const submitBtn = form.querySelector('button[type="submit"]');
 
-    if (!input.value.trim()) {
-        input.focus();
+    if (!input || !input.value.trim()) {
+        if (input) input.focus();
         return;
     }
 
@@ -359,14 +359,16 @@ function submitResponse(event) {
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending...';
 
-    // Submit via AJAX or form
-    const formData = new FormData();
-    formData.append('response', input.value);
-    formData.append('csrf_token', '{{ csrf_token() }}');
-
+    // Submit via JSON (backend expects JSON with 'message' field)
     fetch("{{ url_for('submit_response', session_id=session.id) }}", {
         method: 'POST',
-        body: formData
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            message: input.value
+        })
     })
     .then(response => response.json())
     .then(data => {
@@ -474,16 +476,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatMode = document.getElementById('chatMode');
     const messageInput = document.getElementById('messageInput');
 
+    // Only add event listeners if elements exist (session is active)
+    if (!socraticMode || !chatMode || !messageInput) {
+        return;
+    }
+
     // Mode change handlers
     socraticMode.addEventListener('change', function() {
-        if (this.checked) {
+        if (this.checked && messageInput) {
             messageInput.placeholder = "Type your response to continue the Socratic questioning...";
             updateInterfaceForSocratic();
         }
     });
 
     chatMode.addEventListener('change', function() {
-        if (this.checked) {
+        if (this.checked && messageInput) {
             messageInput.placeholder = "Type your message for direct conversation with AI...";
             updateInterfaceForChat();
         }

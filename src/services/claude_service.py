@@ -31,7 +31,7 @@ except ImportError:
     Anthropic = None
     AsyncAnthropic = None
 
-from ..core import SocraticException
+from src.core import SocraticException
 
 logger = logging.getLogger(__name__)
 
@@ -97,11 +97,11 @@ class ClaudeService:
         if not api_key:
             # Fallback to direct environment check
             import os
-            api_key = os.getenv('API_KEY_CLAUDE')
+            api_key = os.getenv('ANTHROPIC_API_KEY')
 
         if not api_key:
             raise ClaudeServiceError(
-                "Claude API key not found. Set API_KEY_CLAUDE environment variable."
+                "Claude API key not found. Set ANTHROPIC_API_KEY environment variable."
             )
 
         self.client = Anthropic(api_key=api_key)
@@ -443,8 +443,6 @@ Format as a numbered list with brief explanations of why each question is import
     def health_check(self) -> Dict[str, Any]:
         """Check service health and connectivity."""
         try:
-            # Simple test request
-            test_response = self.chat("Hello", max_tokens=10)
 
             return {
                 "status": "healthy",
