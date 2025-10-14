@@ -128,9 +128,14 @@ class UserManagerAgent(BaseAgent):
             )
 
             # Save to database
-            created_user = self.db.users.create(user)
-            if not created_user:
+            create_success = self.db.users.create(user)
+            if not create_success:
                 return self._error_response("Failed to create user in database", "DB_CREATE_FAILED")
+
+            # Fetch the created user
+            created_user = self.db.users.get_by_id(user.id)
+            if not created_user:
+                return self._error_response("User created but could not be retrieved", "DB_RETRIEVE_FAILED")
 
             # Assign role capabilities
             role_assignment = self._assign_role_to_user(created_user, role_str)
