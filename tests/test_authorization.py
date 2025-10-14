@@ -18,13 +18,35 @@ from src.models import User, Project, ProjectCollaborator, UserStatus, UserRole
 from src.agents.base import BaseAgent, require_authentication, require_project_access
 
 
+# Minimal mock services for testing
+class MockServices:
+    """Minimal service container for testing"""
+    def get_db_manager(self):
+        from src.database import get_database
+        db = get_database()
+        return db.db_manager if db else None
+
+    def get_config(self):
+        return None
+
+    def get_logger(self, name=None):
+        import logging
+        return logging.getLogger(name or 'test')
+
+    def get_event_system(self):
+        return None
+
+    def get_event_bus(self):
+        return None
+
+
 # Test Agent for authorization testing
 class TestAuthAgent(BaseAgent):
     """Test agent with decorated methods"""
 
-    def __init__(self):
-        # Initialize without ServiceContainer to avoid warnings
-        super().__init__('test_auth_agent', 'Test Auth Agent', None)
+    def __init__(self, services=None):
+        # Initialize with minimal services for database access
+        super().__init__('test_auth_agent', 'Test Auth Agent', services or MockServices())
 
     def get_capabilities(self):
         return ['auth_test', 'project_test']
@@ -50,10 +72,24 @@ class TestAuthAgent(BaseAgent):
         )
 
 
-@pytest.fixture
+@pytest.fixture(scope="function", autouse=False)
 def setup_test_env():
     """Set up test environment with database and test data"""
-    # Initialize database
+    # Reset and initialize database with fresh state for each test
+    # This ensures no stale data from previous tests
+    from src.database import reset_database
+    import os
+
+    # Delete the database file to ensure clean state
+    db_path = 'data/socratic.db'
+    if os.path.exists(db_path):
+        try:
+            os.remove(db_path)
+        except:
+            pass
+
+    # Reset singleton instances
+    reset_database()
     init_database()
     db = get_database()
 

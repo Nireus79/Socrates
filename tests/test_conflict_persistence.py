@@ -21,18 +21,18 @@ class TestResults:
 
     def add_pass(self, msg):
         self.passed += 1
-        print(f"  ✓ {msg}")
+        print(f"  [PASS] {msg}")
 
     def add_fail(self, name, error):
         self.failed += 1
-        print(f"  ✗ {name}: {error}")
+        print(f"  [FAIL] {name}: {error}")
 
     def print_summary(self):
         print(f"\nTotal: {self.passed + self.failed}")
         print(f"Passed: {self.passed}")
         print(f"Failed: {self.failed}")
         if self.failed == 0:
-            print("✓ ALL TESTS PASSED 🎉")
+            print("[PASS] ALL TESTS PASSED!")
 
 
 def test_table_exists(results, db):
@@ -75,10 +75,11 @@ def test_repository_available(results, db_service):
         return False
 
 
-def test_conflict_detection(results, agent, project_id):
+def test_conflict_detection(results, agent, project_id, user_id):
     print("\nTEST 3: Conflict Detection and Save")
     try:
         result = agent._detect_conflicts({
+            'user_id': user_id,
             'project_id': project_id,
             'session_id': str(uuid.uuid4())
         })
@@ -98,10 +99,11 @@ def test_conflict_detection(results, agent, project_id):
         return False
 
 
-def test_retrieve_conflicts(results, agent, project_id):
+def test_retrieve_conflicts(results, agent, project_id, user_id):
     print("\nTEST 4: Retrieve Conflicts")
     try:
         result = agent._get_conflicts({
+            'user_id': user_id,
             'project_id': project_id,
             'unresolved_only': False
         })
@@ -129,10 +131,11 @@ def test_retrieve_conflicts(results, agent, project_id):
         return False
 
 
-def test_unresolved_only(results, agent, project_id):
+def test_unresolved_only(results, agent, project_id, user_id):
     print("\nTEST 5: Unresolved Conflicts Only")
     try:
         result = agent._get_conflicts({
+            'user_id': user_id,
             'project_id': project_id,
             'unresolved_only': True
         })
@@ -156,10 +159,11 @@ def test_unresolved_only(results, agent, project_id):
         return False
 
 
-def test_resolve_conflict(results, agent, project_id):
+def test_resolve_conflict(results, agent, project_id, user_id):
     print("\nTEST 6: Resolve Conflict")
     try:
         result = agent._get_conflicts({
+            'user_id': user_id,
             'project_id': project_id,
             'unresolved_only': True
         })
@@ -172,6 +176,7 @@ def test_resolve_conflict(results, agent, project_id):
         conflict_id = conflicts[0]['id']
 
         resolve_result = agent._resolve_conflict({
+            'user_id': user_id,
             'conflict_id': conflict_id,
             'resolution_notes': 'Test resolution',
             'resolved_by': 'test_user'
@@ -185,6 +190,7 @@ def test_resolve_conflict(results, agent, project_id):
 
         # Verify not in unresolved list
         check = agent._get_conflicts({
+            'user_id': user_id,
             'project_id': project_id,
             'unresolved_only': True
         })
@@ -273,10 +279,26 @@ def main():
     results = TestResults()
 
     try:
-        # Initialize
+        # Initialize with fresh database
+        from src.database import reset_database
+        from src.models import User, UserStatus, UserRole
+
+        reset_database()
         services = initialize_package()
         db_service = get_database()
         agent = ContextAnalyzerAgent(services)
+
+        # Create test user for authentication
+        user_id = str(uuid.uuid4())
+        user = User(
+            id=user_id,
+            username="test_user",
+            email="test@example.com",
+            password_hash="dummy",
+            role=UserRole.DEVELOPER,
+            status=UserStatus.ACTIVE
+        )
+        db_service.users.create(user)
 
         # Create test project
         project_id = str(uuid.uuid4())
@@ -284,7 +306,7 @@ def main():
             id=project_id,
             name="Conflict Test",
             description="Test",
-            owner_id="test-user",
+            owner_id=user_id,
             status=ProjectStatus.DRAFT
         )
         db_service.projects.create(project)
@@ -292,17 +314,18 @@ def main():
         # Run tests
         test_table_exists(results, db_service.db_manager)
         test_repository_available(results, db_service)
-        test_conflict_detection(results, agent, project_id)
-        test_retrieve_conflicts(results, agent, project_id)
-        test_unresolved_only(results, agent, project_id)
-        test_resolve_conflict(results, agent, project_id)
+        test_conflict_detection(results, agent, project_id, user_id)
+        test_retrieve_conflicts(results, agent, project_id, user_id)
+        test_unresolved_only(results, agent, project_id, user_id)
+        test_resolve_conflict(results, agent, project_id, user_id)
         test_direct_crud(results, db_service, project_id)
 
         # Cleanup
         db_service.projects.delete(project_id)
+        db_service.users.delete(user_id)
 
     except Exception as e:
-        print(f"\n✗ Test suite failed: {e}")
+        print(f"\n[FAIL] Test suite failed: {e}")
         import traceback
         traceback.print_exc()
 
