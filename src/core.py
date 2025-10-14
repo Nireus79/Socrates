@@ -347,7 +347,7 @@ class SystemLogger:
         root_logger.handlers.clear()
 
         # Console handler
-        if config.get('logging.console.enabled', True):
+        if conf.get('logging.console.enabled', True):
             console_handler = logging.StreamHandler(sys.stdout)
             console_handler.setLevel(self._get_log_level(conf.get('logging.console.level', 'INFO')))
             console_formatter = logging.Formatter(

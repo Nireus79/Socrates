@@ -62,7 +62,6 @@ class AgentOrchestrator:
     """
 
     def __init__(self, services: Optional[ServiceContainer] = None):
-        super().__init__("orchestrator", "Agent Orchestrator", services)
         """Initialize orchestrator and all agents
 
         Args:
