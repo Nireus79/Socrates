@@ -1375,7 +1375,26 @@ class ModelRegistry:
 def serialize_model(model: BaseModel) -> str:
     """Serialize model instance to JSON string"""
     try:
-        return model.to_json() # Unresolved attribute reference 'to_json' for class 'BaseModel'
+        from dataclasses import asdict
+
+        # Convert dataclass to dictionary
+        model_dict = asdict(model)
+
+        # Convert datetime objects and enums to serializable format
+        def convert_value(value):
+            if isinstance(value, datetime):
+                return DateTimeHelper.to_iso_string(value)
+            elif isinstance(value, Enum):
+                return value.value
+            elif isinstance(value, dict):
+                return {k: convert_value(v) for k, v in value.items()}
+            elif isinstance(value, list):
+                return [convert_value(item) for item in value]
+            return value
+
+        serializable_dict = {k: convert_value(v) for k, v in model_dict.items()}
+
+        return json.dumps(serializable_dict, indent=2)
     except Exception as e:
         if CORE_AVAILABLE:
             logger = get_logger(__name__)
