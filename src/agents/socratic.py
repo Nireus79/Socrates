@@ -23,6 +23,7 @@ try:
     from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper
     from src.models import ConversationMessage, UserRole, Project, ProjectPhase, ModelValidator, TechnicalRole
     from .base import BaseAgent, require_authentication, require_project_access, log_agent_action
+    from .question_analyzer import QuestionQualityAnalyzer, QuestionBias, CoverageGap
 
     CORE_AVAILABLE = True
 except ImportError:
@@ -179,6 +180,16 @@ class SocraticCounselorAgent(BaseAgent):
         self.max_questions_per_session = 25
         self.conflict_detection_enabled = True
 
+        # Initialize C6 Question Quality Analyzer
+        try:
+            self.question_analyzer = QuestionQualityAnalyzer()
+            if self.logger:
+                self.logger.info("C6 Question Quality Analyzer initialized")
+        except Exception as e:
+            self.question_analyzer = None
+            if self.logger:
+                self.logger.warning(f"Question Quality Analyzer not available: {e}")
+
         # Initialize persistence repositories
         self.session_repo = None
         self.question_repo = None
@@ -213,7 +224,9 @@ class SocraticCounselorAgent(BaseAgent):
             "suggest_improvements", "facilitate_session", "extract_insights",
             "role_based_questioning", "context_aware_questioning",
             "conflict_mediation", "session_guidance", "learning_adaptation",
-            "get_user_sessions", "resume_session"
+            "get_user_sessions", "resume_session",
+            # C6 capabilities
+            "analyze_question_quality", "detect_question_bias", "check_requirement_coverage"
         ]
 
     def _initialize_question_templates(self) -> Dict[str, List[str]]:
@@ -353,17 +366,54 @@ class SocraticCounselorAgent(BaseAgent):
             for question in questions:
                 self._persist_question(session_id, question)
 
+            # C6: Analyze question quality for greedy patterns
+            quality_analysis = None
+            if self.question_analyzer:
+                try:
+                    quality_analysis = self.question_analyzer.analyze_session(
+                        session_id=session_id,
+                        questions=questions
+                    )
+
+                    # Log warnings if quality issues detected
+                    if quality_analysis.biased_questions > 0:
+                        self.logger.warning(
+                            f"C6 Warning: {quality_analysis.biased_questions}/{quality_analysis.total_questions} "
+                            f"questions show solution bias (diversity score: {quality_analysis.diversity_score})"
+                        )
+
+                    if quality_analysis.coverage_gaps:
+                        gap_names = [g.value for g in quality_analysis.coverage_gaps]
+                        self.logger.warning(
+                            f"C6 Warning: Missing coverage for critical areas: {', '.join(gap_names[:3])}"
+                        )
+                except Exception as e:
+                    self.logger.error(f"C6 quality analysis failed: {e}")
+
             self.logger.info(f"Generated {len(questions)} questions for role '{role}' in session {session_id}")
+
+            response_data = {
+                'session_id': session_id,
+                'questions': questions,
+                'role': role,
+                'phase': project_phase,
+                'strategy': strategy['question_style']
+            }
+
+            # Include C6 analysis if available
+            if quality_analysis:
+                response_data['c6_quality_analysis'] = {
+                    'diversity_score': quality_analysis.diversity_score,
+                    'biased_questions': quality_analysis.biased_questions,
+                    'coverage_gaps': [g.value for g in quality_analysis.coverage_gaps],
+                    'overall_quality': quality_analysis.overall_quality,
+                    'recommendations': quality_analysis.recommendations,
+                    'suggested_questions': quality_analysis.suggested_questions
+                }
 
             return self._success_response(
                 "Questions generated successfully",
-                {
-                    'session_id': session_id,
-                    'questions': questions,
-                    'role': role,
-                    'phase': project_phase,
-                    'strategy': strategy['question_style']
-                }
+                response_data
             )
 
         except Exception as e:
@@ -1262,6 +1312,200 @@ class SocraticCounselorAgent(BaseAgent):
             self.logger.error(error_msg)
             return self._error_response(error_msg)
 
+    @log_agent_action
+    def _analyze_question_quality(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        C6: Analyze question quality for bias and coverage
+
+        Args:
+            data: {
+                'session_id': str,
+                'questions': List[Dict]  # Optional, will load from session if not provided
+            }
+
+        Returns:
+            Quality analysis with bias detection and recommendations
+        """
+        try:
+            if not self.question_analyzer:
+                return self._error_response(
+                    "Question quality analyzer not available",
+                    "ANALYZER_NOT_AVAILABLE"
+                )
+
+            session_id = data.get('session_id')
+            questions = data.get('questions')
+
+            if not session_id:
+                return self._error_response("Session ID is required")
+
+            # Load questions from session if not provided
+            if not questions:
+                if session_id not in self.current_sessions:
+                    return self._error_response(f"Unknown session: {session_id}")
+
+                # Try to load from database
+                if self.question_repo:
+                    db_questions = self.question_repo.get_by_session_id(session_id)
+                    questions = [
+                        {
+                            'id': q.id,
+                            'text': q.question_text,
+                            'role': q.role.value if hasattr(q.role, 'value') else q.role
+                        }
+                        for q in db_questions
+                    ]
+                else:
+                    return self._error_response("No questions found for session")
+
+            # Perform quality analysis
+            analysis = self.question_analyzer.analyze_session(
+                session_id=session_id,
+                questions=questions
+            )
+
+            return self._success_response(
+                "Question quality analysis completed",
+                {
+                    'session_id': session_id,
+                    'total_questions': analysis.total_questions,
+                    'biased_questions': analysis.biased_questions,
+                    'diversity_score': analysis.diversity_score,
+                    'overall_quality': analysis.overall_quality,
+                    'coverage_gaps': [g.value for g in analysis.coverage_gaps],
+                    'requirement_coverage': analysis.requirement_coverage,
+                    'recommendations': analysis.recommendations,
+                    'suggested_questions': analysis.suggested_questions
+                }
+            )
+
+        except Exception as e:
+            error_msg = f"Question quality analysis failed: {e}"
+            self.logger.error(error_msg)
+            return self._error_response(error_msg)
+
+    @log_agent_action
+    def _detect_question_bias(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        C6: Detect bias in specific questions
+
+        Args:
+            data: {
+                'questions': List[Dict]  # Questions to analyze
+            }
+
+        Returns:
+            Detailed bias analysis for each question
+        """
+        try:
+            if not self.question_analyzer:
+                return self._error_response(
+                    "Question quality analyzer not available",
+                    "ANALYZER_NOT_AVAILABLE"
+                )
+
+            questions = data.get('questions', [])
+
+            if not questions:
+                return self._error_response("Questions list is required")
+
+            # Analyze each question
+            analyses = []
+            for question in questions:
+                analysis = self.question_analyzer.analyze_question(question)
+                analyses.append({
+                    'question_id': analysis.question_id,
+                    'question_text': analysis.question_text,
+                    'bias_detected': analysis.bias_detected.value if analysis.bias_detected else None,
+                    'bias_score': analysis.bias_score,
+                    'bias_explanation': analysis.bias_explanation,
+                    'quality_score': analysis.quality_score,
+                    'coverage_areas': analysis.coverage_areas,
+                    'suggested_alternatives': analysis.suggested_alternatives
+                })
+
+            return self._success_response(
+                f"Analyzed {len(analyses)} questions for bias",
+                {
+                    'analyses': analyses,
+                    'total_analyzed': len(analyses),
+                    'biased_count': sum(1 for a in analyses if a['bias_score'] > 0.4)
+                }
+            )
+
+        except Exception as e:
+            error_msg = f"Bias detection failed: {e}"
+            self.logger.error(error_msg)
+            return self._error_response(error_msg)
+
+    @log_agent_action
+    def _check_requirement_coverage(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        C6: Check requirement coverage for a session
+
+        Args:
+            data: {
+                'session_id': str,
+                'questions': List[Dict]  # Optional
+            }
+
+        Returns:
+            Coverage analysis showing gaps and recommendations
+        """
+        try:
+            if not self.question_analyzer:
+                return self._error_response(
+                    "Question quality analyzer not available",
+                    "ANALYZER_NOT_AVAILABLE"
+                )
+
+            session_id = data.get('session_id')
+            questions = data.get('questions')
+
+            if not session_id:
+                return self._error_response("Session ID is required")
+
+            # Load questions if not provided
+            if not questions:
+                if self.question_repo:
+                    db_questions = self.question_repo.get_by_session_id(session_id)
+                    questions = [
+                        {
+                            'id': q.id,
+                            'text': q.question_text,
+                            'role': q.role.value if hasattr(q.role, 'value') else q.role
+                        }
+                        for q in db_questions
+                    ]
+                else:
+                    return self._error_response("No questions found for session")
+
+            # Analyze coverage
+            analysis = self.question_analyzer.analyze_session(
+                session_id=session_id,
+                questions=questions
+            )
+
+            return self._success_response(
+                "Requirement coverage analysis completed",
+                {
+                    'session_id': session_id,
+                    'requirement_coverage': analysis.requirement_coverage,
+                    'coverage_gaps': [g.value for g in analysis.coverage_gaps],
+                    'critical_gaps': [
+                        g.value for g in analysis.coverage_gaps
+                        if g in [CoverageGap.NO_SECURITY, CoverageGap.NO_SCALABILITY, CoverageGap.NO_ERROR_HANDLING]
+                    ],
+                    'suggested_questions': analysis.suggested_questions,
+                    'recommendations': analysis.recommendations
+                }
+            )
+
+        except Exception as e:
+            error_msg = f"Coverage analysis failed: {e}"
+            self.logger.error(error_msg)
+            return self._error_response(error_msg)
+
     def health_check(self) -> Dict[str, Any]:
         """Enhanced health check for SocraticCounselorAgent"""
         health = super().health_check()
@@ -1283,6 +1527,12 @@ class SocraticCounselorAgent(BaseAgent):
             health['session_status'] = {
                 'active_sessions': len(self.current_sessions),
                 'max_questions_per_session': self.max_questions_per_session
+            }
+
+            # C6: Check analyzer availability
+            health['c6_analyzer'] = {
+                'available': self.question_analyzer is not None,
+                'status': 'active' if self.question_analyzer else 'unavailable'
             }
 
         except Exception as e:

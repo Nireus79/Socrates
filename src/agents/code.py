@@ -490,6 +490,7 @@ def sample_data():
             specs = TechnicalSpecification(**specs_data) if specs_data else None
 
             # Save specification if provided and repository available
+            optimizer_analysis = None
             if specs and self.spec_repository and specs_data:
                 try:
                     # Save the specification
@@ -500,6 +501,26 @@ def sample_data():
                     })
                     if save_result.get('success'):
                         self.logger.info(f"Saved specification for project {project_id}") if self.logger else None
+
+                        # C6: Analyze architecture with optimizer before generating code
+                        try:
+                            optimizer_analysis = self._call_optimizer_analysis(project_id, specs_data)
+                            if optimizer_analysis and optimizer_analysis.get('success'):
+                                analysis_data = optimizer_analysis.get('data', {})
+                                risk_level = analysis_data.get('risk_level', 'unknown')
+                                issues_found = analysis_data.get('issues_found', 0)
+
+                                if issues_found > 0:
+                                    self.logger.warning(
+                                        f"C6 Architecture Optimizer found {issues_found} issues "
+                                        f"(Risk: {risk_level}). Review before generating code."
+                                    )
+                                else:
+                                    self.logger.info(f"C6 Architecture Optimizer: No issues found (Risk: {risk_level})")
+                        except Exception as e:
+                            # Don't fail code generation if optimizer fails
+                            self.logger.warning(f"C6 optimizer analysis failed: {e}") if self.logger else None
+
                 except Exception as e:
                     # Don't fail codebase generation if spec save fails
                     self.logger.warning(f"Failed to save specification: {e}") if self.logger else None
@@ -562,7 +583,7 @@ def sample_data():
 
             self.logger.info(f"Generated codebase for project {project_id}: {len(generated_files)} files")
 
-            return self._success_response("Codebase generated successfully", {
+            response_data = {
                 'codebase_id': codebase_id,
                 'project_id': project_id,
                 'architecture': architecture,
@@ -581,7 +602,13 @@ def sample_data():
                     'total_size': sum(f.size_bytes for f in generated_files)
                 },
                 'next_steps': self._get_next_steps(architecture)
-            })
+            }
+
+            # Include C6 optimizer analysis if available
+            if optimizer_analysis and optimizer_analysis.get('success'):
+                response_data['c6_architecture_analysis'] = optimizer_analysis.get('data', {})
+
+            return self._success_response("Codebase generated successfully", response_data)
 
         except Exception as e:
             error_msg = f"Codebase generation failed: {e}"
@@ -1076,6 +1103,49 @@ footer {
             'Set up version control',
             'Configure deployment pipeline'
         ]
+
+    def _call_optimizer_analysis(self, project_id: str, spec_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        C6: Call Architecture Optimizer to analyze technical specification
+
+        Args:
+            project_id: Project identifier
+            spec_data: Technical specification data
+
+        Returns:
+            Optimizer analysis result or None if optimizer unavailable
+        """
+        try:
+            # C6: Import and initialize optimizer directly (avoids circular deps)
+            try:
+                from .optimizer import ArchitectureOptimizerAgent
+            except ImportError:
+                self.logger.debug("C6: ArchitectureOptimizerAgent not available")
+                return None
+
+            # Initialize optimizer with same services
+            optimizer = ArchitectureOptimizerAgent(self.services)
+
+            # Call analyze_architecture method directly
+            result = optimizer.process_request('analyze_architecture', {
+                'project_id': project_id,
+                'technical_spec': spec_data,
+                'analysis_depth': 'deep',
+                'user_id': 'system',  # System-triggered analysis
+                '_skip_auth': True  # Skip auth for system calls
+            })
+
+            if result and result.get('success'):
+                self.logger.info("C6: Architecture analysis complete")
+                return result
+            else:
+                error = result.get('error', 'Unknown error') if result else 'No result'
+                self.logger.warning(f"C6: Architecture analysis failed: {error}")
+                return None
+
+        except Exception as e:
+            self.logger.error(f"C6: Error calling optimizer: {e}")
+            return None
 
     def health_check(self) -> Dict[str, Any]:
         """Enhanced health check for CodeGeneratorAgent"""

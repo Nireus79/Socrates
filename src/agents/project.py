@@ -326,6 +326,26 @@ class ProjectManagerAgent(BaseAgent):
             except Exception as e:
                 return self._error_response(f"Failed to update project: {e}", "DB_ERROR")
 
+            # C6: Trigger architecture analysis if phase is changing to DESIGN
+            optimizer_analysis = None
+            if 'phase' in updated_fields:
+                new_phase = updates.get('phase')
+                if new_phase in [ProjectPhase.DESIGN, 'design'] or (hasattr(ProjectPhase, 'DESIGN') and new_phase == ProjectPhase.DESIGN.value):
+                    try:
+                        optimizer_analysis = self._call_optimizer_for_project(project_id)
+                        if optimizer_analysis and optimizer_analysis.get('success'):
+                            analysis_data = optimizer_analysis.get('data', {})
+                            risk_level = analysis_data.get('risk_level', 'unknown')
+                            issues_found = analysis_data.get('issues_found', 0)
+
+                            if issues_found > 0:
+                                self.logger.warning(
+                                    f"C6: Project {project_id} entering DESIGN phase with {issues_found} "
+                                    f"architecture issues (Risk: {risk_level}). Review recommended."
+                                )
+                    except Exception as e:
+                        self.logger.warning(f"C6 optimizer analysis failed: {e}")
+
             # Emit update event
             if self.events:
                 self.events.emit('project_updated', {
@@ -336,13 +356,19 @@ class ProjectManagerAgent(BaseAgent):
 
             self.logger.info(f"Project {project_id} updated successfully by {username}")
 
+            response_data = {
+                'project_id': updated_project.id,
+                'fields_updated': updated_fields,
+                'updated_at': DateTimeHelper.to_iso_string(updated_project.updated_at)
+            }
+
+            # Include C6 analysis if available
+            if optimizer_analysis and optimizer_analysis.get('success'):
+                response_data['c6_architecture_analysis'] = optimizer_analysis.get('data', {})
+
             return self._success_response(
                 "Project updated successfully",
-                {
-                    'project_id': updated_project.id,
-                    'fields_updated': updated_fields,
-                    'updated_at': DateTimeHelper.to_iso_string(updated_project.updated_at)
-                }
+                response_data
             )
 
         except ValidationError:
@@ -977,6 +1003,90 @@ class ProjectManagerAgent(BaseAgent):
             })
 
         return risks
+
+    def _call_optimizer_for_project(self, project_id: str) -> Optional[Dict[str, Any]]:
+        """
+        C6: Call Architecture Optimizer to analyze project architecture
+
+        Args:
+            project_id: Project identifier
+
+        Returns:
+            Optimizer analysis result or None if optimizer unavailable
+        """
+        try:
+            # Get project and technical spec
+            project = self.db.projects.get_by_id(project_id)
+            if not project:
+                self.logger.warning(f"C6: Cannot analyze project {project_id} - not found")
+                return None
+
+            # Get latest technical specification
+            tech_specs = []
+            try:
+                tech_specs = self.db.technical_specifications.get_by_project_id(project_id)
+            except Exception as e:
+                self.logger.debug(f"C6: No tech specs found for project: {e}")
+
+            tech_spec = tech_specs[0] if tech_specs else None
+
+            # If no tech spec, create basic spec from project data
+            if not tech_spec:
+                tech_spec_data = {
+                    'project_id': project_id,
+                    'architecture_type': '',
+                    'technology_stack': project.technology_stack or {},
+                    'functional_requirements': project.requirements or [],
+                    'non_functional_requirements': [],
+                    'security_requirements': [],
+                    'performance_requirements': {},
+                    'scalability_requirements': {},
+                    'testing_strategy': {},
+                    'monitoring_requirements': []
+                }
+            else:
+                # Convert tech spec to dict
+                tech_spec_data = {
+                    'architecture_type': tech_spec.architecture_type,
+                    'technology_stack': tech_spec.technology_stack,
+                    'functional_requirements': tech_spec.functional_requirements,
+                    'non_functional_requirements': tech_spec.non_functional_requirements,
+                    'security_requirements': tech_spec.security_requirements,
+                    'performance_requirements': tech_spec.performance_requirements,
+                    'scalability_requirements': tech_spec.scalability_requirements,
+                    'testing_strategy': tech_spec.testing_strategy,
+                    'monitoring_requirements': tech_spec.monitoring_requirements
+                }
+
+            # Import and initialize optimizer
+            try:
+                from .optimizer import ArchitectureOptimizerAgent
+            except ImportError:
+                self.logger.debug("C6: ArchitectureOptimizerAgent not available")
+                return None
+
+            optimizer = ArchitectureOptimizerAgent(self.services)
+
+            # Call optimizer
+            result = optimizer.process_request('analyze_architecture', {
+                'project_id': project_id,
+                'technical_spec': tech_spec_data,
+                'analysis_depth': 'deep',
+                'user_id': 'system',
+                '_skip_auth': True
+            })
+
+            if result and result.get('success'):
+                self.logger.info(f"C6: Architecture analysis complete for project {project_id}")
+                return result
+            else:
+                error = result.get('error', 'Unknown error') if result else 'No result'
+                self.logger.warning(f"C6: Architecture analysis failed for project {project_id}: {error}")
+                return None
+
+        except Exception as e:
+            self.logger.error(f"C6: Error calling optimizer for project {project_id}: {e}")
+            return None
 
 
 # ============================================================================
