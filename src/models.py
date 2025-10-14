@@ -326,6 +326,29 @@ class User(BaseModel):
         return (self.locked_until is not None and
                 self.locked_until > DateTimeHelper.now())
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert user to dictionary for JSON serialization"""
+        from dataclasses import asdict
+
+        # Convert dataclass to dict
+        data = asdict(self)
+
+        # Convert enums to their string values
+        data['role'] = self.role.value if isinstance(self.role, UserRole) else self.role
+        data['status'] = self.status.value if isinstance(self.status, UserStatus) else self.status
+
+        # Convert datetime objects to ISO strings
+        if self.created_at:
+            data['created_at'] = DateTimeHelper.to_iso_string(self.created_at)
+        if self.updated_at:
+            data['updated_at'] = DateTimeHelper.to_iso_string(self.updated_at)
+        if self.last_login:
+            data['last_login'] = DateTimeHelper.to_iso_string(self.last_login)
+        if self.locked_until:
+            data['locked_until'] = DateTimeHelper.to_iso_string(self.locked_until)
+
+        return data
+
 
 @dataclass
 class Collaborator(BaseModel):

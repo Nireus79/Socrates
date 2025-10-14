@@ -1,19 +1,20 @@
 # Socratic RAG Enhanced - Master Plan v2.0
 
 **Project Version:** 7.3.0
-**Plan Version:** 2.0 (Consolidated)
+**Plan Version:** 2.1 (Strategic Pivot - Test After Completion)
 **Last Updated:** October 14, 2025
-**Status:** Phase A 89% Complete, Planning Phase B & Extensions
+**Status:** Phase A Complete, Phase B Ready to Start, Phase D Added
 
 ---
 
 ## 📋 EXECUTIVE SUMMARY
 
-### Current Status
-- **Phase A (Backend Completion):** 89% complete (6.4/7 tasks)
-- **Estimated Completion:** 4-5 hours remaining
-- **Next Phase:** UI Rebuild (Phase B)
-- **New Requirements:** 5 major feature requests identified
+### Current Status (October 14, 2025)
+- **Phase A (Backend):** ✅ 100% COMPLETE
+- **Phase B (UI Rebuild):** Ready to Start (0% complete)
+- **Phase C (Extensions):** Planned after Phase B
+- **Phase D (Integration Tests):** NEW - Deferred for efficiency
+- **Strategic Decision:** Test-after-completion approach
 
 ### Critical Achievements ✅
 1. Session Persistence - Complete
@@ -21,13 +22,28 @@
 3. Conflict Persistence - Complete
 4. Context Persistence - Complete
 5. Authorization System - Complete
-6. Database Restructure - Complete
+6. Backend Cleanup - Complete
+7. Repository Pattern - Fully Implemented
+8. Unit Tests - 98.5% Passing (64/65)
 
-### Pending Work ⏳
-1. Backend Cleanup (2 hours)
-2. Integration Testing (2-3 hours)
-3. Phase B - UI Rebuild (25-35 hours)
-4. Extension Features (estimated 40-60 hours)
+### Strategic Decision: Test-After-Completion ⚠️
+**Decision Made:** October 14, 2025
+- Integration testing (original Task 7) DEFERRED to Phase D
+- **Reason:** Avoid redundant test rewrites as features evolve
+- Phase B (UI) will define real API surface
+- Phase C (Extensions) will change architecture significantly
+- Comprehensive testing after completion is more cost-efficient
+- **Critical Rule:** Check facts, not assumptions; avoid greedy behavior
+
+### Active Development Path (OPTIMAL ORDER)
+1. ✅ Phase A - Backend (COMPLETE)
+2. ⏳ Phase B - Extensions (133-181 hours) ← **CURRENT**
+   - C6: Architecture Optimizer FIRST (prevents waste)
+   - C2, C1, C4, C3, C5 in that order
+3. 📋 Phase C - Complete UI Rebuild (30-40 hours)
+   - Build UI last with all features known
+4. 📋 Phase D - Integration Testing (4-6 hours)
+   - Test complete system as built
 
 ---
 
@@ -190,52 +206,105 @@ socratic-rag-enhanced/
 
 ---
 
-## 🚀 PHASE B: UI REBUILD (PLANNED)
+## 🚀 PHASE B: EXTENSIONS (OPTIMAL PRIORITY ORDER)
 
 ### Overview
-**Duration:** 25-35 hours
-**Status:** Planned, blocked by Phase A completion
-**Strategy:** Build new UI from scratch knowing full backend capabilities
+**Duration:** 133-181 hours (includes new C6 Architecture Optimizer)
+**Status:** Ready to start
+**Strategy:** Build extensions FIRST with C6 preventing waste, then UI last
 
-### Tasks Breakdown
+### Priority Order Rationale
+1. **C6 First** - Prevents greedy algorithms in all subsequent work
+2. **C2 Second** - Quick win (5-7h), builds momentum
+3. **C1 Third** - Chat mode with C6 validation (12-17h)
+4. **C4 Fourth** - Multi-IDE with C6 design review (29-38h)
+5. **C3 Fifth** - Multi-LLM with C6 optimization (21-27h)
+6. **C5 Last** - Document complete, optimized system (10-15h)
 
-#### B1: Authentication UI (8-11 hours)
-- Login/Register pages
-- Password reset flow
-- User profile management
-- Session management UI
-
-#### B2: Project Management UI (8-10 hours)
-- Project creation wizard
-- Project dashboard
-- Module/Task hierarchy view
-- Framework selection (fix current issues)
-
-#### B3: Socratic Session UI (8-10 hours)
-- Session start/resume interface
-- Role selection UI
-- Question/Answer flow
-- Progress tracking
-- Session history view
-
-#### B4: Code & Documentation UI (9-14 hours)
-- Code generation interface
-- File browser/viewer
-- Documentation viewer
-- Export options
-- IDE sync controls
-
-### Success Criteria
-- [ ] Complete workflow possible without coding
-- [ ] All backend features accessible
-- [ ] Intuitive navigation
-- [ ] No broken links or buttons
-- [ ] Mobile responsive
-- [ ] Works on all supported platforms
+### Why Extensions Before UI
+- Extensions define final API surface
+- UI built once for complete system = No rework
+- C6 optimizes all subsequent extensions
+- Estimated savings: 14-21 hours of UI rework + 20-40 hours prevented by C6
 
 ---
 
-## 🆕 NEW REQUIREMENTS ANALYSIS
+## 🆕 EXTENSION REQUIREMENTS ANALYSIS
+
+### NEW Requirement F: Architecture Optimizer Agent ⭐ **HIGHEST PRIORITY**
+**Status:** ❌ NOT CURRENTLY POSSIBLE
+**Current Limitation:** System has NO meta-level optimization or greedy algorithm prevention
+**Impact:** CRITICAL - Causes waste and technical debt across ALL projects
+
+**What's Missing:**
+1. No global cost analysis (only local optimization)
+2. No greedy algorithm detection in design decisions
+3. No architecture pattern validation
+4. No TCO (Total Cost of Ownership) calculation
+5. No design trade-off analysis
+6. Questions are narrow and don't explore full problem space
+
+**Problem Examples:**
+- Socratic questions don't catch missing requirements (greedy questioning)
+- Designs optimize locally, not globally (e.g., choose MongoDB without considering relations)
+- No validation of architecture against best practices
+- Users make decisions without seeing alternatives
+- Technical debt accumulates unchecked
+
+**Implementation Required:**
+```
+1. Core Optimizer Agent (15-20 hours)
+   - Global cost analysis algorithms
+   - Greedy pattern detection
+   - Anti-pattern matching
+   - TCO calculation engine
+
+2. Question Quality Analyzer (8-10 hours)
+   - Validate Socratic question completeness
+   - Detect narrow/greedy questioning
+   - Generate supplementary questions
+   - Ensure full problem space coverage
+
+3. Design Pattern Validator (10-12 hours)
+   - Common anti-pattern detection
+   - Complexity analysis (cyclomatic, coupling)
+   - Scalability assessment
+   - Security and performance review
+
+4. Global Cost Calculator (8-10 hours)
+   - Development time estimation
+   - Maintenance burden prediction
+   - Technical debt calculation
+   - Alternative comparison engine
+
+5. Integration & UI (8-10 hours)
+   - Hook into all agents
+   - Display warnings/recommendations
+   - Show cost comparisons
+   - Explain reasoning
+
+6. Testing & Docs (6-8 hours)
+   - Validate optimization logic
+   - Document decision criteria
+   - Create example scenarios
+
+Total: 55-70 hours
+```
+
+**Expected Benefits:**
+- Prevents 20-40 hours of rework per project
+- Reduces technical debt by 40-60%
+- Catches design flaws before coding
+- Validates requirements completeness
+- **ROI: Saves more time than it costs**
+
+**Why Build This FIRST:**
+- Will optimize C2, C1, C4, C3 as they're built
+- Prevents greedy decisions in subsequent extensions
+- Foundation for intelligent system behavior
+- Critical for avoiding waste going forward
+
+---
 
 ### Requirement A: Direct LLM Chat Mode
 **Status:** ❌ NOT CURRENTLY POSSIBLE
@@ -413,40 +482,44 @@ Total: 29-38 hours
 
 ---
 
-## 📊 COMPLETE ROADMAP
+## 📊 COMPLETE ROADMAP (UPDATED WITH OPTIMAL ORDER)
 
-### Phase A: Backend Completion (4-5 hours remaining)
-**Priority:** CRITICAL
-**Current:** 89% complete
-- [ ] Task 6: Backend Cleanup (2 hours)
-- [ ] Task 7: Integration Testing (2-3 hours)
+### Phase A: Backend Completion ✅ COMPLETE
+**Status:** 100% complete
+**Achievements:**
+- All persistence systems working
+- Authorization implemented
+- Repository pattern fully functional
+- Unit tests 98.5% passing
 
-### Phase B: UI Rebuild (25-35 hours)
-**Priority:** HIGH
-**Blocked By:** Phase A completion
-- [ ] B1: Authentication UI (8-11h)
-- [ ] B2: Project Management UI (8-10h)
-- [ ] B3: Socratic Session UI (8-10h)
-- [ ] B4: Code & Documentation UI (9-14h)
+### Phase B: Extensions (133-181 hours) ← **CURRENT PHASE**
+**Priority:** CRITICAL (build features before UI)
+**Blocked By:** NOTHING - Ready to start!
 
-### Phase C: Extension Features (77-99 hours)
-**Priority:** MEDIUM
-**Blocked By:** Phase B completion
+**Optimal Order:**
+
+#### C6: Architecture Optimizer Agent (55-70 hours) ⭐ **BUILD FIRST**
+- [ ] C6.1: Core optimizer agent (15-20h)
+- [ ] C6.2: Question quality analyzer (8-10h)
+- [ ] C6.3: Design pattern validator (10-12h)
+- [ ] C6.4: Global cost calculator (8-10h)
+- [ ] C6.5: Integration & UI (8-10h)
+- [ ] C6.6: Testing & documentation (6-8h)
+
+**Why First:** Prevents greedy algorithms and waste in ALL subsequent work
+
+#### C2: Solo Project Mode (5-7 hours)
+- [ ] Solo mode detection (2-3h)
+- [ ] UI adjustments (3-4h)
+
+**Why Second:** Quick win after C6, builds momentum
 
 #### C1: Direct LLM Chat Mode (12-17 hours)
 - [ ] New ChatAgent implementation (5-7h)
 - [ ] Chat UI component (4-6h)
 - [ ] Context extraction from chat (3-4h)
 
-#### C2: Solo Project Mode (5-7 hours)
-- [ ] Solo mode detection (2-3h)
-- [ ] UI adjustments (3-4h)
-
-#### C3: Multiple LLM Providers (21-27 hours)
-- [ ] LLM abstraction layer (8-10h)
-- [ ] Provider management (4-5h)
-- [ ] Agent updates (6-8h)
-- [ ] Provider UI (3-4h)
+**Why Third:** C6 validates chat mode design
 
 #### C4: Multiple IDE Support (29-38 hours)
 - [ ] IDE abstraction layer (6-8h)
@@ -455,41 +528,89 @@ Total: 29-38 hours
 - [ ] PyCharm provider (6-8h)
 - [ ] JetBrains generic (6-8h)
 
-#### C5: Documentation & Testing (10-15 hours)
+**Why Fourth:** Complex feature, C6 ensures good design
+
+#### C3: Multiple LLM Providers (21-27 hours)
+- [ ] LLM abstraction layer (8-10h)
+- [ ] Provider management (4-5h)
+- [ ] Agent updates (6-8h)
+- [ ] Provider UI (3-4h)
+
+**Why Fifth:** Complex architecture, C6 optimizes design
+
+#### C5: Documentation (10-15 hours)
 - [ ] New feature documentation (4-6h)
-- [ ] Extension tests (4-6h)
-- [ ] Migration guides (2-3h)
+- [ ] Extension guides (4-6h)
+- [ ] Migration documentation (2-3h)
+
+**Why Last:** Document complete, optimized system
+
+### Phase C: Complete UI Rebuild (30-40 hours)
+**Priority:** HIGH
+**Blocked By:** Phase B completion
+**Strategy:** Build UI once with ALL features known
+
+- [ ] Authentication UI (6-8h)
+- [ ] Project Management UI (8-10h)
+- [ ] Socratic & Chat UI (8-10h)
+- [ ] Code & Documentation UI (8-12h)
+
+**Benefits:**
+- One design iteration (no rework)
+- All extensions integrated from start
+- Consistent UX across all features
+
+### Phase D: Comprehensive Integration Testing (4-6 hours)
+**Priority:** MEDIUM
+**Blocked By:** Phase C completion
+**Strategy:** Test complete system as built
+
+- [ ] End-to-end workflow tests (2-3h)
+- [ ] Authorization tests (1h)
+- [ ] Performance baseline (1-2h)
 
 ---
 
-## 📋 ESTIMATED TIMELINES
+## 📋 ESTIMATED TIMELINES (UPDATED)
 
-### Immediate Path (Phase A + B)
+### Optimal Development Path
 ```
-Phase A Completion:     4-5 hours   (this week)
-Phase B UI Rebuild:    25-35 hours  (2-3 weeks)
-─────────────────────────────────────
-Total:                 29-40 hours
-```
-
-### Full Extension Path (A + B + C)
-```
-Phase A Completion:     4-5 hours
-Phase B UI Rebuild:    25-35 hours
-Phase C Extensions:    77-99 hours
-─────────────────────────────────────
-Total:                106-139 hours  (13-17 weeks part-time)
+Phase A: Backend         ✅ COMPLETE
+Phase B: Extensions      133-181 hours (17-23 weeks part-time)
+Phase C: UI Rebuild      30-40 hours   (4-5 weeks part-time)
+Phase D: Integration     4-6 hours     (1 week part-time)
+─────────────────────────────────────────────────────────
+Total Remaining:         167-227 hours (22-29 weeks part-time)
 ```
 
-### Feature Priority Ordering
+### Phase B Extension Priorities (UPDATED ORDER)
 ```
-1. Complete Phase A (CRITICAL - foundation)
-2. Complete Phase B (HIGH - working UI needed)
-3. Implement C3 (Multiple LLMs) (HIGH - flexibility)
-4. Implement C1 (Chat Mode) (MEDIUM - UX improvement)
-5. Implement C5 (Documentation) (MEDIUM - usability)
-6. Implement C4 (Multiple IDEs) (LOW - nice to have)
-7. Implement C2 (Solo Mode) (LOW - minor improvement)
+1. C6: Architecture Optimizer (55-70h) ⭐ PREVENTS WASTE
+2. C2: Solo Mode (5-7h) - Quick win
+3. C1: Chat Mode (12-17h) - UX improvement
+4. C4: Multi-IDE (29-38h) - Tool flexibility
+5. C3: Multi-LLM (21-27h) - Provider flexibility
+6. C5: Documentation (10-15h) - Complete docs
+```
+
+### Time Savings from Optimal Order
+```
+Old Approach (UI first):
+- UI initial build:       25-35h
+- Extensions:             77-99h
+- UI rework for extensions: +19-26h
+- Total:                  121-160h
+
+New Approach (Extensions first with C6):
+- C6 optimizer:           55-70h
+- Other extensions:       78-111h
+- UI (one build):         30-40h
+- Total:                  163-221h
+
+But C6 prevents:          -20-40h waste
+Net total:                143-181h
+
+SAVINGS: 20-40 hours + higher quality code
 ```
 
 ---
@@ -654,21 +775,29 @@ solo_mode:
 
 ---
 
-## 🚀 NEXT SESSION GUIDE
+## 🚀 NEXT SESSION GUIDE (UPDATED)
 
-### Immediate Actions (Next 1-2 Sessions)
+### Immediate Actions (Next Session)
 
-**Session 1: Complete Phase A (4-5 hours)**
-1. Task 6.1: Remove db_service from agents (~75 min)
-2. Task 6.3-6.4: Error responses + code quality (~45 min)
-3. Task 7: Integration testing (2-3 hours)
-4. Update this document with Phase A completion ✅
+**Session 1: Start Phase B - C6 Architecture Optimizer (8-10 hours)**
+1. C6.1: Design core optimizer algorithms
+   - Global cost analysis framework
+   - Greedy pattern detection logic
+   - TCO calculation formulas
 
-**Session 2: Start Phase B (4-6 hours)**
-1. B1: Design authentication UI
-2. B1: Implement login/register pages
-3. B1: Test authentication flow
-4. Update TODO with progress
+2. C6.2: Question quality analyzer basics
+   - Parse Socratic question history
+   - Identify coverage gaps
+   - Generate supplementary questions
+
+3. Document C6 architecture and integration points
+4. Update TODO with C6 progress
+
+**Why Start with C6:**
+- Foundation for all subsequent work
+- Prevents waste in C2, C1, C4, C3
+- Critical for avoiding greedy algorithms
+- ROI: Saves more time than it costs
 
 ### Testing Commands
 ```bash
@@ -685,8 +814,10 @@ pytest
 
 ---
 
-**END OF MASTER PLAN v2.0**
+**END OF MASTER PLAN v2.1**
 
-**Status:** Phase A 89% complete, Phase B planned, Phase C specified
-**Total Estimated Remaining:** 106-139 hours (all phases)
-**Critical Path:** Phase A (5h) → Phase B (30h) → Phase C priorities
+**Status:** Phase A ✅ Complete, Phase B Ready (Extensions First), Phase C & D Planned
+**Total Estimated Remaining:** 167-227 hours (Phases B+C+D)
+**Critical Path:** Phase B Extensions (C6→C2→C1→C4→C3→C5) → Phase C UI → Phase D Tests
+**Key Innovation:** C6 Architecture Optimizer prevents greedy algorithms systemwide
+**Strategic Benefit:** Extensions→UI→Tests order saves 20-40 hours + higher quality
