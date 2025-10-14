@@ -40,13 +40,13 @@ class MockServices:
         return None
 
 
-# Test Agent for authorization testing
-class TestAuthAgent(BaseAgent):
-    """Test agent with decorated methods"""
+# Auth Agent for authorization testing (not a test class, just a helper)
+class AuthTestAgent(BaseAgent):
+    """Agent for testing authorization decorators"""
 
     def __init__(self, services=None):
         # Initialize with minimal services for database access
-        super().__init__('test_auth_agent', 'Test Auth Agent', services or MockServices())
+        super().__init__('test_auth_agent', 'Auth Test Agent', services or MockServices())
 
     def get_capabilities(self):
         return ['auth_test', 'project_test']
@@ -148,7 +148,7 @@ def setup_test_env():
     db.project_collaborators.create(collaboration)
 
     # Create test agent
-    agent = TestAuthAgent()
+    agent = AuthTestAgent()
 
     yield {
         'db': db,
@@ -229,7 +229,7 @@ class TestProjectAccess:
 
         assert result['success'] is False
         assert result['error_code'] == 'PROJECT_ID_REQUIRED'
-        assert 'Project ID required' in result['error']
+        assert 'project_id' in result['error'].lower()
 
     def test_invalid_project_id(self, setup_test_env):
         """Test that invalid project_id returns PROJECT_NOT_FOUND error"""

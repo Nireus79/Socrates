@@ -1375,7 +1375,7 @@ class ModelRegistry:
 def serialize_model(model: BaseModel) -> str:
     """Serialize model instance to JSON string"""
     try:
-        return model.to_json()
+        return model.to_json() # Unresolved attribute reference 'to_json' for class 'BaseModel'
     except Exception as e:
         if CORE_AVAILABLE:
             logger = get_logger(__name__)

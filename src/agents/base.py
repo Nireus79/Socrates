@@ -448,13 +448,10 @@ def require_project_access(func):
             collaborators = db.project_collaborators.get_by_project_id(project_id)
             for collab in collaborators:
                 collab_user_id = collab.user_id if hasattr(collab, 'user_id') else None
-                collab_status = collab.status if hasattr(collab, 'status') else 'active'
+                # Check is_active field (not status)
+                is_active = collab.is_active if hasattr(collab, 'is_active') else True
 
-                # Handle status enum
-                if not isinstance(collab_status, str):
-                    collab_status = collab_status.value if hasattr(collab_status, 'value') else str(collab_status)
-
-                if collab_user_id == user_id and collab_status == 'active':
+                if collab_user_id == user_id and is_active:
                     collab_role = collab.role if hasattr(collab, 'role') else 'collaborator'
                     if not isinstance(collab_role, str):
                         collab_role = collab_role.value if hasattr(collab_role, 'value') else str(collab_role)

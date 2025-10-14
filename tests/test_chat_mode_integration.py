@@ -29,7 +29,17 @@ def test_chat_mode_integration():
 
         print("[PASS] Imports successful")
 
-        # Initialize system
+        # Initialize system with clean database
+        import os
+
+        # Delete the database file to ensure clean state
+        db_path = 'data/socratic.db'
+        if os.path.exists(db_path):
+            try:
+                os.remove(db_path)
+            except:
+                pass
+
         services = initialize_package()
         reset_database()
         db = get_database()
