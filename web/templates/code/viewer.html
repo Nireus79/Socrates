@@ -105,7 +105,12 @@
 
                     <!-- Code Content -->
                     <div id="codeContent" style="display: none;">
-                        <pre><code id="codeDisplay" class="language-python"></code></pre>
+                        <pre class="line-numbers"><code id="codeDisplay" class="language-python"></code></pre>
+                    </div>
+
+                    <!-- Markdown Content -->
+                    <div id="markdownContent" style="display: none;">
+                        <div id="markdownDisplay" class="p-4"></div>
                     </div>
                 </div>
             </div>
@@ -323,31 +328,118 @@
     font-size: 0.8rem;
 }
 
-pre {
+/* Prism.js customizations */
+pre[class*="language-"] {
     margin: 0;
     padding: 20px;
-    background-color: #f8f9fa;
     border: none;
-    font-size: 0.9rem;
-    line-height: 1.5;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    background-color: #2d2d2d !important;
 }
 
-code {
+code[class*="language-"] {
     background-color: transparent !important;
-    color: inherit;
+    padding: 0;
+    font-family: 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
+}
+
+.line-numbers .line-numbers-rows {
+    border-right-color: #555;
+}
+
+.line-numbers-rows > span:before {
+    color: #999;
+}
+
+/* Markdown styling */
+#markdownContent {
+    height: calc(100vh - 280px);
+    overflow: auto;
+    background-color: white;
+}
+
+#markdownDisplay {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+#markdownDisplay h1,
+#markdownDisplay h2,
+#markdownDisplay h3,
+#markdownDisplay h4,
+#markdownDisplay h5,
+#markdownDisplay h6 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+#markdownDisplay h1 { font-size: 2em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }
+#markdownDisplay h2 { font-size: 1.5em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }
+#markdownDisplay h3 { font-size: 1.25em; }
+#markdownDisplay h4 { font-size: 1em; }
+
+#markdownDisplay code {
+    background-color: rgba(27,31,35,0.05);
+    border-radius: 3px;
+    font-size: 85%;
+    margin: 0;
+    padding: 0.2em 0.4em;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+#markdownDisplay pre {
+    background-color: #f6f8fa;
+    border-radius: 6px;
+    padding: 16px;
+    overflow: auto;
+    font-size: 85%;
+}
+
+#markdownDisplay pre code {
+    background-color: transparent;
     padding: 0;
 }
 
-.language-python { color: #333; }
-.language-html { color: #333; }
-.language-css { color: #333; }
-.language-javascript { color: #333; }
-.language-json { color: #333; }
-.language-yaml { color: #333; }
-.language-markdown { color: #333; }
-.language-sql { color: #333; }
-.language-dockerfile { color: #333; }
-.language-text { color: #333; }
+#markdownDisplay blockquote {
+    border-left: 4px solid #dfe2e5;
+    color: #6a737d;
+    padding: 0 1em;
+    margin: 0;
+}
+
+#markdownDisplay table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+}
+
+#markdownDisplay table th,
+#markdownDisplay table td {
+    border: 1px solid #dfe2e5;
+    padding: 6px 13px;
+}
+
+#markdownDisplay table tr:nth-child(2n) {
+    background-color: #f6f8fa;
+}
+
+#markdownDisplay img {
+    max-width: 100%;
+    height: auto;
+}
+
+#markdownDisplay a {
+    color: #0366d6;
+    text-decoration: none;
+}
+
+#markdownDisplay a:hover {
+    text-decoration: underline;
+}
 
 /* Auto-refresh indicator */
 .auto-refresh {
@@ -530,14 +622,57 @@ function displayFileContent(fileData) {
     // Show file actions
     document.getElementById('fileActions').style.display = 'block';
 
-    // Display content
-    const codeDisplay = document.getElementById('codeDisplay');
-    codeDisplay.textContent = fileData.content;
-    codeDisplay.className = `language-${fileData.file_type}`;
-
-    // Show content
+    // Hide all content views
     document.getElementById('loadingState').style.display = 'none';
-    document.getElementById('codeContent').style.display = 'block';
+    document.getElementById('codeContent').style.display = 'none';
+    document.getElementById('markdownContent').style.display = 'none';
+
+    // Check if this is a Markdown file
+    if (fileData.file_type === 'markdown' || fileData.file_name.endsWith('.md')) {
+        // Render Markdown
+        const markdownDisplay = document.getElementById('markdownDisplay');
+        if (typeof marked !== 'undefined') {
+            // Configure marked for GitHub-flavored markdown
+            marked.setOptions({
+                gfm: true,
+                breaks: true,
+                headerIds: true,
+                mangle: false
+            });
+            markdownDisplay.innerHTML = marked.parse(fileData.content);
+        } else {
+            // Fallback if marked isn't loaded
+            markdownDisplay.textContent = fileData.content;
+        }
+        document.getElementById('markdownContent').style.display = 'block';
+    } else {
+        // Display as code
+        const codeDisplay = document.getElementById('codeDisplay');
+        codeDisplay.textContent = fileData.content;
+
+        // Map file types to Prism.js language classes
+        const languageMap = {
+            'python': 'python',
+            'javascript': 'javascript',
+            'html': 'markup',
+            'css': 'css',
+            'json': 'json',
+            'yaml': 'yaml',
+            'sql': 'sql',
+            'dockerfile': 'docker',
+            'text': 'plaintext'
+        };
+
+        const language = languageMap[fileData.file_type] || 'plaintext';
+        codeDisplay.className = `language-${language}`;
+
+        document.getElementById('codeContent').style.display = 'block';
+
+        // Trigger Prism.js syntax highlighting
+        if (typeof Prism !== 'undefined') {
+            Prism.highlightElement(codeDisplay);
+        }
+    }
 }
 
 function copyCode() {

@@ -2,6 +2,54 @@
 
 {% block title %}{{ session.session_name }}{% if session.project_id %} - Project Session{% endif %}{% endblock %}
 
+{% block extra_head %}
+<style>
+/* Mode-specific message styling */
+.message-item.socratic-style {
+    border-left: 3px solid #0d6efd;
+}
+
+.message-item.chat-style {
+    border-left: 3px solid #198754;
+}
+
+.message-item.socratic-style .bg-primary {
+    background-color: #0d6efd !important;
+}
+
+.message-item.chat-style .bg-primary {
+    background-color: #198754 !important;
+}
+
+/* Mode toggle button animations */
+.btn-check:checked + .btn-outline-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+#modeToggle {
+    transition: opacity 0.3s ease;
+}
+
+/* Toast notification positioning */
+.alert.position-fixed {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <!-- Header -->
@@ -30,6 +78,11 @@
                         <i class="bi bi-person-badge"></i> {{ session.role|title }} Role
                         <span class="mx-2">•</span>
                         <span class="badge bg-{{ 'success' if session.status == 'active' else 'secondary' }}">{{ session.status|title }}</span>
+                        <span class="mx-2">•</span>
+                        <span class="badge bg-{{ 'primary' if session.mode == 'socratic' or not session.mode else 'success' }}" id="currentModeBadge">
+                            <i class="bi bi-{{ 'question-circle' if session.mode == 'socratic' or not session.mode else 'chat-dots' }}"></i>
+                            {{ (session.mode or 'socratic')|title }} Mode
+                        </span>
                     </p>
                 </div>
                 <div class="btn-group">
@@ -58,12 +111,12 @@
                         </h5>
                         <!-- Mode Toggle -->
                         <div class="btn-group btn-group-sm" role="group" id="modeToggle">
-                            <input type="radio" class="btn-check" name="conversationMode" id="socraticMode" value="socratic" checked>
-                            <label class="btn btn-outline-primary" for="socraticMode">
+                            <input type="radio" class="btn-check" name="conversationMode" id="socraticMode" value="socratic" {{ 'checked' if session.mode == 'socratic' or not session.mode else '' }}>
+                            <label class="btn btn-outline-primary" for="socraticMode" onclick="toggleMode('socratic')">
                                 <i class="bi bi-question-circle"></i> Socratic
                             </label>
-                            <input type="radio" class="btn-check" name="conversationMode" id="chatMode" value="chat">
-                            <label class="btn btn-outline-primary" for="chatMode">
+                            <input type="radio" class="btn-check" name="conversationMode" id="chatMode" value="chat" {{ 'checked' if session.mode == 'chat' else '' }}>
+                            <label class="btn btn-outline-primary" for="chatMode" onclick="toggleMode('chat')">
                                 <i class="bi bi-chat-dots"></i> Chat
                             </label>
                         </div>
@@ -471,45 +524,116 @@ function updateSessionStatus(status) {
 </script>
 <script>
 // Mode switching functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const socraticMode = document.getElementById('socraticMode');
-    const chatMode = document.getElementById('chatMode');
+let currentMode = '{{ session.mode or "socratic" }}';
+
+function toggleMode(newMode) {
+    if (currentMode === newMode) {
+        return; // Already in this mode
+    }
+
+    // Show loading state
+    const modeToggle = document.getElementById('modeToggle');
+    const originalHTML = modeToggle.innerHTML;
+    modeToggle.style.opacity = '0.5';
+    modeToggle.style.pointerEvents = 'none';
+
+    // Call backend to toggle mode
+    fetch("{{ url_for('toggle_session_mode', session_id=session.id) }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ mode: newMode })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentMode = newMode;
+            updateInterfaceForMode(newMode);
+
+            // Show success notification
+            showNotification(`Switched to ${newMode === 'socratic' ? 'Socratic' : 'Chat'} mode`, 'success');
+        } else {
+            throw new Error(data.error || 'Failed to toggle mode');
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling mode:', error);
+        showNotification('Failed to switch mode. Please try again.', 'error');
+
+        // Revert radio button
+        document.getElementById(currentMode + 'Mode').checked = true;
+    })
+    .finally(() => {
+        modeToggle.style.opacity = '1';
+        modeToggle.style.pointerEvents = 'auto';
+    });
+}
+
+function updateInterfaceForMode(mode) {
     const messageInput = document.getElementById('messageInput');
+    const modeBadge = document.getElementById('currentModeBadge');
 
-    // Only add event listeners if elements exist (session is active)
-    if (!socraticMode || !chatMode || !messageInput) {
-        return;
-    }
-
-    // Mode change handlers
-    socraticMode.addEventListener('change', function() {
-        if (this.checked && messageInput) {
-            messageInput.placeholder = "Type your response to continue the Socratic questioning...";
-            updateInterfaceForSocratic();
+    if (mode === 'socratic') {
+        if (messageInput) {
+            messageInput.placeholder = "Type your response to continue the Socratic dialogue...";
         }
-    });
 
-    chatMode.addEventListener('change', function() {
-        if (this.checked && messageInput) {
+        // Update mode badge
+        if (modeBadge) {
+            modeBadge.className = 'badge bg-primary';
+            modeBadge.innerHTML = '<i class="bi bi-question-circle"></i> Socratic Mode';
+        }
+
+        // Update message display style
+        document.querySelectorAll('.message-item').forEach(item => {
+            item.classList.remove('chat-style');
+            item.classList.add('socratic-style');
+        });
+    } else {
+        if (messageInput) {
             messageInput.placeholder = "Type your message for direct conversation with AI...";
-            updateInterfaceForChat();
         }
-    });
 
-    function updateInterfaceForSocratic() {
-        // Update UI elements for Socratic mode
-        document.querySelector('.btn-success').innerHTML = '<i class="bi bi-question-circle"></i> Continue Questioning';
-        currentMode = 'socratic';
+        // Update mode badge
+        if (modeBadge) {
+            modeBadge.className = 'badge bg-success';
+            modeBadge.innerHTML = '<i class="bi bi-chat-dots"></i> Chat Mode';
+        }
+
+        // Update message display style
+        document.querySelectorAll('.message-item').forEach(item => {
+            item.classList.remove('socratic-style');
+            item.classList.add('chat-style');
+        });
     }
+}
 
-    function updateInterfaceForChat() {
-        // Update UI elements for Chat mode
-        document.querySelector('.btn-success').innerHTML = '<i class="bi bi-chat-dots"></i> Send Message';
-        currentMode = 'chat';
-    }
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.zIndex = '9999';
+    notification.style.minWidth = '300px';
+    notification.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
 
-    // Track current mode
-    let currentMode = 'socratic';
+    document.body.appendChild(notification);
+
+    // Auto-dismiss after 3 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Initialize mode on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateInterfaceForMode(currentMode);
 });
 </script>
 {% endblock %}

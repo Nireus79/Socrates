@@ -18,6 +18,34 @@
     </div>
 
     {% if projects %}
+        <!-- Filters and Search -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="btn-group" role="group">
+                    <input type="radio" class="btn-check" name="filter" id="filter-all" autocomplete="off" checked onclick="filterProjects('all')">
+                    <label class="btn btn-outline-primary" for="filter-all">
+                        <i class="bi bi-folder"></i> All ({{ projects|length }})
+                    </label>
+
+                    <input type="radio" class="btn-check" name="filter" id="filter-solo" autocomplete="off" onclick="filterProjects('solo')">
+                    <label class="btn btn-outline-primary" for="filter-solo">
+                        <i class="bi bi-person"></i> Solo ({{ projects|selectattr('is_solo_project', 'equalto', True)|list|length }})
+                    </label>
+
+                    <input type="radio" class="btn-check" name="filter" id="filter-team" autocomplete="off" onclick="filterProjects('team')">
+                    <label class="btn btn-outline-primary" for="filter-team">
+                        <i class="bi bi-people"></i> Team ({{ projects|selectattr('is_solo_project', 'equalto', False)|list|length }})
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="searchProjects" placeholder="Search projects..." onkeyup="searchProjects()">
+                </div>
+            </div>
+        </div>
+
         <!-- Project Statistics -->
         <div class="row mb-4">
             <div class="col-md-3">
@@ -55,13 +83,16 @@
         </div>
 
         <!-- Projects Grid -->
-        <div class="row">
+        <div class="row" id="projectsGrid">
             {% for project in projects %}
-                <div class="col-lg-6 col-xl-4 mb-4">
+                <div class="col-lg-6 col-xl-4 mb-4 project-card"
+                     data-project-name="{{ project.name|lower }}"
+                     data-project-type="{{ 'solo' if project.is_solo_project else 'team' }}"
+                     data-project-status="{{ project.status }}">
                     <div class="card h-100 shadow-sm">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">
-                                <i class="bi bi-{{ 'people-fill' if project.project_type == 'team' else 'person-fill' }}"></i>
+                                <i class="bi bi-{{ 'person-fill' if project.is_solo_project else 'people-fill' }} text-{{ 'info' if project.is_solo_project else 'primary' }}"></i>
                                 {{ project.name }}
                             </h5>
                             <span class="badge bg-{{ 'success' if project.status == 'active' else 'warning' if project.status == 'draft' else 'info' if project.status == 'completed' else 'secondary' }}">
@@ -78,9 +109,9 @@
                             <div class="row text-center">
                                 <div class="col-6">
                                     <small class="text-muted">Type</small><br>
-                                    <span class="badge bg-light text-dark">
-                                        <i class="bi bi-{{ 'people' if project.project_type == 'team' else 'person' }}"></i>
-                                        {{ project.project_type.title() }}
+                                    <span class="badge bg-{{ 'info' if project.is_solo_project else 'primary' }} text-white">
+                                        <i class="bi bi-{{ 'person' if project.is_solo_project else 'people' }}"></i>
+                                        {{ 'Solo' if project.is_solo_project else 'Team' }}
                                     </span>
                                 </div>
                                 <div class="col-6">
@@ -220,4 +251,73 @@
         </div>
     {% endif %}
 </div>
+
+{% block extra_scripts %}
+<script>
+// Project filtering and search functionality
+function filterProjects(type) {
+    const projectCards = document.querySelectorAll('.project-card');
+    let visibleCount = 0;
+
+    projectCards.forEach(card => {
+        const projectType = card.dataset.projectType;
+
+        if (type === 'all') {
+            card.style.display = '';
+            visibleCount++;
+        } else if (projectType === type) {
+            card.style.display = '';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    // Show "no results" message if no projects visible
+    updateNoResultsMessage(visibleCount);
+}
+
+function searchProjects() {
+    const searchTerm = document.getElementById('searchProjects').value.toLowerCase();
+    const projectCards = document.querySelectorAll('.project-card');
+    let visibleCount = 0;
+
+    projectCards.forEach(card => {
+        const projectName = card.dataset.projectName;
+
+        if (projectName.includes(searchTerm)) {
+            card.style.display = '';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    // Show "no results" message if no projects visible
+    updateNoResultsMessage(visibleCount);
+}
+
+function updateNoResultsMessage(visibleCount) {
+    const grid = document.getElementById('projectsGrid');
+    let noResultsMsg = document.getElementById('noResultsMessage');
+
+    if (visibleCount === 0) {
+        if (!noResultsMsg) {
+            noResultsMsg = document.createElement('div');
+            noResultsMsg.id = 'noResultsMessage';
+            noResultsMsg.className = 'col-12 text-center py-5';
+            noResultsMsg.innerHTML = `
+                <i class="bi bi-search display-1 text-muted mb-3"></i>
+                <h5>No Projects Found</h5>
+                <p class="text-muted">Try adjusting your filters or search term.</p>
+            `;
+            grid.appendChild(noResultsMsg);
+        }
+    } else {
+        if (noResultsMsg) {
+            noResultsMsg.remove();
+        }
+    }
+}
+</script>
 {% endblock %}

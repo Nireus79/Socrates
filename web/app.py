@@ -195,6 +195,7 @@ class UserDB:
                     status TEXT DEFAULT 'draft',
                     framework TEXT,
                     technology_stack TEXT,
+                    is_solo_project INTEGER DEFAULT 1,
                     created_at TEXT,
                     updated_at TEXT,
                     FOREIGN KEY (owner_id) REFERENCES users (id)
@@ -210,6 +211,7 @@ class UserDB:
                     owner_id TEXT NOT NULL,
                     role TEXT NOT NULL,
                     status TEXT DEFAULT 'active',
+                    mode TEXT DEFAULT 'socratic',
                     progress INTEGER DEFAULT 0,
                     current_phase TEXT DEFAULT 'discovery',
                     session_data TEXT DEFAULT '{}',
@@ -369,7 +371,7 @@ class UserDB:
 
     # Project methods
     def create_project(self, owner_id: str, name: str, description: str = '',
-                       project_type: str = 'solo', framework: str = ''):
+                       project_type: str = 'solo', framework: str = '', is_solo_project: bool = True):
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -379,9 +381,9 @@ class UserDB:
             updated_at = created_at
 
             cursor.execute('''
-                INSERT INTO projects (id, name, description, owner_id, project_type, framework, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (project_id, name, description, owner_id, project_type, framework, created_at, updated_at))
+                INSERT INTO projects (id, name, description, owner_id, project_type, framework, is_solo_project, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (project_id, name, description, owner_id, project_type, framework, 1 if is_solo_project else 0, created_at, updated_at))
 
             conn.commit()
             conn.close()
@@ -1567,9 +1569,9 @@ def create_flask_app(config_override=None) -> Flask:
         Configured Flask application
     """
     if not FLASK_AVAILABLE:
-        print("❌ FLASK_AVAILABLE is False")
+        print("ERROR: FLASK_AVAILABLE is False")
         raise RuntimeError("Flask not available")
-    print("✅ Flask is available")
+    print("SUCCESS: Flask is available")
     # Create Flask application
     flask_app = Flask(__name__)
 
@@ -1717,6 +1719,201 @@ def create_flask_app(config_override=None) -> Flask:
         if request.method == 'POST':
             flash('Profile updates will be implemented in the full system.', 'info')
         return render_template('auth.html', page='profile')
+
+    # Settings Routes
+    @flask_app.route('/settings')
+    @login_required
+    def settings():
+        """Settings page with LLM, IDE, and system configuration."""
+        try:
+            # Import factories for LLM and IDE providers
+            from src.services.llm.factory import LLMProviderFactory
+            from src.services.ide.factory import IDEProviderFactory
+
+            # Get LLM providers info
+            llm_providers = LLMProviderFactory.get_all_providers_info()
+
+            # Get installed IDEs
+            installed_ide_ids = IDEProviderFactory.detect_installed_ides()
+            installed_ides = []
+            for ide_id in installed_ide_ids:
+                try:
+                    provider = IDEProviderFactory.get_provider(ide_id, auto_detect=False)
+                    installed_ides.append({
+                        'name': ide_id,
+                        'display_name': provider.get_ide_name(),
+                        'version': provider.get_version()
+                    })
+                except Exception as e:
+                    logger.error(f"Error getting IDE {ide_id}: {e}")
+
+            # Get user preferences
+            user_prefs = current_user.preferences or {}
+            current_llm_provider = user_prefs.get('llm_provider', 'claude')
+            current_ide = user_prefs.get('ide', 'vscode')
+
+            # Get API keys from user preferences (stored masked)
+            api_keys = user_prefs.get('api_keys', {})
+
+            return render_template('settings.html',
+                                 llm_providers=llm_providers,
+                                 current_llm_provider=current_llm_provider,
+                                 installed_ides=installed_ides,
+                                 current_ide=current_ide,
+                                 api_keys=api_keys)
+        except Exception as e:
+            logger.error(f"Error loading settings: {e}")
+            flash('Error loading settings. Please try again.', 'error')
+            return redirect(url_for('dashboard'))
+
+    @flask_app.route('/api/settings/llm', methods=['POST'])
+    @login_required
+    def save_llm_settings():
+        """Save LLM provider settings."""
+        try:
+            data = request.get_json()
+            provider = data.get('provider')
+            api_keys = data.get('api_keys', {})
+
+            # Get current user preferences
+            prefs = current_user.preferences or {}
+
+            # Update LLM provider
+            prefs['llm_provider'] = provider
+
+            # Store API keys (in production, these should be encrypted)
+            # For now, we'll store them masked for display purposes
+            prefs['api_keys'] = api_keys
+
+            # Update user in database
+            user_db.update_user(current_user.id, {'preferences': prefs})
+
+            return jsonify({'success': True, 'message': 'LLM settings saved successfully'})
+        except Exception as e:
+            logger.error(f"Error saving LLM settings: {e}")
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+    @flask_app.route('/api/settings/llm/test', methods=['POST'])
+    @login_required
+    def test_llm_connection():
+        """Test LLM provider connection."""
+        try:
+            data = request.get_json()
+            provider_name = data.get('provider')
+
+            from src.services.llm.factory import get_llm_provider
+
+            # Try to get the provider
+            provider = get_llm_provider(provider_name, auto_detect=False)
+
+            # Run health check
+            health = provider.health_check()
+
+            if health.get('status') == 'healthy':
+                return jsonify({
+                    'success': True,
+                    'message': f"{provider.get_provider_name()} is working correctly!"
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': health.get('error', 'Provider not available')
+                })
+        except Exception as e:
+            logger.error(f"Error testing LLM connection: {e}")
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+    @flask_app.route('/api/settings/ide', methods=['POST'])
+    @login_required
+    def save_ide_settings():
+        """Save IDE preferences."""
+        try:
+            data = request.get_json()
+            ide = data.get('ide')
+
+            # Get current user preferences
+            prefs = current_user.preferences or {}
+            prefs['ide'] = ide
+
+            # Update user in database
+            user_db.update_user(current_user.id, {'preferences': prefs})
+
+            return jsonify({'success': True, 'message': 'IDE settings saved successfully'})
+        except Exception as e:
+            logger.error(f"Error saving IDE settings: {e}")
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+    @flask_app.route('/api/settings/profile', methods=['POST'])
+    @login_required
+    def update_profile():
+        """Update user profile information."""
+        try:
+            data = request.get_json()
+
+            # Update user profile fields
+            update_data = {
+                'first_name': data.get('first_name', ''),
+                'last_name': data.get('last_name', ''),
+                'email': data.get('email', ''),
+                'bio': data.get('bio', ''),
+                'skills': data.get('skills', [])
+            }
+
+            user_db.update_user(current_user.id, update_data)
+
+            return jsonify({'success': True, 'message': 'Profile updated successfully'})
+        except Exception as e:
+            logger.error(f"Error updating profile: {e}")
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+    @flask_app.route('/api/settings/password', methods=['POST'])
+    @login_required
+    def change_password():
+        """Change user password."""
+        try:
+            data = request.get_json()
+            current_password = data.get('current_password')
+            new_password = data.get('new_password')
+
+            # Verify current password
+            user = user_db.get_user_by_id(current_user.id)
+            if not user or not bcrypt.check_password_hash(user.get('password_hash'), current_password):
+                return jsonify({'success': False, 'message': 'Current password is incorrect'}), 400
+
+            # Hash new password
+            new_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+
+            # Update password
+            user_db.update_user(current_user.id, {'password_hash': new_hash})
+
+            return jsonify({'success': True, 'message': 'Password changed successfully'})
+        except Exception as e:
+            logger.error(f"Error changing password: {e}")
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+    @flask_app.route('/api/settings/system', methods=['POST'])
+    @login_required
+    def save_system_settings():
+        """Save system preferences."""
+        try:
+            data = request.get_json()
+
+            # Get current user preferences
+            prefs = current_user.preferences or {}
+            prefs['system'] = {
+                'theme': data.get('theme', 'dark'),
+                'email_notifications': data.get('email_notifications', True),
+                'browser_notifications': data.get('browser_notifications', True),
+                'autosave_interval': data.get('autosave_interval', 60)
+            }
+
+            # Update user in database
+            user_db.update_user(current_user.id, {'preferences': prefs})
+
+            return jsonify({'success': True, 'message': 'System settings saved successfully'})
+        except Exception as e:
+            logger.error(f"Error saving system settings: {e}")
+            return jsonify({'success': False, 'message': str(e)}), 500
 
     # Project Routes
     @flask_app.route('/projects')
@@ -2409,11 +2606,15 @@ def create_flask_app(config_override=None) -> Flask:
                 if current_step == 1:
                     # Validate Step 1: Project Details
                     if form.name.validate(form) and form.project_type.validate(form):
+                        # Get is_solo_project from form (default to True)
+                        is_solo = request.form.get('is_solo_project', 'true') == 'true'
+
                         wizard_data.update({
                             'name': form.name.data,
                             'description': form.description.data,
                             'project_type': form.project_type.data,
-                            'status': form.status.data
+                            'status': form.status.data,
+                            'is_solo_project': is_solo
                         })
                     else:
                         step_valid = False
@@ -2448,7 +2649,8 @@ def create_flask_app(config_override=None) -> Flask:
                             name=wizard_data.get('name', ''),
                             description=wizard_data.get('description', ''),
                             project_type=wizard_data.get('project_type', 'solo'),
-                            framework=wizard_data.get('framework', '')
+                            framework=wizard_data.get('framework', ''),
+                            is_solo_project=wizard_data.get('is_solo_project', True)
                         )
 
                         if project_id:
@@ -2552,8 +2754,26 @@ def create_flask_app(config_override=None) -> Flask:
         data = request.get_json()
         new_mode = data.get('mode', 'socratic')
 
-        # For now, just return success - later integrate with backend agents
-        return jsonify({'success': True, 'mode': new_mode})
+        # Validate mode
+        if new_mode not in ['socratic', 'chat']:
+            return jsonify({'error': 'Invalid mode. Must be "socratic" or "chat"'}), 400
+
+        # Update session mode in database
+        try:
+            conn = sqlite3.connect(user_db.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE sessions
+                SET mode = ?, updated_at = ?
+                WHERE id = ? AND owner_id = ?
+            ''', (new_mode, datetime.now().isoformat(), session_id, current_user.id))
+            conn.commit()
+            conn.close()
+
+            return jsonify({'success': True, 'mode': new_mode})
+        except Exception as e:
+            logger.error(f"Error updating session mode: {e}")
+            return jsonify({'error': 'Failed to update mode'}), 500
 
     @flask_app.route('/sessions/<session_id>/archive', methods=['POST'])
     @login_required
@@ -2625,6 +2845,256 @@ def create_flask_app(config_override=None) -> Flask:
         # For now, just return the session URL
         share_url = url_for('session_detail', session_id=session_id, _external=True)
         return jsonify({'share_url': share_url})
+
+    # =================================================================
+    # REPOSITORY ROUTES (GitHub/Git Import)
+    # =================================================================
+
+    @flask_app.route('/repositories')
+    @login_required
+    def repositories():
+        """List all imported repositories for current user."""
+        try:
+            db_manager = get_repository_manager()
+            repos_repo = db_manager.repositories['imported_repositories']
+
+            # Get all repositories for current user
+            repositories_list = repos_repo.get_by_owner_id(current_user.id)
+
+            return render_template('repositories/list.html', repositories=repositories_list)
+        except Exception as e:
+            logger.error(f"Error loading repositories: {e}")
+            flash('Error loading repositories', 'error')
+            return redirect(url_for('dashboard'))
+
+    @flask_app.route('/repositories/import')
+    @login_required
+    def import_repository_page():
+        """Show repository import form."""
+        try:
+            db_manager = get_repository_manager()
+            projects_repo = db_manager.repositories['projects']
+
+            # Get user's projects for association
+            user_projects = projects_repo.get_by_owner_id(current_user.id)
+
+            return render_template('repositories/import.html', projects=user_projects)
+        except Exception as e:
+            logger.error(f"Error loading import page: {e}")
+            flash('Error loading import page', 'error')
+            return redirect(url_for('repositories'))
+
+    @flask_app.route('/api/repositories/import', methods=['POST'])
+    @login_required
+    def import_repository():
+        """Import a Git repository (POST endpoint)."""
+        try:
+            data = request.get_json()
+            repo_url = data.get('repo_url', '').strip()
+            branch = data.get('branch', '').strip() or None
+            project_id = data.get('project_id')
+            vectorize = data.get('vectorize', True)
+
+            if not repo_url:
+                return jsonify({'success': False, 'error': 'Repository URL is required'}), 400
+
+            # Get the repository import service
+            try:
+                from src.services.repository_import_service import RepositoryImportService
+                import_service = RepositoryImportService()
+            except ImportError:
+                logger.error("RepositoryImportService not available")
+                return jsonify({'success': False, 'error': 'Import service not available'}), 500
+
+            # Import the repository
+            result = import_service.import_repository(
+                repo_url=repo_url,
+                user_id=current_user.id,
+                project_id=project_id,
+                branch=branch,
+                vectorize=vectorize
+            )
+
+            if result.get('success'):
+                repo_data = result.get('repository', {})
+                return jsonify({
+                    'success': True,
+                    'message': 'Repository imported successfully',
+                    'repository_id': repo_data.get('id'),
+                    'repository_name': repo_data.get('name'),
+                    'languages_count': len(repo_data.get('languages', [])),
+                    'chunks_created': repo_data.get('chunks_created', 0),
+                    'vectorized': repo_data.get('chunks_created', 0) > 0
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': result.get('message', 'Import failed')
+                }), 400
+
+        except Exception as e:
+            logger.error(f"Error importing repository: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @flask_app.route('/repositories/<repo_id>')
+    @login_required
+    def repository_detail(repo_id):
+        """Show detailed view of an imported repository."""
+        try:
+            db_manager = get_repository_manager()
+            repos_repo = db_manager.repositories['imported_repositories']
+
+            # Get repository
+            repository = repos_repo.get_by_id(repo_id)
+
+            if not repository or repository.owner_id != current_user.id:
+                flash('Repository not found', 'error')
+                return redirect(url_for('repositories'))
+
+            return render_template('repositories/detail.html', repository=repository)
+        except Exception as e:
+            logger.error(f"Error loading repository detail: {e}")
+            flash('Error loading repository details', 'error')
+            return redirect(url_for('repositories'))
+
+    @flask_app.route('/repositories/<repo_id>/delete', methods=['POST'])
+    @login_required
+    def delete_repository(repo_id):
+        """Delete an imported repository."""
+        try:
+            db_manager = get_repository_manager()
+            repos_repo = db_manager.repositories['imported_repositories']
+
+            # Get repository
+            repository = repos_repo.get_by_id(repo_id)
+
+            if not repository or repository.owner_id != current_user.id:
+                flash('Repository not found', 'error')
+                return redirect(url_for('repositories'))
+
+            # Delete from vector database if vectorized
+            if repository.vector_collection_name:
+                try:
+                    from src.services.vector_service import VectorService
+                    vector_service = VectorService()
+                    vector_service.delete_collection(repository.vector_collection_name)
+                except Exception as e:
+                    logger.warning(f"Error deleting vector collection: {e}")
+
+            # Delete local clone if it exists
+            if repository.local_path and os.path.exists(repository.local_path):
+                try:
+                    import shutil
+                    shutil.rmtree(repository.local_path)
+                except Exception as e:
+                    logger.warning(f"Error deleting local clone: {e}")
+
+            # Delete from database
+            repos_repo.delete(repo_id)
+
+            flash('Repository deleted successfully', 'success')
+            return redirect(url_for('repositories'))
+
+        except Exception as e:
+            logger.error(f"Error deleting repository: {e}")
+            flash('Error deleting repository', 'error')
+            return redirect(url_for('repositories'))
+
+    @flask_app.route('/repositories/<repo_id>/reimport')
+    @login_required
+    def reimport_repository(repo_id):
+        """Re-import a repository to update analysis."""
+        try:
+            db_manager = get_repository_manager()
+            repos_repo = db_manager.repositories['imported_repositories']
+
+            # Get repository
+            repository = repos_repo.get_by_id(repo_id)
+
+            if not repository or repository.owner_id != current_user.id:
+                flash('Repository not found', 'error')
+                return redirect(url_for('repositories'))
+
+            # Get the repository import service
+            try:
+                from src.services.repository_import_service import RepositoryImportService
+                import_service = RepositoryImportService()
+            except ImportError:
+                logger.error("RepositoryImportService not available")
+                flash('Import service not available', 'error')
+                return redirect(url_for('repository_detail', repo_id=repo_id))
+
+            # Re-import the repository
+            result = import_service.reimport_repository(repo_id, current_user.id)
+
+            if result.get('success'):
+                flash('Repository re-imported successfully', 'success')
+            else:
+                flash(result.get('message', 'Re-import failed'), 'error')
+
+            return redirect(url_for('repository_detail', repo_id=repo_id))
+
+        except Exception as e:
+            logger.error(f"Error re-importing repository: {e}")
+            flash('Error re-importing repository', 'error')
+            return redirect(url_for('repository_detail', repo_id=repo_id))
+
+    @flask_app.route('/repositories/<repo_id>/export')
+    @login_required
+    def export_repository_analysis(repo_id):
+        """Export repository analysis as JSON."""
+        try:
+            db_manager = get_repository_manager()
+            repos_repo = db_manager.repositories['imported_repositories']
+
+            # Get repository
+            repository = repos_repo.get_by_id(repo_id)
+
+            if not repository or repository.owner_id != current_user.id:
+                return jsonify({'error': 'Repository not found'}), 404
+
+            # Build export data
+            export_data = {
+                'repository': {
+                    'name': repository.name,
+                    'url': repository.url,
+                    'platform': repository.platform,
+                    'owner': repository.owner,
+                    'branch': repository.branch,
+                    'import_status': repository.import_status,
+                    'imported_at': str(repository.imported_at) if repository.imported_at else None
+                },
+                'analysis': {
+                    'languages': repository.languages or [],
+                    'frameworks': repository.frameworks or [],
+                    'dependencies': repository.dependencies or [],
+                    'project_type': repository.project_type
+                },
+                'metrics': {
+                    'total_files': repository.total_files or 0,
+                    'total_lines': repository.total_lines or 0,
+                    'total_size': repository.total_size or 0,
+                    'source_files_count': repository.source_files_count or 0,
+                    'test_files_count': repository.test_files_count or 0,
+                    'config_files_count': repository.config_files_count or 0,
+                    'doc_files_count': repository.doc_files_count or 0
+                },
+                'vectorization': {
+                    'chunks_created': repository.chunks_created or 0,
+                    'vector_collection_name': repository.vector_collection_name
+                }
+            }
+
+            # Create response
+            from flask import make_response
+            response = make_response(json.dumps(export_data, indent=2))
+            response.headers['Content-Disposition'] = f'attachment; filename=repository_{repository.name}_analysis.json'
+            response.headers['Content-Type'] = 'application/json'
+            return response
+
+        except Exception as e:
+            logger.error(f"Error exporting repository analysis: {e}")
+            return jsonify({'error': 'Export failed'}), 500
 
     return flask_app
 

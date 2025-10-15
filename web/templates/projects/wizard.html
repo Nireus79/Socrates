@@ -198,10 +198,22 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-floating mb-4">
-                                        {{ form.project_type(class="form-select") }}
-                                        <label><i class="bi bi-people me-2"></i>Project Type</label>
-                                        <div class="form-text">Will you work alone or with a team?</div>
+                                    <div class="mb-4">
+                                        <label class="form-label"><i class="bi bi-person me-2"></i>Project Mode</label>
+                                        <div class="btn-group w-100" role="group">
+                                            <input type="radio" class="btn-check" name="is_solo_project" id="mode-solo" value="true" checked>
+                                            <label class="btn btn-outline-info" for="mode-solo">
+                                                <i class="bi bi-person-fill"></i> Solo
+                                            </label>
+
+                                            <input type="radio" class="btn-check" name="is_solo_project" id="mode-team" value="false">
+                                            <label class="btn btn-outline-primary" for="mode-team">
+                                                <i class="bi bi-people-fill"></i> Team
+                                            </label>
+                                        </div>
+                                        <div class="form-text mt-2">
+                                            <span id="modeHelpText">Solo: You work independently</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -647,6 +659,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const recommendationCards = document.querySelectorAll('.recommendation-card');
     const templateCards = document.querySelectorAll('.template-card');
     const templateSelectBtn = document.getElementById('templateSelectBtn');
+
+    // Project mode toggle functionality
+    const modeSolo = document.getElementById('mode-solo');
+    const modeTeam = document.getElementById('mode-team');
+    const modeHelpText = document.getElementById('modeHelpText');
+
+    if (modeSolo && modeTeam && modeHelpText) {
+        modeSolo.addEventListener('change', function() {
+            if (this.checked) {
+                modeHelpText.innerHTML = '<i class="bi bi-person-circle text-info"></i> Solo: You work independently without team collaboration features';
+            }
+        });
+
+        modeTeam.addEventListener('change', function() {
+            if (this.checked) {
+                modeHelpText.innerHTML = '<i class="bi bi-people-fill text-primary"></i> Team: Collaborate with team members and assign tasks';
+            }
+        });
+    }
 
     // Template data for detailed view
     const templateData = {{ available_templates|tojson }};
