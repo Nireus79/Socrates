@@ -13,60 +13,288 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
 
-    <!-- Custom CSS -->
+    <!-- Custom CSS - PyCharm Dark Theme -->
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+        /* PyCharm Dark Theme Colors */
+        :root {
+            --bg-primary: #2B2B2B;      /* Main background */
+            --bg-secondary: #313335;    /* Cards, panels */
+            --bg-tertiary: #3C3F41;     /* Navbar, footer */
+            --bg-hover: #4B4E50;        /* Hover states */
+            --text-primary: #A9B7C6;    /* Main text */
+            --text-secondary: #6C7A89;  /* Muted text */
+            --border-color: #555555;    /* Borders */
+            --accent-blue: #6897BB;     /* Links, primary actions */
+            --accent-green: #6A8759;    /* Success */
+            --accent-red: #CC7832;      /* Danger/warning */
+            --accent-yellow: #FFC66D;   /* Attention */
         }
-        
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background-color: var(--bg-tertiary) !important;
+            border-bottom: 1px solid var(--border-color);
+        }
+
         .navbar-brand {
             font-weight: 600;
+            color: var(--text-primary) !important;
         }
-        
+
+        .nav-link {
+            color: var(--text-primary) !important;
+        }
+
+        .nav-link:hover {
+            color: var(--accent-blue) !important;
+            background-color: var(--bg-hover);
+            border-radius: 4px;
+        }
+
         .footer {
-            background-color: rgba(0, 0, 0, 0.1);
-            color: white;
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
             text-align: center;
             padding: 1rem 0;
             margin-top: auto;
+            border-top: 1px solid var(--border-color);
         }
-        
+
         .main-content {
             flex: 1;
+            padding: 20px 0;
         }
-        
+
         .wrapper {
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
-        
-        /* Flash message styling */
+
+        /* Card styling */
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .card-header {
+            background-color: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .card-footer {
+            background-color: var(--bg-tertiary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Button styling */
+        .btn-primary {
+            background-color: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: var(--bg-primary);
+        }
+
+        .btn-primary:hover {
+            background-color: #7BA7CB;
+            border-color: #7BA7CB;
+        }
+
+        .btn-success {
+            background-color: var(--accent-green);
+            border-color: var(--accent-green);
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: var(--accent-red);
+            border-color: var(--accent-red);
+            color: white;
+        }
+
+        .btn-warning {
+            background-color: var(--accent-yellow);
+            border-color: var(--accent-yellow);
+            color: var(--bg-primary);
+        }
+
+        .btn-secondary, .btn-outline-secondary {
+            background-color: var(--bg-hover);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-outline-primary {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--accent-blue);
+            color: var(--bg-primary);
+        }
+
+        /* Form controls */
+        .form-control, .form-select {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .form-control:focus, .form-select:focus {
+            background-color: var(--bg-tertiary);
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 0.2rem rgba(104, 151, 187, 0.25);
+        }
+
+        .form-label {
+            color: var(--text-primary);
+        }
+
+        /* Flash messages */
         .alert {
-            border-radius: 0.75rem;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
         }
-        
+
         .alert-success {
-            background-color: rgba(34, 197, 94, 0.9);
-            color: white;
+            background-color: #2A3A2E;
+            color: var(--accent-green);
+            border-color: var(--accent-green);
         }
-        
+
         .alert-error, .alert-danger {
-            background-color: rgba(239, 68, 68, 0.9);
-            color: white;
+            background-color: #3A2B2B;
+            color: var(--accent-red);
+            border-color: var(--accent-red);
         }
-        
+
         .alert-info {
-            background-color: rgba(59, 130, 246, 0.9);
-            color: white;
+            background-color: #2B3541;
+            color: var(--accent-blue);
+            border-color: var(--accent-blue);
         }
-        
+
         .alert-warning {
-            background-color: rgba(245, 158, 11, 0.9);
-            color: white;
+            background-color: #3A3527;
+            color: var(--accent-yellow);
+            border-color: var(--accent-yellow);
+        }
+
+        /* Tables */
+        .table {
+            color: var(--text-primary);
+        }
+
+        .table-striped > tbody > tr:nth-of-type(odd) > * {
+            background-color: var(--bg-tertiary);
+        }
+
+        /* Badges */
+        .badge {
+            font-weight: 500;
+        }
+
+        .bg-primary {
+            background-color: var(--accent-blue) !important;
+        }
+
+        .bg-success {
+            background-color: var(--accent-green) !important;
+        }
+
+        .bg-danger {
+            background-color: var(--accent-red) !important;
+        }
+
+        .bg-warning {
+            background-color: var(--accent-yellow) !important;
+            color: var(--bg-primary) !important;
+        }
+
+        .bg-info {
+            background-color: var(--accent-blue) !important;
+        }
+
+        .bg-secondary {
+            background-color: var(--bg-hover) !important;
+        }
+
+        /* Text colors */
+        .text-muted {
+            color: var(--text-secondary) !important;
+        }
+
+        .text-primary {
+            color: var(--accent-blue) !important;
+        }
+
+        .text-success {
+            color: var(--accent-green) !important;
+        }
+
+        .text-danger {
+            color: var(--accent-red) !important;
+        }
+
+        .text-warning {
+            color: var(--accent-yellow) !important;
+        }
+
+        /* Links */
+        a {
+            color: var(--accent-blue);
+        }
+
+        a:hover {
+            color: #7BA7CB;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .breadcrumb-item a {
+            color: var(--accent-blue);
+        }
+
+        .breadcrumb-item.active {
+            color: var(--text-primary);
+        }
+
+        /* Modal */
+        .modal-content {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-header, .modal-footer {
+            border-color: var(--border-color);
+        }
+
+        /* Dropdown */
+        .dropdown-menu {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .dropdown-item {
+            color: var(--text-primary);
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--bg-hover);
+            color: var(--text-primary);
         }
     </style>
     
@@ -75,7 +303,7 @@
 <body>
     <div class="wrapper">
         <!-- Navigation -->
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+        <nav class="navbar navbar-expand-lg navbar-dark shadow">
             <div class="container">
                 <a class="navbar-brand" href="{{ url_for('index') }}">
                     <i class="bi bi-lightbulb"></i> Socratic RAG Enhanced
@@ -168,9 +396,9 @@
         <footer class="footer mt-5">
             <div class="container">
                 <p class="mb-0">
-                    <i class="bi bi-lightbulb"></i> Socratic RAG Enhanced v7.5.0 - Phase C: UI Rebuild
+                    <i class="bi bi-lightbulb"></i> Socratic RAG Enhanced v7.5.0
                     <span class="text-muted">|</span>
-                    <span class="badge bg-success">Working</span>
+                    <span class="badge bg-success">Production Ready</span>
                 </p>
             </div>
         </footer>

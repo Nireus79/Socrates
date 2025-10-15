@@ -4,14 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="back full">
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="full">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/run.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/base.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/code/viewer.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/code/viewer.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/projects/dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/projects/dashboard.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/projects/wizard.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/projects/wizard.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/sessions/detail.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/sessions/detail.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -144,14 +141,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00210" summary="run.py">
-      <option name="closed" value="true" />
-      <created>1760100384605</created>
-      <option name="number" value="00210" />
-      <option name="presentableId" value="LOCAL-00210" />
-      <option name="project" value="LOCAL" />
-      <updated>1760100384605</updated>
     </task>
     <task id="LOCAL-00211" summary="run.py">
       <option name="closed" value="true" />
@@ -537,11 +526,18 @@
       <option name="project" value="LOCAL" />
       <updated>1760510838197</updated>
     </task>
-    <option name="localTasksCounter" value="259" />
+    <task id="LOCAL-00259" summary="full">
+      <option name="closed" value="true" />
+      <created>1760515479092</created>
+      <option name="number" value="00259" />
+      <option name="presentableId" value="LOCAL-00259" />
+      <option name="project" value="LOCAL" />
+      <updated>1760515479092</updated>
+    </task>
+    <option name="localTasksCounter" value="260" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="clean up" />
     <MESSAGE value="IntegrationTest" />
     <MESSAGE value="project.py" />
     <MESSAGE value="import database" />
@@ -566,6 +562,7 @@
     <MESSAGE value="greedy" />
     <MESSAGE value="ReadMe" />
     <MESSAGE value="back full" />
-    <option name="LAST_COMMIT_MESSAGE" value="back full" />
+    <MESSAGE value="full" />
+    <option name="LAST_COMMIT_MESSAGE" value="full" />
   </component>
 </project>
