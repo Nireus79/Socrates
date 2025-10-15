@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}{{ repository.name }} - Repository Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('repositories') }}">Repositories</a></li>
+            <li class="breadcrumb-item active">{{ repository.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>
+                <i class="bi bi-{{ 'github' if repository.platform == 'github' else 'git' }}"></i>
+                {{ repository.name }}
+            </h2>
+            <p class="text-muted mb-0">
+                <i class="bi bi-person"></i> {{ repository.owner }}
+                <span class="mx-2">•</span>
+                <i class="bi bi-globe"></i> {{ repository.platform|title }}
+                <span class="mx-2">•</span>
+                <span class="badge bg-{{ 'success' if repository.import_status == 'completed' else 'warning' }}">
+                    {{ repository.import_status|replace('_', ' ')|title }}
+                </span>
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{{ repository.url }}" target="_blank" class="btn btn-outline-primary">
+                    <i class="bi bi-box-arrow-up-right"></i> View on {{ repository.platform|title }}
+                </a>
+                <a href="{{ url_for('repositories') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Analysis Results -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Analysis Results
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Languages -->
+                    <div class="mb-4">
+                        <h6 class="text-muted">Programming Languages ({{ repository.languages|length }})</h6>
+                        <div>
+                            {% if repository.languages %}
+                                {% for lang in repository.languages %}
+                                <span class="badge bg-primary me-1 mb-1">{{ lang }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">No languages detected</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Frameworks -->
+                    <div class="mb-4">
+                        <h6 class="text-muted">Frameworks & Libraries</h6>
+                        <div>
+                            {% if repository.frameworks %}
+                                {% for framework in repository.frameworks %}
+                                <span class="badge bg-success me-1 mb-1">{{ framework }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">No frameworks detected</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Dependencies -->
+                    {% if repository.dependencies %}
+                    <div class="mb-4">
+                        <h6 class="text-muted">Dependencies</h6>
+                        <div class="border rounded p-3 bg-light">
+                            <small class="font-monospace">{{ repository.dependencies|join(', ') }}</small>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Project Type -->
+                    {% if repository.project_type %}
+                    <div class="mb-0">
+                        <h6 class="text-muted">Project Type</h6>
+                        <span class="badge bg-info">{{ repository.project_type|title }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Code Metrics -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bar-chart"></i> Code Metrics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="metric">
+                                <h3 class="text-primary">{{ repository.total_files or 0 }}</h3>
+                                <small class="text-muted">Total Files</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric">
+                                <h3 class="text-success">{{ repository.total_lines or 0 }}</h3>
+                                <small class="text-muted">Lines of Code</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric">
+                                <h3 class="text-info">{{ (repository.total_size or 0)|filesizeformat }}</h3>
+                                <small class="text-muted">Total Size</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric">
+                                <h3 class="text-warning">{{ repository.chunks_created or 0 }}</h3>
+                                <small class="text-muted">Vector Chunks</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Structure -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-folder-tree"></i> Project Structure
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Source Files</h6>
+                            <p class="text-muted">{{ repository.source_files_count or 0 }} files</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Test Files</h6>
+                            <p class="text-muted">{{ repository.test_files_count or 0 }} files</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Config Files</h6>
+                            <p class="text-muted">{{ repository.config_files_count or 0 }} files</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Documentation</h6>
+                            <p class="text-muted">{{ repository.doc_files_count or 0 }} files</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Repository Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Repository Info</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="text-muted small">Repository URL</div>
+                        <a href="{{ repository.url }}" target="_blank" class="small text-break">
+                            {{ repository.url }}
+                        </a>
+                    </div>
+
+                    {% if repository.branch %}
+                    <div class="mb-3">
+                        <div class="text-muted small">Branch</div>
+                        <div><span class="badge bg-secondary">{{ repository.branch }}</span></div>
+                    </div>
+                    {% endif %}
+
+                    {% if repository.local_path %}
+                    <div class="mb-3">
+                        <div class="text-muted small">Local Path</div>
+                        <div class="small font-monospace text-break">{{ repository.local_path }}</div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <div class="text-muted small">Imported At</div>
+                        <div>{{ repository.imported_at or repository.created_at }}</div>
+                    </div>
+
+                    {% if repository.vector_collection_name %}
+                    <div class="mb-0">
+                        <div class="text-muted small">Vector Collection</div>
+                        <div class="small">
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle"></i> Vectorized
+                            </span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-gear"></i> Actions</h6>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary w-100 mb-2" onclick="askAboutRepo()">
+                        <i class="bi bi-chat-dots"></i> Ask AI About This Code
+                    </button>
+                    <button class="btn btn-info w-100 mb-2" onclick="reimportRepo()">
+                        <i class="bi bi-arrow-clockwise"></i> Re-import Repository
+                    </button>
+                    <button class="btn btn-warning w-100 mb-2" onclick="exportAnalysis()">
+                        <i class="bi bi-download"></i> Export Analysis
+                    </button>
+                    <button class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="bi bi-trash"></i> Delete Repository
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Quick Stats</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="small">Primary Language:</span>
+                        <strong class="small">{{ repository.languages[0] if repository.languages else 'Unknown' }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="small">Code Complexity:</span>
+                        <strong class="small">
+                            {% if repository.total_lines < 1000 %}Low
+                            {% elif repository.total_lines < 10000 %}Medium
+                            {% else %}High
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="small">RAG Enabled:</span>
+                        <strong class="small">{{ 'Yes' if repository.chunks_created else 'No' }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong>"{{ repository.name }}"</strong>?</p>
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    This will permanently delete all analysis data and vector embeddings.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('delete_repository', repo_id=repository.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete Repository
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function askAboutRepo() {
+    // Redirect to chat/session with repository context
+    window.location.href = "{{ url_for('new_session') }}?repo_id={{ repository.id }}";
+}
+
+function reimportRepo() {
+    if (confirm('Re-import this repository? This will update the analysis with the latest code.')) {
+        window.location.href = "{{ url_for('reimport_repository', repo_id=repository.id) }}";
+    }
+}
+
+function exportAnalysis() {
+    window.open("{{ url_for('export_repository_analysis', repo_id=repository.id) }}", '_blank');
+}
+</script>
+{% endblock %}

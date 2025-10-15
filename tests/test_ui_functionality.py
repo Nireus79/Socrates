@@ -232,7 +232,7 @@ class FunctionalityTester:
     def test_database_exists(self) -> bool:
         """Test that database file exists."""
         import os
-        db_path = 'data/socratic.db'
+        db_path = '../data/socratic.db'
         exists = os.path.exists(db_path)
 
         self.log(f"Database exists at {db_path}: {exists}")
@@ -248,7 +248,7 @@ class FunctionalityTester:
         import sqlite3
 
         try:
-            conn = sqlite3.connect('data/socratic.db')
+            conn = sqlite3.connect('../data/socratic.db')
             cursor = conn.cursor()
 
             # Get list of tables

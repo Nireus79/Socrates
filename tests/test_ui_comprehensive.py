@@ -18,7 +18,7 @@ import time
 from typing import Dict, Any, Optional, List
 
 BASE_URL = "http://localhost:5002"
-DB_PATH = "data/socratic.db"
+DB_PATH = "../data/socratic.db"
 
 class UITestSuite:
     def __init__(self):

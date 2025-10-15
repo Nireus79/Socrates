@@ -38,7 +38,7 @@ def test_settings_page():
 def test_delete_session_button():
     """Test that delete session button is in template."""
     # Read the template file directly
-    with open('web/templates/sessions/detail.html', 'r', encoding='utf-8') as f:
+    with open('../web/templates/sessions/detail.html', 'r', encoding='utf-8') as f:
         content = f.read()
 
     has_button = 'Delete Session' in content
@@ -47,14 +47,14 @@ def test_delete_session_button():
 
 def test_csrf_disabled():
     """Test that CSRF is disabled in app.py."""
-    with open('web/app.py', 'r', encoding='utf-8') as f:
+    with open('../web/app.py', 'r', encoding='utf-8') as f:
         content = f.read()
 
     return "WTF_CSRF_ENABLED'] = False" in content
 
 def test_session_status_accepts_form_data():
     """Test that session status route accepts both JSON and form data."""
-    with open('web/app.py', 'r', encoding='utf-8') as f:
+    with open('../web/app.py', 'r', encoding='utf-8') as f:
         content = f.read()
 
     # Check for dual handling
@@ -64,7 +64,7 @@ def test_session_status_accepts_form_data():
 
 def test_project_validation_simplified():
     """Test that project validation uses direct form fields."""
-    with open('web/app.py', 'r', encoding='utf-8') as f:
+    with open('../web/app.py', 'r', encoding='utf-8') as f:
         content = f.read()
 
     # Check for simplified validation

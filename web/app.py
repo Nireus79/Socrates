@@ -1817,7 +1817,7 @@ def create_flask_app(config_override=None) -> Flask:
             prefs['api_keys'] = api_keys
 
             # Update user in database
-            user_db.update_user(current_user.id, {'preferences': prefs})
+            user_db.update_user(current_user.id, {'preferences': prefs})  # TODO Unresolved attribute reference 'update_user' for class 'UserDB'
 
             return jsonify({'success': True, 'message': 'LLM settings saved successfully'})
         except Exception as e:
@@ -1838,7 +1838,7 @@ def create_flask_app(config_override=None) -> Flask:
             provider = get_llm_provider(provider_name, auto_detect=False)
 
             # Run health check
-            health = provider.health_check()
+            health = provider.health_check()  # TODO Shadows name 'health' from outer scope
 
             if health.get('status') == 'healthy':
                 return jsonify({
@@ -1867,7 +1867,7 @@ def create_flask_app(config_override=None) -> Flask:
             prefs['ide'] = ide
 
             # Update user in database
-            user_db.update_user(current_user.id, {'preferences': prefs})
+            user_db.update_user(current_user.id, {'preferences': prefs})  # TODO Unresolved attribute reference 'update_user' for class 'UserDB'
 
             return jsonify({'success': True, 'message': 'IDE settings saved successfully'})
         except Exception as e:
@@ -1915,7 +1915,7 @@ def create_flask_app(config_override=None) -> Flask:
             new_hash = generate_password_hash(new_password)
 
             # Update password
-            user_db.update_user(current_user.id, {'password_hash': new_hash})
+            user_db.update_user(current_user.id, {'password_hash': new_hash})  # TODO Unresolved attribute reference 'update_user' for class 'UserDB'
 
             return jsonify({'success': True, 'message': 'Password changed successfully'})
         except Exception as e:
@@ -1939,7 +1939,7 @@ def create_flask_app(config_override=None) -> Flask:
             }
 
             # Update user in database
-            user_db.update_user(current_user.id, {'preferences': prefs})
+            user_db.update_user(current_user.id, {'preferences': prefs})  # TODO Unresolved attribute reference 'update_user' for class 'UserDB'
 
             return jsonify({'success': True, 'message': 'System settings saved successfully'})
         except Exception as e:
@@ -2394,7 +2394,7 @@ def create_flask_app(config_override=None) -> Flask:
         """Get file content for code viewer."""
         try:
             # Get file from database
-            file_record = user_db.get_generated_file(file_id, current_user.id)
+            file_record = user_db.get_generated_file(file_id, current_user.id)   # TODO Unresolved attribute reference 'get_generated_file' for class 'UserDB'
 
             if not file_record:
                 return jsonify({'error': 'File not found'}), 404
@@ -2901,7 +2901,7 @@ def create_flask_app(config_override=None) -> Flask:
             if db_manager is None:
                 repositories_list = []
             else:
-                repos_repo = db_manager.repositories['imported_repositories']
+                repos_repo = db_manager.repositories['imported_repositories']  # TODO Unresolved attribute reference 'repositories' for class 'RepositoryManager'
                 # Get all repositories for current user
                 repositories_list = repos_repo.get_by_owner_id(current_user.id)
 
@@ -2917,7 +2917,7 @@ def create_flask_app(config_override=None) -> Flask:
         """Show repository import form."""
         try:
             db_manager = get_repository_manager()
-            projects_repo = db_manager.repositories['projects']
+            projects_repo = db_manager.repositories['projects']  # TODO Unresolved attribute reference 'repositories' for class 'RepositoryManager'
 
             # Get user's projects for association
             user_projects = projects_repo.get_by_owner_id(current_user.id)
@@ -2986,7 +2986,7 @@ def create_flask_app(config_override=None) -> Flask:
         """Show detailed view of an imported repository."""
         try:
             db_manager = get_repository_manager()
-            repos_repo = db_manager.repositories['imported_repositories']
+            repos_repo = db_manager.repositories['imported_repositories']  # TODO Unresolved attribute reference 'repositories' for class 'RepositoryManager'
 
             # Get repository
             repository = repos_repo.get_by_id(repo_id)
@@ -3007,7 +3007,7 @@ def create_flask_app(config_override=None) -> Flask:
         """Delete an imported repository."""
         try:
             db_manager = get_repository_manager()
-            repos_repo = db_manager.repositories['imported_repositories']
+            repos_repo = db_manager.repositories['imported_repositories']  # TODO Unresolved attribute reference 'repositories' for class 'RepositoryManager'
 
             # Get repository
             repository = repos_repo.get_by_id(repo_id)
@@ -3021,7 +3021,7 @@ def create_flask_app(config_override=None) -> Flask:
                 try:
                     from src.services.vector_service import VectorService
                     vector_service = VectorService()
-                    vector_service.delete_collection(repository.vector_collection_name)
+                    vector_service.delete_collection(repository.vector_collection_name)  # TODO Unresolved attribute reference 'delete_collection' for class 'VectorService'
                 except Exception as e:
                     logger.warning(f"Error deleting vector collection: {e}")
 
@@ -3050,7 +3050,7 @@ def create_flask_app(config_override=None) -> Flask:
         """Re-import a repository to update analysis."""
         try:
             db_manager = get_repository_manager()
-            repos_repo = db_manager.repositories['imported_repositories']
+            repos_repo = db_manager.repositories['imported_repositories']  # TODO Unresolved attribute reference 'repositories' for class 'RepositoryManager'
 
             # Get repository
             repository = repos_repo.get_by_id(repo_id)
@@ -3069,7 +3069,7 @@ def create_flask_app(config_override=None) -> Flask:
                 return redirect(url_for('repository_detail', repo_id=repo_id))
 
             # Re-import the repository
-            result = import_service.reimport_repository(repo_id, current_user.id)
+            result = import_service.reimport_repository(repo_id, current_user.id)  # TODO Unresolved attribute reference 'reimport_repository' for class 'RepositoryImportService'
 
             if result.get('success'):
                 flash('Repository re-imported successfully', 'success')
@@ -3089,7 +3089,7 @@ def create_flask_app(config_override=None) -> Flask:
         """Export repository analysis as JSON."""
         try:
             db_manager = get_repository_manager()
-            repos_repo = db_manager.repositories['imported_repositories']
+            repos_repo = db_manager.repositories['imported_repositories']  # TODO Cannot find reference 'repositories' in 'None | RepositoryManager'
 
             # Get repository
             repository = repos_repo.get_by_id(repo_id)

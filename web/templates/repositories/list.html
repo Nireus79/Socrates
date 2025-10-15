@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}My Repositories - Socratic RAG Enhanced{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="bi bi-folder text-primary"></i> My Repositories</h2>
+            <p class="text-muted">Manage your imported Git repositories and explore analyzed code</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('import_repository_page') }}" class="btn btn-success">
+                <i class="bi bi-cloud-download"></i> Import Repository
+            </a>
+        </div>
+    </div>
+
+    {% if repositories %}
+        <!-- Repository Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ repositories|length }}</h3>
+                        <small>Total Repositories</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ repositories|selectattr('import_status', 'equalto', 'completed')|list|length }}</h3>
+                        <small>Successfully Imported</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ repositories|map(attribute='total_lines')|sum }}</h3>
+                        <small>Total Lines of Code</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ repositories|selectattr('chunks_created', 'gt', 0)|list|length }}</h3>
+                        <small>Vectorized</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Repositories Grid -->
+        <div class="row">
+            {% for repo in repositories %}
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-{{ 'github' if repo.platform == 'github' else 'git' }} text-{{ 'dark' if repo.platform == 'github' else 'primary' }}"></i>
+                                {{ repo.name }}
+                            </h5>
+                            <span class="badge bg-{{ 'success' if repo.import_status == 'completed' else 'warning' if repo.import_status == 'in_progress' else 'danger' }}">
+                                {{ repo.import_status|replace('_', ' ')|title }}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <!-- Owner & Platform -->
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-person"></i> {{ repo.owner }}
+                                    <span class="mx-2">•</span>
+                                    <i class="bi bi-globe"></i> {{ repo.platform|title }}
+                                </small>
+                            </div>
+
+                            <!-- Languages -->
+                            {% if repo.languages %}
+                            <div class="mb-3">
+                                <small class="text-muted d-block mb-1">Languages:</small>
+                                {% for lang in repo.languages[:5] %}
+                                <span class="badge bg-secondary me-1 mb-1">{{ lang }}</span>
+                                {% endfor %}
+                                {% if repo.languages|length > 5 %}
+                                <span class="badge bg-light text-dark">+{{ repo.languages|length - 5 }}</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+
+                            <!-- Frameworks -->
+                            {% if repo.frameworks %}
+                            <div class="mb-3">
+                                <small class="text-muted d-block mb-1">Frameworks:</small>
+                                {% for framework in repo.frameworks[:3] %}
+                                <span class="badge bg-info me-1 mb-1">{{ framework }}</span>
+                                {% endfor %}
+                                {% if repo.frameworks|length > 3 %}
+                                <span class="badge bg-light text-dark">+{{ repo.frameworks|length - 3 }}</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+
+                            <!-- Stats -->
+                            <div class="row text-center mb-3">
+                                <div class="col-4">
+                                    <small class="text-muted">Files</small><br>
+                                    <strong>{{ repo.total_files or 0 }}</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">Lines</small><br>
+                                    <strong>{{ (repo.total_lines or 0)|filesizeformat if repo.total_lines > 1000 else repo.total_lines or 0 }}</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">Chunks</small><br>
+                                    <strong class="text-{{ 'success' if repo.chunks_created else 'muted' }}">{{ repo.chunks_created or 0 }}</strong>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <small class="text-muted">
+                                <i class="bi bi-calendar"></i> Imported: {{ repo.imported_at[:10] if repo.imported_at else repo.created_at[:10] }}
+                            </small>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="btn-group w-100" role="group">
+                                <a href="{{ url_for('repository_detail', repo_id=repo.id) }}"
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                                <a href="{{ repo.url }}" target="_blank"
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-box-arrow-up-right"></i> Source
+                                </a>
+                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                        data-bs-toggle="modal" data-bs-target="#deleteModal{{ repo.id }}">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delete Confirmation Modal -->
+                <div class="modal fade" id="deleteModal{{ repo.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Confirm Delete</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Are you sure you want to delete the repository <strong>"{{ repo.name }}"</strong>?</p>
+                                <p class="text-danger small">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    This will delete all analysis data and vector embeddings. The original repository on {{ repo.platform|title }} will not be affected.
+                                </p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <form method="POST" action="{{ url_for('delete_repository', repo_id=repo.id) }}" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="bi bi-trash"></i> Delete Repository
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <!-- Empty State -->
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card text-center">
+                    <div class="card-body py-5">
+                        <i class="bi bi-cloud-download display-1 text-muted mb-3"></i>
+                        <h4 class="card-title">No Repositories Yet</h4>
+                        <p class="card-text text-muted">
+                            Import your first Git repository to analyze code, detect languages and frameworks,
+                            and enable AI-powered Q&A with RAG.
+                        </p>
+                        <a href="{{ url_for('import_repository_page') }}" class="btn btn-success btn-lg">
+                            <i class="bi bi-cloud-download"></i> Import Your First Repository
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Getting Started Tips -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-github display-4 text-primary mb-3"></i>
+                        <h6>GitHub Repositories</h6>
+                        <p class="small text-muted">
+                            Import public or private repositories from GitHub with full analysis.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-code-slash display-4 text-success mb-3"></i>
+                        <h6>Language Detection</h6>
+                        <p class="small text-muted">
+                            Automatically detect 30+ programming languages and frameworks.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="bi bi-database display-4 text-info mb-3"></i>
+                        <h6>RAG Vectorization</h6>
+                        <p class="small text-muted">
+                            Enable AI-powered Q&A by vectorizing code for semantic search.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

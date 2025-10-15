@@ -1,0 +1,679 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Socratic RAG Enhanced{% endblock %}
+
+{% block extra_head %}
+<style>
+.settings-card {
+    transition: all 0.3s ease;
+}
+
+.settings-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.provider-card {
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.provider-card:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.provider-card.selected {
+    border-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.provider-card.unavailable {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.provider-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.api-key-input {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+.settings-nav-pills .nav-link {
+    color: rgba(255, 255, 255, 0.7);
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.settings-nav-pills .nav-link:hover {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.settings-nav-pills .nav-link.active {
+    background-color: #0d6efd;
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <h1 class="display-6">
+                <i class="bi bi-gear-fill text-primary"></i> Settings
+            </h1>
+            <p class="text-muted">Manage your preferences and system configuration</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Settings Navigation -->
+        <div class="col-lg-3 mb-4">
+            <div class="card bg-dark border">
+                <div class="card-body">
+                    <ul class="nav nav-pills flex-column settings-nav-pills" id="settings-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active w-100 text-start" id="llm-tab" data-bs-toggle="tab"
+                                    data-bs-target="#llm-settings" type="button" role="tab">
+                                <i class="bi bi-robot me-2"></i> LLM Provider
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link w-100 text-start" id="ide-tab" data-bs-toggle="tab"
+                                    data-bs-target="#ide-settings" type="button" role="tab">
+                                <i class="bi bi-code-square me-2"></i> IDE Integration
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link w-100 text-start" id="profile-tab" data-bs-toggle="tab"
+                                    data-bs-target="#profile-settings" type="button" role="tab">
+                                <i class="bi bi-person-circle me-2"></i> Profile
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link w-100 text-start" id="system-tab" data-bs-toggle="tab"
+                                    data-bs-target="#system-settings" type="button" role="tab">
+                                <i class="bi bi-sliders me-2"></i> System
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Content -->
+        <div class="col-lg-9">
+            <div class="tab-content" id="settings-tab-content">
+
+                <!-- LLM Provider Settings -->
+                <div class="tab-pane fade show active" id="llm-settings" role="tabpanel">
+                    <div class="card bg-dark border settings-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-robot"></i> LLM Provider Configuration
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-4">
+                                Choose your preferred AI language model provider. Each provider requires an API key.
+                            </p>
+
+                            <!-- Provider Selection Grid -->
+                            <div class="row g-3 mb-4">
+                                {% for provider in llm_providers %}
+                                <div class="col-md-6">
+                                    <div class="card provider-card {% if provider.name == current_llm_provider %}selected{% endif %} {% if not provider.available %}unavailable{% endif %}"
+                                         onclick="selectLLMProvider('{{ provider.name }}', {{ 'true' if provider.available else 'false' }})">
+                                        <div class="card-body text-center">
+                                            <div class="provider-icon">
+                                                {% if provider.name == 'claude' %}
+                                                    <i class="bi bi-robot text-primary"></i>
+                                                {% elif provider.name == 'openai' %}
+                                                    <i class="bi bi-chat-left-text text-success"></i>
+                                                {% elif provider.name == 'gemini' %}
+                                                    <i class="bi bi-gem text-warning"></i>
+                                                {% elif provider.name == 'ollama' %}
+                                                    <i class="bi bi-hdd-network text-info"></i>
+                                                {% endif %}
+                                            </div>
+                                            <h6>{{ provider.provider_name }}</h6>
+                                            <span class="badge {% if provider.available %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {% if provider.available %}Available{% else %}Not Configured{% endif %}
+                                            </span>
+                                            {% if provider.name == current_llm_provider %}
+                                                <div class="mt-2">
+                                                    <span class="badge bg-primary">
+                                                        <i class="bi bi-check-circle"></i> Selected
+                                                    </span>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- API Key Configuration -->
+                            <div class="mb-4">
+                                <h6 class="mb-3">API Key Configuration</h6>
+
+                                <!-- Claude API Key -->
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="bi bi-robot text-primary"></i> Claude API Key
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control api-key-input" id="claude-api-key"
+                                               placeholder="sk-ant-..." value="{{ api_keys.get('claude', '') }}">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="toggleApiKey('claude-api-key')">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-text text-muted">Get your API key from <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a></small>
+                                </div>
+
+                                <!-- OpenAI API Key -->
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="bi bi-chat-left-text text-success"></i> OpenAI API Key
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control api-key-input" id="openai-api-key"
+                                               placeholder="sk-..." value="{{ api_keys.get('openai', '') }}">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="toggleApiKey('openai-api-key')">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-text text-muted">Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></small>
+                                </div>
+
+                                <!-- Gemini API Key -->
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="bi bi-gem text-warning"></i> Google Gemini API Key
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control api-key-input" id="gemini-api-key"
+                                               placeholder="AI..." value="{{ api_keys.get('gemini', '') }}">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="toggleApiKey('gemini-api-key')">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-text text-muted">Get your API key from <a href="https://makersuite.google.com/app/apikey" target="_blank">makersuite.google.com</a></small>
+                                </div>
+
+                                <!-- Ollama (Local) -->
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="bi bi-hdd-network text-info"></i> Ollama (Local Model)
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="ollama-url"
+                                               placeholder="http://localhost:11434" value="{{ api_keys.get('ollama_url', 'http://localhost:11434') }}">
+                                    </div>
+                                    <small class="form-text text-muted">Ollama runs locally. <a href="https://ollama.ai/" target="_blank">Download here</a></small>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-info" onclick="testLLMConnection()">
+                                    <i class="bi bi-activity"></i> Test Connection
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="saveLLMSettings()">
+                                    <i class="bi bi-save"></i> Save LLM Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- IDE Integration Settings -->
+                <div class="tab-pane fade" id="ide-settings" role="tabpanel">
+                    <div class="card bg-dark border settings-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-code-square"></i> IDE Integration
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-4">
+                                Configure your preferred IDE for project synchronization and code generation.
+                            </p>
+
+                            <!-- IDE Selection -->
+                            <div class="row g-3 mb-4">
+                                {% for ide in installed_ides %}
+                                <div class="col-md-6">
+                                    <div class="card provider-card {% if ide.name == current_ide %}selected{% endif %}"
+                                         onclick="selectIDE('{{ ide.name }}')">
+                                        <div class="card-body text-center">
+                                            <div class="provider-icon">
+                                                {% if ide.name == 'vscode' %}
+                                                    <i class="bi bi-code text-primary"></i>
+                                                {% elif ide.name == 'pycharm' %}
+                                                    <i class="bi bi-terminal text-success"></i>
+                                                {% endif %}
+                                            </div>
+                                            <h6>{{ ide.display_name }}</h6>
+                                            {% if ide.version %}
+                                                <small class="text-muted">Version: {{ ide.version }}</small>
+                                            {% endif %}
+                                            <div class="mt-2">
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle"></i> Installed
+                                                </span>
+                                            </div>
+                                            {% if ide.name == current_ide %}
+                                                <div class="mt-2">
+                                                    <span class="badge bg-primary">
+                                                        <i class="bi bi-star-fill"></i> Default
+                                                    </span>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            {% if not installed_ides %}
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i> No supported IDEs detected. Please install VS Code or PyCharm.
+                            </div>
+                            {% endif %}
+
+                            <div class="d-flex justify-content-end">
+                                <button type="button" class="btn btn-primary" onclick="saveIDESettings()">
+                                    <i class="bi bi-save"></i> Save IDE Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Settings -->
+                <div class="tab-pane fade" id="profile-settings" role="tabpanel">
+                    <div class="card bg-dark border settings-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-person-circle"></i> Profile Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="profile-form">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">First Name</label>
+                                        <input type="text" class="form-control" name="first_name"
+                                               value="{{ current_user.first_name }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" name="last_name"
+                                               value="{{ current_user.last_name }}">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" name="email"
+                                           value="{{ current_user.email }}">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Bio</label>
+                                    <textarea class="form-control" name="bio" rows="3">{{ current_user.bio }}</textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Skills (comma-separated)</label>
+                                    <input type="text" class="form-control" name="skills"
+                                           value="{{ current_user.skills|join(', ') }}">
+                                    <small class="form-text text-muted">e.g., Python, JavaScript, React</small>
+                                </div>
+
+                                <div class="d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save"></i> Update Profile
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Change Password -->
+                    <div class="card bg-dark border settings-card mt-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-lock"></i> Change Password
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="password-form">
+                                <div class="mb-3">
+                                    <label class="form-label">Current Password</label>
+                                    <input type="password" class="form-control" name="current_password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">New Password</label>
+                                    <input type="password" class="form-control" name="new_password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" name="confirm_password" required>
+                                </div>
+                                <div class="d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="bi bi-key"></i> Change Password
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Settings -->
+                <div class="tab-pane fade" id="system-settings" role="tabpanel">
+                    <div class="card bg-dark border settings-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-sliders"></i> System Preferences
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Theme</label>
+                                <select class="form-select" name="theme">
+                                    <option value="dark" selected>Dark Mode</option>
+                                    <option value="light">Light Mode</option>
+                                    <option value="auto">Auto (System)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Notifications</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="email-notifications" checked>
+                                    <label class="form-check-label" for="email-notifications">
+                                        Email Notifications
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="browser-notifications" checked>
+                                    <label class="form-check-label" for="browser-notifications">
+                                        Browser Notifications
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Auto-save Interval</label>
+                                <select class="form-select" name="autosave">
+                                    <option value="30">30 seconds</option>
+                                    <option value="60" selected>1 minute</option>
+                                    <option value="300">5 minutes</option>
+                                    <option value="0">Disabled</option>
+                                </select>
+                            </div>
+
+                            <div class="d-flex justify-content-end">
+                                <button type="button" class="btn btn-primary" onclick="saveSystemSettings()">
+                                    <i class="bi bi-save"></i> Save System Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Settings Page JavaScript
+let selectedLLMProvider = '{{ current_llm_provider }}';
+let selectedIDE = '{{ current_ide }}';
+
+// LLM Provider Selection
+function selectLLMProvider(providerName, isAvailable) {
+    if (isAvailable === 'false' || isAvailable === false) {
+        alert('This provider is not configured yet. Please add an API key first.');
+        return;
+    }
+
+    selectedLLMProvider = providerName;
+
+    // Update UI
+    document.querySelectorAll('.provider-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    event.currentTarget.classList.add('selected');
+}
+
+// IDE Selection
+function selectIDE(ideName) {
+    selectedIDE = ideName;
+
+    // Update UI
+    document.querySelectorAll('#ide-settings .provider-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    event.currentTarget.classList.add('selected');
+}
+
+// Toggle API Key Visibility
+function toggleApiKey(inputId) {
+    const input = document.getElementById(inputId);
+    const icon = event.currentTarget.querySelector('i');
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+    }
+}
+
+// Save LLM Settings
+function saveLLMSettings() {
+    const apiKeys = {
+        claude: document.getElementById('claude-api-key').value,
+        openai: document.getElementById('openai-api-key').value,
+        gemini: document.getElementById('gemini-api-key').value,
+        ollama_url: document.getElementById('ollama-url').value
+    };
+
+    fetch('{{ url_for("save_llm_settings") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            provider: selectedLLMProvider,
+            api_keys: apiKeys
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✓ LLM settings saved successfully!');
+            location.reload();
+        } else {
+            alert('✗ Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving LLM settings:', error);
+        alert('✗ Failed to save settings. Please try again.');
+    });
+}
+
+// Test LLM Connection
+function testLLMConnection() {
+    const provider = selectedLLMProvider;
+
+    if (!provider) {
+        alert('Please select a provider first.');
+        return;
+    }
+
+    const button = event.currentTarget;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-spinner spinner-border spinner-border-sm"></i> Testing...';
+    button.disabled = true;
+
+    fetch('{{ url_for("test_llm_connection") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: provider })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✓ Connection successful!\n\n' + data.message);
+        } else {
+            alert('✗ Connection failed:\n\n' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error testing connection:', error);
+        alert('✗ Connection test failed. Please check your settings.');
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+// Save IDE Settings
+function saveIDESettings() {
+    fetch('{{ url_for("save_ide_settings") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ide: selectedIDE })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✓ IDE settings saved successfully!');
+        } else {
+            alert('✗ Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving IDE settings:', error);
+        alert('✗ Failed to save settings. Please try again.');
+    });
+}
+
+// Save System Settings
+function saveSystemSettings() {
+    const theme = document.querySelector('[name="theme"]').value;
+    const emailNotif = document.getElementById('email-notifications').checked;
+    const browserNotif = document.getElementById('browser-notifications').checked;
+    const autosave = document.querySelector('[name="autosave"]').value;
+
+    fetch('{{ url_for("save_system_settings") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            theme: theme,
+            email_notifications: emailNotif,
+            browser_notifications: browserNotif,
+            autosave_interval: autosave
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✓ System settings saved successfully!');
+        } else {
+            alert('✗ Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving system settings:', error);
+        alert('✗ Failed to save settings. Please try again.');
+    });
+}
+
+// Profile Form Submission
+document.getElementById('profile-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const data = {
+        first_name: formData.get('first_name'),
+        last_name: formData.get('last_name'),
+        email: formData.get('email'),
+        bio: formData.get('bio'),
+        skills: formData.get('skills').split(',').map(s => s.trim()).filter(s => s)
+    };
+
+    fetch('{{ url_for("update_profile") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✓ Profile updated successfully!');
+        } else {
+            alert('✗ Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating profile:', error);
+        alert('✗ Failed to update profile. Please try again.');
+    });
+});
+
+// Password Form Submission
+document.getElementById('password-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const newPassword = formData.get('new_password');
+    const confirmPassword = formData.get('confirm_password');
+
+    if (newPassword !== confirmPassword) {
+        alert('✗ New passwords do not match!');
+        return;
+    }
+
+    const data = {
+        current_password: formData.get('current_password'),
+        new_password: newPassword
+    };
+
+    fetch('{{ url_for("change_password") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✓ Password changed successfully!');
+            this.reset();
+        } else {
+            alert('✗ Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error changing password:', error);
+        alert('✗ Failed to change password. Please try again.');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,469 @@
+{% extends "base.html" %}
+
+{% block title %}Import Repository - Socratic RAG Enhanced{% endblock %}
+
+{% block extra_head %}
+<style>
+.import-card {
+    transition: all 0.3s ease;
+}
+
+.import-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.platform-badge {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.progress-stage {
+    padding: 1rem;
+    border-left: 3px solid #dee2e6;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.progress-stage.active {
+    border-left-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.progress-stage.completed {
+    border-left-color: #198754;
+    background-color: rgba(25, 135, 84, 0.1);
+}
+
+.progress-stage.error {
+    border-left-color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+#progressContainer {
+    display: none;
+}
+
+.spinner-grow-sm {
+    width: 1rem;
+    height: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="bi bi-cloud-download text-primary"></i> Import Repository</h2>
+            <p class="text-muted">Import and analyze external Git repositories from GitHub, GitLab, or Bitbucket</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('repositories') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Repositories
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Import Form -->
+        <div class="col-lg-8">
+            <div class="card import-card" id="importForm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-github"></i> Repository Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="repoImportForm" onsubmit="startImport(event)">
+                        <!-- Repository URL -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-link-45deg"></i> Repository URL *
+                            </label>
+                            <input type="url"
+                                   class="form-control form-control-lg"
+                                   id="repoUrl"
+                                   placeholder="https://github.com/owner/repository"
+                                   required>
+                            <div class="form-text">
+                                Supported platforms: GitHub, GitLab, Bitbucket, or any Git repository
+                            </div>
+                        </div>
+
+                        <!-- Branch Selection -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="bi bi-git"></i> Branch (Optional)
+                                </label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="repoBranch"
+                                       placeholder="main">
+                                <div class="form-text">Leave empty to use default branch</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="bi bi-folder"></i> Project (Optional)
+                                </label>
+                                <select class="form-select" id="projectId">
+                                    <option value="">No Project</option>
+                                    {% for project in projects %}
+                                    <option value="{{ project.id }}">{{ project.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Associate with a project</div>
+                            </div>
+                        </div>
+
+                        <!-- Options -->
+                        <div class="mb-4">
+                            <label class="form-label">Import Options</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enableVectorization" checked>
+                                <label class="form-check-label" for="enableVectorization">
+                                    <i class="bi bi-database"></i> Enable RAG Vectorization
+                                    <small class="text-muted d-block">Store code in vector database for AI-powered Q&A</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <i class="bi bi-cloud-download"></i> Import Repository
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Progress Container -->
+            <div class="card import-card mt-4" id="progressContainer">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-hourglass-split"></i> Import Progress
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Overall Progress Bar -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Overall Progress</span>
+                            <span id="overallProgress">0%</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 id="progressBar"
+                                 style="width: 0%">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stage Progress -->
+                    <div id="stagesContainer">
+                        <div class="progress-stage" id="stage-clone">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-circle me-2"></i>
+                                <div class="flex-grow-1">
+                                    <strong>Cloning Repository</strong>
+                                    <div class="small text-muted" id="stage-clone-message">Waiting...</div>
+                                </div>
+                                <div class="spinner-grow spinner-grow-sm text-primary d-none" id="stage-clone-spinner"></div>
+                            </div>
+                        </div>
+
+                        <div class="progress-stage" id="stage-analyze">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-circle me-2"></i>
+                                <div class="flex-grow-1">
+                                    <strong>Analyzing Codebase</strong>
+                                    <div class="small text-muted" id="stage-analyze-message">Waiting...</div>
+                                </div>
+                                <div class="spinner-grow spinner-grow-sm text-primary d-none" id="stage-analyze-spinner"></div>
+                            </div>
+                        </div>
+
+                        <div class="progress-stage" id="stage-vectorize">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-circle me-2"></i>
+                                <div class="flex-grow-1">
+                                    <strong>Vectorizing Code</strong>
+                                    <div class="small text-muted" id="stage-vectorize-message">Waiting...</div>
+                                </div>
+                                <div class="spinner-grow spinner-grow-sm text-primary d-none" id="stage-vectorize-spinner"></div>
+                            </div>
+                        </div>
+
+                        <div class="progress-stage" id="stage-complete">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-circle me-2"></i>
+                                <div class="flex-grow-1">
+                                    <strong>Finalizing Import</strong>
+                                    <div class="small text-muted" id="stage-complete-message">Waiting...</div>
+                                </div>
+                                <div class="spinner-grow spinner-grow-sm text-primary d-none" id="stage-complete-spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Success/Error Message -->
+                    <div class="alert d-none mt-4" id="resultAlert"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Info -->
+        <div class="col-lg-4">
+            <!-- Supported Platforms -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-check-circle"></i> Supported Platforms
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="platform-badge text-center flex-shrink-0" style="width: 60px;">
+                            <i class="bi bi-github"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">GitHub</h6>
+                            <small class="text-muted">Public & private repositories</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="platform-badge text-center flex-shrink-0" style="width: 60px;">
+                            <i class="bi bi-git"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">GitLab</h6>
+                            <small class="text-muted">Self-hosted & GitLab.com</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="platform-badge text-center flex-shrink-0" style="width: 60px;">
+                            <i class="bi bi-braces"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">Bitbucket</h6>
+                            <small class="text-muted">Cloud & server</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="platform-badge text-center flex-shrink-0" style="width: 60px;">
+                            <i class="bi bi-hdd-network"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">Any Git</h6>
+                            <small class="text-muted">Any accessible Git repository</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-stars"></i> What We Analyze
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> <strong>Languages</strong>
+                            <div class="small text-muted ms-4">30+ programming languages detected</div>
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> <strong>Frameworks</strong>
+                            <div class="small text-muted ms-4">Flask, Django, React, Vue, Express, etc.</div>
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> <strong>Dependencies</strong>
+                            <div class="small text-muted ms-4">requirements.txt, package.json, go.mod</div>
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i> <strong>Structure</strong>
+                            <div class="small text-muted ms-4">Source files, tests, configs, docs</div>
+                        </li>
+                        <li class="mb-0">
+                            <i class="bi bi-check-circle text-success"></i> <strong>Code Metrics</strong>
+                            <div class="small text-muted ms-4">File count, line count, complexity</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightbulb"></i> Tips
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="small mb-0">
+                        <li class="mb-2">Use HTTPS URLs for public repositories</li>
+                        <li class="mb-2">SSH URLs require configured SSH keys</li>
+                        <li class="mb-2">Large repositories may take several minutes</li>
+                        <li class="mb-0">Vectorization enables AI Q&A about the code</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+// Import form submission
+function startImport(event) {
+    event.preventDefault();
+
+    const repoUrl = document.getElementById('repoUrl').value.trim();
+    const repoBranch = document.getElementById('repoBranch').value.trim();
+    const projectId = document.getElementById('projectId').value;
+    const enableVectorization = document.getElementById('enableVectorization').checked;
+
+    if (!repoUrl) {
+        alert('Please enter a repository URL');
+        return;
+    }
+
+    // Hide form, show progress
+    document.getElementById('importForm').style.display = 'none';
+    document.getElementById('progressContainer').style.display = 'block';
+
+    // Disable back button
+    document.querySelector('.btn-outline-secondary').disabled = true;
+
+    // Start import
+    importRepository(repoUrl, repoBranch, projectId, enableVectorization);
+}
+
+async function importRepository(repoUrl, branch, projectId, vectorize) {
+    try {
+        // Update stage: cloning
+        updateStage('clone', 'active', 'Cloning repository from remote...');
+        updateProgress(10);
+
+        const response = await fetch('{{ url_for("import_repository") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                repo_url: repoUrl,
+                branch: branch || null,
+                project_id: projectId || null,
+                vectorize: vectorize
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            // Simulate progress stages (in production, use WebSocket or polling)
+            await simulateProgress(data);
+        } else {
+            throw new Error(data.error || 'Import failed');
+        }
+
+    } catch (error) {
+        console.error('Import error:', error);
+        updateStage('clone', 'error', error.message);
+        showResult('error', 'Import Failed', error.message);
+    }
+}
+
+async function simulateProgress(data) {
+    // Stage 1: Clone (already started)
+    await sleep(1000);
+    updateStage('clone', 'completed', 'Repository cloned successfully');
+    updateProgress(30);
+
+    // Stage 2: Analyze
+    updateStage('analyze', 'active', 'Detecting languages and frameworks...');
+    await sleep(2000);
+    updateStage('analyze', 'completed', `Found ${data.languages_count || 'multiple'} languages and ${data.frameworks_count || 'several'} frameworks`);
+    updateProgress(60);
+
+    // Stage 3: Vectorize (if enabled)
+    if (data.vectorized) {
+        updateStage('vectorize', 'active', 'Creating vector embeddings for code...');
+        await sleep(2000);
+        updateStage('vectorize', 'completed', `Created ${data.chunks_created || 0} code chunks`);
+        updateProgress(90);
+    } else {
+        updateStage('vectorize', 'completed', 'Skipped (vectorization disabled)');
+        updateProgress(85);
+    }
+
+    // Stage 4: Complete
+    updateStage('complete', 'active', 'Finalizing import...');
+    await sleep(500);
+    updateStage('complete', 'completed', 'Import completed successfully!');
+    updateProgress(100);
+
+    // Show success message
+    showResult('success', 'Import Complete!',
+        `<strong>${data.repository_name || 'Repository'}</strong> has been imported successfully.<br>
+        <a href="/repositories/${data.repository_id}" class="btn btn-primary mt-2">View Repository</a>
+        <a href="/repositories" class="btn btn-outline-secondary mt-2">All Repositories</a>`
+    );
+}
+
+function updateStage(stage, status, message) {
+    const stageEl = document.getElementById(`stage-${stage}`);
+    const messageEl = document.getElementById(`stage-${stage}-message`);
+    const spinnerEl = document.getElementById(`stage-${stage}-spinner`);
+
+    // Update status class
+    stageEl.className = `progress-stage ${status}`;
+
+    // Update icon
+    const icon = stageEl.querySelector('i.bi-circle');
+    if (status === 'active') {
+        icon.className = 'bi bi-arrow-right-circle-fill text-primary me-2';
+        spinnerEl.classList.remove('d-none');
+    } else if (status === 'completed') {
+        icon.className = 'bi bi-check-circle-fill text-success me-2';
+        spinnerEl.classList.add('d-none');
+    } else if (status === 'error') {
+        icon.className = 'bi bi-x-circle-fill text-danger me-2';
+        spinnerEl.classList.add('d-none');
+    }
+
+    // Update message
+    messageEl.textContent = message;
+}
+
+function updateProgress(percentage) {
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('overallProgress');
+
+    progressBar.style.width = percentage + '%';
+    progressText.textContent = percentage + '%';
+}
+
+function showResult(type, title, message) {
+    const alertEl = document.getElementById('resultAlert');
+    alertEl.className = `alert alert-${type === 'success' ? 'success' : 'danger'}`;
+    alertEl.innerHTML = `
+        <h5 class="alert-heading">
+            <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${title}
+        </h5>
+        <p class="mb-0">${message}</p>
+    `;
+    alertEl.classList.remove('d-none');
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+</script>
+{% endblock %}
+{% endblock %}
