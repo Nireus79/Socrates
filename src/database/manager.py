@@ -169,6 +169,7 @@ class DatabaseManager:
                         created_at TEXT NOT NULL,
                         updated_at TEXT NOT NULL,
                         technology_stack TEXT,
+                        is_solo_project INTEGER DEFAULT 0,
                         FOREIGN KEY (owner_id) REFERENCES users(id)
                     )
                 """)
@@ -487,7 +488,7 @@ class DatabaseManager:
 
                 try:
                     conn.execute("""
-                                        ALTER TABLE conversation_messages 
+                                        ALTER TABLE conversation_messages
                                         ADD COLUMN conversation_type TEXT DEFAULT 'socratic'
                                     """)
                 except Exception:
@@ -495,6 +496,21 @@ class DatabaseManager:
                     cursor = conn.execute("PRAGMA table_info(conversation_messages)")
                     columns = [row['name'] for row in cursor.fetchall()]
                     if 'conversation_type' not in columns:
+                        # Re-raise error if column doesn't exist and we couldn't add it
+                        raise
+
+                # Migration: Add is_solo_project to projects table (C2: Solo Project Mode)
+                try:
+                    conn.execute("""
+                                        ALTER TABLE projects
+                                        ADD COLUMN is_solo_project INTEGER DEFAULT 0
+                                    """)
+                    self.logger.info("Added is_solo_project column to projects table")
+                except Exception:
+                    # Column might already exist, check if it's there
+                    cursor = conn.execute("PRAGMA table_info(projects)")
+                    columns = [row['name'] for row in cursor.fetchall()]
+                    if 'is_solo_project' not in columns:
                         # Re-raise error if column doesn't exist and we couldn't add it
                         raise
 

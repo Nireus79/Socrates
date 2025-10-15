@@ -465,6 +465,7 @@ class Project(BaseModel):
     # Team and collaboration
     team_members: List[str] = field(default_factory=list)  # User IDs
     stakeholders: List[str] = field(default_factory=list)
+    is_solo_project: bool = False  # Solo project mode (single user)
 
     # Progress tracking
     progress_percentage: float = 0.0

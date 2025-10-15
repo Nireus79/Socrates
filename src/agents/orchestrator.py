@@ -48,7 +48,7 @@ except ImportError:
 
 class AgentOrchestrator:
     """
-    Central orchestrator managing all 9 agents with intelligent routing
+    Central orchestrator managing all 10 agents with intelligent routing
 
     Coordinates:
     1. UserManagerAgent - Authentication and user management
@@ -59,7 +59,8 @@ class AgentOrchestrator:
     6. DocumentProcessorAgent - Document processing
     7. ServicesAgent - Git, export, deployment
     8. SystemMonitorAgent - System monitoring
-    9. ArchitectureOptimizerAgent - Meta-level optimization (NEW)
+    9. ArchitectureOptimizerAgent - Meta-level optimization
+    10. ChatAgent - Free-form conversation and chat mode (NEW)
     """
 
     def __init__(self, services: Optional[ServiceContainer] = None):
@@ -83,7 +84,7 @@ class AgentOrchestrator:
 
         self.logger.info("Starting AgentOrchestrator initialization")
 
-        # Initialize all 9 agents
+        # Initialize all 10 agents
         self._initialize_agents()
 
         # Build capability mapping
@@ -97,7 +98,7 @@ class AgentOrchestrator:
         )
 
     def _initialize_agents(self) -> None:
-        """Initialize all 9 agents with graceful error handling"""
+        """Initialize all 10 agents with graceful error handling"""
         self.logger.info("Initializing agents...")
 
         # Agent initialization order matters - user manager first
@@ -111,6 +112,7 @@ class AgentOrchestrator:
             ('services_agent', 'services', 'ServicesAgent'),
             ('system_monitor', 'monitor', 'SystemMonitorAgent'),
             ('architecture_optimizer', 'optimizer', 'ArchitectureOptimizerAgent'),
+            ('chat_agent', 'chat', 'ChatAgent'),
         ]
 
         for agent_id, module_name, class_name in agent_configs:
@@ -195,6 +197,9 @@ class AgentOrchestrator:
             elif module_name == 'optimizer':
                 from .optimizer import ArchitectureOptimizerAgent
                 return ArchitectureOptimizerAgent
+            elif module_name == 'chat':
+                from .chat import ChatAgent
+                return ChatAgent
             else:
                 self.logger.warning(f"Unknown module: {module_name}")
                 return None

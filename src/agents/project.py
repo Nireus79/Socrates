@@ -165,7 +165,7 @@ class ProjectManagerAgent(BaseAgent):
             "assign_tasks", "track_progress", "manage_collaborators",
             "generate_reports", "risk_assessment", "resource_allocation",
             "timeline_management", "get_project_info", "list_projects",
-            "project_analytics"
+            "project_analytics", "toggle_solo_mode", "get_solo_projects"  # C2: Solo mode
         ]
 
     @require_authentication
@@ -192,9 +192,14 @@ class ProjectManagerAgent(BaseAgent):
                 'tags': data.get('tags', []),
                 'status': ProjectStatus.DRAFT,
                 'phase': ProjectPhase.PLANNING,
+                'is_solo_project': data.get('is_solo_project', False),  # C2: Solo mode field
                 'created_at': DateTimeHelper.now(),
                 'updated_at': DateTimeHelper.now()
             }
+
+            # C2: Auto-detect solo mode if not explicitly set
+            if not data.get('is_solo_project') and self._should_be_solo_mode(project_data):
+                project_data['is_solo_project'] = True
 
             # Validate required fields
             if not project_data['name']:
@@ -240,6 +245,7 @@ class ProjectManagerAgent(BaseAgent):
                     'name': created_project.name,
                     'status': created_project.status.value,
                     'phase': created_project.phase.value,
+                    'is_solo_project': created_project.is_solo_project,  # C2: Include solo mode
                     'created_at': DateTimeHelper.to_iso_string(created_project.created_at)
                 }
             )
@@ -799,6 +805,7 @@ class ProjectManagerAgent(BaseAgent):
                     'status': project.status.value,
                     'phase': project.phase.value,
                     'progress_percentage': project.progress_percentage,
+                    'is_solo_project': getattr(project, 'is_solo_project', False),  # C2: Include solo mode
                     'team_size': len(project.team_members or []),
                     'created_at': DateTimeHelper.to_iso_string(project.created_at),
                     'updated_at': DateTimeHelper.to_iso_string(project.updated_at)
@@ -866,6 +873,7 @@ class ProjectManagerAgent(BaseAgent):
                 'status': project.status.value,
                 'phase': project.phase.value,
                 'progress_percentage': project.progress_percentage,
+                'is_solo_project': getattr(project, 'is_solo_project', False),  # C2: Include solo mode
                 'requirements': project.requirements,
                 'technology_stack': project.technology_stack,
                 'constraints': project.constraints,
@@ -1003,6 +1011,144 @@ class ProjectManagerAgent(BaseAgent):
             })
 
         return risks
+
+    def _should_be_solo_mode(self, project_data: Dict[str, Any]) -> bool:
+        """
+        C2: Determine if project should be in solo mode based on team configuration
+
+        Args:
+            project_data: Project data dictionary
+
+        Returns:
+            True if project should be solo mode, False otherwise
+        """
+        try:
+            # Check team_members list
+            team_members = project_data.get('team_members', [])
+            stakeholders = project_data.get('stakeholders', [])
+
+            # Solo mode if no team members and no stakeholders
+            if len(team_members) == 0 and len(stakeholders) == 0:
+                return True
+
+            # Solo mode if only owner is in team (no collaborators yet)
+            if len(team_members) <= 1:
+                return True
+
+            return False
+        except Exception as e:
+            self.logger.warning(f"Error detecting solo mode: {e}")
+            return False
+
+    @require_authentication
+    @require_project_access
+    @log_agent_action
+    def _toggle_solo_mode(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        C2: Toggle solo mode for a project
+
+        Args:
+            data: Contains project_id, is_solo_project (boolean), user_id
+
+        Returns:
+            Success response with updated project data
+        """
+        project_id = data.get('project_id')
+        is_solo = data.get('is_solo_project')
+        username = data.get('username')
+
+        try:
+            if not project_id:
+                raise ValidationError("Project ID is required")
+
+            if is_solo is None:
+                raise ValidationError("is_solo_project value is required")
+
+            # Get project
+            project = self.db.projects.get_by_id(project_id)
+            if not project:
+                raise ValidationError("Project not found")
+
+            # Update solo mode
+            project.is_solo_project = bool(is_solo)
+            project.updated_at = DateTimeHelper.now()
+
+            # Save changes
+            updated_project = self.db.projects.update(project)
+
+            # Emit event
+            if self.events:
+                self.events.emit('project_solo_mode_toggled', {
+                    'project_id': project_id,
+                    'is_solo_project': is_solo,
+                    'updated_by': username
+                })
+
+            self.logger.info(f"Project {project_id} solo mode set to {is_solo} by {username}")
+
+            return self._success_response(
+                f"Project solo mode {'enabled' if is_solo else 'disabled'}",
+                {
+                    'project_id': project_id,
+                    'is_solo_project': updated_project.is_solo_project,
+                    'updated_at': DateTimeHelper.to_iso_string(updated_project.updated_at)
+                }
+            )
+
+        except ValidationError:
+            raise
+        except Exception as e:
+            self.logger.error(f"Error toggling solo mode for project {project_id or 'unknown'}: {e}")
+            return self._error_response(f"Failed to toggle solo mode: {str(e)}")
+
+    @require_authentication
+    @log_agent_action
+    def _get_solo_projects(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        C2: Get all solo projects for a user
+
+        Args:
+            data: Contains user_id
+
+        Returns:
+            List of solo projects
+        """
+        username = data.get('username')
+
+        try:
+            # Get all projects for user
+            all_projects = self.db.projects.get_by_owner(username)
+
+            # Filter for solo projects
+            solo_projects = [p for p in all_projects if getattr(p, 'is_solo_project', False)]
+
+            # Format project list
+            project_list = []
+            for project in solo_projects:
+                project_list.append({
+                    'id': project.id,
+                    'name': project.name,
+                    'description': project.description,
+                    'status': project.status.value,
+                    'phase': project.phase.value,
+                    'progress_percentage': project.progress_percentage,
+                    'created_at': DateTimeHelper.to_iso_string(project.created_at),
+                    'updated_at': DateTimeHelper.to_iso_string(project.updated_at)
+                })
+
+            self.logger.info(f"Retrieved {len(project_list)} solo projects for {username}")
+
+            return self._success_response(
+                "Solo projects retrieved successfully",
+                {
+                    'projects': project_list,
+                    'count': len(project_list)
+                }
+            )
+
+        except Exception as e:
+            self.logger.error(f"Error getting solo projects for {username or 'unknown'}: {e}")
+            return self._error_response(f"Failed to get solo projects: {str(e)}")
 
     def _call_optimizer_for_project(self, project_id: str) -> Optional[Dict[str, Any]]:
         """

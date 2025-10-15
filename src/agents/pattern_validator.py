@@ -14,7 +14,7 @@ Capabilities:
 - Design smell detection
 """
 
-from typing import Dict, List, Any, Optional, Set
+from typing import Dict, List, Any
 from enum import Enum
 from dataclasses import dataclass
 

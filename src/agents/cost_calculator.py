@@ -16,7 +16,7 @@ helping prevent architectural decisions that seem cheap initially but
 become expensive over time.
 """
 
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
 import math
@@ -469,7 +469,7 @@ class GlobalCostCalculator:
 
         # Burnout risk (0-10 scale)
         # High complexity + low team experience = burnout risk
-        burnout_risk = min(10, complexity_multiplier * 2)
+        burnout_risk = min(10, complexity_multiplier * 2)  # TODO complexity_multiplier * 2 Expected type 'int' (matched generic type 'SupportsRichComparisonT ≤: SupportsDunderLT | SupportsDunderGT'), got 'float' instead
         if team_velocity.experience == TeamExperience.JUNIOR:
             burnout_risk *= 1.5
         burnout_risk = min(10, burnout_risk)

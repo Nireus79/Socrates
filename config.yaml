@@ -57,12 +57,57 @@ logging:
 # AI SERVICES CONFIGURATION
 # =============================================================================
 ai:
-  # Claude (Anthropic) Configuration
-  claude:
-    model: "claude-3-5-sonnet-20241022"
-    max_tokens: 8192
-    temperature: 0.7
-    timeout_seconds: 60
+  # LLM Provider Selection (C3: Multiple LLM Support)
+  llm:
+    # Auto-detect best available LLM provider
+    auto_detect: true
+
+    # Preferred LLM provider (leave empty for auto-detect)
+    # Options: 'claude', 'openai', 'gemini', 'ollama'
+    preferred_provider: ''
+
+    # Provider preference order for auto-detection
+    preference_order:
+      - claude
+      - openai
+      - gemini
+      - ollama
+
+    # Claude (Anthropic) Configuration
+    claude:
+      model: "claude-3-5-sonnet-20241022"
+      max_tokens: 8192
+      temperature: 0.7
+      timeout_seconds: 60
+      # API key loaded from ANTHROPIC_API_KEY environment variable
+
+    # OpenAI Configuration
+    openai:
+      enabled: true
+      model: "gpt-4-turbo"
+      max_tokens: 8192
+      temperature: 0.7
+      timeout_seconds: 60
+      # API key loaded from OPENAI_API_KEY environment variable
+
+    # Google Gemini Configuration
+    gemini:
+      enabled: true
+      model: "gemini-1.5-pro"
+      max_tokens: 8192
+      temperature: 0.7
+      timeout_seconds: 60
+      # API key loaded from GOOGLE_API_KEY or GEMINI_API_KEY environment variable
+
+    # Ollama Configuration (Local LLMs)
+    ollama:
+      enabled: true
+      host: "http://localhost:11434"
+      model: "llama3"
+      max_tokens: 8192
+      temperature: 0.7
+      timeout_seconds: 120
+      # No API key needed - runs locally
 
   # Vector Database Configuration
   database:
@@ -115,6 +160,51 @@ agents:
     enabled: true
     git_integration: true
     ide_integration: true
+
+  # Chat Agent (C1: Direct LLM Chat Mode)
+  chat_agent:
+    enabled: true
+    max_context_messages: 10
+    insight_extraction: true
+    auto_topic_detection: true
+    session_timeout_hours: 24
+
+  # IDE Integration (C4: Multiple IDE Support)
+  ide:
+    # Auto-detect best available IDE (vscode, pycharm)
+    auto_detect: true
+
+    # Preferred IDE (leave empty for auto-detect)
+    # Options: 'vscode', 'pycharm'
+    preferred_ide: ''
+
+    # IDE preference order for auto-detection
+    preference_order:
+      - vscode
+      - pycharm
+
+    # VS Code settings
+    vscode:
+      enabled: true
+      vscode_path: 'code'
+      auto_sync: true
+      enable_file_watching: true
+      default_extensions:
+        - ms-python.python
+        - ms-python.vscode-pylance
+        - ms-python.black-formatter
+        - ms-vscode.vscode-json
+        - redhat.vscode-yaml
+        - bradlc.vscode-tailwindcss
+        - esbenp.prettier-vscode
+        - ms-vscode.vscode-typescript-next
+
+    # PyCharm settings
+    pycharm:
+      enabled: true
+      pycharm_path: 'pycharm'
+      enable_inspections: true
+      enable_code_style: true
 
   # File Storage
   storage:
@@ -251,6 +341,23 @@ users:
     track_actions: true
     track_conflicts: true
     session_timeout: 8  # hours
+
+# =============================================================================
+# PROJECT CONFIGURATION (C2: Solo Project Mode)
+# =============================================================================
+projects:
+  # Solo project mode settings
+  solo_mode:
+    enabled: true
+    auto_detect: true  # Automatically detect solo projects
+    hide_team_features: true  # Hide team UI elements for solo projects
+    default_to_solo: false  # Default new projects to solo mode
+
+  # Team collaboration settings
+  collaboration:
+    enabled: true
+    max_collaborators: 50
+    invitation_expiry_days: 7
 
 # =============================================================================
 # PERFORMANCE & OPTIMIZATION

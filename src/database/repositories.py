@@ -371,16 +371,17 @@ class ProjectRepository(BaseRepository[Project]):
         try:
             data = self._model_to_dict(project)
             query = """
-                INSERT INTO projects (id, name, description, owner_id, status, 
-                                    created_at, updated_at, technology_stack)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO projects (id, name, description, owner_id, status,
+                                    created_at, updated_at, technology_stack, is_solo_project)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
             params = (
                 data.get('id'), data.get('name'), data.get('description'),
                 data.get('owner_id'), data.get('status', 'draft'),
                 DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
                 DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now())),
-                dump_json_field(data.get('technology_stack'))
+                dump_json_field(data.get('technology_stack')),
+                1 if data.get('is_solo_project', False) else 0  # C2: Solo mode field
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -419,13 +420,14 @@ class ProjectRepository(BaseRepository[Project]):
         try:
             data = self._model_to_dict(project)
             query = """
-                UPDATE projects SET name = ?, description = ?, status = ?, 
-                                  technology_stack = ?, updated_at = ?
+                UPDATE projects SET name = ?, description = ?, status = ?,
+                                  technology_stack = ?, is_solo_project = ?, updated_at = ?
                 WHERE id = ?
             """
             params = (
                 data.get('name'), data.get('description'), data.get('status'),
                 dump_json_field(data.get('technology_stack')),
+                1 if data.get('is_solo_project', False) else 0,  # C2: Solo mode field
                 DateTimeHelper.to_iso_string(DateTimeHelper.now()),
                 data.get('id')
             )
@@ -443,6 +445,42 @@ class ProjectRepository(BaseRepository[Project]):
         except Exception as e:
             self.logger.error(f"Error deleting project {project_id}: {e}")
             return False
+
+    def get_solo_projects(self, owner_id: str) -> List[Project]:
+        """
+        C2: Get all solo projects for a specific owner
+
+        Args:
+            owner_id: Owner user ID
+
+        Returns:
+            List of solo projects
+        """
+        try:
+            query = "SELECT * FROM projects WHERE owner_id = ? AND is_solo_project = 1 ORDER BY created_at DESC"
+            results = self.db_manager.execute_query(query, (owner_id,))
+            return [self._row_to_model(row) for row in results]
+        except Exception as e:
+            self.logger.error(f"Error getting solo projects for owner {owner_id}: {e}")
+            return []
+
+    def get_team_projects(self, owner_id: str) -> List[Project]:
+        """
+        C2: Get all team projects (non-solo) for a specific owner
+
+        Args:
+            owner_id: Owner user ID
+
+        Returns:
+            List of team projects
+        """
+        try:
+            query = "SELECT * FROM projects WHERE owner_id = ? AND (is_solo_project = 0 OR is_solo_project IS NULL) ORDER BY created_at DESC"
+            results = self.db_manager.execute_query(query, (owner_id,))
+            return [self._row_to_model(row) for row in results]
+        except Exception as e:
+            self.logger.error(f"Error getting team projects for owner {owner_id}: {e}")
+            return []
 
 
 # ==============================================================================
