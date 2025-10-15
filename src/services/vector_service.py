@@ -351,3 +351,187 @@ class VectorService:
             self.client = None
             self.embedding_function = None
             logger.warning("Vector service operating in limited mode")
+
+    def _get_or_create_collection(self, collection_name: str = "socratic_knowledge") -> Optional[Collection]:
+        """Get or create a ChromaDB collection."""
+        if not self.client:
+            logger.warning("ChromaDB client not available")
+            return None
+
+        try:
+            # Try to get existing collection
+            try:
+                collection = self.client.get_collection(
+                    name=collection_name,
+                    embedding_function=self.embedding_function
+                )
+                return collection
+            except Exception:
+                # Collection doesn't exist, create it
+                collection = self.client.create_collection(
+                    name=collection_name,
+                    embedding_function=self.embedding_function,
+                    metadata={"created_at": datetime.now().isoformat()}
+                )
+                logger.info(f"Created new collection: {collection_name}")
+                return collection
+
+        except Exception as e:
+            logger.error(f"Failed to get/create collection: {e}")
+            return None
+
+    def add_document(self, doc_id: str, content: str, metadata: Optional[Dict[str, Any]] = None,
+                    collection_name: str = "socratic_knowledge") -> bool:
+        """
+        Add a document to the vector database.
+
+        Args:
+            doc_id: Unique identifier for the document
+            content: Document content
+            metadata: Optional metadata dict
+            collection_name: Collection to add to
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.client:
+            logger.warning("Cannot add document - ChromaDB not available")
+            return False
+
+        try:
+            collection = self._get_or_create_collection(collection_name)
+            if not collection:
+                return False
+
+            # Add document
+            collection.add(
+                documents=[content],
+                ids=[doc_id],
+                metadatas=[metadata or {}]
+            )
+
+            logger.debug(f"Added document {doc_id} to collection {collection_name}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to add document: {e}")
+            return False
+
+    def search(self, query: str, n_results: int = 5,
+              where: Optional[Dict[str, Any]] = None,
+              collection_name: str = "socratic_knowledge") -> List[SearchResult]:
+        """
+        Search for similar documents in the vector database.
+
+        Args:
+            query: Search query
+            n_results: Number of results to return
+            where: Optional metadata filter
+            collection_name: Collection to search
+
+        Returns:
+            List of SearchResult objects
+        """
+        if not self.client:
+            logger.warning("Cannot search - ChromaDB not available")
+            return []
+
+        try:
+            collection = self._get_or_create_collection(collection_name)
+            if not collection:
+                return []
+
+            # Query collection
+            results = collection.query(
+                query_texts=[query],
+                n_results=n_results,
+                where=where
+            )
+
+            # Convert to SearchResult objects
+            search_results = []
+            if results and results.get('ids'):
+                for rank, (doc_id, distance, doc, meta) in enumerate(zip(
+                    results['ids'][0],
+                    results['distances'][0],
+                    results['documents'][0],
+                    results['metadatas'][0]
+                )):
+                    vector_doc = VectorDocument(
+                        id=doc_id,
+                        content=doc,
+                        metadata=meta or {},
+                        created_at=None,
+                        updated_at=None
+                    )
+
+                    search_result = SearchResult(
+                        document=vector_doc,
+                        score=1.0 - distance,  # Convert distance to similarity score
+                        rank=rank + 1
+                    )
+                    search_results.append(search_result)
+
+            return search_results
+
+        except Exception as e:
+            logger.error(f"Search failed: {e}")
+            return []
+
+    def delete_document(self, doc_id: str, collection_name: str = "socratic_knowledge") -> bool:
+        """Delete a document from the vector database."""
+        if not self.client:
+            logger.warning("Cannot delete document - ChromaDB not available")
+            return False
+
+        try:
+            collection = self._get_or_create_collection(collection_name)
+            if not collection:
+                return False
+
+            collection.delete(ids=[doc_id])
+            logger.debug(f"Deleted document {doc_id} from collection {collection_name}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to delete document: {e}")
+            return False
+
+    def get_collection_stats(self, collection_name: str = "socratic_knowledge") -> Optional[CollectionStats]:
+        """Get statistics for a collection."""
+        if not self.client:
+            return None
+
+        try:
+            collection = self._get_or_create_collection(collection_name)
+            if not collection:
+                return None
+
+            count = collection.count()
+
+            return CollectionStats(
+                name=collection_name,
+                count=count,
+                dimension=384 if self.embedding_function else None,
+                created_at=None,
+                last_updated=datetime.now()
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to get collection stats: {e}")
+            return None
+
+
+# ============================================================================
+# MODULE EXPORTS
+# ============================================================================
+
+__all__ = [
+    'VectorService',
+    'VectorDocument',
+    'SearchResult',
+    'CollectionStats',
+    'VectorServiceError',
+    'CHROMADB_AVAILABLE',
+    'SENTENCE_TRANSFORMERS_AVAILABLE'
+]

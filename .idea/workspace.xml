@@ -4,19 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="greedy">
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="ReadMe">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/MASTER_PLAN.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/MASTER_PLAN.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/TODO.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/TODO.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/agents/code.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/code.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/agents/cost_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/cost_calculator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/optimizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/optimizer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/orchestrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/orchestrator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/pattern_validator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/pattern_validator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/project.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/project.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/repositories.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/repositories.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/git_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/git_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/vector_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/vector_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -148,14 +146,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00208" summary="run.py">
-      <option name="closed" value="true" />
-      <created>1760099783435</created>
-      <option name="number" value="00208" />
-      <option name="presentableId" value="LOCAL-00208" />
-      <option name="project" value="LOCAL" />
-      <updated>1760099783435</updated>
     </task>
     <task id="LOCAL-00209" summary="run.py">
       <option name="closed" value="true" />
@@ -541,11 +531,18 @@
       <option name="project" value="LOCAL" />
       <updated>1760439897540</updated>
     </task>
-    <option name="localTasksCounter" value="257" />
+    <task id="LOCAL-00257" summary="ReadMe">
+      <option name="closed" value="true" />
+      <created>1760506611889</created>
+      <option name="number" value="00257" />
+      <option name="presentableId" value="LOCAL-00257" />
+      <option name="project" value="LOCAL" />
+      <updated>1760506611889</updated>
+    </task>
+    <option name="localTasksCounter" value="258" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="tests" />
     <MESSAGE value="authorizations" />
     <MESSAGE value="clean up" />
     <MESSAGE value="IntegrationTest" />
@@ -570,6 +567,7 @@
     <MESSAGE value="claude code" />
     <MESSAGE value="claude code C6" />
     <MESSAGE value="greedy" />
-    <option name="LAST_COMMIT_MESSAGE" value="greedy" />
+    <MESSAGE value="ReadMe" />
+    <option name="LAST_COMMIT_MESSAGE" value="ReadMe" />
   </component>
 </project>

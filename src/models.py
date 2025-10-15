@@ -1052,6 +1052,77 @@ class KnowledgeEntry(BaseModel):
 
 
 # ============================================================================
+# REPOSITORY IMPORT MODELS
+# ============================================================================
+
+@dataclass
+class ImportedRepository(BaseModel):
+    """Imported Git repository model"""
+
+    # Repository identification
+    repository_url: str = ""
+    repository_name: str = ""
+    repository_owner: str = ""
+    platform: str = "github"  # github, gitlab, bitbucket, other
+
+    # Association
+    user_id: str = ""  # User who imported the repository
+    project_id: Optional[str] = None  # Optional project association
+
+    # Local storage
+    local_path: str = ""
+    branch: str = "main"
+
+    # Repository statistics
+    total_files: int = 0
+    total_lines: int = 0
+    size_bytes: int = 0
+    primary_language: Optional[str] = None
+    languages: Dict[str, int] = field(default_factory=dict)  # language -> file count
+
+    # Analysis results
+    frameworks: List[str] = field(default_factory=list)
+    dependencies: Dict[str, List[str]] = field(default_factory=dict)  # type -> [deps]
+    project_type: Optional[str] = None  # web, cli, library, mobile
+    has_tests: bool = False
+    has_docker: bool = False
+    has_ci_cd: bool = False
+
+    # Vectorization status
+    is_vectorized: bool = False
+    chunks_created: int = 0
+    vectorization_collection: Optional[str] = None  # ChromaDB collection name
+
+    # Import metadata
+    import_status: str = "pending"  # pending, completed, failed
+    import_error: Optional[str] = None
+    imported_at: datetime = field(default_factory=DateTimeHelper.now)
+    last_analyzed_at: Optional[datetime] = None
+
+    def __post_init__(self):
+        """Validate repository data"""
+        self.validate()
+
+    def validate(self) -> None:
+        """Validate imported repository data"""
+        if not self.repository_url:
+            raise ValidationError("Repository URL is required")
+
+        if not self.user_id:
+            raise ValidationError("User ID is required for imported repository")
+
+    @property
+    def is_imported_successfully(self) -> bool:
+        """Check if import completed successfully"""
+        return self.import_status == "completed"
+
+    @property
+    def is_import_failed(self) -> bool:
+        """Check if import failed"""
+        return self.import_status == "failed"
+
+
+# ============================================================================
 # CONTEXT MODELS
 # ============================================================================
 
@@ -1370,6 +1441,9 @@ class ModelRegistry:
         'user_activity': UserActivity,
         'knowledge_entry': KnowledgeEntry,
 
+        # Repository import models
+        'imported_repository': ImportedRepository,
+
         # Context models
         'project_context': ProjectContext,
         'module_context': ModuleContext,
@@ -1487,6 +1561,9 @@ __all__ = [
 
     # Analytics and reporting models
     'ProjectMetrics', 'UserActivity', 'KnowledgeEntry',
+
+    # Repository import models
+    'ImportedRepository',
 
     # Validation and factory classes
     'ValidationError', 'ValidationHelper', 'ModelValidator', 'ModelFactory',

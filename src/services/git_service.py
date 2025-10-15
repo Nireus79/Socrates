@@ -17,6 +17,8 @@ Features:
 
 import logging
 import subprocess
+import re
+import shutil
 from dataclasses import dataclass
 from typing import Dict, Any, List, Optional, Union, Tuple
 from datetime import datetime
@@ -82,6 +84,37 @@ class GitRemote:
     url: str
     fetch_url: str
     push_url: str
+
+
+@dataclass
+class RepositoryInfo:
+    """Information about a Git repository."""
+    url: str
+    name: str
+    owner: str
+    platform: str  # 'github', 'gitlab', 'bitbucket', 'other'
+    is_private: bool = False
+    default_branch: str = 'main'
+    description: Optional[str] = None
+    language: Optional[str] = None
+    stars: int = 0
+    forks: int = 0
+
+
+@dataclass
+class CloneResult:
+    """Result of repository clone operation."""
+    success: bool
+    local_path: str
+    repository_info: Optional[RepositoryInfo] = None
+    error: Optional[str] = None
+    file_count: int = 0
+    total_size_bytes: int = 0
+    branches: List[str] = None
+
+    def __post_init__(self):
+        if self.branches is None:
+            self.branches = []
 
 
 class GitServiceError(SocraticException):
@@ -796,6 +829,235 @@ temp/
         except Exception as e:
             logger.error(f"Failed to pull: {e}")
             return False
+
+    def parse_repository_url(self, url: str) -> Optional[RepositoryInfo]:
+        """
+        Parse a Git repository URL and extract information.
+
+        Supports:
+        - GitHub: https://github.com/owner/repo or git@github.com:owner/repo.git
+        - GitLab: https://gitlab.com/owner/repo
+        - Bitbucket: https://bitbucket.org/owner/repo
+        - Generic Git URLs
+
+        Args:
+            url: Git repository URL
+
+        Returns:
+            RepositoryInfo object or None if parsing fails
+        """
+        try:
+            # Clean up URL
+            url = url.strip()
+
+            # GitHub patterns
+            github_https = re.match(r'https?://github\.com/([^/]+)/([^/\.]+)', url)
+            github_ssh = re.match(r'git@github\.com:([^/]+)/([^/\.]+)', url)
+
+            # GitLab patterns
+            gitlab_https = re.match(r'https?://gitlab\.com/([^/]+)/([^/\.]+)', url)
+            gitlab_ssh = re.match(r'git@gitlab\.com:([^/]+)/([^/\.]+)', url)
+
+            # Bitbucket patterns
+            bitbucket_https = re.match(r'https?://bitbucket\.org/([^/]+)/([^/\.]+)', url)
+
+            if github_https or github_ssh:
+                match = github_https or github_ssh
+                owner, repo = match.groups()
+                repo = repo.replace('.git', '')
+
+                return RepositoryInfo(
+                    url=url,
+                    name=repo,
+                    owner=owner,
+                    platform='github'
+                )
+
+            elif gitlab_https or gitlab_ssh:
+                match = gitlab_https or gitlab_ssh
+                owner, repo = match.groups()
+                repo = repo.replace('.git', '')
+
+                return RepositoryInfo(
+                    url=url,
+                    name=repo,
+                    owner=owner,
+                    platform='gitlab'
+                )
+
+            elif bitbucket_https:
+                owner, repo = bitbucket_https.groups()
+                repo = repo.replace('.git', '')
+
+                return RepositoryInfo(
+                    url=url,
+                    name=repo,
+                    owner=owner,
+                    platform='bitbucket'
+                )
+
+            else:
+                # Generic Git URL - try to extract name from URL
+                # Pattern: .../repo_name.git or .../repo_name
+                repo_match = re.search(r'/([^/]+?)(\.git)?$', url)
+                if repo_match:
+                    repo_name = repo_match.group(1)
+                    return RepositoryInfo(
+                        url=url,
+                        name=repo_name,
+                        owner='unknown',
+                        platform='other'
+                    )
+
+                return None
+
+        except Exception as e:
+            logger.error(f"Failed to parse repository URL {url}: {e}")
+            return None
+
+    def clone_repository(
+            self,
+            url: str,
+            destination: Optional[str] = None,
+            branch: Optional[str] = None,
+            depth: Optional[int] = None,
+            progress_callback: Optional[callable] = None
+    ) -> CloneResult:
+        """
+        Clone a Git repository from a remote URL.
+
+        Args:
+            url: Repository URL (HTTPS or SSH)
+            destination: Local destination path (auto-generated if None)
+            branch: Specific branch to clone (None for default)
+            depth: Clone depth for shallow clone (None for full clone)
+            progress_callback: Optional callback for progress updates
+
+        Returns:
+            CloneResult with operation status and repository information
+        """
+        try:
+            # Parse repository URL
+            repo_info = self.parse_repository_url(url)
+            if not repo_info:
+                return CloneResult(
+                    success=False,
+                    local_path='',
+                    error=f"Failed to parse repository URL: {url}"
+                )
+
+            # Determine destination path
+            if destination is None:
+                # Auto-generate path: data/imported_repos/{owner}/{repo}
+                destination = Path('data/imported_repos') / repo_info.owner / repo_info.name
+            else:
+                destination = Path(destination)
+
+            # Check if destination already exists
+            if destination.exists():
+                # Check if it's already a git repo
+                try:
+                    existing_repo = Repo(str(destination)) if GIT_PYTHON_AVAILABLE else None
+                    if existing_repo or (destination / '.git').exists():
+                        logger.warning(f"Repository already exists at {destination}")
+                        return CloneResult(
+                            success=False,
+                            local_path=str(destination),
+                            repository_info=repo_info,
+                            error="Repository already cloned at this location"
+                        )
+                except:
+                    pass
+
+                # Remove existing directory if not a git repo
+                shutil.rmtree(destination)
+
+            # Create parent directory
+            destination.parent.mkdir(parents=True, exist_ok=True)
+
+            logger.info(f"Cloning repository {url} to {destination}")
+
+            # Clone using GitPython or command line
+            if GIT_PYTHON_AVAILABLE:
+                clone_kwargs = {
+                    'to_path': str(destination),
+                }
+
+                if branch:
+                    clone_kwargs['branch'] = branch
+
+                if depth:
+                    clone_kwargs['depth'] = depth
+
+                if progress_callback:
+                    # GitPython progress handling
+                    class ProgressPrinter:
+                        def update(self, op_code, cur_count, max_count=None, message=''):
+                            if progress_callback:
+                                percent = (cur_count / max_count * 100) if max_count else 0
+                                progress_callback(op_code, cur_count, max_count, percent, message)
+
+                    clone_kwargs['progress'] = ProgressPrinter()
+
+                repo = Repo.clone_from(url, **clone_kwargs)
+                cloned_path = str(destination)
+
+            else:
+                # Command line fallback
+                clone_cmd = ['clone', url, str(destination)]
+
+                if branch:
+                    clone_cmd.extend(['--branch', branch])
+
+                if depth:
+                    clone_cmd.extend(['--depth', str(depth)])
+
+                stdout, stderr, code = self._run_git_command(clone_cmd, '.')
+
+                if code != 0:
+                    raise GitServiceError(f"Git clone failed: {stderr}")
+
+                cloned_path = str(destination)
+
+            # Analyze cloned repository
+            file_count = 0
+            total_size = 0
+
+            for item in destination.rglob('*'):
+                if item.is_file() and '.git' not in item.parts:
+                    file_count += 1
+                    try:
+                        total_size += item.stat().st_size
+                    except:
+                        pass
+
+            # Get branches
+            branches = []
+            try:
+                branch_objs = self.list_branches(cloned_path)
+                branches = [b.name for b in branch_objs]
+            except:
+                pass
+
+            logger.info(f"Successfully cloned repository: {file_count} files, {total_size / 1024 / 1024:.2f} MB")
+
+            return CloneResult(
+                success=True,
+                local_path=cloned_path,
+                repository_info=repo_info,
+                file_count=file_count,
+                total_size_bytes=total_size,
+                branches=branches
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to clone repository {url}: {e}")
+            return CloneResult(
+                success=False,
+                local_path=destination if destination else '',
+                repository_info=repo_info if 'repo_info' in locals() else None,
+                error=str(e)
+            )
 
     def create_commit_for_generated_code(
             self,

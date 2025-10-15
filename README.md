@@ -1,6 +1,6 @@
-# Socratic RAG Enhanced v7.4.0
+# Socratic RAG Enhanced v7.5.0
 
-**An AI-powered Socratic questioning and code generation system with multi-LLM support, IDE integration, and architecture optimization.**
+**An AI-powered Socratic questioning and code generation system with multi-LLM support, IDE integration, architecture optimization, and GitHub repository import.**
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -18,6 +18,7 @@ Socratic RAG Enhanced is an intelligent software development assistant that comb
 - **🏗️ Architecture Optimization** - Prevents greedy algorithms and validates design decisions
 - **🔄 Multi-LLM Support** - Choose between Claude, OpenAI, Gemini, or local Ollama models
 - **🛠️ IDE Integration** - Seamless integration with VS Code and PyCharm
+- **🔗 GitHub Repository Import** - Import and analyze any Git repository for RAG-enhanced learning ⭐ NEW!
 - **📚 RAG (Retrieval-Augmented Generation)** - Context-aware responses using ChromaDB vector database
 
 ---
@@ -76,6 +77,30 @@ Free-form conversations with AI:
 - **Insight Extraction** - Automatically extracts key decisions
 - **Topic Switching** - Seamlessly switch between topics
 - **Session Management** - Save and resume conversations
+
+### 🔗 GitHub Repository Import (NEW in v7.5!)
+
+Import and analyze external code repositories:
+
+- **One-Click Import** - Clone any GitHub/GitLab/Bitbucket repository
+- **Automatic Analysis** - Detects 30+ programming languages and frameworks
+- **Dependency Extraction** - Extracts requirements.txt, package.json, go.mod, etc.
+- **Code Vectorization** - Stores code in ChromaDB for RAG-enhanced queries
+- **Structure Intelligence** - Categorizes files (source, test, config, docs)
+- **Project Insights** - File counts, line counts, complexity metrics
+- **Ask Questions About Code** - Use AI to explore and understand imported codebases
+
+**Supported Platforms:**
+- GitHub (HTTPS & SSH)
+- GitLab
+- Bitbucket
+- Generic Git repositories
+
+**What You Can Do:**
+- Import reference implementations to learn from
+- Analyze existing codebases before refactoring
+- Build knowledge base from popular open-source projects
+- Ask AI questions about imported code with full context
 
 ### 👤 Solo Project Mode
 
@@ -313,6 +338,44 @@ POST /api/optimizer/analyze
 # - alternatives: better approaches with ROI
 ```
 
+### Example 5: GitHub Repository Import ⭐ NEW!
+
+```python
+from src.services.repository_import_service import get_repository_import_service
+
+# Initialize service
+import_service = get_repository_import_service()
+
+# Import a GitHub repository
+result = import_service.import_repository(
+    repo_url="https://github.com/anthropics/claude-code",
+    user_id="user_123",
+    project_id="proj_456",  # Optional
+    branch="main",  # Optional
+    vectorize=True,  # Enable RAG
+    progress_callback=lambda progress: print(f"{progress.stage}: {progress.message}")
+)
+
+# Check result
+if result.success:
+    print(f"✅ Imported: {result.repository_name}")
+    print(f"📊 Files: {result.total_files}, Lines: {result.total_lines}")
+    print(f"🔤 Language: {result.primary_language}")
+    print(f"🎯 Frameworks: {', '.join(result.analysis.frameworks)}")
+    print(f"📦 Chunks: {result.chunks_created} (vectorized for RAG)")
+else:
+    print(f"❌ Error: {result.error}")
+
+# Now ask questions about the imported code
+POST /api/chat/continue
+{
+    "session_id": "chat_001",
+    "message": "Explain the main architecture of the claude-code repository",
+    "user_id": "user_123"
+}
+# AI will use vectorized code as context for accurate answers!
+```
+
 ---
 
 ## 🏗️ Architecture
@@ -343,12 +406,12 @@ POST /api/optimizer/analyze
 │         (Claude, OpenAI, Gemini, Ollama)                   │
 └──────────────────────┬──────────────────────────────────────┘
                        │
-         ┌─────────────┼─────────────┐
-         │             │             │
-┌────────▼────────┐ ┌──▼──────┐ ┌───▼────────┐
-│   Database      │ │ Vector  │ │    IDE     │
-│   (SQLite)      │ │(ChromaDB│ │ (VS/PyCharm│
-└─────────────────┘ └─────────┘ └────────────┘
+         ┌─────────────┼─────────────┬────────────┐
+         │             │             │            │
+┌────────▼────────┐ ┌──▼──────┐ ┌───▼────────┐ ┌▼──────────┐
+│   Database      │ │ Vector  │ │    IDE     │ │ Git Repos │ ⭐ NEW!
+│   (SQLite)      │ │(ChromaDB│ │ (VS/PyCharm│ │ (Import)  │
+└─────────────────┘ └─────────┘ └────────────┘ └───────────┘
 ```
 
 ### Core Agents
@@ -407,6 +470,7 @@ pytest tests/test_pycharm_integration.py    # PyCharm IDE (11 tests)
 - **[TODO.md](docs/TODO.md)** - Development tasks and progress tracking
 - **[CLAUDE.md](CLAUDE.md)** - Instructions for Claude Code (AI assistant)
 - **[C1_IMPLEMENTATION_SUMMARY.md](docs/C1_IMPLEMENTATION_SUMMARY.md)** - Chat Mode implementation details
+- **[C7_IMPLEMENTATION_SUMMARY.md](docs/C7_IMPLEMENTATION_SUMMARY.md)** - GitHub Repository Import details ⭐ NEW!
 
 ### API Documentation
 
@@ -418,6 +482,7 @@ The system provides a REST API for all operations:
 - **Chat Sessions**: `/api/chat/*`
 - **Code Generation**: `/api/code/*`
 - **Architecture Analysis**: `/api/optimizer/*`
+- **Repository Import**: `/api/repository/import` ⭐ NEW!
 
 Full API documentation coming soon (Swagger/OpenAPI).
 
@@ -455,8 +520,10 @@ Socrates/
 │   │   │   ├── base_provider.py
 │   │   │   ├── pycharm_provider.py
 │   │   │   └── factory.py
-│   │   ├── claude_service.py  # Legacy Claude service
+│   │   ├── claude_service.py       # Legacy Claude service
 │   │   ├── git_service.py
+│   │   ├── repository_analyzer.py  # Repository analysis ⭐ NEW!
+│   │   ├── repository_import_service.py  # Import orchestration ⭐ NEW!
 │   │   └── vector_service.py
 │   ├── database/           # Repository pattern
 │   │   ├── manager.py
@@ -636,6 +703,7 @@ For production deployment:
 - ✅ Multi-LLM support (C3)
 - ✅ Multi-IDE support (C4)
 - ✅ Solo project mode (C2)
+- ✅ GitHub repository import & analysis (C7) ⭐ NEW!
 
 ### In Progress 🚧
 
@@ -683,13 +751,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Project Stats
 
-- **Version**: 7.4.0
+- **Version**: 7.5.0 ⭐ NEW!
 - **Python**: 3.12+
-- **Lines of Code**: ~15,000+
+- **Lines of Code**: ~16,500+ (added repository import)
 - **Test Coverage**: 87+ tests passing
 - **Agents**: 10 core agents
 - **LLM Providers**: 4 (Claude, OpenAI, Gemini, Ollama)
 - **IDE Integrations**: 2 (VS Code, PyCharm)
+- **Supported Languages**: 30+ (for repository analysis) ⭐ NEW!
+- **Git Platforms**: GitHub, GitLab, Bitbucket, Generic Git ⭐ NEW!
 
 ---
 

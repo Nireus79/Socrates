@@ -803,7 +803,7 @@ def sample_data():
 
             # Generate content based on file type and purpose
             if file_ext == '.py':
-                return self._generate_python_content(project, specs, architecture)  # TODO specs, architecture Expected type 'str', got 'dict[str, Any]' instead
+                return self._generate_python_content(project, file_name, file_purpose)
             elif file_ext == '.js':
                 return self._generate_javascript_content(project, specs, architecture, file_name, file_purpose)
             elif file_ext == '.html':

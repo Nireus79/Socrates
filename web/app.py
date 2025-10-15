@@ -273,6 +273,27 @@ class UserDB:
                     FOREIGN KEY (generation_id) REFERENCES code_generations (id) ON DELETE CASCADE
                 )
             ''')
+
+            # Uploaded documents table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS uploaded_documents (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT,
+                    uploaded_by TEXT NOT NULL,
+                    filename TEXT NOT NULL,
+                    file_path TEXT NOT NULL,
+                    file_type TEXT NOT NULL,
+                    file_size INTEGER NOT NULL,
+                    word_count INTEGER DEFAULT 0,
+                    chunk_count INTEGER DEFAULT 0,
+                    processing_status TEXT DEFAULT 'pending',
+                    processing_info TEXT,
+                    uploaded_at TEXT NOT NULL,
+                    processed_at TEXT,
+                    FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
+                    FOREIGN KEY (uploaded_by) REFERENCES users (id) ON DELETE CASCADE
+                )
+            ''')
             conn.commit()
             conn.close()
         except Exception as e:
@@ -887,7 +908,8 @@ Security features (CSRF, rate limiting)""",
         'project_type': 'solo',
         'status': 'draft',
         'default_name': 'API Service',
-        'default_description': 'A scalable REST API service with automatic documentation, authentication, and database integration.',
+        'default_description': 'A scalable REST API service with automatic documentation, authentication, '
+                               'and database integration.',
         'requirements': """REST API endpoints with OpenAPI documentation
 Authentication and authorization (JWT)
 Database models and migrations
@@ -917,7 +939,8 @@ API versioning support""",
         'project_type': 'solo',
         'status': 'draft',
         'default_name': 'React Dashboard',
-        'default_description': 'A modern single-page application with React, featuring responsive design and interactive components.',
+        'default_description': 'A modern single-page application with React, featuring responsive design and '
+                               'interactive components.',
         'requirements': """Component-based architecture
 State management (Redux/Context)
 Responsive design system
@@ -1067,7 +1090,8 @@ Testing and validation""",
         'project_type': 'team',
         'status': 'draft',
         'default_name': 'CMS Platform',
-        'default_description': 'A comprehensive content management system with user roles, media management, and customizable themes.',
+        'default_description': 'A comprehensive content management system with user roles, media management, '
+                               'and customizable themes.',
         'requirements': """User roles and permissions system
 Content creation and editing interface
 Media library and file management
@@ -2140,12 +2164,31 @@ def create_flask_app(config_override=None) -> Flask:
     @login_required
     def get_file_content(file_id):
         """Get file content for code viewer."""
-        # This would get file content by ID for the code viewer
-        # For now, return mock content
-        return jsonify({
-            'content': '# Mock file content\n# This would contain actual generated code',
-            'file_type': 'python'
-        })
+        try:
+            # Get file from database
+            file_record = user_db.get_generated_file(file_id, current_user.id)
+
+            if not file_record:
+                return jsonify({'error': 'File not found'}), 404
+
+            # Read file content
+            file_path = file_record.get('file_path', '')
+            if os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                file_type = os.path.splitext(file_path)[1][1:]  # Remove dot
+            else:
+                content = '# File not found on disk'
+                file_type = 'text'
+
+            return jsonify({
+                'content': content,
+                'file_type': file_type,
+                'file_name': file_record.get('file_name', 'unknown')
+            })
+        except Exception as e:
+            logger.error(f"Error reading file content: {e}")
+            return jsonify({'error': 'Failed to read file'}), 500
 
     @flask_app.route('/api/generations/<generation_id>/progress')
     @login_required
@@ -2195,16 +2238,105 @@ def create_flask_app(config_override=None) -> Flask:
                 file_path = os.path.join(flask_app.config['UPLOAD_FOLDER'], filename)
                 file.save(file_path)
 
-                # TODO: Process document content (extract text, add to knowledge base)
-                # For now, just return success
+                # Process document content
+                processing_status = 'pending'
+                processing_msg = 'Processing...'
+                chunk_count = 0
+                word_count = 0
+
+                # Import uuid module outside try block to ensure it's available later
+                import uuid as uuid_module
+
+                try:
+                    from src.services.document_service import get_document_service
+                    from src.services.vector_service import VectorService
+
+                    doc_service = get_document_service()
+
+                    # Extract text from document
+                    doc_info = doc_service.process_document(file_path)
+                    word_count = doc_info.word_count
+
+                    # Add to vector knowledge base if content extracted
+                    if doc_info.content and len(doc_info.content.strip()) > 0:
+                        try:
+                            vector_service = VectorService()
+
+                            # Chunk content for better retrieval
+                            chunks = doc_service.chunk_content(doc_info.content)
+                            chunk_count = len(chunks)
+
+                            # Add to vector database
+                            for i, chunk in enumerate(chunks):
+                                doc_id = f"{project_id}_{filename}_{i}" if project_id else f"{filename}_{i}"
+
+                                metadata = {
+                                    'filename': filename,
+                                    'project_id': project_id or 'none',
+                                    'chunk_index': i,
+                                    'total_chunks': len(chunks),
+                                    'file_type': doc_info.file_type,
+                                    'word_count': doc_info.word_count,
+                                    'uploaded_by': current_user.id
+                                }
+
+                                try:
+                                    vector_service.add_document(doc_id, chunk, metadata)
+                                except Exception as e:
+                                    logger.error(f"Failed to add chunk {i} to vector DB: {e}")
+
+                            processing_msg = f"Extracted {doc_info.word_count} words, created {len(chunks)} chunks"
+                            processing_status = 'completed'
+
+                        except Exception as e:
+                            logger.error(f"Vector storage failed: {e}")
+                            processing_msg = f"Text extracted ({doc_info.word_count} words) but vector storage unavailable"
+                            processing_status = 'partial'
+                    else:
+                        processing_msg = "No text content extracted"
+                        processing_status = 'failed'
+
+                except Exception as e:
+                    logger.error(f"Document processing failed: {e}")
+                    processing_msg = f"Processing error: {str(e)}"
+                    processing_status = 'failed'
+
+                # Store document metadata in database
+                try:
+                    doc_id = str(uuid_module.uuid4())
+                    uploaded_at = datetime.now().isoformat()
+                    processed_at = uploaded_at if processing_status == 'completed' else None
+
+                    db_instance = get_user_db()
+                    conn = sqlite3.connect(db_instance.db_path)
+                    cursor = conn.cursor()
+
+                    cursor.execute('''
+                        INSERT INTO uploaded_documents (id, project_id, uploaded_by, filename, file_path,
+                                                       file_type, file_size, word_count, chunk_count,
+                                                       processing_status, processing_info, uploaded_at, processed_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (doc_id, project_id, current_user.id, filename, file_path,
+                          os.path.splitext(filename)[1], os.path.getsize(file_path),
+                          word_count, chunk_count, processing_status, processing_msg,
+                          uploaded_at, processed_at))
+
+                    conn.commit()
+                    conn.close()
+                except Exception as e:
+                    logger.error(f"Failed to store document metadata: {e}")
 
                 return jsonify({
                     'success': True,
-                    'message': f'Document "{filename}" uploaded successfully',
+                    'message': f'Document "{filename}" uploaded and processed successfully',
                     'data': {
                         'filename': filename,
                         'project_id': project_id,
-                        'file_size': os.path.getsize(file_path)
+                        'file_size': os.path.getsize(file_path),
+                        'word_count': word_count,
+                        'chunk_count': chunk_count,
+                        'processing_status': processing_status,
+                        'processing_info': processing_msg
                     }
                 })
 
@@ -2320,16 +2452,6 @@ def create_flask_app(config_override=None) -> Flask:
                         )
 
                         if project_id:
-                            # Store additional wizard data if needed
-                            additional_data = {
-                                'requirements': wizard_data.get('requirements', ''),
-                                'estimated_hours': wizard_data.get('estimated_hours', ''),
-                                'priority': wizard_data.get('priority', 'medium'),
-                                'template_id': wizard_data.get('template_id', 'custom'),
-                                'template_name': wizard_data.get('template_name', ''),
-                                'created_via': 'wizard'
-                            }
-
                             # Clear wizard data from session
                             session.pop('wizard_data', None)
 
