@@ -4,39 +4,185 @@
 
 {% block extra_head %}
 <style>
+/* Import Header */
+.import-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.import-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 400px;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.import-header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.import-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.import-header p {
+    opacity: 0.9;
+    margin: 0;
+}
+
+/* Import Card */
 .import-card {
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
     transition: all 0.3s ease;
 }
 
 .import-card:hover {
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    border-color: rgba(13, 110, 253, 0.3);
+    box-shadow: 0 10px 30px rgba(13, 110, 253, 0.1);
 }
 
-.platform-badge {
-    font-size: 2rem;
-    margin-bottom: 1rem;
+.import-card-header {
+    background: rgba(13, 110, 253, 0.1);
+    border-bottom: 1px solid rgba(13, 110, 253, 0.2);
+    padding: 1.5rem;
 }
 
+.import-card-header h5 {
+    color: #a9b7c6;
+    font-weight: 600;
+    margin: 0;
+}
+
+.import-card-body {
+    padding: 2rem;
+}
+
+/* Progress Stage */
 .progress-stage {
     padding: 1rem;
-    border-left: 3px solid #dee2e6;
+    border-left: 3px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 0.5rem;
     transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 0.5rem;
 }
 
 .progress-stage.active {
     border-left-color: #0d6efd;
-    background-color: rgba(13, 110, 253, 0.1);
+    background: rgba(13, 110, 253, 0.15);
 }
 
 .progress-stage.completed {
-    border-left-color: #198754;
-    background-color: rgba(25, 135, 84, 0.1);
+    border-left-color: #51cf66;
+    background: rgba(81, 207, 102, 0.15);
 }
 
 .progress-stage.error {
-    border-left-color: #dc3545;
-    background-color: rgba(220, 53, 69, 0.1);
+    border-left-color: #ff7b7b;
+    background: rgba(220, 53, 69, 0.15);
+}
+
+/* Platform Card */
+.platform-card {
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.platform-badge {
+    font-size: 2.5rem;
+    color: #0d6efd;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(13, 110, 253, 0.1);
+    border-radius: 0.75rem;
+}
+
+/* Form Controls */
+.form-control,
+.form-select,
+textarea {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a9b7c6;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus,
+textarea:focus {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: #0d6efd;
+    color: #a9b7c6;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.form-label {
+    color: #a9b7c6;
+    font-weight: 600;
+}
+
+.form-text {
+    color: #6c7a89;
+}
+
+.form-check-input {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.form-check-label {
+    color: #a9b7c6;
+}
+
+/* Progress Bar */
+.progress {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.25rem;
+    height: 0.5rem;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, #0d6efd 0%, #6610f2 100%);
+}
+
+/* Alert */
+.alert {
+    background: rgba(13, 110, 253, 0.1);
+    border: 1px solid rgba(13, 110, 253, 0.3);
+    color: #6fb3f5;
+    border-radius: 0.5rem;
 }
 
 #progressContainer {
@@ -47,34 +193,49 @@
     width: 1rem;
     height: 1rem;
 }
+
+@media (max-width: 768px) {
+    .import-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .import-header-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <!-- Page Header -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h2><i class="bi bi-cloud-download text-primary"></i> Import Repository</h2>
-            <p class="text-muted">Import and analyze external Git repositories from GitHub, GitLab, or Bitbucket</p>
-        </div>
-        <div class="col-md-4 text-end">
-            <a href="{{ url_for('repositories') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Repositories
-            </a>
+<div class="container-fluid">
+    <!-- Import Header -->
+    <div class="import-header">
+        <div class="import-header-content">
+            <div>
+                <h1>
+                    <i class="bi bi-cloud-download"></i> Import Repository
+                </h1>
+                <p>Import and analyze Git repositories from GitHub, GitLab, Bitbucket, or any Git source</p>
+            </div>
+            <div>
+                <a href="{{ url_for('repositories') }}" class="btn btn-outline-light">
+                    <i class="bi bi-arrow-left"></i> Back to Repositories
+                </a>
+            </div>
         </div>
     </div>
 
     <div class="row">
         <!-- Import Form -->
         <div class="col-lg-8">
-            <div class="card import-card" id="importForm">
-                <div class="card-header">
-                    <h5 class="mb-0">
+            <div class="import-card" id="importForm">
+                <div class="import-card-header">
+                    <h5>
                         <i class="bi bi-github"></i> Repository Details
                     </h5>
                 </div>
-                <div class="card-body">
+                <div class="import-card-body">
                     <form id="repoImportForm" onsubmit="startImport(event)">
                         <!-- Repository URL -->
                         <div class="mb-4">
@@ -140,13 +301,13 @@
             </div>
 
             <!-- Progress Container -->
-            <div class="card import-card mt-4" id="progressContainer">
-                <div class="card-header">
+            <div class="import-card mt-4" id="progressContainer">
+                <div class="import-card-header">
                     <h5 class="mb-0">
                         <i class="bi bi-hourglass-split"></i> Import Progress
                     </h5>
                 </div>
-                <div class="card-body">
+                <div class="import-card-body">
                     <!-- Overall Progress Bar -->
                     <div class="mb-4">
                         <div class="d-flex justify-content-between mb-2">
@@ -217,13 +378,13 @@
         <!-- Sidebar Info -->
         <div class="col-lg-4">
             <!-- Supported Platforms -->
-            <div class="card mb-4">
-                <div class="card-header">
+            <div class="import-card mb-4">
+                <div class="import-card-header">
                     <h6 class="mb-0">
                         <i class="bi bi-check-circle"></i> Supported Platforms
                     </h6>
                 </div>
-                <div class="card-body">
+                <div class="import-card-body">
                     <div class="d-flex align-items-center mb-3">
                         <div class="platform-badge text-center flex-shrink-0" style="width: 60px;">
                             <i class="bi bi-github"></i>
@@ -264,13 +425,13 @@
             </div>
 
             <!-- Features -->
-            <div class="card mb-4">
-                <div class="card-header">
+            <div class="import-card mb-4">
+                <div class="import-card-header">
                     <h6 class="mb-0">
                         <i class="bi bi-stars"></i> What We Analyze
                     </h6>
                 </div>
-                <div class="card-body">
+                <div class="import-card-body">
                     <ul class="list-unstyled mb-0">
                         <li class="mb-2">
                             <i class="bi bi-check-circle text-success"></i> <strong>Languages</strong>
@@ -297,13 +458,13 @@
             </div>
 
             <!-- Tips -->
-            <div class="card border-info">
-                <div class="card-header bg-info text-white">
+            <div class="import-card">
+                <div class="import-card-header">
                     <h6 class="mb-0">
                         <i class="bi bi-lightbulb"></i> Tips
                     </h6>
                 </div>
-                <div class="card-body">
+                <div class="import-card-body">
                     <ul class="small mb-0">
                         <li class="mb-2">Use HTTPS URLs for public repositories</li>
                         <li class="mb-2">SSH URLs require configured SSH keys</li>

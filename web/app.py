@@ -2017,6 +2017,76 @@ def create_flask_app(config_override=None) -> Flask:
 
         return render_template('projects/detail.html', project=project)
 
+    @flask_app.route('/projects/<project_id>/summary')
+    @login_required
+    def project_summary(project_id):
+        """Project summary and progress overview."""
+        project = user_db.get_project(project_id, current_user.id)
+        if not project:
+            flash('Project not found.', 'error')
+            return redirect(url_for('projects'))
+
+        try:
+            # Get modules count
+            modules = user_db.get_project_modules(project_id) or []
+            modules_count = len(modules)
+
+            # Get tasks stats
+            tasks = user_db.get_project_tasks(project_id) or []
+            tasks_completed = len([t for t in tasks if t.get('status') == 'completed'])
+
+            # Get sessions info
+            sessions = user_db.get_project_sessions(project_id) or []
+            sessions_count = len(sessions)
+            last_session = sessions[0].get('created_at')[:10] if sessions else None
+
+            # Check if spec exists
+            spec = user_db.get_technical_specification(project_id)
+            spec_exists = spec is not None
+
+            # Get generated files count
+            codebases = user_db.get_project_codebases(project_id) or []
+            files_generated = 0
+            for codebase in codebases:
+                try:
+                    files = user_db.get_codebase_files(codebase.get('id')) or []
+                    files_generated += len(files)
+                except:
+                    pass
+
+            # Calculate days active
+            created_date = project.get('created_at', '').split('-')
+            updated_date = project.get('updated_at', '').split('-')
+            if created_date and len(created_date) >= 3:
+                try:
+                    days_active = int(''.join(created_date[:3][::-1]))
+                    # Simplified - just show difference between created and updated
+                    days_active = abs((int(updated_date[2][:2]) if len(updated_date) > 2 else 0) - (int(created_date[2][:2]) if len(created_date) > 2 else 0))
+                except:
+                    days_active = 0
+            else:
+                days_active = 0
+
+        except Exception as e:
+            logger.error(f"Error gathering project summary data: {e}")
+            modules_count = 0
+            tasks_completed = 0
+            sessions_count = 0
+            last_session = None
+            spec_exists = False
+            files_generated = 0
+            days_active = 0
+
+        return render_template('projects/summary.html',
+                             project=project,
+                             modules_count=modules_count,
+                             tasks_completed=tasks_completed,
+                             sessions_count=sessions_count,
+                             last_session=last_session,
+                             spec_exists=spec_exists,
+                             files_generated=files_generated,
+                             days_active=days_active)
+
     @flask_app.route('/projects/<project_id>/edit', methods=['GET', 'POST'])
     @login_required
     def edit_project(project_id):
@@ -3243,6 +3313,7 @@ def create_flask_app(config_override=None) -> Flask:
         except Exception as e:
             logger.error(f"Error exporting repository analysis: {e}")
             return jsonify({'error': 'Export failed'}), 500
+
 
     return flask_app
 

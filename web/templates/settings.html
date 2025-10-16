@@ -4,27 +4,132 @@
 
 {% block extra_head %}
 <style>
+/* Settings Header */
+.settings-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.settings-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 400px;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.settings-header-content {
+    position: relative;
+    z-index: 1;
+}
+
+.settings-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.settings-header p {
+    opacity: 0.9;
+    margin: 0;
+}
+
+/* Sidebar Navigation */
+.settings-sidebar {
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    position: sticky;
+    top: 1rem;
+}
+
+.settings-nav-pills {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.settings-nav-pills .nav-link {
+    color: #a9b7c6;
+    background: transparent;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.settings-nav-pills .nav-link:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateX(4px);
+}
+
+.settings-nav-pills .nav-link.active {
+    background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+    color: white;
+}
+
+/* Settings Card */
 .settings-card {
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
     transition: all 0.3s ease;
 }
 
 .settings-card:hover {
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    border-color: rgba(13, 110, 253, 0.3);
+    box-shadow: 0 10px 30px rgba(13, 110, 253, 0.1);
 }
 
+.settings-card-header {
+    background: rgba(13, 110, 253, 0.1);
+    border-bottom: 1px solid rgba(13, 110, 253, 0.2);
+    padding: 1.5rem;
+}
+
+.settings-card-header h5 {
+    color: #a9b7c6;
+    font-weight: 600;
+    margin: 0;
+}
+
+.settings-card-body {
+    padding: 2rem;
+}
+
+/* Provider Card */
 .provider-card {
-    border: 2px solid transparent;
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    text-align: center;
     transition: all 0.3s ease;
     cursor: pointer;
 }
 
 .provider-card:hover {
     border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
 .provider-card.selected {
     border-color: #0d6efd;
-    background-color: rgba(13, 110, 253, 0.1);
+    background: rgba(13, 110, 253, 0.1);
+    box-shadow: 0 0 20px rgba(13, 110, 253, 0.2);
 }
 
 .provider-card.unavailable {
@@ -33,8 +138,56 @@
 }
 
 .provider-icon {
-    font-size: 3rem;
+    font-size: 2.5rem;
     margin-bottom: 1rem;
+}
+
+.provider-name {
+    color: #a9b7c6;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.provider-status {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(81, 207, 102, 0.2);
+    color: #51cf66;
+}
+
+/* Form Styling */
+.settings-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.settings-form-label {
+    color: #a9b7c6;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.form-control,
+.form-select,
+textarea {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a9b7c6;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus,
+textarea:focus {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: #0d6efd;
+    color: #a9b7c6;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
 .api-key-input {
@@ -42,41 +195,92 @@
     font-size: 0.9rem;
 }
 
-.settings-nav-pills .nav-link {
-    color: rgba(255, 255, 255, 0.7);
-    border-radius: 0.5rem;
+.form-check-input {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
 }
 
-.settings-nav-pills .nav-link:hover {
-    color: white;
-    background-color: rgba(255, 255, 255, 0.1);
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
 }
 
-.settings-nav-pills .nav-link.active {
-    background-color: #0d6efd;
+.form-check-label {
+    color: #a9b7c6;
+    margin-left: 0.5rem;
+}
+
+/* Button Styling */
+.btn-save {
+    background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+    border: none;
     color: white;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-save:hover {
+    background: linear-gradient(135deg, #0a58ca 0%, #6610f2 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(13, 110, 253, 0.4);
+}
+
+/* Alert Styling */
+.alert {
+    background: rgba(13, 110, 253, 0.1);
+    border: 1px solid rgba(13, 110, 253, 0.3);
+    color: #6fb3f5;
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.form-text {
+    color: #6c7a89;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+    .settings-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .settings-sidebar {
+        margin-bottom: 2rem;
+        position: static;
+    }
+
+    .settings-nav-pills {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .settings-nav-pills .nav-link {
+        flex: 1;
+        min-width: 120px;
+    }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-12 mb-4">
-            <h1 class="display-6">
-                <i class="bi bi-gear-fill text-primary"></i> Settings
+<div class="container-fluid">
+    <!-- Settings Header -->
+    <div class="settings-header">
+        <div class="settings-header-content">
+            <h1>
+                <i class="bi bi-gear-fill"></i> Settings & Preferences
             </h1>
-            <p class="text-muted">Manage your preferences and system configuration</p>
+            <p>Manage your preferences, API keys, and system configuration</p>
         </div>
     </div>
 
     <div class="row">
         <!-- Settings Navigation -->
         <div class="col-lg-3 mb-4">
-            <div class="card bg-dark border">
-                <div class="card-body">
-                    <ul class="nav nav-pills flex-column settings-nav-pills" id="settings-tabs" role="tablist">
+            <div class="settings-sidebar">
+                <ul class="nav settings-nav-pills" id="settings-tabs" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active w-100 text-start" id="llm-tab" data-bs-toggle="tab"
                                     data-bs-target="#llm-settings" type="button" role="tab">
@@ -102,7 +306,6 @@
                             </button>
                         </li>
                     </ul>
-                </div>
             </div>
         </div>
 
@@ -112,13 +315,13 @@
 
                 <!-- LLM Provider Settings -->
                 <div class="tab-pane fade show active" id="llm-settings" role="tabpanel">
-                    <div class="card bg-dark border settings-card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h5>
                                 <i class="bi bi-robot"></i> LLM Provider Configuration
                             </h5>
                         </div>
-                        <div class="card-body">
+                        <div class="settings-card-body">
                             <p class="text-muted mb-4">
                                 Choose your preferred AI language model provider. Each provider requires an API key.
                             </p>
@@ -234,13 +437,13 @@
 
                 <!-- IDE Integration Settings -->
                 <div class="tab-pane fade" id="ide-settings" role="tabpanel">
-                    <div class="card bg-dark border settings-card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h5>
                                 <i class="bi bi-code-square"></i> IDE Integration
                             </h5>
                         </div>
-                        <div class="card-body">
+                        <div class="settings-card-body">
                             <p class="text-muted mb-4">
                                 Configure your preferred IDE for project synchronization and code generation.
                             </p>
@@ -298,13 +501,13 @@
 
                 <!-- Profile Settings -->
                 <div class="tab-pane fade" id="profile-settings" role="tabpanel">
-                    <div class="card bg-dark border settings-card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h5>
                                 <i class="bi bi-person-circle"></i> Profile Information
                             </h5>
                         </div>
-                        <div class="card-body">
+                        <div class="settings-card-body">
                             <form id="profile-form">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
@@ -347,13 +550,13 @@
                     </div>
 
                     <!-- Change Password -->
-                    <div class="card bg-dark border settings-card mt-4">
-                        <div class="card-header">
-                            <h5 class="mb-0">
+                    <div class="settings-card mt-4">
+                        <div class="settings-card-header">
+                            <h5>
                                 <i class="bi bi-lock"></i> Change Password
                             </h5>
                         </div>
-                        <div class="card-body">
+                        <div class="settings-card-body">
                             <form id="password-form">
                                 <div class="mb-3">
                                     <label class="form-label">Current Password</label>
@@ -379,13 +582,13 @@
 
                 <!-- System Settings -->
                 <div class="tab-pane fade" id="system-settings" role="tabpanel">
-                    <div class="card bg-dark border settings-card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h5>
                                 <i class="bi bi-sliders"></i> System Preferences
                             </h5>
                         </div>
-                        <div class="card-body">
+                        <div class="settings-card-body">
                             <div class="mb-3">
                                 <label class="form-label">Theme</label>
                                 <select class="form-select" name="theme">

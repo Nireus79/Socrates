@@ -1,0 +1,575 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - Summary & Progress - Socratic RAG Enhanced{% endblock %}
+
+{% block extra_head %}
+<style>
+.progress-card {
+    border-left: 4px solid #0d6efd;
+    transition: all 0.3s ease;
+}
+
+.progress-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.metric-box {
+    text-align: center;
+    padding: 1.5rem;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.metric-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #0d6efd;
+    margin-bottom: 0.5rem;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-badge.active {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
+
+.status-badge.draft {
+    background-color: #fff3cd;
+    color: #664d03;
+}
+
+.status-badge.completed {
+    background-color: #cfe2ff;
+    color: #084298;
+}
+
+.status-badge.pending {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
+.timeline-item {
+    padding: 1rem 0;
+    border-left: 3px solid #dee2e6;
+    padding-left: 1.5rem;
+    margin-left: 1rem;
+    position: relative;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 1.5rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #0d6efd;
+    border: 3px solid white;
+}
+
+.timeline-item.completed::before {
+    background-color: #198754;
+}
+
+.timeline-item.pending::before {
+    background-color: #ffc107;
+}
+
+.phase-bar {
+    height: 30px;
+    border-radius: 15px;
+    background-color: #e9ecef;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.phase-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0d6efd 0%, #0a58ca 100%);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: width 0.5s ease;
+}
+
+.info-panel {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.info-value {
+    color: #212529;
+    font-weight: 600;
+}
+
+.highlight {
+    background-color: #fff3cd;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.export-btn {
+    margin-top: 1rem;
+}
+
+@media print {
+    .btn, .breadcrumb, .navbar {
+        display: none;
+    }
+
+    .container {
+        max-width: 100%;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('projects') }}">Projects</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.name }}</a></li>
+            <li class="breadcrumb-item active">Summary & Progress</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="bi bi-graph-up text-primary"></i> Project Summary & Progress</h2>
+            <p class="text-muted">Complete overview of project status, milestones, and context</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-outline-secondary" onclick="window.print()">
+                <i class="bi bi-printer"></i> Print Summary
+            </button>
+            <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-outline-primary ms-2">
+                <i class="bi bi-arrow-left"></i> Back to Project
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Project Status Card -->
+            <div class="card progress-card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Project Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="info-panel">
+                        <div class="info-row">
+                            <span class="info-label">Project Name:</span>
+                            <span class="info-value">{{ project.name }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Status:</span>
+                            <span class="info-value">
+                                <span class="status-badge {{ project.status }}">
+                                    {{ project.status.title() }}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Type:</span>
+                            <span class="info-value">
+                                {% if project.is_solo_project %}
+                                    <span class="badge bg-info"><i class="bi bi-person"></i> Solo</span>
+                                {% else %}
+                                    <span class="badge bg-primary"><i class="bi bi-people"></i> Team</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Framework:</span>
+                            <span class="info-value">{{ project.framework or 'Not specified' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Created:</span>
+                            <span class="info-value">{{ project.created_at[:10] }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Last Updated:</span>
+                            <span class="info-value">{{ project.updated_at[:10] }}</span>
+                        </div>
+                        {% if project.description %}
+                        <div class="info-row">
+                            <span class="info-label">Description:</span>
+                            <span class="info-value">{{ project.description[:100] }}{% if project.description|length > 100 %}...{% endif %}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overall Progress -->
+            <div class="card progress-card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-speedometer2"></i> Overall Progress</h5>
+                </div>
+                <div class="card-body">
+                    {% set overall_progress = ((modules_count|default(0) + tasks_completed|default(0) + sessions_count|default(0) + (1 if spec_exists else 0) + (1 if code_generated else 0)) / 5 * 100)|int %}
+
+                    <div class="phase-bar">
+                        <div class="phase-bar-fill" style="width: {{ overall_progress }}%">
+                            {{ overall_progress }}%
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-3">Project is <span class="highlight">{{ overall_progress }}%</span> complete</p>
+
+                    <div class="row">
+                        <div class="col-6 col-md-3">
+                            <div class="metric-box">
+                                <div class="metric-number">{{ modules_count|default(0) }}</div>
+                                <div class="metric-label">Modules</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-box">
+                                <div class="metric-number">{{ tasks_completed|default(0) }}</div>
+                                <div class="metric-label">Tasks Done</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-box">
+                                <div class="metric-number">{{ sessions_count|default(0) }}</div>
+                                <div class="metric-label">Sessions</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-box">
+                                <div class="metric-number">{{ files_generated|default(0) }}</div>
+                                <div class="metric-label">Files Gen</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Phases Timeline -->
+            <div class="card progress-card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Project Phases Progress</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Discovery Phase -->
+                    <div class="mb-4">
+                        <h6 class="mb-2">
+                            <i class="bi bi-1-circle-fill text-primary"></i> Discovery
+                            {% if sessions_count > 0 %}
+                                <span class="badge bg-success">Completed</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% endif %}
+                        </h6>
+                        <p class="text-muted small">Socratic sessions and requirements gathering</p>
+                        <div class="timeline-item {% if sessions_count > 0 %}completed{% else %}pending{% endif %}">
+                            <strong>{{ sessions_count|default(0) }} session(s)</strong> completed
+                            <div class="small text-muted">
+                                {% if sessions_count > 0 %}
+                                    Last session: {{ last_session|default('Recently') }}
+                                {% else %}
+                                    No sessions started yet
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Phase -->
+                    <div class="mb-4">
+                        <h6 class="mb-2">
+                            <i class="bi bi-2-circle-fill text-primary"></i> Analysis & Specification
+                            {% if spec_exists %}
+                                <span class="badge bg-success">Completed</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% endif %}
+                        </h6>
+                        <p class="text-muted small">Technical specification and architecture planning</p>
+                        <div class="timeline-item {% if spec_exists %}completed{% else %}pending{% endif %}">
+                            {% if spec_exists %}
+                                <strong>Specification created</strong>
+                                <div class="small text-muted">Created and maintained</div>
+                            {% else %}
+                                <strong>Awaiting specification</strong>
+                                <div class="small text-muted">Create during next session</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Planning Phase -->
+                    <div class="mb-4">
+                        <h6 class="mb-2">
+                            <i class="bi bi-3-circle-fill text-primary"></i> Planning & Organization
+                            {% if modules_count > 0 %}
+                                <span class="badge bg-success">In Progress</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% endif %}
+                        </h6>
+                        <p class="text-muted small">Module structure and task breakdown</p>
+                        <div class="timeline-item {% if modules_count > 0 %}completed{% else %}pending{% endif %}">
+                            <strong>{{ modules_count|default(0) }} module(s)</strong> defined
+                            <div class="small text-muted">
+                                {% if modules_count > 0 %}
+                                    Modules organized and ready for development
+                                {% else %}
+                                    No modules defined yet
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Development Phase -->
+                    <div class="mb-4">
+                        <h6 class="mb-2">
+                            <i class="bi bi-4-circle-fill text-primary"></i> Development & Code Generation
+                            {% if code_generated %}
+                                <span class="badge bg-success">In Progress</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% endif %}
+                        </h6>
+                        <p class="text-muted small">Code generation and implementation</p>
+                        <div class="timeline-item {% if code_generated %}completed{% else %}pending{% endif %}">
+                            <strong>{{ files_generated|default(0) }} file(s) generated</strong>
+                            <div class="small text-muted">
+                                {% if code_generated %}
+                                    Code generation completed and ready
+                                {% else %}
+                                    Code generation ready to start
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Completion Phase -->
+                    <div>
+                        <h6 class="mb-2">
+                            <i class="bi bi-5-circle-fill text-primary"></i> Completion & Testing
+                            {% if project.status == 'completed' %}
+                                <span class="badge bg-success">Completed</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% endif %}
+                        </h6>
+                        <p class="text-muted small">Final testing and project closure</p>
+                        <div class="timeline-item {% if project.status == 'completed' %}completed{% else %}pending{% endif %}">
+                            <strong>Project Status: {{ project.status.title() }}</strong>
+                            <div class="small text-muted">
+                                {% if project.status == 'completed' %}
+                                    Project is complete and ready for deployment
+                                {% else %}
+                                    Continue with project work
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Context & Current State -->
+            <div class="card progress-card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Current Context</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-3">
+                        <h6 class="alert-heading"><i class="bi bi-info-circle"></i> Project Status Summary</h6>
+                        <p class="mb-0">
+                            This project is <strong>{{ overall_progress }}% complete</strong> with
+                            <strong>{{ modules_count|default(0) }} modules</strong>,
+                            <strong>{{ tasks_completed|default(0) }} completed tasks</strong>, and
+                            <strong>{{ files_generated|default(0) }} generated files</strong>.
+                        </p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="mb-3"><i class="bi bi-check-circle-fill text-success"></i> Completed</h6>
+                            <ul class="list-unstyled">
+                                {% if sessions_count > 0 %}
+                                    <li class="mb-2"><i class="bi bi-check"></i> <strong>{{ sessions_count }}</strong> Socratic session(s)</li>
+                                {% endif %}
+                                {% if spec_exists %}
+                                    <li class="mb-2"><i class="bi bi-check"></i> Technical specification</li>
+                                {% endif %}
+                                {% if modules_count > 0 %}
+                                    <li class="mb-2"><i class="bi bi-check"></i> <strong>{{ modules_count }}</strong> modules defined</li>
+                                {% endif %}
+                                {% if tasks_completed > 0 %}
+                                    <li class="mb-2"><i class="bi bi-check"></i> <strong>{{ tasks_completed }}</strong> tasks completed</li>
+                                {% endif %}
+                                {% if files_generated > 0 %}
+                                    <li class="mb-2"><i class="bi bi-check"></i> <strong>{{ files_generated }}</strong> files generated</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="mb-3"><i class="bi bi-exclamation-circle-fill text-warning"></i> Next Steps</h6>
+                            <ul class="list-unstyled">
+                                {% if sessions_count == 0 %}
+                                    <li class="mb-2">
+                                        <i class="bi bi-arrow-right"></i> Start a Socratic session to gather requirements
+                                    </li>
+                                {% endif %}
+                                {% if not spec_exists %}
+                                    <li class="mb-2">
+                                        <i class="bi bi-arrow-right"></i> Create technical specification
+                                    </li>
+                                {% endif %}
+                                {% if modules_count == 0 %}
+                                    <li class="mb-2">
+                                        <i class="bi bi-arrow-right"></i> Define project modules and structure
+                                    </li>
+                                {% endif %}
+                                {% if files_generated == 0 %}
+                                    <li class="mb-2">
+                                        <i class="bi bi-arrow-right"></i> Generate initial code based on specifications
+                                    </li>
+                                {% endif %}
+                                {% if project.status != 'completed' %}
+                                    <li class="mb-2">
+                                        <i class="bi bi-arrow-right"></i> Continue development and testing
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Stats -->
+        <div class="col-lg-4">
+            <!-- Quick Stats -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="bi bi-speedometer"></i> Quick Stats</h6>
+                </div>
+                <div class="card-body">
+                    <div class="metric-box mb-3">
+                        <div class="metric-number">{{ overall_progress }}%</div>
+                        <div class="metric-label">Overall Complete</div>
+                    </div>
+                    <hr>
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <strong class="text-primary" style="font-size: 1.5rem;">{{ days_active|default(0) }}</strong>
+                            <div class="small text-muted">Days Active</div>
+                        </div>
+                        <div class="col-6">
+                            <strong class="text-success" style="font-size: 1.5rem;">{{ project.status|first|upper }}</strong>
+                            <div class="small text-muted">Status</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline Summary -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="bi bi-calendar-event"></i> Timeline</h6>
+                </div>
+                <div class="card-body">
+                    <div class="info-panel">
+                        <div class="info-row">
+                            <span class="info-label">Created:</span>
+                            <span class="info-value">{{ project.created_at[:10] }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Updated:</span>
+                            <span class="info-value">{{ project.updated_at[:10] }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Duration:</span>
+                            <span class="info-value">
+                                {% set days = ((project.updated_at[:10]|replace('-', '')|int) - (project.created_at[:10]|replace('-', '')|int)) %}
+                                {{ (days / 10000)|int }} days
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Recommendations</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="small list-unstyled mb-0">
+                        {% if sessions_count < 2 %}
+                            <li class="mb-2">
+                                <i class="bi bi-arrow-right-circle text-info"></i> Conduct more Socratic sessions for better requirements understanding
+                            </li>
+                        {% endif %}
+                        {% if not spec_exists and sessions_count > 0 %}
+                            <li class="mb-2">
+                                <i class="bi bi-arrow-right-circle text-info"></i> Document technical specification based on sessions
+                            </li>
+                        {% endif %}
+                        {% if tasks_completed == 0 and modules_count > 0 %}
+                            <li class="mb-2">
+                                <i class="bi bi-arrow-right-circle text-info"></i> Start tackling planned tasks
+                            </li>
+                        {% endif %}
+                        {% if overall_progress > 70 and project.status != 'completed' %}
+                            <li class="mb-2">
+                                <i class="bi bi-arrow-right-circle text-info"></i> Project is mostly complete - time for final testing
+                            </li>
+                        {% endif %}
+                        {% if overall_progress < 30 %}
+                            <li class="mb-2">
+                                <i class="bi bi-arrow-right-circle text-info"></i> Continue with discovery and planning phases
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

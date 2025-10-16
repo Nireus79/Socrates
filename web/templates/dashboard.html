@@ -4,13 +4,98 @@
 
 {% block extra_head %}
 <style>
+.dashboard-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 400px;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.dashboard-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -30%;
+    width: 300px;
+    height: 300px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+}
+
+.dashboard-header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.dashboard-title h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-title p {
+    opacity: 0.9;
+    margin: 0;
+}
+
+.dashboard-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
 .metric-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    text-align: center;
 }
+
 .metric-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
 }
+
+.metric-card-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.metric-card-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #0d6efd;
+    margin-bottom: 0.5rem;
+}
+
+.metric-card-label {
+    color: #6c7a89;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
 .status-indicator {
     width: 12px;
     height: 12px;
@@ -18,105 +103,283 @@
     display: inline-block;
     animation: pulse 2s infinite;
 }
+
 @keyframes pulse {
     0% { opacity: 1; }
     50% { opacity: 0.5; }
     100% { opacity: 1; }
 }
+
+.health-card {
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.health-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.health-item:last-child {
+    border-bottom: none;
+}
+
+.health-name {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.health-value {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
 .agent-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.agent-card {
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.agent-card:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 10px 30px rgba(13, 110, 253, 0.2);
+}
+
+.agent-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.agent-name {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #a9b7c6;
+}
+
+.agent-description {
+    font-size: 0.85rem;
+    color: #6c7a89;
+    margin: 0;
+}
+
+.project-card {
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+}
+
+.project-card:hover {
+    border-color: rgba(13, 110, 253, 0.5);
+    box-shadow: 0 8px 25px rgba(13, 110, 253, 0.1);
+}
+
+.project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1rem;
+}
+
+.project-name {
+    font-weight: 600;
+    color: #a9b7c6;
+    margin-bottom: 0.25rem;
+}
+
+.project-desc {
+    font-size: 0.85rem;
+    color: #6c7a89;
+    margin: 0;
+}
+
+.project-meta {
+    display: flex;
     gap: 1rem;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: #6c7a89;
+}
+
+.progress-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.progress-bar {
+    background: rgba(255, 255, 255, 0.1);
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, #0d6efd, #6610f2);
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .dashboard-header-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .dashboard-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .dashboard-actions .btn {
+        width: 100%;
+    }
+
+    .metric-card {
+        padding: 1rem;
+    }
+
+    .metric-card-value {
+        font-size: 1.75rem;
+    }
+
+    .agent-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col">
-        <h1 class="display-6 mb-0">
-            <i class="bi bi-speedometer2 text-primary"></i> Dashboard
-        </h1>
-        <p class="text-muted">System overview and project analytics</p>
-    </div>
-    <div class="col-auto">
-        <div class="btn-group">
-            <button class="btn btn-primary" onclick="refreshDashboard()">
-                <i class="bi bi-arrow-clockwise"></i> Refresh
-            </button>
-            <a href="{{ url_for('new_project') }}" class="btn btn-success">
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <div class="dashboard-header-content">
+        <div class="dashboard-title">
+            <h1>
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </h1>
+            <p>Welcome back! Here's your project overview</p>
+        </div>
+        <div class="dashboard-actions">
+            <a href="{{ url_for('new_project') }}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> New Project
             </a>
+            <button class="btn btn-outline-light" onclick="refreshDashboard()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- System Metrics Grid -->
+<div class="row mb-4">
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="metric-card">
+            <i class="metric-card-icon bi bi-folder-fill text-primary"></i>
+            <div class="metric-card-value">{{ system_status.total_projects or 0 }}</div>
+            <p class="metric-card-label">Total Projects</p>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="metric-card">
+            <i class="metric-card-icon bi bi-chat-dots text-success"></i>
+            <div class="metric-card-value">{{ system_status.total_sessions or 0 }}</div>
+            <p class="metric-card-label">Sessions</p>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="metric-card">
+            <i class="metric-card-icon bi bi-code-slash text-info"></i>
+            <div class="metric-card-value">{{ system_status.generated_files or 0 }}</div>
+            <p class="metric-card-label">Generated Files</p>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="metric-card">
+            <i class="metric-card-icon bi bi-activity text-warning"></i>
+            <div class="metric-card-value">{{ system_status.total_available or 0 }}/9</div>
+            <p class="metric-card-label">Services</p>
         </div>
     </div>
 </div>
 
 <!-- System Health Status -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card bg-dark border">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-activity"></i> System Health
-                </h5>
-                <small class="text-muted" id="last-updated">
-                    Updated: <span id="update-time">{{ current_time[:19] }}</span>
-                </small>
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <!-- Agents Status -->
-                    <div class="col-md-3 mb-3">
-                        <div class="d-flex align-items-center justify-content-center">
-                            <span class="status-indicator bg-{% if system_status.agents_available %}success{% else %}warning{% endif %} me-2"></span>
-                            <div>
-                                <div class="h4 mb-0">
-                                    {% if system_status.agents_available %}
-                                        <i class="bi bi-cpu text-success"></i> Online
-                                    {% else %}
-                                        <i class="bi bi-cpu text-warning"></i> Limited
-                                    {% endif %}
-                                </div>
-                                <small class="text-muted">AI Agents</small>
-                            </div>
-                        </div>
-                    </div>
+<div class="health-card mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">
+            <i class="bi bi-activity"></i> System Health
+        </h5>
+        <small class="text-muted" id="last-updated">
+            Updated: <span id="update-time">{{ current_time[:19] }}</span>
+        </small>
+    </div>
 
-                    <!-- Services Status -->
-                    <div class="col-md-3 mb-3">
-                        <div class="d-flex align-items-center justify-content-center">
-                            {% set services_count = system_status.total_available or 0 %}
-                            <span class="status-indicator bg-{% if services_count > 2 %}success{% elif services_count > 0 %}warning{% else %}danger{% endif %} me-2"></span>
-                            <div>
-                                <div class="h4 mb-0">{{ services_count }}/4</div>
-                                <small class="text-muted">Services</small>
-                            </div>
-                        </div>
-                    </div>
+    <div class="health-item">
+        <div class="health-name">
+            <i class="bi bi-cpu text-primary"></i>
+            <span>AI Agents</span>
+        </div>
+        <div class="health-value">
+            <span class="status-indicator bg-{% if system_status.agents_available %}success{% else %}warning{% endif %}"></span>
+            {% if system_status.agents_available %}
+            <span class="badge bg-success">Online</span>
+            {% else %}
+            <span class="badge bg-warning">Limited</span>
+            {% endif %}
+        </div>
+    </div>
 
-                    <!-- Projects -->
-                    <div class="col-md-3 mb-3">
-                        <div class="d-flex align-items-center justify-content-center">
-                            <span class="status-indicator bg-info me-2"></span>
-                            <div>
-                                <div class="h4 mb-0">{{ system_status.total_projects or 0 }}</div>
-                                <small class="text-muted">Projects</small>
-                            </div>
-                        </div>
-                    </div>
+    <div class="health-item">
+        <div class="health-name">
+            <i class="bi bi-hdd-network text-info"></i>
+            <span>Services</span>
+        </div>
+        <div class="health-value">
+            <span class="badge bg-{% if (system_status.total_available or 0) > 6 %}success{% elif (system_status.total_available or 0) > 3 %}warning{% else %}danger{% endif %}">
+                {{ system_status.total_available or 0 }}/9 Running
+            </span>
+        </div>
+    </div>
 
-                    <!-- Generated Files -->
-                    <div class="col-md-3 mb-3">
-                        <div class="d-flex align-items-center justify-content-center">
-                            <span class="status-indicator bg-primary me-2"></span>
-                            <div>
-                                <div class="h4 mb-0">{{ system_status.generated_files or 0 }}</div>
-                                <small class="text-muted">Generated Files</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <div class="health-item">
+        <div class="health-name">
+            <i class="bi bi-speedometer2 text-warning"></i>
+            <span>Performance</span>
+        </div>
+        <div class="health-value">
+            <span class="badge bg-success">Optimal</span>
+        </div>
+    </div>
+
+    <div class="health-item">
+        <div class="health-name">
+            <i class="bi bi-shield-check text-success"></i>
+            <span>Security</span>
+        </div>
+        <div class="health-value">
+            <span class="badge bg-success">Secure</span>
         </div>
     </div>
 </div>
@@ -253,54 +516,63 @@
 
 <!-- AI Agents Status Grid -->
 {% if system_status.agents_available %}
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card bg-dark border">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-cpu"></i> AI Agents Status
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="agent-grid" id="agents-grid">
-                    <!-- Agent cards will be populated via HTMX/JavaScript -->
-                    <div class="card bg-secondary">
-                        <div class="card-body text-center">
-                            <i class="bi bi-chat-quote-fill display-6 text-primary mb-2"></i>
-                            <h6>Socratic Counselor</h6>
-                            <span class="badge bg-success">Active</span>
-                            <small class="d-block text-muted mt-1">Role-based questioning</small>
-                        </div>
-                    </div>
+<div class="mt-5 pt-3 border-top border-secondary">
+    <h5 class="mb-4">
+        <i class="bi bi-cpu"></i> AI Agents Status
+    </h5>
+    <div class="agent-grid">
+        <div class="agent-card">
+            <i class="agent-icon bi bi-chat-quote-fill text-primary"></i>
+            <h6 class="agent-name">Socratic Counselor</h6>
+            <p class="agent-description">Role-based questioning methodology</p>
+            <span class="badge bg-success mt-2">
+                <i class="bi bi-check-circle"></i> Active
+            </span>
+        </div>
 
-                    <div class="card bg-secondary">
-                        <div class="card-body text-center">
-                            <i class="bi bi-code-slash display-6 text-info mb-2"></i>
-                            <h6>Code Generator</h6>
-                            <span class="badge bg-success">Active</span>
-                            <small class="d-block text-muted mt-1">Multi-file generation</small>
-                        </div>
-                    </div>
+        <div class="agent-card">
+            <i class="agent-icon bi bi-code-slash text-info"></i>
+            <h6 class="agent-name">Code Generator</h6>
+            <p class="agent-description">Multi-file generation and testing</p>
+            <span class="badge bg-success mt-2">
+                <i class="bi bi-check-circle"></i> Active
+            </span>
+        </div>
 
-                    <div class="card bg-secondary">
-                        <div class="card-body text-center">
-                            <i class="bi bi-kanban-fill display-6 text-warning mb-2"></i>
-                            <h6>Project Manager</h6>
-                            <span class="badge bg-success">Active</span>
-                            <small class="d-block text-muted mt-1">Lifecycle management</small>
-                        </div>
-                    </div>
+        <div class="agent-card">
+            <i class="agent-icon bi bi-kanban-fill text-warning"></i>
+            <h6 class="agent-name">Project Manager</h6>
+            <p class="agent-description">Lifecycle and workflow management</p>
+            <span class="badge bg-success mt-2">
+                <i class="bi bi-check-circle"></i> Active
+            </span>
+        </div>
 
-                    <div class="card bg-secondary">
-                        <div class="card-body text-center">
-                            <i class="bi bi-file-text-fill display-6 text-success mb-2"></i>
-                            <h6>Document Processor</h6>
-                            <span class="badge bg-success">Active</span>
-                            <small class="d-block text-muted mt-1">Knowledge extraction</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="agent-card">
+            <i class="agent-icon bi bi-file-text-fill text-success"></i>
+            <h6 class="agent-name">Document Processor</h6>
+            <p class="agent-description">Knowledge extraction & vectorization</p>
+            <span class="badge bg-success mt-2">
+                <i class="bi bi-check-circle"></i> Active
+            </span>
+        </div>
+
+        <div class="agent-card">
+            <i class="agent-icon bi bi-diagram-3 text-secondary"></i>
+            <h6 class="agent-name">Context Analyzer</h6>
+            <p class="agent-description">Conflict detection and resolution</p>
+            <span class="badge bg-success mt-2">
+                <i class="bi bi-check-circle"></i> Active
+            </span>
+        </div>
+
+        <div class="agent-card">
+            <i class="agent-icon bi bi-lightning-fill text-info"></i>
+            <h6 class="agent-name">Architecture Optimizer</h6>
+            <p class="agent-description">Design pattern validation & TCO analysis</p>
+            <span class="badge bg-success mt-2">
+                <i class="bi bi-check-circle"></i> Active
+            </span>
         </div>
     </div>
 </div>

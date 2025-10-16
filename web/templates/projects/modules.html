@@ -1,0 +1,541 @@
+{% extends "base.html" %}
+
+{% block title %}Modules & Tasks - {{ project.name if project else 'Project' }} - Socratic RAG Enhanced{% endblock %}
+
+{% block extra_head %}
+<style>
+.modules-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.modules-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 400px;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.modules-header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.modules-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.modules-header p {
+    opacity: 0.9;
+    margin: 0;
+}
+
+.modules-toolbar {
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.module-card {
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+.module-card:hover {
+    border-color: rgba(13, 110, 253, 0.3);
+    box-shadow: 0 10px 30px rgba(13, 110, 253, 0.1);
+    transform: translateY(-2px);
+}
+
+.module-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.module-title {
+    color: #a9b7c6;
+    font-size: 1.25rem;
+    font-weight: 600;
+    flex-grow: 1;
+}
+
+.module-badge {
+    display: inline-block;
+    padding: 0.4rem 0.75rem;
+    background: rgba(13, 110, 253, 0.2);
+    border: 1px solid rgba(13, 110, 253, 0.3);
+    color: #6fb3f5;
+    border-radius: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.module-description {
+    color: #6c7a89;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.tasks-container {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tasks-label {
+    color: #6c7a89;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.75rem;
+    display: block;
+    font-weight: 600;
+}
+
+.task-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.task-item {
+    display: flex;
+    align-items: start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-left: 3px solid #0d6efd;
+    color: #a9b7c6;
+    font-size: 0.9rem;
+}
+
+.task-checkbox {
+    margin-top: 0.2rem;
+    flex-shrink: 0;
+}
+
+.task-status {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(13, 110, 253, 0.2);
+    border: 2px solid rgba(13, 110, 253, 0.5);
+    cursor: pointer;
+}
+
+.task-status.completed {
+    background: rgba(81, 207, 102, 0.2);
+    border-color: #51cf66;
+}
+
+.task-content {
+    flex-grow: 1;
+}
+
+.task-content.completed {
+    text-decoration: line-through;
+    color: #6c7a89;
+}
+
+.task-priority {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    flex-shrink: 0;
+}
+
+.task-priority-high {
+    background: rgba(220, 53, 69, 0.2);
+    color: #ff7b7b;
+}
+
+.task-priority-medium {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.task-priority-low {
+    background: rgba(13, 110, 253, 0.2);
+    color: #6fb3f5;
+}
+
+.module-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.85rem;
+    color: #6c7a89;
+    gap: 1rem;
+}
+
+.module-stats {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.85rem;
+}
+
+.module-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.module-stat-value {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.module-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.module-action-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    background: rgba(13, 110, 253, 0.15);
+    border: 1px solid rgba(13, 110, 253, 0.3);
+    color: #6fb3f5;
+    border-radius: 0.35rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.module-action-btn:hover {
+    background: rgba(13, 110, 253, 0.25);
+    border-color: rgba(13, 110, 253, 0.5);
+    color: #0d6efd;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #6c7a89;
+    margin-bottom: 1.5rem;
+}
+
+.empty-title {
+    color: #a9b7c6;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.empty-text {
+    color: #6c7a89;
+    margin-bottom: 2rem;
+}
+
+.progress-bar-wrapper {
+    margin-top: 0.75rem;
+}
+
+.progress {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.25rem;
+    height: 0.4rem;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, #0d6efd 0%, #6610f2 100%);
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 0.75rem;
+    color: #6c7a89;
+    margin-top: 0.25rem;
+}
+
+@media (max-width: 768px) {
+    .modules-header-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .modules-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .modules-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .module-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .task-item {
+        font-size: 0.85rem;
+    }
+
+    .module-meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="modules-header">
+    <div class="modules-header-content">
+        <div>
+            <h1>
+                <i class="bi bi-diagram-2"></i> Modules & Tasks
+            </h1>
+            <p>Organize and manage your project modules and tasks</p>
+        </div>
+        <div>
+            <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-outline-light">
+                <i class="bi bi-arrow-left"></i> Back to Project
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Toolbar -->
+<div class="modules-toolbar">
+    <div style="flex-grow: 1;">
+        <input type="text" class="form-control" placeholder="Search modules..." onkeyup="filterModules()" id="moduleSearch"
+               style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #a9b7c6;">
+    </div>
+    <div>
+        <button class="btn btn-primary" onclick="addNewModule()">
+            <i class="bi bi-plus-circle"></i> Add Module
+        </button>
+    </div>
+</div>
+
+<!-- Modules List -->
+<div class="row">
+    {% if modules %}
+    <div class="col-12">
+        {% for module in modules %}
+        <div class="module-card module-item" data-module-name="{{ module.name|lower }}">
+            <!-- Module Header -->
+            <div class="module-header">
+                <div>
+                    <h3 class="module-title">
+                        <i class="bi bi-boxes"></i> {{ module.name }}
+                    </h3>
+                    <div class="module-description">
+                        {{ module.description or 'No description provided' }}
+                    </div>
+                </div>
+                <div>
+                    <span class="module-badge">
+                        <i class="bi bi-bar-chart"></i>
+                        {% if module.tasks|length %}
+                            {{ (module.completed_tasks / module.tasks|length * 100)|int }}%
+                        {% else %}
+                            0%
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Module Progress -->
+            {% if module.tasks|length %}
+            <div class="progress-bar-wrapper">
+                <div class="progress">
+                    <div class="progress-bar" style="width: {{ (module.completed_tasks / module.tasks|length * 100)|int }}%"></div>
+                </div>
+                <div class="progress-text">
+                    {{ module.completed_tasks }} / {{ module.tasks|length }} tasks completed
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Tasks List -->
+            {% if module.tasks|length %}
+            <div class="tasks-container">
+                <label class="tasks-label">
+                    <i class="bi bi-list-task"></i> Tasks ({{ module.tasks|length }})
+                </label>
+                <ul class="task-list">
+                    {% for task in module.tasks[:5] %}
+                    <li class="task-item" data-task-id="{{ task.id }}">
+                        <div class="task-status {% if task.is_completed %}completed{% endif %}" onclick="toggleTaskStatus(event, '{{ task.id }}')"></div>
+                        <div class="task-content {% if task.is_completed %}completed{% endif %}">
+                            {{ task.title or 'Untitled Task' }}
+                        </div>
+                        {% if task.priority %}
+                        <span class="task-priority task-priority-{{ task.priority|lower }}">
+                            {{ task.priority|upper }}
+                        </span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                    {% if module.tasks|length > 5 %}
+                    <li style="color: #6c7a89; font-size: 0.85rem; padding: 0.75rem; text-align: center;">
+                        +{{ module.tasks|length - 5 }} more tasks
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% else %}
+            <div class="tasks-container" style="text-align: center; padding: 1rem;">
+                <span style="color: #6c7a89; font-size: 0.9rem;">
+                    <i class="bi bi-inbox"></i> No tasks yet
+                </span>
+            </div>
+            {% endif %}
+
+            <!-- Module Meta -->
+            <div class="module-meta">
+                <div class="module-stats">
+                    <div class="module-stat">
+                        <span style="color: #6c7a89;">Status:</span>
+                        <span class="module-stat-value">
+                            {% if module.status %}
+                                {{ module.status|upper }}
+                            {% else %}
+                                PENDING
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="module-stat">
+                        <span style="color: #6c7a89;">Created:</span>
+                        <span class="module-stat-value">
+                            {{ module.created_at.strftime('%b %d') if module.created_at else 'N/A' }}
+                        </span>
+                    </div>
+                </div>
+                <div class="module-actions">
+                    <button class="module-action-btn" onclick="viewModule('{{ module.id }}')">
+                        <i class="bi bi-eye"></i> View
+                    </button>
+                    <button class="module-action-btn" onclick="editModule('{{ module.id }}')">
+                        <i class="bi bi-pencil"></i> Edit
+                    </button>
+                    <button class="module-action-btn" onclick="addTaskToModule('{{ module.id }}')">
+                        <i class="bi bi-plus"></i> Task
+                    </button>
+                    <button class="module-action-btn" onclick="deleteModule('{{ module.id }}', '{{ module.name }}')">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="col-12">
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="bi bi-diagram-2"></i>
+            </div>
+            <div class="empty-title">No Modules Yet</div>
+            <p class="empty-text">Create your first module to organize your project into manageable components.</p>
+            <button class="btn btn-primary btn-lg" onclick="addNewModule()">
+                <i class="bi bi-plus-circle"></i> Create Your First Module
+            </button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function filterModules() {
+    const searchTerm = document.getElementById('moduleSearch').value.toLowerCase();
+    const moduleItems = document.querySelectorAll('.module-item');
+
+    moduleItems.forEach(item => {
+        const moduleName = item.getAttribute('data-module-name');
+        if (moduleName.includes(searchTerm)) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+function addNewModule() {
+    alert('Add module functionality - would open a modal form');
+    // TODO: Implement module creation modal
+}
+
+function viewModule(moduleId) {
+    alert('View module: ' + moduleId);
+    // TODO: Navigate to module detail page
+}
+
+function editModule(moduleId) {
+    alert('Edit module: ' + moduleId);
+    // TODO: Open module edit modal
+}
+
+function addTaskToModule(moduleId) {
+    alert('Add task to module: ' + moduleId);
+    // TODO: Open add task modal
+}
+
+function deleteModule(moduleId, moduleName) {
+    if (confirm(`Delete module "${moduleName}"? This will also delete all associated tasks.`)) {
+        alert('Deleting module: ' + moduleId);
+        // TODO: Send delete request to backend
+    }
+}
+
+function toggleTaskStatus(event, taskId) {
+    event.stopPropagation();
+    // TODO: Toggle task completion status
+    const taskStatus = event.target;
+    taskStatus.classList.toggle('completed');
+    const taskContent = taskStatus.nextElementSibling;
+    taskContent.classList.toggle('completed');
+}
+</script>
+{% endblock %}

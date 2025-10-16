@@ -28,7 +28,10 @@
             {% endif %}
         </div>
         <div class="col-md-4 text-end">
-            <div class="btn-group" role="group">
+            <a href="{{ url_for('project_summary', project_id=project.id) }}" class="btn btn-info d-block mb-2">
+                <i class="bi bi-graph-up"></i> View Summary & Progress
+            </a>
+            <div class="btn-group w-100" role="group">
                 <a href="{{ url_for('edit_project', project_id=project.id) }}" class="btn btn-outline-primary">
                     <i class="bi bi-pencil"></i> Edit
                 </a>
@@ -37,7 +40,7 @@
                 </button>
             </div>
             <br>
-            <a href="{{ url_for('projects') }}" class="btn btn-outline-secondary mt-2">
+            <a href="{{ url_for('projects') }}" class="btn btn-outline-secondary mt-2 w-100">
                 <i class="bi bi-arrow-left"></i> Back to Projects
             </a>
         </div>

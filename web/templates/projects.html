@@ -4,50 +4,513 @@
 
 {% block extra_head %}
 <style>
-.project-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+.projects-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.projects-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 400px;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.projects-header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.projects-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.projects-header p {
+    opacity: 0.9;
+    margin: 0;
+}
+
+.filter-section {
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
 }
+
+.search-box {
+    flex: 1;
+    min-width: 200px;
+}
+
+.search-box input {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a9b7c6;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.search-box input:focus {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: #0d6efd;
+    color: #a9b7c6;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.filter-dropdown {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a9b7c6;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+}
+
+.filter-dropdown:focus {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: #0d6efd;
+    color: #a9b7c6;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.project-card {
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
 .project-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    transform: translateY(-5px);
+    border-color: rgba(13, 110, 253, 0.5);
+    box-shadow: 0 15px 40px rgba(13, 110, 253, 0.2);
 }
+
+.project-card-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 1rem;
+}
+
+.project-card-title {
+    color: #a9b7c6;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.project-card-body {
+    padding: 1.5rem;
+}
+
+.project-description {
+    color: #6c7a89;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.tech-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
 .tech-badge {
     font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(13, 110, 253, 0.2);
+    border: 1px solid rgba(13, 110, 253, 0.3);
+    color: #6fb3f5;
+    border-radius: 0.35rem;
 }
-.json-editor {
-    font-family: 'Courier New', monospace;
+
+.project-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.85rem;
+    color: #6c7a89;
+}
+
+.project-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #6c7a89;
+    margin-bottom: 1.5rem;
+}
+
+.empty-title {
+    color: #a9b7c6;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.empty-text {
+    color: #6c7a89;
+    margin-bottom: 2rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.3rem 0.6rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-active {
+    background: rgba(81, 207, 102, 0.2);
+    color: #51cf66;
+}
+
+.status-draft {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.status-completed {
+    background: rgba(13, 110, 253, 0.2);
+    color: #6fb3f5;
+}
+
+/* Project Detail Page Styles */
+.detail-header-banner {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.15) 0%, rgba(102, 16, 242, 0.15) 100%);
+    border: 1px solid rgba(13, 110, 253, 0.2);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.detail-header-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 300px;
+    height: 300px;
+    background: rgba(13, 110, 253, 0.1);
+    border-radius: 50%;
+}
+
+.detail-header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.detail-header-info h2 {
+    color: #a9b7c6;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.detail-header-info p {
+    color: #6c7a89;
+    font-size: 0.95rem;
+}
+
+.detail-header-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.detail-section-card {
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+.detail-section-card:hover {
+    border-color: rgba(13, 110, 253, 0.3);
+    box-shadow: 0 10px 30px rgba(13, 110, 253, 0.1);
+}
+
+.detail-section-title {
+    color: #a9b7c6;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.detail-section-title i {
+    color: #0d6efd;
+}
+
+.detail-field-group {
+    margin-bottom: 1.5rem;
+}
+
+.detail-field-label {
+    color: #6c7a89;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.detail-field-value {
+    color: #a9b7c6;
+    font-size: 1rem;
+}
+
+.detail-requirements-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.detail-requirements-list li {
+    color: #a9b7c6;
+    padding: 0.75rem;
+    padding-left: 1.5rem;
+    position: relative;
+    margin-bottom: 0.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 0.5rem;
+    border-left: 3px solid #0d6efd;
+}
+
+.detail-requirements-list li::before {
+    content: '✓';
+    position: absolute;
+    left: 0.5rem;
+    color: #51cf66;
+    font-weight: bold;
+}
+
+.detail-tech-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.detail-tech-item {
+    background: rgba(13, 110, 253, 0.15);
+    border: 1px solid rgba(13, 110, 253, 0.3);
+    color: #6fb3f5;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
     font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.detail-tech-item strong {
+    color: #a9b7c6;
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+    opacity: 0.7;
+}
+
+.detail-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.detail-stat-box {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    text-align: center;
+}
+
+.detail-stat-value {
+    color: #0d6efd;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.detail-stat-label {
+    color: #6c7a89;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-sidebar-card {
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.detail-sidebar-title {
+    color: #a9b7c6;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.detail-sidebar-title i {
+    color: #0d6efd;
+}
+
+.detail-action-button {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.detail-action-button:last-child {
+    margin-bottom: 0;
+}
+
+.detail-priority-high {
+    background: rgba(220, 53, 69, 0.2);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    color: #ff7b7b;
+}
+
+.detail-priority-medium {
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    color: #ffc107;
+}
+
+.detail-priority-low {
+    background: rgba(13, 110, 253, 0.2);
+    border: 1px solid rgba(13, 110, 253, 0.3);
+    color: #6fb3f5;
+}
+
+@media (max-width: 768px) {
+    .projects-header-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .filter-section {
+        flex-direction: column;
+    }
+
+    .search-box {
+        width: 100%;
+    }
+
+    .filter-dropdown {
+        width: 100%;
+    }
+
+    .detail-header-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .detail-header-actions {
+        width: 100%;
+    }
+
+    .detail-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-section-card {
+        padding: 1.5rem;
+    }
 }
 </style>
 {% endblock %}
 
 {% block content %}
 <!-- Page Header -->
-<div class="row mb-4">
-    <div class="col">
-        <h1 class="display-6 mb-0">
-            <i class="bi bi-folder text-primary"></i>
-            {% if page == 'create' %}Create Project
-            {% elif page == 'detail' and project %}{{ project.name }}
-            {% else %}Projects
-            {% endif %}
-        </h1>
-        <p class="text-muted">
-            {% if page == 'create' %}Define your project specifications and technology stack
-            {% elif page == 'detail' and project %}Project details and management
-            {% else %}Manage your AI-powered development projects
-            {% endif %}
-        </p>
-    </div>
-    <div class="col-auto">
+<div class="projects-header">
+    <div class="projects-header-content">
+        <div>
+            <h1>
+                <i class="bi bi-folder"></i>
+                {% if page == 'create' %}Create Project
+                {% elif page == 'detail' and project %}{{ project.name }}
+                {% else %}Projects
+                {% endif %}
+            </h1>
+            <p>
+                {% if page == 'create' %}Define your project specifications and technology stack
+                {% elif page == 'detail' and project %}Project details and management
+                {% else %}Manage your AI-powered development projects
+                {% endif %}
+            </p>
+        </div>
         {% if page != 'create' %}
         <div class="btn-group">
             <a href="{{ url_for('new_project') }}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> New Project
             </a>
-            <button class="btn btn-outline-secondary" onclick="refreshProjects()">
+            <button class="btn btn-outline-light" onclick="refreshProjects()">
                 <i class="bi bi-arrow-clockwise"></i> Refresh
             </button>
         </div>
@@ -224,156 +687,310 @@
 </div>
 
 {% elif page == 'detail' and project %}
-<!-- Project Detail View -->
+<!-- Project Detail Header Banner -->
+<div class="detail-header-banner">
+    <div class="detail-header-content">
+        <div class="detail-header-info">
+            <h2>
+                <i class="bi bi-folder-fill"></i> {{ project.name }}
+            </h2>
+            <p>{{ project.description or 'No description provided' }}</p>
+        </div>
+        <div class="detail-header-actions">
+            <a href="{{ url_for('sessions') }}?project_id={{ project.id }}" class="btn btn-success">
+                <i class="bi bi-chat-dots"></i> Session
+            </a>
+            <a href="{{ url_for('code_dashboard') }}?project_id={{ project.id }}" class="btn btn-info">
+                <i class="bi bi-code-slash"></i> Generate
+            </a>
+            <a href="{{ url_for('projects') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+</div>
+
 <div class="row">
+    <!-- Main Content Column -->
     <div class="col-lg-8">
-        <div class="card bg-dark border mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-info-circle"></i> Project Information
-                </h5>
-                <div class="btn-group btn-group-sm">
-                    <a href="{{ url_for('sessions') }}?project_id={{ project.id }}" class="btn btn-outline-success">
-                        <i class="bi bi-chat-dots"></i> Start Session
-                    </a>  <!-- ADD THIS CLOSING TAG -->
-                    <a href="{{ url_for('code_dashboard') }}?project_id={{ project.id }}" class="btn btn-outline-info">
-                        <i class="bi bi-code-slash"></i> Generate Code
-                    </a>
+        <!-- Project Overview Section -->
+        <div class="detail-section-card">
+            <h3 class="detail-section-title">
+                <i class="bi bi-info-circle"></i> Project Overview
+            </h3>
+
+            <!-- Key Statistics -->
+            <div class="detail-stats-grid">
+                <div class="detail-stat-box">
+                    <div class="detail-stat-value">{{ project.status.value.upper() if project.status else 'DRAFT' }}</div>
+                    <div class="detail-stat-label">Status</div>
                 </div>
-            </div>
-            <div class="card-body">
-                <h4>{{ project.name }}</h4>
-                <p class="text-muted mb-3">{{ project.description or 'No description provided' }}</p>
-
-                {% if project.technology_stack %}
-                <h6>Technology Stack</h6>
-                <div class="mb-3">
-                    {% for key, value in project.technology_stack.items() %}
-                    <span class="badge bg-secondary me-1">{{ key }}: {{ value }}</span>
-                    {% endfor %}
+                <div class="detail-stat-box">
+                    <div class="detail-stat-value">
+                        {% if project.priority == 'high' %}
+                        High
+                        {% elif project.priority == 'medium' %}
+                        Medium
+                        {% else %}
+                        Low
+                        {% endif %}
+                    </div>
+                    <div class="detail-stat-label">Priority</div>
                 </div>
-                {% endif %}
-
-                {% if project.requirements %}
-                <h6>Requirements</h6>
-                <ul class="mb-3">
-                    {% for req in project.requirements %}
-                    <li>{{ req }}</li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
-
-                <div class="row mt-3">
-                    <div class="col-md-4">
-                        <small class="text-muted">Priority:</small>
-                        <div>
-                            {% if project.priority == 'high' %}
-                            <span class="badge bg-danger">High</span>
-                            {% elif project.priority == 'medium' %}
-                            <span class="badge bg-warning">Medium</span>
-                            {% else %}
-                            <span class="badge bg-info">Low</span>
-                            {% endif %}
-                        </div>
+                <div class="detail-stat-box">
+                    <div class="detail-stat-value">{{ project.estimated_hours or '—' }}</div>
+                    <div class="detail-stat-label">Est. Hours</div>
+                </div>
+                <div class="detail-stat-box">
+                    <div class="detail-stat-value">
+                        {{ project.updated_at.strftime('%m/%d') if project.updated_at else 'N/A' }}
                     </div>
-                    <div class="col-md-4">
-                        <small class="text-muted">Estimated Hours:</small>
-                        <div>{{ project.estimated_hours or 'Not specified' }}</div>
-                    </div>
-                    <div class="col-md-4">
-                        <small class="text-muted">Status:</small>
-                        <div>{{ project.status.value if project.status else 'Unknown' }}</div>
-                    </div>
+                    <div class="detail-stat-label">Last Updated</div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-lg-4">
-        <div class="card bg-dark border mb-4">
-            <div class="card-header">
-                <h6 class="mb-0">Quick Actions</h6>
+        <!-- Technology Stack Section -->
+        {% if project.technology_stack %}
+        <div class="detail-section-card">
+            <h3 class="detail-section-title">
+                <i class="bi bi-stack"></i> Technology Stack
+            </h3>
+            <div class="detail-tech-stack">
+                {% for key, value in project.technology_stack.items() %}
+                {% if value %}
+                <div class="detail-tech-item">
+                    <strong>{{ key }}</strong>
+                    {{ value }}
+                </div>
+                {% endif %}
+                {% endfor %}
             </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('sessions') }}?project_id={{ project.id }}" class="btn btn-success">
-                        <i class="bi bi-chat-dots"></i> Socratic Session
-                    </a>
-                    <a href="{{ url_for('code_dashboard') }}?project_id={{ project.id }}" class="btn btn-info">
-                        <i class="bi bi-code-slash"></i> Generate Code
-                    </a>
-                    <button class="btn btn-outline-secondary" disabled>
-                        <i class="bi bi-gear"></i> Settings
-                    </button>
+        </div>
+        {% endif %}
+
+        <!-- Requirements Section -->
+        {% if project.requirements %}
+        <div class="detail-section-card">
+            <h3 class="detail-section-title">
+                <i class="bi bi-list-check"></i> Requirements
+            </h3>
+            <ul class="detail-requirements-list">
+                {% for req in project.requirements %}
+                <li>{{ req }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Project Details Section -->
+        <div class="detail-section-card">
+            <h3 class="detail-section-title">
+                <i class="bi bi-file-text"></i> Project Details
+            </h3>
+
+            <div class="detail-field-group">
+                <span class="detail-field-label">Project Type</span>
+                <div class="detail-field-value">
+                    {% if project.project_type %}
+                    <span class="badge bg-primary">{{ project.project_type.upper() }}</span>
+                    {% else %}
+                    <span style="color: #6c7a89;">Not specified</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="detail-field-group">
+                <span class="detail-field-label">Created</span>
+                <div class="detail-field-value">
+                    {{ project.created_at.strftime('%B %d, %Y at %I:%M %p') if project.created_at else 'Unknown' }}
+                </div>
+            </div>
+
+            <div class="detail-field-group">
+                <span class="detail-field-label">Last Updated</span>
+                <div class="detail-field-value">
+                    {{ project.updated_at.strftime('%B %d, %Y at %I:%M %p') if project.updated_at else 'Never' }}
+                </div>
+            </div>
+
+            <div class="detail-field-group">
+                <span class="detail-field-label">Owner</span>
+                <div class="detail-field-value">
                     {% if project.owner_id == current_user.id %}
-                    <hr>
-                    <button onclick="confirmDelete('{{ project.id }}', '{{ project.name }}')"
-                            class="btn btn-danger">
-                        <i class="bi bi-trash"></i> Delete Project
-                    </button>
+                    <span class="badge bg-success">You</span>
+                    {% else %}
+                    {{ project.owner.username if project.owner else 'Unknown' }}
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Sidebar Column -->
+    <div class="col-lg-4">
+        <!-- Quick Actions Card -->
+        <div class="detail-sidebar-card">
+            <div class="detail-sidebar-title">
+                <i class="bi bi-lightning-charge"></i> Quick Actions
+            </div>
+            <a href="{{ url_for('sessions') }}?project_id={{ project.id }}" class="btn btn-success detail-action-button">
+                <i class="bi bi-chat-dots"></i> Start Session
+            </a>
+            <a href="{{ url_for('code_dashboard') }}?project_id={{ project.id }}" class="btn btn-info detail-action-button">
+                <i class="bi bi-code-slash"></i> Generate Code
+            </a>
+            <button class="btn btn-outline-secondary detail-action-button" disabled>
+                <i class="bi bi-gear"></i> Settings
+            </button>
+            {% if project.owner_id == current_user.id %}
+            <hr style="border-color: rgba(255, 255, 255, 0.1); margin: 1rem 0;">
+            <button onclick="confirmDelete('{{ project.id }}', '{{ project.name }}')"
+                    class="btn btn-danger detail-action-button">
+                <i class="bi bi-trash"></i> Delete Project
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- Priority Indicator Card -->
+        <div class="detail-sidebar-card">
+            <div class="detail-sidebar-title">
+                <i class="bi bi-exclamation-triangle"></i> Priority Level
+            </div>
+            <div class="detail-priority-{% if project.priority == 'high' %}high{% elif project.priority == 'medium' %}medium{% else %}low{% endif %}" style="padding: 1rem; border-radius: 0.5rem; text-align: center; font-weight: 600;">
+                {% if project.priority == 'high' %}
+                <i class="bi bi-exclamation-circle"></i> HIGH PRIORITY
+                {% elif project.priority == 'medium' %}
+                <i class="bi bi-exclamation"></i> MEDIUM PRIORITY
+                {% else %}
+                <i class="bi bi-info-circle"></i> LOW PRIORITY
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Project Meta Card -->
+        <div class="detail-sidebar-card">
+            <div class="detail-sidebar-title">
+                <i class="bi bi-clock-history"></i> Timeline
+            </div>
+            <div class="detail-field-group">
+                <span class="detail-field-label">Created</span>
+                <div class="detail-field-value" style="font-size: 0.9rem;">
+                    {{ project.created_at.strftime('%b %d, %Y') if project.created_at else 'Unknown' }}
+                </div>
+            </div>
+            <div class="detail-field-group">
+                <span class="detail-field-label">Last Activity</span>
+                <div class="detail-field-value" style="font-size: 0.9rem;">
+                    {{ project.updated_at.strftime('%b %d, %Y') if project.updated_at else 'Never' }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Card -->
+        <div class="detail-sidebar-card">
+            <div class="detail-sidebar-title">
+                <i class="bi bi-arrow-left-right"></i> Navigate
+            </div>
+            <a href="{{ url_for('projects') }}" class="btn btn-outline-secondary detail-action-button">
+                <i class="bi bi-list"></i> All Projects
+            </a>
+            <a href="{{ url_for('new_project') }}" class="btn btn-outline-primary detail-action-button">
+                <i class="bi bi-plus-circle"></i> New Project
+            </a>
+        </div>
+    </div>
 </div>
 
 {% else %}
+<!-- Filters Section -->
+<div class="filter-section">
+    <div class="search-box">
+        <input type="text" id="projectSearch" placeholder="Search projects..." onkeyup="filterProjects()">
+    </div>
+    <select class="filter-dropdown" id="statusFilter" onchange="filterProjects()">
+        <option value="">All Status</option>
+        <option value="draft">Draft</option>
+        <option value="active">Active</option>
+        <option value="completed">Completed</option>
+    </select>
+    <select class="filter-dropdown" id="typeFilter" onchange="filterProjects()">
+        <option value="">All Types</option>
+        <option value="solo">Solo</option>
+        <option value="team">Team</option>
+    </select>
+</div>
+
 <!-- Project List View -->
 <div class="row">
     {% if projects %}
     <div class="col-12">
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
             {% for project in projects %}
-            <div class="col">
-                <div class="card project-card bg-dark h-100">
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">
-                            <i class="bi bi-folder-fill text-primary"></i>
-                            {{ project.name }}
-                        </h5>
+            <div class="col project-item" data-status="{{ project.status.value if project.status else 'draft' }}" data-type="{{ project.project_type or 'solo' }}">
+                <div class="project-card">
+                    <!-- Card Header with Title and Status -->
+                    <div class="project-card-header">
+                        <div>
+                            <h6 class="project-card-title">
+                                <i class="bi bi-folder-fill"></i> {{ project.name }}
+                            </h6>
+                            <small style="color: #6c7a89;">Created on {{ project.created_at.strftime('%b %d, %Y') if project.created_at else 'Unknown' }}</small>
+                        </div>
+                        <span class="status-badge status-{{ project.status.value if project.status else 'draft' }}">
+                            {{ project.status.value.upper() if project.status else 'DRAFT' }}
+                        </span>
+                    </div>
 
-                        <p class="card-text text-muted flex-grow-1">
-                            {{ project.description[:100] + '...' if project.description and project.description|length > 100 else project.description or 'No description' }}
+                    <!-- Card Body with Description and Tech Stack -->
+                    <div class="project-card-body">
+                        <p class="project-description">
+                            {{ project.description[:120] + '...' if project.description and project.description|length > 120 else project.description or 'No description provided' }}
                         </p>
 
+                        <!-- Technology Stack Badges -->
                         {% if project.technology_stack %}
-                        <div class="mb-3">
-                            <small class="text-muted">Tech Stack:</small>
-                            <div class="mt-1">
-                                {% for key, value in project.technology_stack.items() %}
-                                <span class="badge bg-secondary tech-badge">{{ value }}</span>
-                                {% endfor %}
-                            </div>
+                        <div class="tech-badges">
+                            {% for key, value in project.technology_stack.items() %}
+                            {% if value %}
+                            <span class="tech-badge" title="{{ key }}">{{ value }}</span>
+                            {% endif %}
+                            {% endfor %}
                         </div>
                         {% endif %}
 
-                        <div class="mt-auto">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">
-                                    Updated {{ project.updated_at.strftime('%m/%d/%Y') if project.updated_at else 'Never' }}
-                                </small>
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{{ url_for('project_detail', project_id=project.id) }}"
-                                       class="btn btn-outline-primary">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    <a href="{{ url_for('sessions') }}?project_id={{ project.id }}"
-                                       class="btn btn-outline-success">
-                                        <i class="bi bi-chat-dots"></i>
-                                    </a>
-                                    <a href="{{ url_for('code_dashboard') }}?project_id={{ project.id }}"
-                                        class="btn btn-outline-info">
-                                        <i class="bi bi-code-slash"></i>
-                                    </a>
-                                    {% if project.owner_id == current_user.id %}
-                                    <button onclick="confirmDelete('{{ project.id }}', '{{ project.name }}')"
-                                            class="btn btn-outline-danger"
-                                            title="Delete Project">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                    {% endif %}
-                                </div>
+                        <!-- Project Meta Information -->
+                        <div class="project-meta">
+                            <small>
+                                {% if project.updated_at %}
+                                Updated {{ project.updated_at.strftime('%m/%d/%Y') }}
+                                {% else %}
+                                Never updated
+                                {% endif %}
+                            </small>
+                            <div class="project-actions">
+                                <a href="{{ url_for('project_detail', project_id=project.id) }}"
+                                   class="btn btn-sm btn-outline-primary"
+                                   title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('sessions') }}?project_id={{ project.id }}"
+                                   class="btn btn-sm btn-outline-success"
+                                   title="Start Session">
+                                    <i class="bi bi-chat-dots"></i>
+                                </a>
+                                <a href="{{ url_for('code_dashboard') }}?project_id={{ project.id }}"
+                                   class="btn btn-sm btn-outline-info"
+                                   title="Generate Code">
+                                    <i class="bi bi-code-slash"></i>
+                                </a>
+                                {% if project.owner_id == current_user.id %}
+                                <button onclick="confirmDelete('{{ project.id }}', '{{ project.name }}')"
+                                        class="btn btn-sm btn-outline-danger"
+                                        title="Delete Project">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -385,11 +1002,13 @@
     {% else %}
     <!-- Empty State -->
     <div class="col-12">
-        <div class="text-center py-5">
-            <i class="bi bi-folder-plus display-1 text-muted mb-4"></i>
-            <h3>No Projects Yet</h3>
-            <p class="text-muted mb-4 lead">Create your first project to start building with AI-powered assistance.</p>
-            <a href="{{ url_for('new_project') }}" class="btn btn-primary btn-lg">
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="bi bi-inbox"></i>
+            </div>
+            <div class="empty-title">No Projects Yet</div>
+            <p class="empty-text">Create your first project to start building with AI-powered assistance.</p>
+            <a href="{{ url_for('new_project') }}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> Create Your First Project
             </a>
         </div>
@@ -524,6 +1143,52 @@ function previewProject() {
 
 function refreshProjects() {
     window.location.reload();
+}
+
+function filterProjects() {
+    const searchTerm = document.getElementById('projectSearch').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+    const typeFilter = document.getElementById('typeFilter').value.toLowerCase();
+
+    const projectItems = document.querySelectorAll('.project-item');
+
+    projectItems.forEach(item => {
+        const projectName = item.querySelector('.project-card-title').textContent.toLowerCase();
+        const projectStatus = item.getAttribute('data-status').toLowerCase();
+        const projectType = item.getAttribute('data-type').toLowerCase();
+
+        // Check if project matches all filters
+        const matchesSearch = projectName.includes(searchTerm);
+        const matchesStatus = !statusFilter || projectStatus === statusFilter;
+        const matchesType = !typeFilter || projectType === typeFilter;
+
+        // Show or hide based on filters
+        if (matchesSearch && matchesStatus && matchesType) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    // Show empty state if no projects match
+    const visibleProjects = Array.from(projectItems).filter(item => item.style.display !== 'none').length;
+    if (visibleProjects === 0) {
+        // Check if we have any results container
+        const projectsContainer = document.querySelector('.row.row-cols-1');
+        if (projectsContainer) {
+            projectsContainer.innerHTML += `
+                <div class="col-12">
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="bi bi-search"></i>
+                        </div>
+                        <div class="empty-title">No Results</div>
+                        <p class="empty-text">Try adjusting your filters or search terms.</p>
+                    </div>
+                </div>
+            `;
+        }
+    }
 }
 
 function confirmDelete(projectId, projectName) {

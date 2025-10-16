@@ -1,0 +1,570 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile - Socratic RAG Enhanced{% endblock %}
+
+{% block extra_head %}
+<style>
+.profile-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.profile-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -30%;
+    width: 200px;
+    height: 200px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+}
+
+.profile-header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 3px solid white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    flex-shrink: 0;
+}
+
+.profile-info h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.profile-info p {
+    opacity: 0.9;
+    margin: 0.25rem 0;
+}
+
+.profile-stats {
+    display: flex;
+    gap: 3rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 1.75rem;
+    font-weight: 700;
+    display: block;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.profile-card {
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+.profile-card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.profile-card h3 {
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #a9b7c6;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.profile-card h3 i {
+    color: #0d6efd;
+    font-size: 1.25rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: #6c7a89;
+    font-weight: 500;
+}
+
+.info-value {
+    color: #a9b7c6;
+    font-weight: 500;
+}
+
+.badge-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.badge {
+    background: rgba(13, 110, 253, 0.2);
+    color: #6fb3f5;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.85rem;
+    border: 1px solid rgba(13, 110, 253, 0.3);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    border: none;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0a58ca 0%, #0847a3 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(13, 110, 253, 0.4);
+}
+
+.btn-outline-primary {
+    background: transparent;
+    border: 2px solid #0d6efd;
+    color: #0d6efd;
+    font-weight: 600;
+    padding: 0.5rem 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+    background: rgba(13, 110, 253, 0.1);
+    border-color: #0a58ca;
+    color: #0a58ca;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stats-card {
+    background: rgba(13, 110, 253, 0.05);
+    border: 1px solid rgba(13, 110, 253, 0.2);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.stats-card-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0d6efd;
+    margin-bottom: 0.5rem;
+}
+
+.stats-card-label {
+    color: #6c7a89;
+    font-size: 0.9rem;
+}
+
+.member-since {
+    color: #6c7a89;
+    font-size: 0.9rem;
+}
+
+.account-status {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: rgba(25, 135, 84, 0.2);
+    color: #51cf66;
+    border-radius: 2rem;
+    font-size: 0.85rem;
+    border: 1px solid rgba(25, 135, 84, 0.3);
+    margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .profile-header-content {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .profile-header-content .profile-info {
+        text-align: center;
+    }
+
+    .profile-stats {
+        justify-content: space-around;
+        gap: 1rem;
+    }
+
+    .profile-card {
+        padding: 1.5rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .action-buttons .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="profile-header-content">
+            <div class="profile-avatar">
+                <i class="bi bi-person-fill"></i>
+            </div>
+            <div class="profile-info flex-grow-1">
+                <h1>{{ current_user.first_name }} {{ current_user.last_name }}</h1>
+                <p style="font-size: 1.1rem;">@{{ current_user.username }}</p>
+                <p>{{ current_user.email }}</p>
+                <div class="account-status">
+                    <i class="bi bi-check-circle-fill"></i> Account Active
+                </div>
+            </div>
+            <div class="profile-stats d-none d-md-flex">
+                <div class="stat-item">
+                    <span class="stat-number">{{ projects_count | default(0) }}</span>
+                    <span class="stat-label">Projects</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ sessions_count | default(0) }}</span>
+                    <span class="stat-label">Sessions</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ generations_count | default(0) }}</span>
+                    <span class="stat-label">Generations</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Grid (Mobile) -->
+    <div class="stats-grid d-md-none">
+        <div class="stats-card">
+            <div class="stats-card-value">{{ projects_count | default(0) }}</div>
+            <div class="stats-card-label">Projects</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-card-value">{{ sessions_count | default(0) }}</div>
+            <div class="stats-card-label">Sessions</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-card-value">{{ generations_count | default(0) }}</div>
+            <div class="stats-card-label">Generations</div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Profile Information -->
+        <div class="col-lg-8">
+            <!-- Personal Information -->
+            <div class="profile-card">
+                <h3>
+                    <i class="bi bi-person-circle"></i> Personal Information
+                </h3>
+                <div class="info-row">
+                    <span class="info-label">First Name</span>
+                    <span class="info-value">{{ current_user.first_name or 'Not provided' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Last Name</span>
+                    <span class="info-value">{{ current_user.last_name or 'Not provided' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email</span>
+                    <span class="info-value">{{ current_user.email or 'Not provided' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Username</span>
+                    <span class="info-value">@{{ current_user.username }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Member Since</span>
+                    <span class="info-value member-since">{{ current_user.created_at[:10] if current_user.created_at else 'Unknown' }}</span>
+                </div>
+            </div>
+
+            <!-- Account Settings -->
+            <div class="profile-card">
+                <h3>
+                    <i class="bi bi-shield-check"></i> Account & Security
+                </h3>
+                <div class="info-row">
+                    <span class="info-label">Account Status</span>
+                    <span class="badge" style="background: rgba(25, 135, 84, 0.2); color: #51cf66; border-color: rgba(25, 135, 84, 0.3);">
+                        <i class="bi bi-check-circle-fill"></i> Active
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Two-Factor Authentication</span>
+                    <span class="badge" style="background: rgba(255, 193, 7, 0.2); color: #ffc107; border-color: rgba(255, 193, 7, 0.3);">
+                        <i class="bi bi-exclamation-circle"></i> Not Enabled
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Last Password Change</span>
+                    <span class="info-value member-since">{{ last_password_change or 'Never' }}</span>
+                </div>
+                <div class="action-buttons mt-3">
+                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                        <i class="bi bi-key"></i> Change Password
+                    </button>
+                    <button class="btn btn-outline-primary" disabled title="Coming soon">
+                        <i class="bi bi-shield-lock"></i> Enable 2FA
+                    </button>
+                </div>
+            </div>
+
+            <!-- Skills & Interests -->
+            {% if current_user.skills %}
+            <div class="profile-card">
+                <h3>
+                    <i class="bi bi-star-fill"></i> Skills
+                </h3>
+                <div class="badge-group">
+                    {% for skill in current_user.skills %}
+                    <span class="badge">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="profile-card">
+                <h3>
+                    <i class="bi bi-lightning-fill"></i> Quick Actions
+                </h3>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('edit_profile') if url_for_check('edit_profile') else '#' }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-pencil"></i> Edit Profile
+                    </a>
+                    <a href="{{ url_for('settings') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-gear"></i> Settings
+                    </a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                </div>
+            </div>
+
+            <!-- Account Overview -->
+            <div class="profile-card">
+                <h3>
+                    <i class="bi bi-graph-up"></i> Account Overview
+                </h3>
+                <div class="info-row">
+                    <span class="info-label">Account Type</span>
+                    <span class="badge">Free Tier</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Plan Status</span>
+                    <span class="badge" style="background: rgba(13, 110, 253, 0.2); color: #6fb3f5; border-color: rgba(13, 110, 253, 0.3);">
+                        Active
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">API Usage</span>
+                    <span class="info-value member-since">{{ api_usage_percent | default('0') }}%</span>
+                </div>
+                <div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-top: 0.5rem; overflow: hidden;">
+                    <div style="height: 100%; background: linear-gradient(90deg, #0d6efd, #6610f2); width: {{ api_usage_percent | default(0) }}%; transition: width 0.3s ease;"></div>
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="profile-card">
+                <h3>
+                    <i class="bi bi-bell-fill"></i> Notifications
+                </h3>
+                <div style="font-size: 0.9rem; color: #6c7a89;">
+                    <div style="margin-bottom: 1rem;">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="email-notif" checked>
+                            <label class="form-check-label" for="email-notif" style="color: #a9b7c6;">
+                                Email Notifications
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="browser-notif" checked>
+                            <label class="form-check-label" for="browser-notif" style="color: #a9b7c6;">
+                                Browser Notifications
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background: linear-gradient(135deg, #313335 0%, #3c3f41 100%); border: 1px solid rgba(255,255,255,0.1);">
+            <div class="modal-header border-bottom" style="border-color: rgba(255,255,255,0.1) !important;">
+                <h5 class="modal-title" style="color: #a9b7c6;">
+                    <i class="bi bi-key"></i> Change Password
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" id="current_password"
+                               name="current_password" required
+                               style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #a9b7c6;">
+                        <label for="current_password" style="color: #6c7a89;">Current Password</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" id="new_password"
+                               name="new_password" required
+                               style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #a9b7c6;">
+                        <label for="new_password" style="color: #6c7a89;">New Password</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" id="confirm_new_password"
+                               name="confirm_new_password" required
+                               style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #a9b7c6;">
+                        <label for="confirm_new_password" style="color: #6c7a89;">Confirm New Password</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top" style="border-color: rgba(255,255,255,0.1) !important;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitPasswordChange()">
+                    <i class="bi bi-check-circle"></i> Update Password
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Helper function check -->
+<script>
+function url_for_check(endpoint) {
+    try {
+        return '{{ url_for_check("' + endpoint + '") if url_for_check is defined else "false" }}' !== 'false';
+    } catch (e) {
+        return false;
+    }
+}
+
+function submitPasswordChange() {
+    const form = document.getElementById('changePasswordForm');
+    const formData = new FormData(form);
+
+    // Validate passwords match
+    if (formData.get('new_password') !== formData.get('confirm_new_password')) {
+        alert('New passwords do not match');
+        return;
+    }
+
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Updating...';
+
+    // Submit password change
+    fetch('{{ url_for("change_password") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            current_password: formData.get('current_password'),
+            new_password: formData.get('new_password')
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Password changed successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
+            form.reset();
+        } else {
+            alert('Error: ' + (data.error || 'Unable to change password'));
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = originalText;
+    });
+}
+</script>
+{% endblock %}
