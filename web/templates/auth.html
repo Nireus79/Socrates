@@ -11,74 +11,380 @@
 {% block extra_head %}
 <style>
 .auth-container {
-    min-height: calc(100vh - 200px);
+    min-height: calc(100vh - 120px);
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 0;
 }
+
+.auth-wrapper {
+    width: 100%;
+    display: flex;
+    gap: 2rem;
+    align-items: stretch;
+}
+
 .auth-card {
-    backdrop-filter: blur(10px);
+    background: linear-gradient(135deg, #313335 0%, #3c3f41 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border-radius: 1rem;
+    overflow: hidden;
+    animation: slideIn 0.4s ease-out;
 }
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .auth-header {
-    background: linear-gradient(135deg, #0d6efd, #6610f2);
-    border-radius: 0.75rem 0.75rem 0 0;
+    background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+    padding: 3rem 2rem;
+    text-align: center;
+    color: white;
+    position: relative;
+    overflow: hidden;
 }
-.form-floating input:focus {
+
+.auth-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.auth-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -30%;
+    width: 200px;
+    height: 200px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+}
+
+.auth-header-content {
+    position: relative;
+    z-index: 1;
+}
+
+.auth-header h3 {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    font-size: 1.75rem;
+}
+
+.auth-header p {
+    opacity: 0.9;
+    margin-bottom: 0;
+    font-size: 0.95rem;
+}
+
+.auth-header i {
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.auth-body {
+    padding: 2.5rem;
+}
+
+.form-floating {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.form-floating > .form-control,
+.form-floating > .form-select {
+    height: calc(3.5rem + 2px);
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a9b7c6;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.form-floating > .form-control:focus,
+.form-floating > .form-select:focus {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    color: #a9b7c6;
+}
+
+.form-floating > label {
+    color: #6c7a89;
+    padding: 1rem 0.75rem;
+    transition: color 0.3s ease;
+}
+
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label {
+    color: #0d6efd;
+}
+
+.form-text {
+    color: #6c7a89;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    display: block;
+}
+
+.form-check-label {
+    color: #a9b7c6;
+    font-size: 0.95rem;
+    user-select: none;
+}
+
+.form-check-input {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 1.25rem;
+    height: 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.form-check-input:focus {
     border-color: #0d6efd;
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
+
 .password-strength {
-    height: 4px;
-    border-radius: 2px;
-    margin-top: 5px;
+    height: 6px;
+    border-radius: 3px;
+    margin-top: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
     transition: all 0.3s ease;
 }
-.strength-weak { background: #dc3545; width: 25%; }
-.strength-fair { background: #fd7e14; width: 50%; }
-.strength-good { background: #ffc107; width: 75%; }
-.strength-strong { background: #198754; width: 100%; }
+
+.password-strength-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+    background: linear-gradient(90deg, #dc3545, #198754);
+    width: 0%;
+}
+
+.strength-weak .password-strength-bar { background: #dc3545; width: 25%; }
+.strength-fair .password-strength-bar { background: #fd7e14; width: 50%; }
+.strength-good .password-strength-bar { background: #ffc107; width: 75%; }
+.strength-strong .password-strength-bar { background: #198754; width: 100%; }
+
+.btn-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    border: none;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0a58ca 0%, #0847a3 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(13, 110, 253, 0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.auth-links {
+    text-align: center;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.auth-links a {
+    color: #0d6efd;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-block;
+    margin: 0.5rem 0;
+}
+
+.auth-links a:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+}
+
+.auth-info-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: white;
+    padding: 2rem;
+}
+
+.auth-info-panel h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, #0d6efd, #6610f2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.auth-info-panel p {
+    color: #a9b7c6;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.auth-features {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.feature-item {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.feature-icon {
+    font-size: 2rem;
+    color: #0d6efd;
+    flex-shrink: 0;
+}
+
+.feature-text h4 {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: white;
+}
+
+.feature-text p {
+    margin: 0;
+    color: #6c7a89;
+    font-size: 0.9rem;
+}
+
+.is-invalid {
+    border-color: #dc3545 !important;
+}
+
+.invalid-feedback {
+    color: #dc3545;
+    font-size: 0.85rem;
+    display: block;
+    margin-top: 0.25rem;
+}
+
+@media (max-width: 768px) {
+    .auth-wrapper {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .auth-info-panel {
+        display: none;
+    }
+
+    .auth-body {
+        padding: 1.5rem;
+    }
+
+    .auth-header {
+        padding: 2rem 1.5rem;
+    }
+
+    .auth-header h3 {
+        font-size: 1.5rem;
+    }
+
+    .auth-header i {
+        font-size: 2rem;
+        margin-bottom: 0.75rem;
+    }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="auth-container d-flex align-items-center justify-content-center py-5">
-    <div class="row w-100 justify-content-center">
-        <div class="col-md-6 col-lg-5">
+<div class="auth-container">
+    <div class="container-fluid h-100">
+        <div class="row h-100 justify-content-center">
+            <!-- Auth Form (Left Side on Desktop) -->
+            <div class="col-lg-5 col-md-8 col-sm-10 d-flex align-items-center justify-content-center">
 
             {% if page == 'login' or not page %}
             <!-- Login Form -->
-            <div class="card auth-card">
-                <div class="auth-header text-white text-center py-4">
-                    <i class="bi bi-box-arrow-in-right display-4 mb-2"></i>
-                    <h3 class="mb-0">Welcome Back</h3>
-                    <p class="mb-0 opacity-75">Sign in to continue</p>
+            <div class="card auth-card w-100">
+                <div class="auth-header">
+                    <div class="auth-header-content">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        <h3>Welcome Back</h3>
+                        <p>Sign in to your account</p>
+                    </div>
                 </div>
-                <div class="card-body p-4">
+                <div class="auth-body">
                     <form method="POST" id="loginForm">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
                         <!-- Username Field -->
-                        <div class="form-floating mb-3">
+                        <div class="form-floating">
                             <input type="text" class="form-control" id="login_username" name="username"
                                    placeholder="Username" required autofocus>
-                            <label>
+                            <label for="login_username">
                                 <i class="bi bi-person-circle"></i> Username
                             </label>
                         </div>
 
                         <!-- Password Field -->
-                        <div class="form-floating mb-3">
+                        <div class="form-floating">
                             <input type="password" class="form-control" id="login_password" name="password"
                                    placeholder="Password" required>
-                            <label>
+                            <label for="login_password">
                                 <i class="bi bi-lock"></i> Password
                             </label>
                         </div>
 
-                        <!-- Remember Me -->
-                        <div class="form-check mb-3">
-                            <input type="checkbox" class="form-check-input" id="remember" name="remember">
-                            <label class="form-check-label" for="remember">
-                                Remember me
-                            </label>
+                        <!-- Remember Me & Forgot Password -->
+                        <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                                <label class="form-check-label" for="remember">
+                                    Remember me
+                                </label>
+                            </div>
+                            <a href="#" class="text-primary small" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">
+                                Forgot password?
+                            </a>
                         </div>
 
                         <!-- Submit Button -->
@@ -87,10 +393,13 @@
                         </button>
 
                         <!-- Links -->
-                        <div class="text-center">
-                            <a href="{{ url_for('register') }}" class="text-primary text-decoration-none">
-                                <i class="bi bi-person-plus"></i> Create Account
-                            </a>
+                        <div class="auth-links">
+                            <div>
+                                Don't have an account?
+                                <a href="{{ url_for('register') }}">
+                                    <i class="bi bi-person-plus"></i> Create one
+                                </a>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -98,79 +407,85 @@
 
             {% elif page == 'register' %}
             <!-- Registration Form -->
-            <div class="card auth-card">
-                <div class="auth-header text-white text-center py-4">
-                    <i class="bi bi-person-plus display-4 mb-2"></i>
-                    <h3 class="mb-0">Create Account</h3>
-                    <p class="mb-0 opacity-75">Join Socratic RAG Enhanced</p>
+            <div class="card auth-card w-100">
+                <div class="auth-header">
+                    <div class="auth-header-content">
+                        <i class="bi bi-person-plus"></i>
+                        <h3>Create Account</h3>
+                        <p>Join Socratic RAG Enhanced</p>
+                    </div>
                 </div>
-                <div class="card-body p-4">
+                <div class="auth-body" style="max-height: 70vh; overflow-y: auto;">
                     <form method="POST" id="registerForm">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
-                        <!-- Username Field (Required) -->
-                        <div class="form-floating mb-3">
+                        <!-- Username Field -->
+                        <div class="form-floating">
                             <input type="text" class="form-control" id="reg_username" name="username"
                                    placeholder="Username" required autofocus>
-                            <label>
+                            <label for="reg_username">
                                 <i class="bi bi-person-circle"></i> Username *
                             </label>
-                            <div class="form-text">
-                                At least 3 characters (letters, numbers, hyphens, underscores)
-                            </div>
+                            <small class="form-text">
+                                3+ characters (letters, numbers, hyphens, underscores)
+                            </small>
                         </div>
 
-                        <!-- Email Field (Optional) -->
-                        <div class="form-floating mb-3">
+                        <!-- Email Field -->
+                        <div class="form-floating">
                             <input type="email" class="form-control" id="reg_email" name="email"
                                    placeholder="Email">
-                            <label>
-                                <i class="bi bi-envelope"></i> Email (optional)
+                            <label for="reg_email">
+                                <i class="bi bi-envelope"></i> Email
                             </label>
                         </div>
 
-                        <!-- First Name Field (Optional) -->
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="reg_first_name" name="first_name"
-                                   placeholder="First Name">
-                            <label>
-                                <i class="bi bi-person"></i> First Name (optional)
-                            </label>
-                        </div>
-
-                        <!-- Last Name Field (Optional) -->
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="reg_last_name" name="last_name"
-                                   placeholder="Last Name">
-                            <label>
-                                <i class="bi bi-person"></i> Last Name (optional)
-                            </label>
-                        </div>
-
-                        <!-- Password Field (Required) -->
-                        <div class="form-floating mb-3">
-                            <input type="password" class="form-control" id="reg_password" name="password"
-                                   placeholder="Password" required>
-                            <label>
-                                <i class="bi bi-lock"></i> Password *
-                            </label>
-                            <div class="password-strength" id="password-strength"></div>
-                            <div class="form-text">
-                                Minimum 6 characters
+                        <!-- Name Fields -->
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="reg_first_name" name="first_name"
+                                           placeholder="First Name">
+                                    <label for="reg_first_name">
+                                        <i class="bi bi-person"></i> First Name
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="reg_last_name" name="last_name"
+                                           placeholder="Last Name">
+                                    <label for="reg_last_name">
+                                        <i class="bi bi-person"></i> Last Name
+                                    </label>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Confirm Password Field (Required) -->
-                        <div class="form-floating mb-3">
+                        <!-- Password Field -->
+                        <div class="form-floating">
+                            <input type="password" class="form-control" id="reg_password" name="password"
+                                   placeholder="Password" required>
+                            <label for="reg_password">
+                                <i class="bi bi-lock"></i> Password *
+                            </label>
+                            <div class="password-strength" id="password-strength">
+                                <div class="password-strength-bar"></div>
+                            </div>
+                            <small class="form-text">Minimum 6 characters</small>
+                        </div>
+
+                        <!-- Confirm Password Field -->
+                        <div class="form-floating">
                             <input type="password" class="form-control" id="reg_confirm_password"
                                    name="confirm_password" placeholder="Confirm Password" required>
-                            <label>
+                            <label for="reg_confirm_password">
                                 <i class="bi bi-lock-fill"></i> Confirm Password *
                             </label>
                             <div id="password-match-message" class="form-text"></div>
                         </div>
 
-                        <!-- Terms Acceptance (Required) -->
+                        <!-- Terms Acceptance -->
                         <div class="form-check mb-3">
                             <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
                             <label class="form-check-label" for="terms">
@@ -185,14 +500,13 @@
                         </button>
 
                         <!-- Links -->
-                        <div class="text-center">
-                            <a href="{{ url_for('login') }}" class="text-primary text-decoration-none">
-                                <i class="bi bi-box-arrow-in-right"></i> Already have an account? Sign In
-                            </a>
-                        </div>
-
-                        <div class="text-center mt-2">
-                            <small class="text-muted">* Required fields</small>
+                        <div class="auth-links">
+                            <div>
+                                Already have an account?
+                                <a href="{{ url_for('login') }}">
+                                    <i class="bi bi-box-arrow-in-right"></i> Sign In
+                                </a>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -200,48 +514,61 @@
 
             {% elif page == 'profile' %}
             <!-- User Profile -->
-            <div class="card auth-card">
-                <div class="auth-header text-white text-center py-4">
-                    <i class="bi bi-person-circle display-4 mb-2"></i>
-                    <h3 class="mb-0">{{ current_user.username if current_user else 'User' }}</h3>
-                    <p class="mb-0 opacity-75">Profile Settings</p>
+            <div class="card auth-card w-100">
+                <div class="auth-header">
+                    <div class="auth-header-content">
+                        <i class="bi bi-person-circle"></i>
+                        <h3>{{ current_user.username if current_user else 'User' }}</h3>
+                        <p>Profile Settings</p>
+                    </div>
                 </div>
-                <div class="card-body p-4">
-                    <!-- Profile Form -->
+                <div class="auth-body">
                     <form method="POST" id="profileForm">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <div class="form-floating mb-3">
+
+                        <!-- Username (Read-only) -->
+                        <div class="form-floating">
                             <input type="text" class="form-control" id="profile_username"
                                    value="{{ current_user.username if current_user else '' }}" readonly>
-                            <label>Username</label>
+                            <label for="profile_username">Username</label>
                         </div>
 
-                        <div class="form-floating mb-3">
+                        <!-- Email -->
+                        <div class="form-floating">
                             <input type="email" class="form-control" id="profile_email" name="email"
                                    value="{{ current_user.email if current_user else '' }}">
-                            <label>Email Address</label>
+                            <label for="profile_email">
+                                <i class="bi bi-envelope"></i> Email Address
+                            </label>
                         </div>
 
-                        <div class="row mb-3">
+                        <!-- Name Fields -->
+                        <div class="row">
                             <div class="col-6">
                                 <div class="form-floating">
                                     <input type="text" class="form-control" id="profile_first_name" name="first_name">
-                                    <label>First Name</label>
+                                    <label for="profile_first_name">
+                                        <i class="bi bi-person"></i> First Name
+                                    </label>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="form-floating">
                                     <input type="text" class="form-control" id="profile_last_name" name="last_name">
-                                    <label>Last Name</label>
+                                    <label for="profile_last_name">
+                                        <i class="bi bi-person"></i> Last Name
+                                    </label>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Submit Button -->
                         <button type="submit" class="btn btn-primary w-100 mb-3">
-                            <i class="bi bi-check-circle"></i> Update Profile
+                            <i class="bi bi-check-circle"></i> Save Changes
                         </button>
 
-                        <button type="button" class="btn btn-outline-warning w-100" data-bs-toggle="modal"
+                        <!-- Change Password Button -->
+                        <button type="button" class="btn btn-outline-primary w-100" data-bs-toggle="modal"
                                 data-bs-target="#changePasswordModal">
                             <i class="bi bi-key"></i> Change Password
                         </button>
@@ -250,6 +577,40 @@
             </div>
             {% endif %}
 
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background: linear-gradient(135deg, #313335 0%, #3c3f41 100%); border: 1px solid rgba(255,255,255,0.1);">
+            <div class="modal-header border-bottom" style="border-color: rgba(255,255,255,0.1) !important;">
+                <h5 class="modal-title" style="color: #a9b7c6;">
+                    <i class="bi bi-key"></i> Reset Password
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p style="color: #a9b7c6; margin-bottom: 1rem;">
+                    Enter your email address and we'll send you instructions to reset your password.
+                </p>
+                <form id="forgotPasswordForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="form-floating">
+                        <input type="email" class="form-control" id="reset_email" name="email" required
+                               style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #a9b7c6;">
+                        <label for="reset_email" style="color: #6c7a89;">Email Address</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top" style="border-color: rgba(255,255,255,0.1) !important;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitForgotPassword()">
+                    <i class="bi bi-envelope"></i> Send Reset Link
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -257,9 +618,9 @@
 <!-- Change Password Modal -->
 <div class="modal fade" id="changePasswordModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content bg-dark">
-            <div class="modal-header">
-                <h5 class="modal-title">
+        <div class="modal-content" style="background: linear-gradient(135deg, #313335 0%, #3c3f41 100%); border: 1px solid rgba(255,255,255,0.1);">
+            <div class="modal-header border-bottom" style="border-color: rgba(255,255,255,0.1) !important;">
+                <h5 class="modal-title" style="color: #a9b7c6;">
                     <i class="bi bi-key"></i> Change Password
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -267,24 +628,27 @@
             <div class="modal-body">
                 <form id="changePasswordForm">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <div class="form-floating mb-3">
+                    <div class="form-floating">
                         <input type="password" class="form-control" id="current_password"
-                               name="current_password" required>
-                        <label>Current Password</label>
+                               name="current_password" required
+                               style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #a9b7c6;">
+                        <label for="current_password" style="color: #6c7a89;">Current Password</label>
                     </div>
-                    <div class="form-floating mb-3">
+                    <div class="form-floating">
                         <input type="password" class="form-control" id="new_password"
-                               name="new_password" required>
-                        <label>New Password</label>
+                               name="new_password" required
+                               style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #a9b7c6;">
+                        <label for="new_password" style="color: #6c7a89;">New Password</label>
                     </div>
-                    <div class="form-floating mb-3">
+                    <div class="form-floating">
                         <input type="password" class="form-control" id="confirm_new_password"
-                               name="confirm_new_password" required>
-                        <label>Confirm New Password</label>
+                               name="confirm_new_password" required
+                               style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #a9b7c6;">
+                        <label for="confirm_new_password" style="color: #6c7a89;">Confirm New Password</label>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer border-top" style="border-color: rgba(255,255,255,0.1) !important;">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="submitPasswordChange()">
                     <i class="bi bi-check-circle"></i> Update Password
@@ -382,12 +746,12 @@ function validateRegistrationForm(form) {
 
 function checkPasswordStrength() {
     const password = document.getElementById('reg_password').value;
-    const strengthBar = document.getElementById('password-strength');
+    const strengthContainer = document.getElementById('password-strength');
 
-    if (!strengthBar) return;
+    if (!strengthContainer) return;
 
     if (password.length === 0) {
-        strengthBar.className = 'password-strength';
+        strengthContainer.className = 'password-strength';
         return;
     }
 
@@ -401,7 +765,7 @@ function checkPasswordStrength() {
     const classes = ['strength-weak', 'strength-fair', 'strength-good', 'strength-strong'];
     const strengthClass = classes[Math.min(Math.floor(strength / 1.5), 3)];
 
-    strengthBar.className = 'password-strength ' + strengthClass;
+    strengthContainer.className = 'password-strength ' + strengthClass;
 }
 
 function checkPasswordMatch() {
@@ -420,6 +784,47 @@ function checkPasswordMatch() {
     }
 }
 
+function submitForgotPassword() {
+    const form = document.getElementById('forgotPasswordForm');
+    const email = form.querySelector('[name="email"]').value;
+
+    if (!email) {
+        alert('Please enter your email address');
+        return;
+    }
+
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending...';
+
+    // Submit password reset request
+    fetch('/api/users/request-password-reset', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Password reset link sent to ' + email + '!\nPlease check your inbox.');
+            bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal')).hide();
+            form.reset();
+        } else {
+            alert('Error: ' + (data.error || 'Unable to process request'));
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = originalText;
+    });
+}
+
 function submitPasswordChange() {
     const form = document.getElementById('changePasswordForm');
     const formData = new FormData(form);
@@ -429,6 +834,11 @@ function submitPasswordChange() {
         alert('New passwords do not match');
         return;
     }
+
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Updating...';
 
     // Submit password change
     fetch('/api/users/change-password', {
@@ -448,11 +858,15 @@ function submitPasswordChange() {
             bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
             form.reset();
         } else {
-            alert('Error: ' + data.error);
+            alert('Error: ' + (data.error || 'Unable to change password'));
         }
     })
     .catch(error => {
-        alert('Error changing password: ' + error);
+        alert('Error: ' + error.message);
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = originalText;
     });
 }
 </script>
