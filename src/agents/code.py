@@ -874,7 +874,7 @@ def sample_data():
 
             try:
                 from src.services.claude_service import ClaudeService
-                claude_service = ClaudeService(self.services)
+                claude_service = ClaudeService()
             except (ImportError, AttributeError):
                 return None
 

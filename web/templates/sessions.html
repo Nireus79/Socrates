@@ -521,6 +521,16 @@
                 </div>
                 <div class="col-auto">
                     <div class="session-actions">
+                        <!-- Mode Toggle -->
+                        <div class="btn-group" role="group" title="Toggle between Socratic and Chat modes">
+                            <button class="btn btn-sm btn-outline-primary active" id="mode-socratic" onclick="switchMode('socratic')">
+                                <i class="bi bi-chat-quote"></i> Socratic
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" id="mode-chat" onclick="switchMode('chat')">
+                                <i class="bi bi-chat-dots"></i> Chat
+                            </button>
+                        </div>
+
                         <button class="btn btn-sm btn-outline-primary" onclick="exportSession()" title="Export Session">
                             <i class="bi bi-download"></i> Export
                         </button>
@@ -1153,6 +1163,72 @@ function endSession() {
         // End session logic
         alert('Session ended successfully');
     }
+}
+
+// Mode switching function
+async function switchMode(mode) {
+    if (!currentSessionId) {
+        alert('No session loaded');
+        return;
+    }
+
+    try {
+        // Update UI immediately for better UX
+        document.getElementById('mode-socratic').classList.toggle('active', mode === 'socratic');
+        document.getElementById('mode-chat').classList.toggle('active', mode === 'chat');
+
+        // Send toggle request to backend
+        const response = await fetch(`/sessions/${currentSessionId}/toggle-mode`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ mode: mode })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            // Show notification
+            const modeName = mode === 'socratic' ? 'Socratic Questioning' : 'Chat Mode';
+            showModeNotification(`Switched to ${modeName}`);
+
+            // Update chat title
+            const currentTitle = document.getElementById('session-title').textContent;
+            const iconClass = mode === 'socratic' ? 'bi-chat-quote' : 'bi-chat-dots';
+            document.getElementById('session-title').innerHTML = `<i class="bi ${iconClass}"></i> ${currentTitle.replace(/^[^a-zA-Z]*/, '').trim()}`;
+        } else {
+            throw new Error(data.error || 'Failed to switch mode');
+        }
+    } catch (error) {
+        console.error('Mode switch error:', error);
+        alert('Failed to switch mode: ' + error.message);
+        // Revert UI on error
+        document.getElementById('mode-socratic').classList.toggle('active');
+        document.getElementById('mode-chat').classList.toggle('active');
+    }
+}
+
+function showModeNotification(message) {
+    // Create a toast notification
+    const toast = document.createElement('div');
+    toast.className = 'alert alert-info alert-dismissible fade show';
+    toast.style.position = 'fixed';
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '9999';
+    toast.style.minWidth = '300px';
+    toast.innerHTML = `
+        <i class="bi bi-info-circle"></i> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(toast);
+
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
 }
 
 // Auto-save session state periodically

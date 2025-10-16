@@ -4,16 +4,20 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="ui completion">
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="task analyzer">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/data/socratic.db" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/base.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/agents/code.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/code.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/document_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/document_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/git_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/git_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/repository_import_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/repository_import_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_agents_.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_bug_fixes.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_chat_agent.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_conflict_persistence.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_context_persistence.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_integration.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_integration_complete.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/web/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/code/viewer.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/code/viewer.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/sessions.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/sessions.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -145,14 +149,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00216" summary="database">
-      <option name="closed" value="true" />
-      <created>1760121501255</created>
-      <option name="number" value="00216" />
-      <option name="presentableId" value="LOCAL-00216" />
-      <option name="project" value="LOCAL" />
-      <updated>1760121501255</updated>
     </task>
     <task id="LOCAL-00217" summary="database">
       <option name="closed" value="true" />
@@ -538,11 +534,18 @@
       <option name="project" value="LOCAL" />
       <updated>1760619305478</updated>
     </task>
-    <option name="localTasksCounter" value="265" />
+    <task id="LOCAL-00265" summary="task analyzer">
+      <option name="closed" value="true" />
+      <created>1760630233045</created>
+      <option name="number" value="00265" />
+      <option name="presentableId" value="LOCAL-00265" />
+      <option name="project" value="LOCAL" />
+      <updated>1760630233045</updated>
+    </task>
+    <option name="localTasksCounter" value="266" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="import database" />
     <MESSAGE value="repo" />
     <MESSAGE value="test_integration.py 100%" />
     <MESSAGE value="test_chat_mode_integration.py" />
@@ -567,6 +570,7 @@
     <MESSAGE value="full" />
     <MESSAGE value="debug" />
     <MESSAGE value="ui completion" />
-    <option name="LAST_COMMIT_MESSAGE" value="ui completion" />
+    <MESSAGE value="task analyzer" />
+    <option name="LAST_COMMIT_MESSAGE" value="task analyzer" />
   </component>
 </project>

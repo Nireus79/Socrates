@@ -2511,15 +2511,15 @@ def create_flask_app(config_override=None) -> Flask:
                         'project_name': project.get('name', 'Generated Project'),
                         'description': project.get('description', ''),
                         'requirements': [
-                            f"Generate a {form.architecture_pattern.data} architecture project",
-                            f"Primary language: {form.primary_language.data}",
-                            f"Backend framework: {form.backend_framework.data}",
-                            f"Frontend framework: {form.frontend_framework.data}",
-                            f"Database: {form.database_type.data}",
-                        ] + ([f"Include authentication"] if form.include_authentication.data else []) +
-                        ([f"Include API documentation"] if form.include_api_docs.data else []) +
-                        ([f"Include comprehensive tests"] if form.include_tests.data else []) +
-                        ([f"Include Docker configuration"] if form.include_docker.data else []),
+                                            f"Generate a {form.architecture_pattern.data} architecture project",
+                                            f"Primary language: {form.primary_language.data}",
+                                            f"Backend framework: {form.backend_framework.data}",
+                                            f"Frontend framework: {form.frontend_framework.data}",
+                                            f"Database: {form.database_type.data}",
+                                        ] + ([f"Include authentication"] if form.include_authentication.data else []) +
+                                        ([f"Include API documentation"] if form.include_api_docs.data else []) +
+                                        ([f"Include comprehensive tests"] if form.include_tests.data else []) +
+                                        ([f"Include Docker configuration"] if form.include_docker.data else []),
                         'technical_specifications': {
                             'architecture_type': form.architecture_pattern.data,
                             'technology_stack': technology_stack,
@@ -2550,7 +2550,8 @@ def create_flask_app(config_override=None) -> Flask:
                         },
                         'version': '1.0.0',
                         'user_id': current_user.id,
-                        '_authenticated_user': type('User', (), {'id': current_user.id, 'username': current_user.username})()
+                        '_authenticated_user': type('User', (),
+                                                    {'id': current_user.id, 'username': current_user.username})()
                     }
 
                     # Call CodeGeneratorAgent via orchestrator
@@ -2613,7 +2614,9 @@ def create_flask_app(config_override=None) -> Flask:
                         user_db.update_generation(generation_id, current_user.id,
                                                   status='completed', progress=100)
 
-                        flash(f'Code generation "{form.generation_name.data}" completed successfully! Generated {file_count} files.', 'success')
+                        flash(
+                            f'Code generation "{form.generation_name.data}" completed successfully! Generated {file_count} files.',
+                            'success')
                         return redirect(url_for('view_generation', generation_id=generation_id))
                     else:
                         # Fall back to mock generation if agent fails
@@ -2627,7 +2630,8 @@ def create_flask_app(config_override=None) -> Flask:
                         ('src/app.py', 'main.py', 'python', '# Mock Flask application - Claude generation failed'),
                         ('src/models.py', 'models.py', 'python', '# Mock database models - Claude generation failed'),
                         ('tests/test_app.py', 'test_app.py', 'python', '# Mock unit tests - Claude generation failed'),
-                        ('README.md', 'README.md', 'markdown', '# Project Documentation\n\nNote: Code generation partially failed. Using template fallback.'),
+                        ('README.md', 'README.md', 'markdown',
+                         '# Project Documentation\n\nNote: Code generation partially failed. Using template fallback.'),
                         ('requirements.txt', 'requirements.txt', 'text', 'flask\nflask-sqlalchemy\npytest')
                     ]
 
@@ -2638,7 +2642,8 @@ def create_flask_app(config_override=None) -> Flask:
                     user_db.update_generation(generation_id, current_user.id,
                                               status='completed', progress=100)
 
-                    flash(f'Code generation "{form.generation_name.data}" completed with fallback templates.', 'warning')
+                    flash(f'Code generation "{form.generation_name.data}" completed with fallback templates.',
+                          'warning')
                     return redirect(url_for('view_generation', generation_id=generation_id))
             else:
                 flash('Error creating generation. Please try again.', 'error')
@@ -2699,8 +2704,11 @@ def create_flask_app(config_override=None) -> Flask:
             zip_buffer.seek(0)
 
             # Generate filename (generation can be dict from DB or object)
-            gen_project_id = generation.get('project_id') if isinstance(generation, dict) else getattr(generation, 'project_id', '')
-            gen_name = generation.get('generation_name', '') if isinstance(generation, dict) else getattr(generation, 'generation_name', '')
+            gen_project_id = generation.get('project_id') if isinstance(generation, dict) else getattr(generation,
+                                                                                                       'project_id', '')
+            gen_name = generation.get('generation_name', '') if isinstance(generation, dict) else getattr(generation,
+                                                                                                          'generation_name',
+                                                                                                          '')
 
             project = user_db.get_project(gen_project_id, current_user.id)
             project_name = project.get('name', 'project').replace(' ', '_') if project else 'project'
@@ -2848,7 +2856,9 @@ def create_flask_app(config_override=None) -> Flask:
             'generation_name': generation.get('generation_name'),
             'created_at': generation.get('created_at'),
             'updated_at': generation.get('updated_at'),
-            'message': f"Generating file {completed_files} of {total_files}" if generation.get('status') == 'generating' else 'Completed' if generation.get('status') == 'completed' else generation.get('status', 'pending').capitalize()
+            'message': f"Generating file {completed_files} of {total_files}" if generation.get(
+                'status') == 'generating' else 'Completed' if generation.get(
+                'status') == 'completed' else generation.get('status', 'pending').capitalize()
         })
 
     # Legacy/Compatibility Routes
@@ -3364,13 +3374,15 @@ def create_flask_app(config_override=None) -> Flask:
                 'summary': {
                     'total_interactions': len(messages),
                     'questions_asked': len(questions),
-                    'session_duration': f"{(datetime.fromisoformat(user_session.get('updated_at', user_session.get('created_at'))) - datetime.fromisoformat(user_session.get('created_at'))).total_seconds() / 60:.1f} minutes" if user_session.get('updated_at') else 'In progress'
+                    'session_duration': f"{(datetime.fromisoformat(user_session.get('updated_at', user_session.get('created_at'))) - datetime.fromisoformat(user_session.get('created_at'))).total_seconds() / 60:.1f} minutes" if user_session.get(
+                        'updated_at') else 'In progress'
                 }
             }
 
             # Create JSON response
             response = make_response(json.dumps(export_data, indent=2, default=str))
-            response.headers['Content-Disposition'] = f'attachment; filename=session_{session_id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+            response.headers[
+                'Content-Disposition'] = f'attachment; filename=session_{session_id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
             response.headers['Content-Type'] = 'application/json'
             return response
         except Exception as e:
