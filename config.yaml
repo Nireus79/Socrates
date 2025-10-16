@@ -242,6 +242,13 @@ web:
     auto_reload: true
     cache_size: 100
 
+  # CSRF Protection settings
+  csrf:
+    enabled: true
+    exempt_methods: ["GET", "HEAD", "OPTIONS", "TRACE"]
+    # Endpoints that should be exempt from CSRF protection (e.g., API endpoints)
+    exempt_endpoints: []
+
 # =============================================================================
 # SECURITY
 # =============================================================================

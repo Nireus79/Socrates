@@ -219,13 +219,13 @@ class GlobalCostCalculator:
         }
 
     def calculate_enhanced_tco(
-        self,
-        project_data: Dict[str, Any],
-        tech_spec: Optional[Dict[str, Any]],
-        team_size: TeamSize = TeamSize.SMALL,
-        team_experience: TeamExperience = TeamExperience.MID,
-        cloud_provider: CloudProvider = CloudProvider.AWS,
-        expected_scale_multiplier: float = 1.0
+            self,
+            project_data: Dict[str, Any],
+            tech_spec: Optional[Dict[str, Any]],
+            team_size: TeamSize = TeamSize.SMALL,
+            team_experience: TeamExperience = TeamExperience.MID,
+            cloud_provider: CloudProvider = CloudProvider.AWS,
+            expected_scale_multiplier: float = 1.0
     ) -> EnhancedTCO:
         """
         Calculate comprehensive Total Cost of Ownership
@@ -282,7 +282,7 @@ class GlobalCostCalculator:
         # Year 5: Likely refactoring + increased complexity
         year_5_maint_hours = maintenance_burden.total_hours_per_year * technical_debt.interest_rate ** 4
         year_5_refactor_hours = (technical_debt.estimated_refactor_cost_hours
-                                * technical_debt.probability_of_major_refactor)
+                                 * technical_debt.probability_of_major_refactor)
         year_5_hours = (year_5_maint_hours * 5 + technical_debt.debt_at_year_5 + year_5_refactor_hours)
         year_5_dev_cost = year_5_hours * hourly_rate
         year_5_cloud_cost = (cloud_costs.monthly_cost_usd * 12 * 5) if cloud_costs else 0
@@ -318,10 +318,10 @@ class GlobalCostCalculator:
         )
 
     def _calculate_team_velocity(
-        self,
-        team_size: TeamSize,
-        team_experience: TeamExperience,
-        tech_spec: Optional[Dict[str, Any]]
+            self,
+            team_size: TeamSize,
+            team_experience: TeamExperience,
+            tech_spec: Optional[Dict[str, Any]]
     ) -> TeamVelocity:
         """Calculate team velocity with all factors"""
 
@@ -359,9 +359,9 @@ class GlobalCostCalculator:
         )
 
     def _estimate_development_hours(
-        self,
-        project_data: Dict[str, Any],
-        tech_spec: Optional[Dict[str, Any]]
+            self,
+            project_data: Dict[str, Any],
+            tech_spec: Optional[Dict[str, Any]]
     ) -> int:
         """Estimate base development hours"""
 
@@ -414,10 +414,10 @@ class GlobalCostCalculator:
         return max(hours, 40)  # Minimum 40 hours (1 week)
 
     def _calculate_maintenance_burden(
-        self,
-        tech_spec: Optional[Dict[str, Any]],
-        team_velocity: TeamVelocity,
-        scale_multiplier: float
+            self,
+            tech_spec: Optional[Dict[str, Any]],
+            team_velocity: TeamVelocity,
+            scale_multiplier: float
     ) -> MaintenanceBurden:
         """Calculate maintenance burden with complexity factors"""
 
@@ -484,10 +484,10 @@ class GlobalCostCalculator:
         )
 
     def _estimate_cloud_costs(
-        self,
-        tech_spec: Optional[Dict[str, Any]],
-        provider: CloudProvider,
-        scale_multiplier: float
+            self,
+            tech_spec: Optional[Dict[str, Any]],
+            provider: CloudProvider,
+            scale_multiplier: float
     ) -> Optional[CloudCostEstimate]:
         """Estimate cloud infrastructure costs"""
 
@@ -536,9 +536,9 @@ class GlobalCostCalculator:
         )
 
     def _model_technical_debt(
-        self,
-        tech_spec: Optional[Dict[str, Any]],
-        maintenance_burden: MaintenanceBurden
+            self,
+            tech_spec: Optional[Dict[str, Any]],
+            maintenance_burden: MaintenanceBurden
     ) -> TechnicalDebtModel:
         """Model technical debt accumulation over time"""
 
@@ -596,11 +596,11 @@ class GlobalCostCalculator:
         )
 
     def _identify_risk_factors(
-        self,
-        tech_spec: Optional[Dict[str, Any]],
-        maintenance_burden: MaintenanceBurden,
-        technical_debt: TechnicalDebtModel,
-        cloud_costs: Optional[CloudCostEstimate]
+            self,
+            tech_spec: Optional[Dict[str, Any]],
+            maintenance_burden: MaintenanceBurden,
+            technical_debt: TechnicalDebtModel,
+            cloud_costs: Optional[CloudCostEstimate]
     ) -> List[str]:
         """Identify cost risk factors"""
 
@@ -620,7 +620,8 @@ class GlobalCostCalculator:
 
         # Likely refactoring needed
         if technical_debt.probability_of_major_refactor > 0.5:
-            risks.append(f"{int(technical_debt.probability_of_major_refactor * 100)}% chance of major refactor (${technical_debt.estimated_refactor_cost_hours}h)")
+            risks.append(
+                f"{int(technical_debt.probability_of_major_refactor * 100)}% chance of major refactor (${technical_debt.estimated_refactor_cost_hours}h)")
 
         # Cloud cost scaling issues
         if cloud_costs and cloud_costs.cost_at_100x_scale > cloud_costs.monthly_cost_usd * 50:
@@ -629,11 +630,11 @@ class GlobalCostCalculator:
         return risks
 
     def _find_optimization_opportunities(
-        self,
-        tech_spec: Optional[Dict[str, Any]],
-        cloud_costs: Optional[CloudCostEstimate],
-        maintenance_burden: MaintenanceBurden,
-        technical_debt: TechnicalDebtModel
+            self,
+            tech_spec: Optional[Dict[str, Any]],
+            cloud_costs: Optional[CloudCostEstimate],
+            maintenance_burden: MaintenanceBurden,
+            technical_debt: TechnicalDebtModel
     ) -> List[Dict[str, Any]]:
         """Find cost optimization opportunities"""
 

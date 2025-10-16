@@ -12,7 +12,6 @@ Environment Variables:
 - ANTHROPIC_API_KEY: Anthropic API key (required)
 """
 
-import os
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 

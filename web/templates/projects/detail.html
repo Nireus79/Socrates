@@ -7,7 +7,7 @@
     <!-- Project Header -->
     <div class="row mb-4">
         <div class="col-md-8">
-            <div class="d-flex align-items-center mb-2">
+            <div class="d-flex align-items-center mb-2 flex-wrap gap-2">
                 <h2 class="me-3">
                     <i class="bi bi-{{ 'people-fill' if project.project_type == 'team' else 'person-fill' }}"></i>
                     {{ project.name }}
@@ -15,6 +15,11 @@
                 <span class="badge bg-{{ 'success' if project.status == 'active' else 'warning' if project.status == 'draft' else 'info' if project.status == 'completed' else 'secondary' }} fs-6">
                     {{ project.status.title() }}
                 </span>
+                {% if project.is_solo_project %}
+                <span class="badge bg-primary fs-6">
+                    <i class="bi bi-person"></i> Solo Project
+                </span>
+                {% endif %}
             </div>
             {% if project.description %}
                 <p class="text-muted">{{ project.description }}</p>

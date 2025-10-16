@@ -936,6 +936,10 @@ temp/
         Returns:
             CloneResult with operation status and repository information
         """
+        # Initialize repo_info before try block to ensure it's always accessible
+        repo_info = None
+        destination_path: Optional[Path] = None
+
         try:
             # Parse repository URL
             repo_info = self.parse_repository_url(url)
@@ -949,20 +953,21 @@ temp/
             # Determine destination path
             if destination is None:
                 # Auto-generate path: data/imported_repos/{owner}/{repo}
-                destination = Path('data/imported_repos') / repo_info.owner / repo_info.name
+                destination_path = Path('data/imported_repos') / repo_info.owner / repo_info.name
             else:
-                destination = Path(destination)
+                # destination parameter was provided, convert to Path
+                destination_path = Path(destination)
 
             # Check if destination already exists
-            if destination.exists():
+            if destination_path.exists():
                 # Check if it's already a git repo
                 try:
-                    existing_repo = Repo(str(destination)) if GIT_PYTHON_AVAILABLE else None
-                    if existing_repo or (destination / '.git').exists():
-                        logger.warning(f"Repository already exists at {destination}")
+                    existing_repo = Repo(str(destination_path)) if GIT_PYTHON_AVAILABLE else None
+                    if existing_repo or (destination_path / '.git').exists():
+                        logger.warning(f"Repository already exists at {destination_path}")
                         return CloneResult(
                             success=False,
-                            local_path=str(destination),
+                            local_path=str(destination_path),
                             repository_info=repo_info,
                             error="Repository already cloned at this location"
                         )
@@ -970,17 +975,17 @@ temp/
                     pass
 
                 # Remove existing directory if not a git repo
-                shutil.rmtree(destination)
+                shutil.rmtree(destination_path)
 
             # Create parent directory
-            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination_path.parent.mkdir(parents=True, exist_ok=True)
 
-            logger.info(f"Cloning repository {url} to {destination}")
+            logger.info(f"Cloning repository {url} to {destination_path}")
 
             # Clone using GitPython or command line
             if GIT_PYTHON_AVAILABLE:
                 clone_kwargs = {
-                    'to_path': str(destination),
+                    'to_path': str(destination_path),
                 }
 
                 if branch:
@@ -1000,11 +1005,11 @@ temp/
                     clone_kwargs['progress'] = ProgressPrinter()
 
                 repo = Repo.clone_from(url, **clone_kwargs)
-                cloned_path = str(destination)
+                cloned_path = str(destination_path)
 
             else:
                 # Command line fallback
-                clone_cmd = ['clone', url, str(destination)]
+                clone_cmd = ['clone', url, str(destination_path)]
 
                 if branch:
                     clone_cmd.extend(['--branch', branch])
@@ -1017,13 +1022,13 @@ temp/
                 if code != 0:
                     raise GitServiceError(f"Git clone failed: {stderr}")
 
-                cloned_path = str(destination)
+                cloned_path = str(destination_path)
 
             # Analyze cloned repository
             file_count = 0
             total_size = 0
 
-            for item in destination.rglob('*'):
+            for item in destination_path.rglob('*'):
                 if item.is_file() and '.git' not in item.parts:
                     file_count += 1
                     try:
@@ -1052,10 +1057,11 @@ temp/
 
         except Exception as e:
             logger.error(f"Failed to clone repository {url}: {e}")
+            # repo_info and destination are safely initialized before try block
             return CloneResult(
                 success=False,
-                local_path=destination if destination else '',
-                repository_info=repo_info if 'repo_info' in locals() else None,
+                local_path=str(destination) if destination else '',
+                repository_info=repo_info,
                 error=str(e)
             )
 

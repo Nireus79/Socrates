@@ -71,7 +71,12 @@ class Collection:
         """Add documents to collection"""
         pass
 
-    def query(self) -> Dict[str, Any]:
+    def query(
+            self,
+            query_texts: List[str],
+            n_results: int = 5,
+            where: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Query collection for similar documents"""
         return {
             'ids': [],
@@ -142,6 +147,7 @@ try:
 except ImportError:
     SENTENCE_TRANSFORMERS_AVAILABLE = False
 
+
     # Fallback SentenceTransformer class
     class SentenceTransformer:
         """Fallback SentenceTransformer when library not available"""
@@ -177,6 +183,7 @@ try:
     CORE_AVAILABLE = True
 except ImportError:
     CORE_AVAILABLE = False
+
 
     # Fallback exception class
     class SocraticException(Exception):
@@ -381,7 +388,7 @@ class VectorService:
             return None
 
     def add_document(self, doc_id: str, content: str, metadata: Optional[Dict[str, Any]] = None,
-                    collection_name: str = "socratic_knowledge") -> bool:
+                     collection_name: str = "socratic_knowledge") -> bool:
         """
         Add a document to the vector database.
 
@@ -418,8 +425,8 @@ class VectorService:
             return False
 
     def search(self, query: str, n_results: int = 5,
-              where: Optional[Dict[str, Any]] = None,
-              collection_name: str = "socratic_knowledge") -> List[SearchResult]:
+               where: Optional[Dict[str, Any]] = None,
+               collection_name: str = "socratic_knowledge") -> List[SearchResult]:
         """
         Search for similar documents in the vector database.
 
@@ -452,10 +459,10 @@ class VectorService:
             search_results = []
             if results and results.get('ids'):
                 for rank, (doc_id, distance, doc, meta) in enumerate(zip(
-                    results['ids'][0],
-                    results['distances'][0],
-                    results['documents'][0],
-                    results['metadatas'][0]
+                        results['ids'][0],
+                        results['distances'][0],
+                        results['documents'][0],
+                        results['metadatas'][0]
                 )):
                     vector_doc = VectorDocument(
                         id=doc_id,
@@ -520,6 +527,29 @@ class VectorService:
         except Exception as e:
             logger.error(f"Failed to get collection stats: {e}")
             return None
+
+    def delete_collection(self, collection_name: str) -> bool:
+        """
+        Delete an entire collection from the vector database.
+
+        Args:
+            collection_name: Name of the collection to delete
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.client:
+            logger.warning("Cannot delete collection - ChromaDB not available")
+            return False
+
+        try:
+            self.client.delete_collection(name=collection_name)
+            logger.info(f"Deleted collection: {collection_name}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to delete collection {collection_name}: {e}")
+            return False
 
 
 # ============================================================================

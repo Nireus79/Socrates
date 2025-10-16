@@ -15,7 +15,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-from pathlib import Path
 
 
 @dataclass

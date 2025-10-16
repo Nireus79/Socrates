@@ -4,8 +4,22 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="full">
+    <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="debug">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/MASTER_PLAN.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/MASTER_PLAN.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/TODO.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/TODO.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/cost_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/cost_calculator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/optimizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/optimizer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/git_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/git_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/ide/base_provider.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/ide/base_provider.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/ide/pycharm_provider.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/ide/pycharm_provider.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/llm/claude_provider.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/llm/claude_provider.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/llm/ollama_provider.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/llm/ollama_provider.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/repository_analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/repository_analyzer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/repository_import_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/repository_import_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/vector_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/vector_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,26 +58,26 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultHtmlFileTemplate": "HTML File",
-    "Python tests.Python tests in all_agents_testing.py.executor": "Run",
-    "Python tests.Python tests in all_agents_tests.py.executor": "Run",
-    "Python tests.Python tests in test_all_agents.py.executor": "Run",
-    "Python tests.Python tests in test_chat_mode_integration.py.executor": "Run",
-    "Python tests.Python tests in test_flask.py.executor": "Run",
-    "Python.claude_service.executor": "Run",
-    "Python.run.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "settings.editor.selected.configurable": "preferences.lookFeel"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;Python tests.Python tests in all_agents_testing.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in all_agents_tests.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in test_all_agents.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in test_chat_mode_integration.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in test_flask.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python.claude_service.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\Users\themi\PycharmProjects\Socrates\web" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\tests" />
+      <recent name="C:\Users\themi\PycharmProjects\Socrates\web" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\docs" />
     </key>
   </component>
@@ -137,14 +151,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00212" summary="run.py">
-      <option name="closed" value="true" />
-      <created>1760102003479</created>
-      <option name="number" value="00212" />
-      <option name="presentableId" value="LOCAL-00212" />
-      <option name="project" value="LOCAL" />
-      <updated>1760102003479</updated>
     </task>
     <task id="LOCAL-00213" summary="run.py">
       <option name="closed" value="true" />
@@ -530,11 +536,18 @@
       <option name="project" value="LOCAL" />
       <updated>1760521302069</updated>
     </task>
-    <option name="localTasksCounter" value="261" />
+    <task id="LOCAL-00261" summary="debug">
+      <option name="closed" value="true" />
+      <created>1760525669831</created>
+      <option name="number" value="00261" />
+      <option name="presentableId" value="LOCAL-00261" />
+      <option name="project" value="LOCAL" />
+      <updated>1760525669831</updated>
+    </task>
+    <option name="localTasksCounter" value="262" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="IntegrationTest" />
     <MESSAGE value="project.py" />
     <MESSAGE value="import database" />
     <MESSAGE value="repo" />
@@ -559,6 +572,7 @@
     <MESSAGE value="ReadMe" />
     <MESSAGE value="back full" />
     <MESSAGE value="full" />
-    <option name="LAST_COMMIT_MESSAGE" value="full" />
+    <MESSAGE value="debug" />
+    <option name="LAST_COMMIT_MESSAGE" value="debug" />
   </component>
 </project>

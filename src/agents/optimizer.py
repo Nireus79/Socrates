@@ -38,31 +38,40 @@ except ImportError:
     import logging
     from datetime import datetime
 
+
     def get_logger(name):
         return logging.getLogger(name)
+
 
     class ServiceContainer:
         def get_logger(self, name):
             return logging.getLogger(name)
+
         def get_config(self):
             return {}
+
         def get_db_manager(self):
             return None
+
 
     class DateTimeHelper:
         @staticmethod
         def now():
             return datetime.now()
+
         @staticmethod
         def to_iso_string(dt):
             return dt.isoformat() if dt else None
 
+
     class ValidationError(Exception):
         pass
+
 
     class ProjectStatus:
         DRAFT = "draft"
         ACTIVE = "active"
+
 
     class ProjectPhase:
         PLANNING = "planning"
@@ -266,7 +275,7 @@ class ArchitectureOptimizerAgent(BaseAgent):
             self._store_architecture_review(project_id, analysis_result)
 
             self.logger.info(f"Architecture analysis complete for project {project_id}: "
-                           f"Risk={risk_level.value}, Issues={len(all_issues)}")
+                             f"Risk={risk_level.value}, Issues={len(all_issues)}")
 
             return self._success_response(
                 f"Architecture analysis complete: {len(all_issues)} issues found",
@@ -305,7 +314,7 @@ class ArchitectureOptimizerAgent(BaseAgent):
                         'severity': 'high',
                         'title': 'MongoDB chosen for relational data',
                         'description': 'MongoDB selected but requirements indicate relational data patterns. '
-                                     'This is a greedy choice optimizing for simplicity over correctness.',
+                                       'This is a greedy choice optimizing for simplicity over correctness.',
                         'consequence': 'Will require complex workarounds or eventual migration to relational DB',
                         'estimated_waste_hours': 40,
                         'recommendation': 'Consider PostgreSQL or MySQL for relational requirements'
@@ -326,7 +335,7 @@ class ArchitectureOptimizerAgent(BaseAgent):
                     'severity': 'medium',
                     'title': 'No scalability requirements defined',
                     'description': 'Project requirements don\'t mention scaling, load, or performance. '
-                                 'This is greedy questioning - not exploring full problem space.',
+                                   'This is greedy questioning - not exploring full problem space.',
                     'consequence': 'Architecture may not handle growth, requiring costly refactoring',
                     'estimated_waste_hours': 20,
                     'recommendation': 'Ask: How many users? What load? What are performance requirements?'
@@ -473,11 +482,15 @@ class ArchitectureOptimizerAgent(BaseAgent):
                 tech_spec_dict = {
                     'architecture_type': tech_spec.architecture_type if hasattr(tech_spec, 'architecture_type') else '',
                     'technology_stack': tech_spec.technology_stack if hasattr(tech_spec, 'technology_stack') else {},
-                    'functional_requirements': tech_spec.functional_requirements if hasattr(tech_spec, 'functional_requirements') else [],
-                    'security_requirements': tech_spec.security_requirements if hasattr(tech_spec, 'security_requirements') else [],
-                    'performance_requirements': tech_spec.performance_requirements if hasattr(tech_spec, 'performance_requirements') else {},
+                    'functional_requirements': tech_spec.functional_requirements if hasattr(tech_spec,
+                                                                                            'functional_requirements') else [],
+                    'security_requirements': tech_spec.security_requirements if hasattr(tech_spec,
+                                                                                        'security_requirements') else [],
+                    'performance_requirements': tech_spec.performance_requirements if hasattr(tech_spec,
+                                                                                              'performance_requirements') else {},
                     'testing_strategy': tech_spec.testing_strategy if hasattr(tech_spec, 'testing_strategy') else {},
-                    'monitoring_requirements': tech_spec.monitoring_requirements if hasattr(tech_spec, 'monitoring_requirements') else [],
+                    'monitoring_requirements': tech_spec.monitoring_requirements if hasattr(tech_spec,
+                                                                                            'monitoring_requirements') else [],
                     'system_components': tech_spec.system_components if hasattr(tech_spec, 'system_components') else []
                 }
 
@@ -605,9 +618,9 @@ class ArchitectureOptimizerAgent(BaseAgent):
 
         # Calculate total 3-year cost
         tco['total_3_year_hours'] = (
-            tco['development_hours'] +
-            (tco['maintenance_hours_per_year'] * 3) +
-            tco['technical_debt_hours']
+                tco['development_hours'] +
+                (tco['maintenance_hours_per_year'] * 3) +
+                tco['technical_debt_hours']
         )
 
         return tco
@@ -634,7 +647,7 @@ class ArchitectureOptimizerAgent(BaseAgent):
             return self.CloudProvider.AWS  # Default to AWS
 
     def _generate_alternatives(self, project: Any, tech_spec: Optional[Any],
-                              issues: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+                               issues: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         C6.4: Generate alternative architectural approaches with cost analysis
         """
@@ -698,8 +711,8 @@ class ArchitectureOptimizerAgent(BaseAgent):
             return RiskLevel.LOW
 
     def _generate_recommendations(self, issues: List[Dict[str, Any]],
-                                 alternatives: List[Dict[str, Any]],
-                                 tco_analysis: Dict[str, Any]) -> List[Dict[str, Any]]:
+                                  alternatives: List[Dict[str, Any]],
+                                  tco_analysis: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Generate prioritized recommendations"""
         recommendations = []
 
@@ -733,8 +746,8 @@ class ArchitectureOptimizerAgent(BaseAgent):
             # Note: Will need to create architecture_reviews table
             # For now, just log it
             self.logger.info(f"Architecture review for project {project_id}: "
-                           f"Risk={review_data['risk_level']}, "
-                           f"Issues={len(review_data['concerns'])}")
+                             f"Risk={review_data['risk_level']}, "
+                             f"Issues={len(review_data['concerns'])}")
 
             return True
         except Exception as e:

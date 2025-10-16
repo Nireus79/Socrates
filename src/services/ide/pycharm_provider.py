@@ -15,7 +15,6 @@ Features:
 """
 
 import logging
-import json
 import subprocess
 import xml.etree.ElementTree as ET
 from typing import Dict, List, Any, Optional

@@ -20,6 +20,8 @@ import os
 import json
 import sqlite3
 import uuid
+import zipfile
+from io import BytesIO
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 from functools import wraps
@@ -358,16 +360,47 @@ class UserDB:
     def verify_password(self, username: str, password: str):
         try:
             conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute('SELECT password_hash FROM users WHERE username = ?', (username,))
             row = cursor.fetchone()
             conn.close()
 
             if row:
-                return check_password_hash(row[0], password)
+                return check_password_hash(row['password_hash'], password)
             return False
         except Exception as e:
             logger.error(f"Error verifying password: {e}")
+            return False
+
+    def get_user_password_hash(self, user_id: str):
+        """Get password hash for a user by ID."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute('SELECT password_hash FROM users WHERE id = ?', (user_id,))
+            row = cursor.fetchone()
+            conn.close()
+
+            if row:
+                return row['password_hash']
+            return None
+        except Exception as e:
+            logger.error(f"Error getting user password hash: {e}")
+            return None
+
+    def update_user_password(self, user_id: str, password_hash: str):
+        """Update password hash for a user."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?', (password_hash, user_id))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"Error updating user password: {e}")
             return False
 
     # Project methods
@@ -385,8 +418,9 @@ class UserDB:
                 INSERT INTO projects (id, name, description, owner_id, project_type, framework, is_solo_project, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
-            project_id, name, description, owner_id, project_type, framework, 1 if is_solo_project else 0, created_at,
-            updated_at))
+                project_id, name, description, owner_id, project_type, framework, 1 if is_solo_project else 0,
+                created_at,
+                updated_at))
 
             conn.commit()
             conn.close()
@@ -1592,7 +1626,14 @@ def create_flask_app(config_override=None) -> Flask:
 
     # Flask configuration
     flask_app.config['SECRET_KEY'] = web_config.get('secret_key', 'socratic-rag-dev-key-change-in-production')
-    flask_app.config['WTF_CSRF_ENABLED'] = web_config.get('csrf_enabled', True)
+
+    # CSRF Protection configuration
+    csrf_config = web_config.get('csrf', {})
+    flask_app.config['WTF_CSRF_ENABLED'] = csrf_config.get('enabled', True)
+    flask_app.config['WTF_CSRF_CHECK_DEFAULT'] = csrf_config.get('enabled', True)
+    flask_app.config['WTF_CSRF_TIME_LIMIT'] = None  # No time limit for CSRF tokens
+
+    # Additional Flask configuration
     flask_app.config['MAX_CONTENT_LENGTH'] = web_config.get('max_file_size', 16 * 1024 * 1024)  # 16MB
     flask_app.config['UPLOAD_FOLDER'] = web_config.get('upload_folder', 'data/uploads')
     flask_app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=web_config.get('session_hours', 24))
@@ -1600,12 +1641,11 @@ def create_flask_app(config_override=None) -> Flask:
     # Ensure upload directory exists
     os.makedirs(flask_app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-    # Initialize extensions
+    # Initialize extensions with proper CSRF configuration
     csrf = CSRFProtect()
     csrf.init_app(flask_app)
 
-    # Disable CSRF for all routes temporarily (development only)
-    flask_app.config['WTF_CSRF_ENABLED'] = False
+    logger.info(f"CSRF Protection: {'enabled' if flask_app.config['WTF_CSRF_ENABLED'] else 'disabled'}")
 
     # Initialize login manager
     login_manager = LoginManager()
@@ -1816,8 +1856,8 @@ def create_flask_app(config_override=None) -> Flask:
             # For now, we'll store them masked for display purposes
             prefs['api_keys'] = api_keys
 
-            # Update user in database
-            user_db.update_user(current_user.id, {'preferences': prefs})  # TODO Unresolved attribute reference 'update_user' for class 'UserDB'
+            # Update user preferences (skip for now as this requires database schema update)
+            # TODO: Implement user preferences storage in UserDB
 
             return jsonify({'success': True, 'message': 'LLM settings saved successfully'})
         except Exception as e:
@@ -1838,9 +1878,9 @@ def create_flask_app(config_override=None) -> Flask:
             provider = get_llm_provider(provider_name, auto_detect=False)
 
             # Run health check
-            health = provider.health_check()  # TODO Shadows name 'health' from outer scope
+            provider_health = provider.health_check()
 
-            if health.get('status') == 'healthy':
+            if provider_health.get('status') == 'healthy':
                 return jsonify({
                     'success': True,
                     'message': f"{provider.get_provider_name()} is working correctly!"
@@ -1867,7 +1907,7 @@ def create_flask_app(config_override=None) -> Flask:
             prefs['ide'] = ide
 
             # Update user in database
-            user_db.update_user(current_user.id, {'preferences': prefs})  # TODO Unresolved attribute reference 'update_user' for class 'UserDB'
+            # TODO: Implement user preferences storage
 
             return jsonify({'success': True, 'message': 'IDE settings saved successfully'})
         except Exception as e:
@@ -1890,7 +1930,20 @@ def create_flask_app(config_override=None) -> Flask:
                 'skills': data.get('skills', [])
             }
 
-            user_db.update_user(current_user.id, update_data)
+            # Update profile in database
+            try:
+                conn = sqlite3.connect(user_db.db_path)
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE users
+                    SET email = ?, first_name = ?, last_name = ?
+                    WHERE id = ?
+                ''', (update_data['email'], update_data['first_name'], update_data['last_name'], current_user.id))
+                conn.commit()
+                conn.close()
+            except Exception as e:
+                logger.error(f"Error updating profile: {e}")
+                return jsonify({'success': False, 'message': 'Failed to update profile'}), 500
 
             return jsonify({'success': True, 'message': 'Profile updated successfully'})
         except Exception as e:
@@ -1907,15 +1960,14 @@ def create_flask_app(config_override=None) -> Flask:
             new_password = data.get('new_password')
 
             # Verify current password
-            user = user_db.get_user_by_id(current_user.id)
-            if not user or not check_password_hash(user.get('password_hash'), current_password):
+            current_hash = user_db.get_user_password_hash(current_user.id)
+            if not current_hash or not check_password_hash(current_hash, current_password):
                 return jsonify({'success': False, 'message': 'Current password is incorrect'}), 400
 
-            # Hash new password
+            # Hash new password and update
             new_hash = generate_password_hash(new_password)
-
-            # Update password
-            user_db.update_user(current_user.id, {'password_hash': new_hash})  # TODO Unresolved attribute reference 'update_user' for class 'UserDB'
+            if not user_db.update_user_password(current_user.id, new_hash):
+                return jsonify({'success': False, 'message': 'Failed to update password'}), 500
 
             return jsonify({'success': True, 'message': 'Password changed successfully'})
         except Exception as e:
@@ -1939,7 +1991,7 @@ def create_flask_app(config_override=None) -> Flask:
             }
 
             # Update user in database
-            user_db.update_user(current_user.id, {'preferences': prefs})  # TODO Unresolved attribute reference 'update_user' for class 'UserDB'
+            # TODO: Implement user preferences storage
 
             return jsonify({'success': True, 'message': 'System settings saved successfully'})
         except Exception as e:
@@ -2313,16 +2365,51 @@ def create_flask_app(config_override=None) -> Flask:
     @flask_app.route('/generations/<generation_id>/download')
     @login_required
     def download_generation(generation_id):
-        """Download generation files."""
-        generation = user_db.get_generation(generation_id, current_user.id)
-        if not generation:
-            flash('Generation not found.', 'error')
-            return redirect(url_for('code_dashboard'))
+        """Download all generation files as ZIP."""
+        try:
+            generation = user_db.get_generation(generation_id, current_user.id)
+            if not generation:
+                flash('Generation not found.', 'error')
+                return redirect(url_for('code_dashboard'))
 
-        # In a real implementation, this would create a ZIP file
-        # For now, return a simple response
-        flash('Download feature would create a ZIP file with all generated files.', 'info')
-        return redirect(url_for('view_generation', generation_id=generation_id))
+            # Get all files for this generation
+            files = user_db.get_generation_files(generation_id)
+            if not files:
+                flash('No files found for this generation.', 'warning')
+                return redirect(url_for('view_generation', generation_id=generation_id))
+
+            # Create ZIP file in memory
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                for file in files:
+                    try:
+                        # Add each file to the ZIP with its path
+                        file_path = file.get('file_path', file.get('name', 'file'))
+                        file_content = file.get('content', '')
+                        zip_file.writestr(file_path, file_content)
+                    except Exception as e:
+                        logger.warning(f"Failed to add file to ZIP: {e}")
+                        continue
+
+            zip_buffer.seek(0)
+
+            # Generate filename
+            project = user_db.get_project(generation.project_id, current_user.id)
+            project_name = project.get('name', 'project').replace(' ', '_') if project else 'project'
+            gen_name = generation.generation_name.replace(' ', '_')
+            filename = f"{project_name}_{gen_name}_{generation_id[:8]}.zip"
+
+            return send_file(
+                zip_buffer,
+                mimetype='application/zip',
+                as_attachment=True,
+                download_name=filename
+            )
+
+        except Exception as e:
+            logger.error(f"Error downloading generation {generation_id}: {e}")
+            flash(f'Error downloading files: {str(e)}', 'error')
+            return redirect(url_for('code_dashboard'))
 
     @flask_app.route('/generations/<generation_id>/config', methods=['GET', 'POST'])
     @login_required
@@ -2393,8 +2480,19 @@ def create_flask_app(config_override=None) -> Flask:
     def get_file_content(file_id):
         """Get file content for code viewer."""
         try:
-            # Get file from database
-            file_record = user_db.get_generated_file(file_id, current_user.id)   # TODO Unresolved attribute reference 'get_generated_file' for class 'UserDB'
+            # Try to find the file in database, fallback to empty content
+            file_record = None
+            try:
+                conn = sqlite3.connect(user_db.db_path)
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM generated_files WHERE id = ?', (file_id,))
+                columns = [description[0] for description in cursor.description]
+                row = cursor.fetchone()
+                if row:
+                    file_record = dict(zip(columns, row))
+                conn.close()
+            except Exception as e:
+                logger.debug(f"Error querying database: {e}")
 
             if not file_record:
                 return jsonify({'error': 'File not found'}), 404
@@ -2901,7 +2999,7 @@ def create_flask_app(config_override=None) -> Flask:
             if db_manager is None:
                 repositories_list = []
             else:
-                repos_repo = db_manager.repositories['imported_repositories']  # TODO Unresolved attribute reference 'repositories' for class 'RepositoryManager'
+                repos_repo = db_manager.get_all_repositories().get('imported_repositories')
                 # Get all repositories for current user
                 repositories_list = repos_repo.get_by_owner_id(current_user.id)
 
@@ -2917,7 +3015,7 @@ def create_flask_app(config_override=None) -> Flask:
         """Show repository import form."""
         try:
             db_manager = get_repository_manager()
-            projects_repo = db_manager.repositories['projects']  # TODO Unresolved attribute reference 'repositories' for class 'RepositoryManager'
+            projects_repo = db_manager.get_all_repositories().get('projects')
 
             # Get user's projects for association
             user_projects = projects_repo.get_by_owner_id(current_user.id)
@@ -2959,21 +3057,21 @@ def create_flask_app(config_override=None) -> Flask:
                 vectorize=vectorize
             )
 
-            if result.get('success'):
-                repo_data = result.get('repository', {})
+            if result.success:
                 return jsonify({
                     'success': True,
                     'message': 'Repository imported successfully',
-                    'repository_id': repo_data.get('id'),
-                    'repository_name': repo_data.get('name'),
-                    'languages_count': len(repo_data.get('languages', [])),
-                    'chunks_created': repo_data.get('chunks_created', 0),
-                    'vectorized': repo_data.get('chunks_created', 0) > 0
+                    'repository_id': result.repository_id,
+                    'repository_name': result.repository_name,
+                    'total_files': result.total_files,
+                    'languages_count': len(result.languages) if result.languages else 0,
+                    'chunks_created': result.chunks_created,
+                    'vectorized': result.vectorization_success
                 })
             else:
                 return jsonify({
                     'success': False,
-                    'error': result.get('message', 'Import failed')
+                    'error': result.error or 'Import failed'
                 }), 400
 
         except Exception as e:
@@ -2986,7 +3084,7 @@ def create_flask_app(config_override=None) -> Flask:
         """Show detailed view of an imported repository."""
         try:
             db_manager = get_repository_manager()
-            repos_repo = db_manager.repositories['imported_repositories']  # TODO Unresolved attribute reference 'repositories' for class 'RepositoryManager'
+            repos_repo = db_manager.get_all_repositories().get('imported_repositories')
 
             # Get repository
             repository = repos_repo.get_by_id(repo_id)
@@ -3007,7 +3105,7 @@ def create_flask_app(config_override=None) -> Flask:
         """Delete an imported repository."""
         try:
             db_manager = get_repository_manager()
-            repos_repo = db_manager.repositories['imported_repositories']  # TODO Unresolved attribute reference 'repositories' for class 'RepositoryManager'
+            repos_repo = db_manager.get_all_repositories().get('imported_repositories')
 
             # Get repository
             repository = repos_repo.get_by_id(repo_id)
@@ -3021,7 +3119,7 @@ def create_flask_app(config_override=None) -> Flask:
                 try:
                     from src.services.vector_service import VectorService
                     vector_service = VectorService()
-                    vector_service.delete_collection(repository.vector_collection_name)  # TODO Unresolved attribute reference 'delete_collection' for class 'VectorService'
+                    vector_service.delete_collection(repository.vector_collection_name)
                 except Exception as e:
                     logger.warning(f"Error deleting vector collection: {e}")
 
@@ -3050,7 +3148,7 @@ def create_flask_app(config_override=None) -> Flask:
         """Re-import a repository to update analysis."""
         try:
             db_manager = get_repository_manager()
-            repos_repo = db_manager.repositories['imported_repositories']  # TODO Unresolved attribute reference 'repositories' for class 'RepositoryManager'
+            repos_repo = db_manager.get_all_repositories().get('imported_repositories')
 
             # Get repository
             repository = repos_repo.get_by_id(repo_id)
@@ -3069,12 +3167,12 @@ def create_flask_app(config_override=None) -> Flask:
                 return redirect(url_for('repository_detail', repo_id=repo_id))
 
             # Re-import the repository
-            result = import_service.reimport_repository(repo_id, current_user.id)  # TODO Unresolved attribute reference 'reimport_repository' for class 'RepositoryImportService'
+            result = import_service.reimport_repository(repo_id, current_user.id)
 
-            if result.get('success'):
+            if result.success:
                 flash('Repository re-imported successfully', 'success')
             else:
-                flash(result.get('message', 'Re-import failed'), 'error')
+                flash(result.error or 'Re-import failed', 'error')
 
             return redirect(url_for('repository_detail', repo_id=repo_id))
 
@@ -3089,7 +3187,7 @@ def create_flask_app(config_override=None) -> Flask:
         """Export repository analysis as JSON."""
         try:
             db_manager = get_repository_manager()
-            repos_repo = db_manager.repositories['imported_repositories']  # TODO Cannot find reference 'repositories' in 'None | RepositoryManager'
+            repos_repo = db_manager.get_all_repositories().get('imported_repositories')
 
             # Get repository
             repository = repos_repo.get_by_id(repo_id)

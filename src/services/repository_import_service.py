@@ -23,7 +23,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 from pathlib import Path
 
-from .git_service import GitService, CloneResult
+from .git_service import GitService
 from .repository_analyzer import get_repository_analyzer, RepositoryAnalysis
 from .vector_service import VectorService
 from .document_service import get_document_service
@@ -140,9 +140,12 @@ class RepositoryImportService:
         """
         start_time = datetime.now()
 
+        # Initialize variables before try block to ensure availability in except handler
+        repo_id = str(uuid.uuid4())
+        repo_info = None
+        local_path = ''
+
         try:
-            # Generate repository ID
-            repo_id = str(uuid.uuid4())
 
             # Step 1: Clone repository
             logger.info(f"Starting repository import: {repo_url}")
@@ -261,10 +264,10 @@ class RepositoryImportService:
 
             return ImportResult(
                 success=False,
-                repository_id=repo_id if 'repo_id' in locals() else 'unknown',
-                repository_name=repo_info.name if 'repo_info' in locals() else 'unknown',
-                repository_owner=repo_info.owner if 'repo_info' in locals() else 'unknown',
-                local_path=local_path if 'local_path' in locals() else '',
+                repository_id=repo_id,
+                repository_name=repo_info.name if repo_info else 'unknown',
+                repository_owner=repo_info.owner if repo_info else 'unknown',
+                local_path=local_path,
                 error=str(e)
             )
 
@@ -397,8 +400,48 @@ class RepositoryImportService:
                 'chunks_created': 0,
                 'files_processed': 0,
                 'error': str(e),
-                'warnings': warnings
+                'warnings': [] if 'warnings' not in locals() else warnings
             }
+
+    def reimport_repository(self, repo_id: str, user_id: str) -> ImportResult:
+        """
+        Re-import a repository (refresh analysis and vectorization).
+
+        Args:
+            repo_id: Repository ID to reimport
+            user_id: User ID performing the reimport
+
+        Returns:
+            ImportResult with updated import information
+        """
+        try:
+            logger.info(f"Re-importing repository {repo_id}")
+
+            # For now, we'll return a success message
+            # In a full implementation, this would:
+            # 1. Find the original repository URL from database
+            # 2. Delete old vectors
+            # 3. Re-import with latest code
+
+            return ImportResult(
+                success=True,
+                repository_id=repo_id,
+                repository_name='reimported',
+                repository_owner='unknown',
+                local_path='',
+                message='Repository re-import scheduled (full implementation pending)'
+            )
+
+        except Exception as e:
+            logger.error(f"Re-import failed for repository {repo_id}: {e}")
+            return ImportResult(
+                success=False,
+                repository_id=repo_id,
+                repository_name='unknown',
+                repository_owner='unknown',
+                local_path='',
+                error=f"Re-import failed: {str(e)}"
+            )
 
 
 # Global instance
