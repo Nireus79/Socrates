@@ -793,15 +793,29 @@ def sample_data():
 
     def _generate_file_content(self, project: Project, specs: Optional[TechnicalSpecification],
                                architecture: Dict[str, Any], file_path: str, category: str) -> str:
-        """Generate content for a specific file"""
+        """Generate content for a specific file using Claude AI or templates as fallback"""
         try:
             file_name = os.path.basename(file_path)
             file_ext = os.path.splitext(file_name)[1]
 
-            # Determine file purpose
+            # Determine file purpose and language
             file_purpose = self._determine_file_purpose(file_path, category)
+            file_language = self._get_language_for_extension(file_ext)
 
-            # Generate content based on file type and purpose
+            # Try Claude AI generation first (if service available)
+            if CORE_AVAILABLE and self.services:
+                try:
+                    claude_content = self._generate_with_claude(
+                        project, specs, architecture, file_path, file_purpose, file_language
+                    )
+                    if claude_content:
+                        return claude_content
+                except Exception as e:
+                    if self.logger:
+                        self.logger.warning(f"Claude generation failed for {file_path}, falling back to templates: {e}")
+                    # Fall through to template generation
+
+            # Fallback to template-based generation
             if file_ext == '.py':
                 return self._generate_python_content(project, file_name, file_purpose)
             elif file_ext == '.js':
@@ -822,6 +836,126 @@ def sample_data():
         except Exception as e:
             self.logger.error(f"Error generating content for {file_path}: {e}")
             return f"# Error generating content for {file_path}: {e}"
+
+    def _get_language_for_extension(self, file_ext: str) -> str:
+        """Map file extension to programming language"""
+        lang_map = {
+            '.py': 'python',
+            '.js': 'javascript',
+            '.ts': 'typescript',
+            '.html': 'html',
+            '.css': 'css',
+            '.sql': 'sql',
+            '.md': 'markdown',
+            '.json': 'json',
+            '.yaml': 'yaml',
+            '.yml': 'yaml',
+            '.xml': 'xml',
+            '.dockerfile': 'dockerfile',
+            '.go': 'go',
+            '.rs': 'rust',
+            '.java': 'java',
+            '.cs': 'csharp',
+            '.rb': 'ruby',
+            '.php': 'php',
+            '.swift': 'swift',
+            '.kt': 'kotlin'
+        }
+        return lang_map.get(file_ext.lower(), 'text')
+
+    def _generate_with_claude(self, project: Project, specs: Optional[TechnicalSpecification],
+                              architecture: Dict[str, Any], file_path: str,
+                              file_purpose: str, file_language: str) -> Optional[str]:
+        """Generate file content using Claude AI"""
+        try:
+            # Get Claude service from ServiceContainer
+            if not self.services:
+                return None
+
+            try:
+                from src.services.claude_service import ClaudeService
+                claude_service = ClaudeService(self.services)
+            except (ImportError, AttributeError):
+                return None
+
+            # Build context from specs and architecture
+            tech_stack = specs.technology_stack if specs else architecture.get('data_layer', {})
+            requirements = specs.functional_requirements if specs else []
+
+            # Build the prompt for Claude
+            prompt = self._build_claude_prompt(
+                file_path, file_purpose, file_language, project,
+                architecture, tech_stack, requirements
+            )
+
+            # Call Claude to generate code
+            response = claude_service.generate_code(
+                requirements=prompt,
+                programming_language=file_language,
+                framework=tech_stack.get('backend_framework') if isinstance(tech_stack, dict) else None,
+                include_tests=file_purpose == 'testing',
+                include_documentation=file_language == 'markdown'
+            )
+
+            if response and getattr(response, 'success', False):
+                content = getattr(response, 'content', '')
+                if self.logger:
+                    self.logger.debug(f"Generated {file_path} using Claude API")
+                return content
+            else:
+                if self.logger:
+                    self.logger.warning(f"Claude API returned unsuccessful response for {file_path}")
+                return None
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error calling Claude for {file_path}: {e}")
+            return None
+
+    def _build_claude_prompt(self, file_path: str, file_purpose: str, file_language: str,
+                             project: Project, architecture: Dict[str, Any],
+                             tech_stack: Any, requirements: List[str]) -> str:
+        """Build a detailed prompt for Claude code generation"""
+        file_name = os.path.basename(file_path)
+
+        prompt = f"""Generate a {file_language} file for the following context:
+
+PROJECT INFORMATION:
+- Name: {getattr(project, 'name', 'Unknown Project')}
+- Description: {getattr(project, 'description', 'No description')}
+- File: {file_path}
+
+FILE PURPOSE: {file_purpose}
+- This file should handle: {file_purpose.replace('_', ' ')}
+
+ARCHITECTURE CONTEXT:
+- Pattern: {architecture.get('pattern', 'mvc').upper()}
+- Components: {', '.join(c.get('name', 'unknown') for c in architecture.get('components', []))}
+- API Style: {architecture.get('api_structure', {}).get('style', 'REST')}
+- Database: {architecture.get('data_layer', {}).get('database_type', 'sqlite')}
+- ORM: {architecture.get('data_layer', {}).get('orm', 'sqlalchemy')}
+
+FUNCTIONAL REQUIREMENTS:
+{chr(10).join(f"- {req}" for req in requirements[:5]) if requirements else "- Standard REST API with CRUD operations"}
+
+SECURITY MEASURES TO INCLUDE:
+- Input validation and sanitization
+- SQL injection prevention
+- CSRF protection
+- Authentication and authorization
+
+REQUIREMENTS FOR {file_name}:
+1. Write production-ready, well-structured {file_language} code
+2. Include comprehensive docstrings and comments
+3. Follow {file_language} best practices and conventions
+4. Make the code modular and testable
+5. Include error handling
+6. Add type hints (for Python)
+7. Ensure the code integrates with the {architecture.get('pattern', 'mvc')} architecture
+
+Please generate only the code, no explanations or markdown formatting."""
+
+        return prompt
 
     def _generate_python_content(self, project: Project, file_name: str, file_purpose: str) -> str:
         """Generate Python file content"""

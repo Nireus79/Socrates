@@ -851,15 +851,15 @@ temp/
             url = url.strip()
 
             # GitHub patterns
-            github_https = re.match(r'https?://github\.com/([^/]+)/([^/\.]+)', url)
-            github_ssh = re.match(r'git@github\.com:([^/]+)/([^/\.]+)', url)
+            github_https = re.match(r'https?://github\.com/([^/]+)/([^/.]+)', url)
+            github_ssh = re.match(r'git@github\.com:([^/]+)/([^/.]+)', url)
 
             # GitLab patterns
-            gitlab_https = re.match(r'https?://gitlab\.com/([^/]+)/([^/\.]+)', url)
-            gitlab_ssh = re.match(r'git@gitlab\.com:([^/]+)/([^/\.]+)', url)
+            gitlab_https = re.match(r'https?://gitlab\.com/([^/]+)/([^/.]+)', url)
+            gitlab_ssh = re.match(r'git@gitlab\.com:([^/]+)/([^/.]+)', url)
 
             # Bitbucket patterns
-            bitbucket_https = re.match(r'https?://bitbucket\.org/([^/]+)/([^/\.]+)', url)
+            bitbucket_https = re.match(r'https?://bitbucket\.org/([^/]+)/([^/.]+)', url)
 
             if github_https or github_ssh:
                 match = github_https or github_ssh

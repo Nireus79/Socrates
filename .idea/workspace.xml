@@ -7,20 +7,13 @@
     <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="ui completion">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/data/socratic.db" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/MASTER_PLAN.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/MASTER_PLAN.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/base.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/database/repositories.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/database/repositories.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_chat_mode_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_chat_mode_integration.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_flask.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_flask.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_integration_complete.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_integration_complete.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_multi_llm_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_multi_llm_integration.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_pycharm_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_pycharm_integration.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_ui_comprehensive.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_ui_comprehensive.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_ui_features.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_ui_features.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_ui_functionality.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_ui_functionality.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/code.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/code.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/document_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/document_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/git_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/git_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/repository_import_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/repository_import_service.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/projects.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/projects.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/code/viewer.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/code/viewer.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -152,14 +145,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758780288513</updated>
-    </task>
-    <task id="LOCAL-00215" summary="run.py">
-      <option name="closed" value="true" />
-      <created>1760108959492</created>
-      <option name="number" value="00215" />
-      <option name="presentableId" value="LOCAL-00215" />
-      <option name="project" value="LOCAL" />
-      <updated>1760108959493</updated>
     </task>
     <task id="LOCAL-00216" summary="database">
       <option name="closed" value="true" />
@@ -545,7 +530,15 @@
       <option name="project" value="LOCAL" />
       <updated>1760610080376</updated>
     </task>
-    <option name="localTasksCounter" value="264" />
+    <task id="LOCAL-00264" summary="ui completion">
+      <option name="closed" value="true" />
+      <created>1760619305478</created>
+      <option name="number" value="00264" />
+      <option name="presentableId" value="LOCAL-00264" />
+      <option name="project" value="LOCAL" />
+      <updated>1760619305478</updated>
+    </task>
+    <option name="localTasksCounter" value="265" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">

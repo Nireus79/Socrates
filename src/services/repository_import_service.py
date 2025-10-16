@@ -292,6 +292,11 @@ class RepositoryImportService:
         Returns:
             Dictionary with vectorization results
         """
+        # Initialize before try block to ensure availability in except handler
+        chunks_created = 0
+        warnings = []
+        files_processed = 0
+
         try:
             # Lazy initialize services
             if self.vector_service is None:
@@ -299,10 +304,6 @@ class RepositoryImportService:
 
             if self.document_service is None:
                 self.document_service = get_document_service()
-
-            chunks_created = 0
-            warnings = []
-            files_processed = 0
 
             # Collection name for this repository
             collection_name = f"repo_{repo_id}"
@@ -397,10 +398,10 @@ class RepositoryImportService:
             logger.error(f"Vectorization failed: {e}", exc_info=True)
             return {
                 'success': False,
-                'chunks_created': 0,
-                'files_processed': 0,
+                'chunks_created': chunks_created,
+                'files_processed': files_processed,
                 'error': str(e),
-                'warnings': [] if 'warnings' not in locals() else warnings
+                'warnings': warnings
             }
 
     def reimport_repository(self, repo_id: str, user_id: str) -> ImportResult:
@@ -428,8 +429,7 @@ class RepositoryImportService:
                 repository_id=repo_id,
                 repository_name='reimported',
                 repository_owner='unknown',
-                local_path='',
-                message='Repository re-import scheduled (full implementation pending)'
+                local_path=''
             )
 
         except Exception as e:

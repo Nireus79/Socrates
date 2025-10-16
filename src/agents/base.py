@@ -312,6 +312,117 @@ class BaseAgent(ABC):
                 self.logger.error(f"Claude API request failed: {e}")
             return None
 
+    def get_provider_for_task(self, task_data: Dict[str, Any]):
+        """
+        Get optimal LLM provider based on task complexity.
+
+        This method uses dynamic provider selection to choose the best provider
+        for a given task based on its complexity, user preferences, and availability.
+
+        Args:
+            task_data: Task information including:
+                - task_type: str (required) - type of task
+                - content: str (optional) - task content
+                - requirements: str (optional) - requirements
+                - user_preference: str (optional) - user's preferred provider
+                - is_interactive: bool (optional, default True) - if response time is critical
+
+        Returns:
+            BaseLLMProvider instance
+
+        Raises:
+            LLMProviderError: If no suitable provider available
+
+        Example:
+            provider = agent.get_provider_for_task({
+                'task_type': 'code_generation',
+                'requirements': 'Build REST API',
+                'is_interactive': False
+            })
+        """
+        try:
+            # Import dynamic provider selector with fallback
+            try:
+                from src.services.dynamic_provider_selector import DynamicProviderSelector
+                selector = DynamicProviderSelector()
+                provider = selector.select_provider(task_data)
+
+                if self.logger:
+                    analysis = selector.analyze_task(task_data)
+                    self.logger.info(
+                        f"Selected provider for {analysis.level.value} complexity task: "
+                        f"{provider.get_provider_name()}"
+                    )
+
+                return provider
+
+            except ImportError:
+                # Fallback to default provider if dynamic selector not available
+                if self.logger:
+                    self.logger.warning(
+                        "Dynamic provider selector not available, using default provider"
+                    )
+                from src.services.llm.factory import get_llm_provider
+                return get_llm_provider()
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error getting provider for task: {e}")
+            raise
+
+    def get_task_complexity(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Analyze task complexity without instantiating a provider.
+
+        Useful for logging, monitoring, or decision-making about task handling.
+
+        Args:
+            task_data: Task information
+
+        Returns:
+            Dict with complexity analysis:
+                - level: str ('simple', 'moderate', 'complex')
+                - score: float (0.0-1.0)
+                - recommended_provider: str
+                - reasoning: str
+                - factors: dict
+
+        Example:
+            analysis = agent.get_task_complexity({
+                'task_type': 'chat_reply',
+                'content': 'Hello!'
+            })
+            print(f"Complexity: {analysis['level']}")
+        """
+        try:
+            from src.services.dynamic_provider_selector import DynamicProviderSelector
+            selector = DynamicProviderSelector()
+            analysis = selector.analyze_task(task_data)
+
+            return {
+                'level': analysis.level.value,
+                'score': round(analysis.score, 3),
+                'recommended_provider': analysis.recommended_provider,
+                'reasoning': analysis.reasoning,
+                'estimated_tokens': analysis.estimated_tokens,
+                'latency_sensitive': analysis.latency_sensitive,
+                'factors': {k: round(v, 3) for k, v in analysis.factors.items()}
+            }
+
+        except Exception as e:
+            if self.logger:
+                self.logger.warning(f"Could not analyze task complexity: {e}")
+            # Return default analysis
+            return {
+                'level': 'moderate',
+                'score': 0.5,
+                'recommended_provider': 'sonnet',
+                'reasoning': 'Using default due to analysis error',
+                'estimated_tokens': 1000,
+                'latency_sensitive': True,
+                'factors': {'error': str(e)}
+            }
+
 
 # ============================================================================
 # DECORATORS

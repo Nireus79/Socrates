@@ -460,14 +460,71 @@ const filesData = {{ files|tojson }};
 document.addEventListener('DOMContentLoaded', function() {
     buildFileTree();
 
-    // Auto-refresh for generating status
+    // Real-time progress polling for generating status
     {% if generation.status == 'generating' %}
-    setTimeout(() => {
-        showAutoRefreshNotification();
-        setTimeout(() => location.reload(), 3000);
-    }, 5000);
+    startProgressPolling();
     {% endif %}
 });
+
+// Poll for generation progress updates
+let progressPollInterval = null;
+let progressCheckCount = 0;
+
+function startProgressPolling() {
+    // Check progress every 2 seconds
+    progressPollInterval = setInterval(checkGenerationProgress, 2000);
+}
+
+async function checkGenerationProgress() {
+    try {
+        const response = await fetch(`/api/generations/${generationId}/progress`);
+        const data = await response.json();
+
+        if (data.success) {
+            // Update progress display
+            updateProgressDisplay(data);
+
+            // If generation is complete, refresh the page
+            if (data.status === 'completed' || data.status === 'failed') {
+                clearInterval(progressPollInterval);
+                showProgressNotification(data);
+                setTimeout(() => location.reload(), 2000);
+            }
+        }
+        progressCheckCount++;
+    } catch (error) {
+        console.error('Error polling progress:', error);
+    }
+}
+
+function updateProgressDisplay(data) {
+    // Find the progress container in the empty state
+    const progressContainer = document.querySelector('.progress');
+    if (progressContainer) {
+        const progressBar = progressContainer.querySelector('.progress-bar');
+        if (progressBar) {
+            progressBar.style.width = data.progress + '%';
+            progressBar.textContent = data.progress + '%';
+        }
+    }
+
+    // Update file count
+    const fileCountEl = document.querySelector('p.small.text-muted');
+    if (fileCountEl) {
+        fileCountEl.textContent = `${data.completed_files}/${data.total_files} files generated`;
+    }
+}
+
+function showProgressNotification(data) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${data.status === 'completed' ? 'success' : 'danger'} alert-dismissible fade show auto-refresh`;
+    notification.innerHTML = `
+        <i class="bi bi-${data.status === 'completed' ? 'check-circle' : 'exclamation-circle'}"></i>
+        ${data.message || (data.status === 'completed' ? 'Code generation completed!' : 'Generation failed')}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(notification);
+}
 
 function buildFileTree() {
     const fileTree = document.getElementById('fileTree');

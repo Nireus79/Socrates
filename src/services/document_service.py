@@ -13,10 +13,9 @@ Features:
 - Integration with vector database
 """
 
-import os
 import logging
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
