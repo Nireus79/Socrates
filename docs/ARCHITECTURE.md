@@ -1,6 +1,6 @@
 # Socratic RAG Enhanced - System Architecture
 
-**Version:** 7.5.0
+**Version:** 7.4.0
 **Last Updated:** October 2024
 **Status:** Production Ready
 
