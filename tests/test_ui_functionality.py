@@ -10,10 +10,9 @@ Tests actual UI functionality including:
 """
 
 import requests
-import json
-from typing import Dict, Any
 
 BASE_URL = "http://localhost:5002"
+
 
 class FunctionalityTester:
     def __init__(self, base_url: str = BASE_URL):
@@ -30,9 +29,9 @@ class FunctionalityTester:
     def test(self, name: str, func):
         """Run a test and track results."""
         try:
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print(f"TEST: {name}")
-            print('='*60)
+            print('=' * 60)
             result = func()
             if result:
                 print(f"[PASS] {name}")
@@ -47,9 +46,9 @@ class FunctionalityTester:
 
     def print_summary(self):
         """Print test summary."""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("TEST SUMMARY")
-        print("="*60)
+        print("=" * 60)
 
         passed = sum(1 for _, status, _ in self.test_results if status == "PASS")
         failed = sum(1 for _, status, _ in self.test_results if status == "FAIL")
@@ -61,7 +60,7 @@ class FunctionalityTester:
         print(f"[-] Failed: {failed}")
         print(f"[!] Errors: {errors}")
         if total > 0:
-            print(f"Success Rate: {(passed/total*100):.1f}%")
+            print(f"Success Rate: {(passed / total * 100):.1f}%")
 
         if failed > 0 or errors > 0:
             print("\nFailed/Error Tests:")
@@ -299,52 +298,52 @@ class FunctionalityTester:
 
 def run_all_tests():
     """Run all functionality tests."""
-    print("="*60)
+    print("=" * 60)
     print("SOCRATIC RAG ENHANCED - UI FUNCTIONALITY TESTING")
     print("Comprehensive Functional Tests")
-    print("="*60)
+    print("=" * 60)
 
     tester = FunctionalityTester()
 
     # User Authentication Tests
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("USER AUTHENTICATION TESTS")
-    print("="*60)
+    print("=" * 60)
     tester.test("User registration page functionality", tester.test_register_user)
     tester.test("Login page form elements", tester.test_login_page_form)
 
     # Navigation Tests
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("NAVIGATION TESTS")
-    print("="*60)
+    print("=" * 60)
     tester.test("Navigation links present", tester.test_navigation_links)
 
     # Theme Tests
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("DARK THEME TESTS")
-    print("="*60)
+    print("=" * 60)
     tester.test("Dark theme CSS applied", tester.test_dark_theme_css)
     tester.test("Prism.js loaded", tester.test_prism_js_loaded)
     tester.test("Marked.js loaded", tester.test_marked_js_loaded)
 
     # Error Handling Tests
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("ERROR HANDLING TESTS")
-    print("="*60)
+    print("=" * 60)
     tester.test("404 page handling", tester.test_404_handling)
     tester.test("Invalid repository ID handling", tester.test_invalid_repository_id)
 
     # Database Tests
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("DATABASE TESTS")
-    print("="*60)
+    print("=" * 60)
     tester.test("Database file exists", tester.test_database_exists)
     tester.test("Database tables present", tester.test_database_tables)
 
     # Bootstrap Tests
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("BOOTSTRAP & STYLING TESTS")
-    print("="*60)
+    print("=" * 60)
     tester.test("Bootstrap loaded correctly", tester.test_bootstrap_loaded)
 
     # Print summary
@@ -361,6 +360,6 @@ if __name__ == "__main__":
 
     tester = run_all_tests()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Functionality testing complete!")
-    print("="*60)
+    print("=" * 60)

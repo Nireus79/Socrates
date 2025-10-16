@@ -285,7 +285,7 @@ class UserRepository(BaseRepository[User]):
         try:
             data = self._model_to_dict(user)
             query = """
-                INSERT INTO users (id, username, email, password_hash, first_name, last_name, 
+                INSERT INTO users (id, username, email, password_hash, first_name, last_name,
                                  role, status, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
@@ -293,8 +293,8 @@ class UserRepository(BaseRepository[User]):
                 data.get('id'), data.get('username'), data.get('email'),
                 data.get('password_hash'), data.get('first_name'), data.get('last_name'),
                 data.get('role', 'viewer'), data.get('status', 'active'),
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                self._to_iso_safe(data.get('created_at'), DateTimeHelper.now().isoformat()),
+                self._to_iso_safe(data.get('updated_at'), DateTimeHelper.now().isoformat())
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -341,7 +341,7 @@ class UserRepository(BaseRepository[User]):
                 data.get('username'), data.get('email'),
                 data.get('first_name'), data.get('last_name'),
                 data.get('role'), data.get('status'),
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                self._to_iso_safe(DateTimeHelper.now()),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)
@@ -378,8 +378,8 @@ class ProjectRepository(BaseRepository[Project]):
             params = (
                 data.get('id'), data.get('name'), data.get('description'),
                 data.get('owner_id'), data.get('status', 'draft'),
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now())),
+                self._to_iso_safe(data.get('created_at'), DateTimeHelper.now().isoformat()),
+                self._to_iso_safe(data.get('updated_at'), DateTimeHelper.now().isoformat()),
                 dump_json_field(data.get('technology_stack')),
                 1 if data.get('is_solo_project', False) else 0  # C2: Solo mode field
             )
@@ -428,7 +428,7 @@ class ProjectRepository(BaseRepository[Project]):
                 data.get('name'), data.get('description'), data.get('status'),
                 dump_json_field(data.get('technology_stack')),
                 1 if data.get('is_solo_project', False) else 0,  # C2: Solo mode field
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                self._to_iso_safe(DateTimeHelper.now()),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)
@@ -511,16 +511,16 @@ class ModuleRepository(BaseRepository[Module]):
                 dump_json_field(data.get('database_tables')),
                 data.get('assigned_to'), data.get('priority', 'medium'),
                 dump_json_field(data.get('blocked_by')),
-                DateTimeHelper.to_iso_string(data.get('start_date')),
-                DateTimeHelper.to_iso_string(data.get('due_date')),
-                DateTimeHelper.to_iso_string(data.get('completed_at')),
+                self._to_iso_safe(data.get('start_date')),
+                self._to_iso_safe(data.get('due_date')),
+                self._to_iso_safe(data.get('completed_at')),
                 data.get('estimated_hours', 0.0),
                 data.get('actual_hours', 0.0),
                 data.get('completion_percentage', 0.0),
                 data.get('quality_score', 0.0),
                 data.get('test_coverage', 0.0),
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                self._to_iso_safe(data.get('created_at'), DateTimeHelper.now().isoformat()),
+                self._to_iso_safe(data.get('updated_at'), DateTimeHelper.now().isoformat())
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -585,13 +585,13 @@ class ModuleRepository(BaseRepository[Module]):
                 dump_json_field(data.get('database_tables')),
                 data.get('assigned_to'), data.get('priority'),
                 dump_json_field(data.get('blocked_by')),
-                DateTimeHelper.to_iso_string(data.get('start_date')),
-                DateTimeHelper.to_iso_string(data.get('due_date')),
-                DateTimeHelper.to_iso_string(data.get('completed_at')),
+                self._to_iso_safe(data.get('start_date')),
+                self._to_iso_safe(data.get('due_date')),
+                self._to_iso_safe(data.get('completed_at')),
                 data.get('estimated_hours'), data.get('actual_hours'),
                 data.get('completion_percentage'), data.get('quality_score'),
                 data.get('test_coverage'),
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                self._to_iso_safe(DateTimeHelper.now()),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)
@@ -667,10 +667,10 @@ class TaskRepository(BaseRepository[Task]):
                 dump_json_field(data.get('dependencies')),
                 data.get('estimated_hours', 0.0),
                 data.get('actual_hours', 0.0),
-                DateTimeHelper.to_iso_string(data.get('due_date')),
-                DateTimeHelper.to_iso_string(data.get('completed_at')),
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                self._to_iso_safe(data.get('due_date')),
+                self._to_iso_safe(data.get('completed_at')),
+                self._to_iso_safe(data.get('created_at'), DateTimeHelper.now().isoformat()),
+                self._to_iso_safe(data.get('updated_at'), DateTimeHelper.now().isoformat())
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -729,9 +729,9 @@ class TaskRepository(BaseRepository[Task]):
                 data.get('priority'), data.get('assigned_to'),
                 dump_json_field(data.get('dependencies')),
                 data.get('estimated_hours'), data.get('actual_hours'),
-                DateTimeHelper.to_iso_string(data.get('due_date')),
-                DateTimeHelper.to_iso_string(data.get('completed_at')),
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                self._to_iso_safe(data.get('due_date')),
+                self._to_iso_safe(data.get('completed_at')),
+                self._to_iso_safe(DateTimeHelper.now()),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)
@@ -795,8 +795,8 @@ class GeneratedCodebaseRepository(BaseRepository[GeneratedCodebase]):
                 data.get('architecture_type'), data.get('total_lines_of_code', 0),
                 data.get('total_files', 0), data.get('size_bytes', 0),
                 data.get('code_quality_score', 0.0), data.get('test_coverage', 0.0),
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                self._to_iso_safe(data.get('created_at', DateTimeHelper.now().isoformat())),
+                self._to_iso_safe(data.get('updated_at', DateTimeHelper.now().isoformat()))
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -837,7 +837,7 @@ class GeneratedCodebaseRepository(BaseRepository[GeneratedCodebase]):
                 data.get('total_lines_of_code'), data.get('total_files'),
                 data.get('size_bytes'), data.get('code_quality_score'),
                 data.get('test_coverage'),
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                self._to_iso_safe(DateTimeHelper.now()),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)
@@ -877,8 +877,8 @@ class GeneratedFileRepository(BaseRepository[GeneratedFile]):
                 data.get('file_path'),
                 data.get('content'),
                 data.get('size_bytes', 0),
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                self._to_iso_safe(data.get('created_at', DateTimeHelper.now().isoformat())),
+                self._to_iso_safe(data.get('updated_at', DateTimeHelper.now().isoformat()))
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -914,7 +914,7 @@ class GeneratedFileRepository(BaseRepository[GeneratedFile]):
             """
             params = (
                 data.get('content'), data.get('size_bytes'),
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                self._to_iso_safe(DateTimeHelper.now()),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)
@@ -990,11 +990,11 @@ class ProjectCollaboratorRepository(BaseRepository[ProjectCollaborator]):
                 data.get('id'), data.get('project_id'), data.get('user_id'),
                 data.get('role', 'developer'),
                 dump_json_field(data.get('permissions', [])),
-                DateTimeHelper.to_iso_string(data.get('joined_at', DateTimeHelper.now())),
+                self._to_iso_safe(data.get('joined_at', DateTimeHelper.now().isoformat())),
                 1 if data.get('is_active', True) else 0,
                 data.get('invitation_status', 'active'),
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                self._to_iso_safe(data.get('created_at', DateTimeHelper.now().isoformat())),
+                self._to_iso_safe(data.get('updated_at', DateTimeHelper.now().isoformat()))
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -1034,7 +1034,7 @@ class ProjectCollaboratorRepository(BaseRepository[ProjectCollaborator]):
                 dump_json_field(data.get('permissions')),
                 1 if data.get('is_active', True) else 0,
                 data.get('invitation_status'),
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                self._to_iso_safe(DateTimeHelper.now()),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)
@@ -1115,9 +1115,9 @@ class SocraticSessionRepository(BaseRepository[SocraticSession]):
                 data.get('total_questions', 0),
                 data.get('answered_questions', 0),
                 dump_json_field(data.get('session_data', {})),
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('completed_at'))
+                self._to_iso_safe(data.get('created_at', DateTimeHelper.now().isoformat())),
+                self._to_iso_safe(data.get('updated_at', DateTimeHelper.now().isoformat())),
+                self._to_iso_safe(data.get('completed_at'))
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -1165,8 +1165,8 @@ class SocraticSessionRepository(BaseRepository[SocraticSession]):
                 data.get('status'), data.get('current_phase'),
                 data.get('total_questions'), data.get('answered_questions'),
                 dump_json_field(data.get('session_data')),
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
-                DateTimeHelper.to_iso_string(data.get('completed_at')),
+                self._to_iso_safe(DateTimeHelper.now()),
+                self._to_iso_safe(data.get('completed_at')),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)
@@ -1278,7 +1278,7 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
                 data.get('session_type', 'chat'),
                 data.get('conversation_context', ''),
                 data.get('message_count', 0),
-                DateTimeHelper.to_iso_string(data.get('last_activity', DateTimeHelper.now())),
+                self._to_iso_safe(data.get('last_activity', DateTimeHelper.now())),
                 data.get('status', 'active'),
                 data.get('chat_mode', 'project_focused'),
                 dump_json_field(data.get('topics_discussed', [])),
@@ -1288,8 +1288,8 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
                 dump_json_field(data.get('decisions_made', [])),
                 data.get('session_notes', ''),
                 data.get('engagement_score', 0.0),
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                self._to_iso_safe(data.get('created_at', DateTimeHelper.now().isoformat())),
+                self._to_iso_safe(data.get('updated_at', DateTimeHelper.now().isoformat()))
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -1360,7 +1360,7 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
             params = (
                 data.get('conversation_context'),
                 data.get('message_count'),
-                DateTimeHelper.to_iso_string(data.get('last_activity', DateTimeHelper.now())),
+                self._to_iso_safe(data.get('last_activity', DateTimeHelper.now().isoformat())),
                 data.get('status'),
                 data.get('chat_mode'),
                 dump_json_field(data.get('topics_discussed', [])),
@@ -1370,7 +1370,7 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
                 dump_json_field(data.get('decisions_made', [])),
                 data.get('session_notes'),
                 data.get('engagement_score'),
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                self._to_iso_safe(DateTimeHelper.now()),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)
@@ -1398,7 +1398,7 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
                     updated_at = ?
                 WHERE id = ?
             """
-            now = DateTimeHelper.to_iso_string(DateTimeHelper.now())
+            now = self._to_iso_safe(DateTimeHelper.now())
             params = (now, now, session_id)
             self.db_manager.execute_update(query, params)
             return True
@@ -1414,7 +1414,7 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
                 SET status = 'completed', updated_at = ?
                 WHERE id = ?
             """
-            params = (DateTimeHelper.to_iso_string(DateTimeHelper.now()), session_id)
+            params = (self._to_iso_safe(DateTimeHelper.now()), session_id)
             self.db_manager.execute_update(query, params)
             return True
         except Exception as e:
@@ -1512,9 +1512,9 @@ class QuestionRepository(BaseRepository[Question]):
                 data.get('answer_text'),
                 1 if data.get('is_answered', False) else 0,
                 data.get('context'),
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('answered_at'))
+                self._to_iso_safe(data.get('created_at', DateTimeHelper.now().isoformat())),
+                self._to_iso_safe(data.get('updated_at', DateTimeHelper.now().isoformat())),
+                self._to_iso_safe(data.get('answered_at'))
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -1551,8 +1551,8 @@ class QuestionRepository(BaseRepository[Question]):
             params = (
                 data.get('answer_text'),
                 1 if data.get('is_answered', False) else 0,
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
-                DateTimeHelper.to_iso_string(data.get('answered_at')),
+                self._to_iso_safe(DateTimeHelper.now()),
+                self._to_iso_safe(data.get('answered_at')),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)
@@ -1643,13 +1643,13 @@ class ConversationMessageRepository(BaseRepository[ConversationMessage]):
             """
             params = (
                 data.get('id'), data.get('session_id'), data.get('project_id'),
-                DateTimeHelper.to_iso_string(data.get('timestamp', DateTimeHelper.now())),
+                self._to_iso_safe(data.get('timestamp', DateTimeHelper.now().isoformat())),
                 data.get('message_type'), data.get('content'), data.get('phase'),
                 data.get('role'), data.get('author'), data.get('question_number'),
                 dump_json_field(data.get('insights_extracted', {})),
                 data.get('conversation_type', 'socratic'),  # ← ADD THIS LINE
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                self._to_iso_safe(data.get('created_at', DateTimeHelper.now().isoformat())),
+                self._to_iso_safe(data.get('updated_at', DateTimeHelper.now().isoformat()))
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -1685,7 +1685,7 @@ class ConversationMessageRepository(BaseRepository[ConversationMessage]):
             """
             params = (
                 dump_json_field(data.get('insights_extracted')),
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                self._to_iso_safe(DateTimeHelper.now()),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)
@@ -1770,10 +1770,10 @@ class TechnicalSpecificationRepository(BaseRepository[TechnicalSpec]):
                 dump_json_field(data.get('constraints')),
                 1 if data.get('is_approved', False) else 0,
                 data.get('approved_by'),
-                DateTimeHelper.to_iso_string(data.get('approved_at')),
+                self._to_iso_safe(data.get('approved_at')),
                 data.get('approval_notes'),
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                self._to_iso_safe(data.get('created_at', DateTimeHelper.now().isoformat())),
+                self._to_iso_safe(data.get('updated_at', DateTimeHelper.now().isoformat()))
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -1827,9 +1827,9 @@ class TechnicalSpecificationRepository(BaseRepository[TechnicalSpec]):
                 dump_json_field(data.get('non_functional_requirements')),
                 1 if data.get('is_approved', False) else 0,
                 data.get('approved_by'),
-                DateTimeHelper.to_iso_string(data.get('approved_at')),
+                self._to_iso_safe(data.get('approved_at')),
                 data.get('approval_notes'),
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                self._to_iso_safe(DateTimeHelper.now()),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)
@@ -1911,9 +1911,9 @@ class ProjectContextRepository(BaseRepository[ProjectContext]):
                 dump_json_field(data.get('team_structure')),
                 dump_json_field(data.get('budget_constraints')),
                 dump_json_field(data.get('timeline_constraints')),
-                DateTimeHelper.to_iso_string(data.get('last_analyzed_at')),
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                self._to_iso_safe(data.get('last_analyzed_at')),
+                self._to_iso_safe(data.get('created_at', DateTimeHelper.now().isoformat())),
+                self._to_iso_safe(data.get('updated_at', DateTimeHelper.now().isoformat()))
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -1960,8 +1960,8 @@ class ProjectContextRepository(BaseRepository[ProjectContext]):
                 dump_json_field(data.get('team_structure')),
                 dump_json_field(data.get('budget_constraints')),
                 dump_json_field(data.get('timeline_constraints')),
-                DateTimeHelper.to_iso_string(data.get('last_analyzed_at')),
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                self._to_iso_safe(data.get('last_analyzed_at')),
+                self._to_iso_safe(DateTimeHelper.now()),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)
@@ -2035,9 +2035,9 @@ class ModuleContextRepository(BaseRepository[ModuleContext]):
                 dump_json_field(data.get('related_modules')),
                 dump_json_field(data.get('related_requirements')),
                 dump_json_field(data.get('related_constraints')),
-                DateTimeHelper.to_iso_string(data.get('last_analyzed_at')),
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                self._to_iso_safe(data.get('last_analyzed_at')),
+                self._to_iso_safe(data.get('created_at', DateTimeHelper.now().isoformat())),
+                self._to_iso_safe(data.get('updated_at', DateTimeHelper.now().isoformat()))
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -2088,8 +2088,8 @@ class ModuleContextRepository(BaseRepository[ModuleContext]):
                 dump_json_field(data.get('related_modules')),
                 dump_json_field(data.get('related_requirements')),
                 dump_json_field(data.get('related_constraints')),
-                DateTimeHelper.to_iso_string(data.get('last_analyzed_at')),
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                self._to_iso_safe(data.get('last_analyzed_at')),
+                self._to_iso_safe(DateTimeHelper.now()),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)
@@ -2160,9 +2160,9 @@ class TaskContextRepository(BaseRepository[TaskContext]):
                 data.get('implementation_notes'), data.get('testing_requirements'),
                 dump_json_field(data.get('prerequisite_tasks')),
                 dump_json_field(data.get('dependent_tasks')),
-                DateTimeHelper.to_iso_string(data.get('last_analyzed_at')),
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                self._to_iso_safe(data.get('last_analyzed_at')),
+                self._to_iso_safe(data.get('created_at', DateTimeHelper.now().isoformat())),
+                self._to_iso_safe(data.get('updated_at', DateTimeHelper.now().isoformat()))
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -2221,8 +2221,8 @@ class TaskContextRepository(BaseRepository[TaskContext]):
                 data.get('testing_requirements'),
                 dump_json_field(data.get('prerequisite_tasks')),
                 dump_json_field(data.get('dependent_tasks')),
-                DateTimeHelper.to_iso_string(data.get('last_analyzed_at')),
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                self._to_iso_safe(data.get('last_analyzed_at')),
+                self._to_iso_safe(DateTimeHelper.now()),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)
@@ -2310,11 +2310,11 @@ class ConflictRepository(BaseRepository[Conflict]):
                 data.get('resolution_strategy', ''),
                 data.get('resolution_notes', ''),
                 data.get('resolved_by'),
-                DateTimeHelper.to_iso_string(data.get('resolved_at')) if data.get('resolved_at') else None,
+                self._to_iso_safe(data.get('resolved_at')) if data.get('resolved_at') else None,
                 dump_json_field(data.get('affected_modules', [])),
                 data.get('estimated_impact_hours'),
-                DateTimeHelper.to_iso_string(data.get('created_at', DateTimeHelper.now())),
-                DateTimeHelper.to_iso_string(data.get('updated_at', DateTimeHelper.now()))
+                self._to_iso_safe(data.get('created_at', DateTimeHelper.now().isoformat())),
+                self._to_iso_safe(data.get('updated_at', DateTimeHelper.now().isoformat()))
             )
             self.db_manager.execute_update(query, params)
             return True
@@ -2408,8 +2408,8 @@ class ConflictRepository(BaseRepository[Conflict]):
             params = (
                 resolution,
                 resolved_by,
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                self._to_iso_safe(DateTimeHelper.now()),
+                self._to_iso_safe(DateTimeHelper.now()),
                 conflict_id
             )
             self.db_manager.execute_update(query, params)
@@ -2448,10 +2448,10 @@ class ConflictRepository(BaseRepository[Conflict]):
                 data.get('resolution_strategy'),
                 data.get('resolution_notes'),
                 data.get('resolved_by'),
-                DateTimeHelper.to_iso_string(data.get('resolved_at')) if data.get('resolved_at') else None,
+                self._to_iso_safe(data.get('resolved_at')) if data.get('resolved_at') else None,
                 dump_json_field(data.get('affected_modules', [])),
                 data.get('estimated_impact_hours'),
-                DateTimeHelper.to_iso_string(DateTimeHelper.now()),
+                self._to_iso_safe(DateTimeHelper.now()),
                 data.get('id')
             )
             self.db_manager.execute_update(query, params)

@@ -2,7 +2,6 @@
 # File: debug_full_flask.py
 # This will identify exactly what's preventing the full Flask app from being created
 
-import sys
 import traceback
 
 
@@ -25,7 +24,7 @@ def debug_full_flask_creation():
 
     # Test config imports
     try:
-        from src.core import get_config
+        from src.core import get_config  # TODO Module 'get_config' not found
         config = get_config()
         print(f"✅ Config loaded: {type(config)}")
     except Exception as e:

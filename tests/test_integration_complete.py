@@ -13,7 +13,6 @@ Tests complete workflows from start to finish:
 import sys
 import os
 import uuid
-from datetime import datetime
 
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -179,7 +178,7 @@ def test_project_creation_flow(services, db, user_id):
         ]
 
         for spec in module_specs:
-            module_result = project_agent._add_module({
+            module_result = project_agent._add_module({  # TODO Unresolved attribute reference '_add_module' for class 'ProjectManagerAgent'
                 'user_id': user_id,
                 'project_id': project_id,
                 'name': spec['name'],
@@ -202,7 +201,7 @@ def test_project_creation_flow(services, db, user_id):
         ]
 
         for task_name in task_specs:
-            task_result = project_agent._add_task({
+            task_result = project_agent._add_task({  # TODO Unresolved attribute reference '_add_task' for class 'ProjectManagerAgent'
                 'user_id': user_id,
                 'project_id': project_id,
                 'module_id': modules[0],
@@ -254,7 +253,7 @@ def test_socratic_session_flow(services, db, user_id, project_id):
 
         # Test 1: Start new session
         print("\n[TEST] Starting Socratic session...")
-        start_result = socratic_agent._start_session({
+        start_result = socratic_agent._start_session({  # TODO Unresolved attribute reference '_start_session' for class 'SocraticCounselorAgent'
             'user_id': user_id,
             'project_id': project_id,
             'role': 'backend_developer'
@@ -268,7 +267,7 @@ def test_socratic_session_flow(services, db, user_id, project_id):
         print("\n[TEST] Answering questions...")
         for i in range(5):
             # Get next question
-            question_result = socratic_agent._get_next_question({
+            question_result = socratic_agent._get_next_question({  # TODO Unresolved attribute reference '_get_next_question' for class 'SocraticCounselorAgent'
                 'user_id': user_id,
                 'session_id': session_id
             })
@@ -287,7 +286,7 @@ def test_socratic_session_flow(services, db, user_id, project_id):
             print(f"[INFO] Question {i+1}: {question.get('question_text', 'N/A')[:60]}...")
 
             # Submit answer
-            answer_result = socratic_agent._submit_answer({
+            answer_result = socratic_agent._submit_answer({  # TODO Unresolved attribute reference '_submit_answer' for class 'SocraticCounselorAgent'
                 'user_id': user_id,
                 'session_id': session_id,
                 'question_id': question_id,
@@ -307,7 +306,7 @@ def test_socratic_session_flow(services, db, user_id, project_id):
 
         # Test 4: Get session history
         print("\n[TEST] Retrieving session history...")
-        history_result = socratic_agent._get_session_history({
+        history_result = socratic_agent._get_session_history({  # TODO Unresolved attribute reference '_get_session_history' for class 'SocraticCounselorAgent'
             'user_id': user_id,
             'session_id': session_id
         })
@@ -340,7 +339,7 @@ def test_code_generation_flow(services, db, user_id, project_id):
 
         # Test 1: Create technical specification
         print("\n[TEST] Creating technical specification...")
-        spec_result = code_agent._create_specification({
+        spec_result = code_agent._create_specification({  # TODO Unresolved attribute reference '_create_specification' for class 'CodeGeneratorAgent'
             'user_id': user_id,
             'project_id': project_id,
             'architecture_type': 'microservices',

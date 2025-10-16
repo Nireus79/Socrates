@@ -13,9 +13,7 @@ This test suite performs actual UI testing by:
 import requests
 import sqlite3
 import os
-import json
 import time
-from typing import Dict, Any, Optional, List
 
 BASE_URL = "http://localhost:5002"
 DB_PATH = "../data/socratic.db"

@@ -13,10 +13,9 @@ and verifying responses.
 """
 
 import requests
-import json
-from typing import Dict, Any, Optional
 
 BASE_URL = "http://localhost:5002"
+
 
 class UITester:
     def __init__(self, base_url: str = BASE_URL):
@@ -27,9 +26,9 @@ class UITester:
     def test(self, name: str, func):
         """Run a test and track results."""
         try:
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print(f"TEST: {name}")
-            print('='*60)
+            print('=' * 60)
             result = func()
             if result:
                 print(f"[PASS] {name}")
@@ -44,9 +43,9 @@ class UITester:
 
     def print_summary(self):
         """Print test summary."""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("TEST SUMMARY")
-        print("="*60)
+        print("=" * 60)
 
         passed = sum(1 for _, status, _ in self.test_results if status == "PASS")
         failed = sum(1 for _, status, _ in self.test_results if status == "FAIL")
@@ -57,7 +56,7 @@ class UITester:
         print(f"[+] Passed: {passed}")
         print(f"[-] Failed: {failed}")
         print(f"[!] Errors: {errors}")
-        print(f"Success Rate: {(passed/total*100):.1f}%")
+        print(f"Success Rate: {(passed / total * 100):.1f}%")
 
         if failed > 0 or errors > 0:
             print("\nFailed/Error Tests:")
@@ -178,46 +177,46 @@ class UITester:
 
 def run_all_tests():
     """Run all UI tests."""
-    print("="*60)
+    print("=" * 60)
     print("SOCRATIC RAG ENHANCED - UI TESTING SUITE")
     print("Phase C Sessions 1-4 Verification")
-    print("="*60)
+    print("=" * 60)
 
     tester = UITester()
 
     # Session 1: Authentication & Settings
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("PHASE C SESSION 1: AUTHENTICATION & SETTINGS")
-    print("="*60)
+    print("=" * 60)
     tester.test("Home page loads", tester.test_home_page)
     tester.test("Login page loads", tester.test_login_page)
     tester.test("Register page loads", tester.test_register_page)
     tester.test("Settings requires authentication", tester.test_settings_page_redirect)
 
     # Session 2: Project Management
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("PHASE C SESSION 2: PROJECT MANAGEMENT")
-    print("="*60)
+    print("=" * 60)
     tester.test("Projects page requires authentication", tester.test_projects_page_redirect)
     tester.test("Dashboard requires authentication", tester.test_dashboard_redirect)
 
     # Session 3: Chat Mode & Socratic UI
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("PHASE C SESSION 3: CHAT MODE & SOCRATIC UI")
-    print("="*60)
+    print("=" * 60)
     tester.test("Sessions page requires authentication", tester.test_sessions_page_redirect)
 
     # Session 4: GitHub Repository Import
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("PHASE C SESSION 4: GITHUB REPOSITORY IMPORT")
-    print("="*60)
+    print("=" * 60)
     tester.test("Repositories page requires authentication", tester.test_repositories_page_redirect)
     tester.test("Repository import page requires authentication", tester.test_repository_import_page_redirect)
 
     # Additional Tests
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("ADDITIONAL TESTS")
-    print("="*60)
+    print("=" * 60)
     tester.test("Code dashboard requires authentication", tester.test_code_dashboard_redirect)
     tester.test("API health endpoint", tester.test_api_health)
     tester.test("Static resources (Bootstrap/Icons)", tester.test_static_resources)
@@ -236,6 +235,6 @@ if __name__ == "__main__":
 
     tester = run_all_tests()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Testing complete! Review results above.")
-    print("="*60)
+    print("=" * 60)

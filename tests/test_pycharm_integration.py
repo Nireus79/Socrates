@@ -6,8 +6,6 @@ Tests PyCharm provider and multi-IDE factory
 import os
 import sys
 import pytest
-from pathlib import Path
-import shutil
 
 # Add src to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -17,8 +15,7 @@ from src.services.ide import (
     detect_installed_ides,
     get_supported_ides,
     IDEProviderFactory,
-    PyCharmProvider,
-    VSCodeProviderWrapper
+    PyCharmProvider
 )
 
 

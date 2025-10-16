@@ -67,6 +67,28 @@ class BaseRepository(Generic[T], ABC):
         """
         return self.model_class.__name__.lower() + 's'
 
+    @staticmethod
+    def _to_iso_safe(value: Any, default: Any = None) -> Any:
+        """
+        Safely convert value to ISO string format.
+
+        Handles:
+        - None values (returns default)
+        - Strings (returns as-is, already converted)
+        - Datetime objects (converts to ISO string)
+        - Other types (converts to string)
+
+        This prevents double-conversion errors when models
+        already have converted datetime to strings via to_dict().
+        """
+        if value is None:
+            return default
+        if isinstance(value, str):
+            return value  # Already a string
+        if hasattr(value, 'isoformat'):  # It's a datetime
+            return value.isoformat()
+        return str(value)
+
     # ==========================================================================
     # ABSTRACT METHODS - Must be implemented by subclasses
     # ==========================================================================
@@ -172,6 +194,7 @@ class BaseRepository(Generic[T], ABC):
         - Models with to_dict() method
         - Models with __dict__ attribute
         - Enum values (converts to string)
+        - Datetime values (converts to ISO string)
 
         Args:
             entity: Model instance
@@ -179,6 +202,8 @@ class BaseRepository(Generic[T], ABC):
         Returns:
             Dictionary representation
         """
+        from datetime import datetime
+
         # Try to_dict() method first
         if hasattr(entity, 'to_dict'):
             data = entity.to_dict()
@@ -188,10 +213,12 @@ class BaseRepository(Generic[T], ABC):
         else:
             data = {}
 
-        # Convert all enum values to strings for database storage
+        # Convert all enum values to strings and datetime objects to ISO strings
         for key, value in data.items():
             if hasattr(value, 'value'):  # It's an enum
                 data[key] = value.value
+            elif isinstance(value, datetime):  # It's a datetime object
+                data[key] = value.isoformat()
 
         return data
 

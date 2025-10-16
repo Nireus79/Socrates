@@ -448,6 +448,12 @@
     color: #6fb3f5;
 }
 
+.status-badge-solo {
+    background: rgba(102, 16, 242, 0.2);
+    color: #b19cd9;
+    border: 1px solid rgba(102, 16, 242, 0.3);
+}
+
 @media (max-width: 768px) {
     .projects-header-content {
         flex-direction: column;
@@ -790,6 +796,21 @@
             </h3>
 
             <div class="detail-field-group">
+                <span class="detail-field-label">Project Mode</span>
+                <div class="detail-field-value">
+                    {% if project.is_solo_project %}
+                    <span class="badge" style="background: rgba(102, 16, 242, 0.3); color: #b19cd9; border: 1px solid rgba(102, 16, 242, 0.5);">
+                        <i class="bi bi-person-circle"></i> SOLO MODE
+                    </span>
+                    {% else %}
+                    <span class="badge bg-info">
+                        <i class="bi bi-people"></i> TEAM MODE
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="detail-field-group">
                 <span class="detail-field-label">Project Type</span>
                 <div class="detail-field-value">
                     {% if project.project_type %}
@@ -825,6 +846,26 @@
                 </div>
             </div>
         </div>
+
+        <!-- Team Collaborators Section (Team Projects Only) -->
+        {% if not project.is_solo_project %}
+        <div class="detail-section-card">
+            <h3 class="detail-section-title">
+                <i class="bi bi-people"></i> Team Collaborators
+            </h3>
+
+            <div class="detail-field-group">
+                <span class="detail-field-label">Notice</span>
+                <div class="detail-field-value" style="color: #a9b7c6;">
+                    This is a team project. Team collaboration features and collaborator management are available here.
+                </div>
+            </div>
+
+            <div class="alert alert-info" style="background: rgba(13, 110, 253, 0.2); border: 1px solid rgba(13, 110, 253, 0.3); color: #6fb3f5; margin: 0;">
+                <i class="bi bi-info-circle"></i> Team management features are coming soon.
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Sidebar Column -->
@@ -927,7 +968,7 @@
     <div class="col-12">
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
             {% for project in projects %}
-            <div class="col project-item" data-status="{{ project.status.value if project.status else 'draft' }}" data-type="{{ project.project_type or 'solo' }}">
+            <div class="col project-item" data-status="{{ project.status.value if project.status else 'draft' }}" data-type="{{ 'solo' if project.is_solo_project else 'team' }}">
                 <div class="project-card">
                     <!-- Card Header with Title and Status -->
                     <div class="project-card-header">
@@ -937,9 +978,16 @@
                             </h6>
                             <small style="color: #6c7a89;">Created on {{ project.created_at.strftime('%b %d, %Y') if project.created_at else 'Unknown' }}</small>
                         </div>
-                        <span class="status-badge status-{{ project.status.value if project.status else 'draft' }}">
-                            {{ project.status.value.upper() if project.status else 'DRAFT' }}
-                        </span>
+                        <div>
+                            {% if project.is_solo_project %}
+                            <span class="status-badge status-badge-solo" style="margin-right: 0.5rem;">
+                                <i class="bi bi-person-circle"></i> SOLO
+                            </span>
+                            {% endif %}
+                            <span class="status-badge status-{{ project.status.value if project.status else 'draft' }}">
+                                {{ project.status.value.upper() if project.status else 'DRAFT' }}
+                            </span>
+                        </div>
                     </div>
 
                     <!-- Card Body with Description and Tech Stack -->
@@ -1151,6 +1199,7 @@ function filterProjects() {
     const typeFilter = document.getElementById('typeFilter').value.toLowerCase();
 
     const projectItems = document.querySelectorAll('.project-item');
+    let visibleCount = 0;
 
     projectItems.forEach(item => {
         const projectName = item.querySelector('.project-card-title').textContent.toLowerCase();
@@ -1165,28 +1214,41 @@ function filterProjects() {
         // Show or hide based on filters
         if (matchesSearch && matchesStatus && matchesType) {
             item.style.display = '';
+            visibleCount++;
         } else {
             item.style.display = 'none';
         }
     });
 
     // Show empty state if no projects match
-    const visibleProjects = Array.from(projectItems).filter(item => item.style.display !== 'none').length;
-    if (visibleProjects === 0) {
-        // Check if we have any results container
+    if (visibleCount === 0) {
+        // Remove any existing empty state first
+        const existingEmpty = document.querySelector('.filter-empty-state');
+        if (existingEmpty) {
+            existingEmpty.remove();
+        }
+
+        // Add new empty state
         const projectsContainer = document.querySelector('.row.row-cols-1');
         if (projectsContainer) {
-            projectsContainer.innerHTML += `
-                <div class="col-12">
-                    <div class="empty-state">
-                        <div class="empty-icon">
-                            <i class="bi bi-search"></i>
-                        </div>
-                        <div class="empty-title">No Results</div>
-                        <p class="empty-text">Try adjusting your filters or search terms.</p>
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'col-12 filter-empty-state';
+            emptyDiv.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="bi bi-search"></i>
                     </div>
+                    <div class="empty-title">No Results</div>
+                    <p class="empty-text">Try adjusting your filters or search terms.</p>
                 </div>
             `;
+            projectsContainer.appendChild(emptyDiv);
+        }
+    } else {
+        // Remove empty state if results found
+        const existingEmpty = document.querySelector('.filter-empty-state');
+        if (existingEmpty) {
+            existingEmpty.remove();
         }
     }
 }
