@@ -5,20 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c515be20-b38c-4dee-9b09-41d2c1636d61" name="Changes" comment="debug">
+      <change afterPath="$PROJECT_DIR$/web/templates/documents/upload.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/MASTER_PLAN.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/MASTER_PLAN.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/TODO.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/TODO.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/cost_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/cost_calculator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/optimizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/optimizer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/git_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/git_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/ide/base_provider.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/ide/base_provider.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/ide/pycharm_provider.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/ide/pycharm_provider.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/llm/claude_provider.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/llm/claude_provider.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/llm/ollama_provider.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/llm/ollama_provider.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/repository_analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/repository_analyzer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/repository_import_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/repository_import_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/vector_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/vector_service.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/app.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

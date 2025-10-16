@@ -2394,9 +2394,9 @@ def create_flask_app(config_override=None) -> Flask:
             zip_buffer.seek(0)
 
             # Generate filename
-            project = user_db.get_project(generation.project_id, current_user.id)
+            project = user_db.get_project(generation.project_id, current_user.id)  # TODO Unresolved attribute reference 'project_id' for class 'dict'
             project_name = project.get('name', 'project').replace(' ', '_') if project else 'project'
-            gen_name = generation.generation_name.replace(' ', '_')
+            gen_name = generation.generation_name.replace(' ', '_')  # Unresolved attribute reference 'generation_name' for class 'dict'
             filename = f"{project_name}_{gen_name}_{generation_id[:8]}.zip"
 
             return send_file(
@@ -2541,149 +2541,155 @@ def create_flask_app(config_override=None) -> Flask:
             'app_version': '7.3.0'
         })
 
+    @flask_app.route('/upload-document', methods=['GET'])
+    @login_required
+    def upload_document_page():
+        """Display document upload form."""
+        projects = user_db.get_projects_by_owner(current_user.id)  # TODO Shadows name 'projects' from outer scope, Unresolved attribute reference 'get_projects_by_owner' for class 'UserDB'
+        return render_template('documents/upload.html', projects=projects)
+
     @flask_app.route('/upload-document', methods=['POST'])
     @login_required
     def upload_document():
         """Handle document upload."""
-        form = DocumentUploadForm()
-
-        if form.validate_on_submit():
-            try:
-                file = form.file.data
-                project_id = form.project_id.data or None
-
-                # Generate secure filename
-                filename = secure_filename(file.filename)
-                if not filename:
-                    return jsonify({
-                        'success': False,
-                        'message': 'Invalid filename'
-                    }), 400
-
-                # Save file
-                file_path = os.path.join(flask_app.config['UPLOAD_FOLDER'], filename)
-                file.save(file_path)
-
-                # Process document content
-                processing_status = 'pending'
-                processing_msg = 'Processing...'
-                chunk_count = 0
-                word_count = 0
-
-                # Import uuid module outside try block to ensure it's available later
-                import uuid as uuid_module
-
-                try:
-                    from src.services.document_service import get_document_service
-                    from src.services.vector_service import VectorService
-
-                    doc_service = get_document_service()
-
-                    # Extract text from document
-                    doc_info = doc_service.process_document(file_path)
-                    word_count = doc_info.word_count
-
-                    # Add to vector knowledge base if content extracted
-                    if doc_info.content and len(doc_info.content.strip()) > 0:
-                        try:
-                            vector_service = VectorService()
-
-                            # Chunk content for better retrieval
-                            chunks = doc_service.chunk_content(doc_info.content)
-                            chunk_count = len(chunks)
-
-                            # Add to vector database
-                            for i, chunk in enumerate(chunks):
-                                doc_id = f"{project_id}_{filename}_{i}" if project_id else f"{filename}_{i}"
-
-                                metadata = {
-                                    'filename': filename,
-                                    'project_id': project_id or 'none',
-                                    'chunk_index': i,
-                                    'total_chunks': len(chunks),
-                                    'file_type': doc_info.file_type,
-                                    'word_count': doc_info.word_count,
-                                    'uploaded_by': current_user.id
-                                }
-
-                                try:
-                                    vector_service.add_document(doc_id, chunk, metadata)
-                                except Exception as e:
-                                    logger.error(f"Failed to add chunk {i} to vector DB: {e}")
-
-                            processing_msg = f"Extracted {doc_info.word_count} words, created {len(chunks)} chunks"
-                            processing_status = 'completed'
-
-                        except Exception as e:
-                            logger.error(f"Vector storage failed: {e}")
-                            processing_msg = f"Text extracted ({doc_info.word_count} words) but vector storage unavailable"
-                            processing_status = 'partial'
-                    else:
-                        processing_msg = "No text content extracted"
-                        processing_status = 'failed'
-
-                except Exception as e:
-                    logger.error(f"Document processing failed: {e}")
-                    processing_msg = f"Processing error: {str(e)}"
-                    processing_status = 'failed'
-
-                # Store document metadata in database
-                try:
-                    doc_id = str(uuid_module.uuid4())
-                    uploaded_at = datetime.now().isoformat()
-                    processed_at = uploaded_at if processing_status == 'completed' else None
-
-                    db_instance = get_user_db()
-                    conn = sqlite3.connect(db_instance.db_path)
-                    cursor = conn.cursor()
-
-                    cursor.execute('''
-                        INSERT INTO uploaded_documents (id, project_id, uploaded_by, filename, file_path,
-                                                       file_type, file_size, word_count, chunk_count,
-                                                       processing_status, processing_info, uploaded_at, processed_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (doc_id, project_id, current_user.id, filename, file_path,
-                          os.path.splitext(filename)[1], os.path.getsize(file_path),
-                          word_count, chunk_count, processing_status, processing_msg,
-                          uploaded_at, processed_at))
-
-                    conn.commit()
-                    conn.close()
-                except Exception as e:
-                    logger.error(f"Failed to store document metadata: {e}")
-
-                return jsonify({
-                    'success': True,
-                    'message': f'Document "{filename}" uploaded and processed successfully',
-                    'data': {
-                        'filename': filename,
-                        'project_id': project_id,
-                        'file_size': os.path.getsize(file_path),
-                        'word_count': word_count,
-                        'chunk_count': chunk_count,
-                        'processing_status': processing_status,
-                        'processing_info': processing_msg
-                    }
-                })
-
-            except Exception as e:
-                logger.error(f"File upload error: {e}")
+        # Support both form data and multipart uploads (XHR/fetch)
+        if 'file' in request.files:
+            file = request.files.get('file')
+            project_id = request.form.get('project_id') or None
+        else:
+            # Fallback to form handling
+            form = DocumentUploadForm()
+            if not form.validate_on_submit():
                 return jsonify({
                     'success': False,
-                    'message': 'Upload failed. Please try again.'
-                }), 500
+                    'message': 'Form validation failed'
+                }), 400
+            file = form.file.data
+            project_id = form.project_id.data or None
 
-        # Form validation failed
-        errors = []
-        for field, field_errors in form.errors.items():
-            for error in field_errors:
-                errors.append(f"{field}: {error}")
+        try:
+            # Generate secure filename
+            filename = secure_filename(file.filename)
+            if not filename:
+                return jsonify({
+                    'success': False,
+                    'message': 'Invalid filename'
+                }), 400
 
-        return jsonify({
-            'success': False,
-            'message': 'Validation failed',
-            'errors': errors
-        }), 400
+            # Save file
+            file_path = os.path.join(flask_app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+
+            # Process document content
+            processing_status = 'pending'
+            processing_msg = 'Processing...'
+            chunk_count = 0
+            word_count = 0
+
+            # Import uuid module outside try block to ensure it's available later
+            import uuid as uuid_module
+
+            try:
+                from src.services.document_service import get_document_service
+                from src.services.vector_service import VectorService
+
+                doc_service = get_document_service()
+
+                # Extract text from document
+                doc_info = doc_service.process_document(file_path)
+                word_count = doc_info.word_count
+
+                # Add to vector knowledge base if content extracted
+                if doc_info.content and len(doc_info.content.strip()) > 0:
+                    try:
+                        vector_service = VectorService()
+
+                        # Chunk content for better retrieval
+                        chunks = doc_service.chunk_content(doc_info.content)
+                        chunk_count = len(chunks)
+
+                        # Add to vector database
+                        for i, chunk in enumerate(chunks):
+                            doc_id = f"{project_id}_{filename}_{i}" if project_id else f"{filename}_{i}"
+
+                            metadata = {
+                                'filename': filename,
+                                'project_id': project_id or 'none',
+                                'chunk_index': i,
+                                'total_chunks': len(chunks),
+                                'file_type': doc_info.file_type,
+                                'word_count': doc_info.word_count,
+                                'uploaded_by': current_user.id
+                            }
+
+                            try:
+                                vector_service.add_document(doc_id, chunk, metadata)
+                            except Exception as e:
+                                logger.error(f"Failed to add chunk {i} to vector DB: {e}")
+
+                        processing_msg = f"Extracted {doc_info.word_count} words, created {len(chunks)} chunks"
+                        processing_status = 'completed'
+
+                    except Exception as e:
+                        logger.error(f"Vector storage failed: {e}")
+                        processing_msg = f"Text extracted ({doc_info.word_count} words) but vector storage unavailable"
+                        processing_status = 'partial'
+                else:
+                    processing_msg = "No text content extracted"
+                    processing_status = 'failed'
+
+            except Exception as e:
+                logger.error(f"Document processing failed: {e}")
+                processing_msg = f"Processing error: {str(e)}"
+                processing_status = 'failed'
+
+            # Store document metadata in database
+            try:
+                doc_id = str(uuid_module.uuid4())
+                uploaded_at = datetime.now().isoformat()
+                processed_at = uploaded_at if processing_status == 'completed' else None
+
+                db_instance = get_user_db()
+                conn = sqlite3.connect(db_instance.db_path)
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                    INSERT INTO uploaded_documents (id, project_id, uploaded_by, filename, file_path,
+                                                   file_type, file_size, word_count, chunk_count,
+                                                   processing_status, processing_info, uploaded_at, processed_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (doc_id, project_id, current_user.id, filename, file_path,
+                      os.path.splitext(filename)[1], os.path.getsize(file_path),
+                      word_count, chunk_count, processing_status, processing_msg,
+                      uploaded_at, processed_at))
+
+                conn.commit()
+                conn.close()
+            except Exception as e:
+                logger.error(f"Failed to store document metadata: {e}")
+
+            # Return success response with upload details
+            return jsonify({
+                'success': True,
+                'message': f'Document "{filename}" uploaded and processed successfully',
+                'data': {
+                    'filename': filename,
+                    'project_id': project_id,
+                    'file_size': os.path.getsize(file_path),
+                    'word_count': word_count,
+                    'chunk_count': chunk_count,
+                    'vectorized': processing_status == 'completed',
+                    'processing_status': processing_status,
+                    'processing_info': processing_msg
+                }
+            })
+
+        except Exception as e:
+            logger.error(f"File upload error: {e}")
+            return jsonify({
+                'success': False,
+                'message': 'Upload failed. Please try again.'
+            }), 500
 
     logger.info("Flask application created successfully")
 

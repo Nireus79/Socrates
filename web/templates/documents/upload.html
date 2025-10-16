@@ -1,0 +1,601 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Document - Socratic RAG Enhanced{% endblock %}
+
+{% block extra_head %}
+<style>
+.upload-area {
+    border: 2px dashed #0d6efd;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    background-color: rgba(13, 110, 253, 0.05);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.upload-area:hover {
+    border-color: #0a58ca;
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.upload-area.dragover {
+    border-color: #0a58ca;
+    background-color: rgba(13, 110, 253, 0.15);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+
+.file-input {
+    display: none;
+}
+
+#uploadForm {
+    display: block;
+}
+
+#progressContainer {
+    display: none;
+    margin-top: 2rem;
+}
+
+.progress-item {
+    margin-bottom: 1.5rem;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.progress-bar {
+    height: 25px;
+    border-radius: 4px;
+}
+
+.status-icon {
+    display: inline-block;
+    width: 24px;
+    margin-right: 8px;
+    text-align: center;
+}
+
+.file-preview {
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    margin-top: 1rem;
+}
+
+.file-details {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.file-details li {
+    padding: 0.5rem 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+.file-details strong {
+    color: #495057;
+}
+
+.success-summary {
+    padding: 1rem;
+    background-color: #d1e7dd;
+    border: 1px solid #badbcc;
+    border-radius: 6px;
+    margin-top: 1rem;
+}
+
+.success-summary h5 {
+    color: #0f5132;
+    margin-bottom: 0.5rem;
+}
+
+.success-summary li {
+    color: #0f5132;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="bi bi-file-earmark-arrow-up text-primary"></i> Upload Document</h2>
+            <p class="text-muted">Upload and process documents for knowledge base integration</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Upload Form -->
+        <div class="col-lg-8">
+            <!-- Upload Form Card -->
+            <div class="card" id="uploadForm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cloud-upload"></i> Select Document to Upload
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Drag & Drop Area -->
+                    <div class="upload-area" id="uploadArea">
+                        <div>
+                            <i class="bi bi-cloud-upload display-3 text-primary mb-3"></i>
+                            <h5>Drag & Drop Your Document Here</h5>
+                            <p class="text-muted mb-0">or click to browse files</p>
+                        </div>
+                        <input type="file" id="fileInput" class="file-input" accept=".pdf,.docx,.txt,.md,.py,.js,.html,.css">
+                    </div>
+
+                    <!-- File Preview -->
+                    <div class="file-preview d-none" id="filePreview">
+                        <h6 class="mb-2">Selected File:</h6>
+                        <ul class="file-details">
+                            <li>
+                                <strong>Name:</strong>
+                                <span id="fileName">-</span>
+                            </li>
+                            <li>
+                                <strong>Size:</strong>
+                                <span id="fileSize">-</span>
+                            </li>
+                            <li>
+                                <strong>Type:</strong>
+                                <span id="fileType">-</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Project Selection -->
+                    <div class="mt-4">
+                        <label class="form-label" for="projectSelect">
+                            <i class="bi bi-folder"></i> Associate with Project (Optional)
+                        </label>
+                        <select class="form-select" id="projectSelect">
+                            <option value="">No Project</option>
+                            {% for project in projects %}
+                            <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Select a project to associate this document with</div>
+                    </div>
+
+                    <!-- Upload Button -->
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="button" class="btn btn-primary btn-lg" id="uploadBtn" disabled>
+                            <i class="bi bi-cloud-upload"></i> Upload Document
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Container -->
+            <div class="card" id="progressContainer">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-hourglass-split"></i> Upload Progress
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Overall Progress -->
+                    <div class="progress-item">
+                        <div class="progress-label">
+                            <span>Overall Progress</span>
+                            <span id="overallProgress">0%</span>
+                        </div>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 id="progressBar"
+                                 style="width: 0%; font-size: 0.8rem; line-height: 25px;">
+                                0%
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Stage -->
+                    <div class="progress-item">
+                        <div class="progress-label">
+                            <span><span class="status-icon" id="uploadIcon">⏳</span>Uploading File</span>
+                            <span id="uploadStatus">0%</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-info"
+                                 id="uploadProgressBar"
+                                 style="width: 0%">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Processing Stage -->
+                    <div class="progress-item">
+                        <div class="progress-label">
+                            <span><span class="status-icon" id="processIcon">⏳</span>Processing Document</span>
+                            <span id="processStatus">Waiting...</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-success"
+                                 id="processProgressBar"
+                                 style="width: 0%">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vectorization Stage -->
+                    <div class="progress-item">
+                        <div class="progress-label">
+                            <span><span class="status-icon" id="vectorIcon">⏳</span>Vectorizing Content</span>
+                            <span id="vectorStatus">Waiting...</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-warning"
+                                 id="vectorProgressBar"
+                                 style="width: 0%">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Success Message -->
+                    <div class="alert alert-success d-none mt-4" id="successAlert">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-check-circle"></i> Upload Complete!
+                        </h5>
+                        <p class="mb-2" id="successMessage">Your document has been processed successfully.</p>
+                        <div class="success-summary">
+                            <h6>Processing Summary:</h6>
+                            <ul class="file-details mb-0">
+                                <li>
+                                    <strong>Words:</strong>
+                                    <span id="wordCount">-</span>
+                                </li>
+                                <li>
+                                    <strong>Chunks:</strong>
+                                    <span id="chunkCount">-</span>
+                                </li>
+                                <li>
+                                    <strong>Processing Time:</strong>
+                                    <span id="processingTime">-</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-primary" onclick="resetForm()">
+                                <i class="bi bi-cloud-upload"></i> Upload Another Document
+                            </button>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-house"></i> Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div class="alert alert-danger d-none mt-4" id="errorAlert">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-exclamation-circle"></i> Upload Failed
+                        </h5>
+                        <p class="mb-0" id="errorMessage">An error occurred during upload. Please try again.</p>
+                        <button type="button" class="btn btn-outline-danger mt-2" onclick="resetForm()">
+                            <i class="bi bi-arrow-clockwise"></i> Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Info -->
+        <div class="col-lg-4">
+            <!-- Supported Formats -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-check-circle"></i> Supported Formats
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-file-pdf text-danger"></i> <strong>PDF</strong>
+                            <div class="small text-muted ms-4">Portable Document Format</div>
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-file-word text-primary"></i> <strong>DOCX</strong>
+                            <div class="small text-muted ms-4">Microsoft Word Document</div>
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-file-text"></i> <strong>TXT</strong>
+                            <div class="small text-muted ms-4">Plain Text File</div>
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-file-code text-success"></i> <strong>Code Files</strong>
+                            <div class="small text-muted ms-4">Python, JavaScript, HTML, CSS</div>
+                        </li>
+                        <li class="mb-0">
+                            <i class="bi bi-file-markdown"></i> <strong>Markdown</strong>
+                            <div class="small text-muted ms-4">Markdown formatted text</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Features -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-stars"></i> What Happens Next
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ol class="small mb-0">
+                        <li class="mb-2">
+                            <strong>Upload</strong> - File is securely uploaded to the server
+                        </li>
+                        <li class="mb-2">
+                            <strong>Process</strong> - Content is extracted and analyzed
+                        </li>
+                        <li class="mb-2">
+                            <strong>Vectorize</strong> - Content is converted to embeddings
+                        </li>
+                        <li class="mb-0">
+                            <strong>Index</strong> - Added to knowledge base for AI Q&A
+                        </li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightbulb"></i> Tips
+                    </h6>
+                </div>
+                <div class="card-body small">
+                    <ul class="mb-0">
+                        <li class="mb-2">Maximum file size: 10 MB</li>
+                        <li class="mb-2">Processing speed depends on file size</li>
+                        <li class="mb-2">Large documents may take a few minutes</li>
+                        <li class="mb-0">Content is stored securely and indexed for search</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+const uploadBtn = document.getElementById('uploadBtn');
+const filePreview = document.getElementById('filePreview');
+const uploadForm = document.getElementById('uploadForm');
+const progressContainer = document.getElementById('progressContainer');
+
+let selectedFile = null;
+let uploadStartTime = null;
+
+// Drag and drop handlers
+uploadArea.addEventListener('click', () => fileInput.click());
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleFileSelection(files[0]);
+    }
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleFileSelection(e.target.files[0]);
+    }
+});
+
+function handleFileSelection(file) {
+    selectedFile = file;
+
+    // Update preview
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = formatFileSize(file.size);
+    document.getElementById('fileType').textContent = file.type || 'Unknown';
+
+    filePreview.classList.remove('d-none');
+    uploadBtn.disabled = false;
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+uploadBtn.addEventListener('click', uploadDocument);
+
+async function uploadDocument() {
+    if (!selectedFile) {
+        alert('Please select a file');
+        return;
+    }
+
+    uploadStartTime = Date.now();
+    uploadForm.style.display = 'none';
+    progressContainer.style.display = 'block';
+    uploadBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    const projectId = document.getElementById('projectSelect').value;
+    if (projectId) {
+        formData.append('project_id', projectId);
+    }
+
+    try {
+        // Stage 1: Upload
+        updateStage('upload', 'active', 'Uploading file...');
+        updateOverallProgress(10);
+
+        // Simulate upload progress
+        let uploadProgress = 0;
+        const uploadInterval = setInterval(() => {
+            uploadProgress += Math.random() * 30;
+            if (uploadProgress > 90) uploadProgress = 90;
+            document.getElementById('uploadProgressBar').style.width = uploadProgress + '%';
+            document.getElementById('uploadStatus').textContent = Math.round(uploadProgress) + '%';
+        }, 300);
+
+        const response = await fetch('{{ url_for("upload_document") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        });
+
+        clearInterval(uploadInterval);
+        document.getElementById('uploadProgressBar').style.width = '100%';
+        document.getElementById('uploadStatus').textContent = '100%';
+        document.getElementById('uploadIcon').textContent = '✓';
+        updateOverallProgress(35);
+
+        if (!response.ok) {
+            throw new Error(`Upload failed: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.message || 'Upload failed');
+        }
+
+        // Stage 2: Processing
+        updateStage('process', 'active', 'Processing document content...');
+        updateOverallProgress(45);
+
+        await simulateProgress('process', 45, 75);
+        document.getElementById('processIcon').textContent = '✓';
+        updateOverallProgress(75);
+
+        // Stage 3: Vectorization
+        if (data.vectorized) {
+            updateStage('vector', 'active', 'Creating vector embeddings...');
+            await simulateProgress('vector', 75, 95);
+            document.getElementById('vectorIcon').textContent = '✓';
+            updateOverallProgress(95);
+        } else {
+            document.getElementById('vectorIcon').textContent = '✓';
+            updateOverallProgress(95);
+        }
+
+        // Complete
+        updateOverallProgress(100);
+        showSuccess(data);
+
+    } catch (error) {
+        console.error('Upload error:', error);
+        document.getElementById('errorMessage').textContent = error.message;
+        document.getElementById('errorAlert').classList.remove('d-none');
+        document.getElementById('processIcon').textContent = '✗';
+        document.getElementById('uploadIcon').textContent = '✗';
+    } finally {
+        uploadBtn.disabled = false;
+    }
+}
+
+function updateStage(stage, status, message) {
+    const statusEl = document.getElementById(stage + 'Status');
+    if (statusEl) {
+        statusEl.textContent = message;
+    }
+}
+
+function updateOverallProgress(percentage) {
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('overallProgress');
+    progressBar.style.width = percentage + '%';
+    progressBar.textContent = percentage + '%';
+    progressText.textContent = percentage + '%';
+}
+
+async function simulateProgress(stage, startPercent, endPercent) {
+    return new Promise((resolve) => {
+        let currentPercent = startPercent;
+        const interval = setInterval(() => {
+            currentPercent += Math.random() * 15;
+            if (currentPercent >= endPercent) {
+                currentPercent = endPercent;
+                clearInterval(interval);
+                updateOverallProgress(currentPercent);
+                resolve();
+            } else {
+                updateOverallProgress(currentPercent);
+            }
+        }, 400);
+    });
+}
+
+function showSuccess(data) {
+    const duration = Math.round((Date.now() - uploadStartTime) / 1000);
+
+    document.getElementById('wordCount').textContent = data.word_count || '0';
+    document.getElementById('chunkCount').textContent = data.chunk_count || '0';
+    document.getElementById('processingTime').textContent = duration + ' seconds';
+
+    document.getElementById('successAlert').classList.remove('d-none');
+    document.getElementById('processProgressBar').style.width = '100%';
+    document.getElementById('vectorProgressBar').style.width = '100%';
+}
+
+function resetForm() {
+    selectedFile = null;
+    fileInput.value = '';
+    filePreview.classList.add('d-none');
+    uploadBtn.disabled = true;
+    uploadForm.style.display = 'block';
+    progressContainer.style.display = 'none';
+
+    // Reset progress bars
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('uploadProgressBar').style.width = '0%';
+    document.getElementById('processProgressBar').style.width = '0%';
+    document.getElementById('vectorProgressBar').style.width = '0%';
+
+    // Reset icons
+    document.getElementById('uploadIcon').textContent = '⏳';
+    document.getElementById('processIcon').textContent = '⏳';
+    document.getElementById('vectorIcon').textContent = '⏳';
+
+    // Reset messages
+    document.getElementById('successAlert').classList.add('d-none');
+    document.getElementById('errorAlert').classList.add('d-none');
+}
+</script>
+{% endblock %}
+{% endblock %}
