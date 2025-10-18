@@ -1,0 +1,58 @@
+2025-10-17 09:06:06 - socratic - INFO - initialize:392 - Logging system initialized successfully
+2025-10-17 09:06:06 - events - INFO - set_logger:451 - Event system initialized
+2025-10-17 09:06:06 - system - INFO - create_services:677 - Service container initialized successfully
+2025-10-17 09:06:06 - orchestrator - INFO - __init__:85 - Starting AgentOrchestrator initialization
+2025-10-17 09:06:06 - orchestrator - INFO - _initialize_agents:102 - Initializing agents...
+2025-10-17 09:06:06 - src.database.manager.DatabaseManager - INFO - _init_schema:538 - Chat tables and indexes created successfully
+2025-10-17 09:06:06 - src.database.manager.DatabaseManager - INFO - _init_schema:543 - Database schema initialized successfully
+2025-10-17 09:06:06 - agent.user_manager - INFO - _initialize_claude_client:159 - Claude API client initialized successfully
+2025-10-17 09:06:06 - agent.user_manager - INFO - __init__:137 - Agent User Manager (user_manager) initialized
+2025-10-17 09:06:06 - orchestrator - INFO - _initialize_single_agent:157 - ✓ UserManagerAgent initialized successfully
+2025-10-17 09:06:06 - agent.project_manager - INFO - _initialize_claude_client:159 - Claude API client initialized successfully
+2025-10-17 09:06:06 - agent.project_manager - INFO - __init__:137 - Agent Project Manager (project_manager) initialized
+2025-10-17 09:06:06 - agent.project_manager - INFO - __init__:158 - ProjectManagerAgent initialized successfully
+2025-10-17 09:06:06 - orchestrator - INFO - _initialize_single_agent:157 - ✓ ProjectManagerAgent initialized successfully
+2025-10-17 09:06:06 - agent.socratic_counselor - INFO - _initialize_claude_client:159 - Claude API client initialized successfully
+2025-10-17 09:06:06 - agent.socratic_counselor - INFO - __init__:137 - Agent Socratic Counselor (socratic_counselor) initialized
+2025-10-17 09:06:06 - agent.socratic_counselor - INFO - __init__:187 - C6 Question Quality Analyzer initialized
+2025-10-17 09:06:06 - agent.socratic_counselor - INFO - __init__:205 - Session persistence repositories initialized
+2025-10-17 09:06:06 - agent.socratic_counselor - INFO - __init__:218 - SocraticCounselorAgent initialized successfully
+2025-10-17 09:06:06 - orchestrator - INFO - _initialize_single_agent:157 - ✓ SocraticCounselorAgent initialized successfully
+2025-10-17 09:06:06 - agent.code_generator - INFO - _initialize_claude_client:159 - Claude API client initialized successfully
+2025-10-17 09:06:06 - agent.code_generator - INFO - __init__:137 - Agent Code Generator Agent (code_generator) initialized
+2025-10-17 09:06:06 - agent.code_generator - INFO - __init__:243 - CodeGeneratorAgent initialized successfully
+2025-10-17 09:06:06 - orchestrator - INFO - _initialize_single_agent:157 - ✓ CodeGeneratorAgent initialized successfully
+2025-10-17 09:06:06 - agent.context_analyzer - INFO - _initialize_claude_client:159 - Claude API client initialized successfully
+2025-10-17 09:06:06 - agent.context_analyzer - INFO - __init__:137 - Agent Context Analyzer (context_analyzer) initialized
+2025-10-17 09:06:06 - agent.context_analyzer - INFO - __init__:195 - ContextAnalyzerAgent initialized with conflict detection rules and context persistence
+2025-10-17 09:06:06 - orchestrator - INFO - _initialize_single_agent:157 - ✓ ContextAnalyzerAgent initialized successfully
+2025-10-17 09:06:06 - agent.document_processor - INFO - _initialize_claude_client:159 - Claude API client initialized successfully
+2025-10-17 09:06:06 - agent.document_processor - INFO - __init__:137 - Agent Document Processor Agent (document_processor) initialized
+2025-10-17 09:06:06 - agent.document_processor - INFO - __init__:175 - DocumentProcessorAgent initialized with multi-format support
+2025-10-17 09:06:06 - orchestrator - INFO - _initialize_single_agent:157 - ✓ DocumentProcessorAgent initialized successfully
+2025-10-17 09:06:06 - agent.services - INFO - _initialize_claude_client:159 - Claude API client initialized successfully
+2025-10-17 09:06:06 - agent.services - INFO - __init__:137 - Agent Services Agent (services) initialized
+2025-10-17 09:06:06 - agent.services - INFO - __init__:141 - ServicesAgent initialized with external integrations support
+2025-10-17 09:06:06 - orchestrator - INFO - _initialize_single_agent:157 - ✓ ServicesAgent initialized successfully
+2025-10-17 09:06:06 - agent.system_monitor - INFO - _initialize_claude_client:159 - Claude API client initialized successfully
+2025-10-17 09:06:06 - agent.system_monitor - INFO - __init__:137 - Agent System Monitor Agent (system_monitor) initialized
+2025-10-17 09:06:06 - agent.system_monitor - INFO - __init__:158 - SystemMonitorAgent initialized with comprehensive monitoring
+2025-10-17 09:06:06 - orchestrator - INFO - _initialize_single_agent:157 - ✓ SystemMonitorAgent initialized successfully
+2025-10-17 09:06:06 - agent.architecture_optimizer - INFO - _initialize_claude_client:159 - Claude API client initialized successfully
+2025-10-17 09:06:06 - agent.architecture_optimizer - INFO - __init__:137 - Agent Architecture Optimizer (architecture_optimizer) initialized
+2025-10-17 09:06:06 - agent.architecture_optimizer - INFO - __init__:125 - C6.3 Design Pattern Validator initialized
+2025-10-17 09:06:06 - agent.architecture_optimizer - INFO - __init__:140 - C6.4 Global Cost Calculator initialized
+2025-10-17 09:06:06 - agent.architecture_optimizer - INFO - __init__:147 - ArchitectureOptimizerAgent initialized successfully
+2025-10-17 09:06:06 - orchestrator - INFO - _initialize_single_agent:157 - ✓ ArchitectureOptimizerAgent initialized successfully
+2025-10-17 09:06:06 - agent.chat_agent - INFO - _initialize_claude_client:159 - Claude API client initialized successfully
+2025-10-17 09:06:06 - agent.chat_agent - INFO - __init__:137 - Agent Chat Agent (chat_agent) initialized
+2025-10-17 09:06:06 - orchestrator - INFO - _initialize_single_agent:157 - ✓ ChatAgent initialized successfully
+2025-10-17 09:06:06 - orchestrator - INFO - _initialize_agents:126 - Agent initialization complete: 10/10 successful
+2025-10-17 09:06:06 - orchestrator - WARNING - _build_capability_map:235 - Capability 'suggest_improvements' provided by multiple agents: socratic_counselor and code_generator
+2025-10-17 09:06:06 - orchestrator - WARNING - _build_capability_map:235 - Capability 'detect_conflicts' provided by multiple agents: socratic_counselor and context_analyzer
+2025-10-17 09:06:06 - orchestrator - WARNING - _build_capability_map:235 - Capability 'suggest_improvements' provided by multiple agents: code_generator and context_analyzer
+2025-10-17 09:06:06 - orchestrator - WARNING - _build_capability_map:235 - Capability 'risk_assessment' provided by multiple agents: project_manager and context_analyzer
+2025-10-17 09:06:06 - orchestrator - WARNING - _build_capability_map:235 - Capability 'create_documentation' provided by multiple agents: document_processor and services_agent
+2025-10-17 09:06:06 - orchestrator - WARNING - _build_capability_map:235 - Capability 'extract_insights' provided by multiple agents: socratic_counselor and chat_agent
+2025-10-17 09:06:06 - orchestrator - INFO - _build_capability_map:246 - Built capability map with 114 capabilities
+2025-10-17 09:06:06 - orchestrator - INFO - __init__:93 - AgentOrchestrator initialized: 10 agents active, 0 failed, 114 capabilities

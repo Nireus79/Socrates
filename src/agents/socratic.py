@@ -23,7 +23,7 @@ try:
     from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper
     from src.models import ConversationMessage, UserRole, Project, ProjectPhase, ModelValidator, TechnicalRole
     from .base import BaseAgent, require_authentication, require_project_access, log_agent_action
-    from .question_analyzer import QuestionQualityAnalyzer, QuestionBias, CoverageGap
+    from .quality_analyzer import QuestionQualityAnalyzer, QuestionBias, CoverageGap
 
     CORE_AVAILABLE = True
 except ImportError:

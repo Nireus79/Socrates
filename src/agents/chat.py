@@ -11,6 +11,7 @@ try:
     from src.core import ServiceContainer, DateTimeHelper, ValidationError, ValidationHelper
     from src.models import ChatSession, ConversationMessage, Project, ConversationStatus
     from .base import BaseAgent, require_authentication, require_project_access, log_agent_action
+    from .quality_analyzer import QualityAnalyzer
 
     CORE_AVAILABLE = True
 except ImportError:
@@ -66,6 +67,16 @@ class ChatAgent(BaseAgent):
         self.max_context_messages = 10  # Number of previous messages to include in context
         self.insight_extraction_enabled = True
         self.topic_tracking_enabled = True
+
+        # Initialize quality analyzer for chat statement validation
+        try:
+            self.quality_analyzer = QualityAnalyzer()
+            if self.logger:
+                self.logger.info("QualityAnalyzer initialized for chat mode")
+        except Exception as e:
+            self.quality_analyzer = None
+            if self.logger:
+                self.logger.warning(f"Failed to initialize QualityAnalyzer: {e}")
 
     def get_capabilities(self) -> List[str]:
         """Return list of capabilities this agent provides"""

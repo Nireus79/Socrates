@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - Socratic RAG{% endblock %}
+
+{% block content %}
+<div class="error-container d-flex align-items-center justify-content-center min-vh-100">
+    <div class="error-content text-center">
+        <div class="error-code mb-4">
+            <h1 class="display-1" style="color: #6897BB; font-weight: bold;">404</h1>
+        </div>
+
+        <div class="error-message">
+            <h2 class="mb-3">Page Not Found</h2>
+            <p class="lead text-muted mb-4">
+                The page you're looking for doesn't exist or has been moved.
+            </p>
+        </div>
+
+        <div class="error-details mb-5">
+            <p class="text-muted">
+                <i class="bi bi-exclamation-circle"></i>
+                Request path: <code>{{ request.path }}</code>
+            </p>
+        </div>
+
+        <div class="error-actions">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary me-2">
+                <i class="bi bi-house"></i> Go to Dashboard
+            </a>
+            <a href="{{ url_for('projects') }}" class="btn btn-outline-primary">
+                <i class="bi bi-folder"></i> View Projects
+            </a>
+        </div>
+
+        <div class="mt-5 pt-5 text-muted">
+            <small>
+                If you think this is an error, please <a href="mailto:support@socratic-rag.com">contact support</a>
+            </small>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-container {
+    background: linear-gradient(135deg, #2B2B2B 0%, #313335 100%);
+    min-height: 100vh;
+}
+
+.error-content {
+    max-width: 500px;
+    padding: 2rem;
+}
+
+.error-code h1 {
+    text-shadow: 0 2px 10px rgba(104, 151, 187, 0.3);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+code {
+    background-color: #3C3F41;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    color: #6897BB;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}

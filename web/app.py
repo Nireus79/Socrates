@@ -35,7 +35,7 @@ except ImportError:
 try:
     from flask import (
         Flask, render_template, request, jsonify, redirect, url_for,
-        flash, session, send_file, abort, Response, stream_template, get_flashed_messages
+    flash, session, send_file, abort, Response, stream_template, get_flashed_messages
     )
     from flask_wtf import FlaskForm, CSRFProtect
     from flask_wtf.file import FileField, FileAllowed, FileRequired
@@ -184,6 +184,23 @@ class UserDB:
                     last_name TEXT,
                     role TEXT DEFAULT 'developer',
                     created_at TEXT
+                )
+            ''')
+
+            # User preferences table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS user_preferences (
+                    user_id TEXT PRIMARY KEY,
+                    theme TEXT DEFAULT 'dark',
+                    ide TEXT DEFAULT 'vscode',
+                    email_notifications BOOLEAN DEFAULT 1,
+                    browser_notifications BOOLEAN DEFAULT 1,
+                    autosave_interval INTEGER DEFAULT 60,
+                    llm_provider TEXT DEFAULT 'claude',
+                    llm_model TEXT DEFAULT 'claude-3-sonnet-20240229',
+                    preferences_json TEXT DEFAULT '{}',
+                    updated_at TEXT,
+                    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
                 )
             ''')
 
@@ -401,6 +418,102 @@ class UserDB:
             return True
         except Exception as e:
             logger.error(f"Error updating user password: {e}")
+            return False
+
+    # User preferences methods
+    def get_user_preferences(self, user_id: str):
+        """Get user preferences."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT user_id, theme, ide, email_notifications, browser_notifications,
+                       autosave_interval, llm_provider, llm_model, preferences_json, updated_at
+                FROM user_preferences WHERE user_id = ?
+            ''', (user_id,))
+            row = cursor.fetchone()
+            conn.close()
+
+            if row:
+                import json
+                prefs_json = {}
+                try:
+                    prefs_json = json.loads(row[8]) if row[8] else {}
+                except:
+                    pass
+
+                return {
+                    'user_id': row[0],
+                    'theme': row[1] or 'dark',
+                    'ide': row[2] or 'vscode',
+                    'email_notifications': bool(row[3]),
+                    'browser_notifications': bool(row[4]),
+                    'autosave_interval': row[5] or 60,
+                    'llm_provider': row[6] or 'claude',
+                    'llm_model': row[7] or 'claude-3-sonnet-20240229',
+                    'preferences': prefs_json,
+                    'updated_at': row[9]
+                }
+            return None
+        except Exception as e:
+            logger.error(f"Error getting user preferences: {e}")
+            return None
+
+    def save_user_preferences(self, user_id: str, preferences: dict):
+        """Save or update user preferences."""
+        try:
+            import json
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            updated_at = datetime.now().isoformat()
+            preferences_json = json.dumps(preferences.get('preferences', {}))
+
+            # Try to update first
+            cursor.execute('''
+                UPDATE user_preferences SET
+                    theme = ?, ide = ?, email_notifications = ?,
+                    browser_notifications = ?, autosave_interval = ?,
+                    llm_provider = ?, llm_model = ?, preferences_json = ?,
+                    updated_at = ?
+                WHERE user_id = ?
+            ''', (
+                preferences.get('theme', 'dark'),
+                preferences.get('ide', 'vscode'),
+                preferences.get('email_notifications', True),
+                preferences.get('browser_notifications', True),
+                preferences.get('autosave_interval', 60),
+                preferences.get('llm_provider', 'claude'),
+                preferences.get('llm_model', 'claude-3-sonnet-20240229'),
+                preferences_json,
+                updated_at,
+                user_id
+            ))
+
+            # If no rows affected, insert
+            if cursor.rowcount == 0:
+                cursor.execute('''
+                    INSERT INTO user_preferences
+                    (user_id, theme, ide, email_notifications, browser_notifications,
+                     autosave_interval, llm_provider, llm_model, preferences_json, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    user_id,
+                    preferences.get('theme', 'dark'),
+                    preferences.get('ide', 'vscode'),
+                    preferences.get('email_notifications', True),
+                    preferences.get('browser_notifications', True),
+                    preferences.get('autosave_interval', 60),
+                    preferences.get('llm_provider', 'claude'),
+                    preferences.get('llm_model', 'claude-3-sonnet-20240229'),
+                    preferences_json,
+                    updated_at
+                ))
+
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            logger.error(f"Error saving user preferences: {e}")
             return False
 
     # Project methods
@@ -1020,6 +1133,72 @@ class UserDB:
             return files
         except Exception as e:
             logger.error(f"Error getting generation files: {e}")
+            return []
+
+    def get_user_sessions_count(self, user_id: str) -> int:
+        """Get total count of sessions for a user"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM sessions WHERE owner_id = ?', (user_id,))
+            count = cursor.fetchone()[0]
+            conn.close()
+            return count
+        except Exception as e:
+            logger.error(f"Error getting user sessions count: {e}")
+            return 0
+
+    def get_user_generated_files_count(self, user_id: str) -> int:
+        """Get total count of generated files for a user's projects"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT COUNT(gf.id)
+                FROM generated_files gf
+                JOIN code_generations cg ON gf.generation_id = cg.id
+                JOIN projects p ON cg.project_id = p.id
+                WHERE p.owner_id = ?
+            ''', (user_id,))
+            count = cursor.fetchone()[0]
+            conn.close()
+            return count
+        except Exception as e:
+            logger.error(f"Error getting user generated files count: {e}")
+            return 0
+
+    def get_user_generations(self, user_id: str, limit: int = 5):
+        """Get recent code generations for a user's projects"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT cg.id, cg.project_id, cg.generation_name, cg.status,
+                       cg.progress, cg.created_at, cg.completed_at, p.name
+                FROM code_generations cg
+                JOIN projects p ON cg.project_id = p.id
+                WHERE p.owner_id = ?
+                ORDER BY cg.created_at DESC
+                LIMIT ?
+            ''', (user_id, limit))
+
+            generations = []
+            for row in cursor.fetchall():
+                generations.append({
+                    'id': row[0],
+                    'project_id': row[1],
+                    'generation_name': row[2],
+                    'status': row[3],
+                    'progress': row[4],
+                    'created_at': row[5],
+                    'completed_at': row[6],
+                    'project_name': row[7]
+                })
+
+            conn.close()
+            return generations
+        except Exception as e:
+            logger.error(f"Error getting user generations: {e}")
             return []
 
 
@@ -1742,8 +1921,19 @@ def create_flask_app(config_override=None) -> Flask:
     if config_override:
         web_config.update(config_override)
 
-    # Flask configuration
-    flask_app.config['SECRET_KEY'] = web_config.get('secret_key', 'socratic-rag-dev-key-change-in-production')
+    # Flask configuration - Secret key (required for session/CSRF security)
+    secret_key = web_config.get('secret_key') or os.environ.get('SOCRATIC_SECRET_KEY')
+    if not secret_key:
+        secret_key = 'socratic-rag-dev-key-change-in-production'
+        logger.warning("Using default SECRET_KEY - set SOCRATIC_SECRET_KEY environment variable for production")
+
+    flask_app.config['SECRET_KEY'] = secret_key
+
+    # Session configuration - required for CSRF token storage
+    flask_app.config['SESSION_COOKIE_SECURE'] = False  # Set True in production with HTTPS
+    flask_app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access
+    flask_app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF protection
+    flask_app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=web_config.get('session_hours', 24))
 
     # CSRF Protection configuration
     csrf_config = web_config.get('csrf', {})
@@ -1754,7 +1944,6 @@ def create_flask_app(config_override=None) -> Flask:
     # Additional Flask configuration
     flask_app.config['MAX_CONTENT_LENGTH'] = web_config.get('max_file_size', 16 * 1024 * 1024)  # 16MB
     flask_app.config['UPLOAD_FOLDER'] = web_config.get('upload_folder', 'data/uploads')
-    flask_app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=web_config.get('session_hours', 24))
 
     # Ensure upload directory exists
     os.makedirs(flask_app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -1779,6 +1968,64 @@ def create_flask_app(config_override=None) -> Flask:
         """Load user for Flask-Login."""
         return user_db.get_user_by_id(user_id)
 
+    # Error handlers for API/AJAX responses
+    @flask_app.errorhandler(401)
+    def unauthorized(e):
+        """Handle 401 Unauthorized - return JSON for AJAX requests."""
+        if request.is_json or request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
+            return jsonify({'success': False, 'error': 'Unauthorized', 'message': 'Please log in to access this resource'}), 401
+        # Redirect to login for regular page requests
+        return redirect(url_for('login'))
+
+    @flask_app.errorhandler(403)
+    def forbidden(e):
+        """Handle 403 Forbidden - return JSON for AJAX requests."""
+        if request.is_json or request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
+            return jsonify({'success': False, 'error': 'Forbidden', 'message': 'You do not have permission to access this resource'}), 403
+        return jsonify({'success': False, 'error': 'Forbidden', 'message': 'You do not have permission to access this resource'}), 403
+
+    @flask_app.errorhandler(404)
+    def not_found(e):
+        """Handle 404 Not Found - return JSON for AJAX requests."""
+        if request.is_json or request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
+            return jsonify({'success': False, 'error': 'Not Found', 'message': 'The requested resource was not found'}), 404
+        return jsonify({'success': False, 'error': 'Not Found', 'message': 'The requested resource was not found'}), 404
+
+    @flask_app.errorhandler(400)
+    def bad_request(e):
+        """Handle 400 Bad Request - return JSON for AJAX requests."""
+        if request.is_json or request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
+            return jsonify({'success': False, 'error': 'Bad Request', 'message': str(e.description)}), 400
+        return jsonify({'success': False, 'error': 'Bad Request', 'message': str(e.description)}), 400
+
+    @flask_app.errorhandler(500)
+    def internal_error(e):
+        """Handle 500 Internal Server Error - return JSON for AJAX requests."""
+        logger.error(f"Internal server error: {e}")
+        if request.is_json or request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
+            return jsonify({'success': False, 'error': 'Internal Server Error', 'message': 'An error occurred processing your request'}), 500
+        return jsonify({'success': False, 'error': 'Internal Server Error', 'message': 'An error occurred processing your request'}), 500
+
+    # CSRF Error Handler
+    if FLASK_AVAILABLE:
+        try:
+            from flask_wtf.csrf import CSRFError
+            @flask_app.errorhandler(CSRFError)
+            def csrf_error(e):
+                """Handle CSRF validation errors - return JSON for API requests."""
+                logger.warning(f"CSRF validation failed: {e}")
+                if request.is_json or request.headers.get('Accept') == 'application/json' or request.path.startswith('/api/'):
+                    return jsonify({
+                        'success': False,
+                        'error': 'CSRF validation failed',
+                        'message': 'Invalid or missing CSRF token'
+                    }), 400
+                # For non-API requests, redirect or render error
+                flash('Invalid request. Please try again.', 'error')
+                return redirect(request.referrer or url_for('dashboard')), 400
+        except Exception as e:
+            logger.debug(f"CSRF error handler registration: {e}")
+
     # =================================================================
     # PAGE ROUTES
     # =================================================================
@@ -1789,6 +2036,23 @@ def create_flask_app(config_override=None) -> Flask:
         if current_user and current_user.is_authenticated:
             return redirect(url_for('dashboard'))
         return redirect(url_for('login'))
+
+    @flask_app.route('/test-diagnostic')
+    def test_diagnostic():
+        """Diagnostic endpoint to verify code changes are loaded."""
+        from datetime import datetime as dt
+        return jsonify({
+            'status': 'success',
+            'message': 'Diagnostic endpoint working - code changes ARE loaded',
+            'timestamp': dt.utcnow().isoformat(),
+            'csrf_protection_enabled': flask_app.config.get('WTF_CSRF_ENABLED', False),
+            'secret_key_set': bool(flask_app.config.get('SECRET_KEY')),
+            'session_cookie_config': {
+                'secure': flask_app.config.get('SESSION_COOKIE_SECURE'),
+                'httponly': flask_app.config.get('SESSION_COOKIE_HTTPONLY'),
+                'samesite': flask_app.config.get('SESSION_COOKIE_SAMESITE')
+            }
+        })
 
     @flask_app.route('/dashboard')
     @login_required
@@ -1813,6 +2077,12 @@ def create_flask_app(config_override=None) -> Flask:
                                current_time=datetime.now().isoformat(),
                                system_status=system_status)
 
+    @flask_app.route('/reports')
+    @login_required
+    def reports():
+        """Reports and analytics page."""
+        return render_template('reports.html')
+
     @flask_app.route('/login', methods=['GET', 'POST'])
     def login():
         """User login page."""
@@ -1830,6 +2100,10 @@ def create_flask_app(config_override=None) -> Flask:
                     return redirect(url_for('dashboard'))
 
             flash('Invalid username or password', 'error')
+        else:
+            # Debug: Log form errors if validation fails
+            if request.method == 'POST':
+                logger.debug(f"Form validation failed. Errors: {form.errors}")
         return render_template('auth.html', form=form, page='login')
 
     @flask_app.route('/register', methods=['GET', 'POST'])
@@ -1854,6 +2128,10 @@ def create_flask_app(config_override=None) -> Flask:
                 return redirect(url_for('login'))
             else:
                 flash('Registration failed. Please try again.', 'error')
+        else:
+            # Debug: Log form errors if validation fails
+            if request.method == 'POST':
+                logger.debug(f"Registration form validation failed. Errors: {form.errors}")
 
         return render_template('auth.html', form=form, page='register')
 
@@ -1955,6 +2233,7 @@ def create_flask_app(config_override=None) -> Flask:
                                    api_keys={})
 
     @flask_app.route('/api/settings/llm', methods=['POST'])
+    @csrf.exempt
     @login_required
     def save_llm_settings():
         """Save LLM provider settings."""
@@ -1962,26 +2241,40 @@ def create_flask_app(config_override=None) -> Flask:
             data = request.get_json()
             provider = data.get('provider')
             api_keys = data.get('api_keys', {})
+            model = data.get('model', 'claude-3-sonnet-20240229')
 
             # Get current user preferences
-            prefs = current_user.preferences or {}
+            existing_prefs = user_db.get_user_preferences(current_user.id) or {}
 
-            # Update LLM provider
-            prefs['llm_provider'] = provider
+            # Update LLM provider settings
+            prefs = {
+                'theme': existing_prefs.get('theme', 'dark'),
+                'ide': existing_prefs.get('ide', 'vscode'),
+                'email_notifications': existing_prefs.get('email_notifications', True),
+                'browser_notifications': existing_prefs.get('browser_notifications', True),
+                'autosave_interval': existing_prefs.get('autosave_interval', 60),
+                'llm_provider': provider,
+                'llm_model': model,
+                'preferences': {
+                    **existing_prefs.get('preferences', {}),
+                    'api_keys': api_keys
+                }
+            }
 
-            # Store API keys (in production, these should be encrypted)
-            # For now, we'll store them masked for display purposes
-            prefs['api_keys'] = api_keys
+            # Save preferences to database
+            success = user_db.save_user_preferences(current_user.id, prefs)
 
-            # Update user preferences (skip for now as this requires database schema update)
-            # Note: User preferences storage can be implemented when UserDB schema is updated
+            if success:
+                return jsonify({'success': True, 'message': 'LLM settings saved successfully'})
+            else:
+                return jsonify({'success': False, 'message': 'Failed to save preferences'}), 500
 
-            return jsonify({'success': True, 'message': 'LLM settings saved successfully'})
         except Exception as e:
             logger.error(f"Error saving LLM settings: {e}")
             return jsonify({'success': False, 'message': str(e)}), 500
 
     @flask_app.route('/api/settings/llm/test', methods=['POST'])
+    @csrf.exempt
     @login_required
     def test_llm_connection():
         """Test LLM provider connection."""
@@ -2012,6 +2305,7 @@ def create_flask_app(config_override=None) -> Flask:
             return jsonify({'success': False, 'message': str(e)}), 500
 
     @flask_app.route('/api/settings/ide', methods=['POST'])
+    @csrf.exempt
     @login_required
     def save_ide_settings():
         """Save IDE preferences."""
@@ -2020,18 +2314,34 @@ def create_flask_app(config_override=None) -> Flask:
             ide = data.get('ide')
 
             # Get current user preferences
-            prefs = current_user.preferences or {}
-            prefs['ide'] = ide
+            existing_prefs = user_db.get_user_preferences(current_user.id) or {}
 
-            # Update user in database
-            # Note: User preferences storage can be implemented when UserDB schema is updated
+            # Update IDE setting
+            prefs = {
+                'theme': existing_prefs.get('theme', 'dark'),
+                'ide': ide,
+                'email_notifications': existing_prefs.get('email_notifications', True),
+                'browser_notifications': existing_prefs.get('browser_notifications', True),
+                'autosave_interval': existing_prefs.get('autosave_interval', 60),
+                'llm_provider': existing_prefs.get('llm_provider', 'claude'),
+                'llm_model': existing_prefs.get('llm_model', 'claude-3-sonnet-20240229'),
+                'preferences': existing_prefs.get('preferences', {})
+            }
 
-            return jsonify({'success': True, 'message': 'IDE settings saved successfully'})
+            # Save preferences to database
+            success = user_db.save_user_preferences(current_user.id, prefs)
+
+            if success:
+                return jsonify({'success': True, 'message': 'IDE settings saved successfully'})
+            else:
+                return jsonify({'success': False, 'message': 'Failed to save preferences'}), 500
+
         except Exception as e:
             logger.error(f"Error saving IDE settings: {e}")
             return jsonify({'success': False, 'message': str(e)}), 500
 
     @flask_app.route('/api/settings/profile', methods=['POST'])
+    @csrf.exempt
     @login_required
     def update_profile():
         """Update user profile information."""
@@ -2068,6 +2378,7 @@ def create_flask_app(config_override=None) -> Flask:
             return jsonify({'success': False, 'message': str(e)}), 500
 
     @flask_app.route('/api/settings/password', methods=['POST'])
+    @csrf.exempt
     @login_required
     def change_password():
         """Change user password."""
@@ -2092,6 +2403,7 @@ def create_flask_app(config_override=None) -> Flask:
             return jsonify({'success': False, 'message': str(e)}), 500
 
     @flask_app.route('/api/settings/system', methods=['POST'])
+    @csrf.exempt
     @login_required
     def save_system_settings():
         """Save system preferences."""
@@ -2099,18 +2411,27 @@ def create_flask_app(config_override=None) -> Flask:
             data = request.get_json()
 
             # Get current user preferences
-            prefs = current_user.preferences or {}
-            prefs['system'] = {
+            existing_prefs = user_db.get_user_preferences(current_user.id) or {}
+
+            # Update system settings
+            prefs = {
                 'theme': data.get('theme', 'dark'),
+                'ide': existing_prefs.get('ide', 'vscode'),
                 'email_notifications': data.get('email_notifications', True),
                 'browser_notifications': data.get('browser_notifications', True),
-                'autosave_interval': data.get('autosave_interval', 60)
+                'autosave_interval': data.get('autosave_interval', 60),
+                'llm_provider': existing_prefs.get('llm_provider', 'claude'),
+                'llm_model': existing_prefs.get('llm_model', 'claude-3-sonnet-20240229'),
+                'preferences': existing_prefs.get('preferences', {})
             }
 
-            # Update user in database
-            # Note: User preferences storage can be implemented when UserDB schema is updated
+            # Save preferences to database
+            success = user_db.save_user_preferences(current_user.id, prefs)
 
-            return jsonify({'success': True, 'message': 'System settings saved successfully'})
+            if success:
+                return jsonify({'success': True, 'message': 'System settings saved successfully'})
+            else:
+                return jsonify({'success': False, 'message': 'Failed to save preferences'}), 500
         except Exception as e:
             logger.error(f"Error saving system settings: {e}")
             return jsonify({'success': False, 'message': str(e)}), 500
@@ -3192,6 +3513,7 @@ def create_flask_app(config_override=None) -> Flask:
         return redirect(url_for('new_project', step=step))
 
     @flask_app.route('/sessions/<session_id>/status', methods=['POST'])
+    @csrf.exempt
     @login_required
     def update_session_status(session_id):
         """Update session status."""
@@ -3219,6 +3541,7 @@ def create_flask_app(config_override=None) -> Flask:
             return jsonify({'error': 'Failed to update status'}), 500
 
     @flask_app.route('/sessions/<session_id>/toggle-mode', methods=['POST'])
+    @csrf.exempt
     @login_required
     def toggle_session_mode(session_id):
         """Toggle between Socratic and Chat mode."""
@@ -3251,6 +3574,7 @@ def create_flask_app(config_override=None) -> Flask:
             return jsonify({'error': 'Failed to update mode'}), 500
 
     @flask_app.route('/sessions/<session_id>/archive', methods=['POST'])
+    @csrf.exempt
     @login_required
     def archive_session(session_id):
         """Archive a session."""
@@ -3266,6 +3590,7 @@ def create_flask_app(config_override=None) -> Flask:
             return jsonify({'error': 'Failed to archive session'}), 500
 
     @flask_app.route('/sessions/<session_id>/response', methods=['POST'])
+    @csrf.exempt
     @login_required
     def submit_response(session_id):
         """Handle session response submission."""
@@ -3445,6 +3770,7 @@ def create_flask_app(config_override=None) -> Flask:
             return redirect(url_for('repositories'))
 
     @flask_app.route('/api/repositories/import', methods=['POST'])
+    @csrf.exempt
     @login_required
     def import_repository():
         """Import a Git repository (POST endpoint)."""
@@ -3655,6 +3981,239 @@ def create_flask_app(config_override=None) -> Flask:
         except Exception as e:
             logger.error(f"Error exporting repository analysis: {e}")
             return jsonify({'error': 'Export failed'}), 500
+
+    # =====================================================================
+    # MISSING API ENDPOINTS - CRITICAL FOR UI FUNCTIONALITY
+    # =====================================================================
+
+    @flask_app.route('/health', methods=['GET'])
+    def health_check():
+        """System health check endpoint."""
+        try:
+            # Check database connectivity
+            db_status = 'healthy'
+            try:
+                conn = sqlite3.connect(user_db.db_path)
+                cursor = conn.cursor()
+                cursor.execute('SELECT 1')
+                conn.close()
+            except Exception as e:
+                db_status = 'unhealthy'
+                logger.error(f"Database health check failed: {e}")
+
+            # Check core services
+            services_status = 'healthy'
+            try:
+                if SYSTEM_AVAILABLE:
+                    services = get_services_status()
+                    services_status = 'healthy' if services.get('total_available', 0) > 0 else 'degraded'
+            except Exception as e:
+                logger.warning(f"Services status check failed: {e}")
+                services_status = 'degraded'
+
+            overall_status = 'healthy' if db_status == 'healthy' and services_status != 'unhealthy' else 'degraded'
+
+            return jsonify({
+                'status': overall_status,
+                'database': db_status,
+                'services': services_status,
+                'timestamp': datetime.now().isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Health check failed: {e}")
+            return jsonify({
+                'status': 'unhealthy',
+                'error': str(e),
+                'timestamp': datetime.now().isoformat()
+            }), 500
+
+    @flask_app.route('/api/health', methods=['GET'])
+    @csrf.exempt
+    def api_health_check():
+        """API health check endpoint."""
+        return health_check()
+
+    @flask_app.route('/api/metrics/<metric>', methods=['GET'])
+    @csrf.exempt
+    @login_required
+    def get_metrics(metric):
+        """Get system metrics."""
+        try:
+            if metric == 'projects':
+                count = len(user_db.get_user_projects(current_user.id))
+                return jsonify({'metric': metric, 'value': count, 'timestamp': datetime.now().isoformat()})
+
+            elif metric == 'sessions':
+                count = user_db.get_user_sessions_count(current_user.id)
+                return jsonify({'metric': metric, 'value': count, 'timestamp': datetime.now().isoformat()})
+
+            elif metric == 'generated_files':
+                count = user_db.get_user_generated_files_count(current_user.id)
+                return jsonify({'metric': metric, 'value': count, 'timestamp': datetime.now().isoformat()})
+
+            elif metric == 'agents':
+                if SYSTEM_AVAILABLE:
+                    services = get_services_status()
+                    count = services.get('total_available', 0)
+                else:
+                    count = 0
+                return jsonify({'metric': metric, 'value': count, 'timestamp': datetime.now().isoformat()})
+
+            else:
+                return jsonify({'error': f'Unknown metric: {metric}'}), 400
+
+        except Exception as e:
+            logger.error(f"Error getting metric {metric}: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @flask_app.route('/api/agents/status', methods=['GET'])
+    @csrf.exempt
+    @login_required
+    def agents_status():
+        """Get status of all AI agents."""
+        try:
+            if not SYSTEM_AVAILABLE:
+                return jsonify({
+                    'success': True,
+                    'agents': [],
+                    'total_available': 0,
+                    'note': 'System not fully initialized'
+                })
+
+            services = get_services_status()
+            agents_list = []
+
+            # Define core agents
+            core_agents = [
+                {'id': 'user', 'name': 'User Manager', 'description': 'User authentication and management'},
+                {'id': 'project', 'name': 'Project Manager', 'description': 'Project lifecycle management'},
+                {'id': 'socratic', 'name': 'Socratic Counselor', 'description': 'Socratic questioning methodology'},
+                {'id': 'code', 'name': 'Code Generator', 'description': 'Code generation with testing'},
+                {'id': 'context', 'name': 'Context Analyzer', 'description': 'Context analysis with RAG'},
+                {'id': 'optimizer', 'name': 'Architecture Optimizer', 'description': 'Architecture optimization analysis'}
+            ]
+
+            for agent in core_agents:
+                agents_list.append({
+                    **agent,
+                    'status': 'available',
+                    'initialized': True,
+                    'last_used': None
+                })
+
+            return jsonify({
+                'success': True,
+                'agents': agents_list,
+                'total_available': len(agents_list),
+                'timestamp': datetime.now().isoformat()
+            })
+
+        except Exception as e:
+            logger.error(f"Error getting agents status: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @flask_app.route('/api/services/status', methods=['GET'])
+    @csrf.exempt
+    @login_required
+    def services_status():
+        """Get status of system services."""
+        try:
+            if not SYSTEM_AVAILABLE:
+                return jsonify({
+                    'success': True,
+                    'services': [],
+                    'total_available': 0,
+                    'note': 'System not fully initialized'
+                })
+
+            services = get_services_status()
+            services_list = [
+                {
+                    'name': service,
+                    'status': 'available',
+                    'initialized': service in services.get('initialized_services', [])
+                }
+                for service in services.get('available_services', {}).keys()
+            ]
+
+            return jsonify({
+                'success': True,
+                'services': services_list,
+                'total_available': services.get('total_available', 0),
+                'timestamp': datetime.now().isoformat()
+            })
+
+        except Exception as e:
+            logger.error(f"Error getting services status: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @flask_app.route('/api/activity-feed', methods=['GET'])
+    @csrf.exempt
+    @login_required
+    def activity_feed():
+        """Get user activity feed."""
+        try:
+            limit = request.args.get('limit', 10, type=int)
+
+            # Get recent sessions
+            recent_sessions = user_db.get_user_sessions(current_user.id)
+
+            # Get recent generations
+            recent_generations = user_db.get_user_generations(current_user.id, limit=5)
+
+            activities = []
+
+            # Add sessions to activity feed
+            if recent_sessions:
+                for session in recent_sessions:
+                    activities.append({
+                        'type': 'session',
+                        'title': f"Started session: {session.get('topic', 'Untitled')}",
+                        'timestamp': session.get('created_at', ''),
+                        'icon': 'chat-left-text',
+                        'id': session.get('id', '')
+                    })
+
+            # Add code generations to activity feed
+            if recent_generations:
+                for gen in recent_generations:
+                    activities.append({
+                        'type': 'generation',
+                        'title': f"Generated code: {gen.get('project_name', 'Project')}",
+                        'timestamp': gen.get('created_at', ''),
+                        'icon': 'code',
+                        'id': gen.get('id', '')
+                    })
+
+            # Sort by timestamp (most recent first)
+            activities.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+
+            return jsonify({
+                'success': True,
+                'activities': activities[:limit],
+                'total': len(activities),
+                'timestamp': datetime.now().isoformat()
+            })
+
+        except Exception as e:
+            logger.error(f"Error getting activity feed: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'activities': []
+            }), 500
+
+    # Error handlers
+    @flask_app.errorhandler(404)
+    def not_found(error):
+        """Handle 404 errors."""
+        return render_template('errors/404.html'), 404
+
+    @flask_app.errorhandler(500)
+    def server_error(error):
+        """Handle 500 errors."""
+        logger.error(f"Server error: {error}")
+        return render_template('errors/500.html'), 500
 
     return flask_app
 

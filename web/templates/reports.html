@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Analytics - Socratic RAG{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Reports & Analytics</h1>
+            <p class="text-muted">System performance, usage statistics, and project insights</p>
+        </div>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-primary btn-sm" id="periodWeek">Week</button>
+            <button type="button" class="btn btn-outline-primary btn-sm active" id="periodMonth">Month</button>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="periodYear">Year</button>
+        </div>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Total Projects</h6>
+                            <h2 class="mb-0" id="totalProjects">0</h2>
+                        </div>
+                        <i class="bi bi-folder text-primary" style="font-size: 2rem; opacity: 0.3;"></i>
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                        <i class="bi bi-arrow-up"></i> 0% from last period
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Total Sessions</h6>
+                            <h2 class="mb-0" id="totalSessions">0</h2>
+                        </div>
+                        <i class="bi bi-chat-left text-success" style="font-size: 2rem; opacity: 0.3;"></i>
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                        <i class="bi bi-arrow-up"></i> 0% from last period
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Files Generated</h6>
+                            <h2 class="mb-0" id="totalFiles">0</h2>
+                        </div>
+                        <i class="bi bi-file-code text-warning" style="font-size: 2rem; opacity: 0.3;"></i>
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                        <i class="bi bi-arrow-up"></i> 0% from last period
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title text-muted mb-2">Active Agents</h6>
+                            <h2 class="mb-0" id="totalAgents">0</h2>
+                        </div>
+                        <i class="bi bi-cpu text-info" style="font-size: 2rem; opacity: 0.3;"></i>
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                        All systems <span class="badge bg-success">healthy</span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom">
+                    <h6 class="card-title mb-0">Session Activity Trend</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="sessionTrendChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom">
+                    <h6 class="card-title mb-0">Project Status Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="projectStatusChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Performance -->
+    <div class="row mb-4">
+        <div class="col-lg-12 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom">
+                    <h6 class="card-title mb-0">System Performance Metrics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <h6 class="mb-2">Database Health</h6>
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 95%" id="dbHealth">
+                                    95%
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-1">Healthy</small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6 class="mb-2">API Response Time</h6>
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar bg-info" role="progressbar" style="width: 78%" id="apiTime">
+                                    78% (120ms avg)
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-1">Good</small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6 class="mb-2">System Uptime</h6>
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: 99.8%" id="uptime">
+                                    99.8%
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-1">Excellent</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Table -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom">
+                    <h6 class="card-title mb-0">Recent Activity</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="px-3">Activity</th>
+                                    <th class="px-3">Type</th>
+                                    <th class="px-3">Project</th>
+                                    <th class="px-3">Timestamp</th>
+                                    <th class="px-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activityTable">
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        <i class="bi bi-inbox"></i> No recent activity
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadReportsData();
+    initializeCharts();
+});
+
+function loadReportsData() {
+    // Load metrics
+    fetch('/api/metrics/projects')
+        .then(r => r.json())
+        .then(d => {
+            document.getElementById('totalProjects').textContent = d.value || 0;
+        })
+        .catch(e => console.warn('Failed to load projects metric:', e));
+
+    fetch('/api/metrics/sessions')
+        .then(r => r.json())
+        .then(d => {
+            document.getElementById('totalSessions').textContent = d.value || 0;
+        })
+        .catch(e => console.warn('Failed to load sessions metric:', e));
+
+    fetch('/api/metrics/generated_files')
+        .then(r => r.json())
+        .then(d => {
+            document.getElementById('totalFiles').textContent = d.value || 0;
+        })
+        .catch(e => console.warn('Failed to load files metric:', e));
+
+    fetch('/api/agents/status')
+        .then(r => r.json())
+        .then(d => {
+            document.getElementById('totalAgents').textContent = d.total_available || 0;
+        })
+        .catch(e => console.warn('Failed to load agents status:', e));
+
+    // Load activity feed
+    fetch('/api/activity-feed?limit=10')
+        .then(r => r.json())
+        .then(d => {
+            if (d.activities && d.activities.length > 0) {
+                const table = document.getElementById('activityTable');
+                table.innerHTML = d.activities.map(a => `
+                    <tr>
+                        <td class="px-3">
+                            <i class="bi bi-${a.icon}"></i> ${a.title}
+                        </td>
+                        <td class="px-3">
+                            <span class="badge bg-light text-dark">${a.type}</span>
+                        </td>
+                        <td class="px-3">-</td>
+                        <td class="px-3">
+                            <small>${new Date(a.timestamp).toLocaleString()}</small>
+                        </td>
+                        <td class="px-3">
+                            <span class="badge bg-success">Done</span>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        })
+        .catch(e => console.warn('Failed to load activity feed:', e));
+}
+
+function initializeCharts() {
+    // Session Trend Chart
+    const sessionCtx = document.getElementById('sessionTrendChart');
+    if (sessionCtx) {
+        new Chart(sessionCtx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Sessions',
+                    data: [2, 5, 3, 8, 6, 4, 7],
+                    borderColor: '#6897BB',
+                    backgroundColor: 'rgba(104, 151, 187, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#6897BB',
+                    pointBorderColor: '#2B2B2B',
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10,
+                        ticks: { color: '#999' },
+                        grid: { color: '#3C3F41' }
+                    },
+                    x: {
+                        ticks: { color: '#999' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+
+    // Project Status Chart
+    const projectCtx = document.getElementById('projectStatusChart');
+    if (projectCtx) {
+        new Chart(projectCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Draft', 'In Progress', 'Completed'],
+                datasets: [{
+                    data: [30, 50, 20],
+                    backgroundColor: ['#CC7832', '#6897BB', '#6A8759'],
+                    borderColor: '#2B2B2B',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: { color: '#999' }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Period selector buttons
+document.getElementById('periodWeek')?.addEventListener('click', function() {
+    document.querySelectorAll('[id^="period"]').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    loadReportsData();
+});
+
+document.getElementById('periodMonth')?.addEventListener('click', function() {
+    document.querySelectorAll('[id^="period"]').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    loadReportsData();
+});
+
+document.getElementById('periodYear')?.addEventListener('click', function() {
+    document.querySelectorAll('[id^="period"]').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    loadReportsData();
+});
+</script>
+
+<style>
+.card {
+    background-color: #313335;
+    color: #E0E0E0;
+}
+
+.card-header {
+    background-color: #2B2B2B !important;
+}
+
+.table {
+    color: #E0E0E0;
+}
+
+.table thead th {
+    border-bottom: 2px solid #3C3F41;
+    color: #999;
+    font-weight: 600;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(104, 151, 187, 0.1);
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.35rem 0.65rem;
+}
+
+.progress {
+    background-color: #3C3F41;
+}
+
+.btn-outline-primary {
+    color: #6897BB;
+    border-color: #6897BB;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary.active {
+    background-color: #6897BB;
+    border-color: #6897BB;
+    color: #2B2B2B;
+}
+</style>
+{% endblock %}

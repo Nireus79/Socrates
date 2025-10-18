@@ -1,25 +1,32 @@
 #!/usr/bin/env python3
 """
-QuestionQualityAnalyzer - Meta-level Question Analysis
-=======================================================
+  - Meta-level Quality Analysis for All Phases
+============================================================
 
-Analyzes Socratic questions to detect greedy patterns and ensure comprehensive
-requirement coverage. Prevents myopic questioning that biases toward specific
-solutions without exploring alternatives.
+Analyzes and validates text across all project phases to detect greedy patterns
+and ensure comprehensive requirement coverage. Prevents myopic decisions that bias
+toward specific solutions without exploring alternatives.
 
-Part of C6 Architecture Optimizer Extension.
+Works across all phases:
+- Socratic Phase: Validates questions for bias and coverage gaps
+- Chat Phase: Validates conversational suggestions for quality and completeness
+- Code Generation Phase: Validates code suggestions and architectural decisions
+- Architecture Phase: Validates design choices and recommendations
 
 Capabilities:
-- Detect solution-biased questions
+- Detect solution-biased suggestions/questions/statements
 - Identify missing requirement coverage
-- Calculate question diversity score
-- Suggest alternative question paths
+- Calculate diversity and quality scores
+- Suggest alternative approaches
 - Track requirement coverage gaps
+- Validate across all suggestion types
+
+Part of C6 Architecture Optimizer Extension.
 """
 
-from typing import Dict, List, Any, Optional, Set
+from typing import Dict, List, Any, Optional, Set, Union
 from enum import Enum
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 class QuestionBias(Enum):
@@ -73,9 +80,48 @@ class SessionAnalysis:
     overall_quality: float  # 0.0 to 1.0
 
 
-class QuestionQualityAnalyzer:
+@dataclass
+class SuggestionAnalysis:
+    """Analysis result for a single suggestion (code, architecture, approach)"""
+    suggestion_id: str
+    suggestion_text: str
+    suggestion_type: str  # 'code', 'architecture', 'approach', 'recommendation'
+    bias_detected: Optional[QuestionBias]
+    bias_score: float  # 0.0 = no bias, 1.0 = highly biased
+    bias_explanation: str
+    coverage_areas: List[str]
+    quality_score: float  # 0.0 to 1.0
+    confidence_level: str  # 'verified', 'assumed', 'speculative'
+    missing_context: List[str]  # What information is missing
+    suggested_improvements: List[str]
+
+
+@dataclass
+class AnalysisSession:
+    """Analysis result for entire session of suggestions/statements"""
+    session_id: str
+    session_type: str  # 'socratic', 'chat', 'code_review', 'architecture'
+    total_items: int
+    biased_items: int
+    diversity_score: float
+    coverage_gaps: List[CoverageGap]
+    requirement_coverage: Dict[str, float]
+    recommendations: List[str]
+    overall_quality: float
+    analysis_items: List[Union[QuestionAnalysis, SuggestionAnalysis]] = field(default_factory=list)
+
+
+class QualityAnalyzer:
     """
-    Analyzes question quality and detects greedy questioning patterns
+    Analyzes quality across all phases: questions, suggestions, statements, code changes.
+    Detects greedy patterns, solution bias, coverage gaps, and ensures comprehensive analysis.
+
+    This is a universal quality validator that works across:
+    - Socratic questioning (original capability)
+    - Chat conversations (new)
+    - Code suggestions (new)
+    - Architecture decisions (new)
+    - Any text-based recommendation or statement
     """
 
     def __init__(self):
@@ -104,7 +150,7 @@ class QuestionQualityAnalyzer:
         # Required coverage areas
         self.required_coverage_areas = {
             'scalability': [
-                'scale', 'growth', 'users', 'load', 'concurrent',
+                'scale', 'scalability', 'growth', 'users', 'load', 'concurrent',
                 'traffic', 'volume', 'capacity'
             ],
             'security': [
@@ -539,15 +585,277 @@ class QuestionQualityAnalyzer:
 
         return alternatives
 
+    # ========================================================================
+    # NEW METHODS FOR EXTENDED PHASES (Chat, Code, Architecture)
+    # ========================================================================
+
+    def analyze_suggestion(
+        self,
+        suggestion: Dict[str, Any],
+        context: Optional[Dict[str, Any]] = None
+    ) -> SuggestionAnalysis:
+        """
+        Analyze a code/architecture/approach suggestion for bias and quality.
+
+        Args:
+            suggestion: Dict with 'id', 'text', 'type', 'context' (optional)
+            context: Optional context about the project/decision
+
+        Returns:
+            SuggestionAnalysis with bias detection and quality assessment
+        """
+        suggestion_id = suggestion.get('id', '')
+        suggestion_text = suggestion.get('text', '').lower()
+        suggestion_type = suggestion.get('type', 'unknown')
+
+        # Detect bias (reuse existing logic)
+        bias_detected = None
+        bias_score = 0.0
+        bias_explanation = ""
+
+        # Check for solution bias
+        solution_bias_count = sum(
+            1 for pattern in self.solution_bias_patterns
+            if pattern in suggestion_text
+        )
+        if solution_bias_count > 0:
+            bias_detected = QuestionBias.SOLUTION_BIASED
+            bias_score = min(1.0, solution_bias_count * 0.3)
+            bias_explanation = (
+                f"Suggestion assumes specific solution/technology. "
+                f"Found {solution_bias_count} solution-specific terms."
+            )
+
+        # Check for technology bias
+        tech_bias_count = sum(
+            1 for pattern in self.technology_bias_patterns
+            if pattern in suggestion_text
+        )
+        if tech_bias_count > 0 and bias_score < 0.5:
+            bias_detected = QuestionBias.TECHNOLOGY_BIASED
+            bias_score = max(bias_score, min(1.0, tech_bias_count * 0.4))
+            bias_explanation = (
+                f"Suggestion biases toward specific technology choice. "
+                f"Found {tech_bias_count} technology-specific patterns."
+            )
+
+        # Calculate quality score
+        quality_score = max(0.0, 1.0 - bias_score)
+
+        # Determine coverage areas
+        coverage_areas = self._determine_coverage_areas(suggestion_text)
+
+        # Detect confidence level (based on context/verification)
+        confidence_level = self._assess_confidence_level(suggestion, context)
+
+        # Identify missing context
+        missing_context = self._identify_missing_context(suggestion_type, coverage_areas)
+
+        # Generate improvements if biased
+        suggested_improvements = []
+        if bias_score > 0.4:
+            suggested_improvements = self._generate_alternative_suggestions(
+                suggestion_text, bias_detected, suggestion_type
+            )
+
+        return SuggestionAnalysis(
+            suggestion_id=suggestion_id,
+            suggestion_text=suggestion.get('text', ''),
+            suggestion_type=suggestion_type,
+            bias_detected=bias_detected,
+            bias_score=bias_score,
+            bias_explanation=bias_explanation if bias_detected else "No significant bias detected",
+            coverage_areas=coverage_areas,
+            quality_score=quality_score,
+            confidence_level=confidence_level,
+            missing_context=missing_context,
+            suggested_improvements=suggested_improvements
+        )
+
+    def analyze_statement(
+        self,
+        statement: Dict[str, Any],
+        context: Optional[Dict[str, Any]] = None
+    ) -> SuggestionAnalysis:
+        """
+        Analyze a chat statement or recommendation for quality and completeness.
+
+        Args:
+            statement: Dict with 'id', 'text', 'author', 'timestamp'
+            context: Optional context about the conversation
+
+        Returns:
+            SuggestionAnalysis adapted for statement evaluation
+        """
+        # Reuse suggestion analysis with 'statement' type
+        statement_as_suggestion = {
+            'id': statement.get('id', ''),
+            'text': statement.get('text', ''),
+            'type': 'statement'
+        }
+        return self.analyze_suggestion(statement_as_suggestion, context)
+
+    def analyze_code_change(
+        self,
+        code_change: Dict[str, Any],
+        context: Optional[Dict[str, Any]] = None
+    ) -> SuggestionAnalysis:
+        """
+        Analyze a proposed code change for architecture quality and bias.
+
+        Args:
+            code_change: Dict with 'id', 'description', 'code', 'rationale'
+            context: Optional context about the codebase
+
+        Returns:
+            SuggestionAnalysis focused on architectural concerns
+        """
+        # Combine description and rationale for analysis
+        text = f"{code_change.get('description', '')} {code_change.get('rationale', '')}"
+
+        code_as_suggestion = {
+            'id': code_change.get('id', ''),
+            'text': text,
+            'type': 'code_change'
+        }
+
+        analysis = self.analyze_suggestion(code_as_suggestion, context)
+
+        # Add code-specific checks
+        code_text = code_change.get('code', '').lower()
+        code_specific_issues = self._check_code_quality_patterns(code_text)
+
+        if code_specific_issues:
+            analysis.suggested_improvements.extend(code_specific_issues)
+
+        return analysis
+
+    def _assess_confidence_level(
+        self,
+        suggestion: Dict[str, Any],
+        context: Optional[Dict[str, Any]]
+    ) -> str:
+        """
+        Assess confidence level based on whether suggestion is verified or assumed.
+
+        Returns: 'verified', 'assumed', or 'speculative'
+        """
+        # If context is provided, it's likely verified
+        if context and context.get('verified', False):
+            return 'verified'
+
+        # If suggestion includes evidence/reference, it's likely verified
+        if suggestion.get('evidence') or suggestion.get('reference'):
+            return 'verified'
+
+        # If suggestion mentions assumptions, it's speculative
+        text = suggestion.get('text', '').lower()
+        if any(word in text for word in ['might', 'could', 'may', 'possibly', 'probably']):
+            return 'speculative'
+
+        # Default to assumed (most suggestions without verification)
+        return 'assumed'
+
+    def _identify_missing_context(
+        self,
+        suggestion_type: str,
+        coverage_areas: List[str]
+    ) -> List[str]:
+        """Identify what context/information is missing from a suggestion."""
+        missing = []
+
+        # Check coverage gaps
+        all_areas = set(self.required_coverage_areas.keys())
+        covered = set(coverage_areas)
+        gaps = all_areas - covered
+
+        if gaps:
+            missing.append(f"Missing coverage areas: {', '.join(sorted(gaps))}")
+
+        # Type-specific checks
+        if suggestion_type == 'code_change':
+            if 'testing' not in coverage_areas:
+                missing.append("No mention of testing strategy or test coverage")
+            if 'error_handling' not in coverage_areas:
+                missing.append("No mention of error handling or edge cases")
+
+        elif suggestion_type == 'architecture':
+            if 'scalability' not in coverage_areas:
+                missing.append("No mention of scalability requirements")
+            if 'security' not in coverage_areas:
+                missing.append("No mention of security/compliance requirements")
+
+        return missing
+
+    def _generate_alternative_suggestions(
+        self,
+        biased_suggestion: str,
+        bias_type: Optional[QuestionBias],
+        suggestion_type: str
+    ) -> List[str]:
+        """Generate alternative, less biased suggestions."""
+        alternatives = []
+
+        if bias_type == QuestionBias.SOLUTION_BIASED:
+            alternatives.append(
+                f"Consider exploring multiple approaches to {suggestion_type}. "
+                f"What are the key requirements that must be met?"
+            )
+            alternatives.append(
+                "What trade-offs exist between different solutions?"
+            )
+
+        elif bias_type == QuestionBias.TECHNOLOGY_BIASED:
+            alternatives.append(
+                "What technical requirements and constraints should guide technology choices?"
+            )
+            alternatives.append(
+                "Consider technologies the team is experienced with. "
+                f"What are the compatibility requirements for {suggestion_type}?"
+            )
+
+        return alternatives
+
+    def _check_code_quality_patterns(self, code_text: str) -> List[str]:
+        """Check for code-specific quality issues."""
+        issues = []
+
+        # Check for bare except
+        if 'except:' in code_text:
+            issues.append("Code uses bare except clause - should catch specific exceptions")
+
+        # Check for hardcoded values
+        if any(f"'{i}'" in code_text or f'"{i}"' in code_text for i in range(10, 1000)):
+            issues.append("Code may contain hardcoded values - consider parameterization")
+
+        # Check for TODO/FIXME
+        if 'todo' in code_text or 'fixme' in code_text:
+            issues.append("Code contains TODO/FIXME comments - incomplete implementation")
+
+        return issues
+
+
+# ============================================================================
+# BACKWARD COMPATIBILITY ALIAS
+# ============================================================================
+
+# Keep old name for backward compatibility
+QuestionQualityAnalyzer = QualityAnalyzer
+
 
 # ============================================================================
 # MODULE EXPORTS
 # ============================================================================
 
 __all__ = [
-    'QuestionQualityAnalyzer',
+    # New names (preferred)
+    'QualityAnalyzer',
+    'SuggestionAnalysis',
+    'AnalysisSession',
     'QuestionAnalysis',
     'SessionAnalysis',
     'QuestionBias',
-    'CoverageGap'
+    'CoverageGap',
+    # Backward compatibility
+    'QuestionQualityAnalyzer'
 ]

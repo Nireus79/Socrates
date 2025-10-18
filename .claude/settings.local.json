@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(taskkill:*)",
+      "Bash(taskkill.exe:*)",
+      "Bash(curl:*)",
+      "Bash(rm:*)",
+      "Bash(python:*)",
+      "WebFetch(domain:github.com)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

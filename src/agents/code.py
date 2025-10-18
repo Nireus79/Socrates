@@ -28,6 +28,9 @@ try:
         TestResult, FileType, TestType, ProjectPhase, ModelValidator
     )
     from .base import BaseAgent, require_authentication, require_project_access, log_agent_action
+    from .quality_analyzer import QualityAnalyzer
+    from .code_validator import validate_code_action, ValidationResult
+    from .code_editor import CodeEditor, CodeDiff, BugReport, DebugResult
 
     CORE_AVAILABLE = True
 except ImportError:
@@ -201,6 +204,27 @@ class CodeGeneratorAgent(BaseAgent):
     def __init__(self, services: Optional[ServiceContainer] = None):
         """Initialize CodeGeneratorAgent with ServiceContainer dependency injection"""
         super().__init__("code_generator", "Code Generator Agent", services)
+
+        # Initialize quality analyzer for code suggestions validation
+        try:
+            self.quality_analyzer = QualityAnalyzer()
+            if self.logger:
+                self.logger.info("QualityAnalyzer initialized for code generation")
+        except Exception as e:
+            self.quality_analyzer = None
+            if self.logger:
+                self.logger.warning(f"Failed to initialize QualityAnalyzer: {e}")
+
+        # Initialize code editor for code modification capabilities
+        try:
+            self.code_editor = CodeEditor()
+            if self.logger:
+                self.logger.info("CodeEditor initialized for code editing capabilities")
+        except Exception as e:
+            self.code_editor = None
+            if self.logger:
+                self.logger.warning(f"Failed to initialize CodeEditor: {e}")
+
         # Code generation settings
         self.supported_frameworks = {
             'backend': ['flask', 'fastapi', 'django', 'express'],
@@ -245,11 +269,15 @@ class CodeGeneratorAgent(BaseAgent):
     def get_capabilities(self) -> List[str]:
         """Return list of capabilities this agent provides"""
         return [
+            # Code Generation Capabilities
             "generate_codebase", "design_architecture", "generate_files",
-            "create_tests", "analyze_code_quality", "optimize_performance",
-            "generate_documentation", "setup_deployment", "validate_code",
-            "extract_requirements", "estimate_complexity", "suggest_improvements",
-            "get_specification", "save_specification", "list_specifications",
+            "create_tests", "extract_requirements", "estimate_complexity",
+            "generate_documentation", "setup_deployment", "get_specification",
+            "save_specification", "list_specifications",
+            # NEW: Code Editing and Modification Capabilities
+            "edit_file", "refactor_code", "debug_code", "fix_bugs",
+            "analyze_code_quality", "optimize_performance", "validate_code",
+            "suggest_improvements",
         ]
 
     def _get_specification(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -1340,6 +1368,319 @@ footer {
             'created_at': DateTimeHelper.to_iso_string(spec.created_at),
             'updated_at': DateTimeHelper.to_iso_string(spec.updated_at)
         }
+
+    # ========================================================================
+    # NEW: CODE EDITING AND MODIFICATION METHODS
+    # ========================================================================
+
+    @validate_code_action('edit', require_verification=True, min_quality_score=0.6)
+    @require_authentication
+    @require_project_access
+    @log_agent_action
+    def _edit_file(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Edit an existing code file with quality validation.
+
+        Args:
+            data: {
+                'file_path': str,
+                'original_code': str,
+                'modified_code': str,
+                'description': str,
+                'rationale': str,
+                'project_id': str,
+                'user_id': str
+            }
+
+        Returns:
+            Success response with diff information
+        """
+        try:
+            if not self.code_editor:
+                return self._error_response("CodeEditor not available")
+
+            file_path = data.get('file_path')
+            original_code = data.get('original_code', '')
+            modified_code = data.get('modified_code', '')
+            description = data.get('description', '')
+
+            if not file_path:
+                return self._error_response("file_path is required")
+
+            # Generate diff
+            diff = self.code_editor.edit_file(
+                file_path=file_path,
+                original_code=original_code,
+                modified_code=modified_code,
+                description=description
+            )
+
+            return self._success_response("File edited successfully", {
+                'file_path': file_path,
+                'added_lines': diff.added_lines,
+                'removed_lines': diff.removed_lines,
+                'diff': ''.join(diff.diff_lines),
+                'changes_summary': f"Modified {file_path}: +{diff.added_lines} -{diff.removed_lines}"
+            })
+
+        except Exception as e:
+            error_msg = f"File editing failed: {e}"
+            self.logger.error(error_msg) if self.logger else None
+            return self._error_response(error_msg)
+
+    @validate_code_action('refactor', require_verification=False, min_quality_score=0.5)
+    @require_authentication
+    @require_project_access
+    @log_agent_action
+    def _refactor_code(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Refactor code for improved structure, performance, or readability.
+
+        Args:
+            data: {
+                'code': str,
+                'refactoring_type': str,  # 'simplify', 'performance', 'readability', 'security'
+                'description': str,
+                'project_id': str,
+                'user_id': str
+            }
+
+        Returns:
+            Success response with refactored code
+        """
+        try:
+            if not self.code_editor:
+                return self._error_response("CodeEditor not available")
+
+            code = data.get('code', '')
+            refactoring_type = data.get('refactoring_type', 'readability')
+            description = data.get('description', '')
+
+            if not code:
+                return self._error_response("code is required")
+
+            # Perform refactoring
+            refactored_code, report = self.code_editor.refactor_code(
+                code=code,
+                refactoring_type=refactoring_type
+            )
+
+            return self._success_response("Code refactored successfully", {
+                'refactoring_type': refactoring_type,
+                'original_lines': report['metrics']['original_lines'],
+                'refactored_lines': report['metrics']['refactored_lines'],
+                'transformations': report['transformations'],
+                'refactored_code': refactored_code,
+                'summary': f"{refactoring_type} refactoring: {report['metrics']['original_lines']} → {report['metrics']['refactored_lines']} lines"
+            })
+
+        except Exception as e:
+            error_msg = f"Refactoring failed: {e}"
+            self.logger.error(error_msg) if self.logger else None
+            return self._error_response(error_msg)
+
+    @validate_code_action('debug', require_verification=False, min_quality_score=0.0)
+    @require_authentication
+    @require_project_access
+    @log_agent_action
+    def _debug_code(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Debug code and identify issues.
+
+        Args:
+            data: {
+                'code': str,
+                'language': str,  # 'python', 'javascript', etc.
+                'project_id': str,
+                'user_id': str
+            }
+
+        Returns:
+            Success response with debug results
+        """
+        try:
+            if not self.code_editor:
+                return self._error_response("CodeEditor not available")
+
+            code = data.get('code', '')
+            language = data.get('language', 'python')
+
+            if not code:
+                return self._error_response("code is required")
+
+            # Perform debugging
+            debug_result = self.code_editor.debug_code(
+                code=code,
+                language=language
+            )
+
+            return self._success_response("Code debugging complete", {
+                'has_errors': debug_result.has_errors,
+                'error_count': debug_result.error_count,
+                'errors': debug_result.errors,
+                'warnings': debug_result.warnings,
+                'analysis': debug_result.analysis
+            })
+
+        except Exception as e:
+            error_msg = f"Debugging failed: {e}"
+            self.logger.error(error_msg) if self.logger else None
+            return self._error_response(error_msg)
+
+    @validate_code_action('fix_bugs', require_verification=False, min_quality_score=0.0)
+    @require_authentication
+    @require_project_access
+    @log_agent_action
+    def _fix_bugs(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Detect and fix common bugs in code.
+
+        Args:
+            data: {
+                'code': str,
+                'language': str,  # 'python', 'javascript', etc.
+                'project_id': str,
+                'user_id': str
+            }
+
+        Returns:
+            Success response with fixed code and bug reports
+        """
+        try:
+            if not self.code_editor:
+                return self._error_response("CodeEditor not available")
+
+            code = data.get('code', '')
+            language = data.get('language', 'python')
+
+            if not code:
+                return self._error_response("code is required")
+
+            # Detect and fix bugs
+            fixed_code, bug_reports = self.code_editor.fix_bugs(
+                code=code,
+                language=language
+            )
+
+            # Format bug reports
+            bugs_data = []
+            for bug in bug_reports:
+                bugs_data.append({
+                    'type': bug.bug_type,
+                    'severity': bug.severity,
+                    'description': bug.description,
+                    'location': bug.location,
+                    'example': bug.example,
+                    'suggested_fix': bug.suggested_fix
+                })
+
+            return self._success_response("Bugs detected and fixed", {
+                'bug_count': len(bug_reports),
+                'bugs': bugs_data,
+                'fixed_code': fixed_code,
+                'summary': f"Fixed {len(bug_reports)} bugs: " + ', '.join(
+                    [b.bug_type for b in bug_reports]
+                ) if bug_reports else "No bugs found"
+            })
+
+        except Exception as e:
+            error_msg = f"Bug fixing failed: {e}"
+            self.logger.error(error_msg) if self.logger else None
+            return self._error_response(error_msg)
+
+    @require_authentication
+    @require_project_access
+    @log_agent_action
+    def _analyze_code_quality(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Analyze code quality and provide metrics.
+
+        Args:
+            data: {
+                'code': str,
+                'project_id': str,
+                'user_id': str
+            }
+
+        Returns:
+            Success response with quality metrics
+        """
+        try:
+            if not self.quality_analyzer:
+                return self._error_response("QualityAnalyzer not available")
+
+            code = data.get('code', '')
+
+            if not code:
+                return self._error_response("code is required")
+
+            # Analyze code quality through QualityAnalyzer
+            analysis = self.quality_analyzer.analyze_code_change({
+                'id': 'quality_check_1',
+                'description': 'Code quality analysis',
+                'code': code,
+                'rationale': 'Quality metrics'
+            })
+
+            return self._success_response("Code quality analysis complete", {
+                'quality_score': analysis.quality_score,
+                'bias_score': analysis.bias_score,
+                'confidence_level': analysis.confidence_level,
+                'coverage_areas': analysis.coverage_areas,
+                'missing_context': analysis.missing_context,
+                'suggested_improvements': analysis.suggested_improvements
+            })
+
+        except Exception as e:
+            error_msg = f"Code quality analysis failed: {e}"
+            self.logger.error(error_msg) if self.logger else None
+            return self._error_response(error_msg)
+
+    @require_authentication
+    @require_project_access
+    @log_agent_action
+    def _optimize_performance(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Optimize code for better performance.
+
+        Args:
+            data: {
+                'code': str,
+                'optimization_focus': str,  # 'speed', 'memory', 'bandwidth'
+                'project_id': str,
+                'user_id': str
+            }
+
+        Returns:
+            Success response with optimization suggestions
+        """
+        try:
+            if not self.code_editor:
+                return self._error_response("CodeEditor not available")
+
+            code = data.get('code', '')
+            optimization_focus = data.get('optimization_focus', 'speed')
+
+            if not code:
+                return self._error_response("code is required")
+
+            # Apply performance optimization
+            optimized_code, report = self.code_editor.refactor_code(
+                code=code,
+                refactoring_type='performance'
+            )
+
+            return self._success_response("Performance optimization complete", {
+                'optimization_focus': optimization_focus,
+                'transformations': report['transformations'],
+                'optimized_code': optimized_code,
+                'metrics': report['metrics']
+            })
+
+        except Exception as e:
+            error_msg = f"Performance optimization failed: {e}"
+            self.logger.error(error_msg) if self.logger else None
+            return self._error_response(error_msg)
 
 
 # ============================================================================
