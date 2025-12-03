@@ -1,3 +1,8 @@
+# REFERENCE FILE - Not currently used
+# This file contains the original DocumentProcessor and DocumentAgent implementations
+# Document processing functionality is currently disabled (TODO: debug and restore)
+# When ready to fix, use this as reference to restore to: socratic_system/agents/document_processor.py
+
 #!/usr/bin/env python3
 
 import os

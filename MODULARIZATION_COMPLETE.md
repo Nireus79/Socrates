@@ -264,7 +264,7 @@ pip install -r requirements.txt
 ### Running
 ```bash
 # Method 1: Direct entry point
-python main.py
+python Socrates.py
 
 # Method 2: Using socratic7.py (for backwards compatibility)
 python socratic7.py
@@ -415,7 +415,7 @@ The Socratic RAG System has been successfully refactored from a monolithic 3,778
 pip install -r requirements.txt
 
 # 2. Run the application
-python main.py
+python Socrates.py
 
 # 3. Enter your Claude API key when prompted
 # 4. Login or create an account
