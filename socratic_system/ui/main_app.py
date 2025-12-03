@@ -9,6 +9,7 @@ import datetime
 from typing import Optional, Dict, Any
 from colorama import Fore, Style
 
+from socratic_system.models import User, ProjectContext
 from socratic_system.orchestration import AgentOrchestrator
 
 class SocraticRAGSystem:
