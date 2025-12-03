@@ -1,0 +1,20 @@
+# Socratic RAG System Requirements
+
+# Core dependencies
+anthropic>=0.7.0
+chromadb>=0.3.0
+sentence-transformers>=2.2.0
+PyPDF2>=3.0.0
+
+# UI and formatting
+colorama>=0.4.6
+
+# Python standard library (included, listed for reference)
+# sqlite3
+# uuid
+# datetime
+# json
+# pickle
+# threading
+# hashlib
+# getpass
