@@ -141,7 +141,7 @@ class SocraticRAGSystem:
 
             elif choice == '3' or choice == '/exit':
                 print(f"\n{Fore.GREEN}Thank you for using Socratic RAG System")
-                print("..τω Ασκληπιώ οφείλομεν αλετρυόνα, απόδοτε και μη αμελήσετε..{Style.RESET_ALL}\n")
+                print("..τω Ασκληπιώ οφείλομεν αλετρυόνα, απόδοτε και μη αμελήσετε..\n")
                 return False
 
             else:
