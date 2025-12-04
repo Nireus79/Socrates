@@ -28,3 +28,5 @@ class ProjectContext:
     updated_at: datetime.datetime
     is_archived: bool = False
     archived_at: Optional[datetime.datetime] = None
+    progress: int = 0  # 0-100 percentage
+    status: str = "active"  # active, completed, on-hold

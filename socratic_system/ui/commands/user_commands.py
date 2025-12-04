@@ -1,0 +1,324 @@
+"""User authentication and account management commands"""
+
+import hashlib
+import datetime
+from typing import Dict, Any, List
+from colorama import Fore, Style
+from socratic_system.models import User
+from socratic_system.ui.commands.base import BaseCommand
+
+
+class UserLoginCommand(BaseCommand):
+    """Login to an existing account"""
+
+    def __init__(self):
+        super().__init__(
+            name="user login",
+            description="Login to an existing account",
+            usage="user login"
+        )
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute user login command"""
+        orchestrator = context.get('orchestrator')
+        app = context.get('app')
+
+        if not orchestrator or not app:
+            return self.error("Orchestrator or app not available")
+
+        print(f"\n{Fore.CYAN}Login{Style.RESET_ALL}")
+
+        username = input(f"{Fore.WHITE}Username: ").strip()
+        if not username:
+            return self.error("Username cannot be empty")
+
+        passcode = input(f"{Fore.WHITE}Passcode: ").strip()
+        if not passcode:
+            return self.error("Passcode cannot be empty")
+
+        # Load user from database
+        user = orchestrator.database.load_user(username)
+        if not user:
+            return self.error("User not found")
+
+        # Verify passcode
+        passcode_hash = hashlib.sha256(passcode.encode()).hexdigest()
+        if user.passcode_hash != passcode_hash:
+            return self.error("Invalid passcode")
+
+        # Update app context
+        app.current_user = user
+        app.context_display.set_context(user=user)
+
+        self.print_success(f"Welcome back, {username}!")
+
+        return self.success(data={'user': user})
+
+
+class UserCreateCommand(BaseCommand):
+    """Create a new account"""
+
+    def __init__(self):
+        super().__init__(
+            name="user create",
+            description="Create a new account",
+            usage="user create"
+        )
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute user create command"""
+        orchestrator = context.get('orchestrator')
+        app = context.get('app')
+
+        if not orchestrator or not app:
+            return self.error("Orchestrator or app not available")
+
+        print(f"\n{Fore.CYAN}Create New Account{Style.RESET_ALL}")
+
+        username = input(f"{Fore.WHITE}Username: ").strip()
+        if not username:
+            return self.error("Username cannot be empty")
+
+        # Check if user already exists
+        existing_user = orchestrator.database.load_user(username)
+        if existing_user:
+            return self.error("Username already exists")
+
+        passcode = input(f"{Fore.WHITE}Passcode: ").strip()
+        if not passcode:
+            return self.error("Passcode cannot be empty")
+
+        confirm_passcode = input(f"{Fore.WHITE}Confirm passcode: ").strip()
+        if passcode != confirm_passcode:
+            return self.error("Passcodes do not match")
+
+        # Create user
+        passcode_hash = hashlib.sha256(passcode.encode()).hexdigest()
+        user = User(
+            username=username,
+            passcode_hash=passcode_hash,
+            created_at=datetime.datetime.now(),
+            projects=[]
+        )
+
+        orchestrator.database.save_user(user)
+
+        # Update app context
+        app.current_user = user
+        app.context_display.set_context(user=user)
+
+        self.print_success(f"Account created successfully! Welcome, {username}!")
+
+        return self.success(data={'user': user})
+
+
+class UserLogoutCommand(BaseCommand):
+    """Logout and switch to a different user"""
+
+    def __init__(self):
+        super().__init__(
+            name="user logout",
+            description="Logout current user and switch to another account",
+            usage="user logout"
+        )
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute user logout command"""
+        app = context.get('app')
+
+        if not app:
+            return self.error("App not available")
+
+        current_user = app.current_user
+        if current_user:
+            self.print_info(f"Logging out {current_user.username}")
+
+        app.current_user = None
+        app.current_project = None
+        app.context_display.set_context(user=None, project=None)
+
+        return self.success(message="Logged out successfully")
+
+
+class UserArchiveCommand(BaseCommand):
+    """Archive the current user account"""
+
+    def __init__(self):
+        super().__init__(
+            name="user archive",
+            description="Archive your current account (soft delete)",
+            usage="user archive"
+        )
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute user archive command"""
+        if not self.require_user(context):
+            return self.error("No user logged in")
+
+        orchestrator = context.get('orchestrator')
+        app = context.get('app')
+        user = context.get('user')
+
+        if not orchestrator or not app or not user:
+            return self.error("Required context not available")
+
+        print(f"\n{Fore.YELLOW}⚠️  Account Archiving{Style.RESET_ALL}")
+        print("This will:")
+        print("  • Archive your account (you can restore it later)")
+        print("  • Archive all projects you own")
+        print("  • Remove you from collaborations")
+        print("  • Keep all data for potential restoration")
+
+        confirm = input(f"\n{Fore.RED}Are you sure? (yes/no): ").lower()
+        if confirm != 'yes':
+            self.print_info("Archiving cancelled")
+            return self.success()
+
+        result = orchestrator.process_request('user_manager', {
+            'action': 'archive_user',
+            'username': user.username,
+            'requester': user.username
+        })
+
+        if result['status'] == 'success':
+            self.print_success(result['message'])
+            self.print_info("You will be logged out now")
+
+            app.current_user = None
+            app.current_project = None
+            app.context_display.set_context(user=None, project=None)
+
+            input("Press Enter to continue...")
+
+            return self.success()
+        else:
+            return self.error(result.get('message', 'Failed to archive account'))
+
+
+class UserDeleteCommand(BaseCommand):
+    """Permanently delete the current user account"""
+
+    def __init__(self):
+        super().__init__(
+            name="user delete",
+            description="Permanently delete your account (cannot be undone)",
+            usage="user delete"
+        )
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute user delete command"""
+        if not self.require_user(context):
+            return self.error("No user logged in")
+
+        orchestrator = context.get('orchestrator')
+        app = context.get('app')
+        user = context.get('user')
+
+        if not orchestrator or not app or not user:
+            return self.error("Required context not available")
+
+        print(f"\n{Fore.RED}⚠️  PERMANENT ACCOUNT DELETION{Style.RESET_ALL}")
+        print("This will:")
+        print("  • PERMANENTLY delete your account")
+        print("  • Transfer owned projects to collaborators")
+        print("  • Delete projects with no collaborators")
+        print("  • Remove all your data FOREVER")
+        print(f"\n{Fore.YELLOW}This action CANNOT be undone!{Style.RESET_ALL}")
+
+        confirm1 = input(f"\n{Fore.RED}Type 'I UNDERSTAND' to continue: ").strip()
+        if confirm1 != 'I UNDERSTAND':
+            self.print_info("Deletion cancelled")
+            return self.success()
+
+        confirm2 = input(f"{Fore.RED}Type 'DELETE' to confirm permanent deletion: ").strip()
+        if confirm2 != 'DELETE':
+            self.print_info("Deletion cancelled")
+            return self.success()
+
+        result = orchestrator.process_request('user_manager', {
+            'action': 'delete_user_permanently',
+            'username': user.username,
+            'requester': user.username,
+            'confirmation': 'DELETE'
+        })
+
+        if result['status'] == 'success':
+            self.print_success(result['message'])
+            print("Account has been permanently deleted.")
+            print("Goodbye.")
+
+            app.current_user = None
+            app.current_project = None
+            app.context_display.set_context(user=None, project=None)
+
+            return {'status': 'exit', 'message': 'Account deleted'}
+        else:
+            return self.error(result.get('message', 'Failed to delete account'))
+
+
+class UserRestoreCommand(BaseCommand):
+    """Restore an archived user account"""
+
+    def __init__(self):
+        super().__init__(
+            name="user restore",
+            description="Restore an archived user account",
+            usage="user restore"
+        )
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute user restore command"""
+        orchestrator = context.get('orchestrator')
+
+        if not orchestrator:
+            return self.error("Orchestrator not available")
+
+        result = orchestrator.process_request('user_manager', {
+            'action': 'get_archived_users'
+        })
+
+        if result['status'] != 'success' or not result.get('archived_users'):
+            self.print_info("No archived accounts found")
+            return self.success()
+
+        print(f"\n{Fore.CYAN}Archived Accounts:{Style.RESET_ALL}")
+        archived_users = result['archived_users']
+
+        for i, user_info in enumerate(archived_users, 1):
+            archived_date = user_info.get('archived_at', 'Unknown')
+            if isinstance(archived_date, str):
+                try:
+                    archived_date = datetime.datetime.fromisoformat(archived_date).strftime("%Y-%m-%d %H:%M")
+                except:
+                    pass
+
+            print(f"{i}. {user_info['username']} (archived: {archived_date})")
+
+        try:
+            choice = input(
+                f"\n{Fore.WHITE}Select account to restore (1-{len(archived_users)}, or 0 to cancel): ").strip()
+
+            if choice == '0':
+                return self.success()
+
+            index = int(choice) - 1
+            if 0 <= index < len(archived_users):
+                username = archived_users[index]['username']
+
+                confirm = input(f"{Fore.CYAN}Restore account '{username}'? (y/n): ").lower()
+                if confirm == 'y':
+                    result = orchestrator.process_request('user_manager', {
+                        'action': 'restore_user',
+                        'username': username
+                    })
+
+                    if result['status'] == 'success':
+                        self.print_success(f"Account '{username}' restored successfully!")
+                        return self.success()
+                    else:
+                        return self.error(result.get('message', 'Failed to restore account'))
+            else:
+                return self.error("Invalid selection")
+
+        except ValueError:
+            return self.error("Invalid input")

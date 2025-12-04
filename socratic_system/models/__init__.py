@@ -7,11 +7,13 @@ from .project import ProjectContext
 from .knowledge import KnowledgeEntry
 from .monitoring import TokenUsage
 from .conflict import ConflictInfo
+from .note import ProjectNote
 
 __all__ = [
     'User',
     'ProjectContext',
     'KnowledgeEntry',
     'TokenUsage',
-    'ConflictInfo'
+    'ConflictInfo',
+    'ProjectNote'
 ]

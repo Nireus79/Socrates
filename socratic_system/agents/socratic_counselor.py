@@ -248,7 +248,7 @@ Return only the question, no additional text or explanation."""
     def _handle_conflicts_realtime(self, conflicts: List[ConflictInfo], project: ProjectContext) -> bool:
         """Handle conflicts in real-time during conversation"""
         for conflict in conflicts:
-            print(f"\n{Fore.RED}⚠️  CONFLICT DETECTED!")
+            print(f"\n{Fore.RED}[WARNING]  CONFLICT DETECTED!")
             print(f"{Fore.YELLOW}Type: {conflict.conflict_type}")
             print(f"{Fore.WHITE}Existing: '{conflict.old_value}' (by {conflict.old_author})")
             print(f"{Fore.WHITE}New: '{conflict.new_value}' (by {conflict.new_author})")
@@ -268,15 +268,15 @@ Return only the question, no additional text or explanation."""
                 choice = input(f"{Fore.WHITE}Choose resolution (1-4): ").strip()
 
                 if choice == '1':
-                    print(f"{Fore.GREEN}✓ Keeping existing: '{conflict.old_value}'")
+                    print(f"{Fore.GREEN}[OK] Keeping existing: '{conflict.old_value}'")
                     self._remove_from_insights(conflict.new_value, conflict.conflict_type)
                     break
                 elif choice == '2':
-                    print(f"{Fore.GREEN}✓ Replacing with: '{conflict.new_value}'")
+                    print(f"{Fore.GREEN}[OK] Replacing with: '{conflict.new_value}'")
                     self._remove_from_project_context(project, conflict.old_value, conflict.conflict_type)
                     break
                 elif choice == '3':
-                    print(f"{Fore.YELLOW}⏭️  Skipping specification")
+                    print(f"{Fore.YELLOW}[SKIP]  Skipping specification")
                     self._remove_from_insights(conflict.new_value, conflict.conflict_type)
                     break
                 elif choice == '4':
@@ -284,7 +284,7 @@ Return only the question, no additional text or explanation."""
                     if resolved_value:
                         self._remove_from_project_context(project, conflict.old_value, conflict.conflict_type)
                         self._update_insights_value(conflict.new_value, resolved_value, conflict.conflict_type)
-                        print(f"{Fore.GREEN}✓ Updated to: '{resolved_value}'")
+                        print(f"{Fore.GREEN}[OK] Updated to: '{resolved_value}'")
                     break
                 else:
                     print(f"{Fore.RED}Invalid choice. Please try again.")
