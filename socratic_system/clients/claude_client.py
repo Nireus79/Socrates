@@ -388,3 +388,41 @@ class ClaudeClient:
             return fallback_suggestions.get(project.phase,
                                             "Consider breaking the question into smaller parts and researching each "
                                             "aspect individually.")
+
+    def generate_response(self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7) -> str:
+        """
+        Generate a general response from Claude for any prompt.
+
+        Args:
+            prompt: The prompt to send to Claude
+            max_tokens: Maximum tokens in response (default: 2000)
+            temperature: Temperature for response generation (default: 0.7)
+
+        Returns:
+            Claude's response as a string
+
+        Raises:
+            Exception: If API call fails
+        """
+        try:
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                messages=[{"role": "user", "content": prompt}]
+            )
+
+            # Track token usage
+            self.orchestrator.system_monitor.process({
+                'action': 'track_tokens',
+                'input_tokens': response.usage.input_tokens,
+                'output_tokens': response.usage.output_tokens,
+                'total_tokens': response.usage.input_tokens + response.usage.output_tokens,
+                'cost_estimate': self._calculate_cost(response.usage)
+            })
+
+            return response.content[0].text.strip()
+
+        except Exception as e:
+            print(f"{Fore.RED}Error generating response: {e}")
+            raise e
