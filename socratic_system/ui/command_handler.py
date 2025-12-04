@@ -51,7 +51,7 @@ class CommandHandler:
         Parse and execute a command from user input.
 
         Args:
-            user_input: Raw user input string
+            user_input: Raw user input string (must start with /)
             context: Application context with user, project, orchestrator, etc.
 
         Returns:
@@ -62,12 +62,15 @@ class CommandHandler:
         if not user_input:
             return {'status': 'idle', 'message': ''}
 
-        # Handle slash commands
-        if user_input.startswith('/'):
-            return self._execute_command(user_input[1:], context)
-        else:
-            # Try parsing without slash
-            return self._execute_command(user_input, context)
+        # Commands MUST start with /
+        if not user_input.startswith('/'):
+            return {
+                'status': 'error',
+                'message': f"{Fore.YELLOW}Commands must start with '/' (e.g., /help){Style.RESET_ALL}\n"
+                           f"Type '/help' to see available commands."
+            }
+
+        return self._execute_command(user_input[1:], context)
 
     def _execute_command(self, command_input: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -203,13 +206,14 @@ class CommandHandler:
 
     def _print_all_help(self) -> None:
         """Print help for all commands organized by category."""
-        print(f"\n{Fore.CYAN}{'═' * 60}")
-        print("Socratic RAG System - Available Commands")
-        print('═' * 60)
-        print(f"{Style.RESET_ALL}\n")
+        print(f"\n{Fore.CYAN}{'=' * 70}")
+        print(" " * 15 + "SOCRATIC RAG SYSTEM - COMMANDS")
+        print('=' * 70)
+        print(f"{Style.RESET_ALL}")
 
         # Organize commands by first part of name (category)
         categories: Dict[str, List[str]] = {}
+        category_order = ['user', 'project', 'collab', 'docs', 'note', 'conv', 'session', 'code', 'help', 'debug']
 
         for name in sorted(self.commands.keys()):
             parts = name.split()
@@ -219,28 +223,55 @@ class CommandHandler:
                 categories[category] = []
             categories[category].append(name)
 
-        # Print organized commands
-        for category in sorted(categories.keys()):
-            print(f"{Fore.YELLOW}{category.upper()} Commands:{Style.RESET_ALL}")
+        # Print commands organized by category
+        for category in category_order:
+            if category not in categories:
+                continue
+
+            print(f"\n{Fore.GREEN}► {category.upper()} COMMANDS{Style.RESET_ALL}")
+            print(f"{Fore.CYAN}{'-' * 68}{Style.RESET_ALL}")
 
             for command_name in sorted(categories[category]):
                 cmd = self.commands[command_name]
                 description = cmd.description or "(no description)"
                 usage = cmd.usage or command_name
 
-                # Format with proper alignment
-                print(f"  {Fore.CYAN}{usage:30}{Style.RESET_ALL} - {description}")
+                # Format with / prefix and proper alignment
+                cmd_display = f"/{usage}"
+                print(f"  {Fore.CYAN}{cmd_display:<40}{Style.RESET_ALL}  {description}")
+
+            print()
+
+        # Print any remaining categories not in the predefined order
+        for category in sorted(categories.keys()):
+            if category in category_order:
+                continue
+
+            print(f"\n{Fore.GREEN}► {category.upper()} COMMANDS{Style.RESET_ALL}")
+            print(f"{Fore.CYAN}{'-' * 68}{Style.RESET_ALL}")
+
+            for command_name in sorted(categories[category]):
+                cmd = self.commands[command_name]
+                description = cmd.description or "(no description)"
+                usage = cmd.usage or command_name
+
+                cmd_display = f"/{usage}"
+                print(f"  {Fore.CYAN}{cmd_display:<40}{Style.RESET_ALL}  {description}")
 
             print()
 
         # Print aliases if any
         if self.aliases:
-            print(f"{Fore.YELLOW}Aliases:{Style.RESET_ALL}")
+            print(f"\n{Fore.GREEN}► ALIASES{Style.RESET_ALL}")
+            print(f"{Fore.CYAN}{'-' * 68}{Style.RESET_ALL}")
             for alias, target in sorted(self.aliases.items()):
-                print(f"  {Fore.CYAN}{alias:15}{Style.RESET_ALL} → {target}")
+                print(f"  {Fore.YELLOW}/{alias:<39}{Style.RESET_ALL}  (shortcut for /{target})")
             print()
 
-        print(f"For detailed help on a command, use: {Fore.GREEN}/help <command>{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}")
+        print(f"Usage: Type a command starting with {Fore.GREEN}'{Style.RESET_ALL} (e.g., {Fore.GREEN}/help project list{Style.RESET_ALL})")
+        print(f"Help:  Type {Fore.GREEN}/help <command>{Style.RESET_ALL} for more details on a command")
+        print(f"{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}\n")
 
     def is_valid_command(self, command_name: str) -> bool:
         """
