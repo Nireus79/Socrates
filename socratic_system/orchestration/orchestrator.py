@@ -165,7 +165,23 @@ class AgentOrchestrator:
             return []
 
     def process_request(self, agent_name: str, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Route request to appropriate agent"""
+        """
+        Route a request to the appropriate agent (synchronous).
+
+        Args:
+            agent_name: Name of the agent to process the request
+            request: Dictionary containing the request parameters
+
+        Returns:
+            Dictionary containing the agent's response
+
+        Example:
+            >>> result = orchestrator.process_request('project_manager', {
+            ...     'action': 'create_project',
+            ...     'project_name': 'My Project',
+            ...     'owner': 'alice'
+            ... })
+        """
         agents = {
             'project_manager': self.project_manager,
             'socratic_counselor': self.socratic_counselor,
@@ -180,6 +196,102 @@ class AgentOrchestrator:
 
         agent = agents.get(agent_name)
         if agent:
-            return agent.process(request)
+            self.event_emitter.emit(EventType.AGENT_START, {
+                'agent': agent_name,
+                'action': request.get('action', 'unknown')
+            })
+
+            try:
+                result = agent.process(request)
+
+                self.event_emitter.emit(EventType.AGENT_COMPLETE, {
+                    'agent': agent_name,
+                    'status': result.get('status', 'unknown')
+                })
+
+                return result
+            except Exception as e:
+                self.logger.error(f"Agent {agent_name} error: {e}")
+                self.event_emitter.emit(EventType.AGENT_ERROR, {
+                    'agent': agent_name,
+                    'error': str(e)
+                })
+                raise
         else:
             return {'status': 'error', 'message': f'Unknown agent: {agent_name}'}
+
+    async def process_request_async(
+        self,
+        agent_name: str,
+        request: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Route a request to the appropriate agent asynchronously.
+
+        Allows for non-blocking execution of long-running operations. Most useful
+        when multiple operations need to run concurrently or when integration with
+        async frameworks (FastAPI, etc.) is needed.
+
+        Args:
+            agent_name: Name of the agent to process the request
+            request: Dictionary containing the request parameters
+
+        Returns:
+            Dictionary containing the agent's response
+
+        Raises:
+            ValueError: If agent is not found
+
+        Example:
+            >>> result = await orchestrator.process_request_async('code_generator', {
+            ...     'action': 'generate_code',
+            ...     'project': project_context
+            ... })
+
+        Concurrent Example:
+            >>> results = await asyncio.gather(
+            ...     orchestrator.process_request_async('code_generator', code_req),
+            ...     orchestrator.process_request_async('socratic_counselor', socratic_req)
+            ... )
+        """
+        agents = {
+            'project_manager': self.project_manager,
+            'socratic_counselor': self.socratic_counselor,
+            'context_analyzer': self.context_analyzer,
+            'code_generator': self.code_generator,
+            'system_monitor': self.system_monitor,
+            'conflict_detector': self.conflict_detector,
+            'document_agent': self.document_agent,
+            'user_manager': self.user_manager,
+            'note_manager': self.note_manager
+        }
+
+        agent = agents.get(agent_name)
+        if not agent:
+            raise ValueError(f"Unknown agent: {agent_name}")
+
+        self.event_emitter.emit(EventType.AGENT_START, {
+            'agent': agent_name,
+            'action': request.get('action', 'unknown'),
+            'async': True
+        })
+
+        try:
+            result = await agent.process_async(request)
+
+            self.event_emitter.emit(EventType.AGENT_COMPLETE, {
+                'agent': agent_name,
+                'status': result.get('status', 'unknown'),
+                'async': True
+            })
+
+            return result
+
+        except Exception as e:
+            self.logger.error(f"Agent {agent_name} async error: {e}")
+            self.event_emitter.emit(EventType.AGENT_ERROR, {
+                'agent': agent_name,
+                'error': str(e),
+                'async': True
+            })
+            raise
