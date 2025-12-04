@@ -21,6 +21,7 @@ from socratic_system.agents import (
     CodeGeneratorAgent, SystemMonitorAgent, ConflictDetectorAgent,
     DocumentAgent, UserManagerAgent
 )
+from socratic_system.agents.note_manager import NoteManagerAgent
 from .knowledge_base import DEFAULT_KNOWLEDGE
 
 
@@ -56,6 +57,7 @@ class AgentOrchestrator:
         self.conflict_detector = ConflictDetectorAgent(self)
         self.document_agent = DocumentAgent(self)
         self.user_manager = UserManagerAgent(self)
+        self.note_manager = NoteManagerAgent("note_manager", self)
 
     def _load_knowledge_base(self):
         """Load default knowledge base if not already loaded"""
@@ -81,7 +83,8 @@ class AgentOrchestrator:
             'system_monitor': self.system_monitor,
             'conflict_detector': self.conflict_detector,
             'document_agent': self.document_agent,
-            'user_manager': self.user_manager
+            'user_manager': self.user_manager,
+            'note_manager': self.note_manager
         }
 
         agent = agents.get(agent_name)

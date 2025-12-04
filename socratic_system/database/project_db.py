@@ -9,7 +9,7 @@ import sqlite3
 from typing import Dict, List, Optional
 from dataclasses import asdict
 
-from socratic_system.models import ProjectContext, User
+from socratic_system.models import ProjectContext, User, ProjectNote
 from socratic_system.utils.datetime_helpers import serialize_datetime, deserialize_datetime
 
 
@@ -41,6 +41,16 @@ class ProjectDatabase:
                 passcode_hash TEXT,
                 data BLOB,
                 created_at TEXT
+            )
+        ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS project_notes (
+                note_id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                data BLOB,
+                created_at TEXT,
+                FOREIGN KEY (project_id) REFERENCES projects(project_id)
             )
         ''')
 
@@ -384,3 +394,79 @@ class ProjectDatabase:
 
         conn.close()
         return []
+
+    def save_note(self, note: ProjectNote) -> bool:
+        """Save a project note to the database"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            data = pickle.dumps(asdict(note))
+            created_at_str = serialize_datetime(note.created_at)
+
+            cursor.execute('''
+                INSERT OR REPLACE INTO project_notes (note_id, project_id, data, created_at)
+                VALUES (?, ?, ?, ?)
+            ''', (note.note_id, note.project_id, data, created_at_str))
+
+            conn.commit()
+            conn.close()
+            return True
+
+        except Exception as e:
+            print(f"Error saving note: {e}")
+            return False
+
+    def get_project_notes(self, project_id: str, note_type: Optional[str] = None) -> List[ProjectNote]:
+        """Get all notes for a project, optionally filtered by type"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT data FROM project_notes WHERE project_id = ?', (project_id,))
+            results = cursor.fetchall()
+
+            conn.close()
+
+            notes = []
+            for (data,) in results:
+                try:
+                    note_data = pickle.loads(data)
+                    # Convert datetime strings back to datetime objects if needed
+                    if isinstance(note_data.get('created_at'), str):
+                        note_data['created_at'] = deserialize_datetime(note_data['created_at'])
+
+                    note = ProjectNote(**note_data)
+
+                    # Filter by type if specified
+                    if note_type is None or note.note_type == note_type:
+                        notes.append(note)
+
+                except Exception as e:
+                    print(f"Warning: Could not load note: {e}")
+
+            return notes
+
+        except Exception as e:
+            print(f"Error getting notes: {e}")
+            return []
+
+    def search_notes(self, project_id: str, query: str) -> List[ProjectNote]:
+        """Search notes for a project by content"""
+        notes = self.get_project_notes(project_id)
+        return [note for note in notes if note.matches_query(query)]
+
+    def delete_note(self, note_id: str) -> bool:
+        """Delete a note by ID"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            cursor.execute('DELETE FROM project_notes WHERE note_id = ?', (note_id,))
+            conn.commit()
+            conn.close()
+            return True
+
+        except Exception as e:
+            print(f"Error deleting note: {e}")
+            return False

@@ -29,6 +29,10 @@ class TechStackConflictChecker(ConflictChecker):
     ) -> Optional[ConflictInfo]:
         """Check if new tech conflicts with existing tech"""
         for existing_value in existing_values:
+            # Skip identical values - not a conflict if same tech is being added again
+            if new_value.lower().strip() == existing_value.lower().strip():
+                continue
+
             conflict_category = find_conflict_category(new_value, existing_value)
             if conflict_category:
                 severity = 'high' if conflict_category in ['databases', 'languages'] else 'medium'
@@ -69,6 +73,11 @@ class RequirementsConflictChecker(ConflictChecker):
         current_user: str
     ) -> Optional[ConflictInfo]:
         """Check if new requirement conflicts with existing requirements"""
+        # Skip identical values - not a conflict if same requirement is being added again
+        for existing_value in existing_values:
+            if new_value.lower().strip() == existing_value.lower().strip():
+                return None
+
         # Use Claude for semantic conflict detection
         semantic_conflicts = self._check_semantic_conflicts(
             new_value,
@@ -246,6 +255,11 @@ class ConstraintsConflictChecker(ConflictChecker):
         current_user: str
     ) -> Optional[ConflictInfo]:
         """Check if new constraint conflicts with existing constraints"""
+        # Skip identical values - not a conflict if same constraint is being added again
+        for existing_value in existing_values:
+            if new_value.lower().strip() == existing_value.lower().strip():
+                return None
+
         semantic_conflicts = self._check_semantic_conflicts(
             new_value,
             existing_values,

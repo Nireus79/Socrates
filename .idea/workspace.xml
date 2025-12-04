@@ -4,10 +4,19 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/Socrates.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Socrates.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="modularized socratic7">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MODULARIZATION_COMPLETE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MODULARIZATION_SUMMARY.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MODULARIZATION_TEST_REPORT.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/context_analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/context_analyzer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/database/project_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/project_db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/models/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/models/project.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/project.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/main_app.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/main_app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_modularization.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_modularization.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -17,36 +26,41 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "Nireus79"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Nireus79&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/Nireus79/Socrates.git",
-    "accountId": "e6d6a39d-d3a3-406e-b2df-1a86f33a9093"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Nireus79/Socrates.git&quot;,
+    &quot;accountId&quot;: &quot;e6d6a39d-d3a3-406e-b2df-1a86f33a9093&quot;
   }
-}]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 5
-}]]></component>
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
   <component name="ProjectId" id="36LIcvaPWvOszpJG9eVs8jydrR3" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.socratic7.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.socratic7.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;
   }
-}]]></component>
+}</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\themi\PycharmProjects\Socrates\tests" />
+    </key>
+  </component>
   <component name="RunManager">
-    <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+    <configuration name="Socrates" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="Socrates" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -59,7 +73,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
+      <option name="SCRIPT_NAME" value="C:\Users\themi\PycharmProjects\Socrates\Socrates.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -85,6 +99,19 @@
       <option name="presentableId" value="Default" />
       <updated>1764779508364</updated>
     </task>
+    <task id="LOCAL-00001" summary="modularized socratic7">
+      <option name="closed" value="true" />
+      <created>1764786402342</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1764786402342</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="modularized socratic7" />
+    <option name="LAST_COMMIT_MESSAGE" value="modularized socratic7" />
   </component>
 </project>
