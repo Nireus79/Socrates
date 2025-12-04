@@ -3,7 +3,8 @@
 from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.ui.commands.system_commands import (
     HelpCommand, ExitCommand, BackCommand, MenuCommand, StatusCommand,
-    ClearCommand, PromptCommand, InfoCommand
+    ClearCommand, PromptCommand, InfoCommand,
+    NLUEnableCommand, NLUDisableCommand, NLUStatusCommand
 )
 from socratic_system.ui.commands.user_commands import (
     UserLoginCommand, UserCreateCommand, UserLogoutCommand,
@@ -45,6 +46,7 @@ __all__ = [
     'BaseCommand',
     'HelpCommand', 'ExitCommand', 'BackCommand', 'MenuCommand', 'StatusCommand',
     'ClearCommand', 'PromptCommand', 'InfoCommand',
+    'NLUEnableCommand', 'NLUDisableCommand', 'NLUStatusCommand',
     'UserLoginCommand', 'UserCreateCommand', 'UserLogoutCommand',
     'UserArchiveCommand', 'UserDeleteCommand', 'UserRestoreCommand',
     'ProjectCreateCommand', 'ProjectLoadCommand', 'ProjectListCommand',
