@@ -219,3 +219,70 @@ class InfoCommand(BaseCommand):
         print()
 
         return self.success()
+
+
+class NLUEnableCommand(BaseCommand):
+    """Enable natural language understanding"""
+
+    def __init__(self):
+        super().__init__(
+            name="nlu enable",
+            description="Enable natural language command interpretation",
+            usage="nlu enable"
+        )
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute NLU enable command"""
+        app = context.get('app')
+        if not app or not app.nlu_handler:
+            return self.error("NLU not available in this context")
+
+        app.nlu_handler.enable()
+        return self.success("Natural language understanding enabled. You can now use plain English commands!")
+
+
+class NLUDisableCommand(BaseCommand):
+    """Disable natural language understanding"""
+
+    def __init__(self):
+        super().__init__(
+            name="nlu disable",
+            description="Disable natural language command interpretation (requires slash commands)",
+            usage="nlu disable"
+        )
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute NLU disable command"""
+        app = context.get('app')
+        if not app or not app.nlu_handler:
+            return self.error("NLU not available in this context")
+
+        app.nlu_handler.disable()
+        return self.success("Natural language understanding disabled. Use slash commands (e.g., /help)")
+
+
+class NLUStatusCommand(BaseCommand):
+    """Show NLU status"""
+
+    def __init__(self):
+        super().__init__(
+            name="nlu status",
+            description="Show natural language understanding status",
+            usage="nlu status"
+        )
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute NLU status command"""
+        app = context.get('app')
+        if not app or not app.nlu_handler:
+            return self.error("NLU not available in this context")
+
+        status_text = "enabled" if app.nlu_handler.is_enabled() else "disabled"
+        message = f"Natural language understanding is currently {Fore.CYAN}{status_text}{Style.RESET_ALL}"
+
+        if app.nlu_handler.is_enabled():
+            message += "\nYou can type plain English commands (e.g., 'create a project') or use slash commands"
+        else:
+            message += "\nYou must use slash commands (e.g., /project create)"
+
+        return self.success(message=message)

@@ -4,7 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="modularized socratic7" />
+    <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="modularized socratic7">
+      <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/data_level0.bin" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/data_level0.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/length.bin" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/length.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_data/vector_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_data/vector_db/chroma.sqlite3" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/main_app.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/main_app.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

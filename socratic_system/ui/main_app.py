@@ -13,10 +13,12 @@ from socratic_system.orchestration import AgentOrchestrator
 from socratic_system.ui.command_handler import CommandHandler
 from socratic_system.ui.navigation import NavigationStack
 from socratic_system.ui.context_display import ContextDisplay
+from socratic_system.ui.nlu_handler import NLUHandler, SuggestionDisplay
 from socratic_system.ui.commands import (
     # System commands
     HelpCommand, ExitCommand, BackCommand, MenuCommand, StatusCommand,
     ClearCommand, PromptCommand, InfoCommand,
+    NLUEnableCommand, NLUDisableCommand, NLUStatusCommand,
     # User commands
     UserLoginCommand, UserCreateCommand, UserLogoutCommand,
     UserArchiveCommand, UserDeleteCommand, UserRestoreCommand,
@@ -58,6 +60,7 @@ class SocraticRAGSystem:
         self.command_handler: Optional[CommandHandler] = None
         self.nav_stack: Optional[NavigationStack] = None
         self.context_display: Optional[ContextDisplay] = None
+        self.nlu_handler: Optional[NLUHandler] = None
 
     def start(self) -> None:
         """Start the Socratic RAG System"""
@@ -85,6 +88,10 @@ class SocraticRAGSystem:
             # Authenticate user
             if not self._authenticate_user():
                 return
+
+            # Enable NLU after login
+            self.nlu_handler = NLUHandler(self.orchestrator.claude_client, self.command_handler)
+            print(f"{Fore.GREEN}[OK] Natural language understanding enabled{Style.RESET_ALL}")
 
             # Start command loop
             self._command_loop()
@@ -161,6 +168,11 @@ class SocraticRAGSystem:
         self.command_handler.register_command(PromptCommand())
         self.command_handler.register_command(InfoCommand())
 
+        # NLU control commands
+        self.command_handler.register_command(NLUEnableCommand())
+        self.command_handler.register_command(NLUDisableCommand())
+        self.command_handler.register_command(NLUStatusCommand())
+
         # User commands
         self.command_handler.register_command(UserLoginCommand())
         self.command_handler.register_command(UserCreateCommand())
@@ -232,8 +244,8 @@ class SocraticRAGSystem:
                 if not user_input:
                     continue
 
-                # Execute command
-                result = self.command_handler.execute(user_input, self._get_context())
+                # Execute command (with NLU support)
+                result = self._process_input_with_nlu(user_input, self._get_context())
 
                 # Handle result
                 if result['status'] == 'exit':
@@ -262,6 +274,40 @@ class SocraticRAGSystem:
             except Exception as e:
                 print(f"{Fore.RED}Unexpected error: {e}{Style.RESET_ALL}")
 
+    def _process_input_with_nlu(self, user_input: str, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Process input with NLU support"""
+        # Skip NLU if not initialized or input starts with /
+        if not self.nlu_handler or self.nlu_handler.should_skip_nlu(user_input):
+            return self.command_handler.execute(user_input, context)
+
+        # Interpret with NLU
+        nlu_result = self.nlu_handler.interpret(user_input, context)
+
+        if nlu_result['status'] == 'success':
+            # High confidence - execute directly
+            command = nlu_result['command']
+            if nlu_result.get('message'):
+                print(nlu_result['message'])
+            return self.command_handler.execute(command, context)
+
+        elif nlu_result['status'] == 'suggestions':
+            # Medium confidence - show suggestions
+            if nlu_result.get('message'):
+                print(nlu_result['message'])
+            suggestions = nlu_result.get('suggestions', [])
+            selected = SuggestionDisplay.show_suggestions(suggestions)
+
+            if selected:
+                print(f"{Fore.CYAN}[NLU] Executing: {selected}{Style.RESET_ALL}")
+                return self.command_handler.execute(selected, context)
+            return {'status': 'idle'}
+
+        else:  # no_match or error
+            return {
+                'status': 'error',
+                'message': nlu_result.get('message', 'Couldn\'t understand that.')
+            }
+
     def _get_context(self) -> Dict[str, Any]:
         """Get the current application context for commands"""
         return {
@@ -281,12 +327,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-# 5 embedded documents stored in the vector database:
-#
-#   1. Software Architecture Patterns - "MVC, MVP, MVVM, microservices architecture, layered architecture, event-driven architecture..."
-#   2. Python Best Practices - "PEP 8 style guide, virtual environments, docstrings, error handling, type hints..."
-#   3. REST API Design Principles - "HTTP methods, resource URLs, naming conventions, status codes, versioning, authentication..."
-#   4. Database Design Basics (partially visible in metadata)
-#   5. Security Considerations (referenced in logs)
