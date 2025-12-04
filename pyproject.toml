@@ -1,0 +1,166 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "socrates-ai"
+version = "8.0.0"
+description = "A Socratic method tutoring system powered by Claude AI with multi-agent orchestration"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Socrates AI Contributors"}
+]
+maintainers = [
+    {name = "Socrates AI Contributors"}
+]
+keywords = [
+    "ai",
+    "claude",
+    "socratic-method",
+    "tutoring",
+    "rag",
+    "retrieval-augmented-generation",
+    "multi-agent",
+    "education",
+    "software-engineering"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Education",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.8"
+
+dependencies = [
+    "anthropic>=0.7.0",
+    "chromadb>=0.3.0",
+    "sentence-transformers>=2.2.0",
+    "PyPDF2>=3.0.0",
+    "python-dateutil>=2.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+    "isort>=5.12.0",
+]
+async = [
+    "asyncio>=3.4.3",
+]
+docs = [
+    "sphinx>=5.0",
+    "sphinx-rtd-theme>=1.0",
+    "sphinx-autodoc-typehints>=1.19",
+]
+
+[project.urls]
+Homepage = "https://github.com/Nireus79/Socrates"
+Documentation = "https://github.com/Nireus79/Socrates"
+Repository = "https://github.com/Nireus79/Socrates"
+"Bug Tracker" = "https://github.com/Nireus79/Socrates/issues"
+Changelog = "https://github.com/Nireus79/Socrates/releases"
+
+[tool.setuptools]
+packages = ["socratic_system"]
+
+[tool.setuptools.package-data]
+socratic_system = [
+    "py.typed",
+    "config/knowledge_base.json",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # Pyflakes
+    "I",     # isort
+    "C",     # flake8-comprehensions
+    "B",     # flake8-bugbear
+    "UP",    # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "W503",  # line break before binary operator
+]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+strict_equality = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+asyncio_mode = "auto"
+addopts = "--strict-markers --tb=short"
+
+[tool.coverage.run]
+source = ["socratic_system"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
