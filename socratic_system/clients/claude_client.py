@@ -1,28 +1,46 @@
 """
 Claude API client for Socratic RAG System
+
+Provides both synchronous and asynchronous interfaces for calling Claude API,
+with automatic token tracking and structured error handling.
 """
 
+import asyncio
 import json
-from typing import Dict, Any
+import logging
+from typing import Dict, Any, Optional
 
 import anthropic
-from colorama import Fore
 
-from socratic_system.config import CONFIG
+from socratic_system.events import EventType
+from socratic_system.exceptions import APIError
 from socratic_system.models import ProjectContext, ConflictInfo
 
 
 class ClaudeClient:
-    """Client for interacting with Claude API"""
+    """
+    Client for interacting with Claude API.
+
+    Supports both synchronous and asynchronous operations with automatic
+    token usage tracking and event emission.
+    """
 
     def __init__(self, api_key: str, orchestrator: 'AgentOrchestrator'):
+        """
+        Initialize Claude client.
+
+        Args:
+            api_key: Anthropic API key
+            orchestrator: Reference to AgentOrchestrator for event emission and token tracking
+        """
         self.client = anthropic.Anthropic(api_key=api_key)
+        self.async_client = anthropic.AsyncAnthropic(api_key=api_key)
         self.orchestrator = orchestrator
-        self.model = CONFIG['CLAUDE_MODEL']
+        self.model = orchestrator.config.claude_model
+        self.logger = logging.getLogger("socrates.clients.claude")
 
     def extract_insights(self, user_response: str, project: ProjectContext) -> Dict:
-        """Extract insights from user response using Claude"""
-
+        """Extract insights from user response using Claude (synchronous)"""
         # Handle empty or non-informative responses
         if not user_response or len(user_response.strip()) < 3:
             return {}
@@ -72,52 +90,63 @@ class ClaudeClient:
             )
 
             # Track token usage
-            self.orchestrator.system_monitor.process({
-                'action': 'track_tokens',
-                'input_tokens': response.usage.input_tokens,
-                'output_tokens': response.usage.output_tokens,
-                'total_tokens': response.usage.input_tokens + response.usage.output_tokens,
-                'cost_estimate': self._calculate_cost(response.usage)
-            })
+            self._track_token_usage(response.usage, "extract_insights")
 
             # Try to parse JSON response
-            try:
-                response_text = response.content[0].text.strip()
-
-                # Clean up the response
-                if response_text.startswith('```json'):
-                    response_text = response_text.replace('```json', '').replace('```', '').strip()
-                elif response_text.startswith('```'):
-                    response_text = response_text.replace('```', '').strip()
-
-                # Find JSON object in the response
-                start = response_text.find('{')
-                end = response_text.rfind('}') + 1
-
-                if 0 <= start < end:
-                    json_text = response_text[start:end]
-                    parsed_insights = json.loads(json_text)
-
-                    # Validate and clean the insights
-                    if isinstance(parsed_insights, dict):
-                        cleaned_insights = {}
-                        for key, value in parsed_insights.items():
-                            if key in ['goals', 'requirements', 'tech_stack', 'constraints', 'team_structure']:
-                                if value:
-                                    cleaned_insights[key] = value
-
-                        return cleaned_insights
-                    else:
-                        return {}
-                else:
-                    return {}
-
-            except (json.JSONDecodeError, ValueError, IndexError) as json_error:
-                print(f"{Fore.YELLOW}Warning: Could not parse JSON response: {json_error}")
-                return {}
+            return self._parse_json_response(response.content[0].text.strip())
 
         except Exception as e:
-            print(f"{Fore.RED}Error extracting insights: {e}")
+            self.logger.error(f"Error extracting insights: {e}")
+            self.orchestrator.event_emitter.emit(
+                EventType.LOG_ERROR,
+                {"message": f"Failed to extract insights: {e}"}
+            )
+            return {}
+
+    async def extract_insights_async(self, user_response: str, project: ProjectContext) -> Dict:
+        """Extract insights from user response asynchronously"""
+        # Handle empty or non-informative responses
+        if not user_response or len(user_response.strip()) < 3:
+            return {}
+
+        if user_response.lower().strip() in ["i don't know", "idk", "not sure", "no idea", "dunno", "unsure"]:
+            return {'note': 'User expressed uncertainty - may need more guidance'}
+
+        prompt = f"""
+        Analyze this user response in the context of their project and extract structured insights:
+
+        Project Context:
+        - Goals: {project.goals or 'Not specified'}
+        - Phase: {project.phase}
+        - Tech Stack: {', '.join(project.tech_stack) if project.tech_stack else 'Not specified'}
+
+        User Response: "{user_response}"
+
+        Please extract and return any mentions of:
+        1. Goals or objectives
+        2. Technical requirements
+        3. Technology preferences
+        4. Constraints or limitations
+        5. Team structure preferences
+
+        IMPORTANT: Return ONLY valid JSON.
+        """
+
+        try:
+            response = await self.async_client.messages.create(
+                model=self.model,
+                max_tokens=1000,
+                temperature=0.3,
+                messages=[{"role": "user", "content": prompt}]
+            )
+
+            # Track token usage asynchronously
+            await self._track_token_usage_async(response.usage, "extract_insights_async")
+
+            return self._parse_json_response(response.content[0].text.strip())
+
+        except Exception as e:
+            self.logger.error(f"Error extracting insights (async): {e}")
             return {}
 
     def generate_conflict_resolution_suggestions(self, conflict: ConflictInfo, project: ProjectContext) -> str:
@@ -239,7 +268,7 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating documentation: {e}"
 
-    def test_connection(self):
+    def test_connection(self) -> bool:
         """Test connection to Claude API"""
         try:
             response = self.client.messages.create(
@@ -248,13 +277,43 @@ class ClaudeClient:
                 temperature=0,
                 messages=[{"role": "user", "content": "Test"}]
             )
+            self.logger.info("Claude API connection test successful")
             return True
         except Exception as e:
-            raise e
+            self.logger.error(f"Claude API connection test failed: {e}")
+            raise APIError(f"Failed to connect to Claude API: {e}", error_type="CONNECTION_ERROR")
 
-    def _calculate_cost(self, usage) -> float:
+    # Helper Methods
+
+    def _track_token_usage(self, usage: Any, operation: str) -> None:
+        """Track token usage and emit event"""
+        total_tokens = usage.input_tokens + usage.output_tokens
+        cost = self._calculate_cost(usage)
+
+        self.orchestrator.system_monitor.process({
+            'action': 'track_tokens',
+            'operation': operation,
+            'input_tokens': usage.input_tokens,
+            'output_tokens': usage.output_tokens,
+            'total_tokens': total_tokens,
+            'cost_estimate': cost
+        })
+
+        self.orchestrator.event_emitter.emit(EventType.TOKEN_USAGE, {
+            'operation': operation,
+            'input_tokens': usage.input_tokens,
+            'output_tokens': usage.output_tokens,
+            'total_tokens': total_tokens,
+            'cost_estimate': cost
+        })
+
+    async def _track_token_usage_async(self, usage: Any, operation: str) -> None:
+        """Track token usage asynchronously"""
+        await asyncio.to_thread(self._track_token_usage, usage, operation)
+
+    def _calculate_cost(self, usage: Any) -> float:
         """Calculate estimated cost based on token usage"""
-        # Claude 3 Sonnet pricing (approximate)
+        # Claude Sonnet 4.5 pricing (approximate - check pricing page for latest)
         input_cost_per_1k = 0.003  # $0.003 per 1K input tokens
         output_cost_per_1k = 0.015  # $0.015 per 1K output tokens
 
@@ -262,6 +321,39 @@ class ClaudeClient:
         output_cost = (usage.output_tokens / 1000) * output_cost_per_1k
 
         return input_cost + output_cost
+
+    def _parse_json_response(self, response_text: str) -> Dict[str, Any]:
+        """Parse JSON from Claude response with error handling"""
+        try:
+            # Clean up markdown code blocks if present
+            if response_text.startswith('```json'):
+                response_text = response_text.replace('```json', '').replace('```', '').strip()
+            elif response_text.startswith('```'):
+                response_text = response_text.replace('```', '').strip()
+
+            # Find JSON object in the response
+            start = response_text.find('{')
+            end = response_text.rfind('}') + 1
+
+            if 0 <= start < end:
+                json_text = response_text[start:end]
+                parsed_data = json.loads(json_text)
+
+                if isinstance(parsed_data, dict):
+                    return parsed_data
+                else:
+                    return {}
+            else:
+                self.logger.warning("No JSON object found in response")
+                return {}
+
+        except json.JSONDecodeError as e:
+            self.logger.warning(f"Failed to parse JSON response: {e}")
+            self.orchestrator.event_emitter.emit(
+                EventType.LOG_WARNING,
+                {"message": f"Could not parse JSON response: {e}"}
+            )
+            return {}
 
     def generate_socratic_question(self, prompt: str) -> str:
         """Generate a Socratic question using Claude"""
@@ -274,19 +366,17 @@ class ClaudeClient:
             )
 
             # Track token usage
-            self.orchestrator.system_monitor.process({
-                'action': 'track_tokens',
-                'input_tokens': response.usage.input_tokens,
-                'output_tokens': response.usage.output_tokens,
-                'total_tokens': response.usage.input_tokens + response.usage.output_tokens,
-                'cost_estimate': self._calculate_cost(response.usage)
-            })
+            self._track_token_usage(response.usage, "generate_socratic_question")
 
             return response.content[0].text.strip()
 
         except Exception as e:
-            print(f"{Fore.RED}Error generating Socratic question: {e}")
-            raise e
+            self.logger.error(f"Error generating Socratic question: {e}")
+            self.orchestrator.event_emitter.emit(
+                EventType.LOG_ERROR,
+                {"message": f"Failed to generate Socratic question: {e}"}
+            )
+            raise APIError(f"Error generating Socratic question: {e}", error_type="GENERATION_ERROR")
 
     def generate_suggestions(self, current_question: str, project: ProjectContext) -> str:
         """Generate helpful suggestions when user can't answer a question"""
@@ -402,7 +492,7 @@ class ClaudeClient:
             Claude's response as a string
 
         Raises:
-            Exception: If API call fails
+            APIError: If API call fails
         """
         try:
             response = self.client.messages.create(
@@ -413,16 +503,51 @@ class ClaudeClient:
             )
 
             # Track token usage
-            self.orchestrator.system_monitor.process({
-                'action': 'track_tokens',
-                'input_tokens': response.usage.input_tokens,
-                'output_tokens': response.usage.output_tokens,
-                'total_tokens': response.usage.input_tokens + response.usage.output_tokens,
-                'cost_estimate': self._calculate_cost(response.usage)
-            })
+            self._track_token_usage(response.usage, "generate_response")
 
             return response.content[0].text.strip()
 
         except Exception as e:
-            print(f"{Fore.RED}Error generating response: {e}")
-            raise e
+            self.logger.error(f"Error generating response: {e}")
+            self.orchestrator.event_emitter.emit(
+                EventType.LOG_ERROR,
+                {"message": f"Failed to generate response: {e}"}
+            )
+            raise APIError(f"Error generating response: {e}", error_type="GENERATION_ERROR")
+
+    async def generate_response_async(
+        self,
+        prompt: str,
+        max_tokens: int = 2000,
+        temperature: float = 0.7
+    ) -> str:
+        """
+        Generate a general response from Claude asynchronously.
+
+        Args:
+            prompt: The prompt to send to Claude
+            max_tokens: Maximum tokens in response
+            temperature: Temperature for response generation
+
+        Returns:
+            Claude's response as a string
+
+        Raises:
+            APIError: If API call fails
+        """
+        try:
+            response = await self.async_client.messages.create(
+                model=self.model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                messages=[{"role": "user", "content": prompt}]
+            )
+
+            # Track token usage
+            await self._track_token_usage_async(response.usage, "generate_response_async")
+
+            return response.content[0].text.strip()
+
+        except Exception as e:
+            self.logger.error(f"Error generating response (async): {e}")
+            raise APIError(f"Error generating response: {e}", error_type="GENERATION_ERROR")
