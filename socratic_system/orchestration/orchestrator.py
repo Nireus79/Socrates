@@ -6,14 +6,18 @@ Coordinates all agents and manages their interactions, including:
 - Request routing
 - Knowledge base management
 - Database components
+- Event emission for decoupled communication
 """
 
-import os
 import json
-from typing import Dict, Any, List
-from colorama import Fore
+import logging
+import os
+from typing import Dict, Any, List, Optional, Union
+from pathlib import Path
+import asyncio
 
-from socratic_system.config import CONFIG
+from socratic_system.config import SocratesConfig, CONFIG
+from socratic_system.events import EventEmitter, EventType
 from socratic_system.models import KnowledgeEntry
 from socratic_system.database import ProjectDatabase, VectorDatabase
 from socratic_system.clients import ClaudeClient
@@ -26,28 +30,63 @@ from socratic_system.agents.note_manager import NoteManagerAgent
 
 
 class AgentOrchestrator:
-    """Orchestrates all agents and manages system-wide coordination"""
+    """
+    Orchestrates all agents and manages system-wide coordination.
 
-    def __init__(self, api_key: str):
-        self.api_key = api_key
+    Supports both old-style initialization (api_key string) and new-style (SocratesConfig)
+    for backward compatibility.
+    """
 
-        # Initialize database components
-        data_dir = CONFIG['DATA_DIR']
-        os.makedirs(data_dir, exist_ok=True)
+    def __init__(self, api_key_or_config: Union[str, SocratesConfig]):
+        """
+        Initialize the orchestrator.
 
-        self.database = ProjectDatabase(os.path.join(data_dir, 'projects.db'))
-        self.vector_db = VectorDatabase(os.path.join(data_dir, 'vector_db'))
+        Args:
+            api_key_or_config: Either an API key string (old style) or SocratesConfig (new style)
+        """
+        # Handle both old-style (api_key string) and new-style (SocratesConfig) initialization
+        if isinstance(api_key_or_config, str):
+            # Old style: create config from API key with defaults
+            self.config = SocratesConfig(api_key=api_key_or_config)
+        else:
+            # New style: use provided config
+            self.config = api_key_or_config
+
+        self.api_key = self.config.api_key
+
+        # Initialize logging
+        logging.basicConfig(
+            level=self.config.log_level,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        self.logger = logging.getLogger("socrates.orchestrator")
+
+        # Initialize event emitter
+        self.event_emitter = EventEmitter()
+
+        # Initialize database components with configured paths
+        self.database = ProjectDatabase(str(self.config.projects_db_path))
+        self.vector_db = VectorDatabase(str(self.config.vector_db_path))
 
         # Initialize Claude client
-        self.claude_client = ClaudeClient(api_key, self)
+        self.claude_client = ClaudeClient(self.config.api_key, self)
+
+        # Initialize agents
         self._initialize_agents()
 
         # Load default knowledge base
         self._load_knowledge_base()
 
-        print(f"{Fore.GREEN}[OK] Socratic RAG System v7.0 initialized successfully!")
+        # Emit system initialized event
+        self.event_emitter.emit(EventType.SYSTEM_INITIALIZED, {
+            "version": "8.0.0",
+            "data_dir": str(self.config.data_dir),
+            "model": self.config.claude_model,
+        })
 
-    def _initialize_agents(self):
+        self.logger.info("Socratic RAG System v8.0 initialized successfully!")
+
+    def _initialize_agents(self) -> None:
         """Initialize agents after orchestrator is fully set up"""
         self.project_manager = ProjectManagerAgent(self)
         self.socratic_counselor = SocraticCounselorAgent(self)
@@ -59,39 +98,53 @@ class AgentOrchestrator:
         self.user_manager = UserManagerAgent(self)
         self.note_manager = NoteManagerAgent("note_manager", self)
 
-    def _load_knowledge_base(self):
+    def _load_knowledge_base(self) -> None:
         """Load default knowledge base from config file if not already loaded"""
         if self.vector_db.knowledge_loaded:
             return
 
-        print(f"{Fore.YELLOW}Loading knowledge base...")
+        self.logger.info("Loading knowledge base...")
+        self.event_emitter.emit(EventType.LOG_INFO, {"message": "Loading knowledge base..."})
 
         # Load knowledge from JSON config file
         knowledge_data = self._load_knowledge_config()
 
         if not knowledge_data:
-            print(f"{Fore.YELLOW}[WARN] No knowledge base config found")
+            self.logger.warning("No knowledge base config found")
+            self.event_emitter.emit(
+                EventType.LOG_WARNING,
+                {"message": "No knowledge base config found"}
+            )
             return
 
         for entry_data in knowledge_data:
-            entry = KnowledgeEntry(**entry_data)
-            self.vector_db.add_knowledge(entry)
+            try:
+                entry = KnowledgeEntry(**entry_data)
+                self.vector_db.add_knowledge(entry)
+            except Exception as e:
+                self.logger.error(f"Failed to add knowledge entry: {e}")
 
         self.vector_db.knowledge_loaded = True
-        print(f"{Fore.GREEN}[OK] Knowledge base loaded ({len(knowledge_data)} entries)")
+
+        self.event_emitter.emit(EventType.KNOWLEDGE_LOADED, {
+            "entry_count": len(knowledge_data),
+            "status": "success"
+        })
+
+        self.logger.info(f"Knowledge base loaded ({len(knowledge_data)} entries)")
 
     def _load_knowledge_config(self) -> List[Dict[str, Any]]:
         """Load knowledge base from JSON configuration file"""
-        config_path = os.path.join(
-            os.path.dirname(__file__),
-            '..',
-            'config',
-            'knowledge_base.json'
-        )
+        # Try the configured knowledge base path first
+        if self.config.knowledge_base_path:
+            config_path = Path(self.config.knowledge_base_path)
+        else:
+            # Fall back to default location
+            config_path = Path(__file__).parent.parent / 'config' / 'knowledge_base.json'
 
         try:
-            if not os.path.exists(config_path):
-                print(f"{Fore.YELLOW}[WARN] Knowledge config not found: {config_path}")
+            if not config_path.exists():
+                self.logger.debug(f"Knowledge config not found: {config_path}")
                 return []
 
             with open(config_path, 'r', encoding='utf-8') as f:
@@ -101,14 +154,14 @@ class AgentOrchestrator:
             if knowledge_entries:
                 return knowledge_entries
             else:
-                print(f"{Fore.YELLOW}[WARN] No 'default_knowledge' entries in config")
+                self.logger.warning("No 'default_knowledge' entries in config")
                 return []
 
         except json.JSONDecodeError as e:
-            print(f"{Fore.RED}[ERROR] Invalid JSON in knowledge config: {e}")
+            self.logger.error(f"Invalid JSON in knowledge config: {e}")
             return []
         except Exception as e:
-            print(f"{Fore.RED}[ERROR] Failed to load knowledge config: {e}")
+            self.logger.error(f"Failed to load knowledge config: {e}")
             return []
 
     def process_request(self, agent_name: str, request: Dict[str, Any]) -> Dict[str, Any]:
