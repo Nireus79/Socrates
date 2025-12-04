@@ -3,6 +3,7 @@ Project database for persistent storage in Socratic RAG System
 """
 
 import os
+import logging
 import datetime
 import pickle
 import sqlite3
@@ -18,6 +19,7 @@ class ProjectDatabase:
 
     def __init__(self, db_path: str):
         self.db_path = db_path
+        self.logger = logging.getLogger("socrates.database.projects")
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
         self._init_database()
 
@@ -130,7 +132,7 @@ class ProjectDatabase:
                             project_data['updated_at'], datetime.datetime) else str(project_data['updated_at'])
                     })
             except Exception as e:
-                print(f"Warning: Could not load project {project_id}: {e}")
+                self.logger.warning(f"Could not load project {project_id}: {e}")
 
         return projects
 
@@ -214,7 +216,7 @@ class ProjectDatabase:
                             ''', (updated_data, datetime.datetime.now().isoformat(), project_id))
 
                     except Exception as e:
-                        print(f"Warning: Could not archive project {project_id}: {e}")
+                        self.logger.warning(f"Could not archive project {project_id}: {e}")
 
                 conn.commit()
                 conn.close()
@@ -222,7 +224,7 @@ class ProjectDatabase:
             return True
 
         except Exception as e:
-            print(f"Error archiving user: {e}")
+            self.logger.error(f"Error archiving user: {e}")
             return False
 
     def restore_user(self, username: str) -> bool:
@@ -238,7 +240,7 @@ class ProjectDatabase:
             return True
 
         except Exception as e:
-            print(f"Error restoring user: {e}")
+            self.logger.error(f"Error restoring user: {e}")
             return False
 
     def permanently_delete_user(self, username: str) -> bool:
@@ -277,7 +279,7 @@ class ProjectDatabase:
                             projects_to_delete.append(project_id)
 
                 except Exception as e:
-                    print(f"Warning: Could not process project {project_id}: {e}")
+                    self.logger.warning(f"Could not process project {project_id}: {e}")
 
             # Delete projects with no collaborators
             for project_id in projects_to_delete:
@@ -289,12 +291,12 @@ class ProjectDatabase:
             conn.commit()
             conn.close()
 
-            print(
+            self.logger.info(
                 f"User {username} deleted. {len(projects_to_transfer)} projects transferred, {len(projects_to_delete)} projects deleted.")
             return True
 
         except Exception as e:
-            print(f"Error permanently deleting user: {e}")
+            self.logger.error(f"Error permanently deleting user: {e}")
             return False
 
     def archive_project(self, project_id: str) -> bool:
@@ -311,7 +313,7 @@ class ProjectDatabase:
             return True
 
         except Exception as e:
-            print(f"Error archiving project: {e}")
+            self.logger.error(f"Error archiving project: {e}")
             return False
 
     def restore_project(self, project_id: str) -> bool:
@@ -328,7 +330,7 @@ class ProjectDatabase:
             return True
 
         except Exception as e:
-            print(f"Error restoring project: {e}")
+            self.logger.error(f"Error restoring project: {e}")
             return False
 
     def permanently_delete_project(self, project_id: str) -> bool:
@@ -343,7 +345,7 @@ class ProjectDatabase:
             return True
 
         except Exception as e:
-            print(f"Error permanently deleting project: {e}")
+            self.logger.error(f"Error permanently deleting project: {e}")
             return False
 
     def get_archived_items(self, item_type: str) -> List[Dict]:
@@ -366,7 +368,7 @@ class ProjectDatabase:
                             'project_count': len(user_data.get('projects', []))
                         })
                 except Exception as e:
-                    print(f"Warning: Could not load user {username}: {e}")
+                    self.logger.warning(f"Could not load user {username}: {e}")
 
             conn.close()
             return archived_users
@@ -387,7 +389,7 @@ class ProjectDatabase:
                             'archived_at': project_data.get('archived_at')
                         })
                 except Exception as e:
-                    print(f"Warning: Could not load project {project_id}: {e}")
+                    self.logger.warning(f"Could not load project {project_id}: {e}")
 
             conn.close()
             return archived_projects
@@ -414,7 +416,7 @@ class ProjectDatabase:
             return True
 
         except Exception as e:
-            print(f"Error saving note: {e}")
+            self.logger.error(f"Error saving note: {e}")
             return False
 
     def get_project_notes(self, project_id: str, note_type: Optional[str] = None) -> List[ProjectNote]:
@@ -443,12 +445,12 @@ class ProjectDatabase:
                         notes.append(note)
 
                 except Exception as e:
-                    print(f"Warning: Could not load note: {e}")
+                    self.logger.warning(f"Could not load note: {e}")
 
             return notes
 
         except Exception as e:
-            print(f"Error getting notes: {e}")
+            self.logger.error(f"Error getting notes: {e}")
             return []
 
     def search_notes(self, project_id: str, query: str) -> List[ProjectNote]:
@@ -468,5 +470,5 @@ class ProjectDatabase:
             return True
 
         except Exception as e:
-            print(f"Error deleting note: {e}")
+            self.logger.error(f"Error deleting note: {e}")
             return False

@@ -3,6 +3,7 @@ Vector database for knowledge management in Socratic RAG System
 """
 
 import os
+import logging
 from typing import Dict, List
 
 import chromadb
@@ -17,6 +18,7 @@ class VectorDatabase:
 
     def __init__(self, db_path: str):
         self.db_path = db_path
+        self.logger = logging.getLogger("socrates.database.vector")
         self.client = chromadb.PersistentClient(path=db_path)
         self.collection = self.client.get_or_create_collection("socratic_knowledge")
         self.embedding_model = SentenceTransformer(CONFIG['EMBEDDING_MODEL'])
@@ -28,7 +30,7 @@ class VectorDatabase:
         try:
             existing = self.collection.get(ids=[entry.id])
             if existing['ids']:
-                print(f"Knowledge entry '{entry.id}' already exists, skipping...")
+                self.logger.debug(f"Knowledge entry '{entry.id}' already exists, skipping...")
                 return
         except Exception:
             pass  # Entry doesn't exist, proceed with adding
@@ -44,9 +46,9 @@ class VectorDatabase:
                 ids=[entry.id],
                 embeddings=[entry.embedding]
             )
-            print(f"Added knowledge entry: {entry.id}")
+            self.logger.debug(f"Added knowledge entry: {entry.id}")
         except Exception as e:
-            print(f"Warning: Could not add knowledge entry {entry.id}: {e}")
+            self.logger.warning(f"Could not add knowledge entry {entry.id}: {e}")
 
     def search_similar(self, query: str, top_k: int = 5) -> List[Dict]:
         """Search for similar knowledge entries"""
@@ -74,7 +76,7 @@ class VectorDatabase:
                 results['distances'][0]
             )]
         except Exception as e:
-            print(f"Warning: Search failed: {e}")
+            self.logger.warning(f"Search failed: {e}")
             return []
 
     def add_text(self, content: str, metadata: Dict = None):
@@ -101,4 +103,4 @@ class VectorDatabase:
         try:
             self.collection.delete(ids=[entry_id])
         except Exception as e:
-            print(f"Warning: Could not delete entry {entry_id}: {e}")
+            self.logger.warning(f"Could not delete entry {entry_id}: {e}")
