@@ -50,8 +50,40 @@ class ContinueCommand(BaseCommand):
             print(f"\n{Fore.BLUE}🤔 {question}")
 
             # Get user response
-            print(f"\n{Fore.YELLOW}Your response (type 'done' to finish, 'advance' to move to next phase, 'help' for suggestions):{Style.RESET_ALL}")
+            print(f"\n{Fore.YELLOW}Your response (or use /done, /advance, /help, /back, /exit):{Style.RESET_ALL}")
             response = input(f"{Fore.WHITE}> ").strip()
+
+            # Check if user is trying to use a command (starts with /)
+            if response.startswith('/'):
+                # Pass command to main command handler
+                cmd_result = app.command_handler.execute(response, context)
+
+                # Handle special session commands
+                if response.startswith('/done'):
+                    self.print_info("Finishing session")
+                    session_active = False
+                    break
+                elif response.startswith('/advance'):
+                    # Command handler already executed it, phase was updated
+                    print(f"{Fore.YELLOW}Continuing with new phase...{Style.RESET_ALL}")
+                    continue
+                elif response.startswith('/back') or response.startswith('/exit'):
+                    # User wants to leave session
+                    session_active = False
+                    break
+                elif response.startswith('/help'):
+                    # Show session help
+                    print(f"\n{Fore.CYAN}Session Commands:{Style.RESET_ALL}")
+                    print(f"  /continue  - Continue answering questions")
+                    print(f"  /done      - Finish this session")
+                    print(f"  /advance   - Move to next phase")
+                    print(f"  /help      - Show session help")
+                    print(f"  /back      - Return to main menu")
+                    print(f"  /exit      - Exit application\n")
+                    continue
+                else:
+                    # Other commands executed by command handler
+                    continue
 
             if response.lower() == 'done':
                 self.print_info("Finishing session")

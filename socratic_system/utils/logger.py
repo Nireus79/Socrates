@@ -46,12 +46,36 @@ class DebugLogger:
         file_handler.setFormatter(file_formatter)
         cls._logger.addHandler(file_handler)
 
-        # Console handler (only shows when debug mode is on)
+        # Console handler (shows INFO by default, DEBUG when enabled)
         cls._console_handler = logging.StreamHandler()
-        cls._console_handler.setLevel(logging.INFO)  # Default to INFO
-        console_formatter = logging.Formatter(
-            f'{Fore.CYAN}[%(levelname)s]{Style.RESET_ALL} %(name)s: %(message)s'
-        )
+        cls._console_handler.setLevel(logging.DEBUG)  # Show DEBUG when enabled
+
+        # Enhanced formatter with better readability
+        def format_console_message(record):
+            # Color code by level
+            if record.levelno >= logging.ERROR:
+                level_color = Fore.RED
+                prefix = '[ERROR]'
+            elif record.levelno >= logging.WARNING:
+                level_color = Fore.YELLOW
+                prefix = '[WARN]'
+            elif record.levelno >= logging.INFO:
+                level_color = Fore.GREEN
+                prefix = '[INFO]'
+            else:  # DEBUG
+                level_color = Fore.CYAN
+                prefix = '[DEBUG]'
+
+            # Extract component name (e.g., 'socratic_rag.project_manager' -> 'project_manager')
+            component = record.name.split('.')[-1] if '.' in record.name else record.name
+
+            return f"{level_color}{prefix}{Style.RESET_ALL} {component}: {record.getMessage()}"
+
+        class ConsoleFormatter(logging.Formatter):
+            def format(self, record):
+                return format_console_message(record)
+
+        console_formatter = ConsoleFormatter()
         cls._console_handler.setFormatter(console_formatter)
         cls._logger.addHandler(cls._console_handler)
 
@@ -60,10 +84,19 @@ class DebugLogger:
         """Toggle debug mode on/off"""
         cls._debug_mode = enabled
         if cls._console_handler:
+            # In debug mode, show DEBUG and above
+            # In normal mode, show INFO and above
             if enabled:
                 cls._console_handler.setLevel(logging.DEBUG)
             else:
                 cls._console_handler.setLevel(logging.INFO)
+
+        # Log the mode change
+        logger = cls.get_logger('system')
+        if enabled:
+            logger.info("Debug mode ENABLED - all operations will be logged")
+        else:
+            logger.info("Debug mode DISABLED - only important operations logged")
 
     @classmethod
     def is_debug_mode(cls) -> bool:

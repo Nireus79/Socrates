@@ -94,6 +94,8 @@ class SocraticCounselorAgent(Agent):
 
     def _generate_dynamic_question(self, project: ProjectContext, context: str, question_count: int) -> str:
         """Generate contextual questions using Claude"""
+        from socratic_system.utils.logger import get_logger
+        logger = get_logger('socratic_counselor')
 
         # Get conversation history for context
         recent_conversation = ""
@@ -102,21 +104,28 @@ class SocraticCounselorAgent(Agent):
             for msg in recent_messages:
                 role = "Assistant" if msg['type'] == 'assistant' else "User"
                 recent_conversation += f"{role}: {msg['content']}\n"
+            logger.debug(f"Using {len(recent_messages)} recent messages for context")
 
         # Get relevant knowledge from vector database
         relevant_knowledge = ""
         if context:
+            logger.debug("Searching vector database for relevant knowledge...")
             knowledge_results = self.orchestrator.vector_db.search_similar(context, top_k=3)
             if knowledge_results:
                 relevant_knowledge = "\n".join([result['content'][:200] + "..." for result in knowledge_results])
+                logger.debug(f"Found {len(knowledge_results)} relevant knowledge items")
 
+        logger.debug(f"Building question prompt for {project.phase} phase (question #{question_count + 1})")
         prompt = self._build_question_prompt(project, context, recent_conversation, relevant_knowledge, question_count)
 
         try:
+            logger.info(f"Generating dynamic question for {project.phase} phase")
             question = self.orchestrator.claude_client.generate_socratic_question(prompt)
+            logger.debug(f"Question generated successfully: {question[:100]}...")
             self.log(f"Generated dynamic question for {project.phase} phase")
             return question
         except Exception as e:
+            logger.warning(f"Failed to generate dynamic question: {e}, falling back to static")
             self.log(f"Failed to generate dynamic question: {e}, falling back to static", "WARN")
             return self._generate_static_question(project, question_count)
 
@@ -187,9 +196,14 @@ Return only the question, no additional text or explanation."""
 
     def _process_response(self, request: Dict) -> Dict:
         """Process user response and extract insights"""
+        from socratic_system.utils.logger import get_logger
+        logger = get_logger('socratic_counselor')
+
         project = request.get('project')
         user_response = request.get('response')
         current_user = request.get('current_user')
+
+        logger.debug(f"Processing user response ({len(user_response)} chars) from {current_user}")
 
         # Add to conversation history with phase information
         project.conversation_history.append({
@@ -199,12 +213,52 @@ Return only the question, no additional text or explanation."""
             'phase': project.phase,
             'author': current_user  # Track who said what
         })
+        logger.debug(f"Added response to conversation history (total: {len(project.conversation_history)} messages)")
 
         # Extract insights using Claude
+        logger.info("Extracting insights from user response...")
         insights = self.orchestrator.claude_client.extract_insights(user_response, project)
+
+        if insights:
+            # Log detailed breakdown of extracted specs
+            spec_details = []
+            if insights.get('goals'):
+                goals = insights['goals']
+                if isinstance(goals, str) and goals:
+                    spec_details.append(f"1 goal")
+                elif isinstance(goals, list):
+                    spec_details.append(f"{len([g for g in goals if g])} goal(s)")
+
+            if insights.get('requirements'):
+                reqs = insights['requirements']
+                if isinstance(reqs, list):
+                    spec_details.append(f"{len(reqs)} requirement(s)")
+                elif reqs:
+                    spec_details.append("1 requirement")
+
+            if insights.get('tech_stack'):
+                techs = insights['tech_stack']
+                if isinstance(techs, list):
+                    spec_details.append(f"{len(techs)} tech(s)")
+                elif techs:
+                    spec_details.append("1 tech")
+
+            if insights.get('constraints'):
+                consts = insights['constraints']
+                if isinstance(consts, list):
+                    spec_details.append(f"{len(consts)} constraint(s)")
+                elif consts:
+                    spec_details.append("1 constraint")
+
+            spec_summary = ", ".join(spec_details) if spec_details else "no specs"
+            logger.info(f"Extracted {spec_summary}")
+            logger.debug(f"Full insights: {insights}")
+        else:
+            logger.debug("No insights extracted from response")
 
         # REAL-TIME CONFLICT DETECTION
         if insights:
+            logger.info("Running conflict detection on new insights...")
             conflict_result = self.orchestrator.process_request('conflict_detector', {
                 'action': 'detect_conflicts',
                 'project': project,
@@ -213,14 +267,20 @@ Return only the question, no additional text or explanation."""
             })
 
             if conflict_result['status'] == 'success' and conflict_result['conflicts']:
+                logger.warning(f"Detected {len(conflict_result['conflicts'])} conflict(s)")
                 # Handle conflicts before updating context
                 conflicts_resolved = self._handle_conflicts_realtime(conflict_result['conflicts'], project)
                 if not conflicts_resolved:
                     # User chose not to resolve conflicts, don't update context
+                    logger.info("User chose not to resolve conflicts")
                     return {'status': 'success', 'insights': insights, 'conflicts_pending': True}
+            else:
+                logger.debug("No conflicts detected")
 
         # Update context only if no conflicts or conflicts were resolved
+        logger.info("Updating project context with insights...")
         self._update_project_context(project, insights)
+        logger.debug("Project context updated successfully")
 
         return {'status': 'success', 'insights': insights}
 
