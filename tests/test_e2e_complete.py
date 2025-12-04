@@ -944,5 +944,38 @@ class TestCompleteE2EWorkflow:
         print("="*60 + "\n")
 
 
+class TestCommandValidation:
+    """Test command syntax and validation rules"""
+
+    def test_command_requires_slash_prefix(self, app):
+        """Test that commands without / prefix are rejected"""
+        # Commands without / should fail
+        result = app.command_handler.execute('help', {})
+        assert result['status'] == 'error'
+        assert 'must start with' in result['message'].lower()
+
+        result = app.command_handler.execute('project list', {})
+        assert result['status'] == 'error'
+        assert 'must start with' in result['message'].lower()
+
+    def test_command_with_slash_prefix_works(self, app):
+        """Test that commands with / prefix are accepted"""
+        # Commands with / should be recognized as valid syntax
+        # (though they might fail if app context is incomplete)
+        result = app.command_handler.execute('/help', {'app': app})
+        assert result['status'] != 'error' or 'must start with' not in result['message'].lower()
+
+    def test_natural_language_not_treated_as_command(self, app):
+        """Test that natural language input is not treated as commands"""
+        # Regular text without / should be rejected as command
+        result = app.command_handler.execute('Tell me about Python', {})
+        assert result['status'] == 'error'
+        assert 'must start with' in result['message'].lower()
+
+        result = app.command_handler.execute('What is a design pattern?', {})
+        assert result['status'] == 'error'
+        assert 'must start with' in result['message'].lower()
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '-s'])

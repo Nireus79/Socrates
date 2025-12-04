@@ -6,17 +6,11 @@
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="modularized socratic7">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MODULARIZATION_COMPLETE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/MODULARIZATION_SUMMARY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/MODULARIZATION_TEST_REPORT.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/agents/context_analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/context_analyzer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/database/project_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/project_db.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/models/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/models/project.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/project.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/ui/main_app.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/main_app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_modularization.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_modularization.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_data/projects.db" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_data/projects.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/data_level0.bin" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/data_level0.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/length.bin" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/length.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_data/vector_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_data/vector_db/chroma.sqlite3" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/command_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/command_handler.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
