@@ -35,6 +35,8 @@ from socratic_system.ui.commands import (
     NoteAddCommand, NoteListCommand, NoteSearchCommand, NoteDeleteCommand,
     # Conversation commands
     ConvSearchCommand, ConvSummaryCommand,
+    # Query commands (direct Q&A)
+    AskCommand, ExplainCommand, SearchCommand,
     # Statistics commands
     ProjectStatsCommand, ProjectProgressCommand, ProjectStatusCommand,
     # Debug commands
@@ -213,6 +215,11 @@ class SocraticRAGSystem:
         # Debug commands
         self.command_handler.register_command(DebugCommand())
         self.command_handler.register_command(LogsCommand())
+
+        # Query/Answer commands
+        self.command_handler.register_command(AskCommand())
+        self.command_handler.register_command(ExplainCommand())
+        self.command_handler.register_command(SearchCommand())
 
     def _command_loop(self) -> None:
         """Main command processing loop"""

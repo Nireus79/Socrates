@@ -37,6 +37,9 @@ from socratic_system.ui.commands.stats_commands import (
 from socratic_system.ui.commands.debug_commands import (
     DebugCommand, LogsCommand
 )
+from socratic_system.ui.commands.query_commands import (
+    AskCommand, ExplainCommand, SearchCommand
+)
 
 __all__ = [
     'BaseCommand',
@@ -52,6 +55,7 @@ __all__ = [
     'DocImportCommand', 'DocImportDirCommand', 'DocListCommand',
     'NoteAddCommand', 'NoteListCommand', 'NoteSearchCommand', 'NoteDeleteCommand',
     'ConvSearchCommand', 'ConvSummaryCommand',
+    'AskCommand', 'ExplainCommand', 'SearchCommand',
     'ProjectStatsCommand', 'ProjectProgressCommand', 'ProjectStatusCommand',
     'DebugCommand', 'LogsCommand',
 ]
