@@ -77,6 +77,25 @@ class VectorDatabase:
             print(f"Warning: Search failed: {e}")
             return []
 
+    def add_text(self, content: str, metadata: Dict = None):
+        """Add text content directly (for document imports)"""
+        if metadata is None:
+            metadata = {}
+
+        # Generate unique ID based on content hash
+        import hashlib
+        content_id = hashlib.md5(content.encode()).hexdigest()[:8]
+
+        # Create knowledge entry
+        entry = KnowledgeEntry(
+            id=content_id,
+            content=content,
+            category='imported_document',
+            metadata=metadata
+        )
+
+        self.add_knowledge(entry)
+
     def delete_entry(self, entry_id: str):
         """Delete knowledge entry"""
         try:
