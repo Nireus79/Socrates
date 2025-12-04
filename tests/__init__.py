@@ -1,1 +1,1 @@
-"""Tests package for Socratic RAG System"""
+"""Socrates test suite"""

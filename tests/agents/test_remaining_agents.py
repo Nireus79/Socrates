@@ -19,7 +19,7 @@ class TestSocraticCounselorAgent:
 
     def test_agent_initialization(self, test_config):
         """Test SocraticCounselorAgent initializes correctly"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
             agent = SocraticCounselorAgent(orchestrator)
@@ -29,7 +29,7 @@ class TestSocraticCounselorAgent:
 
     def test_start_dialogue_with_topic(self, test_config, sample_project):
         """Test starting Socratic dialogue on a topic"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
             agent = SocraticCounselorAgent(orchestrator)
@@ -59,7 +59,7 @@ class TestContextAnalyzerAgent:
 
     def test_agent_initialization(self, test_config):
         """Test ContextAnalyzerAgent initializes correctly"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.context_analyzer import ContextAnalyzerAgent
             agent = ContextAnalyzerAgent(orchestrator)
@@ -69,7 +69,7 @@ class TestContextAnalyzerAgent:
 
     def test_extract_context_from_conversation(self, test_config):
         """Test extracting context from conversation history"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.context_analyzer import ContextAnalyzerAgent
             agent = ContextAnalyzerAgent(orchestrator)
@@ -99,7 +99,7 @@ class TestDocumentProcessorAgent:
 
     def test_agent_initialization(self, test_config):
         """Test DocumentProcessorAgent initializes correctly"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.document_processor import DocumentProcessorAgent
             agent = DocumentProcessorAgent(orchestrator)
@@ -109,7 +109,7 @@ class TestDocumentProcessorAgent:
 
     def test_extract_text_from_document(self, test_config, temp_data_dir):
         """Test extracting text from documents"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.document_processor import DocumentProcessorAgent
             agent = DocumentProcessorAgent(orchestrator)
@@ -132,7 +132,7 @@ class TestConflictDetectorAgent:
 
     def test_agent_initialization(self, test_config):
         """Test ConflictDetectorAgent initializes correctly"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.conflict_detector import ConflictDetectorAgent
             agent = ConflictDetectorAgent(orchestrator)
@@ -142,7 +142,7 @@ class TestConflictDetectorAgent:
 
     def test_detect_note_conflict(self, test_config):
         """Test detecting conflicts in notes"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.conflict_detector import ConflictDetectorAgent
             agent = ConflictDetectorAgent(orchestrator)
@@ -167,7 +167,7 @@ class TestSystemMonitorAgent:
 
     def test_agent_initialization(self, test_config):
         """Test SystemMonitorAgent initializes correctly"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.system_monitor import SystemMonitorAgent
             agent = SystemMonitorAgent(orchestrator)
@@ -177,7 +177,7 @@ class TestSystemMonitorAgent:
 
     def test_perform_health_check(self, test_config):
         """Test system health check"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.system_monitor import SystemMonitorAgent
             agent = SystemMonitorAgent(orchestrator)
@@ -199,7 +199,7 @@ class TestUserManagerAgent:
 
     def test_agent_initialization(self, test_config):
         """Test UserManagerAgent initializes correctly"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.user_manager import UserManagerAgent
             agent = UserManagerAgent(orchestrator)
@@ -209,7 +209,7 @@ class TestUserManagerAgent:
 
     def test_create_user(self, test_config):
         """Test creating a new user"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.user_manager import UserManagerAgent
             agent = UserManagerAgent(orchestrator)
@@ -227,7 +227,7 @@ class TestUserManagerAgent:
 
     def test_authenticate_user(self, test_config):
         """Test user authentication"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.user_manager import UserManagerAgent
             agent = UserManagerAgent(orchestrator)
@@ -250,7 +250,7 @@ class TestNoteManagerAgent:
 
     def test_agent_initialization(self, test_config):
         """Test NoteManagerAgent initializes correctly"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.note_manager import NoteManagerAgent
             agent = NoteManagerAgent(orchestrator)
@@ -260,7 +260,7 @@ class TestNoteManagerAgent:
 
     def test_create_note(self, test_config, sample_project):
         """Test creating a note"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.note_manager import NoteManagerAgent
             agent = NoteManagerAgent(orchestrator)
@@ -279,7 +279,7 @@ class TestNoteManagerAgent:
 
     def test_get_note(self, test_config, sample_project):
         """Test retrieving a note"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.note_manager import NoteManagerAgent
             agent = NoteManagerAgent(orchestrator)
@@ -297,7 +297,7 @@ class TestNoteManagerAgent:
 
     def test_list_project_notes(self, test_config, sample_project):
         """Test listing notes in a project"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.note_manager import NoteManagerAgent
             agent = NoteManagerAgent(orchestrator)
@@ -321,7 +321,7 @@ class TestAgentCrossCollaboration:
 
     def test_counselor_analyzer_collaboration(self, test_config, sample_project):
         """Test SocraticCounselor and ContextAnalyzer working together"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
             from socratic_system.agents.context_analyzer import ContextAnalyzerAgent
@@ -356,7 +356,7 @@ class TestAgentCrossCollaboration:
 
     def test_project_manager_note_manager_collaboration(self, test_config, sample_project):
         """Test ProjectManager and NoteManager collaboration"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.project_manager import ProjectManagerAgent
             from socratic_system.agents.note_manager import NoteManagerAgent
@@ -388,7 +388,7 @@ class TestAgentCrossCollaboration:
 
     def test_conflict_detector_with_project_manager(self, test_config, sample_project):
         """Test ConflictDetector working with ProjectManager"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.project_manager import ProjectManagerAgent
             from socratic_system.agents.conflict_detector import ConflictDetectorAgent
@@ -424,7 +424,7 @@ class TestAgentErrorHandling:
 
     def test_missing_action_field_all_agents(self, test_config):
         """Test that all agents handle missing action field"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
 
             from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
@@ -461,7 +461,7 @@ class TestAgentErrorHandling:
     ])
     def test_agent_initialization_all(self, test_config, agent_class, agent_name):
         """Test all agents initialize with correct names"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
 
             # Dynamic import

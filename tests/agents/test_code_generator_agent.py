@@ -18,7 +18,7 @@ class TestCodeGeneratorAgentInitialization:
 
     def test_agent_initialization(self, test_config):
         """Test CodeGeneratorAgent initializes correctly"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -33,7 +33,7 @@ class TestCodeGeneratorAgentContextBuilding:
 
     def test_build_generation_context_basic(self, test_config, sample_project):
         """Test building code generation context from project"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -55,7 +55,7 @@ class TestCodeGeneratorAgentContextBuilding:
 
     def test_build_generation_context_with_conversation(self, test_config, sample_project):
         """Test that conversation history is included in context"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -74,7 +74,7 @@ class TestCodeGeneratorAgentContextBuilding:
 
     def test_build_generation_context_empty_fields(self, test_config, sample_project):
         """Test context building handles empty project fields gracefully"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -98,7 +98,7 @@ class TestCodeGeneratorAgentScriptGeneration:
 
     def test_generate_script_success(self, test_config, sample_project):
         """Test successful script generation"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -123,7 +123,7 @@ class TestCodeGeneratorAgentScriptGeneration:
 
     def test_generate_script_api_error(self, test_config, sample_project):
         """Test handling of API errors during code generation"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -148,7 +148,7 @@ class TestCodeGeneratorAgentScriptGeneration:
 
     def test_generate_script_preserves_context(self, test_config, sample_project):
         """Test that generated context is returned with script"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -177,7 +177,7 @@ class TestCodeGeneratorAgentDocumentation:
 
     def test_generate_documentation_success(self, test_config, sample_project):
         """Test successful documentation generation"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -202,7 +202,7 @@ class TestCodeGeneratorAgentDocumentation:
 
     def test_generate_documentation_missing_script(self, test_config, sample_project):
         """Test documentation generation handles missing script"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -220,7 +220,7 @@ class TestCodeGeneratorAgentDocumentation:
 
     def test_generate_documentation_with_complex_code(self, test_config, sample_project):
         """Test documentation generation for complex code"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -268,7 +268,7 @@ class TestCodeGeneratorAgentErrorHandling:
 
     def test_unknown_action(self, test_config):
         """Test handling of unknown action"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -283,7 +283,7 @@ class TestCodeGeneratorAgentErrorHandling:
 
     def test_missing_action_field(self, test_config):
         """Test handling of missing action field"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -295,7 +295,7 @@ class TestCodeGeneratorAgentErrorHandling:
 
     def test_missing_project_field(self, test_config):
         """Test handling of missing project in request"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -332,7 +332,7 @@ class TestCodeGeneratorAgentLanguageSupport:
         self, test_config, sample_project, language, tech_stack
     ):
         """Test code generation for different programming languages"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -359,7 +359,7 @@ class TestCodeGeneratorAgentLogging:
 
     def test_generates_log_message(self, test_config, sample_project):
         """Test that code generation emits log messages"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -386,7 +386,7 @@ class TestCodeGeneratorAgentIntegration:
 
     def test_full_generation_workflow(self, test_config, sample_project):
         """Test complete workflow: script generation -> documentation"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -429,7 +429,7 @@ def process_data(data):
 
     def test_context_rich_generation(self, test_config, sample_project):
         """Test that rich project context improves generation quality"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -474,7 +474,7 @@ def process_data(data):
 
     def test_generation_with_error_recovery(self, test_config, sample_project):
         """Test recovery from temporary API failures"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
