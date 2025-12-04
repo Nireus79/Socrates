@@ -274,3 +274,12 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+# 5 embedded documents stored in the vector database:
+#
+#   1. Software Architecture Patterns - "MVC, MVP, MVVM, microservices architecture, layered architecture, event-driven architecture..."
+#   2. Python Best Practices - "PEP 8 style guide, virtual environments, docstrings, error handling, type hints..."
+#   3. REST API Design Principles - "HTTP methods, resource URLs, naming conventions, status codes, versioning, authentication..."
+#   4. Database Design Basics (partially visible in metadata)
+#   5. Security Considerations (referenced in logs)

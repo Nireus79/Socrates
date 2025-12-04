@@ -48,10 +48,22 @@ class DocImportCommand(BaseCommand):
         })
 
         if result['status'] == 'success':
-            self.print_success(f"Successfully imported '{result.get('file_name', 'file')}'")
-            print(f"{Fore.WHITE}Added {result.get('entries_added', 0)} knowledge entries")
+            file_name = result.get('file_name', 'file')
+            words = result.get('words_extracted', 0)
+            chunks = result.get('chunks_created', 0)
+            entries = result.get('entries_added', 0)
 
-            return self.success(data={'file_name': result.get('file_name'), 'entries_added': result.get('entries_added')})
+            self.print_success(f"Successfully imported '{file_name}'")
+            print(f"{Fore.WHITE}Content extracted: {words} words")
+            print(f"Chunks created: {chunks}")
+            print(f"Stored in knowledge base: {entries} entries")
+
+            return self.success(data={
+                'file_name': file_name,
+                'words_extracted': words,
+                'chunks_created': chunks,
+                'entries_added': entries
+            })
         else:
             return self.error(result.get('message', 'Failed to import file'))
 
@@ -105,19 +117,27 @@ class DocImportDirCommand(BaseCommand):
         })
 
         if result['status'] == 'success':
-            self.print_success(result.get('message', 'Directory processed'))
+            successful = result.get('files_processed', 0)
+            failed = result.get('files_failed', 0)
+            total_words = result.get('total_words_extracted', 0)
+            total_chunks = result.get('total_chunks_created', 0)
+            total_entries = result.get('total_entries_stored', 0)
 
-            summary = result.get('summary', {})
-            print(f"{Fore.WHITE}Processed files:  {len(summary.get('processed_files', []))}")
-            print(f"Failed files:     {len(summary.get('failed_files', []))}")
-            print(f"Total entries:    {summary.get('total_entries', 0)}")
+            self.print_success(f"Directory import complete!")
+            print(f"{Fore.WHITE}Files processed:     {successful}")
+            if failed > 0:
+                print(f"Files failed:        {failed}")
+            print(f"Total content:       {total_words} words")
+            print(f"Chunks created:      {total_chunks}")
+            print(f"Stored in knowledge: {total_entries} entries")
 
-            if summary.get('failed_files'):
-                print(f"\n{Fore.YELLOW}Failed files:{Style.RESET_ALL}")
-                for failed in summary['failed_files']:
-                    print(f"  - {failed.get('file', 'unknown')}: {failed.get('error', 'unknown error')}")
-
-            return self.success(data={'summary': summary})
+            return self.success(data={
+                'files_processed': successful,
+                'files_failed': failed,
+                'total_words_extracted': total_words,
+                'total_chunks_created': total_chunks,
+                'total_entries_stored': total_entries
+            })
         else:
             return self.error(result.get('message', 'Failed to import directory'))
 
