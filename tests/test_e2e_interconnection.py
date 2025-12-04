@@ -18,7 +18,7 @@ class TestFullProjectLifecycleWithKnowledge:
 
     def test_complete_project_workflow(self, test_config, sample_user):
         """Test complete end-to-end project workflow"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.project_manager import ProjectManagerAgent
             from socratic_system.agents.code_generator import CodeGeneratorAgent
@@ -85,7 +85,7 @@ class TestMultiAgentCollaboration:
 
     def test_counselor_analyzer_generator_pipeline(self, test_config, sample_project):
         """Test collaboration pipeline across three agents"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
             from socratic_system.agents.context_analyzer import ContextAnalyzerAgent
@@ -147,7 +147,7 @@ class TestConflictDetectionAndResolution:
 
     def test_conflict_workflow_with_project_manager(self, test_config, sample_project):
         """Test conflict detection integrated with project management"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.project_manager import ProjectManagerAgent
             from socratic_system.agents.conflict_detector import ConflictDetectorAgent
@@ -193,7 +193,7 @@ class TestDocumentProcessingToKnowledge:
 
     def test_document_to_knowledge_pipeline(self, test_config, temp_data_dir):
         """Test document processing pipeline into knowledge base"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.document_processor import DocumentProcessorAgent
 
@@ -222,7 +222,7 @@ class TestEventPropagation:
 
     def test_event_emission_through_system(self, test_config, sample_project):
         """Test that events flow from agents through orchestrator"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.project_manager import ProjectManagerAgent
 
@@ -262,7 +262,7 @@ class TestCollaborationAndConflictDetection:
 
     def test_two_user_project_workflow(self, test_config, sample_user):
         """Test two users collaborating on same project"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.project_manager import ProjectManagerAgent
 
@@ -313,7 +313,7 @@ class TestCompleteUserToCodePipeline:
 
     def test_end_to_end_user_to_code(self, test_config, sample_user):
         """Test complete user → project → code generation pipeline"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.project_manager import ProjectManagerAgent
             from socratic_system.agents.code_generator import CodeGeneratorAgent
@@ -384,7 +384,7 @@ class TestErrorRecoveryAcrossLayers:
 
     def test_api_failure_handling(self, test_config, sample_project):
         """Test system recovery from API failures"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.code_generator import CodeGeneratorAgent
 
@@ -426,7 +426,7 @@ class TestMultiProjectContextIsolation:
 
     def test_project_context_switching(self, test_config):
         """Test switching between projects maintains isolation"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             from socratic_system.agents.project_manager import ProjectManagerAgent
 

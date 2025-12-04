@@ -19,7 +19,7 @@ class TestProjectManagerAgentCreation:
 
     def test_agent_initialization(self, test_config):
         """Test ProjectManagerAgent initializes correctly"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -29,7 +29,7 @@ class TestProjectManagerAgentCreation:
 
     def test_create_project_success(self, test_config, sample_user):
         """Test successful project creation"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -49,7 +49,7 @@ class TestProjectManagerAgentCreation:
 
     def test_create_project_with_invalid_data(self, test_config):
         """Test project creation with missing required fields"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -72,7 +72,7 @@ class TestProjectManagerAgentProjectOperations:
 
     def test_load_project_success(self, test_config, sample_project):
         """Test loading an existing project"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -91,7 +91,7 @@ class TestProjectManagerAgentProjectOperations:
 
     def test_load_project_not_found(self, test_config):
         """Test loading a non-existent project"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -107,7 +107,7 @@ class TestProjectManagerAgentProjectOperations:
 
     def test_save_project_updates_timestamp(self, test_config, sample_project):
         """Test that saving a project updates its timestamp"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -135,7 +135,7 @@ class TestProjectManagerAgentCollaborators:
 
     def test_add_collaborator_success(self, test_config, sample_project):
         """Test adding a collaborator to project"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -154,7 +154,7 @@ class TestProjectManagerAgentCollaborators:
 
     def test_add_duplicate_collaborator(self, test_config, sample_project):
         """Test adding a collaborator who is already on the project"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -174,7 +174,7 @@ class TestProjectManagerAgentCollaborators:
 
     def test_list_collaborators(self, test_config, sample_project):
         """Test listing all collaborators for a project"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -197,7 +197,7 @@ class TestProjectManagerAgentCollaborators:
 
     def test_remove_collaborator_success(self, test_config, sample_project):
         """Test removing a collaborator from project"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -218,7 +218,7 @@ class TestProjectManagerAgentCollaborators:
 
     def test_remove_collaborator_not_owner(self, test_config, sample_project):
         """Test that non-owners cannot remove collaborators"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -239,7 +239,7 @@ class TestProjectManagerAgentCollaborators:
 
     def test_remove_owner_fails(self, test_config, sample_project):
         """Test that owner cannot be removed from project"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -264,7 +264,7 @@ class TestProjectManagerAgentProjectListing:
 
     def test_list_projects_for_user(self, test_config, sample_user):
         """Test listing all projects owned by a user"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -309,7 +309,7 @@ class TestProjectManagerAgentArchiving:
 
     def test_archive_project_success(self, test_config, sample_project):
         """Test successfully archiving a project"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -328,7 +328,7 @@ class TestProjectManagerAgentArchiving:
 
     def test_archive_project_not_owner(self, test_config, sample_project):
         """Test that non-owners cannot archive project"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -347,7 +347,7 @@ class TestProjectManagerAgentArchiving:
 
     def test_archive_nonexistent_project(self, test_config):
         """Test archiving a non-existent project"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -363,7 +363,7 @@ class TestProjectManagerAgentArchiving:
 
     def test_restore_project_success(self, test_config, sample_project):
         """Test successfully restoring an archived project"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -388,7 +388,7 @@ class TestProjectManagerAgentDeletion:
 
     def test_delete_project_requires_confirmation(self, test_config, sample_project):
         """Test that project deletion requires confirmation"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -409,7 +409,7 @@ class TestProjectManagerAgentDeletion:
 
     def test_delete_project_success_with_confirmation(self, test_config, sample_project):
         """Test successful permanent project deletion with proper confirmation"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -429,7 +429,7 @@ class TestProjectManagerAgentDeletion:
 
     def test_delete_project_not_owner(self, test_config, sample_project):
         """Test that non-owners cannot delete project"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -454,7 +454,7 @@ class TestProjectManagerAgentErrorHandling:
 
     def test_unknown_action(self, test_config):
         """Test handling of unknown action"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -469,7 +469,7 @@ class TestProjectManagerAgentErrorHandling:
 
     def test_missing_action(self, test_config):
         """Test handling of missing action field"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -481,7 +481,7 @@ class TestProjectManagerAgentErrorHandling:
 
     def test_get_archived_projects(self, test_config):
         """Test retrieving archived projects list"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -501,7 +501,7 @@ class TestProjectManagerAgentIntegration:
 
     def test_full_project_lifecycle(self, test_config, sample_user):
         """Test complete project lifecycle: create -> load -> save -> archive -> restore"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
@@ -553,7 +553,7 @@ class TestProjectManagerAgentIntegration:
 
     def test_collaboration_workflow(self, test_config, sample_project):
         """Test adding/removing collaborators and listing them"""
-        with patch('socratic_system.clients.anthropic.Anthropic'):
+        with patch('anthropic.Anthropic'):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = ProjectManagerAgent(orchestrator)
 
