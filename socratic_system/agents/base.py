@@ -6,9 +6,12 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from socratic_system.events import EventType
+
+if TYPE_CHECKING:
+    from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
 
 class Agent(ABC):

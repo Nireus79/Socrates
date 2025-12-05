@@ -238,4 +238,4 @@ class TestConfigEnvironmentVariables:
         """Test that missing API key is handled"""
         with patch.dict(os.environ, {}, clear=True):
             with pytest.raises((ConfigurationError, ValueError)):
-                config = SocratesConfig.from_env()
+                SocratesConfig.from_env()

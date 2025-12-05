@@ -117,7 +117,7 @@ def validate_test_files():
     for module_name, class_name in components_to_test:
         try:
             module = __import__(module_name, fromlist=[class_name])
-            cls = getattr(module, class_name)
+            getattr(module, class_name)
             print(f"  [OK] {class_name} from {module_name}")
             import_success += 1
         except Exception as e:

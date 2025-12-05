@@ -39,7 +39,6 @@ def discover_and_run_tests():
     runner = unittest.TextTestRunner(verbosity=2, stream=sys.stdout)
 
     # Discover tests
-    test_dir = project_root / "tests"
     suite = unittest.TestSuite()
 
     print("Discovering tests...")

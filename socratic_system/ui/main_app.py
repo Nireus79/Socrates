@@ -291,9 +291,9 @@ class SocraticRAGSystem:
                     if result.get("message"):
                         print(result["message"])
                     # Handle navigation context changes
-                    if result.get("data", {}).get("nav_context"):
-                        nav_context = result["data"]["nav_context"]
-                        # Could implement navigation here if needed
+                    # Could implement navigation here if needed
+                    # if result.get("data", {}).get("nav_context"):
+                    #     pass  # Handle nav_context when implemented
                 elif result["status"] == "info":
                     if result.get("message"):
                         print(result["message"])

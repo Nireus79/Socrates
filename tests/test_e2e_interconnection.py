@@ -137,7 +137,6 @@ class TestConflictDetectionAndResolution:
             from socratic_system.models import ConflictInfo
 
             proj_mgr = ProjectManagerAgent(orchestrator)
-            conflict_det = ConflictDetectorAgent(orchestrator)
 
             orchestrator.database.save_project(sample_project)
 
@@ -327,7 +326,7 @@ class TestCompleteUserToCodePipeline:
                 "content": "Architecture: Consumer → Processor → Storage",
                 "tags": ["architecture"],
             }
-            note_result = note_mgr.process(note_req)
+            note_mgr.process(note_req)
 
             # 5. Save final project state
             save_req = {"action": "save_project", "project": project}

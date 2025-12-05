@@ -162,7 +162,7 @@ def test_model_instantiation():
         )
 
         # Test User instantiation
-        user = User(
+        User(
             username="test_user",
             passcode_hash="hash123",
             created_at=datetime.datetime.now(),
@@ -172,7 +172,7 @@ def test_model_instantiation():
         test_results["passed"] += 1
 
         # Test ProjectContext instantiation
-        project = ProjectContext(
+        ProjectContext(
             project_id="proj123",
             name="Test Project",
             owner="test_user",
@@ -194,12 +194,12 @@ def test_model_instantiation():
         test_results["passed"] += 1
 
         # Test KnowledgeEntry instantiation
-        entry = KnowledgeEntry(id="entry1", content="test content", category="general", metadata={})
+        KnowledgeEntry(id="entry1", content="test content", category="general", metadata={})
         print(f"{GREEN}[OK] PASS{RESET}: KnowledgeEntry model instantiation")
         test_results["passed"] += 1
 
         # Test TokenUsage instantiation
-        usage = TokenUsage(
+        TokenUsage(
             input_tokens=100,
             output_tokens=50,
             total_tokens=150,
@@ -210,7 +210,7 @@ def test_model_instantiation():
         test_results["passed"] += 1
 
         # Test ConflictInfo instantiation
-        conflict = ConflictInfo(
+        ConflictInfo(
             conflict_id="conf1",
             conflict_type="tech_stack",
             old_value="React",
@@ -282,7 +282,7 @@ def test_datetime_helpers():
         test_results["passed"] += 1
 
         # Test deserialization
-        deserialized = deserialize_datetime(serialized)
+        deserialize_datetime(serialized)
         print(f"{GREEN}[OK] PASS{RESET}: Datetime deserialization")
         test_results["passed"] += 1
 

@@ -55,9 +55,7 @@ class TestVectorDBFilter:
         mock_vector_db = Mock(spec=VectorDatabase)
 
         # Test filter is correctly built for project search
-        filter_with_project = VectorDatabase._build_project_filter(
-            mock_vector_db, "proj_123"
-        )
+        filter_with_project = VectorDatabase._build_project_filter(mock_vector_db, "proj_123")
         assert filter_with_project == {"project_id": {"$eq": "proj_123"}}
 
         # Test filter for no project returns None

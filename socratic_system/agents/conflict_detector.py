@@ -65,13 +65,11 @@ class ConflictDetectorAgent(Agent):
     def _resolve_conflict(self, request: Dict) -> Dict:
         """Resolve a detected conflict"""
         conflict = request.get("conflict")
-        resolution = request.get("resolution")
 
         return {"status": "success", "conflict_id": conflict.conflict_id, "resolved": True}
 
     def _get_conflict_suggestions(self, request: Dict) -> Dict:
         """Get suggestions for resolving a conflict"""
         conflict = request.get("conflict")
-        project = request.get("project")
 
         return {"status": "success", "suggestions": conflict.suggestions}

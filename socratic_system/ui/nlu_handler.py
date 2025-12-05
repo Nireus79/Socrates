@@ -7,9 +7,13 @@ into structured slash commands without modifying the existing command system.
 
 import json
 import re
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from colorama import Fore, Style
+
+if TYPE_CHECKING:
+    from socratic_system.clients.claude_client import ClaudeClient
+    from socratic_system.ui.command_handler import CommandHandler
 
 
 class CommandSuggestion:
