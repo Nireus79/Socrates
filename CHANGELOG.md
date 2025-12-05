@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2025-12-05
+
+### Fixed
+
+- **Code Quality** - Resolved all 14 remaining Ruff violations (C901, E722)
+  - Reduced cyclomatic complexity in 7 files by extracting helper methods
+  - Replaced bare `except:` statements with specific exception handling
+  - Files improved: config.py, command_handler.py, collab_commands.py, project_commands.py, session_commands.py, user_commands.py, main_app.py
+  - All changes are pure refactoring with zero functional changes
+  - Improved code maintainability and adherence to Python best practices
+
+- **CI/CD** - Infrastructure improvements
+  - Updated deprecated GitHub Actions to v4
+  - Configured workflows to trigger only on master branch
+  - Removed Python 3.8 and 3.9 from test matrix
+
 ## [0.6.0] - 2025-12-05
 
 ### Added
