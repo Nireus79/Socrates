@@ -59,17 +59,17 @@ export function useQuestion(projectId: string) {
 ```
 """
 
-import os
-import logging
-from datetime import datetime
-from typing import Optional, Dict, Any
 import asyncio
 import json
+import logging
+import os
+from datetime import datetime
+from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, WebSocket, HTTPException, BackgroundTasks
+import uvicorn
+from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-import uvicorn
 
 try:
     import socrates
@@ -79,10 +79,10 @@ except ImportError:
 
 from pydantic import BaseModel
 
-
 # ============================================================================
 # Request/Response Models
 # ============================================================================
+
 
 class ProjectCreate(BaseModel):
     name: str
@@ -109,6 +109,7 @@ class CodeGenerateRequest(BaseModel):
 # Application State Manager
 # ============================================================================
 
+
 class SocratesAppState:
     """Manages application state and Socrates connection"""
 
@@ -123,6 +124,7 @@ class SocratesAppState:
         config_builder = socrates.ConfigBuilder(api_key)
         if data_dir:
             from pathlib import Path
+
             config_builder = config_builder.with_data_dir(Path(data_dir))
 
         config = config_builder.build()
@@ -141,9 +143,9 @@ class SocratesAppState:
         def on_event(event_type, data):
             # Add to history
             event_record = {
-                'timestamp': datetime.now().isoformat(),
-                'event_type': event_type.value,
-                'data': data
+                "timestamp": datetime.now().isoformat(),
+                "event_type": event_type.value,
+                "data": data,
             }
             self.event_history.append(event_record)
             if len(self.event_history) > self.max_history:
@@ -160,7 +162,7 @@ class SocratesAppState:
             socrates.EventType.QUESTION_GENERATED,
             socrates.EventType.AGENT_START,
             socrates.EventType.AGENT_COMPLETE,
-            socrates.EventType.TOKEN_USAGE
+            socrates.EventType.TOKEN_USAGE,
         ]:
             emitter.on(event_type, on_event)
 
@@ -190,7 +192,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Socrates React Server",
     description="Backend server for Socrates AI React frontend",
-    version="8.0.0"
+    version="8.0.0",
 )
 
 # Add CORS middleware
@@ -209,6 +211,7 @@ state = SocratesAppState()
 # ============================================================================
 # Startup/Shutdown
 # ============================================================================
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -232,13 +235,11 @@ async def shutdown_event():
 # Health & Info Endpoints
 # ============================================================================
 
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {
-        "status": "ok",
-        "initialized": state.orchestrator is not None
-    }
+    return {"status": "ok", "initialized": state.orchestrator is not None}
 
 
 @app.get("/info")
@@ -251,7 +252,7 @@ async def get_info():
         "version": "8.0.0",
         "library_version": socrates.__version__,
         "model": state.orchestrator.config.claude_model,
-        "initialized": True
+        "initialized": True,
     }
 
 
@@ -259,21 +260,25 @@ async def get_info():
 # Project Endpoints
 # ============================================================================
 
+
 @app.post("/api/projects")
 async def create_project(request: ProjectCreate):
     """Create a new project"""
     if not state.orchestrator:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
-    result = state.orchestrator.process_request('project_manager', {
-        'action': 'create_project',
-        'project_name': request.name,
-        'owner': request.owner,
-        'description': request.description or ''
-    })
+    result = state.orchestrator.process_request(
+        "project_manager",
+        {
+            "action": "create_project",
+            "project_name": request.name,
+            "owner": request.owner,
+            "description": request.description or "",
+        },
+    )
 
-    if result.get('status') == 'success':
-        project = result.get('project')
+    if result.get("status") == "success":
+        project = result.get("project")
         return {
             "success": True,
             "project": {
@@ -282,10 +287,10 @@ async def create_project(request: ProjectCreate):
                 "owner": project.owner,
                 "description": project.description,
                 "phase": project.phase,
-                "created_at": project.created_at.isoformat()
-            }
+                "created_at": project.created_at.isoformat(),
+            },
         }
-    raise HTTPException(status_code=400, detail=result.get('message'))
+    raise HTTPException(status_code=400, detail=result.get("message"))
 
 
 @app.get("/api/projects")
@@ -294,15 +299,14 @@ async def list_projects(owner: Optional[str] = None):
     if not state.orchestrator:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
-    result = state.orchestrator.process_request('project_manager', {
-        'action': 'list_projects',
-        'owner': owner
-    })
+    result = state.orchestrator.process_request(
+        "project_manager", {"action": "list_projects", "owner": owner}
+    )
 
     return {
         "success": True,
-        "projects": result.get('projects', []),
-        "total": len(result.get('projects', []))
+        "projects": result.get("projects", []),
+        "total": len(result.get("projects", [])),
     }
 
 
@@ -310,28 +314,32 @@ async def list_projects(owner: Optional[str] = None):
 # Question Endpoints
 # ============================================================================
 
+
 @app.post("/api/projects/{project_id}/question")
 async def ask_question(project_id: str, request: QuestionRequest):
     """Get a Socratic question"""
     if not state.orchestrator:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
-    result = state.orchestrator.process_request('question_generator', {
-        'action': 'generate_question',
-        'project_id': project_id,
-        'topic': request.topic,
-        'difficulty_level': request.difficulty_level
-    })
+    result = state.orchestrator.process_request(
+        "question_generator",
+        {
+            "action": "generate_question",
+            "project_id": project_id,
+            "topic": request.topic,
+            "difficulty_level": request.difficulty_level,
+        },
+    )
 
-    if result.get('status') == 'success':
+    if result.get("status") == "success":
         return {
             "success": True,
-            "question_id": result.get('question_id'),
-            "question": result.get('question'),
-            "context": result.get('context'),
-            "hints": result.get('hints', [])
+            "question_id": result.get("question_id"),
+            "question": result.get("question"),
+            "context": result.get("context"),
+            "hints": result.get("hints", []),
         }
-    raise HTTPException(status_code=400, detail=result.get('message'))
+    raise HTTPException(status_code=400, detail=result.get("message"))
 
 
 @app.post("/api/projects/{project_id}/response")
@@ -340,26 +348,30 @@ async def submit_response(project_id: str, request: ResponseSubmit):
     if not state.orchestrator:
         raise HTTPException(status_code=503, detail="Server not initialized")
 
-    result = state.orchestrator.process_request('response_evaluator', {
-        'action': 'evaluate_response',
-        'project_id': project_id,
-        'question_id': request.question_id,
-        'user_response': request.user_response
-    })
+    result = state.orchestrator.process_request(
+        "response_evaluator",
+        {
+            "action": "evaluate_response",
+            "project_id": project_id,
+            "question_id": request.question_id,
+            "user_response": request.user_response,
+        },
+    )
 
-    if result.get('status') == 'success':
+    if result.get("status") == "success":
         return {
             "success": True,
-            "feedback": result.get('feedback'),
-            "is_correct": result.get('is_correct', False),
-            "insights": result.get('insights', [])
+            "feedback": result.get("feedback"),
+            "is_correct": result.get("is_correct", False),
+            "insights": result.get("insights", []),
         }
-    raise HTTPException(status_code=400, detail=result.get('message'))
+    raise HTTPException(status_code=400, detail=result.get("message"))
 
 
 # ============================================================================
 # Code Generation Endpoints
 # ============================================================================
+
 
 @app.post("/api/projects/{project_id}/code/generate")
 async def generate_code(project_id: str, request: CodeGenerateRequest):
@@ -368,38 +380,41 @@ async def generate_code(project_id: str, request: CodeGenerateRequest):
         raise HTTPException(status_code=503, detail="Server not initialized")
 
     # Load project
-    project_result = state.orchestrator.process_request('project_manager', {
-        'action': 'load_project',
-        'project_id': project_id
-    })
+    project_result = state.orchestrator.process_request(
+        "project_manager", {"action": "load_project", "project_id": project_id}
+    )
 
-    if project_result.get('status') != 'success':
+    if project_result.get("status") != "success":
         raise HTTPException(status_code=404, detail="Project not found")
 
-    project = project_result['project']
+    project = project_result["project"]
 
     # Generate code
-    result = state.orchestrator.process_request('code_generator', {
-        'action': 'generate_code',
-        'project': project,
-        'specification': request.specification or '',
-        'language': request.language
-    })
+    result = state.orchestrator.process_request(
+        "code_generator",
+        {
+            "action": "generate_code",
+            "project": project,
+            "specification": request.specification or "",
+            "language": request.language,
+        },
+    )
 
-    if result.get('status') == 'success':
+    if result.get("status") == "success":
         return {
             "success": True,
-            "code": result.get('script', ''),
-            "explanation": result.get('explanation'),
+            "code": result.get("script", ""),
+            "explanation": result.get("explanation"),
             "language": request.language,
-            "token_usage": result.get('token_usage')
+            "token_usage": result.get("token_usage"),
         }
-    raise HTTPException(status_code=400, detail=result.get('message'))
+    raise HTTPException(status_code=400, detail=result.get("message"))
 
 
 # ============================================================================
 # Event Streaming Endpoints
 # ============================================================================
+
 
 @app.websocket("/ws/events")
 async def websocket_events(websocket: WebSocket):
@@ -425,6 +440,7 @@ async def websocket_events(websocket: WebSocket):
 @app.get("/api/events/stream")
 async def stream_events():
     """Server-sent events (SSE) endpoint for real-time events"""
+
     async def event_generator():
         # Send event history
         for event in state.event_history:
@@ -434,10 +450,7 @@ async def stream_events():
         while True:
             await asyncio.sleep(30)
 
-    return StreamingResponse(
-        event_generator(),
-        media_type="text/event-stream"
-    )
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @app.get("/api/events/history")
@@ -446,13 +459,14 @@ async def get_event_history(limit: int = 50):
     return {
         "success": True,
         "events": state.event_history[-limit:],
-        "total": len(state.event_history)
+        "total": len(state.event_history),
     }
 
 
 # ============================================================================
 # Utility Endpoints
 # ============================================================================
+
 
 @app.post("/api/test-connection")
 async def test_connection():
@@ -471,6 +485,7 @@ async def test_connection():
 # Entry Point
 # ============================================================================
 
+
 def main():
     """Run the server"""
     host = os.getenv("HOST", "127.0.0.1")
@@ -478,19 +493,13 @@ def main():
     reload = os.getenv("RELOAD", "false").lower() == "true"
 
     logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
     logger.info(f"Starting Socrates React Server on {host}:{port}")
     logger.info("Access API docs at http://localhost:8000/docs")
 
-    uvicorn.run(
-        "react_frontend_server:app",
-        host=host,
-        port=port,
-        reload=reload
-    )
+    uvicorn.run("react_frontend_server:app", host=host, port=port, reload=reload)
 
 
 if __name__ == "__main__":

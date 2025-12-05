@@ -132,7 +132,6 @@ class TestConflictDetectionAndResolution:
         """Test conflict detection integrated with project management"""
         with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
-            from socratic_system.agents.conflict_detector import ConflictDetectorAgent
             from socratic_system.agents.project_manager import ProjectManagerAgent
             from socratic_system.models import ConflictInfo
 

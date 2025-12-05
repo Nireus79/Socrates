@@ -33,10 +33,9 @@ Implements JSON-RPC methods that VS Code extension calls.
 """
 
 import json
-import sys
 import logging
-from typing import Optional, Dict, Any
-import threading
+import sys
+from typing import Any, Dict, Optional
 
 try:
     import socrates
@@ -65,7 +64,7 @@ class SocratesRPCServer:
         self.initialized = False
 
         # Setup logging to file (stderr is reserved for RPC protocol)
-        fh = logging.FileHandler('/tmp/socrates_vscode.log')
+        fh = logging.FileHandler("/tmp/socrates_vscode.log")
         fh.setLevel(logging.INFO)
         self.logger.addHandler(fh)
 
@@ -92,14 +91,11 @@ class SocratesRPCServer:
                 "status": "success",
                 "version": socrates.__version__,
                 "model": config.claude_model,
-                "data_dir": str(config.data_dir)
+                "data_dir": str(config.data_dir),
             }
         except Exception as e:
             self.logger.error(f"Initialization failed: {e}")
-            return {
-                "status": "error",
-                "message": str(e)
-            }
+            return {"status": "error", "message": str(e)}
 
     def _check_initialized(self) -> bool:
         """Check if server is initialized"""
@@ -111,15 +107,18 @@ class SocratesRPCServer:
         """Create a new project"""
         self._check_initialized()
 
-        result = self.orchestrator.process_request('project_manager', {
-            'action': 'create_project',
-            'project_name': name,
-            'owner': owner,
-            'description': description
-        })
+        result = self.orchestrator.process_request(
+            "project_manager",
+            {
+                "action": "create_project",
+                "project_name": name,
+                "owner": owner,
+                "description": description,
+            },
+        )
 
-        if result.get('status') == 'success':
-            project = result.get('project')
+        if result.get("status") == "success":
+            project = result.get("project")
             return {
                 "status": "success",
                 "project": {
@@ -129,125 +128,123 @@ class SocratesRPCServer:
                     "description": project.description,
                     "phase": project.phase,
                     "created_at": project.created_at.isoformat(),
-                    "updated_at": project.updated_at.isoformat()
-                }
+                    "updated_at": project.updated_at.isoformat(),
+                },
             }
-        return {
-            "status": "error",
-            "message": result.get('message', 'Failed to create project')
-        }
+        return {"status": "error", "message": result.get("message", "Failed to create project")}
 
     def listProjects(self, owner: Optional[str] = None) -> Dict[str, Any]:
         """List projects"""
         self._check_initialized()
 
-        result = self.orchestrator.process_request('project_manager', {
-            'action': 'list_projects',
-            'owner': owner
-        })
+        result = self.orchestrator.process_request(
+            "project_manager", {"action": "list_projects", "owner": owner}
+        )
 
         projects = []
-        for p in result.get('projects', []):
-            projects.append({
-                "project_id": p['project_id'],
-                "name": p['name'],
-                "owner": p['owner'],
-                "phase": p['phase'],
-                "updated_at": p.get('updated_at', '').isoformat() if hasattr(p.get('updated_at'), 'isoformat') else str(p.get('updated_at', ''))
-            })
+        for p in result.get("projects", []):
+            projects.append(
+                {
+                    "project_id": p["project_id"],
+                    "name": p["name"],
+                    "owner": p["owner"],
+                    "phase": p["phase"],
+                    "updated_at": (
+                        p.get("updated_at", "").isoformat()
+                        if hasattr(p.get("updated_at"), "isoformat")
+                        else str(p.get("updated_at", ""))
+                    ),
+                }
+            )
 
-        return {
-            "status": "success",
-            "projects": projects,
-            "total": len(projects)
-        }
+        return {"status": "success", "projects": projects, "total": len(projects)}
 
-    def askQuestion(self, project_id: str, topic: Optional[str] = None, difficulty: str = "intermediate") -> Dict[str, Any]:
+    def askQuestion(
+        self, project_id: str, topic: Optional[str] = None, difficulty: str = "intermediate"
+    ) -> Dict[str, Any]:
         """Ask a Socratic question"""
         self._check_initialized()
 
-        result = self.orchestrator.process_request('question_generator', {
-            'action': 'generate_question',
-            'project_id': project_id,
-            'topic': topic,
-            'difficulty_level': difficulty
-        })
+        result = self.orchestrator.process_request(
+            "question_generator",
+            {
+                "action": "generate_question",
+                "project_id": project_id,
+                "topic": topic,
+                "difficulty_level": difficulty,
+            },
+        )
 
-        if result.get('status') == 'success':
+        if result.get("status") == "success":
             return {
                 "status": "success",
-                "question_id": result.get('question_id'),
-                "question": result.get('question'),
-                "context": result.get('context'),
-                "hints": result.get('hints', [])
+                "question_id": result.get("question_id"),
+                "question": result.get("question"),
+                "context": result.get("context"),
+                "hints": result.get("hints", []),
             }
-        return {
-            "status": "error",
-            "message": result.get('message', 'Failed to generate question')
-        }
+        return {"status": "error", "message": result.get("message", "Failed to generate question")}
 
     def evaluateResponse(self, project_id: str, question_id: str, response: str) -> Dict[str, Any]:
         """Evaluate user response"""
         self._check_initialized()
 
-        result = self.orchestrator.process_request('response_evaluator', {
-            'action': 'evaluate_response',
-            'project_id': project_id,
-            'question_id': question_id,
-            'user_response': response
-        })
+        result = self.orchestrator.process_request(
+            "response_evaluator",
+            {
+                "action": "evaluate_response",
+                "project_id": project_id,
+                "question_id": question_id,
+                "user_response": response,
+            },
+        )
 
-        if result.get('status') == 'success':
+        if result.get("status") == "success":
             return {
                 "status": "success",
-                "feedback": result.get('feedback'),
-                "is_correct": result.get('is_correct', False),
-                "insights": result.get('insights', []),
-                "next_topic": result.get('next_topic')
+                "feedback": result.get("feedback"),
+                "is_correct": result.get("is_correct", False),
+                "insights": result.get("insights", []),
+                "next_topic": result.get("next_topic"),
             }
-        return {
-            "status": "error",
-            "message": result.get('message', 'Failed to evaluate response')
-        }
+        return {"status": "error", "message": result.get("message", "Failed to evaluate response")}
 
-    def generateCode(self, project_id: str, specification: str = "", language: str = "python") -> Dict[str, Any]:
+    def generateCode(
+        self, project_id: str, specification: str = "", language: str = "python"
+    ) -> Dict[str, Any]:
         """Generate code"""
         self._check_initialized()
 
         # Load project first
-        project_result = self.orchestrator.process_request('project_manager', {
-            'action': 'load_project',
-            'project_id': project_id
-        })
+        project_result = self.orchestrator.process_request(
+            "project_manager", {"action": "load_project", "project_id": project_id}
+        )
 
-        if project_result.get('status') != 'success':
-            return {
-                "status": "error",
-                "message": f"Project {project_id} not found"
-            }
+        if project_result.get("status") != "success":
+            return {"status": "error", "message": f"Project {project_id} not found"}
 
-        project = project_result['project']
+        project = project_result["project"]
 
         # Generate code
-        result = self.orchestrator.process_request('code_generator', {
-            'action': 'generate_code',
-            'project': project,
-            'specification': specification,
-            'language': language
-        })
+        result = self.orchestrator.process_request(
+            "code_generator",
+            {
+                "action": "generate_code",
+                "project": project,
+                "specification": specification,
+                "language": language,
+            },
+        )
 
-        if result.get('status') == 'success':
+        if result.get("status") == "success":
             return {
                 "status": "success",
-                "code": result.get('script', ''),
-                "explanation": result.get('explanation'),
+                "code": result.get("script", ""),
+                "explanation": result.get("explanation"),
                 "language": language,
-                "token_usage": result.get('token_usage')
+                "token_usage": result.get("token_usage"),
             }
-        return {
-            "status": "error",
-            "message": result.get('message', 'Failed to generate code')
-        }
+        return {"status": "error", "message": result.get("message", "Failed to generate code")}
 
     def getInfo(self) -> Dict[str, Any]:
         """Get server info"""
@@ -256,13 +253,9 @@ class SocratesRPCServer:
                 "status": "success",
                 "initialized": True,
                 "version": socrates.__version__,
-                "model": self.orchestrator.config.claude_model
+                "model": self.orchestrator.config.claude_model,
             }
-        return {
-            "status": "success",
-            "initialized": False,
-            "version": socrates.__version__
-        }
+        return {"status": "success", "initialized": False, "version": socrates.__version__}
 
 
 class JSONRPCHandler:
@@ -276,39 +269,31 @@ class JSONRPCHandler:
         """Handle incoming JSON-RPC message"""
         try:
             request = json.loads(message)
-            method = request.get('method')
-            params = request.get('params', {})
-            msg_id = request.get('id')
+            method = request.get("method")
+            params = request.get("params", {})
+            msg_id = request.get("id")
 
             # Call method on server
             if hasattr(self.server, method):
                 fn = getattr(self.server, method)
                 result = fn(**params) if isinstance(params, dict) else fn(*params)
-                response = {
-                    "jsonrpc": "2.0",
-                    "id": msg_id,
-                    "result": result
-                }
+                response = {"jsonrpc": "2.0", "id": msg_id, "result": result}
             else:
                 response = {
                     "jsonrpc": "2.0",
                     "id": msg_id,
-                    "error": {
-                        "code": -32601,
-                        "message": f"Method not found: {method}"
-                    }
+                    "error": {"code": -32601, "message": f"Method not found: {method}"},
                 }
 
             return json.dumps(response)
         except Exception as e:
-            return json.dumps({
-                "jsonrpc": "2.0",
-                "id": request.get('id') if 'request' in locals() else None,
-                "error": {
-                    "code": -32603,
-                    "message": str(e)
+            return json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "id": request.get("id") if "request" in locals() else None,
+                    "error": {"code": -32603, "message": str(e)},
                 }
-            })
+            )
 
     def run(self):
         """Run the JSON-RPC server reading from stdin"""
@@ -324,13 +309,7 @@ class JSONRPCHandler:
                 print(response)
                 sys.stdout.flush()
             except Exception as e:
-                print(json.dumps({
-                    "jsonrpc": "2.0",
-                    "error": {
-                        "code": -32603,
-                        "message": str(e)
-                    }
-                }))
+                print(json.dumps({"jsonrpc": "2.0", "error": {"code": -32603, "message": str(e)}}))
                 sys.stdout.flush()
 
 
@@ -408,8 +387,7 @@ export function deactivate() {
 def main():
     """Main entry point for the RPC server"""
     logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
     server = SocratesRPCServer()

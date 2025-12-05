@@ -25,7 +25,9 @@
       "Bash(find:*)",
       "Bash(black:*)",
       "Bash(ruff check:*)",
-      "Bash(pytest:*)"
+      "Bash(pytest:*)",
+      "Bash(gh release create v0.6.0 --title \"Release v0.6.0\" --notes \"$(cat <<''EOF''\n# Version 0.6.0 - Production Ready with Documentation\n\n## 🎯 Major Improvements\n\n### Documentation Suite (71,000+ words)\n- Complete user guide and API reference\n- Installation and troubleshooting guides  \n- Developer guide for extending the system\n- Architecture documentation\n\n### Bug Fixes\n- ChromaDB compatibility (removed `$exists` operator)\n- Logger defaults to INFO level (debug mode off by default)\n- Exit message formatting with proper f-string rendering\n\n### Code Quality\n- All Ruff violations resolved (F821, F841)\n- Black formatting applied consistently\n- Enhanced type hints with TYPE_CHECKING blocks\n- All CI/CD checks passing ✅\n\n## 📦 Packages\n- **socrates-ai**: Core library (main)\n- **socrates-cli**: Command-line interface  \n- **socrates-api**: REST API server\n\n## 🚀 Installation\n\\`\\`\\`bash\npip install socrates-ai>=0.6.0\n\\`\\`\\`\n\nSee [CHANGELOG.md](./CHANGELOG.md) for full details.\nEOF\n)\")",
+      "Bash(gh auth status:*)"
     ],
     "deny": [],
     "ask": []

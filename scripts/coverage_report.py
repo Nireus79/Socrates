@@ -8,11 +8,11 @@ Generates comprehensive coverage reports in multiple formats:
 - Coverage badge
 """
 
+import json
 import subprocess
 import sys
-import json
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict
 
 
 def run_coverage() -> int:
@@ -33,7 +33,7 @@ def run_coverage() -> int:
         "--cov-report=term-missing",
         "--cov-report=json",
         "--cov-report=xml",
-        "-v"
+        "-v",
     ]
 
     result = subprocess.run(cmd, capture_output=False)
@@ -63,7 +63,7 @@ def print_coverage_summary(coverage_data: Dict) -> None:
 
     totals = coverage_data.get("totals", {})
 
-    print(f"\nOverall Coverage:")
+    print("\nOverall Coverage:")
     print(f"  Statements: {totals.get('percent_covered', 0):.1f}%")
     print(f"  Branches: {totals.get('percent_covered_branch', 0):.1f}%")
     print(f"  Lines: {totals.get('num_statements', 0)} statements")
@@ -74,7 +74,11 @@ def print_coverage_summary(coverage_data: Dict) -> None:
     file_coverage = []
 
     for filepath, file_data in sorted(files.items()):
-        if "socratic_system" in filepath or "socrates_cli" in filepath or "socrates_api" in filepath:
+        if (
+            "socratic_system" in filepath
+            or "socrates_cli" in filepath
+            or "socrates_api" in filepath
+        ):
             percent = file_data.get("summary", {}).get("percent_covered", 0)
             file_coverage.append((filepath, percent))
 
@@ -103,10 +107,7 @@ def print_coverage_summary(coverage_data: Dict) -> None:
 def generate_badge() -> None:
     """Generate coverage badge"""
     try:
-        subprocess.run(
-            ["coverage-badge", "-o", "coverage.svg", "-f"],
-            check=True
-        )
+        subprocess.run(["coverage-badge", "-o", "coverage.svg", "-f"], check=True)
         print("\n[SUCCESS] Coverage badge generated: coverage.svg")
     except FileNotFoundError:
         print("\n[INFO] coverage-badge not installed, skipping badge generation")
@@ -121,7 +122,7 @@ def generate_html_report() -> None:
     if html_dir.exists():
         index_file = html_dir / "index.html"
         if index_file.exists():
-            print(f"\n[SUCCESS] HTML coverage report: htmlcov/index.html")
+            print("\n[SUCCESS] HTML coverage report: htmlcov/index.html")
             print(f"  Open in browser: file://{index_file.absolute()}")
 
 

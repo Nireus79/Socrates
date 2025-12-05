@@ -244,43 +244,7 @@ Return only the question, no additional text or explanation."""
         # Extract insights using Claude
         logger.info("Extracting insights from user response...")
         insights = self.orchestrator.claude_client.extract_insights(user_response, project)
-
-        if insights:
-            # Log detailed breakdown of extracted specs
-            spec_details = []
-            if insights.get("goals"):
-                goals = insights["goals"]
-                if isinstance(goals, str) and goals:
-                    spec_details.append("1 goal")
-                elif isinstance(goals, list):
-                    spec_details.append(f"{len([g for g in goals if g])} goal(s)")
-
-            if insights.get("requirements"):
-                reqs = insights["requirements"]
-                if isinstance(reqs, list):
-                    spec_details.append(f"{len(reqs)} requirement(s)")
-                elif reqs:
-                    spec_details.append("1 requirement")
-
-            if insights.get("tech_stack"):
-                techs = insights["tech_stack"]
-                if isinstance(techs, list):
-                    spec_details.append(f"{len(techs)} tech(s)")
-                elif techs:
-                    spec_details.append("1 tech")
-
-            if insights.get("constraints"):
-                consts = insights["constraints"]
-                if isinstance(consts, list):
-                    spec_details.append(f"{len(consts)} constraint(s)")
-                elif consts:
-                    spec_details.append("1 constraint")
-
-            spec_summary = ", ".join(spec_details) if spec_details else "no specs"
-            logger.info(f"Extracted {spec_summary}")
-            logger.debug(f"Full insights: {insights}")
-        else:
-            logger.debug("No insights extracted from response")
+        self._log_extracted_insights(logger, insights)
 
         # REAL-TIME CONFLICT DETECTION
         if insights:
@@ -314,6 +278,37 @@ Return only the question, no additional text or explanation."""
         logger.debug("Project context updated successfully")
 
         return {"status": "success", "insights": insights}
+
+    def _log_extracted_insights(self, logger, insights: Dict) -> None:
+        """Log detailed breakdown of extracted insights"""
+        if not insights:
+            logger.debug("No insights extracted from response")
+            return
+
+        spec_details = []
+        if insights.get("goals"):
+            goals = insights["goals"]
+            count = len([g for g in goals if g]) if isinstance(goals, list) else 1
+            spec_details.append(f"{count} goal(s)" if count > 1 else "1 goal")
+
+        if insights.get("requirements"):
+            reqs = insights["requirements"]
+            count = len(reqs) if isinstance(reqs, list) else 1
+            spec_details.append(f"{count} requirement(s)" if count > 1 else "1 requirement")
+
+        if insights.get("tech_stack"):
+            techs = insights["tech_stack"]
+            count = len(techs) if isinstance(techs, list) else 1
+            spec_details.append(f"{count} tech(s)" if count > 1 else "1 tech")
+
+        if insights.get("constraints"):
+            consts = insights["constraints"]
+            count = len(consts) if isinstance(consts, list) else 1
+            spec_details.append(f"{count} constraint(s)" if count > 1 else "1 constraint")
+
+        spec_summary = ", ".join(spec_details) if spec_details else "no specs"
+        logger.info(f"Extracted {spec_summary}")
+        logger.debug(f"Full insights: {insights}")
 
     def _remove_from_project_context(self, project: ProjectContext, value: str, context_type: str):
         """Remove a value from project context"""
@@ -404,6 +399,22 @@ Return only the question, no additional text or explanation."""
 
         return {"status": "success", "new_phase": project.phase}
 
+    def _normalize_to_list(self, value: Any) -> List[str]:
+        """Convert any value to a list of non-empty strings"""
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if item]
+        elif isinstance(value, str):
+            return [value.strip()] if value.strip() else []
+        else:
+            normalized = str(value).strip()
+            return [normalized] if normalized else []
+
+    def _update_list_field(self, current_list: List[str], new_items: List[str]) -> None:
+        """Add new unique items to a list field"""
+        for item in new_items:
+            if item and item not in current_list:
+                current_list.append(item)
+
     def _update_project_context(self, project: ProjectContext, insights: Dict):
         """Update project context based on extracted insights"""
         if not insights or not isinstance(insights, dict):
@@ -412,64 +423,24 @@ Return only the question, no additional text or explanation."""
         try:
             # Handle goals
             if "goals" in insights and insights["goals"]:
-                goals_value = insights["goals"]
-                if isinstance(goals_value, list):
-                    project.goals = " ".join(str(item) for item in goals_value if item)
-                elif isinstance(goals_value, str):
-                    project.goals = goals_value.strip()
-                else:
-                    project.goals = str(goals_value).strip()
+                goals_list = self._normalize_to_list(insights["goals"])
+                if goals_list:
+                    project.goals = " ".join(goals_list)
 
             # Handle requirements
             if "requirements" in insights and insights["requirements"]:
-                requirements_value = insights["requirements"]
-                if isinstance(requirements_value, list):
-                    for req in requirements_value:
-                        req_str = str(req).strip() if req else ""
-                        if req_str and req_str not in project.requirements:
-                            project.requirements.append(req_str)
-                elif isinstance(requirements_value, str):
-                    req_str = requirements_value.strip()
-                    if req_str and req_str not in project.requirements:
-                        project.requirements.append(req_str)
-                else:
-                    req_str = str(requirements_value).strip()
-                    if req_str and req_str not in project.requirements:
-                        project.requirements.append(req_str)
+                req_list = self._normalize_to_list(insights["requirements"])
+                self._update_list_field(project.requirements, req_list)
 
             # Handle tech_stack
             if "tech_stack" in insights and insights["tech_stack"]:
-                tech_value = insights["tech_stack"]
-                if isinstance(tech_value, list):
-                    for tech in tech_value:
-                        tech_str = str(tech).strip() if tech else ""
-                        if tech_str and tech_str not in project.tech_stack:
-                            project.tech_stack.append(tech_str)
-                elif isinstance(tech_value, str):
-                    tech_str = tech_value.strip()
-                    if tech_str and tech_str not in project.tech_stack:
-                        project.tech_stack.append(tech_str)
-                else:
-                    tech_str = str(tech_value).strip()
-                    if tech_str and tech_str not in project.tech_stack:
-                        project.tech_stack.append(tech_str)
+                tech_list = self._normalize_to_list(insights["tech_stack"])
+                self._update_list_field(project.tech_stack, tech_list)
 
             # Handle constraints
             if "constraints" in insights and insights["constraints"]:
-                constraints_value = insights["constraints"]
-                if isinstance(constraints_value, list):
-                    for constraint in constraints_value:
-                        constraint_str = str(constraint).strip() if constraint else ""
-                        if constraint_str and constraint_str not in project.constraints:
-                            project.constraints.append(constraint_str)
-                elif isinstance(constraints_value, str):
-                    constraint_str = constraints_value.strip()
-                    if constraint_str and constraint_str not in project.constraints:
-                        project.constraints.append(constraint_str)
-                else:
-                    constraint_str = str(constraints_value).strip()
-                    if constraint_str and constraint_str not in project.constraints:
-                        project.constraints.append(constraint_str)
+                constraint_list = self._normalize_to_list(insights["constraints"])
+                self._update_list_field(project.constraints, constraint_list)
 
         except Exception as e:
             print(f"{Fore.YELLOW}Warning: Error updating project context: {e}")

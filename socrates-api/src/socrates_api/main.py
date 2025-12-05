@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -18,26 +18,27 @@ import uvicorn
 import socrates
 
 from .models import (
-    CreateProjectRequest, ProjectResponse, ListProjectsResponse,
-    AskQuestionRequest, QuestionResponse,
-    ProcessResponseRequest, ProcessResponseResponse,
-    GenerateCodeRequest, CodeGenerationResponse,
-    ErrorResponse, SystemInfoResponse
+    CreateProjectRequest,
+    ProjectResponse,
+    ListProjectsResponse,
+    AskQuestionRequest,
+    QuestionResponse,
+    ProcessResponseRequest,
+    ProcessResponseResponse,
+    GenerateCodeRequest,
+    CodeGenerationResponse,
+    ErrorResponse,
+    SystemInfoResponse,
 )
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 # Global state
-app_state = {
-    "orchestrator": None,
-    "start_time": time.time(),
-    "event_listeners_registered": False
-}
+app_state = {"orchestrator": None, "start_time": time.time(), "event_listeners_registered": False}
 
 
 def get_orchestrator() -> socrates.AgentOrchestrator:
@@ -109,10 +110,7 @@ async def shutdown_event():
 @app.get("/health", response_model=dict)
 async def health_check():
     """Health check endpoint"""
-    return {
-        "status": "ok",
-        "initialized": app_state["orchestrator"] is not None
-    }
+    return {"status": "ok", "initialized": app_state["orchestrator"] is not None}
 
 
 @app.post("/initialize", response_model=SystemInfoResponse)
@@ -155,10 +153,7 @@ async def initialize(api_key: Optional[str] = None):
         logger.info("Socrates API initialized successfully")
 
         return SystemInfoResponse(
-            version="8.0.0",
-            library_version=socrates.__version__,
-            status="operational",
-            uptime=0.0
+            version="8.0.0", library_version=socrates.__version__, status="operational", uptime=0.0
         )
 
     except Exception as e:
@@ -169,14 +164,10 @@ async def initialize(api_key: Optional[str] = None):
 @app.get("/info", response_model=SystemInfoResponse)
 async def get_info():
     """Get API and system information"""
-    orchestrator = get_orchestrator()
     uptime = time.time() - app_state["start_time"]
 
     return SystemInfoResponse(
-        version="8.0.0",
-        library_version=socrates.__version__,
-        status="operational",
-        uptime=uptime
+        version="8.0.0", library_version=socrates.__version__, status="operational", uptime=uptime
     )
 
 
@@ -193,15 +184,18 @@ async def create_project(request: CreateProjectRequest):
     orchestrator = get_orchestrator()
 
     try:
-        result = orchestrator.process_request('project_manager', {
-            'action': 'create_project',
-            'project_name': request.name,
-            'owner': request.owner,
-            'description': request.description or ''
-        })
+        result = orchestrator.process_request(
+            "project_manager",
+            {
+                "action": "create_project",
+                "project_name": request.name,
+                "owner": request.owner,
+                "description": request.description or "",
+            },
+        )
 
-        if result.get('status') == 'success':
-            project = result.get('project')
+        if result.get("status") == "success":
+            project = result.get("project")
             return ProjectResponse(
                 project_id=project.project_id,
                 name=project.name,
@@ -210,12 +204,11 @@ async def create_project(request: CreateProjectRequest):
                 phase=project.phase,
                 created_at=project.created_at,
                 updated_at=project.updated_at,
-                is_archived=project.is_archived
+                is_archived=project.is_archived,
             )
         else:
             raise HTTPException(
-                status_code=400,
-                detail=result.get('message', 'Failed to create project')
+                status_code=400, detail=result.get("message", "Failed to create project")
             )
 
     except Exception as e:
@@ -234,30 +227,26 @@ async def list_projects(owner: Optional[str] = None):
     orchestrator = get_orchestrator()
 
     try:
-        result = orchestrator.process_request('project_manager', {
-            'action': 'list_projects',
-            'owner': owner
-        })
+        result = orchestrator.process_request(
+            "project_manager", {"action": "list_projects", "owner": owner}
+        )
 
-        projects = result.get('projects', [])
+        projects = result.get("projects", [])
         project_responses = [
             ProjectResponse(
-                project_id=p['project_id'],
-                name=p['name'],
-                owner=p['owner'],
-                description=p.get('description'),
-                phase=p['phase'],
-                created_at=p['created_at'],
-                updated_at=p['updated_at'],
-                is_archived=p.get('is_archived', False)
+                project_id=p["project_id"],
+                name=p["name"],
+                owner=p["owner"],
+                description=p.get("description"),
+                phase=p["phase"],
+                created_at=p["created_at"],
+                updated_at=p["updated_at"],
+                is_archived=p.get("is_archived", False),
             )
             for p in projects
         ]
 
-        return ListProjectsResponse(
-            projects=project_responses,
-            total=len(project_responses)
-        )
+        return ListProjectsResponse(projects=project_responses, total=len(project_responses))
 
     except Exception as e:
         logger.error(f"Error listing projects: {e}")
@@ -277,27 +266,29 @@ async def ask_question(project_id: str, request: AskQuestionRequest):
     orchestrator = get_orchestrator()
 
     try:
-        result = orchestrator.process_request('question_generator', {
-            'action': 'generate_question',
-            'project_id': project_id,
-            'topic': request.topic,
-            'difficulty_level': request.difficulty_level
-        })
+        result = orchestrator.process_request(
+            "question_generator",
+            {
+                "action": "generate_question",
+                "project_id": project_id,
+                "topic": request.topic,
+                "difficulty_level": request.difficulty_level,
+            },
+        )
 
-        if result.get('status') == 'success':
+        if result.get("status") == "success":
             return QuestionResponse(
-                question_id=result.get('question_id'),
-                question=result.get('question'),
-                context=result.get('context'),
-                hints=result.get('hints', [])
+                question_id=result.get("question_id"),
+                question=result.get("question"),
+                context=result.get("context"),
+                hints=result.get("hints", []),
             )
         else:
             raise HTTPException(
-                status_code=400,
-                detail=result.get('message', 'Failed to generate question')
+                status_code=400, detail=result.get("message", "Failed to generate question")
             )
 
-    except socrates.ProjectNotFoundError as e:
+    except socrates.ProjectNotFoundError:
         raise HTTPException(status_code=404, detail=f"Project not found: {project_id}")
     except Exception as e:
         logger.error(f"Error generating question: {e}")
@@ -317,27 +308,29 @@ async def process_response(project_id: str, request: ProcessResponseRequest):
     orchestrator = get_orchestrator()
 
     try:
-        result = orchestrator.process_request('response_evaluator', {
-            'action': 'evaluate_response',
-            'project_id': project_id,
-            'question_id': request.question_id,
-            'user_response': request.user_response
-        })
+        result = orchestrator.process_request(
+            "response_evaluator",
+            {
+                "action": "evaluate_response",
+                "project_id": project_id,
+                "question_id": request.question_id,
+                "user_response": request.user_response,
+            },
+        )
 
-        if result.get('status') == 'success':
+        if result.get("status") == "success":
             return ProcessResponseResponse(
-                feedback=result.get('feedback'),
-                is_correct=result.get('is_correct', False),
+                feedback=result.get("feedback"),
+                is_correct=result.get("is_correct", False),
                 next_question=None,  # Could load next question here
-                insights=result.get('insights', [])
+                insights=result.get("insights", []),
             )
         else:
             raise HTTPException(
-                status_code=400,
-                detail=result.get('message', 'Failed to evaluate response')
+                status_code=400, detail=result.get("message", "Failed to evaluate response")
             )
 
-    except socrates.ProjectNotFoundError as e:
+    except socrates.ProjectNotFoundError:
         raise HTTPException(status_code=404, detail=f"Project not found: {project_id}")
     except Exception as e:
         logger.error(f"Error processing response: {e}")
@@ -358,38 +351,39 @@ async def generate_code(request: GenerateCodeRequest):
 
     try:
         # Load project
-        project_result = orchestrator.process_request('project_manager', {
-            'action': 'load_project',
-            'project_id': request.project_id
-        })
+        project_result = orchestrator.process_request(
+            "project_manager", {"action": "load_project", "project_id": request.project_id}
+        )
 
-        if project_result.get('status') != 'success':
+        if project_result.get("status") != "success":
             raise HTTPException(status_code=404, detail="Project not found")
 
-        project = project_result['project']
+        project = project_result["project"]
 
         # Generate code
-        code_result = orchestrator.process_request('code_generator', {
-            'action': 'generate_code',
-            'project': project,
-            'specification': request.specification,
-            'language': request.language
-        })
+        code_result = orchestrator.process_request(
+            "code_generator",
+            {
+                "action": "generate_code",
+                "project": project,
+                "specification": request.specification,
+                "language": request.language,
+            },
+        )
 
-        if code_result.get('status') == 'success':
+        if code_result.get("status") == "success":
             return CodeGenerationResponse(
-                code=code_result.get('script', ''),
-                explanation=code_result.get('explanation'),
+                code=code_result.get("script", ""),
+                explanation=code_result.get("explanation"),
                 language=request.language,
-                token_usage=code_result.get('token_usage')
+                token_usage=code_result.get("token_usage"),
             )
         else:
             raise HTTPException(
-                status_code=400,
-                detail=code_result.get('message', 'Failed to generate code')
+                status_code=400, detail=code_result.get("message", "Failed to generate code")
             )
 
-    except socrates.ProjectNotFoundError as e:
+    except socrates.ProjectNotFoundError:
         raise HTTPException(status_code=404, detail=f"Project not found: {request.project_id}")
     except Exception as e:
         logger.error(f"Error generating code: {e}")
@@ -404,9 +398,9 @@ async def socrates_error_handler(request, exc: socrates.SocratesError):
         content=ErrorResponse(
             error=exc.__class__.__name__,
             message=str(exc),
-            error_code=getattr(exc, 'error_code', None),
-            details=getattr(exc, 'context', None)
-        ).model_dump()
+            error_code=getattr(exc, "error_code", None),
+            details=getattr(exc, "context", None),
+        ).model_dump(),
     )
 
 
@@ -419,8 +413,8 @@ async def general_error_handler(request, exc: Exception):
         content=ErrorResponse(
             error="InternalServerError",
             message="An unexpected error occurred",
-            error_code="INTERNAL_ERROR"
-        ).model_dump()
+            error_code="INTERNAL_ERROR",
+        ).model_dump(),
     )
 
 
@@ -432,13 +426,7 @@ def run():
 
     logger.info(f"Starting Socrates API on {host}:{port}")
 
-    uvicorn.run(
-        "socrates_api.main:app",
-        host=host,
-        port=port,
-        reload=reload,
-        log_level="info"
-    )
+    uvicorn.run("socrates_api.main:app", host=host, port=port, reload=reload, log_level="info")
 
 
 if __name__ == "__main__":

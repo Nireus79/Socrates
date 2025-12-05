@@ -5,7 +5,6 @@ Tests for Socrates REST API endpoints
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, Mock
-import json
 
 # Import FastAPI app
 import sys
@@ -14,12 +13,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from socrates_api.main import app
-from socrates_api.models import (
-    CreateProjectRequest,
-    ProjectResponse,
-    QuestionRequest,
-    ResponseSubmit
-)
 
 
 @pytest.fixture
@@ -76,10 +69,9 @@ class TestAPIInitializeEndpoint:
 
     def test_initialize_response_structure(self, client):
         """Test initialize response structure"""
-        with patch('socrates_api.main.socrates.create_orchestrator'):
-            with patch('socrates_api.main.socrates.create_orchestrator') as mock_create:
-                # This test structure requires mocking to work properly
-                pass
+        with patch("socrates_api.main.socrates.create_orchestrator"):
+            # This test structure requires mocking to work properly
+            pass
 
 
 @pytest.mark.unit
@@ -133,35 +125,23 @@ class TestAPIQuestionEndpoints:
 
     def test_ask_question_requires_project(self, client):
         """Test asking question requires project ID"""
-        response = client.post(
-            "/projects/invalid_id/question",
-            json={"topic": "test"}
-        )
+        response = client.post("/projects/invalid_id/question", json={"topic": "test"})
 
         # Should fail without proper setup
         assert response.status_code in [400, 404, 503]
 
     def test_question_request_structure(self, client):
         """Test question request validation"""
-        request_body = {
-            "topic": "REST API design",
-            "difficulty_level": "intermediate"
-        }
+        request_body = {"topic": "REST API design", "difficulty_level": "intermediate"}
 
-        response = client.post(
-            "/projects/test_proj/question",
-            json=request_body
-        )
+        response = client.post("/projects/test_proj/question", json=request_body)
 
         # May fail but should validate structure
         assert response.status_code in [400, 404, 503]
 
     def test_submit_response_requires_data(self, client):
         """Test submitting response requires data"""
-        response = client.post(
-            "/projects/test_proj/response",
-            json={}
-        )
+        response = client.post("/projects/test_proj/response", json={})
 
         # Should fail validation
         assert response.status_code in [422, 400, 404]
@@ -175,10 +155,7 @@ class TestAPICodeGenerationEndpoint:
         """Test code generation requires project ID"""
         response = client.post(
             "/code/generate",
-            json={
-                "project_id": "invalid_id",
-                "specification": "Test specification"
-            }
+            json={"project_id": "invalid_id", "specification": "Test specification"},
         )
 
         # Should fail without proper setup
@@ -189,7 +166,7 @@ class TestAPICodeGenerationEndpoint:
         request_body = {
             "project_id": "test_proj",
             "specification": "Create an API endpoint",
-            "language": "python"
+            "language": "python",
         }
 
         response = client.post("/code/generate", json=request_body)
@@ -258,20 +235,14 @@ class TestAPICORS:
 
     def test_cors_headers_present(self, client):
         """Test CORS headers in response"""
-        response = client.options(
-            "/projects",
-            headers={"Origin": "http://localhost:3000"}
-        )
+        client.options("/projects", headers={"Origin": "http://localhost:3000"})
 
         # CORS should be configured
         # Response may vary
 
     def test_cors_allows_cross_origin(self, client):
         """Test that API allows cross-origin requests"""
-        response = client.get(
-            "/health",
-            headers={"Origin": "http://localhost:3000"}
-        )
+        response = client.get("/health", headers={"Origin": "http://localhost:3000"})
 
         assert response.status_code == 200
 
@@ -283,19 +254,14 @@ class TestAPIRequestValidation:
     def test_invalid_json_body(self, client):
         """Test invalid JSON body"""
         response = client.post(
-            "/projects",
-            data="invalid json",
-            headers={"Content-Type": "application/json"}
+            "/projects", data="invalid json", headers={"Content-Type": "application/json"}
         )
 
         assert response.status_code in [400, 422]
 
     def test_missing_required_fields(self, client):
         """Test missing required fields"""
-        response = client.post(
-            "/projects",
-            json={"name": "Test"}  # Missing 'owner'
-        )
+        response = client.post("/projects", json={"name": "Test"})  # Missing 'owner'
 
         # Should fail validation
         assert response.status_code == 422
@@ -303,11 +269,7 @@ class TestAPIRequestValidation:
     def test_invalid_field_types(self, client):
         """Test invalid field types"""
         response = client.post(
-            "/projects",
-            json={
-                "name": 123,  # Should be string
-                "owner": "testuser"
-            }
+            "/projects", json={"name": 123, "owner": "testuser"}  # Should be string
         )
 
         # May fail validation
@@ -383,21 +345,21 @@ class TestAPIDocumentation:
 
     def test_openapi_schema_available(self, client):
         """Test OpenAPI schema is available"""
-        response = client.get("/openapi.json")
+        client.get("/openapi.json")
 
         # May require FastAPI setup
         # assert response.status_code == 200
 
     def test_swagger_docs_available(self, client):
         """Test Swagger documentation is available"""
-        response = client.get("/docs")
+        client.get("/docs")
 
         # FastAPI should serve Swagger docs
         # assert response.status_code == 200
 
     def test_redoc_docs_available(self, client):
         """Test ReDoc documentation is available"""
-        response = client.get("/redoc")
+        client.get("/redoc")
 
         # FastAPI should serve ReDoc docs
         # assert response.status_code == 200
