@@ -2,10 +2,10 @@
 Unit tests for Socrates event system
 """
 
-import pytest
-from unittest.mock import Mock, call
+from unittest.mock import Mock
 
-import socrates
+import pytest
+
 from socratic_system.events import EventEmitter, EventType
 
 
@@ -151,14 +151,14 @@ class TestEventTypes:
 
     def test_event_type_values(self):
         """Test that EventType has expected values"""
-        assert hasattr(EventType, 'LOG_INFO')
-        assert hasattr(EventType, 'LOG_ERROR')
-        assert hasattr(EventType, 'PROJECT_CREATED')
-        assert hasattr(EventType, 'CODE_GENERATED')
-        assert hasattr(EventType, 'AGENT_START')
-        assert hasattr(EventType, 'AGENT_COMPLETE')
-        assert hasattr(EventType, 'AGENT_ERROR')
-        assert hasattr(EventType, 'TOKEN_USAGE')
+        assert hasattr(EventType, "LOG_INFO")
+        assert hasattr(EventType, "LOG_ERROR")
+        assert hasattr(EventType, "PROJECT_CREATED")
+        assert hasattr(EventType, "CODE_GENERATED")
+        assert hasattr(EventType, "AGENT_START")
+        assert hasattr(EventType, "AGENT_COMPLETE")
+        assert hasattr(EventType, "AGENT_ERROR")
+        assert hasattr(EventType, "TOKEN_USAGE")
 
     def test_event_type_string_conversion(self):
         """Test converting EventType to string"""
@@ -245,7 +245,7 @@ class TestEventData:
             "agent": "code_generator",
             "results": [1, 2, 3],
             "nested": {"key": "value"},
-            "tokens": {"input": 100, "output": 50}
+            "tokens": {"input": 100, "output": 50},
         }
 
         mock_event_emitter.emit(EventType.AGENT_COMPLETE, complex_data)

@@ -60,45 +60,45 @@ __author__ = "Socrates AI Contributors"
 __license__ = "MIT"
 
 # Core Configuration API
-from .config import SocratesConfig, ConfigBuilder
-
-# Core Components
-from .orchestration import AgentOrchestrator
 from .clients import ClaudeClient
-
-# Data Models
-from .models import (
-    User,
-    ProjectContext,
-    KnowledgeEntry,
-    TokenUsage,
-    ConflictInfo,
-    ProjectNote,
-)
+from .config import ConfigBuilder, SocratesConfig
 
 # Event System
 from .events import EventEmitter, EventType
 
 # Custom Exceptions
 from .exceptions import (
-    SocratesError,
-    ConfigurationError,
     AgentError,
-    DatabaseError,
+    APIError,
     AuthenticationError,
+    ConfigurationError,
+    DatabaseError,
     ProjectNotFoundError,
+    SocratesError,
     UserNotFoundError,
     ValidationError,
-    APIError,
 )
+
+# Data Models
+from .models import (
+    ConflictInfo,
+    KnowledgeEntry,
+    ProjectContext,
+    ProjectNote,
+    TokenUsage,
+    User,
+)
+
+# Core Components
+from .orchestration import AgentOrchestrator
 
 # Legacy UI (for CLI)
 from .ui import SocraticRAGSystem
 
-
 # ============================================================================
 # Convenience Functions
 # ============================================================================
+
 
 def create_orchestrator(config: SocratesConfig) -> AgentOrchestrator:
     """
@@ -127,11 +127,7 @@ def create_orchestrator(config: SocratesConfig) -> AgentOrchestrator:
     return AgentOrchestrator(config)
 
 
-def quick_start(
-    api_key: str,
-    data_dir: str = None,
-    log_level: str = "INFO"
-) -> AgentOrchestrator:
+def quick_start(api_key: str, data_dir: str = None, log_level: str = "INFO") -> AgentOrchestrator:
     """
     Quick start with minimal configuration.
 
@@ -177,15 +173,12 @@ __all__ = [
     "__version__",
     "__author__",
     "__license__",
-
     # Configuration
     "SocratesConfig",
     "ConfigBuilder",
-
     # Core Components
     "AgentOrchestrator",
     "ClaudeClient",
-
     # Models
     "User",
     "ProjectContext",
@@ -193,11 +186,9 @@ __all__ = [
     "TokenUsage",
     "ConflictInfo",
     "ProjectNote",
-
     # Events
     "EventEmitter",
     "EventType",
-
     # Exceptions
     "SocratesError",
     "ConfigurationError",
@@ -208,11 +199,9 @@ __all__ = [
     "UserNotFoundError",
     "ValidationError",
     "APIError",
-
     # Convenience Functions
     "create_orchestrator",
     "quick_start",
-
     # Legacy (CLI)
     "SocraticRAGSystem",
 ]

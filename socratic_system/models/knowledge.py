@@ -3,12 +3,13 @@ Knowledge entry model for Socratic RAG System
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class KnowledgeEntry:
     """Represents a single entry in the knowledge vector database"""
+
     id: str
     content: str
     category: str

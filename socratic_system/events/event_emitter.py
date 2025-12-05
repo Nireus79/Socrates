@@ -4,8 +4,8 @@ Event emitter system for Socrates - Thread-safe event publishing and subscriptio
 
 import logging
 import threading
-from typing import Dict, Any, Callable, List, Optional
 from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional
 
 from .event_types import EventType
 
@@ -61,6 +61,7 @@ class EventEmitter:
             event_type: The type of event to listen for
             callback: A callable that will be invoked once with the event data
         """
+
         def wrapper(data):
             try:
                 callback(data)
@@ -107,7 +108,7 @@ class EventEmitter:
         self,
         event_type: EventType,
         data: Optional[Dict[str, Any]] = None,
-        skip_logging: bool = False
+        skip_logging: bool = False,
     ) -> None:
         """
         Emit an event to all registered listeners.
@@ -143,8 +144,7 @@ class EventEmitter:
                 callback(data)
             except Exception as e:
                 self._logger.error(
-                    f"Error in event listener for {event_type.value}: {e}",
-                    exc_info=e
+                    f"Error in event listener for {event_type.value}: {e}", exc_info=e
                 )
 
     def listener_count(self, event_type: Optional[EventType] = None) -> int:

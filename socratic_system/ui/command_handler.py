@@ -1,8 +1,10 @@
 """Command handler for parsing and routing user input"""
 
 import shlex
-from typing import Dict, Any, List, Optional, Type
+from typing import Any, Dict, List, Optional
+
 from colorama import Fore, Style
+
 from socratic_system.ui.commands.base import BaseCommand
 
 
@@ -60,14 +62,14 @@ class CommandHandler:
         user_input = user_input.strip()
 
         if not user_input:
-            return {'status': 'idle', 'message': ''}
+            return {"status": "idle", "message": ""}
 
         # Commands MUST start with /
-        if not user_input.startswith('/'):
+        if not user_input.startswith("/"):
             return {
-                'status': 'error',
-                'message': f"{Fore.YELLOW}Commands must start with '/' (e.g., /help){Style.RESET_ALL}\n"
-                           f"Type '/help' to see available commands."
+                "status": "error",
+                "message": f"{Fore.YELLOW}Commands must start with '/' (e.g., /help){Style.RESET_ALL}\n"
+                f"Type '/help' to see available commands.",
             }
 
         return self._execute_command(user_input[1:], context)
@@ -88,12 +90,12 @@ class CommandHandler:
             parts = shlex.split(command_input)
         except ValueError as e:
             return {
-                'status': 'error',
-                'message': f"{Fore.RED}Parse error: {str(e)}{Style.RESET_ALL}"
+                "status": "error",
+                "message": f"{Fore.RED}Parse error: {str(e)}{Style.RESET_ALL}",
             }
 
         if not parts:
-            return {'status': 'idle', 'message': ''}
+            return {"status": "idle", "message": ""}
 
         # Try to match multi-word commands (up to 3 words)
         command_name = None
@@ -101,14 +103,14 @@ class CommandHandler:
 
         # Try 3-word command first (e.g., "project archive restore")
         if len(parts) >= 3:
-            three_word = ' '.join(parts[:3]).lower()
+            three_word = " ".join(parts[:3]).lower()
             if three_word in self.commands:
                 command_name = three_word
                 args = parts[3:]
 
         # Try 2-word command (e.g., "project list")
         if command_name is None and len(parts) >= 2:
-            two_word = ' '.join(parts[:2]).lower()
+            two_word = " ".join(parts[:2]).lower()
             if two_word in self.commands:
                 command_name = two_word
                 args = parts[2:]
@@ -125,9 +127,9 @@ class CommandHandler:
         # Look up command
         if command_name not in self.commands:
             return {
-                'status': 'error',
-                'message': f"{Fore.RED}Unknown command: {command_name}{Style.RESET_ALL}\n"
-                           f"Type '/help' for a list of available commands.{Style.RESET_ALL}"
+                "status": "error",
+                "message": f"{Fore.RED}Unknown command: {command_name}{Style.RESET_ALL}\n"
+                f"Type '/help' for a list of available commands.{Style.RESET_ALL}",
             }
 
         command = self.commands[command_name]
@@ -138,8 +140,8 @@ class CommandHandler:
             return result
         except Exception as e:
             return {
-                'status': 'error',
-                'message': f"{Fore.RED}Command error: {str(e)}{Style.RESET_ALL}"
+                "status": "error",
+                "message": f"{Fore.RED}Command error: {str(e)}{Style.RESET_ALL}",
             }
 
     def get_command(self, name: str) -> Optional[BaseCommand]:
@@ -177,10 +179,7 @@ class CommandHandler:
             Dictionary of matching command_name -> BaseCommand
         """
         prefix = prefix.lower()
-        return {
-            name: cmd for name, cmd in self.commands.items()
-            if name.startswith(prefix)
-        }
+        return {name: cmd for name, cmd in self.commands.items() if name.startswith(prefix)}
 
     def print_help(self, command_name: Optional[str] = None) -> None:
         """
@@ -208,16 +207,27 @@ class CommandHandler:
         """Print help for all commands organized by category."""
         print(f"\n{Fore.CYAN}{'=' * 70}")
         print(" " * 15 + "SOCRATIC RAG SYSTEM - COMMANDS")
-        print('=' * 70)
+        print("=" * 70)
         print(f"{Style.RESET_ALL}")
 
         # Organize commands by first part of name (category)
         categories: Dict[str, List[str]] = {}
-        category_order = ['user', 'project', 'collab', 'docs', 'note', 'conv', 'session', 'code', 'help', 'debug']
+        category_order = [
+            "user",
+            "project",
+            "collab",
+            "docs",
+            "note",
+            "conv",
+            "session",
+            "code",
+            "help",
+            "debug",
+        ]
 
         for name in sorted(self.commands.keys()):
             parts = name.split()
-            category = parts[0] if parts else 'system'
+            category = parts[0] if parts else "system"
 
             if category not in categories:
                 categories[category] = []
@@ -269,8 +279,12 @@ class CommandHandler:
             print()
 
         print(f"{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}")
-        print(f"Usage: Type a command starting with {Fore.GREEN}'{Style.RESET_ALL} (e.g., {Fore.GREEN}/help project list{Style.RESET_ALL})")
-        print(f"Help:  Type {Fore.GREEN}/help <command>{Style.RESET_ALL} for more details on a command")
+        print(
+            f"Usage: Type a command starting with {Fore.GREEN}'{Style.RESET_ALL} (e.g., {Fore.GREEN}/help project list{Style.RESET_ALL})"
+        )
+        print(
+            f"Help:  Type {Fore.GREEN}/help <command>{Style.RESET_ALL} for more details on a command"
+        )
         print(f"{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}\n")
 
     def is_valid_command(self, command_name: str) -> bool:

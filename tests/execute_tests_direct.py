@@ -4,7 +4,6 @@ Direct test execution - runs individual test functions without pytest
 """
 
 import sys
-import os
 from pathlib import Path
 
 # Add project root to path
@@ -16,7 +15,8 @@ try:
     import socrates
 except ModuleNotFoundError:
     import socratic_system as socrates
-    sys.modules['socrates'] = socrates
+
+    sys.modules["socrates"] = socrates
 
 print("=" * 100)
 print("SOCRATES TEST EXECUTION - DIRECT RUNNER")
@@ -28,18 +28,18 @@ print("STEP 1: IMPORTING TEST MODULES")
 print("-" * 100)
 
 test_modules_to_import = [
-    'tests.test_config',
-    'tests.test_models',
-    'tests.test_events',
-    'tests.agents.test_project_manager_agent',
-    'tests.agents.test_code_generator_agent',
-    'tests.test_conflict_resolution',
+    "tests.test_config",
+    "tests.test_models",
+    "tests.test_events",
+    "tests.agents.test_project_manager_agent",
+    "tests.agents.test_code_generator_agent",
+    "tests.test_conflict_resolution",
 ]
 
 imported_tests = 0
 for module_name in test_modules_to_import:
     try:
-        module = __import__(module_name, fromlist=[''])
+        module = __import__(module_name, fromlist=[""])
         imported_tests += 1
         print(f"[OK] Imported {module_name}")
     except Exception as e:
@@ -61,8 +61,9 @@ test_fail_count = 0
 # Test 2.1: Test basic model creation
 print("[TEST 2.1] Creating ProjectContext model...")
 try:
-    from socratic_system.models import ProjectContext
     import datetime
+
+    from socratic_system.models import ProjectContext
 
     project = ProjectContext(
         project_id="test_001",
@@ -80,7 +81,7 @@ try:
         phase="active",
         conversation_history=[],
         created_at=datetime.datetime.now(),
-        updated_at=datetime.datetime.now()
+        updated_at=datetime.datetime.now(),
     )
 
     assert project.project_id == "test_001"
@@ -113,7 +114,7 @@ try:
         old_timestamp="2025-12-04T10:00:00",
         new_timestamp="2025-12-04T10:30:00",
         severity="medium",
-        suggestions=["Review both options"]
+        suggestions=["Review both options"],
     )
 
     assert conflict.conflict_id == "conf_001"
@@ -156,8 +157,9 @@ print()
 # Test 2.4: Test Config creation
 print("[TEST 2.4] Creating SocratesConfig...")
 try:
-    from socratic_system.config import SocratesConfig
     import tempfile
+
+    from socratic_system.config import SocratesConfig
 
     with tempfile.TemporaryDirectory() as tmpdir:
         config = SocratesConfig(
@@ -165,7 +167,7 @@ try:
             data_dir=Path(tmpdir),
             claude_model="claude-opus-4-5-20251101",
             embedding_model="all-MiniLM-L6-v2",
-            log_level="INFO"
+            log_level="INFO",
         )
 
         assert config.api_key == "sk-test-key"
@@ -173,7 +175,7 @@ try:
         assert str(config.claude_model) == "claude-opus-4-5-20251101"
 
     print("[PASS] SocratesConfig creation works correctly")
-    print(f"       Created config with model: claude-opus-4-5-20251101")
+    print("       Created config with model: claude-opus-4-5-20251101")
     test_execution_count += 1
     test_pass_count += 1
 except Exception as e:
@@ -186,16 +188,19 @@ print()
 # Test 2.5: Test ProjectManagerAgent
 print("[TEST 2.5] Initializing ProjectManagerAgent...")
 try:
-    from socratic_system.orchestration.orchestrator import AgentOrchestrator
-    from socratic_system.agents.project_manager import ProjectManagerAgent
-    from unittest.mock import patch, MagicMock
-    import tempfile
     import shutil
+    import tempfile
     import time
+    from unittest.mock import MagicMock, patch
+
+    from socratic_system.agents.project_manager import ProjectManagerAgent
+    from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
     tmpdir = tempfile.mkdtemp()
     try:
-        with patch('anthropic.Anthropic') as mock_anthro, patch('anthropic.AsyncAnthropic') as mock_async:
+        with patch("anthropic.Anthropic") as mock_anthro, patch(
+            "anthropic.AsyncAnthropic"
+        ) as mock_async:
             # Set up mocks to return mock clients
             mock_anthro.return_value = MagicMock()
             mock_async.return_value = MagicMock()
@@ -205,17 +210,17 @@ try:
                 data_dir=Path(tmpdir),
                 claude_model="claude-opus-4-5-20251101",
                 embedding_model="all-MiniLM-L6-v2",
-                log_level="ERROR"  # Suppress debug logs
+                log_level="ERROR",  # Suppress debug logs
             )
 
             orchestrator = AgentOrchestrator(config)
             agent = ProjectManagerAgent(orchestrator)
 
             assert agent is not None
-            assert hasattr(agent, 'process')
+            assert hasattr(agent, "process")
 
         print("[PASS] ProjectManagerAgent initialization works")
-        print(f"       ProjectManagerAgent successfully created and ready to process requests")
+        print("       ProjectManagerAgent successfully created and ready to process requests")
         test_execution_count += 1
         test_pass_count += 1
     finally:
@@ -235,15 +240,18 @@ print()
 # Test 2.6: Test CodeGeneratorAgent
 print("[TEST 2.6] Initializing CodeGeneratorAgent...")
 try:
-    from socratic_system.agents.code_generator import CodeGeneratorAgent
-    from unittest.mock import patch, MagicMock
-    import tempfile
     import shutil
+    import tempfile
     import time
+    from unittest.mock import MagicMock, patch
+
+    from socratic_system.agents.code_generator import CodeGeneratorAgent
 
     tmpdir = tempfile.mkdtemp()
     try:
-        with patch('anthropic.Anthropic') as mock_anthro, patch('anthropic.AsyncAnthropic') as mock_async:
+        with patch("anthropic.Anthropic") as mock_anthro, patch(
+            "anthropic.AsyncAnthropic"
+        ) as mock_async:
             mock_anthro.return_value = MagicMock()
             mock_async.return_value = MagicMock()
 
@@ -252,17 +260,17 @@ try:
                 data_dir=Path(tmpdir),
                 claude_model="claude-opus-4-5-20251101",
                 embedding_model="all-MiniLM-L6-v2",
-                log_level="ERROR"
+                log_level="ERROR",
             )
 
             orchestrator = AgentOrchestrator(config)
             agent = CodeGeneratorAgent(orchestrator)
 
             assert agent is not None
-            assert hasattr(agent, 'process')
+            assert hasattr(agent, "process")
 
         print("[PASS] CodeGeneratorAgent initialization works")
-        print(f"       CodeGeneratorAgent successfully created and ready for code generation")
+        print("       CodeGeneratorAgent successfully created and ready for code generation")
         test_execution_count += 1
         test_pass_count += 1
     finally:
@@ -281,16 +289,19 @@ print()
 # Test 2.7: Test KnowledgeManagerAgent
 print("[TEST 2.7] Testing KnowledgeManagerAgent...")
 try:
-    from socratic_system.agents.knowledge_manager import KnowledgeManagerAgent
-    from unittest.mock import patch, MagicMock
-    import tempfile
-    import shutil
-    import time
     import gc
+    import shutil
+    import tempfile
+    import time
+    from unittest.mock import MagicMock, patch
+
+    from socratic_system.agents.knowledge_manager import KnowledgeManagerAgent
 
     tmpdir = tempfile.mkdtemp()
     try:
-        with patch('anthropic.Anthropic') as mock_anthro, patch('anthropic.AsyncAnthropic') as mock_async:
+        with patch("anthropic.Anthropic") as mock_anthro, patch(
+            "anthropic.AsyncAnthropic"
+        ) as mock_async:
             mock_anthro.return_value = MagicMock()
             mock_async.return_value = MagicMock()
 
@@ -299,24 +310,24 @@ try:
                 data_dir=Path(tmpdir),
                 claude_model="claude-opus-4-5-20251101",
                 embedding_model="all-MiniLM-L6-v2",
-                log_level="ERROR"
+                log_level="ERROR",
             )
 
             orchestrator = AgentOrchestrator(config)
             agent = KnowledgeManagerAgent("KnowledgeManager", orchestrator)
 
             assert agent is not None
-            assert hasattr(agent, 'process')
+            assert hasattr(agent, "process")
 
         # Close databases and release file locks
-        if hasattr(orchestrator, 'database') and hasattr(orchestrator.database, '_db'):
+        if hasattr(orchestrator, "database") and hasattr(orchestrator.database, "_db"):
             try:
                 orchestrator.database._db.close()
             except:
                 pass
 
         print("[PASS] KnowledgeManagerAgent initialization works")
-        print(f"       Knowledge base agent loaded with 100+ entries")
+        print("       Knowledge base agent loaded with 100+ entries")
         test_execution_count += 1
         test_pass_count += 1
     finally:

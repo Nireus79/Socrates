@@ -1,7 +1,9 @@
 """Project statistics and progress commands"""
 
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 from colorama import Fore, Style
+
 from socratic_system.ui.commands.base import BaseCommand
 
 
@@ -12,7 +14,7 @@ class ProjectStatsCommand(BaseCommand):
         super().__init__(
             name="project stats",
             description="View comprehensive project statistics",
-            usage="project stats"
+            usage="project stats",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -20,20 +22,19 @@ class ProjectStatsCommand(BaseCommand):
         if not self.require_project(context):
             return self.error("No project loaded")
 
-        orchestrator = context.get('orchestrator')
-        project = context.get('project')
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
 
         if not orchestrator or not project:
             return self.error("Required context not available")
 
         # Get statistics
-        result = orchestrator.process_request('context_analyzer', {
-            'action': 'get_statistics',
-            'project': project
-        })
+        result = orchestrator.process_request(
+            "context_analyzer", {"action": "get_statistics", "project": project}
+        )
 
-        if result['status'] == 'success':
-            stats = result['statistics']
+        if result["status"] == "success":
+            stats = result["statistics"]
 
             self.print_header(f"Project Statistics: {stats['project_name']}")
 
@@ -42,7 +43,9 @@ class ProjectStatsCommand(BaseCommand):
             print(f"  Owner:             {stats['owner']}")
             print(f"  Phase:             {stats['current_phase']}")
             print(f"  Status:            {stats['status']}")
-            print(f"  Progress:          {self._get_progress_bar(stats['progress'])} {stats['progress']}%")
+            print(
+                f"  Progress:          {self._get_progress_bar(stats['progress'])} {stats['progress']}%"
+            )
             print()
 
             # Timeline
@@ -76,15 +79,15 @@ class ProjectStatsCommand(BaseCommand):
             print(f"  Notes:             {stats['notes']}")
             print()
 
-            return self.success(data={'statistics': stats})
+            return self.success(data={"statistics": stats})
         else:
-            return self.error(result.get('message', 'Failed to get statistics'))
+            return self.error(result.get("message", "Failed to get statistics"))
 
     @staticmethod
     def _get_progress_bar(progress: int, width: int = 20) -> str:
         """Get a visual progress bar"""
         filled = int(width * progress / 100)
-        bar = '█' * filled + '░' * (width - filled)
+        bar = "█" * filled + "░" * (width - filled)
         return f"{Fore.GREEN}{bar}{Style.RESET_ALL}"
 
 
@@ -95,7 +98,7 @@ class ProjectProgressCommand(BaseCommand):
         super().__init__(
             name="project progress",
             description="Update project progress percentage (0-100)",
-            usage="project progress <0-100>"
+            usage="project progress <0-100>",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -103,7 +106,7 @@ class ProjectProgressCommand(BaseCommand):
         if not self.require_project(context):
             return self.error("No project loaded")
 
-        project = context.get('project')
+        project = context.get("project")
         if not project:
             return self.error("No project loaded")
 
@@ -125,23 +128,22 @@ class ProjectProgressCommand(BaseCommand):
 
         # Update project
         project.progress = progress
-        project.updated_at = __import__('datetime').datetime.now()
+        project.updated_at = __import__("datetime").datetime.now()
 
         # Save project
-        orchestrator = context.get('orchestrator')
+        orchestrator = context.get("orchestrator")
         if orchestrator:
-            result = orchestrator.process_request('project_manager', {
-                'action': 'save_project',
-                'project': project
-            })
+            result = orchestrator.process_request(
+                "project_manager", {"action": "save_project", "project": project}
+            )
 
-            if result['status'] == 'success':
+            if result["status"] == "success":
                 print(f"{Fore.GREEN}Progress bar:{Style.RESET_ALL}")
                 filled = int(20 * progress / 100)
-                bar = '█' * filled + '░' * (20 - filled)
+                bar = "█" * filled + "░" * (20 - filled)
                 print(f"  {Fore.GREEN}{bar}{Style.RESET_ALL} {progress}%")
                 self.print_success(f"Project progress updated to {progress}%")
-                return self.success(data={'progress': progress})
+                return self.success(data={"progress": progress})
             else:
                 return self.error("Failed to save project progress")
         else:
@@ -155,7 +157,7 @@ class ProjectStatusCommand(BaseCommand):
         super().__init__(
             name="project status",
             description="Set project status (active/completed/on-hold)",
-            usage="project status <active|completed|on-hold>"
+            usage="project status <active|completed|on-hold>",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -163,11 +165,11 @@ class ProjectStatusCommand(BaseCommand):
         if not self.require_project(context):
             return self.error("No project loaded")
 
-        project = context.get('project')
+        project = context.get("project")
         if not project:
             return self.error("No project loaded")
 
-        valid_statuses = ['active', 'completed', 'on-hold']
+        valid_statuses = ["active", "completed", "on-hold"]
 
         # Get status
         if args:
@@ -191,19 +193,18 @@ class ProjectStatusCommand(BaseCommand):
 
         # Update project
         project.status = status
-        project.updated_at = __import__('datetime').datetime.now()
+        project.updated_at = __import__("datetime").datetime.now()
 
         # Save project
-        orchestrator = context.get('orchestrator')
+        orchestrator = context.get("orchestrator")
         if orchestrator:
-            result = orchestrator.process_request('project_manager', {
-                'action': 'save_project',
-                'project': project
-            })
+            result = orchestrator.process_request(
+                "project_manager", {"action": "save_project", "project": project}
+            )
 
-            if result['status'] == 'success':
+            if result["status"] == "success":
                 self.print_success(f"Project status updated to '{status}'")
-                return self.success(data={'status': status})
+                return self.success(data={"status": status})
             else:
                 return self.error("Failed to save project status")
         else:

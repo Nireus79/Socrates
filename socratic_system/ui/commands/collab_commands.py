@@ -1,7 +1,9 @@
 """Collaboration and team management commands"""
 
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 from colorama import Fore, Style
+
 from socratic_system.ui.commands.base import BaseCommand
 
 
@@ -12,7 +14,7 @@ class CollabAddCommand(BaseCommand):
         super().__init__(
             name="collab add",
             description="Add a collaborator to the current project",
-            usage="collab add <username>"
+            usage="collab add <username>",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -28,9 +30,9 @@ class CollabAddCommand(BaseCommand):
         if not username:
             return self.error("Username cannot be empty")
 
-        orchestrator = context.get('orchestrator')
-        project = context.get('project')
-        user = context.get('user')
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
+        user = context.get("user")
 
         if not orchestrator or not project or not user:
             return self.error("Required context not available")
@@ -52,25 +54,23 @@ class CollabAddCommand(BaseCommand):
             return self.error(f"User '{username}' is already a collaborator")
 
         # Add collaborator
-        result = orchestrator.process_request('project_manager', {
-            'action': 'add_collaborator',
-            'project': project,
-            'username': username
-        })
+        result = orchestrator.process_request(
+            "project_manager",
+            {"action": "add_collaborator", "project": project, "username": username},
+        )
 
-        if result['status'] == 'success':
+        if result["status"] == "success":
             self.print_success(f"Added '{username}' as collaborator!")
             project.collaborators.append(username)
 
             # Save project
-            orchestrator.process_request('project_manager', {
-                'action': 'save_project',
-                'project': project
-            })
+            orchestrator.process_request(
+                "project_manager", {"action": "save_project", "project": project}
+            )
 
-            return self.success(data={'collaborator': username})
+            return self.success(data={"collaborator": username})
         else:
-            return self.error(result.get('message', 'Failed to add collaborator'))
+            return self.error(result.get("message", "Failed to add collaborator"))
 
 
 class CollabRemoveCommand(BaseCommand):
@@ -80,7 +80,7 @@ class CollabRemoveCommand(BaseCommand):
         super().__init__(
             name="collab remove",
             description="Remove a collaborator from the current project",
-            usage="collab remove <username>"
+            usage="collab remove <username>",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -88,9 +88,9 @@ class CollabRemoveCommand(BaseCommand):
         if not self.require_project(context):
             return self.error("No project loaded")
 
-        orchestrator = context.get('orchestrator')
-        project = context.get('project')
-        user = context.get('user')
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
+        user = context.get("user")
 
         if not orchestrator or not project or not user:
             return self.error("Required context not available")
@@ -112,7 +112,14 @@ class CollabRemoveCommand(BaseCommand):
                 print(f"{i}. {collaborator}")
 
             try:
-                choice = int(input(f"\n{Fore.WHITE}Select collaborator to remove (1-{len(project.collaborators)}): ")) - 1
+                choice = (
+                    int(
+                        input(
+                            f"\n{Fore.WHITE}Select collaborator to remove (1-{len(project.collaborators)}): "
+                        )
+                    )
+                    - 1
+                )
                 if 0 <= choice < len(project.collaborators):
                     username = project.collaborators[choice]
                 else:
@@ -124,32 +131,34 @@ class CollabRemoveCommand(BaseCommand):
             return self.error(f"User '{username}' is not a collaborator")
 
         confirm = input(f"{Fore.YELLOW}Remove '{username}'? (y/n): ").lower()
-        if confirm != 'y':
+        if confirm != "y":
             self.print_info("Removal cancelled")
             return self.success()
 
-        result = orchestrator.process_request('project_manager', {
-            'action': 'remove_collaborator',
-            'project': project,
-            'username': username,
-            'requester': user.username
-        })
+        result = orchestrator.process_request(
+            "project_manager",
+            {
+                "action": "remove_collaborator",
+                "project": project,
+                "username": username,
+                "requester": user.username,
+            },
+        )
 
-        if result['status'] == 'success':
+        if result["status"] == "success":
             self.print_success(f"Removed '{username}' from project!")
             # Only remove from local list if still present
             if username in project.collaborators:
                 project.collaborators.remove(username)
 
                 # Save project
-                orchestrator.process_request('project_manager', {
-                    'action': 'save_project',
-                    'project': project
-                })
+                orchestrator.process_request(
+                    "project_manager", {"action": "save_project", "project": project}
+                )
 
-            return self.success(data={'removed_user': username})
+            return self.success(data={"removed_user": username})
         else:
-            return self.error(result.get('message', 'Failed to remove collaborator'))
+            return self.error(result.get("message", "Failed to remove collaborator"))
 
 
 class CollabListCommand(BaseCommand):
@@ -159,7 +168,7 @@ class CollabListCommand(BaseCommand):
         super().__init__(
             name="collab list",
             description="List all collaborators for the current project",
-            usage="collab list"
+            usage="collab list",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -167,33 +176,34 @@ class CollabListCommand(BaseCommand):
         if not self.require_project(context):
             return self.error("No project loaded")
 
-        orchestrator = context.get('orchestrator')
-        project = context.get('project')
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
 
         if not orchestrator or not project:
             return self.error("Required context not available")
 
         # Get collaborators
-        result = orchestrator.process_request('project_manager', {
-            'action': 'list_collaborators',
-            'project': project
-        })
+        result = orchestrator.process_request(
+            "project_manager", {"action": "list_collaborators", "project": project}
+        )
 
-        if result['status'] == 'success':
+        if result["status"] == "success":
             print(f"\n{Fore.CYAN}Collaborators for '{project.name}':{Style.RESET_ALL}")
 
-            members = result.get('collaborators', [])
+            members = result.get("collaborators", [])
 
             if not members:
                 self.print_info("No collaborators")
                 return self.success()
 
             for member in members:
-                role_color = Fore.GREEN if member['role'] == 'owner' else Fore.WHITE
-                role_symbol = "[USER]" if member['role'] == 'collaborator' else "[OWNER]"
-                print(f"{role_color}{role_symbol} {member['username']:20} ({member['role']}){Style.RESET_ALL}")
+                role_color = Fore.GREEN if member["role"] == "owner" else Fore.WHITE
+                role_symbol = "[USER]" if member["role"] == "collaborator" else "[OWNER]"
+                print(
+                    f"{role_color}{role_symbol} {member['username']:20} ({member['role']}){Style.RESET_ALL}"
+                )
 
             print()
-            return self.success(data={'collaborators': members})
+            return self.success(data={"collaborators": members})
         else:
-            return self.error(result.get('message', 'Failed to list collaborators'))
+            return self.error(result.get("message", "Failed to list collaborators"))

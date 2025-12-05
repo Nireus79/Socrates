@@ -4,16 +4,16 @@ Supports debug mode, file logging, and console output
 """
 
 import logging
-import os
 from pathlib import Path
 from typing import Optional
+
 from colorama import Fore, Style
 
 
 class DebugLogger:
     """Centralized logging system with debug mode support"""
 
-    _instance: Optional['DebugLogger'] = None
+    _instance: Optional["DebugLogger"] = None
     _debug_mode: bool = False
     _logger: Optional[logging.Logger] = None
     _console_handler: Optional[logging.StreamHandler] = None
@@ -28,20 +28,19 @@ class DebugLogger:
     def _initialize(cls):
         """Initialize the logging system"""
         # Create logger
-        cls._logger = logging.getLogger('socratic_rag')
+        cls._logger = logging.getLogger("socratic_rag")
         cls._logger.setLevel(logging.DEBUG)
 
         # Create logs directory
-        logs_dir = Path('socratic_logs')
+        logs_dir = Path("socratic_logs")
         logs_dir.mkdir(exist_ok=True)
 
         # File handler (always logs everything)
-        log_file = logs_dir / 'socratic.log'
+        log_file = logs_dir / "socratic.log"
         file_handler = logging.FileHandler(log_file)
         file_handler.setLevel(logging.DEBUG)
         file_formatter = logging.Formatter(
-            '[%(asctime)s] [%(levelname)s] %(name)s: %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
         )
         file_handler.setFormatter(file_formatter)
         cls._logger.addHandler(file_handler)
@@ -55,19 +54,19 @@ class DebugLogger:
             # Color code by level
             if record.levelno >= logging.ERROR:
                 level_color = Fore.RED
-                prefix = '[ERROR]'
+                prefix = "[ERROR]"
             elif record.levelno >= logging.WARNING:
                 level_color = Fore.YELLOW
-                prefix = '[WARN]'
+                prefix = "[WARN]"
             elif record.levelno >= logging.INFO:
                 level_color = Fore.GREEN
-                prefix = '[INFO]'
+                prefix = "[INFO]"
             else:  # DEBUG
                 level_color = Fore.CYAN
-                prefix = '[DEBUG]'
+                prefix = "[DEBUG]"
 
             # Extract component name (e.g., 'socratic_rag.project_manager' -> 'project_manager')
-            component = record.name.split('.')[-1] if '.' in record.name else record.name
+            component = record.name.split(".")[-1] if "." in record.name else record.name
 
             return f"{level_color}{prefix}{Style.RESET_ALL} {component}: {record.getMessage()}"
 
@@ -92,7 +91,7 @@ class DebugLogger:
                 cls._console_handler.setLevel(logging.INFO)
 
         # Log the mode change
-        logger = cls.get_logger('system')
+        logger = cls.get_logger("system")
         if enabled:
             logger.info("Debug mode ENABLED - all operations will be logged")
         else:
@@ -106,28 +105,30 @@ class DebugLogger:
     @classmethod
     def get_logger(cls, name: str) -> logging.Logger:
         """Get a logger for a specific component"""
-        return logging.getLogger(f'socratic_rag.{name}')
+        return logging.getLogger(f"socratic_rag.{name}")
 
     @classmethod
-    def debug(cls, message: str, component: str = 'system') -> None:
+    def debug(cls, message: str, component: str = "system") -> None:
         """Log debug message"""
         logger = cls.get_logger(component)
         logger.debug(message)
 
     @classmethod
-    def info(cls, message: str, component: str = 'system') -> None:
+    def info(cls, message: str, component: str = "system") -> None:
         """Log info message"""
         logger = cls.get_logger(component)
         logger.info(message)
 
     @classmethod
-    def warning(cls, message: str, component: str = 'system') -> None:
+    def warning(cls, message: str, component: str = "system") -> None:
         """Log warning message"""
         logger = cls.get_logger(component)
         logger.warning(message)
 
     @classmethod
-    def error(cls, message: str, component: str = 'system', exception: Optional[Exception] = None) -> None:
+    def error(
+        cls, message: str, component: str = "system", exception: Optional[Exception] = None
+    ) -> None:
         """Log error message"""
         logger = cls.get_logger(component)
         if exception:

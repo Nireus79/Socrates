@@ -12,8 +12,8 @@ Or with headless mode:
 """
 
 import os
-from locust import HttpUser, task, between, events
-import json
+
+from locust import HttpUser, between, events, task
 
 
 class SocratesAPIUser(HttpUser):
@@ -30,9 +30,7 @@ class SocratesAPIUser(HttpUser):
 
     def initialize_api(self):
         """Initialize API connection"""
-        response = self.client.post("/initialize", json={
-            "api_key": self.api_key
-        })
+        response = self.client.post("/initialize", json={"api_key": self.api_key})
 
         if response.status_code == 200:
             self.project_id = "test_proj_load"
@@ -40,10 +38,7 @@ class SocratesAPIUser(HttpUser):
     @task(3)
     def list_projects(self):
         """List projects (weight: 3)"""
-        with self.client.get(
-            "/projects",
-            catch_response=True
-        ) as response:
+        with self.client.get("/projects", catch_response=True) as response:
             if response.status_code == 200:
                 response.success()
             elif response.status_code == 503:
@@ -56,11 +51,8 @@ class SocratesAPIUser(HttpUser):
         """Create a project (weight: 2)"""
         with self.client.post(
             "/projects",
-            json={
-                "name": f"Load Test Project {self.client.task_id}",
-                "owner": "load_test_user"
-            },
-            catch_response=True
+            json={"name": f"Load Test Project {self.client.task_id}", "owner": "load_test_user"},
+            catch_response=True,
         ) as response:
             if response.status_code == 200:
                 response.success()
@@ -77,10 +69,7 @@ class SocratesAPIUser(HttpUser):
     @task(2)
     def get_event_history(self):
         """Get event history (weight: 2)"""
-        with self.client.get(
-            "/api/events/history?limit=50",
-            catch_response=True
-        ) as response:
+        with self.client.get("/api/events/history?limit=50", catch_response=True) as response:
             if response.status_code == 200:
                 response.success()
             else:
@@ -89,10 +78,7 @@ class SocratesAPIUser(HttpUser):
     @task(1)
     def health_check(self):
         """Health check (weight: 1)"""
-        with self.client.get(
-            "/health",
-            catch_response=True
-        ) as response:
+        with self.client.get("/health", catch_response=True) as response:
             if response.status_code == 200:
                 response.success()
             else:
@@ -101,11 +87,7 @@ class SocratesAPIUser(HttpUser):
     @task(1)
     def test_connection(self):
         """Test API connection (weight: 1)"""
-        with self.client.post(
-            "/api/test-connection",
-            json={},
-            catch_response=True
-        ) as response:
+        with self.client.post("/api/test-connection", json={}, catch_response=True) as response:
             if response.status_code in [200, 400]:
                 response.success()
             else:
@@ -120,10 +102,7 @@ class AdminUser(HttpUser):
     @task
     def get_info(self):
         """Get system info"""
-        with self.client.get(
-            "/info",
-            catch_response=True
-        ) as response:
+        with self.client.get("/info", catch_response=True) as response:
             if response.status_code in [200, 503]:
                 response.success()
             else:
@@ -169,7 +148,9 @@ def on_test_stop(environment, **kwargs):
 
 
 @events.request.add_listener
-def on_request(request_type, name, response_time, response_length, response, context, exception, **kwargs):
+def on_request(
+    request_type, name, response_time, response_length, response, context, exception, **kwargs
+):
     """Called after each request"""
     if exception:
         print(f"[ERROR] {request_type} {name}: {exception}")
@@ -177,36 +158,22 @@ def on_request(request_type, name, response_time, response_length, response, con
 
 # Load test configurations
 LOAD_TEST_SCENARIOS = {
-    "light": {
-        "description": "Light load test",
-        "users": 10,
-        "spawn_rate": 2,
-        "duration": "1m"
-    },
-    "medium": {
-        "description": "Medium load test",
-        "users": 50,
-        "spawn_rate": 5,
-        "duration": "5m"
-    },
-    "heavy": {
-        "description": "Heavy load test",
-        "users": 200,
-        "spawn_rate": 20,
-        "duration": "10m"
-    },
+    "light": {"description": "Light load test", "users": 10, "spawn_rate": 2, "duration": "1m"},
+    "medium": {"description": "Medium load test", "users": 50, "spawn_rate": 5, "duration": "5m"},
+    "heavy": {"description": "Heavy load test", "users": 200, "spawn_rate": 20, "duration": "10m"},
     "stress": {
         "description": "Stress test (find breaking point)",
         "users": 500,
         "spawn_rate": 50,
-        "duration": "15m"
-    }
+        "duration": "15m",
+    },
 }
 
 
 def print_load_test_guide():
     """Print load test usage guide"""
-    print("""
+    print(
+        """
 SOCRATES API LOAD TESTING GUIDE
 ================================
 
@@ -238,7 +205,8 @@ SOCRATES API LOAD TESTING GUIDE
 
 Load Test Scenarios
 ===================
-""")
+"""
+    )
 
     for scenario, config in LOAD_TEST_SCENARIOS.items():
         print(f"\n{scenario.upper()}: {config['description']}")
@@ -246,7 +214,8 @@ Load Test Scenarios
         print(f"  Spawn rate: {config['spawn_rate']} users/sec")
         print(f"  Duration: {config['duration']}")
 
-    print("""
+    print(
+        """
 
 Task Weights
 ============
@@ -283,7 +252,8 @@ Stress Test (500 users):
   - Find breaking point
   - Identify bottlenecks
   - Response times may exceed 5s
-""")
+"""
+    )
 
 
 if __name__ == "__main__":

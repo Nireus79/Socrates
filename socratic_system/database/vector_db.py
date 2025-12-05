@@ -2,7 +2,6 @@
 Vector database for knowledge management in Socratic RAG System
 """
 
-import os
 import logging
 from typing import Dict, List, Optional
 
@@ -21,7 +20,7 @@ class VectorDatabase:
         self.logger = logging.getLogger("socrates.database.vector")
         self.client = chromadb.PersistentClient(path=db_path)
         self.collection = self.client.get_or_create_collection("socratic_knowledge")
-        self.embedding_model = SentenceTransformer(CONFIG['EMBEDDING_MODEL'])
+        self.embedding_model = SentenceTransformer(CONFIG["EMBEDDING_MODEL"])
         self.knowledge_loaded = False  # FIX: Track if knowledge is already loaded
 
     def add_knowledge(self, entry: KnowledgeEntry):
@@ -29,7 +28,7 @@ class VectorDatabase:
         # FIX: Check if entry already exists before adding
         try:
             existing = self.collection.get(ids=[entry.id])
-            if existing['ids']:
+            if existing["ids"]:
                 self.logger.debug(f"Knowledge entry '{entry.id}' already exists, skipping...")
                 return
         except Exception:
@@ -37,20 +36,26 @@ class VectorDatabase:
 
         if not entry.embedding:
             embedding_result = self.embedding_model.encode(entry.content)
-            entry.embedding = embedding_result.tolist() if hasattr(embedding_result, 'tolist') else embedding_result
+            entry.embedding = (
+                embedding_result.tolist()
+                if hasattr(embedding_result, "tolist")
+                else embedding_result
+            )
 
         try:
             self.collection.add(
                 documents=[entry.content],
                 metadatas=[entry.metadata],
                 ids=[entry.id],
-                embeddings=[entry.embedding]
+                embeddings=[entry.embedding],
             )
             self.logger.debug(f"Added knowledge entry: {entry.id}")
         except Exception as e:
             self.logger.warning(f"Could not add knowledge entry {entry.id}: {e}")
 
-    def search_similar(self, query: str, top_k: int = 5, project_id: Optional[str] = None) -> List[Dict]:
+    def search_similar(
+        self, query: str, top_k: int = 5, project_id: Optional[str] = None
+    ) -> List[Dict]:
         """Search for similar knowledge entries
 
         Args:
@@ -70,21 +75,18 @@ class VectorDatabase:
             results = self.collection.query(
                 query_embeddings=[query_embedding],
                 n_results=min(top_k, self.collection.count()),
-                where=where_filter if where_filter else None
+                where=where_filter if where_filter else None,
             )
 
-            if not results['documents'] or not results['documents'][0]:
+            if not results["documents"] or not results["documents"][0]:
                 return []
 
-            return [{
-                'content': doc,
-                'metadata': meta,
-                'score': dist
-            } for doc, meta, dist in zip(
-                results['documents'][0],
-                results['metadatas'][0],
-                results['distances'][0]
-            )]
+            return [
+                {"content": doc, "metadata": meta, "score": dist}
+                for doc, meta, dist in zip(
+                    results["documents"][0], results["metadatas"][0], results["distances"][0]
+                )
+            ]
         except Exception as e:
             self.logger.warning(f"Search failed: {e}")
             return []
@@ -96,14 +98,12 @@ class VectorDatabase:
 
         # Generate unique ID based on content hash
         import hashlib
+
         content_id = hashlib.md5(content.encode()).hexdigest()[:8]
 
         # Create knowledge entry
         entry = KnowledgeEntry(
-            id=content_id,
-            content=content,
-            category='imported_document',
-            metadata=metadata
+            id=content_id, content=content, category="imported_document", metadata=metadata
         )
 
         self.add_knowledge(entry)
@@ -129,8 +129,8 @@ class VectorDatabase:
             # Add project_id and scope to metadata
             if entry.metadata is None:
                 entry.metadata = {}
-            entry.metadata['project_id'] = project_id
-            entry.metadata['scope'] = 'project'
+            entry.metadata["project_id"] = project_id
+            entry.metadata["scope"] = "project"
 
             # Use add_knowledge to handle embedding and storage
             self.add_knowledge(entry)
@@ -154,18 +154,15 @@ class VectorDatabase:
             where_filter = {"project_id": {"$eq": project_id}}
             results = self.collection.get(where=where_filter)
 
-            if not results['ids']:
+            if not results["ids"]:
                 return []
 
-            return [{
-                'id': entry_id,
-                'content': doc,
-                'metadata': meta
-            } for entry_id, doc, meta in zip(
-                results['ids'],
-                results['documents'],
-                results['metadatas']
-            )]
+            return [
+                {"id": entry_id, "content": doc, "metadata": meta}
+                for entry_id, doc, meta in zip(
+                    results["ids"], results["documents"], results["metadatas"]
+                )
+            ]
         except Exception as e:
             self.logger.warning(f"Failed to get project knowledge: {e}")
             return []
@@ -181,12 +178,15 @@ class VectorDatabase:
         """
         try:
             knowledge = self.get_project_knowledge(project_id)
-            return [{
-                'id': entry['id'],
-                'content': entry['content'],
-                'category': entry['metadata'].get('category', 'custom'),
-                'metadata': entry['metadata']
-            } for entry in knowledge]
+            return [
+                {
+                    "id": entry["id"],
+                    "content": entry["content"],
+                    "category": entry["metadata"].get("category", "custom"),
+                    "metadata": entry["metadata"],
+                }
+                for entry in knowledge
+            ]
         except Exception as e:
             self.logger.warning(f"Failed to export project knowledge: {e}")
             return []
@@ -207,10 +207,10 @@ class VectorDatabase:
                 try:
                     # Create KnowledgeEntry from dict
                     entry = KnowledgeEntry(
-                        id=entry_data.get('id'),
-                        content=entry_data.get('content'),
-                        category=entry_data.get('category', 'custom'),
-                        metadata=entry_data.get('metadata', {})
+                        id=entry_data.get("id"),
+                        content=entry_data.get("content"),
+                        category=entry_data.get("category", "custom"),
+                        metadata=entry_data.get("metadata", {}),
                     )
                     if self.add_project_knowledge(entry, project_id):
                         count += 1
@@ -253,12 +253,14 @@ class VectorDatabase:
             where_filter = {"project_id": {"$eq": project_id}}
             knowledge = self.collection.get(where=where_filter)
 
-            if not knowledge['ids']:
+            if not knowledge["ids"]:
                 return 0
 
-            self.collection.delete(ids=knowledge['ids'])
-            self.logger.info(f"Deleted {len(knowledge['ids'])} knowledge entries for project '{project_id}'")
-            return len(knowledge['ids'])
+            self.collection.delete(ids=knowledge["ids"])
+            self.logger.info(
+                f"Deleted {len(knowledge['ids'])} knowledge entries for project '{project_id}'"
+            )
+            return len(knowledge["ids"])
         except Exception as e:
             self.logger.warning(f"Failed to delete project knowledge: {e}")
             return 0

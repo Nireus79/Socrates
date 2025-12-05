@@ -2,19 +2,19 @@
 
 from .base import ConflictChecker
 from .checkers import (
-    TechStackConflictChecker,
-    RequirementsConflictChecker,
+    ConstraintsConflictChecker,
     GoalsConflictChecker,
-    ConstraintsConflictChecker
+    RequirementsConflictChecker,
+    TechStackConflictChecker,
 )
 from .rules import CONFLICT_RULES, find_conflict_category
 
 __all__ = [
-    'ConflictChecker',
-    'TechStackConflictChecker',
-    'RequirementsConflictChecker',
-    'GoalsConflictChecker',
-    'ConstraintsConflictChecker',
-    'CONFLICT_RULES',
-    'find_conflict_category'
+    "ConflictChecker",
+    "TechStackConflictChecker",
+    "RequirementsConflictChecker",
+    "GoalsConflictChecker",
+    "ConstraintsConflictChecker",
+    "CONFLICT_RULES",
+    "find_conflict_category",
 ]

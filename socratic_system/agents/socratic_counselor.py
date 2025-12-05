@@ -3,11 +3,12 @@ Socratic counselor agent for guided questioning and response processing
 """
 
 import datetime
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 from colorama import Fore
 
-from socratic_system.models import ProjectContext, ConflictInfo
+from socratic_system.models import ConflictInfo, ProjectContext
+
 from .base import Agent
 
 
@@ -21,60 +22,63 @@ class SocraticCounselorAgent(Agent):
 
         # Fallback static questions if Claude is unavailable
         self.static_questions = {
-            'discovery': [
+            "discovery": [
                 "What specific problem does your project solve?",
                 "Who is your target audience or user base?",
                 "What are the core features you envision?",
                 "Are there similar solutions that exist? How will yours differ?",
-                "What are your success criteria for this project?"
+                "What are your success criteria for this project?",
             ],
-            'analysis': [
+            "analysis": [
                 "What technical challenges do you anticipate?",
                 "What are your performance requirements?",
                 "How will you handle user authentication and security?",
                 "What third-party integrations might you need?",
-                "How will you test and validate your solution?"
+                "How will you test and validate your solution?",
             ],
-            'design': [
+            "design": [
                 "How will you structure your application architecture?",
                 "What design patterns will you use?",
                 "How will you organize your code and modules?",
                 "What development workflow will you follow?",
-                "How will you handle error cases and edge scenarios?"
+                "How will you handle error cases and edge scenarios?",
             ],
-            'implementation': [
+            "implementation": [
                 "What will be your first implementation milestone?",
                 "How will you handle deployment and DevOps?",
                 "What monitoring and logging will you implement?",
                 "How will you document your code and API?",
-                "What's your plan for maintenance and updates?"
-            ]
+                "What's your plan for maintenance and updates?",
+            ],
         }
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process Socratic questioning requests"""
-        action = request.get('action')
+        action = request.get("action")
 
-        if action == 'generate_question':
+        if action == "generate_question":
             return self._generate_question(request)
-        elif action == 'process_response':
+        elif action == "process_response":
             return self._process_response(request)
-        elif action == 'advance_phase':
+        elif action == "advance_phase":
             return self._advance_phase(request)
-        elif action == 'toggle_dynamic_questions':
+        elif action == "toggle_dynamic_questions":
             self.use_dynamic_questions = not self.use_dynamic_questions
-            return {'status': 'success', 'dynamic_mode': self.use_dynamic_questions}
+            return {"status": "success", "dynamic_mode": self.use_dynamic_questions}
 
-        return {'status': 'error', 'message': 'Unknown action'}
+        return {"status": "error", "message": "Unknown action"}
 
     def _generate_question(self, request: Dict) -> Dict:
         """Generate the next Socratic question"""
-        project = request.get('project')
+        project = request.get("project")
         context = self.orchestrator.context_analyzer.get_context_summary(project)
 
         # Count questions already asked in this phase
-        phase_questions = [msg for msg in project.conversation_history
-                           if msg.get('type') == 'assistant' and msg.get('phase') == project.phase]
+        phase_questions = [
+            msg
+            for msg in project.conversation_history
+            if msg.get("type") == "assistant" and msg.get("phase") == project.phase
+        ]
 
         if self.use_dynamic_questions:
             question = self._generate_dynamic_question(project, context, len(phase_questions))
@@ -82,27 +86,32 @@ class SocraticCounselorAgent(Agent):
             question = self._generate_static_question(project, len(phase_questions))
 
         # Store the question in conversation history
-        project.conversation_history.append({
-            'timestamp': datetime.datetime.now().isoformat(),
-            'type': 'assistant',
-            'content': question,
-            'phase': project.phase,
-            'question_number': len(phase_questions) + 1
-        })
+        project.conversation_history.append(
+            {
+                "timestamp": datetime.datetime.now().isoformat(),
+                "type": "assistant",
+                "content": question,
+                "phase": project.phase,
+                "question_number": len(phase_questions) + 1,
+            }
+        )
 
-        return {'status': 'success', 'question': question}
+        return {"status": "success", "question": question}
 
-    def _generate_dynamic_question(self, project: ProjectContext, context: str, question_count: int) -> str:
+    def _generate_dynamic_question(
+        self, project: ProjectContext, context: str, question_count: int
+    ) -> str:
         """Generate contextual questions using Claude"""
         from socratic_system.utils.logger import get_logger
-        logger = get_logger('socratic_counselor')
+
+        logger = get_logger("socratic_counselor")
 
         # Get conversation history for context
         recent_conversation = ""
         if project.conversation_history:
             recent_messages = project.conversation_history[-4:]  # Last 4 messages
             for msg in recent_messages:
-                role = "Assistant" if msg['type'] == 'assistant' else "User"
+                role = "Assistant" if msg["type"] == "assistant" else "User"
                 recent_conversation += f"{role}: {msg['content']}\n"
             logger.debug(f"Using {len(recent_messages)} recent messages for context")
 
@@ -112,11 +121,17 @@ class SocraticCounselorAgent(Agent):
             logger.debug("Searching vector database for relevant knowledge...")
             knowledge_results = self.orchestrator.vector_db.search_similar(context, top_k=3)
             if knowledge_results:
-                relevant_knowledge = "\n".join([result['content'][:200] + "..." for result in knowledge_results])
+                relevant_knowledge = "\n".join(
+                    [result["content"][:200] + "..." for result in knowledge_results]
+                )
                 logger.debug(f"Found {len(knowledge_results)} relevant knowledge items")
 
-        logger.debug(f"Building question prompt for {project.phase} phase (question #{question_count + 1})")
-        prompt = self._build_question_prompt(project, context, recent_conversation, relevant_knowledge, question_count)
+        logger.debug(
+            f"Building question prompt for {project.phase} phase (question #{question_count + 1})"
+        )
+        prompt = self._build_question_prompt(
+            project, context, recent_conversation, relevant_knowledge, question_count
+        )
 
         try:
             logger.info(f"Generating dynamic question for {project.phase} phase")
@@ -129,22 +144,28 @@ class SocraticCounselorAgent(Agent):
             self.log(f"Failed to generate dynamic question: {e}, falling back to static", "WARN")
             return self._generate_static_question(project, question_count)
 
-    def _build_question_prompt(self, project: ProjectContext, context: str,
-                               recent_conversation: str, relevant_knowledge: str, question_count: int) -> str:
+    def _build_question_prompt(
+        self,
+        project: ProjectContext,
+        context: str,
+        recent_conversation: str,
+        relevant_knowledge: str,
+        question_count: int,
+    ) -> str:
         """Build prompt for dynamic question generation"""
 
         phase_descriptions = {
-            'discovery': "exploring the problem space, understanding user needs, and defining project goals",
-            'analysis': "analyzing technical requirements, identifying challenges, and planning solutions",
-            'design': "designing architecture, choosing patterns, and planning implementation structure",
-            'implementation': "planning development steps, deployment strategy, and maintenance approach"
+            "discovery": "exploring the problem space, understanding user needs, and defining project goals",
+            "analysis": "analyzing technical requirements, identifying challenges, and planning solutions",
+            "design": "designing architecture, choosing patterns, and planning implementation structure",
+            "implementation": "planning development steps, deployment strategy, and maintenance approach",
         }
 
         phase_focus = {
-            'discovery': "problem definition, user needs, market research, competitive analysis",
-            'analysis': "technical feasibility, performance requirements, security considerations, integrations",
-            'design': "architecture patterns, code organization, development workflow, error handling",
-            'implementation': "development milestones, deployment pipeline, monitoring, documentation"
+            "discovery": "problem definition, user needs, market research, competitive analysis",
+            "analysis": "technical feasibility, performance requirements, security considerations, integrations",
+            "design": "architecture patterns, code organization, development workflow, error handling",
+            "implementation": "development milestones, deployment pipeline, monitoring, documentation",
         }
 
         return f"""You are a Socratic tutor helping a developer think through their software project.
@@ -187,33 +208,38 @@ Return only the question, no additional text or explanation."""
         else:
             # Fallback questions when we've exhausted the static list
             fallbacks = {
-                'discovery': "What other aspects of the problem space should we explore?",
-                'analysis': "What technical considerations haven't we discussed yet?",
-                'design': "What design decisions are you still uncertain about?",
-                'implementation': "What implementation details would you like to work through?"
+                "discovery": "What other aspects of the problem space should we explore?",
+                "analysis": "What technical considerations haven't we discussed yet?",
+                "design": "What design decisions are you still uncertain about?",
+                "implementation": "What implementation details would you like to work through?",
             }
             return fallbacks.get(project.phase, "What would you like to explore further?")
 
     def _process_response(self, request: Dict) -> Dict:
         """Process user response and extract insights"""
         from socratic_system.utils.logger import get_logger
-        logger = get_logger('socratic_counselor')
 
-        project = request.get('project')
-        user_response = request.get('response')
-        current_user = request.get('current_user')
+        logger = get_logger("socratic_counselor")
+
+        project = request.get("project")
+        user_response = request.get("response")
+        current_user = request.get("current_user")
 
         logger.debug(f"Processing user response ({len(user_response)} chars) from {current_user}")
 
         # Add to conversation history with phase information
-        project.conversation_history.append({
-            'timestamp': datetime.datetime.now().isoformat(),
-            'type': 'user',
-            'content': user_response,
-            'phase': project.phase,
-            'author': current_user  # Track who said what
-        })
-        logger.debug(f"Added response to conversation history (total: {len(project.conversation_history)} messages)")
+        project.conversation_history.append(
+            {
+                "timestamp": datetime.datetime.now().isoformat(),
+                "type": "user",
+                "content": user_response,
+                "phase": project.phase,
+                "author": current_user,  # Track who said what
+            }
+        )
+        logger.debug(
+            f"Added response to conversation history (total: {len(project.conversation_history)} messages)"
+        )
 
         # Extract insights using Claude
         logger.info("Extracting insights from user response...")
@@ -222,29 +248,29 @@ Return only the question, no additional text or explanation."""
         if insights:
             # Log detailed breakdown of extracted specs
             spec_details = []
-            if insights.get('goals'):
-                goals = insights['goals']
+            if insights.get("goals"):
+                goals = insights["goals"]
                 if isinstance(goals, str) and goals:
-                    spec_details.append(f"1 goal")
+                    spec_details.append("1 goal")
                 elif isinstance(goals, list):
                     spec_details.append(f"{len([g for g in goals if g])} goal(s)")
 
-            if insights.get('requirements'):
-                reqs = insights['requirements']
+            if insights.get("requirements"):
+                reqs = insights["requirements"]
                 if isinstance(reqs, list):
                     spec_details.append(f"{len(reqs)} requirement(s)")
                 elif reqs:
                     spec_details.append("1 requirement")
 
-            if insights.get('tech_stack'):
-                techs = insights['tech_stack']
+            if insights.get("tech_stack"):
+                techs = insights["tech_stack"]
                 if isinstance(techs, list):
                     spec_details.append(f"{len(techs)} tech(s)")
                 elif techs:
                     spec_details.append("1 tech")
 
-            if insights.get('constraints'):
-                consts = insights['constraints']
+            if insights.get("constraints"):
+                consts = insights["constraints"]
                 if isinstance(consts, list):
                     spec_details.append(f"{len(consts)} constraint(s)")
                 elif consts:
@@ -259,21 +285,26 @@ Return only the question, no additional text or explanation."""
         # REAL-TIME CONFLICT DETECTION
         if insights:
             logger.info("Running conflict detection on new insights...")
-            conflict_result = self.orchestrator.process_request('conflict_detector', {
-                'action': 'detect_conflicts',
-                'project': project,
-                'new_insights': insights,
-                'current_user': current_user
-            })
+            conflict_result = self.orchestrator.process_request(
+                "conflict_detector",
+                {
+                    "action": "detect_conflicts",
+                    "project": project,
+                    "new_insights": insights,
+                    "current_user": current_user,
+                },
+            )
 
-            if conflict_result['status'] == 'success' and conflict_result['conflicts']:
+            if conflict_result["status"] == "success" and conflict_result["conflicts"]:
                 logger.warning(f"Detected {len(conflict_result['conflicts'])} conflict(s)")
                 # Handle conflicts before updating context
-                conflicts_resolved = self._handle_conflicts_realtime(conflict_result['conflicts'], project)
+                conflicts_resolved = self._handle_conflicts_realtime(
+                    conflict_result["conflicts"], project
+                )
                 if not conflicts_resolved:
                     # User chose not to resolve conflicts, don't update context
                     logger.info("User chose not to resolve conflicts")
-                    return {'status': 'success', 'insights': insights, 'conflicts_pending': True}
+                    return {"status": "success", "insights": insights, "conflicts_pending": True}
             else:
                 logger.debug("No conflicts detected")
 
@@ -282,17 +313,17 @@ Return only the question, no additional text or explanation."""
         self._update_project_context(project, insights)
         logger.debug("Project context updated successfully")
 
-        return {'status': 'success', 'insights': insights}
+        return {"status": "success", "insights": insights}
 
     def _remove_from_project_context(self, project: ProjectContext, value: str, context_type: str):
         """Remove a value from project context"""
-        if context_type == 'tech_stack' and value in project.tech_stack:
+        if context_type == "tech_stack" and value in project.tech_stack:
             project.tech_stack.remove(value)
-        elif context_type == 'requirements' and value in project.requirements:
+        elif context_type == "requirements" and value in project.requirements:
             project.requirements.remove(value)
-        elif context_type == 'constraints' and value in project.constraints:
+        elif context_type == "constraints" and value in project.constraints:
             project.constraints.remove(value)
-        elif context_type == 'goals':
+        elif context_type == "goals":
             project.goals = ""
 
     def _manual_resolution(self, conflict: ConflictInfo) -> str:
@@ -305,7 +336,9 @@ Return only the question, no additional text or explanation."""
             return new_value
         return ""
 
-    def _handle_conflicts_realtime(self, conflicts: List[ConflictInfo], project: ProjectContext) -> bool:
+    def _handle_conflicts_realtime(
+        self, conflicts: List[ConflictInfo], project: ProjectContext
+    ) -> bool:
         """Handle conflicts in real-time during conversation"""
         for conflict in conflicts:
             print(f"\n{Fore.RED}[WARNING]  CONFLICT DETECTED!")
@@ -315,7 +348,9 @@ Return only the question, no additional text or explanation."""
             print(f"{Fore.RED}Severity: {conflict.severity}")
 
             # Get AI-generated suggestions
-            suggestions = self.orchestrator.claude_client.generate_conflict_resolution_suggestions(conflict, project)
+            suggestions = self.orchestrator.claude_client.generate_conflict_resolution_suggestions(
+                conflict, project
+            )
             print(f"\n{Fore.MAGENTA}{suggestions}")
 
             print(f"\n{Fore.CYAN}Resolution Options:")
@@ -327,23 +362,29 @@ Return only the question, no additional text or explanation."""
             while True:
                 choice = input(f"{Fore.WHITE}Choose resolution (1-4): ").strip()
 
-                if choice == '1':
+                if choice == "1":
                     print(f"{Fore.GREEN}[OK] Keeping existing: '{conflict.old_value}'")
                     self._remove_from_insights(conflict.new_value, conflict.conflict_type)
                     break
-                elif choice == '2':
+                elif choice == "2":
                     print(f"{Fore.GREEN}[OK] Replacing with: '{conflict.new_value}'")
-                    self._remove_from_project_context(project, conflict.old_value, conflict.conflict_type)
+                    self._remove_from_project_context(
+                        project, conflict.old_value, conflict.conflict_type
+                    )
                     break
-                elif choice == '3':
+                elif choice == "3":
                     print(f"{Fore.YELLOW}[SKIP]  Skipping specification")
                     self._remove_from_insights(conflict.new_value, conflict.conflict_type)
                     break
-                elif choice == '4':
+                elif choice == "4":
                     resolved_value = self._manual_resolution(conflict)
                     if resolved_value:
-                        self._remove_from_project_context(project, conflict.old_value, conflict.conflict_type)
-                        self._update_insights_value(conflict.new_value, resolved_value, conflict.conflict_type)
+                        self._remove_from_project_context(
+                            project, conflict.old_value, conflict.conflict_type
+                        )
+                        self._update_insights_value(
+                            conflict.new_value, resolved_value, conflict.conflict_type
+                        )
                         print(f"{Fore.GREEN}[OK] Updated to: '{resolved_value}'")
                     break
                 else:
@@ -353,15 +394,15 @@ Return only the question, no additional text or explanation."""
 
     def _advance_phase(self, request: Dict) -> Dict:
         """Advance project to the next phase"""
-        project = request.get('project')
-        phases = ['discovery', 'analysis', 'design', 'implementation']
+        project = request.get("project")
+        phases = ["discovery", "analysis", "design", "implementation"]
 
         current_index = phases.index(project.phase)
         if current_index < len(phases) - 1:
             project.phase = phases[current_index + 1]
             self.log(f"Advanced project to {project.phase} phase")
 
-        return {'status': 'success', 'new_phase': project.phase}
+        return {"status": "success", "new_phase": project.phase}
 
     def _update_project_context(self, project: ProjectContext, insights: Dict):
         """Update project context based on extracted insights"""
@@ -370,18 +411,18 @@ Return only the question, no additional text or explanation."""
 
         try:
             # Handle goals
-            if 'goals' in insights and insights['goals']:
-                goals_value = insights['goals']
+            if "goals" in insights and insights["goals"]:
+                goals_value = insights["goals"]
                 if isinstance(goals_value, list):
-                    project.goals = ' '.join(str(item) for item in goals_value if item)
+                    project.goals = " ".join(str(item) for item in goals_value if item)
                 elif isinstance(goals_value, str):
                     project.goals = goals_value.strip()
                 else:
                     project.goals = str(goals_value).strip()
 
             # Handle requirements
-            if 'requirements' in insights and insights['requirements']:
-                requirements_value = insights['requirements']
+            if "requirements" in insights and insights["requirements"]:
+                requirements_value = insights["requirements"]
                 if isinstance(requirements_value, list):
                     for req in requirements_value:
                         req_str = str(req).strip() if req else ""
@@ -397,8 +438,8 @@ Return only the question, no additional text or explanation."""
                         project.requirements.append(req_str)
 
             # Handle tech_stack
-            if 'tech_stack' in insights and insights['tech_stack']:
-                tech_value = insights['tech_stack']
+            if "tech_stack" in insights and insights["tech_stack"]:
+                tech_value = insights["tech_stack"]
                 if isinstance(tech_value, list):
                     for tech in tech_value:
                         tech_str = str(tech).strip() if tech else ""
@@ -414,8 +455,8 @@ Return only the question, no additional text or explanation."""
                         project.tech_stack.append(tech_str)
 
             # Handle constraints
-            if 'constraints' in insights and insights['constraints']:
-                constraints_value = insights['constraints']
+            if "constraints" in insights and insights["constraints"]:
+                constraints_value = insights["constraints"]
                 if isinstance(constraints_value, list):
                     for constraint in constraints_value:
                         constraint_str = str(constraint).strip() if constraint else ""

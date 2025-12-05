@@ -1,7 +1,8 @@
 """Base command class for all CLI commands"""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
+
 from colorama import Fore, Style
 
 
@@ -25,7 +26,7 @@ class BaseCommand(ABC):
         self.name = name
         self.description = description
         self.usage = usage
-        self.subcommands: Dict[str, 'BaseCommand'] = {}
+        self.subcommands: Dict[str, BaseCommand] = {}
 
     @abstractmethod
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -49,7 +50,7 @@ class BaseCommand(ABC):
         """
         pass
 
-    def register_subcommand(self, subcommand: 'BaseCommand') -> None:
+    def register_subcommand(self, subcommand: "BaseCommand") -> None:
         """Register a subcommand."""
         self.subcommands[subcommand.name] = subcommand
 
@@ -73,7 +74,9 @@ class BaseCommand(ABC):
 
         return help_text
 
-    def validate_args(self, args: List[str], min_count: int = 0, max_count: Optional[int] = None) -> bool:
+    def validate_args(
+        self, args: List[str], min_count: int = 0, max_count: Optional[int] = None
+    ) -> bool:
         """
         Validate argument count.
 
@@ -101,10 +104,7 @@ class BaseCommand(ABC):
         Returns:
             Error response dictionary
         """
-        return {
-            'status': 'error',
-            'message': f"{Fore.RED}Error: {message}{Style.RESET_ALL}"
-        }
+        return {"status": "error", "message": f"{Fore.RED}Error: {message}{Style.RESET_ALL}"}
 
     def success(self, message: str = "", data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
@@ -117,11 +117,11 @@ class BaseCommand(ABC):
         Returns:
             Success response dictionary
         """
-        response = {'status': 'success'}
+        response = {"status": "success"}
         if message:
-            response['message'] = f"{Fore.GREEN}{message}{Style.RESET_ALL}"
+            response["message"] = f"{Fore.GREEN}{message}{Style.RESET_ALL}"
         if data:
-            response['data'] = data
+            response["data"] = data
         return response
 
     def info(self, message: str) -> Dict[str, Any]:
@@ -134,10 +134,7 @@ class BaseCommand(ABC):
         Returns:
             Info response dictionary
         """
-        return {
-            'status': 'info',
-            'message': f"{Fore.CYAN}{message}{Style.RESET_ALL}"
-        }
+        return {"status": "info", "message": f"{Fore.CYAN}{message}{Style.RESET_ALL}"}
 
     def require_project(self, context: Dict[str, Any]) -> bool:
         """
@@ -149,7 +146,7 @@ class BaseCommand(ABC):
         Returns:
             True if project is loaded, False otherwise
         """
-        return context.get('project') is not None
+        return context.get("project") is not None
 
     def require_user(self, context: Dict[str, Any]) -> bool:
         """
@@ -161,7 +158,7 @@ class BaseCommand(ABC):
         Returns:
             True if user is logged in, False otherwise
         """
-        return context.get('user') is not None
+        return context.get("user") is not None
 
     def print_header(self, title: str) -> None:
         """Print a formatted section header."""

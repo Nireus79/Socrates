@@ -2,14 +2,15 @@
 Project context model for Socratic RAG System
 """
 
-from dataclasses import dataclass
-from typing import List, Optional, Dict
 import datetime
+from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 
 @dataclass
 class ProjectContext:
     """Represents a project's complete context and metadata"""
+
     project_id: str
     name: str
     owner: str

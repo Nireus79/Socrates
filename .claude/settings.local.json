@@ -22,7 +22,10 @@
       "Bash(wc:*)",
       "Bash(ls:*)",
       "Bash(iconv:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(black:*)",
+      "Bash(ruff check:*)",
+      "Bash(pytest:*)"
     ],
     "deny": [],
     "ask": []

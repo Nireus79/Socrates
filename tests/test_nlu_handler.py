@@ -5,31 +5,33 @@ Tests the NLU system's ability to interpret natural language commands
 and suggest matching slash commands.
 """
 
-import pytest
 import json
-import sys
 import os
-import tempfile
 import shutil
-from unittest.mock import patch, MagicMock, call
+import sys
+import tempfile
 from io import StringIO
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Fix Windows console encoding issues
-if sys.platform == 'win32':
+if sys.platform == "win32":
     import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
-from socratic_system.ui.nlu_handler import CommandSuggestion, NLUHandler, SuggestionDisplay
-from socratic_system.ui.command_handler import CommandHandler
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
 from socratic_system.orchestration import AgentOrchestrator
-from socratic_system.ui.commands import HelpCommand, ExitCommand, StatusCommand
+from socratic_system.ui.command_handler import CommandHandler
+from socratic_system.ui.commands import ExitCommand, HelpCommand, StatusCommand
+from socratic_system.ui.nlu_handler import CommandSuggestion, NLUHandler, SuggestionDisplay
 
 
 @pytest.fixture
 def temp_data_dir():
     """Create temporary data directory for testing"""
     temp_dir = tempfile.mkdtemp()
-    os.environ['SOCRATIC_DATA_DIR'] = temp_dir
+    os.environ["SOCRATIC_DATA_DIR"] = temp_dir
     yield temp_dir
     shutil.rmtree(temp_dir)
 
@@ -37,9 +39,9 @@ def temp_data_dir():
 @pytest.fixture
 def orchestrator(temp_data_dir):
     """Initialize orchestrator with mocked Claude client"""
-    with patch.dict(os.environ, {'API_KEY_CLAUDE': 'test-key'}):
-        with patch('socratic_system.orchestration.orchestrator.ClaudeClient'):
-            orch = AgentOrchestrator('test-key')
+    with patch.dict(os.environ, {"API_KEY_CLAUDE": "test-key"}):
+        with patch("socratic_system.orchestration.orchestrator.ClaudeClient"):
+            orch = AgentOrchestrator("test-key")
             orch.claude_client = MagicMock()
             orch.claude_client.generate_response = MagicMock(return_value="Test response")
             orch.database.users = {}
@@ -51,8 +53,8 @@ def orchestrator(temp_data_dir):
 def command_handler():
     """Initialize command handler with test commands"""
     handler = CommandHandler()
-    handler.register_command(HelpCommand(), aliases=['h', '?'])
-    handler.register_command(ExitCommand(), aliases=['quit', 'q'])
+    handler.register_command(HelpCommand(), aliases=["h", "?"])
+    handler.register_command(ExitCommand(), aliases=["quit", "q"])
     handler.register_command(StatusCommand())
     return handler
 
@@ -67,10 +69,10 @@ def nlu_handler(orchestrator, command_handler):
 def mock_context():
     """Create mock application context"""
     return {
-        'user': MagicMock(username='testuser'),
-        'project': MagicMock(name='TestProject', phase='discovery'),
-        'orchestrator': MagicMock(),
-        'app': MagicMock()
+        "user": MagicMock(username="testuser"),
+        "project": MagicMock(name="TestProject", phase="discovery"),
+        "orchestrator": MagicMock(),
+        "app": MagicMock(),
     }
 
 
@@ -80,10 +82,7 @@ class TestCommandSuggestion:
     def test_suggestion_creation(self):
         """Test creating a command suggestion"""
         suggestion = CommandSuggestion(
-            command="/help",
-            confidence=0.95,
-            reasoning="User asked for help",
-            args=[]
+            command="/help", confidence=0.95, reasoning="User asked for help", args=[]
         )
 
         assert suggestion.command == "/help"
@@ -97,7 +96,7 @@ class TestCommandSuggestion:
             command="/project create",
             confidence=0.85,
             reasoning="Clear intent to create a project",
-            args=["MyProject"]
+            args=["MyProject"],
         )
 
         assert suggestion.command == "/project create"
@@ -107,25 +106,19 @@ class TestCommandSuggestion:
     def test_suggestion_to_dict(self):
         """Test converting suggestion to dictionary"""
         suggestion = CommandSuggestion(
-            command="/help",
-            confidence=0.95,
-            reasoning="Help requested",
-            args=[]
+            command="/help", confidence=0.95, reasoning="Help requested", args=[]
         )
 
         result = suggestion.to_dict()
-        assert result['command'] == "/help"
-        assert result['confidence'] == 0.95
-        assert result['reasoning'] == "Help requested"
-        assert result['args'] == []
+        assert result["command"] == "/help"
+        assert result["confidence"] == 0.95
+        assert result["reasoning"] == "Help requested"
+        assert result["args"] == []
 
     def test_get_full_command_without_args(self):
         """Test getting full command without arguments"""
         suggestion = CommandSuggestion(
-            command="/exit",
-            confidence=0.95,
-            reasoning="Exit command",
-            args=[]
+            command="/exit", confidence=0.95, reasoning="Exit command", args=[]
         )
 
         assert suggestion.get_full_command() == "/exit"
@@ -136,7 +129,7 @@ class TestCommandSuggestion:
             command="/project create",
             confidence=0.85,
             reasoning="Create project",
-            args=["TestProject", "python"]
+            args=["TestProject", "python"],
         )
 
         assert suggestion.get_full_command() == "/project create TestProject python"
@@ -166,10 +159,10 @@ class TestNLUHandlerBasics:
     def test_quick_patterns_loaded(self, nlu_handler):
         """Test quick patterns are loaded"""
         patterns = nlu_handler.quick_patterns
-        assert r'\b(exit|quit|bye|goodbye)\b' in patterns
-        assert r'\b(help|what can you do|show help)\b' in patterns
-        assert patterns[r'\b(exit|quit|bye|goodbye)\b'] == '/exit'
-        assert patterns[r'\b(help|what can you do|show help)\b'] == '/help'
+        assert r"\b(exit|quit|bye|goodbye)\b" in patterns
+        assert r"\b(help|what can you do|show help)\b" in patterns
+        assert patterns[r"\b(exit|quit|bye|goodbye)\b"] == "/exit"
+        assert patterns[r"\b(help|what can you do|show help)\b"] == "/help"
 
 
 class TestShouldSkipNLU:
@@ -203,29 +196,29 @@ class TestQuickPatternMatching:
 
     def test_match_exit_patterns(self, nlu_handler):
         """Test matching exit command patterns"""
-        assert nlu_handler.try_quick_match("exit") == '/exit'
-        assert nlu_handler.try_quick_match("quit") == '/exit'
-        assert nlu_handler.try_quick_match("bye") == '/exit'
-        assert nlu_handler.try_quick_match("goodbye") == '/exit'
+        assert nlu_handler.try_quick_match("exit") == "/exit"
+        assert nlu_handler.try_quick_match("quit") == "/exit"
+        assert nlu_handler.try_quick_match("bye") == "/exit"
+        assert nlu_handler.try_quick_match("goodbye") == "/exit"
 
     def test_match_help_patterns(self, nlu_handler):
         """Test matching help command patterns"""
-        assert nlu_handler.try_quick_match("help") == '/help'
-        assert nlu_handler.try_quick_match("show help") == '/help'
-        assert nlu_handler.try_quick_match("what can you do") == '/help'
+        assert nlu_handler.try_quick_match("help") == "/help"
+        assert nlu_handler.try_quick_match("show help") == "/help"
+        assert nlu_handler.try_quick_match("what can you do") == "/help"
 
     def test_match_other_patterns(self, nlu_handler):
         """Test matching other quick patterns"""
-        assert nlu_handler.try_quick_match("clear") == '/clear'
-        assert nlu_handler.try_quick_match("back") == '/back'
-        assert nlu_handler.try_quick_match("menu") == '/menu'
-        assert nlu_handler.try_quick_match("status") == '/status'
+        assert nlu_handler.try_quick_match("clear") == "/clear"
+        assert nlu_handler.try_quick_match("back") == "/back"
+        assert nlu_handler.try_quick_match("menu") == "/menu"
+        assert nlu_handler.try_quick_match("status") == "/status"
 
     def test_case_insensitive_matching(self, nlu_handler):
         """Test pattern matching is case insensitive"""
-        assert nlu_handler.try_quick_match("EXIT") == '/exit'
-        assert nlu_handler.try_quick_match("Help") == '/help'
-        assert nlu_handler.try_quick_match("CLEAR") == '/clear'
+        assert nlu_handler.try_quick_match("EXIT") == "/exit"
+        assert nlu_handler.try_quick_match("Help") == "/help"
+        assert nlu_handler.try_quick_match("CLEAR") == "/clear"
 
     def test_no_match(self, nlu_handler):
         """Test when no pattern matches"""
@@ -240,16 +233,16 @@ class TestInterpretWithQuickMatch:
         """Test interpret returns quick match without API call"""
         result = nlu_handler.interpret("exit", mock_context)
 
-        assert result['status'] == 'success'
-        assert result['command'] == '/exit'
-        assert '[NLU]' in result.get('message', '')
+        assert result["status"] == "success"
+        assert result["command"] == "/exit"
+        assert "[NLU]" in result.get("message", "")
 
     def test_interpret_skip_nlu_for_slash(self, nlu_handler, mock_context):
         """Test interpret skips NLU for slash commands"""
         result = nlu_handler.interpret("/help", mock_context)
 
-        assert result['status'] == 'success'
-        assert result['command'] == '/help'
+        assert result["status"] == "success"
+        assert result["command"] == "/help"
         # Slash commands bypass command handler and go straight through
         # Should have message (either [NLU] for quick match or direct execution)
 
@@ -259,22 +252,24 @@ class TestParseNLUResponse:
 
     def test_parse_valid_json_response(self, nlu_handler):
         """Test parsing valid JSON response"""
-        response = json.dumps({
-            "interpretations": [
-                {
-                    "command": "/help",
-                    "confidence": 0.95,
-                    "reasoning": "Help requested",
-                    "args": []
-                }
-            ]
-        })
+        response = json.dumps(
+            {
+                "interpretations": [
+                    {
+                        "command": "/help",
+                        "confidence": 0.95,
+                        "reasoning": "Help requested",
+                        "args": [],
+                    }
+                ]
+            }
+        )
 
         result = nlu_handler._parse_nlu_response(response)
         assert result is not None
-        assert 'interpretations' in result
-        assert len(result['interpretations']) == 1
-        assert result['interpretations'][0]['command'] == '/help'
+        assert "interpretations" in result
+        assert len(result["interpretations"]) == 1
+        assert result["interpretations"][0]["command"] == "/help"
 
     def test_parse_json_with_markdown_fence(self, nlu_handler):
         """Test parsing JSON wrapped in markdown code fence"""
@@ -293,7 +288,7 @@ class TestParseNLUResponse:
 
         result = nlu_handler._parse_nlu_response(response)
         assert result is not None
-        assert 'interpretations' in result
+        assert "interpretations" in result
 
     def test_parse_json_with_plain_fence(self, nlu_handler):
         """Test parsing JSON wrapped in plain code fence"""
@@ -312,7 +307,7 @@ class TestParseNLUResponse:
 
         result = nlu_handler._parse_nlu_response(response)
         assert result is not None
-        assert 'interpretations' in result
+        assert "interpretations" in result
 
     def test_parse_invalid_json(self, nlu_handler):
         """Test parsing invalid JSON returns None"""
@@ -327,7 +322,7 @@ class TestParseNLUResponse:
 
         result = nlu_handler._parse_nlu_response(response)
         assert result is not None
-        assert result['interpretations'] == []
+        assert result["interpretations"] == []
 
 
 class TestNLUInterpretation:
@@ -335,81 +330,85 @@ class TestNLUInterpretation:
 
     def test_interpret_high_confidence(self, nlu_handler, mock_context):
         """Test interpretation with high confidence executes directly"""
-        mock_response = json.dumps({
-            "interpretations": [
-                {
-                    "command": "/help",
-                    "confidence": 0.95,
-                    "reasoning": "Clear request for help",
-                    "args": []
-                }
-            ]
-        })
+        mock_response = json.dumps(
+            {
+                "interpretations": [
+                    {
+                        "command": "/help",
+                        "confidence": 0.95,
+                        "reasoning": "Clear request for help",
+                        "args": [],
+                    }
+                ]
+            }
+        )
 
         nlu_handler.claude_client.generate_response = MagicMock(return_value=mock_response)
 
         result = nlu_handler.interpret("show me help", mock_context)
 
-        assert result['status'] == 'success'
-        assert result['command'] == '/help'
-        assert '[NLU]' in result.get('message', '')
+        assert result["status"] == "success"
+        assert result["command"] == "/help"
+        assert "[NLU]" in result.get("message", "")
 
     def test_interpret_medium_confidence(self, nlu_handler, mock_context):
         """Test interpretation with medium confidence shows suggestions"""
-        mock_response = json.dumps({
-            "interpretations": [
-                {
-                    "command": "/help",
-                    "confidence": 0.70,
-                    "reasoning": "Possible help request",
-                    "args": []
-                },
-                {
-                    "command": "/status",
-                    "confidence": 0.60,
-                    "reasoning": "Could be status check",
-                    "args": []
-                }
-            ]
-        })
+        mock_response = json.dumps(
+            {
+                "interpretations": [
+                    {
+                        "command": "/help",
+                        "confidence": 0.70,
+                        "reasoning": "Possible help request",
+                        "args": [],
+                    },
+                    {
+                        "command": "/status",
+                        "confidence": 0.60,
+                        "reasoning": "Could be status check",
+                        "args": [],
+                    },
+                ]
+            }
+        )
 
         nlu_handler.claude_client.generate_response = MagicMock(return_value=mock_response)
 
         result = nlu_handler.interpret("what's that", mock_context)
 
-        assert result['status'] == 'suggestions'
-        assert 'suggestions' in result
-        assert len(result['suggestions']) >= 1
+        assert result["status"] == "suggestions"
+        assert "suggestions" in result
+        assert len(result["suggestions"]) >= 1
 
     def test_interpret_low_confidence(self, nlu_handler, mock_context):
         """Test interpretation with low confidence shows no match"""
-        mock_response = json.dumps({
-            "interpretations": [
-                {
-                    "command": "/help",
-                    "confidence": 0.40,
-                    "reasoning": "Very weak match",
-                    "args": []
-                }
-            ]
-        })
+        mock_response = json.dumps(
+            {
+                "interpretations": [
+                    {
+                        "command": "/help",
+                        "confidence": 0.40,
+                        "reasoning": "Very weak match",
+                        "args": [],
+                    }
+                ]
+            }
+        )
 
         nlu_handler.claude_client.generate_response = MagicMock(return_value=mock_response)
 
         result = nlu_handler.interpret("random text", mock_context)
 
-        assert result['status'] == 'no_match'
+        assert result["status"] == "no_match"
 
     def test_interpret_api_error(self, nlu_handler, mock_context):
         """Test interpretation handles API errors gracefully"""
-        nlu_handler.claude_client.generate_response = MagicMock(
-            side_effect=Exception("API Error")
-        )
+        nlu_handler.claude_client.generate_response = MagicMock(side_effect=Exception("API Error"))
 
         result = nlu_handler.interpret("test command", mock_context)
 
-        assert result['status'] == 'error'
-        assert 'message' in result
+        assert result["status"] == "error"
+        assert "message" in result
 
     def test_interpret_empty_response(self, nlu_handler, mock_context):
         """Test interpretation handles empty response"""
@@ -419,7 +418,7 @@ class TestNLUInterpretation:
 
         result = nlu_handler.interpret("test", mock_context)
 
-        assert result['status'] == 'no_match'
+        assert result["status"] == "no_match"
 
 
 class TestNLUCaching:
@@ -427,16 +426,18 @@ class TestNLUCaching:
 
     def test_cache_successful_interpretation(self, nlu_handler, mock_context):
         """Test that successful interpretations are cached"""
-        mock_response = json.dumps({
-            "interpretations": [
-                {
-                    "command": "/help",
-                    "confidence": 0.95,
-                    "reasoning": "Help requested",
-                    "args": []
-                }
-            ]
-        })
+        mock_response = json.dumps(
+            {
+                "interpretations": [
+                    {
+                        "command": "/help",
+                        "confidence": 0.95,
+                        "reasoning": "Help requested",
+                        "args": [],
+                    }
+                ]
+            }
+        )
 
         nlu_handler.claude_client.generate_response = MagicMock(return_value=mock_response)
 
@@ -445,11 +446,11 @@ class TestNLUCaching:
 
         # First call
         result1 = nlu_handler.interpret(test_phrase, mock_context)
-        assert result1['status'] == 'success'
+        assert result1["status"] == "success"
 
         # Second call should use cache (no API call)
         result2 = nlu_handler.interpret(test_phrase, mock_context)
-        assert result2['status'] == 'success'
+        assert result2["status"] == "success"
 
         # API should only be called once (second call uses cache)
         assert nlu_handler.claude_client.generate_response.call_count == 1
@@ -462,31 +463,26 @@ class TestNLUCaching:
 
         # First call with no match
         result1 = nlu_handler.interpret("random text", mock_context)
-        assert result1['status'] == 'no_match'
+        assert result1["status"] == "no_match"
 
         # Second call should hit API again (not cached)
         result2 = nlu_handler.interpret("random text", mock_context)
-        assert result2['status'] == 'no_match'
+        assert result2["status"] == "no_match"
 
         # API should be called twice
         assert nlu_handler.claude_client.generate_response.call_count == 2
 
     def test_cache_size_limit(self, nlu_handler, mock_context):
         """Test that cache respects size limit"""
-        mock_response_template = json.dumps({
-            "interpretations": [
-                {
-                    "command": "/help",
-                    "confidence": 0.95,
-                    "reasoning": "Help",
-                    "args": []
-                }
-            ]
-        })
-
-        nlu_handler.claude_client.generate_response = MagicMock(
-            return_value=mock_response_template
+        mock_response_template = json.dumps(
+            {
+                "interpretations": [
+                    {"command": "/help", "confidence": 0.95, "reasoning": "Help", "args": []}
+                ]
+            }
         )
+
+        nlu_handler.claude_client.generate_response = MagicMock(return_value=mock_response_template)
 
         # Fill cache beyond limit
         for i in range(nlu_handler._cache_max_size + 10):
@@ -502,37 +498,31 @@ class TestBuildContextSummary:
     def test_build_context_with_user_and_project(self, nlu_handler):
         """Test building context summary with user and project"""
         context = {
-            'user': MagicMock(username='testuser'),
-            'project': MagicMock(name='TestProject', phase='design')
+            "user": MagicMock(username="testuser"),
+            "project": MagicMock(name="TestProject", phase="design"),
         }
 
         summary = nlu_handler._build_context_summary(context)
 
-        assert 'testuser' in summary
-        assert 'TestProject' in summary
-        assert 'design' in summary
+        assert "testuser" in summary
+        assert "TestProject" in summary
+        assert "design" in summary
 
     def test_build_context_no_project(self, nlu_handler):
         """Test building context summary without project"""
-        context = {
-            'user': MagicMock(username='testuser'),
-            'project': None
-        }
+        context = {"user": MagicMock(username="testuser"), "project": None}
 
         summary = nlu_handler._build_context_summary(context)
 
-        assert 'testuser' in summary
-        assert 'No project' in summary
+        assert "testuser" in summary
+        assert "No project" in summary
 
     def test_build_context_empty(self, nlu_handler):
         """Test building context summary with no user and no project"""
-        summary = nlu_handler._build_context_summary({
-            'user': None,
-            'project': None
-        })
+        summary = nlu_handler._build_context_summary({"user": None, "project": None})
 
         # Empty context should mention no project
-        assert 'No project' in summary or 'No context' in summary
+        assert "No project" in summary or "No context" in summary
 
 
 class TestSuggestionDisplay:
@@ -546,13 +536,13 @@ class TestSuggestionDisplay:
         ]
 
         # Capture stdout
-        with patch('builtins.input', side_effect=['0']):  # User selects cancel
-            with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+        with patch("builtins.input", side_effect=["0"]):  # User selects cancel
+            with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
                 result = SuggestionDisplay.show_suggestions(suggestions)
                 output = mock_stdout.getvalue()
 
                 # Check display format
-                assert '[1]' in output or '[1]' in result or True  # Output captured above
+                assert "[1]" in output or "[1]" in result or True  # Output captured above
 
     def test_show_suggestions_user_selection(self):
         """Test user selecting a suggestion"""
@@ -561,9 +551,9 @@ class TestSuggestionDisplay:
             CommandSuggestion("/status", 0.70, "Status check", []),
         ]
 
-        with patch('builtins.input', return_value='1'):
+        with patch("builtins.input", return_value="1"):
             result = SuggestionDisplay.show_suggestions(suggestions)
-            assert result == '/help'
+            assert result == "/help"
 
     def test_show_suggestions_cancel(self):
         """Test user cancelling suggestions"""
@@ -571,7 +561,7 @@ class TestSuggestionDisplay:
             CommandSuggestion("/help", 0.95, "Help request", []),
         ]
 
-        with patch('builtins.input', return_value='0'):
+        with patch("builtins.input", return_value="0"):
             result = SuggestionDisplay.show_suggestions(suggestions)
             assert result is None
 
@@ -582,9 +572,9 @@ class TestSuggestionDisplay:
         ]
 
         # Try invalid, then valid
-        with patch('builtins.input', side_effect=['99', '1']):
+        with patch("builtins.input", side_effect=["99", "1"]):
             result = SuggestionDisplay.show_suggestions(suggestions)
-            assert result == '/help'
+            assert result == "/help"
 
     def test_show_suggestions_non_numeric_input(self):
         """Test non-numeric input handling"""
@@ -593,9 +583,9 @@ class TestSuggestionDisplay:
         ]
 
         # Try non-numeric, then valid
-        with patch('builtins.input', side_effect=['abc', '1']):
+        with patch("builtins.input", side_effect=["abc", "1"]):
             result = SuggestionDisplay.show_suggestions(suggestions)
-            assert result == '/help'
+            assert result == "/help"
 
     def test_show_suggestions_keyboard_interrupt(self):
         """Test keyboard interrupt during selection"""
@@ -603,7 +593,7 @@ class TestSuggestionDisplay:
             CommandSuggestion("/help", 0.95, "Help", []),
         ]
 
-        with patch('builtins.input', side_effect=KeyboardInterrupt()):
+        with patch("builtins.input", side_effect=KeyboardInterrupt()):
             result = SuggestionDisplay.show_suggestions(suggestions)
             assert result is None
 
@@ -618,7 +608,7 @@ class TestCommandMetadata:
         assert metadata is not None
         assert len(metadata) > 0
         # Should contain command information
-        assert 'HELP' in metadata.upper() or 'help' in metadata.lower()
+        assert "HELP" in metadata.upper() or "help" in metadata.lower()
 
     def test_command_metadata_caching(self, nlu_handler):
         """Test command metadata is cached"""
@@ -635,30 +625,32 @@ class TestIntegrationWithContext:
     def test_interpret_with_full_context(self, nlu_handler):
         """Test interpretation with complete context"""
         context = {
-            'user': MagicMock(username='alice'),
-            'project': MagicMock(name='MyApp', phase='implementation'),
-            'orchestrator': MagicMock(),
-            'app': MagicMock()
+            "user": MagicMock(username="alice"),
+            "project": MagicMock(name="MyApp", phase="implementation"),
+            "orchestrator": MagicMock(),
+            "app": MagicMock(),
         }
 
-        mock_response = json.dumps({
-            "interpretations": [
-                {
-                    "command": "/project status",
-                    "confidence": 0.85,
-                    "reasoning": "Asking about project status",
-                    "args": []
-                }
-            ]
-        })
+        mock_response = json.dumps(
+            {
+                "interpretations": [
+                    {
+                        "command": "/project status",
+                        "confidence": 0.85,
+                        "reasoning": "Asking about project status",
+                        "args": [],
+                    }
+                ]
+            }
+        )
 
         nlu_handler.claude_client.generate_response = MagicMock(return_value=mock_response)
 
         result = nlu_handler.interpret("how is my project going", context)
 
-        assert result['status'] == 'success'
-        assert '/project' in result['command']
+        assert result["status"] == "success"
+        assert "/project" in result["command"]
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

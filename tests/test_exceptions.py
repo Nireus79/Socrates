@@ -4,17 +4,16 @@ Unit tests for Socrates exception system
 
 import pytest
 
-import socrates
 from socratic_system.exceptions import (
-    SocratesError,
-    ConfigurationError,
     AgentError,
-    DatabaseError,
+    APIError,
     AuthenticationError,
+    ConfigurationError,
+    DatabaseError,
     ProjectNotFoundError,
+    SocratesError,
     UserNotFoundError,
     ValidationError,
-    APIError
 )
 
 
@@ -45,11 +44,7 @@ class TestSocratesError:
     def test_error_to_dict(self):
         """Test converting error to dictionary"""
         context = {"key": "value"}
-        error = SocratesError(
-            "Test message",
-            error_code="TEST",
-            context=context
-        )
+        error = SocratesError("Test message", error_code="TEST", context=context)
 
         error_dict = error.to_dict()
 
@@ -78,20 +73,14 @@ class TestConfigurationError:
 
     def test_configuration_error_with_code(self):
         """Test ConfigurationError with code"""
-        error = ConfigurationError(
-            "Missing API key",
-            error_code="MISSING_API_KEY"
-        )
+        error = ConfigurationError("Missing API key", error_code="MISSING_API_KEY")
 
         assert error.error_code == "MISSING_API_KEY"
 
     def test_configuration_error_with_context(self):
         """Test ConfigurationError with context"""
         context = {"missing_key": "ANTHROPIC_API_KEY"}
-        error = ConfigurationError(
-            "Missing required config",
-            context=context
-        )
+        error = ConfigurationError("Missing required config", context=context)
 
         assert error.context == context
 
@@ -109,10 +98,7 @@ class TestAgentError:
     def test_agent_error_with_agent_info(self):
         """Test AgentError with agent information"""
         context = {"agent_name": "code_generator", "action": "generate_code"}
-        error = AgentError(
-            "Code generation failed",
-            context=context
-        )
+        error = AgentError("Code generation failed", context=context)
 
         assert error.context["agent_name"] == "code_generator"
 
@@ -130,10 +116,7 @@ class TestDatabaseError:
     def test_database_error_context(self):
         """Test DatabaseError with context"""
         context = {"operation": "save_project", "table": "projects"}
-        error = DatabaseError(
-            "Failed to save project",
-            context=context
-        )
+        error = DatabaseError("Failed to save project", context=context)
 
         assert error.context["operation"] == "save_project"
 
@@ -144,10 +127,7 @@ class TestProjectNotFoundError:
 
     def test_project_not_found_error(self):
         """Test ProjectNotFoundError"""
-        error = ProjectNotFoundError(
-            "Project not found",
-            context={"project_id": "invalid_id"}
-        )
+        error = ProjectNotFoundError("Project not found", context={"project_id": "invalid_id"})
 
         assert isinstance(error, DatabaseError)
         assert "invalid_id" in str(error.context)
@@ -166,10 +146,7 @@ class TestUserNotFoundError:
 
     def test_user_not_found_error(self):
         """Test UserNotFoundError"""
-        error = UserNotFoundError(
-            "User not found",
-            context={"username": "nonexistent"}
-        )
+        error = UserNotFoundError("User not found", context={"username": "nonexistent"})
 
         assert isinstance(error, DatabaseError)
 
@@ -192,10 +169,7 @@ class TestAuthenticationError:
 
     def test_authentication_error_context(self):
         """Test AuthenticationError with context"""
-        error = AuthenticationError(
-            "Invalid credentials",
-            context={"auth_method": "api_key"}
-        )
+        error = AuthenticationError("Invalid credentials", context={"auth_method": "api_key"})
 
         assert error.context["auth_method"] == "api_key"
 
@@ -213,10 +187,7 @@ class TestValidationError:
     def test_validation_error_with_field(self):
         """Test ValidationError with field information"""
         context = {"field": "project_name", "reason": "too_short"}
-        error = ValidationError(
-            "Validation failed",
-            context=context
-        )
+        error = ValidationError("Validation failed", context=context)
 
         assert error.context["field"] == "project_name"
 
@@ -234,24 +205,14 @@ class TestAPIError:
     def test_api_error_with_status(self):
         """Test APIError with HTTP status"""
         context = {"status_code": 429, "message": "Rate limited"}
-        error = APIError(
-            "Claude API error",
-            context=context
-        )
+        error = APIError("Claude API error", context=context)
 
         assert error.context["status_code"] == 429
 
     def test_api_error_with_retry_info(self):
         """Test APIError with retry information"""
-        context = {
-            "status_code": 500,
-            "retries_remaining": 2,
-            "retry_after": 10
-        }
-        error = APIError(
-            "API server error",
-            context=context
-        )
+        context = {"status_code": 500, "retries_remaining": 2, "retry_after": 10}
+        error = APIError("API server error", context=context)
 
         assert error.context["retries_remaining"] == 2
 
@@ -270,7 +231,7 @@ class TestErrorHierarchy:
             ProjectNotFoundError("test"),
             UserNotFoundError("test"),
             ValidationError("test"),
-            APIError("test")
+            APIError("test"),
         ]
 
         for error in errors:
@@ -278,6 +239,7 @@ class TestErrorHierarchy:
 
     def test_error_catching_hierarchy(self):
         """Test catching errors at different hierarchy levels"""
+
         def raise_project_error():
             raise ProjectNotFoundError("Project not found")
 
@@ -316,11 +278,7 @@ class TestErrorMessages:
     def test_error_to_dict_includes_all_info(self):
         """Test that to_dict includes all error information"""
         context = {"key1": "value1", "key2": {"nested": "value"}}
-        error = SocratesError(
-            "Test message",
-            error_code="TEST_CODE",
-            context=context
-        )
+        error = SocratesError("Test message", error_code="TEST_CODE", context=context)
 
         error_dict = error.to_dict()
 
@@ -383,7 +341,7 @@ class TestErrorContextData:
             "list": [1, 2, 3],
             "dict": {"nested": "value"},
             "bool": True,
-            "none": None
+            "none": None,
         }
 
         error = SocratesError("Message", context=context)

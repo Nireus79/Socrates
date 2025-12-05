@@ -6,9 +6,10 @@ Benchmarks key operations to identify bottlenecks and track performance regressi
 Run with: pytest tests/test_performance.py -v --benchmark-only
 """
 
-import pytest
-from unittest.mock import patch, Mock
 from datetime import datetime
+from unittest.mock import Mock, patch
+
+import pytest
 
 import socrates
 
@@ -26,6 +27,7 @@ class TestConfigPerformance:
 
     def test_config_creation_benchmark(self, benchmark, mock_api_key):
         """Benchmark SocratesConfig creation"""
+
         def create_config():
             return socrates.SocratesConfig(api_key=mock_api_key)
 
@@ -38,7 +40,7 @@ class TestConfigPerformance:
         from unittest.mock import patch
 
         def load_config():
-            with patch.dict(os.environ, {'ANTHROPIC_API_KEY': mock_api_key}):
+            with patch.dict(os.environ, {"ANTHROPIC_API_KEY": mock_api_key}):
                 return socrates.SocratesConfig.from_env()
 
         result = benchmark(load_config)
@@ -46,11 +48,14 @@ class TestConfigPerformance:
 
     def test_config_builder_benchmark(self, benchmark, mock_api_key, temp_data_dir):
         """Benchmark ConfigBuilder"""
+
         def build_config():
-            return socrates.ConfigBuilder(mock_api_key) \
-                .with_data_dir(temp_data_dir) \
-                .with_log_level("DEBUG") \
+            return (
+                socrates.ConfigBuilder(mock_api_key)
+                .with_data_dir(temp_data_dir)
+                .with_log_level("DEBUG")
                 .build()
+            )
 
         result = benchmark(build_config)
         assert result is not None
@@ -106,8 +111,9 @@ class TestOrchestratorPerformance:
 
     def test_orchestrator_creation_benchmark(self, benchmark, benchmark_config):
         """Benchmark orchestrator creation"""
+
         def create_orchestrator():
-            with patch('anthropic.Anthropic'):
+            with patch("anthropic.Anthropic"):
                 return socrates.AgentOrchestrator(benchmark_config)
 
         result = benchmark(create_orchestrator)
@@ -115,13 +121,11 @@ class TestOrchestratorPerformance:
 
     def test_orchestrator_request_benchmark(self, benchmark, benchmark_config):
         """Benchmark request processing"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(benchmark_config)
 
             def process_request():
-                return orchestrator.process_request('project_manager', {
-                    'action': 'list_projects'
-                })
+                return orchestrator.process_request("project_manager", {"action": "list_projects"})
 
             result = benchmark(process_request)
             assert result is not None
@@ -160,7 +164,6 @@ class TestDatabasePerformance:
         """Benchmark listing projects"""
         from socratic_system.database import ProjectDatabase
         from socratic_system.models import ProjectContext
-        from datetime import datetime
 
         db = ProjectDatabase(str(benchmark_config.projects_db_path))
 
@@ -172,7 +175,7 @@ class TestDatabasePerformance:
                 owner="testuser",
                 phase="active",
                 created_at=datetime.now(),
-                updated_at=datetime.now()
+                updated_at=datetime.now(),
             )
             db.save_project(project)
 
@@ -191,13 +194,10 @@ class TestModelPerformance:
     def test_user_creation_benchmark(self, benchmark):
         """Benchmark creating User objects"""
         from socratic_system.models import User
-        from datetime import datetime
 
         def create_user():
             return User(
-                username="testuser",
-                passcode_hash="hashed_password",
-                created_at=datetime.now()
+                username="testuser", passcode_hash="hashed_password", created_at=datetime.now()
             )
 
         result = benchmark(create_user)
@@ -206,7 +206,6 @@ class TestModelPerformance:
     def test_project_creation_benchmark(self, benchmark):
         """Benchmark creating ProjectContext objects"""
         from socratic_system.models import ProjectContext
-        from datetime import datetime
 
         def create_project():
             return ProjectContext(
@@ -215,7 +214,7 @@ class TestModelPerformance:
                 owner="testuser",
                 phase="active",
                 created_at=datetime.now(),
-                updated_at=datetime.now()
+                updated_at=datetime.now(),
             )
 
         result = benchmark(create_project)
@@ -230,7 +229,7 @@ class TestModelPerformance:
                 id="entry_001",
                 content="Test content " * 100,  # ~1KB content
                 category="test",
-                metadata={"source": "test"}
+                metadata={"source": "test"},
             )
 
         result = benchmark(create_entry)
@@ -248,10 +247,7 @@ class TestMemoryUsage:
 
         def emit_many_events():
             for i in range(1000):
-                emitter.emit(socrates.EventType.LOG_INFO, {
-                    "index": i,
-                    "data": "test" * 10
-                })
+                emitter.emit(socrates.EventType.LOG_INFO, {"index": i, "data": "test" * 10})
 
         benchmark(emit_many_events)
 
@@ -271,9 +267,9 @@ class TestMemoryUsage:
 # Benchmark comparison matrix
 def test_benchmark_summary(benchmark_results) -> None:
     """Summary of benchmark results"""
-    if hasattr(benchmark_results, 'stats'):
+    if hasattr(benchmark_results, "stats"):
         stats = benchmark_results.stats
-        print(f"\nBenchmark Summary:")
+        print("\nBenchmark Summary:")
         print(f"  Min: {stats.min:.3f}s")
         print(f"  Max: {stats.max:.3f}s")
         print(f"  Mean: {stats.mean:.3f}s")

@@ -8,13 +8,13 @@ with automatic token tracking and structured error handling.
 import asyncio
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict
 
 import anthropic
 
 from socratic_system.events import EventType
 from socratic_system.exceptions import APIError
-from socratic_system.models import ProjectContext, ConflictInfo
+from socratic_system.models import ConflictInfo, ProjectContext
 
 
 class ClaudeClient:
@@ -25,7 +25,7 @@ class ClaudeClient:
     token usage tracking and event emission.
     """
 
-    def __init__(self, api_key: str, orchestrator: 'AgentOrchestrator'):
+    def __init__(self, api_key: str, orchestrator: "AgentOrchestrator"):
         """
         Initialize Claude client.
 
@@ -48,7 +48,7 @@ class ClaudeClient:
         # Handle common non-informative responses
         non_informative = ["i don't know", "idk", "not sure", "no idea", "dunno", "unsure"]
         if user_response.lower().strip() in non_informative:
-            return {'note': 'User expressed uncertainty - may need more guidance'}
+            return {"note": "User expressed uncertainty - may need more guidance"}
 
         # Build prompt
         prompt = f"""
@@ -86,7 +86,7 @@ class ClaudeClient:
                 model=self.model,
                 max_tokens=1000,
                 temperature=0.3,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
 
             # Track token usage
@@ -98,8 +98,7 @@ class ClaudeClient:
         except Exception as e:
             self.logger.error(f"Error extracting insights: {e}")
             self.orchestrator.event_emitter.emit(
-                EventType.LOG_ERROR,
-                {"message": f"Failed to extract insights: {e}"}
+                EventType.LOG_ERROR, {"message": f"Failed to extract insights: {e}"}
             )
             return {}
 
@@ -109,8 +108,15 @@ class ClaudeClient:
         if not user_response or len(user_response.strip()) < 3:
             return {}
 
-        if user_response.lower().strip() in ["i don't know", "idk", "not sure", "no idea", "dunno", "unsure"]:
-            return {'note': 'User expressed uncertainty - may need more guidance'}
+        if user_response.lower().strip() in [
+            "i don't know",
+            "idk",
+            "not sure",
+            "no idea",
+            "dunno",
+            "unsure",
+        ]:
+            return {"note": "User expressed uncertainty - may need more guidance"}
 
         prompt = f"""
         Analyze this user response in the context of their project and extract structured insights:
@@ -137,7 +143,7 @@ class ClaudeClient:
                 model=self.model,
                 max_tokens=1000,
                 temperature=0.3,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
 
             # Track token usage asynchronously
@@ -149,7 +155,9 @@ class ClaudeClient:
             self.logger.error(f"Error extracting insights (async): {e}")
             return {}
 
-    def generate_conflict_resolution_suggestions(self, conflict: ConflictInfo, project: ProjectContext) -> str:
+    def generate_conflict_resolution_suggestions(
+        self, conflict: ConflictInfo, project: ProjectContext
+    ) -> str:
         """Generate suggestions for resolving a specific conflict"""
 
         context_summary = self.orchestrator.context_analyzer.get_context_summary(project)
@@ -178,7 +186,7 @@ class ClaudeClient:
                 model=self.model,
                 max_tokens=600,
                 temperature=0.7,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
 
             return response.content[0].text.strip()
@@ -208,17 +216,19 @@ class ClaudeClient:
                 model=self.model,
                 max_tokens=4000,
                 temperature=0.7,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
 
             # Track token usage
-            self.orchestrator.system_monitor.process({
-                'action': 'track_tokens',
-                'input_tokens': response.usage.input_tokens,
-                'output_tokens': response.usage.output_tokens,
-                'total_tokens': response.usage.input_tokens + response.usage.output_tokens,
-                'cost_estimate': self._calculate_cost(response.usage)
-            })
+            self.orchestrator.system_monitor.process(
+                {
+                    "action": "track_tokens",
+                    "input_tokens": response.usage.input_tokens,
+                    "output_tokens": response.usage.output_tokens,
+                    "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
+                    "cost_estimate": self._calculate_cost(response.usage),
+                }
+            )
 
             return response.content[0].text
 
@@ -251,17 +261,19 @@ class ClaudeClient:
                 model=self.model,
                 max_tokens=3000,
                 temperature=0.5,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
 
             # Track token usage
-            self.orchestrator.system_monitor.process({
-                'action': 'track_tokens',
-                'input_tokens': response.usage.input_tokens,
-                'output_tokens': response.usage.output_tokens,
-                'total_tokens': response.usage.input_tokens + response.usage.output_tokens,
-                'cost_estimate': self._calculate_cost(response.usage)
-            })
+            self.orchestrator.system_monitor.process(
+                {
+                    "action": "track_tokens",
+                    "input_tokens": response.usage.input_tokens,
+                    "output_tokens": response.usage.output_tokens,
+                    "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
+                    "cost_estimate": self._calculate_cost(response.usage),
+                }
+            )
 
             return response.content[0].text
 
@@ -275,7 +287,7 @@ class ClaudeClient:
                 model=self.model,
                 max_tokens=10,
                 temperature=0,
-                messages=[{"role": "user", "content": "Test"}]
+                messages=[{"role": "user", "content": "Test"}],
             )
             self.logger.info("Claude API connection test successful")
             return True
@@ -290,22 +302,27 @@ class ClaudeClient:
         total_tokens = usage.input_tokens + usage.output_tokens
         cost = self._calculate_cost(usage)
 
-        self.orchestrator.system_monitor.process({
-            'action': 'track_tokens',
-            'operation': operation,
-            'input_tokens': usage.input_tokens,
-            'output_tokens': usage.output_tokens,
-            'total_tokens': total_tokens,
-            'cost_estimate': cost
-        })
+        self.orchestrator.system_monitor.process(
+            {
+                "action": "track_tokens",
+                "operation": operation,
+                "input_tokens": usage.input_tokens,
+                "output_tokens": usage.output_tokens,
+                "total_tokens": total_tokens,
+                "cost_estimate": cost,
+            }
+        )
 
-        self.orchestrator.event_emitter.emit(EventType.TOKEN_USAGE, {
-            'operation': operation,
-            'input_tokens': usage.input_tokens,
-            'output_tokens': usage.output_tokens,
-            'total_tokens': total_tokens,
-            'cost_estimate': cost
-        })
+        self.orchestrator.event_emitter.emit(
+            EventType.TOKEN_USAGE,
+            {
+                "operation": operation,
+                "input_tokens": usage.input_tokens,
+                "output_tokens": usage.output_tokens,
+                "total_tokens": total_tokens,
+                "cost_estimate": cost,
+            },
+        )
 
     async def _track_token_usage_async(self, usage: Any, operation: str) -> None:
         """Track token usage asynchronously"""
@@ -326,14 +343,14 @@ class ClaudeClient:
         """Parse JSON from Claude response with error handling"""
         try:
             # Clean up markdown code blocks if present
-            if response_text.startswith('```json'):
-                response_text = response_text.replace('```json', '').replace('```', '').strip()
-            elif response_text.startswith('```'):
-                response_text = response_text.replace('```', '').strip()
+            if response_text.startswith("```json"):
+                response_text = response_text.replace("```json", "").replace("```", "").strip()
+            elif response_text.startswith("```"):
+                response_text = response_text.replace("```", "").strip()
 
             # Find JSON object in the response
-            start = response_text.find('{')
-            end = response_text.rfind('}') + 1
+            start = response_text.find("{")
+            end = response_text.rfind("}") + 1
 
             if 0 <= start < end:
                 json_text = response_text[start:end]
@@ -350,8 +367,7 @@ class ClaudeClient:
         except json.JSONDecodeError as e:
             self.logger.warning(f"Failed to parse JSON response: {e}")
             self.orchestrator.event_emitter.emit(
-                EventType.LOG_WARNING,
-                {"message": f"Could not parse JSON response: {e}"}
+                EventType.LOG_WARNING, {"message": f"Could not parse JSON response: {e}"}
             )
             return {}
 
@@ -362,7 +378,7 @@ class ClaudeClient:
                 model=self.model,
                 max_tokens=200,
                 temperature=0.7,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
 
             # Track token usage
@@ -373,10 +389,11 @@ class ClaudeClient:
         except Exception as e:
             self.logger.error(f"Error generating Socratic question: {e}")
             self.orchestrator.event_emitter.emit(
-                EventType.LOG_ERROR,
-                {"message": f"Failed to generate Socratic question: {e}"}
+                EventType.LOG_ERROR, {"message": f"Failed to generate Socratic question: {e}"}
             )
-            raise APIError(f"Error generating Socratic question: {e}", error_type="GENERATION_ERROR")
+            raise APIError(
+                f"Error generating Socratic question: {e}", error_type="GENERATION_ERROR"
+            )
 
     def generate_suggestions(self, current_question: str, project: ProjectContext) -> str:
         """Generate helpful suggestions when user can't answer a question"""
@@ -386,14 +403,16 @@ class ClaudeClient:
         if project.conversation_history:
             recent_messages = project.conversation_history[-6:]
             for msg in recent_messages:
-                role = "Assistant" if msg['type'] == 'assistant' else "User"
+                role = "Assistant" if msg["type"] == "assistant" else "User"
                 recent_conversation += f"{role}: {msg['content']}\n"
 
         # Get relevant knowledge from vector database
         relevant_knowledge = ""
         knowledge_results = self.orchestrator.vector_db.search_similar(current_question, top_k=3)
         if knowledge_results:
-            relevant_knowledge = "\n".join([result['content'][:300] for result in knowledge_results])
+            relevant_knowledge = "\n".join(
+                [result["content"][:300] for result in knowledge_results]
+            )
 
         # Build context summary
         context_summary = self.orchestrator.context_analyzer.get_context_summary(project)
@@ -429,57 +448,60 @@ class ClaudeClient:
                 model=self.model,
                 max_tokens=800,
                 temperature=0.7,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
 
             # Track token usage
-            self.orchestrator.system_monitor.process({
-                'action': 'track_tokens',
-                'input_tokens': response.usage.input_tokens,
-                'output_tokens': response.usage.output_tokens,
-                'total_tokens': response.usage.input_tokens + response.usage.output_tokens,
-                'cost_estimate': self._calculate_cost(response.usage)
-            })
+            self.orchestrator.system_monitor.process(
+                {
+                    "action": "track_tokens",
+                    "input_tokens": response.usage.input_tokens,
+                    "output_tokens": response.usage.output_tokens,
+                    "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
+                    "cost_estimate": self._calculate_cost(response.usage),
+                }
+            )
 
             return response.content[0].text.strip()
 
-        except Exception as e:
+        except Exception:
             # Fallback suggestions if Claude API fails
             fallback_suggestions = {
-                'discovery': """Here are some suggestions to help you think through this:
+                "discovery": """Here are some suggestions to help you think through this:
 
     • Consider researching similar applications or tools in your problem domain
     • Think about specific pain points you've experienced that this could solve
     • Ask potential users what features would be most valuable to them
     • Look at existing solutions and identify what's missing or could be improved""",
-
-                'analysis': """Here are some suggestions to help you think through this:
+                "analysis": """Here are some suggestions to help you think through this:
 
     • Break down the technical challenge into smaller, specific problems
     • Research what libraries or frameworks are commonly used for this type of project
     • Consider scalability, security, and performance requirements early
     • Look up case studies of similar technical implementations""",
-
-                'design': """Here are some suggestions to help you think through this:
+                "design": """Here are some suggestions to help you think through this:
 
     • Start with a simple architecture and plan how to extend it later
     • Consider using established design patterns like MVC, Repository, or Factory
     • Think about how different components will communicate with each other
     • Sketch out the data flow and user interaction patterns""",
-
-                'implementation': """Here are some suggestions to help you think through this:
+                "implementation": """Here are some suggestions to help you think through this:
 
     • Break the project into small, manageable milestones
     • Consider starting with a minimal viable version first
     • Think about your development environment and tooling needs
-    • Plan your testing strategy alongside your implementation approach"""
+    • Plan your testing strategy alongside your implementation approach""",
             }
 
-            return fallback_suggestions.get(project.phase,
-                                            "Consider breaking the question into smaller parts and researching each "
-                                            "aspect individually.")
+            return fallback_suggestions.get(
+                project.phase,
+                "Consider breaking the question into smaller parts and researching each "
+                "aspect individually.",
+            )
 
-    def generate_response(self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7) -> str:
+    def generate_response(
+        self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7
+    ) -> str:
         """
         Generate a general response from Claude for any prompt.
 
@@ -499,7 +521,7 @@ class ClaudeClient:
                 model=self.model,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
 
             # Track token usage
@@ -510,16 +532,12 @@ class ClaudeClient:
         except Exception as e:
             self.logger.error(f"Error generating response: {e}")
             self.orchestrator.event_emitter.emit(
-                EventType.LOG_ERROR,
-                {"message": f"Failed to generate response: {e}"}
+                EventType.LOG_ERROR, {"message": f"Failed to generate response: {e}"}
             )
             raise APIError(f"Error generating response: {e}", error_type="GENERATION_ERROR")
 
     async def generate_response_async(
-        self,
-        prompt: str,
-        max_tokens: int = 2000,
-        temperature: float = 0.7
+        self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7
     ) -> str:
         """
         Generate a general response from Claude asynchronously.
@@ -540,7 +558,7 @@ class ClaudeClient:
                 model=self.model,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
 
             # Track token usage

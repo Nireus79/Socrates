@@ -1,7 +1,9 @@
 """Code generation and documentation commands"""
 
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 from colorama import Fore, Style
+
 from socratic_system.ui.commands.base import BaseCommand
 
 
@@ -12,7 +14,7 @@ class CodeGenerateCommand(BaseCommand):
         super().__init__(
             name="code generate",
             description="Generate code based on current project context",
-            usage="code generate"
+            usage="code generate",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -20,21 +22,20 @@ class CodeGenerateCommand(BaseCommand):
         if not self.require_project(context):
             return self.error("No project loaded")
 
-        orchestrator = context.get('orchestrator')
-        project = context.get('project')
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
 
         if not orchestrator or not project:
             return self.error("Required context not available")
 
         print(f"\n{Fore.CYAN}Generating Code...{Style.RESET_ALL}")
 
-        result = orchestrator.process_request('code_generator', {
-            'action': 'generate_script',
-            'project': project
-        })
+        result = orchestrator.process_request(
+            "code_generator", {"action": "generate_script", "project": project}
+        )
 
-        if result['status'] == 'success':
-            script = result['script']
+        if result["status"] == "success":
+            script = result["script"]
             self.print_success("Code Generated Successfully!")
             print(f"\n{Fore.YELLOW}{'=' * 60}")
             print(f"{Fore.WHITE}{script}")
@@ -42,22 +43,21 @@ class CodeGenerateCommand(BaseCommand):
 
             # Ask if user wants documentation
             doc_choice = input(f"{Fore.CYAN}Generate documentation? (y/n): ").lower()
-            if doc_choice == 'y':
-                doc_result = orchestrator.process_request('code_generator', {
-                    'action': 'generate_documentation',
-                    'project': project,
-                    'script': script
-                })
+            if doc_choice == "y":
+                doc_result = orchestrator.process_request(
+                    "code_generator",
+                    {"action": "generate_documentation", "project": project, "script": script},
+                )
 
-                if doc_result['status'] == 'success':
+                if doc_result["status"] == "success":
                     self.print_success("Documentation Generated!")
                     print(f"\n{Fore.YELLOW}{'=' * 60}")
                     print(f"{Fore.WHITE}{doc_result['documentation']}")
                     print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}\n")
 
-            return self.success(data={'script': script})
+            return self.success(data={"script": script})
         else:
-            return self.error(result.get('message', 'Failed to generate code'))
+            return self.error(result.get("message", "Failed to generate code"))
 
 
 class CodeDocsCommand(BaseCommand):
@@ -67,7 +67,7 @@ class CodeDocsCommand(BaseCommand):
         super().__init__(
             name="code docs",
             description="Generate comprehensive documentation for the project",
-            usage="code docs"
+            usage="code docs",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -75,8 +75,8 @@ class CodeDocsCommand(BaseCommand):
         if not self.require_project(context):
             return self.error("No project loaded")
 
-        orchestrator = context.get('orchestrator')
-        project = context.get('project')
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
 
         if not orchestrator or not project:
             return self.error("Required context not available")
@@ -84,29 +84,27 @@ class CodeDocsCommand(BaseCommand):
         print(f"\n{Fore.CYAN}Generating Documentation...{Style.RESET_ALL}")
 
         # First generate code if not done yet
-        result = orchestrator.process_request('code_generator', {
-            'action': 'generate_script',
-            'project': project
-        })
+        result = orchestrator.process_request(
+            "code_generator", {"action": "generate_script", "project": project}
+        )
 
-        if result['status'] == 'success':
-            script = result['script']
+        if result["status"] == "success":
+            script = result["script"]
 
             # Generate documentation
-            doc_result = orchestrator.process_request('code_generator', {
-                'action': 'generate_documentation',
-                'project': project,
-                'script': script
-            })
+            doc_result = orchestrator.process_request(
+                "code_generator",
+                {"action": "generate_documentation", "project": project, "script": script},
+            )
 
-            if doc_result['status'] == 'success':
+            if doc_result["status"] == "success":
                 self.print_success("Documentation Generated Successfully!")
                 print(f"\n{Fore.YELLOW}{'=' * 60}")
                 print(f"{Fore.WHITE}{doc_result['documentation']}")
                 print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}\n")
 
-                return self.success(data={'documentation': doc_result['documentation']})
+                return self.success(data={"documentation": doc_result["documentation"]})
             else:
-                return self.error(doc_result.get('message', 'Failed to generate documentation'))
+                return self.error(doc_result.get("message", "Failed to generate documentation"))
         else:
-            return self.error(result.get('message', 'Failed to generate code'))
+            return self.error(result.get("message", "Failed to generate code"))

@@ -13,10 +13,9 @@ Examples:
 """
 
 import os
-import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -127,10 +126,7 @@ class SocratesConfig:
         Raises:
             ValueError: If required API key is not found
         """
-        api_key = os.getenv(
-            "ANTHROPIC_API_KEY",
-            os.getenv("API_KEY_CLAUDE")
-        )
+        api_key = os.getenv("ANTHROPIC_API_KEY", os.getenv("API_KEY_CLAUDE"))
         if not api_key:
             raise ValueError(
                 "API key required. Set ANTHROPIC_API_KEY or API_KEY_CLAUDE environment variable"

@@ -2,7 +2,7 @@
 Custom exception classes for Socrates system
 """
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 
 class SocratesError(Exception):
@@ -19,7 +19,7 @@ class SocratesError(Exception):
         self,
         message: str,
         error_code: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ):
         """Initialize SocratesError"""
         self.message = message
@@ -45,21 +45,25 @@ class SocratesError(Exception):
 
 class ConfigurationError(SocratesError):
     """Raised when configuration is invalid or missing"""
+
     pass
 
 
 class AgentError(SocratesError):
     """Raised when an agent encounters an error during processing"""
+
     pass
 
 
 class DatabaseError(SocratesError):
     """Raised when a database operation fails"""
+
     pass
 
 
 class AuthenticationError(SocratesError):
     """Raised when user authentication fails"""
+
     pass
 
 
@@ -69,7 +73,9 @@ class ProjectNotFoundError(DatabaseError):
     def __init__(self, project_id: str):
         """Initialize ProjectNotFoundError"""
         message = f"Project not found: {project_id}"
-        super().__init__(message, error_code="PROJECT_NOT_FOUND", context={"project_id": project_id})
+        super().__init__(
+            message, error_code="PROJECT_NOT_FOUND", context={"project_id": project_id}
+        )
 
 
 class UserNotFoundError(DatabaseError):
@@ -83,6 +89,7 @@ class UserNotFoundError(DatabaseError):
 
 class ValidationError(SocratesError):
     """Raised when input validation fails"""
+
     pass
 
 
@@ -94,7 +101,7 @@ class APIError(SocratesError):
         message: str,
         status_code: Optional[int] = None,
         error_type: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
     ):
         """Initialize APIError"""
         if context is None:

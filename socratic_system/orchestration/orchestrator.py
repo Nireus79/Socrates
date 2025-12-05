@@ -11,23 +11,26 @@ Coordinates all agents and manages their interactions, including:
 
 import json
 import logging
-import os
-from typing import Dict, Any, List, Optional, Union
 from pathlib import Path
-import asyncio
+from typing import Any, Dict, List, Union
 
-from socratic_system.config import SocratesConfig, CONFIG
+from socratic_system.agents import (
+    CodeGeneratorAgent,
+    ConflictDetectorAgent,
+    ContextAnalyzerAgent,
+    DocumentAgent,
+    ProjectManagerAgent,
+    SocraticCounselorAgent,
+    SystemMonitorAgent,
+    UserManagerAgent,
+)
+from socratic_system.agents.knowledge_manager import KnowledgeManagerAgent
+from socratic_system.agents.note_manager import NoteManagerAgent
+from socratic_system.clients import ClaudeClient
+from socratic_system.config import SocratesConfig
+from socratic_system.database import ProjectDatabase, VectorDatabase
 from socratic_system.events import EventEmitter, EventType
 from socratic_system.models import KnowledgeEntry
-from socratic_system.database import ProjectDatabase, VectorDatabase
-from socratic_system.clients import ClaudeClient
-from socratic_system.agents import (
-    ProjectManagerAgent, SocraticCounselorAgent, ContextAnalyzerAgent,
-    CodeGeneratorAgent, SystemMonitorAgent, ConflictDetectorAgent,
-    DocumentAgent, UserManagerAgent
-)
-from socratic_system.agents.note_manager import NoteManagerAgent
-from socratic_system.agents.knowledge_manager import KnowledgeManagerAgent
 
 
 class AgentOrchestrator:
@@ -58,7 +61,7 @@ class AgentOrchestrator:
         # Initialize logging
         logging.basicConfig(
             level=self.config.log_level,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         )
         self.logger = logging.getLogger("socrates.orchestrator")
 
@@ -79,11 +82,14 @@ class AgentOrchestrator:
         self._load_knowledge_base()
 
         # Emit system initialized event
-        self.event_emitter.emit(EventType.SYSTEM_INITIALIZED, {
-            "version": "0.5.0",
-            "data_dir": str(self.config.data_dir),
-            "model": self.config.claude_model,
-        })
+        self.event_emitter.emit(
+            EventType.SYSTEM_INITIALIZED,
+            {
+                "version": "0.5.0",
+                "data_dir": str(self.config.data_dir),
+                "model": self.config.claude_model,
+            },
+        )
 
         self.logger.info("Socratic RAG System initialized successfully!")
 
@@ -114,8 +120,7 @@ class AgentOrchestrator:
         if not knowledge_data:
             self.logger.warning("No knowledge base config found")
             self.event_emitter.emit(
-                EventType.LOG_WARNING,
-                {"message": "No knowledge base config found"}
+                EventType.LOG_WARNING, {"message": "No knowledge base config found"}
             )
             return
 
@@ -128,10 +133,9 @@ class AgentOrchestrator:
 
         self.vector_db.knowledge_loaded = True
 
-        self.event_emitter.emit(EventType.KNOWLEDGE_LOADED, {
-            "entry_count": len(knowledge_data),
-            "status": "success"
-        })
+        self.event_emitter.emit(
+            EventType.KNOWLEDGE_LOADED, {"entry_count": len(knowledge_data), "status": "success"}
+        )
 
         self.logger.info(f"Knowledge base loaded ({len(knowledge_data)} entries)")
 
@@ -142,17 +146,17 @@ class AgentOrchestrator:
             config_path = Path(self.config.knowledge_base_path)
         else:
             # Fall back to default location
-            config_path = Path(__file__).parent.parent / 'config' / 'knowledge_base.json'
+            config_path = Path(__file__).parent.parent / "config" / "knowledge_base.json"
 
         try:
             if not config_path.exists():
                 self.logger.debug(f"Knowledge config not found: {config_path}")
                 return []
 
-            with open(config_path, 'r', encoding='utf-8') as f:
+            with open(config_path, encoding="utf-8") as f:
                 config = json.load(f)
 
-            knowledge_entries = config.get('default_knowledge', [])
+            knowledge_entries = config.get("default_knowledge", [])
             if knowledge_entries:
                 return knowledge_entries
             else:
@@ -185,48 +189,45 @@ class AgentOrchestrator:
             ... })
         """
         agents = {
-            'project_manager': self.project_manager,
-            'socratic_counselor': self.socratic_counselor,
-            'context_analyzer': self.context_analyzer,
-            'code_generator': self.code_generator,
-            'system_monitor': self.system_monitor,
-            'conflict_detector': self.conflict_detector,
-            'document_agent': self.document_agent,
-            'user_manager': self.user_manager,
-            'note_manager': self.note_manager,
-            'knowledge_manager': self.knowledge_manager
+            "project_manager": self.project_manager,
+            "socratic_counselor": self.socratic_counselor,
+            "context_analyzer": self.context_analyzer,
+            "code_generator": self.code_generator,
+            "system_monitor": self.system_monitor,
+            "conflict_detector": self.conflict_detector,
+            "document_agent": self.document_agent,
+            "user_manager": self.user_manager,
+            "note_manager": self.note_manager,
+            "knowledge_manager": self.knowledge_manager,
         }
 
         agent = agents.get(agent_name)
         if agent:
-            self.event_emitter.emit(EventType.AGENT_START, {
-                'agent': agent_name,
-                'action': request.get('action', 'unknown')
-            })
+            self.event_emitter.emit(
+                EventType.AGENT_START,
+                {"agent": agent_name, "action": request.get("action", "unknown")},
+            )
 
             try:
                 result = agent.process(request)
 
-                self.event_emitter.emit(EventType.AGENT_COMPLETE, {
-                    'agent': agent_name,
-                    'status': result.get('status', 'unknown')
-                })
+                self.event_emitter.emit(
+                    EventType.AGENT_COMPLETE,
+                    {"agent": agent_name, "status": result.get("status", "unknown")},
+                )
 
                 return result
             except Exception as e:
                 self.logger.error(f"Agent {agent_name} error: {e}")
-                self.event_emitter.emit(EventType.AGENT_ERROR, {
-                    'agent': agent_name,
-                    'error': str(e)
-                })
+                self.event_emitter.emit(
+                    EventType.AGENT_ERROR, {"agent": agent_name, "error": str(e)}
+                )
                 raise
         else:
-            return {'status': 'error', 'message': f'Unknown agent: {agent_name}'}
+            return {"status": "error", "message": f"Unknown agent: {agent_name}"}
 
     async def process_request_async(
-        self,
-        agent_name: str,
-        request: Dict[str, Any]
+        self, agent_name: str, request: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         Route a request to the appropriate agent asynchronously.
@@ -258,44 +259,40 @@ class AgentOrchestrator:
             ... )
         """
         agents = {
-            'project_manager': self.project_manager,
-            'socratic_counselor': self.socratic_counselor,
-            'context_analyzer': self.context_analyzer,
-            'code_generator': self.code_generator,
-            'system_monitor': self.system_monitor,
-            'conflict_detector': self.conflict_detector,
-            'document_agent': self.document_agent,
-            'user_manager': self.user_manager,
-            'note_manager': self.note_manager,
-            'knowledge_manager': self.knowledge_manager
+            "project_manager": self.project_manager,
+            "socratic_counselor": self.socratic_counselor,
+            "context_analyzer": self.context_analyzer,
+            "code_generator": self.code_generator,
+            "system_monitor": self.system_monitor,
+            "conflict_detector": self.conflict_detector,
+            "document_agent": self.document_agent,
+            "user_manager": self.user_manager,
+            "note_manager": self.note_manager,
+            "knowledge_manager": self.knowledge_manager,
         }
 
         agent = agents.get(agent_name)
         if not agent:
             raise ValueError(f"Unknown agent: {agent_name}")
 
-        self.event_emitter.emit(EventType.AGENT_START, {
-            'agent': agent_name,
-            'action': request.get('action', 'unknown'),
-            'async': True
-        })
+        self.event_emitter.emit(
+            EventType.AGENT_START,
+            {"agent": agent_name, "action": request.get("action", "unknown"), "async": True},
+        )
 
         try:
             result = await agent.process_async(request)
 
-            self.event_emitter.emit(EventType.AGENT_COMPLETE, {
-                'agent': agent_name,
-                'status': result.get('status', 'unknown'),
-                'async': True
-            })
+            self.event_emitter.emit(
+                EventType.AGENT_COMPLETE,
+                {"agent": agent_name, "status": result.get("status", "unknown"), "async": True},
+            )
 
             return result
 
         except Exception as e:
             self.logger.error(f"Agent {agent_name} async error: {e}")
-            self.event_emitter.emit(EventType.AGENT_ERROR, {
-                'agent': agent_name,
-                'error': str(e),
-                'async': True
-            })
+            self.event_emitter.emit(
+                EventType.AGENT_ERROR, {"agent": agent_name, "error": str(e), "async": True}
+            )
             raise

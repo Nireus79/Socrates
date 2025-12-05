@@ -1,6 +1,6 @@
 """Navigation stack for managing context and state transitions"""
 
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class NavigationStack:

@@ -2,14 +2,12 @@
 Tests for CodeGeneratorAgent - Code generation and documentation
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import Mock, MagicMock, patch
-from datetime import datetime
 
 import socrates
 from socratic_system.agents.code_generator import CodeGeneratorAgent
-from socratic_system.models import ProjectContext
-from socratic_system.events import EventType
 
 
 @pytest.mark.unit
@@ -18,7 +16,7 @@ class TestCodeGeneratorAgentInitialization:
 
     def test_agent_initialization(self, test_config):
         """Test CodeGeneratorAgent initializes correctly"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -33,7 +31,7 @@ class TestCodeGeneratorAgentContextBuilding:
 
     def test_build_generation_context_basic(self, test_config, sample_project):
         """Test building code generation context from project"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -55,15 +53,15 @@ class TestCodeGeneratorAgentContextBuilding:
 
     def test_build_generation_context_with_conversation(self, test_config, sample_project):
         """Test that conversation history is included in context"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
             sample_project.conversation_history = [
-                {'type': 'user', 'content': 'Should I use async or sync?'},
-                {'type': 'assistant', 'content': 'Use async for I/O-bound operations'},
-                {'type': 'user', 'content': 'What about error handling?'},
-                {'type': 'assistant', 'content': 'Use try-except blocks with custom exceptions'},
+                {"type": "user", "content": "Should I use async or sync?"},
+                {"type": "assistant", "content": "Use async for I/O-bound operations"},
+                {"type": "user", "content": "What about error handling?"},
+                {"type": "assistant", "content": "Use try-except blocks with custom exceptions"},
             ]
 
             context = agent._build_generation_context(sample_project)
@@ -74,7 +72,7 @@ class TestCodeGeneratorAgentContextBuilding:
 
     def test_build_generation_context_empty_fields(self, test_config, sample_project):
         """Test context building handles empty project fields gracefully"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -98,7 +96,7 @@ class TestCodeGeneratorAgentScriptGeneration:
 
     def test_generate_script_success(self, test_config, sample_project):
         """Test successful script generation"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -109,21 +107,18 @@ class TestCodeGeneratorAgentScriptGeneration:
             sample_project.goals = "Create a simple greeting function"
             sample_project.tech_stack = ["Python"]
 
-            request = {
-                'action': 'generate_script',
-                'project': sample_project
-            }
+            request = {"action": "generate_script", "project": sample_project}
 
             result = agent.process(request)
 
-            assert result['status'] == 'success'
-            assert result['script'] == mock_code
-            assert 'context_used' in result
+            assert result["status"] == "success"
+            assert result["script"] == mock_code
+            assert "context_used" in result
             orchestrator.claude_client.generate_code.assert_called_once()
 
     def test_generate_script_api_error(self, test_config, sample_project):
         """Test handling of API errors during code generation"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -132,41 +127,33 @@ class TestCodeGeneratorAgentScriptGeneration:
                 side_effect=Exception("API Error: Rate limited")
             )
 
-            request = {
-                'action': 'generate_script',
-                'project': sample_project
-            }
+            request = {"action": "generate_script", "project": sample_project}
 
             # Should propagate error or handle gracefully
             try:
                 result = agent.process(request)
                 # If it doesn't raise, it should indicate error
-                assert 'status' in result
+                assert "status" in result
             except Exception:
                 # This is also acceptable - error is raised
                 pass
 
     def test_generate_script_preserves_context(self, test_config, sample_project):
         """Test that generated context is returned with script"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
             sample_project.goals = "Build API endpoints"
             sample_project.requirements = ["CRUD operations", "Validation"]
-            orchestrator.claude_client.generate_code = MagicMock(
-                return_value="# Generated code"
-            )
+            orchestrator.claude_client.generate_code = MagicMock(return_value="# Generated code")
 
-            request = {
-                'action': 'generate_script',
-                'project': sample_project
-            }
+            request = {"action": "generate_script", "project": sample_project}
 
             result = agent.process(request)
 
-            assert 'context_used' in result
-            context = result['context_used']
+            assert "context_used" in result
+            context = result["context_used"]
             assert "Build API endpoints" in context
             assert "CRUD operations" in context
 
@@ -177,50 +164,48 @@ class TestCodeGeneratorAgentDocumentation:
 
     def test_generate_documentation_success(self, test_config, sample_project):
         """Test successful documentation generation"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
             sample_code = "def calculate_sum(a, b):\n    return a + b"
             mock_docs = "# Calculate Sum\nAdds two numbers and returns the result."
 
-            orchestrator.claude_client.generate_documentation = MagicMock(
-                return_value=mock_docs
-            )
+            orchestrator.claude_client.generate_documentation = MagicMock(return_value=mock_docs)
 
             request = {
-                'action': 'generate_documentation',
-                'project': sample_project,
-                'script': sample_code
+                "action": "generate_documentation",
+                "project": sample_project,
+                "script": sample_code,
             }
 
             result = agent.process(request)
 
-            assert result['status'] == 'success'
-            assert result['documentation'] == mock_docs
+            assert result["status"] == "success"
+            assert result["documentation"] == mock_docs
             orchestrator.claude_client.generate_documentation.assert_called_once()
 
     def test_generate_documentation_missing_script(self, test_config, sample_project):
         """Test documentation generation handles missing script"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
             request = {
-                'action': 'generate_documentation',
-                'project': sample_project,
-                'script': None
+                "action": "generate_documentation",
+                "project": sample_project,
+                "script": None,
             }
 
             result = agent.process(request)
 
-            assert 'status' in result
+            assert "status" in result
             # Should handle gracefully or raise appropriate error
             orchestrator.claude_client.generate_documentation.assert_called_once()
 
     def test_generate_documentation_with_complex_code(self, test_config, sample_project):
         """Test documentation generation for complex code"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -246,20 +231,18 @@ class DataProcessor:
 
             mock_docs = "# Data Processor\nHandles batch processing with caching."
 
-            orchestrator.claude_client.generate_documentation = MagicMock(
-                return_value=mock_docs
-            )
+            orchestrator.claude_client.generate_documentation = MagicMock(return_value=mock_docs)
 
             request = {
-                'action': 'generate_documentation',
-                'project': sample_project,
-                'script': complex_code
+                "action": "generate_documentation",
+                "project": sample_project,
+                "script": complex_code,
             }
 
             result = agent.process(request)
 
-            assert result['status'] == 'success'
-            assert 'Data Processor' in result['documentation']
+            assert result["status"] == "success"
+            assert "Data Processor" in result["documentation"]
 
 
 @pytest.mark.unit
@@ -268,22 +251,20 @@ class TestCodeGeneratorAgentErrorHandling:
 
     def test_unknown_action(self, test_config):
         """Test handling of unknown action"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
-            request = {
-                'action': 'unknown_generation_action'
-            }
+            request = {"action": "unknown_generation_action"}
 
             result = agent.process(request)
 
-            assert result['status'] == 'error'
-            assert 'unknown' in result['message'].lower()
+            assert result["status"] == "error"
+            assert "unknown" in result["message"].lower()
 
     def test_missing_action_field(self, test_config):
         """Test handling of missing action field"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -291,11 +272,11 @@ class TestCodeGeneratorAgentErrorHandling:
 
             result = agent.process(request)
 
-            assert result['status'] == 'error'
+            assert result["status"] == "error"
 
     def test_missing_project_field(self, test_config):
         """Test handling of missing project in request"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -304,14 +285,14 @@ class TestCodeGeneratorAgentErrorHandling:
             )
 
             request = {
-                'action': 'generate_script'
+                "action": "generate_script"
                 # Missing 'project' field
             }
 
             try:
                 result = agent.process(request)
                 # Should handle error
-                assert 'status' in result
+                assert "status" in result
             except Exception:
                 # Error raised is also acceptable
                 pass
@@ -321,18 +302,21 @@ class TestCodeGeneratorAgentErrorHandling:
 class TestCodeGeneratorAgentLanguageSupport:
     """Tests for different programming language support"""
 
-    @pytest.mark.parametrize("language,tech_stack", [
-        ("Python", ["Python", "FastAPI"]),
-        ("JavaScript", ["JavaScript", "Node.js", "Express"]),
-        ("TypeScript", ["TypeScript", "NestJS"]),
-        ("Go", ["Go", "Gin"]),
-        ("Rust", ["Rust", "Actix"]),
-    ])
+    @pytest.mark.parametrize(
+        "language,tech_stack",
+        [
+            ("Python", ["Python", "FastAPI"]),
+            ("JavaScript", ["JavaScript", "Node.js", "Express"]),
+            ("TypeScript", ["TypeScript", "NestJS"]),
+            ("Go", ["Go", "Gin"]),
+            ("Rust", ["Rust", "Actix"]),
+        ],
+    )
     def test_generate_script_multiple_languages(
         self, test_config, sample_project, language, tech_stack
     ):
         """Test code generation for different programming languages"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -342,14 +326,11 @@ class TestCodeGeneratorAgentLanguageSupport:
             mock_code = f"// {language} code example"
             orchestrator.claude_client.generate_code = MagicMock(return_value=mock_code)
 
-            request = {
-                'action': 'generate_script',
-                'project': sample_project
-            }
+            request = {"action": "generate_script", "project": sample_project}
 
             result = agent.process(request)
 
-            assert result['status'] == 'success'
+            assert result["status"] == "success"
             orchestrator.claude_client.generate_code.assert_called_once()
 
 
@@ -359,20 +340,15 @@ class TestCodeGeneratorAgentLogging:
 
     def test_generates_log_message(self, test_config, sample_project):
         """Test that code generation emits log messages"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
             # Track log calls
             agent.log = MagicMock()
-            orchestrator.claude_client.generate_code = MagicMock(
-                return_value="# code"
-            )
+            orchestrator.claude_client.generate_code = MagicMock(return_value="# code")
 
-            request = {
-                'action': 'generate_script',
-                'project': sample_project
-            }
+            request = {"action": "generate_script", "project": sample_project}
 
             agent.process(request)
 
@@ -386,7 +362,7 @@ class TestCodeGeneratorAgentIntegration:
 
     def test_full_generation_workflow(self, test_config, sample_project):
         """Test complete workflow: script generation -> documentation"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -398,38 +374,33 @@ def process_data(data):
             mock_docs = "# Process Data\nDoubles each element in the input list."
 
             orchestrator.claude_client.generate_code = MagicMock(return_value=mock_code)
-            orchestrator.claude_client.generate_documentation = MagicMock(
-                return_value=mock_docs
-            )
+            orchestrator.claude_client.generate_documentation = MagicMock(return_value=mock_docs)
 
             sample_project.goals = "Create data processing utilities"
             sample_project.tech_stack = ["Python"]
             sample_project.requirements = ["Efficient processing", "Clean code"]
 
             # Generate script
-            gen_request = {
-                'action': 'generate_script',
-                'project': sample_project
-            }
+            gen_request = {"action": "generate_script", "project": sample_project}
             gen_result = agent.process(gen_request)
-            assert gen_result['status'] == 'success'
+            assert gen_result["status"] == "success"
 
             # Generate documentation for the script
             doc_request = {
-                'action': 'generate_documentation',
-                'project': sample_project,
-                'script': gen_result['script']
+                "action": "generate_documentation",
+                "project": sample_project,
+                "script": gen_result["script"],
             }
             doc_result = agent.process(doc_request)
-            assert doc_result['status'] == 'success'
+            assert doc_result["status"] == "success"
 
             # Verify both succeeded
-            assert gen_result['script'] == mock_code
-            assert doc_result['documentation'] == mock_docs
+            assert gen_result["script"] == mock_code
+            assert doc_result["documentation"] == mock_docs
 
     def test_context_rich_generation(self, test_config, sample_project):
         """Test that rich project context improves generation quality"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
@@ -442,54 +413,45 @@ def process_data(data):
                 "Authentication",
                 "Rate limiting",
                 "Caching",
-                "Logging"
+                "Logging",
             ]
             sample_project.constraints = [
                 "Must run on Kubernetes",
                 "Zero-downtime deployments",
-                "Sub-100ms response times"
+                "Sub-100ms response times",
             ]
             sample_project.deployment_target = "Kubernetes"
             sample_project.code_style = "PEP 8 with Black formatter"
             sample_project.conversation_history = [
-                {'type': 'user', 'content': 'Should services be in separate containers?'},
-                {'type': 'assistant', 'content': 'Yes, separate containers for each microservice'},
+                {"type": "user", "content": "Should services be in separate containers?"},
+                {"type": "assistant", "content": "Yes, separate containers for each microservice"},
             ]
 
             mock_code = "# Microservices starter code"
             orchestrator.claude_client.generate_code = MagicMock(return_value=mock_code)
 
-            request = {
-                'action': 'generate_script',
-                'project': sample_project
-            }
+            request = {"action": "generate_script", "project": sample_project}
 
             result = agent.process(request)
 
-            assert result['status'] == 'success'
+            assert result["status"] == "success"
             # Verify rich context was used
-            context = result['context_used']
+            context = result["context_used"]
             assert "microservices" in context.lower() or "Build" in context
             assert "kubernetes" in context.lower() or "Deployment" in context.lower()
 
     def test_generation_with_error_recovery(self, test_config, sample_project):
         """Test recovery from temporary API failures"""
-        with patch('anthropic.Anthropic'):
+        with patch("anthropic.Anthropic"):
             orchestrator = socrates.AgentOrchestrator(test_config)
             agent = CodeGeneratorAgent(orchestrator)
 
             # First call fails, second succeeds (simulating retry)
             orchestrator.claude_client.generate_code = MagicMock(
-                side_effect=[
-                    Exception("Temporary API error"),
-                    "# Code after retry"
-                ]
+                side_effect=[Exception("Temporary API error"), "# Code after retry"]
             )
 
-            request = {
-                'action': 'generate_script',
-                'project': sample_project
-            }
+            request = {"action": "generate_script", "project": sample_project}
 
             # First attempt fails
             with pytest.raises(Exception):
@@ -501,4 +463,4 @@ def process_data(data):
 
             # Second attempt succeeds
             result = agent.process(request)
-            assert result['status'] == 'success'
+            assert result["status"] == "success"

@@ -5,7 +5,6 @@ Uses pytest.main() directly without capture module
 """
 
 import sys
-import os
 from pathlib import Path
 
 # Add project root to path
@@ -17,7 +16,8 @@ try:
     import socrates
 except ModuleNotFoundError:
     import socratic_system as socrates
-    sys.modules['socrates'] = socrates
+
+    sys.modules["socrates"] = socrates
 
 
 def run_tests():
@@ -34,10 +34,13 @@ def run_tests():
     args = [
         "tests/",
         "-v",  # Verbose
-        "-p", "no:cacheprovider",  # Disable cache
-        "-p", "no:assertion",  # Disable assertion rewriting
+        "-p",
+        "no:cacheprovider",  # Disable cache
+        "-p",
+        "no:assertion",  # Disable assertion rewriting
         "--tb=short",  # Short traceback format
-        "-W", "ignore::DeprecationWarning",  # Ignore deprecation warnings
+        "-W",
+        "ignore::DeprecationWarning",  # Ignore deprecation warnings
         "--no-header",  # Don't print pytest header
     ]
 
