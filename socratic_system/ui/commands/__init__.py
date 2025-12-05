@@ -41,6 +41,11 @@ from socratic_system.ui.commands.debug_commands import (
 from socratic_system.ui.commands.query_commands import (
     AskCommand, ExplainCommand, SearchCommand
 )
+from socratic_system.ui.commands.knowledge_commands import (
+    KnowledgeAddCommand, KnowledgeListCommand, KnowledgeSearchCommand,
+    KnowledgeExportCommand, KnowledgeImportCommand, KnowledgeRemoveCommand,
+    RememberCommand
+)
 
 __all__ = [
     'BaseCommand',
@@ -60,4 +65,7 @@ __all__ = [
     'AskCommand', 'ExplainCommand', 'SearchCommand',
     'ProjectStatsCommand', 'ProjectProgressCommand', 'ProjectStatusCommand',
     'DebugCommand', 'LogsCommand',
+    'KnowledgeAddCommand', 'KnowledgeListCommand', 'KnowledgeSearchCommand',
+    'KnowledgeExportCommand', 'KnowledgeImportCommand', 'KnowledgeRemoveCommand',
+    'RememberCommand',
 ]

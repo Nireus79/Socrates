@@ -13,7 +13,16 @@
       "Bash(git rm:*)",
       "Bash(git reset:*)",
       "Bash(dir:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "WebFetch(domain:pypi.org)",
+      "Bash(curl:*)",
+      "Bash(PYTHONPATH=/c/Users/themi/PycharmProjects/Socrates python -m pytest:*)",
+      "Bash(git tag:*)",
+      "Bash(git push:*)",
+      "Bash(wc:*)",
+      "Bash(ls:*)",
+      "Bash(iconv:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

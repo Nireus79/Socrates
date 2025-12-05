@@ -27,6 +27,7 @@ from socratic_system.agents import (
     DocumentAgent, UserManagerAgent
 )
 from socratic_system.agents.note_manager import NoteManagerAgent
+from socratic_system.agents.knowledge_manager import KnowledgeManagerAgent
 
 
 class AgentOrchestrator:
@@ -79,12 +80,12 @@ class AgentOrchestrator:
 
         # Emit system initialized event
         self.event_emitter.emit(EventType.SYSTEM_INITIALIZED, {
-            "version": "8.0.0",
+            "version": "0.5.0",
             "data_dir": str(self.config.data_dir),
             "model": self.config.claude_model,
         })
 
-        self.logger.info("Socratic RAG System v8.0 initialized successfully!")
+        self.logger.info("Socratic RAG System initialized successfully!")
 
     def _initialize_agents(self) -> None:
         """Initialize agents after orchestrator is fully set up"""
@@ -97,6 +98,7 @@ class AgentOrchestrator:
         self.document_agent = DocumentAgent(self)
         self.user_manager = UserManagerAgent(self)
         self.note_manager = NoteManagerAgent("note_manager", self)
+        self.knowledge_manager = KnowledgeManagerAgent("knowledge_manager", self)
 
     def _load_knowledge_base(self) -> None:
         """Load default knowledge base from config file if not already loaded"""
@@ -191,7 +193,8 @@ class AgentOrchestrator:
             'conflict_detector': self.conflict_detector,
             'document_agent': self.document_agent,
             'user_manager': self.user_manager,
-            'note_manager': self.note_manager
+            'note_manager': self.note_manager,
+            'knowledge_manager': self.knowledge_manager
         }
 
         agent = agents.get(agent_name)
@@ -263,7 +266,8 @@ class AgentOrchestrator:
             'conflict_detector': self.conflict_detector,
             'document_agent': self.document_agent,
             'user_manager': self.user_manager,
-            'note_manager': self.note_manager
+            'note_manager': self.note_manager,
+            'knowledge_manager': self.knowledge_manager
         }
 
         agent = agents.get(agent_name)

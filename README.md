@@ -1,8 +1,10 @@
 # Socrates AI
 
 A Socratic method tutoring system powered by Claude AI with multi-agent orchestration, RAG (Retrieval-Augmented Generation), and event-driven architecture.
+Helps users and collaborators, design and develop projects of various domains.
+Ideal for vibe coding
 
-> **Status**: Beta (v8.0.0)
+> **Status**: Beta (v0.5.0)
 > **License**: MIT
 > **Python**: 3.8+
 
