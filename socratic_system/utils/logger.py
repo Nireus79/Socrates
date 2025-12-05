@@ -48,7 +48,7 @@ class DebugLogger:
 
         # Console handler (shows INFO by default, DEBUG when enabled)
         cls._console_handler = logging.StreamHandler()
-        cls._console_handler.setLevel(logging.DEBUG)  # Show DEBUG when enabled
+        cls._console_handler.setLevel(logging.INFO)  # Show INFO by default
 
         # Enhanced formatter with better readability
         def format_console_message(record):

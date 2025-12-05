@@ -40,7 +40,7 @@ class ExitCommand(BaseCommand):
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute exit command"""
         print(f"\n{Fore.GREEN}Thank you for using Socratic RAG System")
-        print("..τω Ασκληπιώ οφείλομεν αλετρυόνα, απόδοτε και μη αμελήσετε..{Style.RESET_ALL}\n")
+        print(f"..τω Ασκληπιώ οφείλομεν αλετρυόνα, απόδοτε και μη αμελήσετε..{Style.RESET_ALL}\n")
 
         return {'status': 'exit', 'message': 'Exiting application'}
 

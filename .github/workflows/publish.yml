@@ -1,0 +1,231 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [created, published]
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Run in dry-run mode (no actual publish)'
+        required: false
+        default: 'false'
+
+jobs:
+  test:
+    name: Test Before Publishing
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . -e socrates-cli -e socrates-api
+          pip install -e ".[dev]" pytest-cov
+
+      - name: Run tests
+        run: |
+          pytest --cov=socratic_system -v
+
+      - name: Check coverage
+        run: |
+          pytest --cov=socratic_system --cov-fail-under=70
+
+  build:
+    name: Build Distributions
+    runs-on: ubuntu-latest
+    needs: test
+
+    strategy:
+      matrix:
+        package:
+          - path: .
+            name: socrates-ai
+          - path: socrates-cli
+            name: socrates-cli
+          - path: socrates-api
+            name: socrates-api
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel twine
+
+      - name: Build ${{ matrix.package.name }}
+        run: |
+          cd ${{ matrix.package.path }}
+          python -m build
+
+      - name: Check distribution with twine
+        run: |
+          cd ${{ matrix.package.path }}
+          python -m twine check dist/*
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v3
+        with:
+          name: distributions-${{ matrix.package.name }}
+          path: ${{ matrix.package.path }}/dist/
+          retention-days: 5
+
+  publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry-run == 'false')
+
+    strategy:
+      matrix:
+        package:
+          - path: .
+            name: socrates-ai
+          - path: socrates-cli
+            name: socrates-cli
+          - path: socrates-api
+            name: socrates-api
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download distributions
+        uses: actions/download-artifact@v3
+        with:
+          name: distributions-${{ matrix.package.name }}
+          path: dist/
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install twine
+        run: pip install twine
+
+      - name: Publish ${{ matrix.package.name }} to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          TWINE_NON_INTERACTIVE: true
+        run: |
+          python -m twine upload dist/* --skip-existing
+
+  publish-test:
+    name: Publish to TestPyPI (Dry Run)
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry-run == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all distributions
+        uses: actions/download-artifact@v3
+        with:
+          path: dist-all/
+
+      - name: Flatten distributions
+        run: |
+          mkdir -p dist
+          find dist-all -name "*.whl" -o -name "*.tar.gz" | xargs cp -t dist/ 2>/dev/null || true
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install twine
+        run: pip install twine
+
+      - name: Publish to TestPyPI (Dry Run)
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
+          TWINE_NON_INTERACTIVE: true
+        run: |
+          python -m twine upload dist/* --skip-existing || true
+
+  release-notes:
+    name: Create Release Notes
+    runs-on: ubuntu-latest
+    needs: publish
+    if: github.event_name == 'release'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate release notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat > /tmp/release_notes.md << 'EOF'
+          # Release Notes
+
+          ## Packages Published
+          - **socrates-ai**: Core library with AI agents and orchestration
+          - **socrates-cli**: Command-line interface tool
+          - **socrates-api**: REST API server
+
+          All packages are available on PyPI:
+          ```bash
+          pip install socrates-ai
+          pip install socrates-cli
+          pip install socrates-api
+          ```
+
+          ## Changelog
+          See the full changelog: [CHANGELOG.md](./CHANGELOG.md)
+
+          ## Documentation
+          - [Library Documentation](https://socrates-ai.readthedocs.io)
+          - [CLI Documentation](./socrates-cli/README.md)
+          - [API Documentation](./socrates-api/README.md)
+
+          ## Support
+          - GitHub Issues: https://github.com/Nireus79/Socrates/issues
+          - Discussions: https://github.com/Nireus79/Socrates/discussions
+          EOF
+          cat /tmp/release_notes.md
+
+      - name: Update release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit ${{ github.ref }} \
+            --notes-file /tmp/release_notes.md || true
+
+  notify:
+    name: Notify of Release
+    runs-on: ubuntu-latest
+    needs: [publish, release-notes]
+    if: github.event_name == 'release'
+
+    steps:
+      - name: Create notification
+        run: |
+          echo "Successfully published Socrates v${{ github.event.release.tag_name }} to PyPI"
+          echo "- socrates-ai"
+          echo "- socrates-cli"
+          echo "- socrates-api"
+          echo ""
+          echo "Install with: pip install socrates-ai"
