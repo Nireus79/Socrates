@@ -15,7 +15,7 @@ Examples:
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 
 @dataclass
@@ -68,31 +68,18 @@ class SocratesConfig:
     # Custom Knowledge
     custom_knowledge: List[str] = field(default_factory=list)
 
-    def __post_init__(self) -> None:
-        """Initialize derived paths and create directories"""
-        # Ensure data_dir is a Path object
-        if isinstance(self.data_dir, str):
-            self.data_dir = Path(self.data_dir)
+    def _ensure_path(self, path_value: Union[str, Path, None], default_path: Path) -> Path:
+        """Convert path value to Path object"""
+        if path_value is None:
+            return default_path
+        elif isinstance(path_value, str):
+            return Path(path_value)
+        else:
+            return path_value
 
-        # Initialize derived paths if not explicitly set
-        if self.projects_db_path is None:
-            self.projects_db_path = self.data_dir / "projects.db"
-        elif isinstance(self.projects_db_path, str):
-            self.projects_db_path = Path(self.projects_db_path)
-
-        if self.vector_db_path is None:
-            self.vector_db_path = self.data_dir / "vector_db"
-        elif isinstance(self.vector_db_path, str):
-            self.vector_db_path = Path(self.vector_db_path)
-
-        if self.log_file is None:
-            self.log_file = self.data_dir / "logs" / "socrates.log"
-        elif isinstance(self.log_file, str):
-            self.log_file = Path(self.log_file)
-
-        # Set knowledge_base_path if not explicitly set
+    def _setup_knowledge_base_path(self) -> None:
+        """Set knowledge_base_path if not explicitly set"""
         if self.knowledge_base_path is None:
-            # Try to find knowledge_base.json in config directory
             current_dir = Path(__file__).parent
             config_dir = current_dir.parent / "config"
             if config_dir.exists():
@@ -100,10 +87,34 @@ class SocratesConfig:
                 if kb_path.exists():
                     self.knowledge_base_path = kb_path
 
-        # Create directories
+    def _create_directories(self) -> None:
+        """Create required directories"""
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.vector_db_path.mkdir(parents=True, exist_ok=True)
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
+
+    def __post_init__(self) -> None:
+        """Initialize derived paths and create directories"""
+        # Ensure data_dir is a Path object
+        if isinstance(self.data_dir, str):
+            self.data_dir = Path(self.data_dir)
+
+        # Initialize derived paths if not explicitly set
+        self.projects_db_path = self._ensure_path(
+            self.projects_db_path, self.data_dir / "projects.db"
+        )
+        self.vector_db_path = self._ensure_path(
+            self.vector_db_path, self.data_dir / "vector_db"
+        )
+        self.log_file = self._ensure_path(
+            self.log_file, self.data_dir / "logs" / "socrates.log"
+        )
+
+        # Set knowledge_base_path if not explicitly set
+        self._setup_knowledge_base_path()
+
+        # Create directories
+        self._create_directories()
 
     @classmethod
     def from_env(cls, **overrides) -> "SocratesConfig":

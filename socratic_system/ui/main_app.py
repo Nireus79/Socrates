@@ -267,6 +267,36 @@ class SocraticRAGSystem:
         self.command_handler.register_command(ExplainCommand())
         self.command_handler.register_command(SearchCommand())
 
+    def _handle_command_result(self, result: Dict[str, Any]) -> bool:
+        """
+        Handle command execution result and display appropriate messages.
+
+        Args:
+            result: Command result dictionary with status and message
+
+        Returns:
+            True if command loop should continue, False if exit requested
+        """
+        if result["status"] == "exit":
+            return False
+        elif result["status"] == "error":
+            if result.get("message"):
+                print(result["message"])
+        elif result["status"] == "success":
+            if result.get("message"):
+                print(result["message"])
+        elif result["status"] == "info":
+            if result.get("message"):
+                print(result["message"])
+        elif result["status"] != "idle":
+            # Unknown status
+            print(
+                f"{Fore.YELLOW}Command executed with status: {result['status']}{Style.RESET_ALL}"
+            )
+            if result.get("message"):
+                print(result["message"])
+        return True
+
     def _command_loop(self) -> None:
         """Main command processing loop"""
         while True:
@@ -282,28 +312,8 @@ class SocraticRAGSystem:
                 result = self._process_input_with_nlu(user_input, self._get_context())
 
                 # Handle result
-                if result["status"] == "exit":
+                if not self._handle_command_result(result):
                     break
-                elif result["status"] == "error":
-                    if result.get("message"):
-                        print(result["message"])
-                elif result["status"] == "success":
-                    if result.get("message"):
-                        print(result["message"])
-                    # Handle navigation context changes
-                    # Could implement navigation here if needed
-                    # if result.get("data", {}).get("nav_context"):
-                    #     pass  # Handle nav_context when implemented
-                elif result["status"] == "info":
-                    if result.get("message"):
-                        print(result["message"])
-                elif result["status"] != "idle":
-                    # Unknown status
-                    print(
-                        f"{Fore.YELLOW}Command executed with status: {result['status']}{Style.RESET_ALL}"
-                    )
-                    if result.get("message"):
-                        print(result["message"])
 
             except KeyboardInterrupt:
                 print(f"\n{Fore.YELLOW}Interrupted. Type '/exit' to quit.{Style.RESET_ALL}")
