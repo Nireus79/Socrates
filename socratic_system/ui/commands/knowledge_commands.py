@@ -145,7 +145,7 @@ class KnowledgeListCommand(BaseCommand):
             if arg.startswith("--limit="):
                 try:
                     return int(arg.split("=")[1])
-                except:
+                except (ValueError, IndexError):
                     pass
         return 10
 
@@ -209,7 +209,7 @@ class KnowledgeSearchCommand(BaseCommand):
             if arg.startswith("--top="):
                 try:
                     return int(arg.split("=")[1])
-                except:
+                except (ValueError, IndexError):
                     pass
         return 5
 

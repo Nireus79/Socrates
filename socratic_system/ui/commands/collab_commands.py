@@ -83,53 +83,49 @@ class CollabRemoveCommand(BaseCommand):
             usage="collab remove <username>",
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute collab remove command"""
-        if not self.require_project(context):
-            return self.error("No project loaded")
+    def _select_collaborator(self, project) -> str:
+        """
+        Interactively select a collaborator from the project.
 
-        orchestrator = context.get("orchestrator")
-        project = context.get("project")
-        user = context.get("user")
+        Args:
+            project: Project object with collaborators list
 
-        if not orchestrator or not project or not user:
-            return self.error("Required context not available")
+        Returns:
+            Selected username or None if invalid input
+        """
+        print(f"\n{Fore.YELLOW}Current Collaborators:{Style.RESET_ALL}")
+        for i, collaborator in enumerate(project.collaborators, 1):
+            print(f"{i}. {collaborator}")
 
-        # Only owner can remove collaborators
-        if user.username != project.owner:
-            return self.error("Only the project owner can remove collaborators")
-
-        if not project.collaborators:
-            self.print_info("No collaborators to remove")
-            return self.success()
-
-        # Get username from args or interactive selection
-        if self.validate_args(args, min_count=1):
-            username = args[0]
-        else:
-            print(f"\n{Fore.YELLOW}Current Collaborators:{Style.RESET_ALL}")
-            for i, collaborator in enumerate(project.collaborators, 1):
-                print(f"{i}. {collaborator}")
-
-            try:
-                choice = (
-                    int(
-                        input(
-                            f"\n{Fore.WHITE}Select collaborator to remove (1-{len(project.collaborators)}): "
-                        )
+        try:
+            choice = (
+                int(
+                    input(
+                        f"\n{Fore.WHITE}Select collaborator to remove (1-{len(project.collaborators)}): "
                     )
-                    - 1
                 )
-                if 0 <= choice < len(project.collaborators):
-                    username = project.collaborators[choice]
-                else:
-                    return self.error("Invalid selection")
-            except ValueError:
-                return self.error("Invalid input")
+                - 1
+            )
+            if 0 <= choice < len(project.collaborators):
+                return project.collaborators[choice]
+            else:
+                return None
+        except ValueError:
+            return None
 
-        if username not in project.collaborators:
-            return self.error(f"User '{username}' is not a collaborator")
+    def _remove_collaborator(self, username: str, project, user, orchestrator) -> Dict[str, Any]:
+        """
+        Remove a collaborator from the project after confirmation.
 
+        Args:
+            username: Username to remove
+            project: Project object
+            user: Current user
+            orchestrator: Orchestrator instance
+
+        Returns:
+            Result dictionary with success/error status
+        """
         confirm = input(f"{Fore.YELLOW}Remove '{username}'? (y/n): ").lower()
         if confirm != "y":
             self.print_info("Removal cancelled")
@@ -159,6 +155,40 @@ class CollabRemoveCommand(BaseCommand):
             return self.success(data={"removed_user": username})
         else:
             return self.error(result.get("message", "Failed to remove collaborator"))
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute collab remove command"""
+        if not self.require_project(context):
+            return self.error("No project loaded")
+
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
+        user = context.get("user")
+
+        if not orchestrator or not project or not user:
+            return self.error("Required context not available")
+
+        # Only owner can remove collaborators
+        if user.username != project.owner:
+            return self.error("Only the project owner can remove collaborators")
+
+        if not project.collaborators:
+            self.print_info("No collaborators to remove")
+            return self.success()
+
+        # Get username from args or interactive selection
+        if self.validate_args(args, min_count=1):
+            username = args[0]
+        else:
+            username = self._select_collaborator(project)
+            if username is None:
+                return self.error("Invalid input")
+
+        if username not in project.collaborators:
+            return self.error(f"User '{username}' is not a collaborator")
+
+        # Remove the collaborator
+        return self._remove_collaborator(username, project, user, orchestrator)
 
 
 class CollabListCommand(BaseCommand):

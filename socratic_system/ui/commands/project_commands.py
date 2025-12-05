@@ -66,27 +66,16 @@ class ProjectLoadCommand(BaseCommand):
             name="project load", description="Load an existing project", usage="project load"
         )
 
-    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute project load command"""
-        if not self.require_user(context):
-            return self.error("Must be logged in to load a project")
+    def _display_projects(self, result: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Display projects organized by status (active/archived).
 
-        orchestrator = context.get("orchestrator")
-        app = context.get("app")
-        user = context.get("user")
+        Args:
+            result: Result dict with projects list
 
-        if not orchestrator or not app or not user:
-            return self.error("Required context not available")
-
-        # Get user's projects
-        result = orchestrator.process_request(
-            "project_manager", {"action": "list_projects", "username": user.username}
-        )
-
-        if result["status"] != "success" or not result.get("projects"):
-            self.print_info("No projects found")
-            return self.success()
-
+        Returns:
+            Flattened list of all projects for selection
+        """
         # Separate active and archived
         active_projects = [p for p in result["projects"] if p.get("status") != "archived"]
         archived_projects = [p for p in result["projects"] if p.get("status") == "archived"]
@@ -111,33 +100,73 @@ class ProjectLoadCommand(BaseCommand):
                     f"{len(all_projects)}. 🗄️ {project['name']} ({project['phase']}) - {project['updated_at']}"
                 )
 
+        return all_projects
+
+    def _load_selected_project(self, project_info: Dict[str, Any], orchestrator, app) -> Dict[str, Any]:
+        """
+        Load selected project and update app context.
+
+        Args:
+            project_info: Selected project info
+            orchestrator: Orchestrator instance
+            app: App instance
+
+        Returns:
+            Result dict with project or error
+        """
+        project_id = project_info["project_id"]
+
+        # Load project
+        result = orchestrator.process_request(
+            "project_manager", {"action": "load_project", "project_id": project_id}
+        )
+
+        if result["status"] == "success":
+            project = result["project"]
+            app.current_project = project
+            app.context_display.set_context(project=project)
+
+            if getattr(project, "is_archived", False):
+                self.print_warning(f"Archived project loaded: {project.name}")
+                print(
+                    f"{Fore.YELLOW}Note: This project is archived. Some features may be limited.{Style.RESET_ALL}"
+                )
+            else:
+                self.print_success(f"Project loaded: {project.name}")
+
+            return self.success(data={"project": project})
+        else:
+            return self.error(result.get("message", "Failed to load project"))
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute project load command"""
+        if not self.require_user(context):
+            return self.error("Must be logged in to load a project")
+
+        orchestrator = context.get("orchestrator")
+        app = context.get("app")
+        user = context.get("user")
+
+        if not orchestrator or not app or not user:
+            return self.error("Required context not available")
+
+        # Get user's projects
+        result = orchestrator.process_request(
+            "project_manager", {"action": "list_projects", "username": user.username}
+        )
+
+        if result["status"] != "success" or not result.get("projects"):
+            self.print_info("No projects found")
+            return self.success()
+
+        # Display projects and get selection
+        all_projects = self._display_projects(result)
+
         try:
             choice = int(input(f"\n{Fore.WHITE}Select project (1-{len(all_projects)}): ")) - 1
             if 0 <= choice < len(all_projects):
                 project_info = all_projects[choice]
-                project_id = project_info["project_id"]
-
-                # Load project
-                result = orchestrator.process_request(
-                    "project_manager", {"action": "load_project", "project_id": project_id}
-                )
-
-                if result["status"] == "success":
-                    project = result["project"]
-                    app.current_project = project
-                    app.context_display.set_context(project=project)
-
-                    if getattr(project, "is_archived", False):
-                        self.print_warning(f"Archived project loaded: {project.name}")
-                        print(
-                            f"{Fore.YELLOW}Note: This project is archived. Some features may be limited.{Style.RESET_ALL}"
-                        )
-                    else:
-                        self.print_success(f"Project loaded: {project.name}")
-
-                    return self.success(data={"project": project})
-                else:
-                    return self.error(result.get("message", "Failed to load project"))
+                return self._load_selected_project(project_info, orchestrator, app)
             else:
                 return self.error("Invalid selection")
         except ValueError:
@@ -246,6 +275,67 @@ class ProjectRestoreCommand(BaseCommand):
             usage="project restore",
         )
 
+    def _display_archived_projects(self, archived_projects: List[Dict[str, Any]]) -> None:
+        """
+        Display archived projects with formatted dates.
+
+        Args:
+            archived_projects: List of archived project dictionaries
+        """
+        print(f"\n{Fore.CYAN}Archived Projects:{Style.RESET_ALL}")
+
+        for i, project_info in enumerate(archived_projects, 1):
+            archived_date = project_info.get("archived_at", "Unknown")
+            if isinstance(archived_date, str):
+                try:
+                    archived_date = datetime.datetime.fromisoformat(archived_date).strftime(
+                        "%Y-%m-%d %H:%M"
+                    )
+                except (ValueError, TypeError):
+                    pass
+
+            print(
+                f"{i}. {project_info['name']} by {project_info['owner']} (archived: {archived_date})"
+            )
+
+    def _restore_selected_project(
+        self, project: Dict[str, Any], user, orchestrator
+    ) -> Dict[str, Any]:
+        """
+        Restore a selected archived project.
+
+        Args:
+            project: Selected project dictionary
+            user: Current user
+            orchestrator: Orchestrator instance
+
+        Returns:
+            Result dictionary with success/error status
+        """
+        # Check if user has permission
+        if user.username != project["owner"]:
+            return self.error("Only the project owner can restore projects")
+
+        confirm = input(f"{Fore.CYAN}Restore project '{project['name']}'? (y/n): ").lower()
+        if confirm != "y":
+            self.print_info("Restoration cancelled")
+            return self.success()
+
+        result = orchestrator.process_request(
+            "project_manager",
+            {
+                "action": "restore_project",
+                "project_id": project["project_id"],
+                "requester": user.username,
+            },
+        )
+
+        if result["status"] == "success":
+            self.print_success(f"Project '{project['name']}' restored successfully!")
+            return self.success()
+        else:
+            return self.error(result.get("message", "Failed to restore project"))
+
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute project restore command"""
         if not self.require_user(context):
@@ -265,22 +355,8 @@ class ProjectRestoreCommand(BaseCommand):
             self.print_info("No archived projects found")
             return self.success()
 
-        print(f"\n{Fore.CYAN}Archived Projects:{Style.RESET_ALL}")
         archived_projects = result["archived_projects"]
-
-        for i, project_info in enumerate(archived_projects, 1):
-            archived_date = project_info.get("archived_at", "Unknown")
-            if isinstance(archived_date, str):
-                try:
-                    archived_date = datetime.datetime.fromisoformat(archived_date).strftime(
-                        "%Y-%m-%d %H:%M"
-                    )
-                except:
-                    pass
-
-            print(
-                f"{i}. {project_info['name']} by {project_info['owner']} (archived: {archived_date})"
-            )
+        self._display_archived_projects(archived_projects)
 
         try:
             choice = input(
@@ -293,27 +369,7 @@ class ProjectRestoreCommand(BaseCommand):
             index = int(choice) - 1
             if 0 <= index < len(archived_projects):
                 project = archived_projects[index]
-
-                # Check if user has permission
-                if user.username != project["owner"]:
-                    return self.error("Only the project owner can restore projects")
-
-                confirm = input(f"{Fore.CYAN}Restore project '{project['name']}'? (y/n): ").lower()
-                if confirm == "y":
-                    result = orchestrator.process_request(
-                        "project_manager",
-                        {
-                            "action": "restore_project",
-                            "project_id": project["project_id"],
-                            "requester": user.username,
-                        },
-                    )
-
-                    if result["status"] == "success":
-                        self.print_success(f"Project '{project['name']}' restored successfully!")
-                        return self.success()
-                    else:
-                        return self.error(result.get("message", "Failed to restore project"))
+                return self._restore_selected_project(project, user, orchestrator)
             else:
                 return self.error("Invalid selection")
 
@@ -330,6 +386,117 @@ class ProjectDeleteCommand(BaseCommand):
             description="Permanently delete a project (cannot be undone)",
             usage="project delete",
         )
+
+    def _get_owned_projects(self, user, orchestrator, result: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Get list of projects owned by the user.
+
+        Args:
+            user: Current user
+            orchestrator: Orchestrator instance
+            result: Result dict with projects list
+
+        Returns:
+            List of owned project dictionaries
+        """
+        owned_projects = []
+        for project_info in result["projects"]:
+            project = orchestrator.database.load_project(project_info["project_id"])
+            if project and project.owner == user.username:
+                owned_projects.append(
+                    {
+                        "project_id": project.project_id,
+                        "name": project.name,
+                        "status": project_info.get("status", "active"),
+                        "collaborator_count": len(project.collaborators),
+                    }
+                )
+        return owned_projects
+
+    def _display_owned_projects(self, owned_projects: List[Dict[str, Any]]) -> None:
+        """
+        Display owned projects for deletion selection.
+
+        Args:
+            owned_projects: List of owned project dictionaries
+        """
+        print(f"\n{Fore.RED}⚠️  PERMANENT PROJECT DELETION{Style.RESET_ALL}")
+        print("Select a project to permanently delete:")
+
+        for i, project in enumerate(owned_projects, 1):
+            status_indicator = "🗄️" if project["status"] == "archived" else "📁"
+            collab_text = (
+                f"({project['collaborator_count']} collaborators)"
+                if project["collaborator_count"] > 0
+                else "(no collaborators)"
+            )
+            print(f"{i}. {status_indicator} {project['name']} {collab_text}")
+
+    def _confirm_delete(self, project: Dict[str, Any]) -> bool:
+        """
+        Get double confirmation for project deletion.
+
+        Args:
+            project: Project to delete
+
+        Returns:
+            True if user confirmed deletion, False otherwise
+        """
+        print(f"\n{Fore.RED}⚠️  You are about to PERMANENTLY DELETE:{Style.RESET_ALL}")
+        print(f"Project: {project['name']}")
+        print(f"Status: {project['status']}")
+        print(f"Collaborators: {project['collaborator_count']}")
+        print(f"\n{Fore.YELLOW}This action CANNOT be undone!{Style.RESET_ALL}")
+        print("All conversation history, context, and project data will be lost forever.")
+
+        confirm1 = input(f"\n{Fore.RED}Type the project name to continue: ").strip()
+        if confirm1 != project["name"]:
+            self.print_info("Deletion cancelled")
+            return False
+
+        confirm2 = input(f"{Fore.RED}Type 'DELETE' to confirm permanent deletion: ").strip()
+        if confirm2 != "DELETE":
+            self.print_info("Deletion cancelled")
+            return False
+
+        return True
+
+    def _delete_selected_project(
+        self, project: Dict[str, Any], user, orchestrator, app
+    ) -> Dict[str, Any]:
+        """
+        Delete selected project after confirmation.
+
+        Args:
+            project: Project to delete
+            user: Current user
+            orchestrator: Orchestrator instance
+            app: App instance
+
+        Returns:
+            Result dictionary with success/error status
+        """
+        result = orchestrator.process_request(
+            "project_manager",
+            {
+                "action": "delete_project_permanently",
+                "project_id": project["project_id"],
+                "requester": user.username,
+                "confirmation": "DELETE",
+            },
+        )
+
+        if result["status"] == "success":
+            self.print_success(result["message"])
+
+            # Clear current project if it was the deleted one
+            if app.current_project and app.current_project.project_id == project["project_id"]:
+                app.current_project = None
+                app.context_display.set_context(project=None)
+
+            return self.success()
+        else:
+            return self.error(result.get("message", "Failed to delete project"))
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute project delete command"""
@@ -353,34 +520,14 @@ class ProjectDeleteCommand(BaseCommand):
             return self.success()
 
         # Filter to only owned projects
-        owned_projects = []
-        for project_info in result["projects"]:
-            project = orchestrator.database.load_project(project_info["project_id"])
-            if project and project.owner == user.username:
-                owned_projects.append(
-                    {
-                        "project_id": project.project_id,
-                        "name": project.name,
-                        "status": project_info.get("status", "active"),
-                        "collaborator_count": len(project.collaborators),
-                    }
-                )
+        owned_projects = self._get_owned_projects(user, orchestrator, result)
 
         if not owned_projects:
             self.print_info("You don't own any projects")
             return self.success()
 
-        print(f"\n{Fore.RED}⚠️  PERMANENT PROJECT DELETION{Style.RESET_ALL}")
-        print("Select a project to permanently delete:")
-
-        for i, project in enumerate(owned_projects, 1):
-            status_indicator = "🗄️" if project["status"] == "archived" else "📁"
-            collab_text = (
-                f"({project['collaborator_count']} collaborators)"
-                if project["collaborator_count"] > 0
-                else "(no collaborators)"
-            )
-            print(f"{i}. {status_indicator} {project['name']} {collab_text}")
+        # Display projects and get selection
+        self._display_owned_projects(owned_projects)
 
         try:
             choice = input(
@@ -394,47 +541,12 @@ class ProjectDeleteCommand(BaseCommand):
             if 0 <= index < len(owned_projects):
                 project = owned_projects[index]
 
-                print(f"\n{Fore.RED}⚠️  You are about to PERMANENTLY DELETE:{Style.RESET_ALL}")
-                print(f"Project: {project['name']}")
-                print(f"Status: {project['status']}")
-                print(f"Collaborators: {project['collaborator_count']}")
-                print(f"\n{Fore.YELLOW}This action CANNOT be undone!{Style.RESET_ALL}")
-                print("All conversation history, context, and project data will be lost forever.")
-
-                confirm1 = input(f"\n{Fore.RED}Type the project name to continue: ").strip()
-                if confirm1 != project["name"]:
-                    self.print_info("Deletion cancelled")
+                # Get confirmation from user
+                if not self._confirm_delete(project):
                     return self.success()
 
-                confirm2 = input(f"{Fore.RED}Type 'DELETE' to confirm permanent deletion: ").strip()
-                if confirm2 != "DELETE":
-                    self.print_info("Deletion cancelled")
-                    return self.success()
-
-                result = orchestrator.process_request(
-                    "project_manager",
-                    {
-                        "action": "delete_project_permanently",
-                        "project_id": project["project_id"],
-                        "requester": user.username,
-                        "confirmation": "DELETE",
-                    },
-                )
-
-                if result["status"] == "success":
-                    self.print_success(result["message"])
-
-                    # Clear current project if it was the deleted one
-                    if (
-                        app.current_project
-                        and app.current_project.project_id == project["project_id"]
-                    ):
-                        app.current_project = None
-                        app.context_display.set_context(project=None)
-
-                    return self.success()
-                else:
-                    return self.error(result.get("message", "Failed to delete project"))
+                # Delete the project
+                return self._delete_selected_project(project, user, orchestrator, app)
             else:
                 return self.error("Invalid selection")
 

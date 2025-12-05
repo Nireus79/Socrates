@@ -266,6 +266,53 @@ class UserRestoreCommand(BaseCommand):
             usage="user restore",
         )
 
+    def _display_archived_users(self, archived_users: List[Dict[str, Any]]) -> None:
+        """
+        Display archived user accounts with formatted dates.
+
+        Args:
+            archived_users: List of archived user dictionaries
+        """
+        print(f"\n{Fore.CYAN}Archived Accounts:{Style.RESET_ALL}")
+
+        for i, user_info in enumerate(archived_users, 1):
+            archived_date = user_info.get("archived_at", "Unknown")
+            if isinstance(archived_date, str):
+                try:
+                    archived_date = datetime.datetime.fromisoformat(archived_date).strftime(
+                        "%Y-%m-%d %H:%M"
+                    )
+                except (ValueError, TypeError):
+                    pass
+
+            print(f"{i}. {user_info['username']} (archived: {archived_date})")
+
+    def _restore_selected_user(self, username: str, orchestrator) -> Dict[str, Any]:
+        """
+        Restore a selected archived user account.
+
+        Args:
+            username: Username to restore
+            orchestrator: Orchestrator instance
+
+        Returns:
+            Result dictionary with success/error status
+        """
+        confirm = input(f"{Fore.CYAN}Restore account '{username}'? (y/n): ").lower()
+        if confirm != "y":
+            self.print_info("Restoration cancelled")
+            return self.success()
+
+        result = orchestrator.process_request(
+            "user_manager", {"action": "restore_user", "username": username}
+        )
+
+        if result["status"] == "success":
+            self.print_success(f"Account '{username}' restored successfully!")
+            return self.success()
+        else:
+            return self.error(result.get("message", "Failed to restore account"))
+
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute user restore command"""
         orchestrator = context.get("orchestrator")
@@ -279,20 +326,8 @@ class UserRestoreCommand(BaseCommand):
             self.print_info("No archived accounts found")
             return self.success()
 
-        print(f"\n{Fore.CYAN}Archived Accounts:{Style.RESET_ALL}")
         archived_users = result["archived_users"]
-
-        for i, user_info in enumerate(archived_users, 1):
-            archived_date = user_info.get("archived_at", "Unknown")
-            if isinstance(archived_date, str):
-                try:
-                    archived_date = datetime.datetime.fromisoformat(archived_date).strftime(
-                        "%Y-%m-%d %H:%M"
-                    )
-                except:
-                    pass
-
-            print(f"{i}. {user_info['username']} (archived: {archived_date})")
+        self._display_archived_users(archived_users)
 
         try:
             choice = input(
@@ -305,18 +340,7 @@ class UserRestoreCommand(BaseCommand):
             index = int(choice) - 1
             if 0 <= index < len(archived_users):
                 username = archived_users[index]["username"]
-
-                confirm = input(f"{Fore.CYAN}Restore account '{username}'? (y/n): ").lower()
-                if confirm == "y":
-                    result = orchestrator.process_request(
-                        "user_manager", {"action": "restore_user", "username": username}
-                    )
-
-                    if result["status"] == "success":
-                        self.print_success(f"Account '{username}' restored successfully!")
-                        return self.success()
-                    else:
-                        return self.error(result.get("message", "Failed to restore account"))
+                return self._restore_selected_user(username, orchestrator)
             else:
                 return self.error("Invalid selection")
 

@@ -17,6 +17,82 @@ class ContinueCommand(BaseCommand):
             usage="continue",
         )
 
+    def _handle_command(self, response: str, context: Dict[str, Any]) -> tuple:
+        """Handle / commands. Returns (should_continue, continue_session)"""
+        app = context.get("app")
+        app.command_handler.execute(response, context)
+
+        if response.startswith("/done"):
+            self.print_info("Finishing session")
+            return False, False  # don't continue loop, end session
+        elif response.startswith("/advance"):
+            print(f"{Fore.YELLOW}Continuing with new phase...{Style.RESET_ALL}")
+            return True, True  # continue loop, stay in session
+        elif response.startswith("/back") or response.startswith("/exit"):
+            return False, False  # don't continue loop, end session
+        elif response.startswith("/help"):
+            self._show_session_help()
+            return True, True  # continue loop, stay in session
+        else:
+            return True, True  # other commands, continue loop
+
+    def _show_session_help(self) -> None:
+        """Show session help menu"""
+        print(f"\n{Fore.CYAN}Session Commands:{Style.RESET_ALL}")
+        print("  /continue  - Continue answering questions")
+        print("  /done      - Finish this session")
+        print("  /advance   - Move to next phase")
+        print("  /help      - Show session help")
+        print("  /back      - Return to main menu")
+        print("  /exit      - Exit application\n")
+
+    def _handle_special_response(self, response: str, orchestrator, project) -> tuple:
+        """Handle non-command responses. Returns (handled, should_continue)"""
+        if response.lower() == "done":
+            self.print_info("Finishing session")
+            return True, False  # handled, end session
+        elif response.lower() == "advance":
+            result = orchestrator.process_request(
+                "socratic_counselor", {"action": "advance_phase", "project": project}
+            )
+            if result["status"] == "success":
+                project.phase = result["new_phase"]
+                self.print_success(f"Advanced to {result['new_phase']} phase!")
+            else:
+                self.print_error(result.get("message", "Could not advance phase"))
+            return True, True  # handled, continue session
+        elif response.lower() in ["help", "suggestions", "hint"]:
+            return True, True  # handled by caller, continue session
+        elif not response:
+            return True, True  # empty response, continue
+        return False, True  # not handled
+
+    def _process_user_answer(self, response: str, orchestrator, project, user) -> None:
+        """Process the user's answer to the question"""
+        result = orchestrator.process_request(
+            "socratic_counselor",
+            {
+                "action": "process_response",
+                "project": project,
+                "response": response,
+                "current_user": user.username,
+            },
+        )
+
+        if result["status"] == "success":
+            if result.get("conflicts_pending"):
+                self.print_warning("Some specifications were not added due to conflicts")
+            elif result.get("insights"):
+                self.print_success("Insights captured and integrated!")
+
+            save_result = orchestrator.process_request(
+                "project_manager", {"action": "save_project", "project": project}
+            )
+            if save_result["status"] != "success":
+                self.print_error("Failed to save project")
+        else:
+            self.print_error(result.get("message", "Error processing response"))
+
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute continue command"""
         if not self.require_project(context):
@@ -38,7 +114,7 @@ class ContinueCommand(BaseCommand):
         session_active = True
 
         while session_active:
-            # Generate question first
+            # Generate question
             question_result = orchestrator.process_request(
                 "socratic_counselor", {"action": "generate_question", "project": project}
             )
@@ -56,92 +132,26 @@ class ContinueCommand(BaseCommand):
             )
             response = input(f"{Fore.WHITE}> ").strip()
 
-            # Check if user is trying to use a command (starts with /)
+            # Handle / commands
             if response.startswith("/"):
-                # Pass command to main command handler
-                app.command_handler.execute(response, context)
-
-                # Handle special session commands
-                if response.startswith("/done"):
-                    self.print_info("Finishing session")
-                    session_active = False
+                should_continue, session_active = self._handle_command(response, context)
+                if not should_continue:
                     break
-                elif response.startswith("/advance"):
-                    # Command handler already executed it, phase was updated
-                    print(f"{Fore.YELLOW}Continuing with new phase...{Style.RESET_ALL}")
-                    continue
-                elif response.startswith("/back") or response.startswith("/exit"):
-                    # User wants to leave session
-                    session_active = False
+                continue
+
+            # Handle special responses (done, advance, help, etc)
+            handled, should_continue = self._handle_special_response(response, orchestrator, project)
+            if handled:
+                if not should_continue:
                     break
-                elif response.startswith("/help"):
-                    # Show session help
-                    print(f"\n{Fore.CYAN}Session Commands:{Style.RESET_ALL}")
-                    print("  /continue  - Continue answering questions")
-                    print("  /done      - Finish this session")
-                    print("  /advance   - Move to next phase")
-                    print("  /help      - Show session help")
-                    print("  /back      - Return to main menu")
-                    print("  /exit      - Exit application\n")
-                    continue
-                else:
-                    # Other commands executed by command handler
-                    continue
-
-            if response.lower() == "done":
-                self.print_info("Finishing session")
-                session_active = False
-                break
-
-            elif response.lower() == "advance":
-                result = orchestrator.process_request(
-                    "socratic_counselor", {"action": "advance_phase", "project": project}
-                )
-                if result["status"] == "success":
-                    project.phase = result["new_phase"]
-                    self.print_success(f"Advanced to {result['new_phase']} phase!")
-                else:
-                    self.print_error(result.get("message", "Could not advance phase"))
+                if response.lower() in ["help", "suggestions", "hint"]:
+                    suggestions = orchestrator.claude_client.generate_suggestions(question, project)
+                    print(f"\n{Fore.MAGENTA}💡 {suggestions}")
+                    print(f"{Fore.YELLOW}Now, would you like to try answering the question?{Style.RESET_ALL}")
                 continue
 
-            elif response.lower() in ["help", "suggestions", "hint"]:
-                # Generate suggestions
-                suggestions = orchestrator.claude_client.generate_suggestions(question, project)
-                print(f"\n{Fore.MAGENTA}💡 {suggestions}")
-                print(
-                    f"{Fore.YELLOW}Now, would you like to try answering the question?{Style.RESET_ALL}"
-                )
-                continue
-
-            elif not response:
-                continue
-
-            # Process the user's response
-            result = orchestrator.process_request(
-                "socratic_counselor",
-                {
-                    "action": "process_response",
-                    "project": project,
-                    "response": response,
-                    "current_user": user.username,
-                },
-            )
-
-            if result["status"] == "success":
-                if result.get("conflicts_pending"):
-                    self.print_warning("Some specifications were not added due to conflicts")
-                elif result.get("insights"):
-                    self.print_success("Insights captured and integrated!")
-
-                # Save the updated project
-                save_result = orchestrator.process_request(
-                    "project_manager", {"action": "save_project", "project": project}
-                )
-
-                if save_result["status"] != "success":
-                    self.print_error("Failed to save project")
-            else:
-                self.print_error(result.get("message", "Error processing response"))
+            # Process normal answer
+            self._process_user_answer(response, orchestrator, project, user)
 
         return self.success()
 

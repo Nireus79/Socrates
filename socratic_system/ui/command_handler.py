@@ -74,6 +74,33 @@ class CommandHandler:
 
         return self._execute_command(user_input[1:], context)
 
+    def _match_command(self, parts: List[str]) -> tuple:
+        """
+        Match user input parts to a registered command.
+
+        Args:
+            parts: Parsed command input parts
+
+        Returns:
+            Tuple of (command_name, args)
+        """
+        # Try 3-word command first (e.g., "project archive restore")
+        if len(parts) >= 3:
+            three_word = " ".join(parts[:3]).lower()
+            if three_word in self.commands:
+                return three_word, parts[3:]
+
+        # Try 2-word command (e.g., "project list")
+        if len(parts) >= 2:
+            two_word = " ".join(parts[:2]).lower()
+            if two_word in self.commands:
+                return two_word, parts[2:]
+
+        # Try 1-word command (e.g., "help")
+        command_name = parts[0].lower()
+        args = parts[1:]
+        return command_name, args
+
     def _execute_command(self, command_input: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """
         Internal method to parse and execute a command.
@@ -97,28 +124,8 @@ class CommandHandler:
         if not parts:
             return {"status": "idle", "message": ""}
 
-        # Try to match multi-word commands (up to 3 words)
-        command_name = None
-        args = parts
-
-        # Try 3-word command first (e.g., "project archive restore")
-        if len(parts) >= 3:
-            three_word = " ".join(parts[:3]).lower()
-            if three_word in self.commands:
-                command_name = three_word
-                args = parts[3:]
-
-        # Try 2-word command (e.g., "project list")
-        if command_name is None and len(parts) >= 2:
-            two_word = " ".join(parts[:2]).lower()
-            if two_word in self.commands:
-                command_name = two_word
-                args = parts[2:]
-
-        # Try 1-word command (e.g., "help")
-        if command_name is None:
-            command_name = parts[0].lower()
-            args = parts[1:]
+        # Match command name and args
+        command_name, args = self._match_command(parts)
 
         # Resolve aliases
         if command_name in self.aliases:
@@ -203,6 +210,27 @@ class CommandHandler:
             # Print all commands organized by category
             self._print_all_help()
 
+    def _print_help_category(self, category: str, commands_in_category: List[str]) -> None:
+        """
+        Print help for a single command category.
+
+        Args:
+            category: Category name
+            commands_in_category: List of command names in the category
+        """
+        print(f"\n{Fore.GREEN}► {category.upper()} COMMANDS{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'-' * 68}{Style.RESET_ALL}")
+
+        for command_name in sorted(commands_in_category):
+            cmd = self.commands[command_name]
+            description = cmd.description or "(no description)"
+            usage = cmd.usage or command_name
+
+            cmd_display = f"/{usage}"
+            print(f"  {Fore.CYAN}{cmd_display:<40}{Style.RESET_ALL}  {description}")
+
+        print()
+
     def _print_all_help(self) -> None:
         """Print help for all commands organized by category."""
         print(f"\n{Fore.CYAN}{'=' * 70}")
@@ -237,38 +265,13 @@ class CommandHandler:
         for category in category_order:
             if category not in categories:
                 continue
-
-            print(f"\n{Fore.GREEN}► {category.upper()} COMMANDS{Style.RESET_ALL}")
-            print(f"{Fore.CYAN}{'-' * 68}{Style.RESET_ALL}")
-
-            for command_name in sorted(categories[category]):
-                cmd = self.commands[command_name]
-                description = cmd.description or "(no description)"
-                usage = cmd.usage or command_name
-
-                # Format with / prefix and proper alignment
-                cmd_display = f"/{usage}"
-                print(f"  {Fore.CYAN}{cmd_display:<40}{Style.RESET_ALL}  {description}")
-
-            print()
+            self._print_help_category(category, categories[category])
 
         # Print any remaining categories not in the predefined order
         for category in sorted(categories.keys()):
             if category in category_order:
                 continue
-
-            print(f"\n{Fore.GREEN}► {category.upper()} COMMANDS{Style.RESET_ALL}")
-            print(f"{Fore.CYAN}{'-' * 68}{Style.RESET_ALL}")
-
-            for command_name in sorted(categories[category]):
-                cmd = self.commands[command_name]
-                description = cmd.description or "(no description)"
-                usage = cmd.usage or command_name
-
-                cmd_display = f"/{usage}"
-                print(f"  {Fore.CYAN}{cmd_display:<40}{Style.RESET_ALL}  {description}")
-
-            print()
+            self._print_help_category(category, categories[category])
 
         # Print aliases if any
         if self.aliases:
