@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-12-05
+
+### Added
+
+- **Comprehensive Documentation Suite** - 8 new documentation files (71,000+ words)
+  - `docs/README.md` - System overview and quick start guide
+  - `docs/INSTALLATION.md` - Complete installation and setup guide
+  - `docs/USER_GUIDE.md` - End-user tutorial and CLI command reference
+  - `docs/ARCHITECTURE.md` - Technical architecture and design patterns
+  - `docs/API_REFERENCE.md` - Complete API documentation with examples
+  - `docs/CONFIGURATION.md` - Configuration options and scenarios
+  - `docs/TROUBLESHOOTING.md` - Common issues and solutions
+  - `docs/DEVELOPER_GUIDE.md` - Contributing and extension guide
+
+- **Expanded Test Suite** - 15+ new test cases for recent fixes
+  - Vector database filter tests (4 tests)
+  - Logger initialization tests (5 tests)
+  - Exit command formatting tests (4 tests)
+  - Integration tests (2 tests)
+
+### Fixed
+
+- **ChromaDB Compatibility** - Removed unsupported `$exists` operator
+  - VectorDatabase now uses `$eq` filters for project-scoped queries
+  - Fixed `_build_project_filter()` to handle None case properly
+  - Ensures compatibility with ChromaDB filtering API
+
+- **Logger Configuration** - Debug mode now defaults to OFF
+  - Console handler initializes with INFO level (not DEBUG)
+  - Reduces log noise in normal operation mode
+  - Debug mode can be enabled per-session when needed
+
+- **Exit Message Formatting** - Fixed f-string rendering
+  - Exit command now properly displays Greek philosophical quote
+  - Colors and styling render correctly using f-string interpolation
+  - Thanking message displays as intended
+
+- **Code Quality Improvements**
+  - Resolved all F821 (undefined name) violations with TYPE_CHECKING imports
+  - Fixed F841 (unused variable) violations throughout codebase
+  - Updated pyproject.toml ruff configuration to use [tool.ruff.lint] section
+  - Removed deprecated W503 rule from linting rules
+
+### Improved
+
+- **Type Hints** - Better forward reference handling
+  - AgentOrchestrator, ClaudeClient, CommandHandler now properly imported in TYPE_CHECKING blocks
+  - Prevents circular import issues while maintaining type safety
+  - Improved IDE autocomplete and type checking support
+
+- **CI/CD Pipeline** - All GitHub Actions checks passing
+  - ✅ Ruff linting (E, W, F, I, C, B, UP rules)
+  - ✅ Black formatting (100-character line length)
+  - ✅ PyTest suite (all tests passing)
+  - ✅ MyPy type checking
+  - ✅ Security audit
+
 ## [0.5.0] - 2025-12-04
 
 ### Versioning
