@@ -2,7 +2,6 @@
 Conflict detection and resolution system tests
 """
 
-
 import pytest
 
 from socratic_system.models import ConflictInfo

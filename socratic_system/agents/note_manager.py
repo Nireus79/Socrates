@@ -1,9 +1,12 @@
 """Note manager agent for handling project notes"""
 
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict
 
 from socratic_system.agents.base import Agent
 from socratic_system.models import ProjectNote
+
+if TYPE_CHECKING:
+    from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
 
 class NoteManagerAgent(Agent):
@@ -164,7 +167,6 @@ class NoteManagerAgent(Agent):
         """Delete a note by ID"""
         try:
             note_id = request.get("note_id")
-            project_id = request.get("project_id")  # Optional, for validation
 
             if not note_id:
                 return {"status": "error", "message": "note_id required"}

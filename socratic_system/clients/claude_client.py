@@ -8,13 +8,16 @@ with automatic token tracking and structured error handling.
 import asyncio
 import json
 import logging
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict
 
 import anthropic
 
 from socratic_system.events import EventType
 from socratic_system.exceptions import APIError
 from socratic_system.models import ConflictInfo, ProjectContext
+
+if TYPE_CHECKING:
+    from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
 
 class ClaudeClient:
@@ -283,7 +286,7 @@ class ClaudeClient:
     def test_connection(self) -> bool:
         """Test connection to Claude API"""
         try:
-            response = self.client.messages.create(
+            self.client.messages.create(
                 model=self.model,
                 max_tokens=10,
                 temperature=0,

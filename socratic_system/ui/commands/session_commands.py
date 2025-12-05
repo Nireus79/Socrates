@@ -59,7 +59,7 @@ class ContinueCommand(BaseCommand):
             # Check if user is trying to use a command (starts with /)
             if response.startswith("/"):
                 # Pass command to main command handler
-                cmd_result = app.command_handler.execute(response, context)
+                app.command_handler.execute(response, context)
 
                 # Handle special session commands
                 if response.startswith("/done"):
