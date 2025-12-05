@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socrates-ai"
-version = "0.6.0"
+version = "0.6.1"
 description = "A Socratic method tutoring system powered by Claude AI with multi-agent orchestration"
 readme = "README.md"
 license = {text = "MIT"}
