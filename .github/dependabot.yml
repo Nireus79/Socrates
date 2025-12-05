@@ -1,0 +1,56 @@
+version: 2
+updates:
+  # Check for pip updates weekly
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "02:00"
+    pull-request-branch-name:
+      separator: "/"
+    reviewers:
+      - Nireus79
+    assignees:
+      - Nireus79
+    labels:
+      - dependencies
+      - automated
+    commit-message:
+      prefix: "chore(deps):"
+      prefix-development: "chore(deps-dev):"
+      include: "scope"
+
+  # Check for GitHub Actions updates weekly
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "02:00"
+    pull-request-branch-name:
+      separator: "/"
+    reviewers:
+      - Nireus79
+    labels:
+      - dependencies
+      - ci
+      - automated
+    commit-message:
+      prefix: "ci:"
+
+  # Check for Docker updates weekly
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "02:00"
+    pull-request-branch-name:
+      separator: "/"
+    labels:
+      - dependencies
+      - docker
+      - automated
+    commit-message:
+      prefix: "ci(docker):"

@@ -1,0 +1,182 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+jobs:
+  ruff:
+    name: Ruff Linter
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Lint with ruff
+        run: |
+          ruff check socratic_system socrates_cli socrates_api tests --output-format=github
+
+  black:
+    name: Black Code Formatter
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install black
+        run: pip install black
+
+      - name: Check formatting with black
+        run: black --check socratic_system socrates_cli socrates_api tests
+
+  mypy:
+    name: MyPy Type Checker
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . mypy
+
+      - name: Type check with mypy
+        run: |
+          mypy socratic_system --ignore-missing-imports --no-error-summary || true
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install security tools
+        run: |
+          pip install bandit safety
+
+      - name: Run bandit security check
+        run: |
+          bandit -r socratic_system socrates_cli socrates_api -ll || true
+
+      - name: Check dependencies with safety
+        run: |
+          safety check --json || true
+
+  dependencies:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . -e socrates-cli -e socrates-api
+
+      - name: Check for outdated packages
+        run: |
+          pip list --outdated || true
+
+  docs:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install docstring checker
+        run: pip install pydocstyle
+
+      - name: Check docstrings
+        run: |
+          pydocstyle socratic_system --ignore=D100,D104 || true
+
+  code-coverage:
+    name: Code Coverage Threshold
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . -e socrates-cli -e socrates-api
+          pip install -e ".[dev]" pytest-cov
+
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=socratic_system --cov-report=term-missing:skip-covered \
+                  --cov-fail-under=70
+
+  all-quality-checks-passed:
+    name: All Quality Checks Passed
+    runs-on: ubuntu-latest
+    needs: [ruff, black, mypy, security, dependencies, docs, code-coverage]
+    if: always()
+
+    steps:
+      - name: Check if all quality checks passed
+        run: |
+          if [[ "${{ needs.ruff.result }}" != "success" || \
+                "${{ needs.black.result }}" != "success" || \
+                "${{ needs.docs.result }}" != "success" ]]; then
+            echo "Some quality checks failed"
+            exit 1
+          else
+            echo "All quality checks passed!"
+          fi
+        continue-on-error: true

@@ -4,7 +4,7 @@ Vector database for knowledge management in Socratic RAG System
 
 import os
 import logging
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import chromadb
 from sentence_transformers import SentenceTransformer
@@ -50,17 +50,27 @@ class VectorDatabase:
         except Exception as e:
             self.logger.warning(f"Could not add knowledge entry {entry.id}: {e}")
 
-    def search_similar(self, query: str, top_k: int = 5) -> List[Dict]:
-        """Search for similar knowledge entries"""
+    def search_similar(self, query: str, top_k: int = 5, project_id: Optional[str] = None) -> List[Dict]:
+        """Search for similar knowledge entries
+
+        Args:
+            query: Search query string
+            top_k: Number of results to return
+            project_id: Optional project ID to filter results. If None, searches all knowledge
+        """
         if not query.strip():
             return []
 
         try:
             query_embedding = self.embedding_model.encode(query).tolist()
 
+            # Build where filter for project_id if specified
+            where_filter = self._build_project_filter(project_id)
+
             results = self.collection.query(
                 query_embeddings=[query_embedding],
-                n_results=min(top_k, self.collection.count())
+                n_results=min(top_k, self.collection.count()),
+                where=where_filter if where_filter else None
             )
 
             if not results['documents'] or not results['documents'][0]:
@@ -104,3 +114,151 @@ class VectorDatabase:
             self.collection.delete(ids=[entry_id])
         except Exception as e:
             self.logger.warning(f"Could not delete entry {entry_id}: {e}")
+
+    def add_project_knowledge(self, entry: KnowledgeEntry, project_id: str) -> bool:
+        """Add knowledge entry specific to a project
+
+        Args:
+            entry: KnowledgeEntry to add
+            project_id: Project ID to associate with this knowledge
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Add project_id and scope to metadata
+            if entry.metadata is None:
+                entry.metadata = {}
+            entry.metadata['project_id'] = project_id
+            entry.metadata['scope'] = 'project'
+
+            # Use add_knowledge to handle embedding and storage
+            self.add_knowledge(entry)
+            self.logger.debug(f"Added project knowledge '{entry.id}' for project '{project_id}'")
+            return True
+        except Exception as e:
+            self.logger.warning(f"Failed to add project knowledge: {e}")
+            return False
+
+    def get_project_knowledge(self, project_id: str) -> List[Dict]:
+        """Get all knowledge entries for a specific project
+
+        Args:
+            project_id: Project ID to filter by
+
+        Returns:
+            List of knowledge entries for the project
+        """
+        try:
+            # Query with project_id filter
+            where_filter = {"project_id": {"$eq": project_id}}
+            results = self.collection.get(where=where_filter)
+
+            if not results['ids']:
+                return []
+
+            return [{
+                'id': entry_id,
+                'content': doc,
+                'metadata': meta
+            } for entry_id, doc, meta in zip(
+                results['ids'],
+                results['documents'],
+                results['metadatas']
+            )]
+        except Exception as e:
+            self.logger.warning(f"Failed to get project knowledge: {e}")
+            return []
+
+    def export_project_knowledge(self, project_id: str) -> List[Dict]:
+        """Export all knowledge entries for a project as JSON-compatible dicts
+
+        Args:
+            project_id: Project ID to export
+
+        Returns:
+            List of knowledge entry dicts (id, content, category, metadata)
+        """
+        try:
+            knowledge = self.get_project_knowledge(project_id)
+            return [{
+                'id': entry['id'],
+                'content': entry['content'],
+                'category': entry['metadata'].get('category', 'custom'),
+                'metadata': entry['metadata']
+            } for entry in knowledge]
+        except Exception as e:
+            self.logger.warning(f"Failed to export project knowledge: {e}")
+            return []
+
+    def import_project_knowledge(self, project_id: str, entries: List[Dict]) -> int:
+        """Import knowledge entries for a project
+
+        Args:
+            project_id: Project ID to import into
+            entries: List of knowledge entry dicts
+
+        Returns:
+            Number of entries successfully imported
+        """
+        count = 0
+        try:
+            for entry_data in entries:
+                try:
+                    # Create KnowledgeEntry from dict
+                    entry = KnowledgeEntry(
+                        id=entry_data.get('id'),
+                        content=entry_data.get('content'),
+                        category=entry_data.get('category', 'custom'),
+                        metadata=entry_data.get('metadata', {})
+                    )
+                    if self.add_project_knowledge(entry, project_id):
+                        count += 1
+                except Exception as e:
+                    self.logger.debug(f"Failed to import entry {entry_data.get('id')}: {e}")
+                    continue
+
+            self.logger.info(f"Imported {count} knowledge entries for project '{project_id}'")
+            return count
+        except Exception as e:
+            self.logger.warning(f"Failed to import project knowledge: {e}")
+            return count
+
+    def _build_project_filter(self, project_id: Optional[str] = None) -> Optional[Dict]:
+        """Build ChromaDB where filter for project_id
+
+        Args:
+            project_id: Project ID to filter by, or None for no filtering
+
+        Returns:
+            ChromaDB where filter dict, or None if no filtering needed
+        """
+        if project_id is None:
+            # No filtering - search all knowledge
+            return None
+        else:
+            # Search only project-specific knowledge
+            return {"project_id": {"$eq": project_id}}
+
+    def delete_project_knowledge(self, project_id: str) -> int:
+        """Delete all knowledge entries for a project
+
+        Args:
+            project_id: Project ID to delete knowledge for
+
+        Returns:
+            Number of entries deleted
+        """
+        try:
+            where_filter = {"project_id": {"$eq": project_id}}
+            knowledge = self.collection.get(where=where_filter)
+
+            if not knowledge['ids']:
+                return 0
+
+            self.collection.delete(ids=knowledge['ids'])
+            self.logger.info(f"Deleted {len(knowledge['ids'])} knowledge entries for project '{project_id}'")
+            return len(knowledge['ids'])
+        except Exception as e:
+            self.logger.warning(f"Failed to delete project knowledge: {e}")
+            return 0
