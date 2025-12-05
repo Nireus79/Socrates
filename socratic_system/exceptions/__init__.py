@@ -3,25 +3,25 @@ Custom exceptions for Socrates system
 """
 
 from .errors import (
-    SocratesError,
-    ConfigurationError,
     AgentError,
-    DatabaseError,
+    APIError,
     AuthenticationError,
+    ConfigurationError,
+    DatabaseError,
     ProjectNotFoundError,
+    SocratesError,
     UserNotFoundError,
     ValidationError,
-    APIError,
 )
 
 __all__ = [
-    'SocratesError',
-    'ConfigurationError',
-    'AgentError',
-    'DatabaseError',
-    'AuthenticationError',
-    'ProjectNotFoundError',
-    'UserNotFoundError',
-    'ValidationError',
-    'APIError',
+    "SocratesError",
+    "ConfigurationError",
+    "AgentError",
+    "DatabaseError",
+    "AuthenticationError",
+    "ProjectNotFoundError",
+    "UserNotFoundError",
+    "ValidationError",
+    "APIError",
 ]

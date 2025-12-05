@@ -2,14 +2,10 @@
 Conflict detection and resolution system tests
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock, patch
-from datetime import datetime
-import uuid
 
-import socrates
+import pytest
+
 from socratic_system.models import ConflictInfo
-from socratic_system.events import EventType
 
 
 @pytest.mark.unit
@@ -28,7 +24,7 @@ class TestConflictInfoModel:
             old_timestamp="2025-12-04T10:00:00",
             new_timestamp="2025-12-04T10:30:00",
             severity="low",
-            suggestions=["Update all dependencies", "Run compatibility tests"]
+            suggestions=["Update all dependencies", "Run compatibility tests"],
         )
 
         assert conflict.conflict_id == "conf_001"
@@ -42,7 +38,7 @@ class TestConflictInfoModel:
 
     def test_conflict_info_severity_levels(self):
         """Test all valid conflict severity levels"""
-        for severity in ['low', 'medium', 'high']:
+        for severity in ["low", "medium", "high"]:
             conflict = ConflictInfo(
                 conflict_id=f"conf_{severity}",
                 conflict_type="requirements",
@@ -53,13 +49,13 @@ class TestConflictInfoModel:
                 old_timestamp="2025-12-04T10:00:00",
                 new_timestamp="2025-12-04T10:30:00",
                 severity=severity,
-                suggestions=[]
+                suggestions=[],
             )
             assert conflict.severity == severity
 
     def test_conflict_info_types(self):
         """Test different conflict types"""
-        conflict_types = ['tech_stack', 'requirements', 'goals', 'constraints']
+        conflict_types = ["tech_stack", "requirements", "goals", "constraints"]
 
         for conflict_type in conflict_types:
             conflict = ConflictInfo(
@@ -72,7 +68,7 @@ class TestConflictInfoModel:
                 old_timestamp="2025-12-04T10:00:00",
                 new_timestamp="2025-12-04T10:30:00",
                 severity="medium",
-                suggestions=[]
+                suggestions=[],
             )
             assert conflict.conflict_type == conflict_type
 
@@ -82,7 +78,7 @@ class TestConflictInfoModel:
             "Review both versions",
             "Vote on which to keep",
             "Merge both requirements",
-            "Ask project owner for decision"
+            "Ask project owner for decision",
         ]
 
         conflict = ConflictInfo(
@@ -95,7 +91,7 @@ class TestConflictInfoModel:
             old_timestamp="2025-12-04T09:00:00",
             new_timestamp="2025-12-04T11:00:00",
             severity="high",
-            suggestions=suggestions
+            suggestions=suggestions,
         )
 
         assert len(conflict.suggestions) == 4
@@ -153,7 +149,7 @@ class TestConflictDetection:
             old_timestamp="t1",
             new_timestamp="t2",
             severity="high",
-            suggestions=[]
+            suggestions=[],
         )
         assert tech_conflict.severity == "high"
 
@@ -168,7 +164,7 @@ class TestConflictDetection:
             old_timestamp="t1",
             new_timestamp="t2",
             severity="medium",
-            suggestions=[]
+            suggestions=[],
         )
         assert constraint_conflict.severity == "medium"
 
@@ -189,7 +185,7 @@ class TestConflictResolution:
             old_timestamp="2025-12-04T10:00:00",
             new_timestamp="2025-12-04T10:30:00",
             severity="medium",
-            suggestions=["Keep old version", "Update to new version"]
+            suggestions=["Keep old version", "Update to new version"],
         )
 
         # Resolve by keeping old value
@@ -208,7 +204,7 @@ class TestConflictResolution:
             old_timestamp="2025-12-04T10:00:00",
             new_timestamp="2025-12-04T10:30:00",
             severity="medium",
-            suggestions=[]
+            suggestions=[],
         )
 
         # Resolve by keeping new value (typically newer timestamp wins)
@@ -227,12 +223,12 @@ class TestConflictResolution:
             old_timestamp="2025-12-04T10:00:00",
             new_timestamp="2025-12-04T10:30:00",
             severity="low",
-            suggestions=["Merge requirements"]
+            suggestions=["Merge requirements"],
         )
 
         # Merge: combine unique items
-        old_reqs = set(r.strip() for r in conflict.old_value.split(','))
-        new_reqs = set(r.strip() for r in conflict.new_value.split(','))
+        old_reqs = set(r.strip() for r in conflict.old_value.split(","))
+        new_reqs = set(r.strip() for r in conflict.new_value.split(","))
         merged = old_reqs | new_reqs  # Union of both
 
         assert "Authentication" in merged
@@ -258,7 +254,7 @@ class TestConflictEdgeCases:
             old_timestamp="2025-12-04T10:00:00",
             new_timestamp="2025-12-04T10:30:00",
             severity="low",
-            suggestions=["Auto-accept (same author)"]
+            suggestions=["Auto-accept (same author)"],
         )
 
         # Same author suggests auto-resolution
@@ -279,8 +275,8 @@ class TestConflictEdgeCases:
             suggestions=[
                 "Schedule team discussion",
                 "Review architecture docs",
-                "Get consensus before proceeding"
-            ]
+                "Get consensus before proceeding",
+            ],
         )
 
         # High severity should have suggestions for review
@@ -299,7 +295,7 @@ class TestConflictEdgeCases:
             old_timestamp="2025-12-04T10:00:00",
             new_timestamp="2025-12-04T11:00:00",  # Later timestamp
             severity="medium",
-            suggestions=[]
+            suggestions=[],
         )
 
         # Last write wins strategy
@@ -319,7 +315,7 @@ class TestConflictEdgeCases:
             old_timestamp="2025-12-04T10:00:00",
             new_timestamp="2025-12-04T10:30:00",
             severity="low",
-            suggestions=["Accept new value - old was empty"]
+            suggestions=["Accept new value - old was empty"],
         )
 
         # When old is empty, new should typically be accepted
@@ -347,8 +343,8 @@ class TestConflictResolutionWorkflow:
                 "Review security requirements",
                 "Compare implementation complexity",
                 "Consult security team",
-                "Vote among project members"
-            ]
+                "Vote among project members",
+            ],
         )
 
         # Verify conflict properties
@@ -375,7 +371,7 @@ class TestConflictResolutionWorkflow:
                 old_timestamp="t1",
                 new_timestamp="t2",
                 severity="low",
-                suggestions=[]
+                suggestions=[],
             ),
             ConflictInfo(
                 conflict_id="c_high",
@@ -387,7 +383,7 @@ class TestConflictResolutionWorkflow:
                 old_timestamp="t1",
                 new_timestamp="t2",
                 severity="high",
-                suggestions=[]
+                suggestions=[],
             ),
             ConflictInfo(
                 conflict_id="c_medium",
@@ -399,16 +395,13 @@ class TestConflictResolutionWorkflow:
                 old_timestamp="t1",
                 new_timestamp="t2",
                 severity="medium",
-                suggestions=[]
+                suggestions=[],
             ),
         ]
 
         # Sort by severity (high first)
-        priority_order = {'high': 0, 'medium': 1, 'low': 2}
-        sorted_conflicts = sorted(
-            conflicts,
-            key=lambda c: priority_order.get(c.severity, 3)
-        )
+        priority_order = {"high": 0, "medium": 1, "low": 2}
+        sorted_conflicts = sorted(conflicts, key=lambda c: priority_order.get(c.severity, 3))
 
         # High severity should be first
         assert sorted_conflicts[0].severity == "high"
@@ -427,24 +420,24 @@ class TestConflictResolutionWorkflow:
             old_timestamp="2025-12-04T10:00:00",
             new_timestamp="2025-12-04T12:00:00",
             severity="high",
-            suggestions=[]
+            suggestions=[],
         )
 
         # Resolution record
         resolution = {
-            'conflict_id': conflict.conflict_id,
-            'resolution_type': 'manual_approval',
-            'chosen_value': conflict.new_value,
-            'resolved_by': 'charlie',
-            'resolved_at': '2025-12-04T13:00:00',
-            'reasoning': 'Multi-region deployment provides better reliability'
+            "conflict_id": conflict.conflict_id,
+            "resolution_type": "manual_approval",
+            "chosen_value": conflict.new_value,
+            "resolved_by": "charlie",
+            "resolved_at": "2025-12-04T13:00:00",
+            "reasoning": "Multi-region deployment provides better reliability",
         }
 
         # Verify audit trail data
-        assert resolution['conflict_id'] == 'audit_001'
-        assert resolution['chosen_value'] == 'Multi-region deployment'
-        assert resolution['resolved_by'] == 'charlie'
-        assert 'reasoning' in resolution
+        assert resolution["conflict_id"] == "audit_001"
+        assert resolution["chosen_value"] == "Multi-region deployment"
+        assert resolution["resolved_by"] == "charlie"
+        assert "reasoning" in resolution
 
 
 @pytest.mark.unit
@@ -454,30 +447,18 @@ class TestConflictPreventionStrategies:
     def test_optimistic_locking_prevents_conflicts(self):
         """Test that optimistic locking can prevent some conflicts"""
         # Version 1 of resource
-        resource_v1 = {
-            'version': 1,
-            'content': 'Original content',
-            'author': 'alice'
-        }
+        resource_v1 = {"version": 1, "content": "Original content", "author": "alice"}
 
         # User A tries to update with version 1
-        update_a = {
-            'version': 1,
-            'content': 'Updated by A',
-            'author': 'alice'
-        }
+        update_a = {"version": 1, "content": "Updated by A", "author": "alice"}
 
         # User B tries to update with version 1
-        update_b = {
-            'version': 1,
-            'content': 'Updated by B',
-            'author': 'bob'
-        }
+        update_b = {"version": 1, "content": "Updated by B", "author": "bob"}
 
         # First update succeeds and increments version
-        if update_a['version'] == resource_v1['version']:
-            resource_v1['content'] = update_a['content']
-            resource_v1['version'] = 2
+        if update_a["version"] == resource_v1["version"]:
+            resource_v1["content"] = update_a["content"]
+            resource_v1["version"] = 2
             first_update_success = True
         else:
             first_update_success = False
@@ -485,16 +466,16 @@ class TestConflictPreventionStrategies:
         assert first_update_success is True
 
         # Second update fails because version doesn't match
-        if update_b['version'] == resource_v1['version']:
-            resource_v1['content'] = update_b['content']
-            resource_v1['version'] = 3
+        if update_b["version"] == resource_v1["version"]:
+            resource_v1["content"] = update_b["content"]
+            resource_v1["version"] = 3
             second_update_success = True
         else:
             second_update_success = False
 
         # Second update should fail (conflict prevented)
         assert second_update_success is False
-        assert resource_v1['version'] == 2  # Version not incremented
+        assert resource_v1["version"] == 2  # Version not incremented
 
     def test_merge_strategies_prevent_conflicts(self):
         """Test that merge strategies can prevent some conflicts"""

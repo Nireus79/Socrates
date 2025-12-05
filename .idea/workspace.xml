@@ -7,18 +7,92 @@
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.5.0">
       <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Socrates.py" beforeDir="false" afterPath="$PROJECT_DIR$/Socrates.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_data/projects.db" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_data/projects.db" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/data_level0.bin" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/data_level0.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/length.bin" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/length.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_data/vector_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_data/vector_db/chroma.sqlite3" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_system/agents/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/base.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/config/knowledge_base.json" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/config/knowledge_base.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/events/event_types.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/events/event_types.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/code_generator.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/code_generator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/conflict_detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/conflict_detector.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/context_analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/context_analyzer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/document_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/document_processor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/knowledge_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/knowledge_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/note_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/note_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/project_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/project_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/system_monitor.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/system_monitor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/user_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/user_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/clients/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/clients/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/clients/claude_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/clients/claude_client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/conflict_resolution/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/conflict_resolution/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/conflict_resolution/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/conflict_resolution/base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/conflict_resolution/checkers.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/conflict_resolution/checkers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/conflict_resolution/rules.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/conflict_resolution/rules.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/database/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/database/project_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/project_db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/database/vector_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/vector_db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/events/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/events/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/events/event_emitter.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/events/event_emitter.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/exceptions/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/exceptions/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/exceptions/errors.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/exceptions/errors.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/models/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/models/conflict.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/conflict.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/models/knowledge.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/knowledge.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/models/monitoring.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/monitoring.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/models/note.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/note.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/models/project.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/project.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/models/user.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/user.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/orchestration/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/orchestration/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/orchestration/knowledge_base.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/orchestration/knowledge_base.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/command_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/command_handler.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/code_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/code_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/collab_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/collab_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/conv_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/conv_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/debug_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/debug_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/doc_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/doc_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/knowledge_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/knowledge_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/note_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/note_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/project_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/project_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/query_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/query_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/session_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/session_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/stats_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/stats_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/system_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/system_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/user_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/user_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/context_display.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/context_display.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/main_app.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/main_app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/navigation.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/navigation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/nlu_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/nlu_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/utils/logger.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/utils/logger.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/agents/test_code_generator_agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/agents/test_code_generator_agent.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/agents/test_project_manager_agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/agents/test_project_manager_agent.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/agents/test_remaining_agents.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/agents/test_remaining_agents.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/conftest.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/conftest.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/execute_tests_direct.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/execute_tests_direct.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/load_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/load_test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/run_comprehensive_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/run_comprehensive_tests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/run_pytest_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/run_pytest_tests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/run_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/run_tests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_conflict_resolution.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_conflict_resolution.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_e2e_complete.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_e2e_complete.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_e2e_interconnection.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_e2e_interconnection.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_events.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_events.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_exceptions.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_exceptions.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_knowledge_management.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_knowledge_management.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_knowledge_manager_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_knowledge_manager_integration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_modularization.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_modularization.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_nlu_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_nlu_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_orchestrator_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_orchestrator_integration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_performance.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_performance.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_phase4_verification.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_phase4_verification.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_recent_fixes.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_recent_fixes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_runner_subprocess.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_runner_subprocess.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/validate_test_suite.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/validate_test_suite.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -111,7 +185,15 @@
       <option name="project" value="LOCAL" />
       <updated>1764786402342</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="0.5.0">
+      <option name="closed" value="true" />
+      <created>1764920919225</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1764920919225</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">

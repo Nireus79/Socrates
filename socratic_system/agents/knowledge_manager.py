@@ -9,8 +9,8 @@ Manages project-specific knowledge enrichment through:
 """
 
 import logging
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from typing import Any, Dict, List
 
 from socratic_system.agents.base import Agent
 from socratic_system.events import EventType
@@ -25,7 +25,7 @@ class KnowledgeManagerAgent(Agent):
     mechanisms for storing and reviewing project-specific knowledge.
     """
 
-    def __init__(self, name: str, orchestrator: 'AgentOrchestrator'):
+    def __init__(self, name: str, orchestrator: "AgentOrchestrator"):
         """
         Initialize Knowledge Manager Agent.
 
@@ -41,8 +41,7 @@ class KnowledgeManagerAgent(Agent):
 
         # Register for knowledge suggestion events
         self.orchestrator.event_emitter.on(
-            EventType.KNOWLEDGE_SUGGESTION,
-            self._handle_knowledge_suggestion
+            EventType.KNOWLEDGE_SUGGESTION, self._handle_knowledge_suggestion
         )
 
         self.logger.info("Knowledge Manager Agent initialized")
@@ -57,23 +56,20 @@ class KnowledgeManagerAgent(Agent):
         Returns:
             Response dictionary with status and data
         """
-        action = request.get('action')
+        action = request.get("action")
 
-        if action == 'get_suggestions':
+        if action == "get_suggestions":
             return self._get_suggestions(request)
-        elif action == 'approve_suggestion':
+        elif action == "approve_suggestion":
             return self._approve_suggestion(request)
-        elif action == 'reject_suggestion':
+        elif action == "reject_suggestion":
             return self._reject_suggestion(request)
-        elif action == 'get_queue_status':
+        elif action == "get_queue_status":
             return self._get_queue_status(request)
-        elif action == 'clear_suggestions':
+        elif action == "clear_suggestions":
             return self._clear_suggestions(request)
         else:
-            return {
-                'status': 'error',
-                'message': f'Unknown action: {action}'
-            }
+            return {"status": "error", "message": f"Unknown action: {action}"}
 
     def _handle_knowledge_suggestion(self, data: Dict[str, Any]) -> None:
         """
@@ -86,17 +82,17 @@ class KnowledgeManagerAgent(Agent):
         # from the current context or be part of the event
         # For now, we store suggestions with context
 
-        project_id = data.get('project_id', 'default')
+        project_id = data.get("project_id", "default")
         suggestion = {
-            'id': self._generate_suggestion_id(),
-            'content': data.get('content'),
-            'category': data.get('category'),
-            'topic': data.get('topic'),
-            'difficulty': data.get('difficulty', 'intermediate'),
-            'reason': data.get('reason', 'insufficient_context'),
-            'agent': data.get('agent', 'unknown'),
-            'timestamp': data.get('timestamp', datetime.now().isoformat()),
-            'status': 'pending'
+            "id": self._generate_suggestion_id(),
+            "content": data.get("content"),
+            "category": data.get("category"),
+            "topic": data.get("topic"),
+            "difficulty": data.get("difficulty", "intermediate"),
+            "reason": data.get("reason", "insufficient_context"),
+            "agent": data.get("agent", "unknown"),
+            "timestamp": data.get("timestamp", datetime.now().isoformat()),
+            "status": "pending",
         }
 
         if project_id not in self.suggestions:
@@ -110,165 +106,121 @@ class KnowledgeManagerAgent(Agent):
         )
 
         # Emit event for UI/logging
-        self.emit_event(EventType.LOG_INFO, {
-            'message': f"Knowledge suggestion from {suggestion['agent']}: {suggestion['topic']}"
-        })
+        self.emit_event(
+            EventType.LOG_INFO,
+            {"message": f"Knowledge suggestion from {suggestion['agent']}: {suggestion['topic']}"},
+        )
 
     def _get_suggestions(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Get pending suggestions for a project"""
-        project_id = request.get('project_id', 'default')
-        status_filter = request.get('status', 'pending')
+        project_id = request.get("project_id", "default")
+        status_filter = request.get("status", "pending")
 
         if project_id not in self.suggestions:
-            return {
-                'status': 'success',
-                'suggestions': [],
-                'count': 0
-            }
+            return {"status": "success", "suggestions": [], "count": 0}
 
         suggestions = self.suggestions[project_id]
 
-        if status_filter != 'all':
-            suggestions = [s for s in suggestions if s['status'] == status_filter]
+        if status_filter != "all":
+            suggestions = [s for s in suggestions if s["status"] == status_filter]
 
-        return {
-            'status': 'success',
-            'suggestions': suggestions,
-            'count': len(suggestions)
-        }
+        return {"status": "success", "suggestions": suggestions, "count": len(suggestions)}
 
     def _approve_suggestion(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Approve and add suggestion to project knowledge"""
-        project_id = request.get('project_id', 'default')
-        suggestion_id = request.get('suggestion_id')
+        project_id = request.get("project_id", "default")
+        suggestion_id = request.get("suggestion_id")
 
         if project_id not in self.suggestions:
-            return {
-                'status': 'error',
-                'message': 'Project not found'
-            }
+            return {"status": "error", "message": "Project not found"}
 
         # Find suggestion
         suggestion = None
         for s in self.suggestions[project_id]:
-            if s['id'] == suggestion_id:
+            if s["id"] == suggestion_id:
                 suggestion = s
                 break
 
         if not suggestion:
-            return {
-                'status': 'error',
-                'message': f'Suggestion not found: {suggestion_id}'
-            }
+            return {"status": "error", "message": f"Suggestion not found: {suggestion_id}"}
 
         try:
             # Create knowledge entry
             entry = KnowledgeEntry(
                 id=f"suggested_{suggestion_id}",
-                content=suggestion['content'],
-                category=suggestion['category'],
+                content=suggestion["content"],
+                category=suggestion["category"],
                 metadata={
-                    'topic': suggestion['topic'],
-                    'difficulty': suggestion['difficulty'],
-                    'source': f"agent_suggestion_from_{suggestion['agent']}",
-                    'reason': suggestion['reason'],
-                    'approved_at': datetime.now().isoformat()
-                }
+                    "topic": suggestion["topic"],
+                    "difficulty": suggestion["difficulty"],
+                    "source": f"agent_suggestion_from_{suggestion['agent']}",
+                    "reason": suggestion["reason"],
+                    "approved_at": datetime.now().isoformat(),
+                },
             )
 
             # Add to project knowledge
-            success = self.orchestrator.vector_db.add_project_knowledge(
-                entry,
-                project_id
-            )
+            success = self.orchestrator.vector_db.add_project_knowledge(entry, project_id)
 
             if success:
-                suggestion['status'] = 'approved'
+                suggestion["status"] = "approved"
                 self.logger.info(f"Suggestion approved and added: {suggestion_id}")
-                return {
-                    'status': 'success',
-                    'message': f'Knowledge added: {suggestion["topic"]}'
-                }
+                return {"status": "success", "message": f'Knowledge added: {suggestion["topic"]}'}
             else:
-                return {
-                    'status': 'error',
-                    'message': 'Failed to add knowledge'
-                }
+                return {"status": "error", "message": "Failed to add knowledge"}
 
         except Exception as e:
             self.logger.error(f"Failed to approve suggestion: {str(e)}")
-            return {
-                'status': 'error',
-                'message': f'Approval failed: {str(e)}'
-            }
+            return {"status": "error", "message": f"Approval failed: {str(e)}"}
 
     def _reject_suggestion(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Reject a suggestion"""
-        project_id = request.get('project_id', 'default')
-        suggestion_id = request.get('suggestion_id')
+        project_id = request.get("project_id", "default")
+        suggestion_id = request.get("suggestion_id")
 
         if project_id not in self.suggestions:
-            return {
-                'status': 'error',
-                'message': 'Project not found'
-            }
+            return {"status": "error", "message": "Project not found"}
 
         # Find and reject suggestion
         for s in self.suggestions[project_id]:
-            if s['id'] == suggestion_id:
-                s['status'] = 'rejected'
+            if s["id"] == suggestion_id:
+                s["status"] = "rejected"
                 self.logger.info(f"Suggestion rejected: {suggestion_id}")
-                return {
-                    'status': 'success',
-                    'message': 'Suggestion rejected'
-                }
+                return {"status": "success", "message": "Suggestion rejected"}
 
-        return {
-            'status': 'error',
-            'message': f'Suggestion not found: {suggestion_id}'
-        }
+        return {"status": "error", "message": f"Suggestion not found: {suggestion_id}"}
 
     def _get_queue_status(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Get status of knowledge suggestion queue"""
-        project_id = request.get('project_id', 'default')
+        project_id = request.get("project_id", "default")
 
         if project_id not in self.suggestions:
-            return {
-                'status': 'success',
-                'pending': 0,
-                'approved': 0,
-                'rejected': 0,
-                'total': 0
-            }
+            return {"status": "success", "pending": 0, "approved": 0, "rejected": 0, "total": 0}
 
         suggestions = self.suggestions[project_id]
 
         return {
-            'status': 'success',
-            'pending': len([s for s in suggestions if s['status'] == 'pending']),
-            'approved': len([s for s in suggestions if s['status'] == 'approved']),
-            'rejected': len([s for s in suggestions if s['status'] == 'rejected']),
-            'total': len(suggestions)
+            "status": "success",
+            "pending": len([s for s in suggestions if s["status"] == "pending"]),
+            "approved": len([s for s in suggestions if s["status"] == "approved"]),
+            "rejected": len([s for s in suggestions if s["status"] == "rejected"]),
+            "total": len(suggestions),
         }
 
     def _clear_suggestions(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Clear processed suggestions for a project"""
-        project_id = request.get('project_id', 'default')
-        keep_pending = request.get('keep_pending', True)
+        project_id = request.get("project_id", "default")
+        keep_pending = request.get("keep_pending", True)
 
         if project_id not in self.suggestions:
-            return {
-                'status': 'success',
-                'cleared': 0
-            }
+            return {"status": "success", "cleared": 0}
 
         original_count = len(self.suggestions[project_id])
 
         if keep_pending:
             # Keep only pending suggestions
             self.suggestions[project_id] = [
-                s for s in self.suggestions[project_id]
-                if s['status'] == 'pending'
+                s for s in self.suggestions[project_id] if s["status"] == "pending"
             ]
         else:
             # Clear all
@@ -278,14 +230,12 @@ class KnowledgeManagerAgent(Agent):
 
         self.logger.info(f"Cleared {cleared_count} processed suggestions")
 
-        return {
-            'status': 'success',
-            'cleared': cleared_count
-        }
+        return {"status": "success", "cleared": cleared_count}
 
     def _generate_suggestion_id(self) -> str:
         """Generate unique suggestion ID"""
         import hashlib
         import time
+
         timestamp = str(time.time())
         return hashlib.md5(timestamp.encode()).hexdigest()[:12]

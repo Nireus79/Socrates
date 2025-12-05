@@ -2,13 +2,12 @@
 Unit tests for Socrates configuration system
 """
 
-import pytest
 import os
-from pathlib import Path
 from unittest.mock import patch
 
-import socrates
-from socratic_system.config import SocratesConfig, ConfigBuilder
+import pytest
+
+from socratic_system.config import ConfigBuilder, SocratesConfig
 from socratic_system.exceptions import ConfigurationError
 
 
@@ -34,10 +33,7 @@ class TestSocratesConfig:
 
     def test_config_data_dir_creation(self, temp_data_dir, mock_api_key):
         """Test that data directories are created"""
-        config = SocratesConfig(
-            api_key=mock_api_key,
-            data_dir=temp_data_dir / "test_socrates"
-        )
+        config = SocratesConfig(api_key=mock_api_key, data_dir=temp_data_dir / "test_socrates")
 
         assert config.data_dir.exists()
         assert config.projects_db_path.exists()
@@ -52,7 +48,7 @@ class TestSocratesConfig:
             api_key=mock_api_key,
             data_dir=temp_data_dir,
             projects_db_path=custom_db,
-            vector_db_path=custom_vector
+            vector_db_path=custom_vector,
         )
 
         assert config.projects_db_path == custom_db
@@ -60,52 +56,50 @@ class TestSocratesConfig:
 
     def test_config_from_env(self, mock_api_key, temp_data_dir):
         """Test loading config from environment variables"""
-        with patch.dict(os.environ, {
-            'ANTHROPIC_API_KEY': mock_api_key,
-            'SOCRATES_DATA_DIR': str(temp_data_dir),
-            'SOCRATES_LOG_LEVEL': 'DEBUG'
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "ANTHROPIC_API_KEY": mock_api_key,
+                "SOCRATES_DATA_DIR": str(temp_data_dir),
+                "SOCRATES_LOG_LEVEL": "DEBUG",
+            },
+        ):
             config = SocratesConfig.from_env()
 
             assert config.api_key == mock_api_key
             assert str(config.data_dir) == str(temp_data_dir)
-            assert config.log_level == 'DEBUG'
+            assert config.log_level == "DEBUG"
 
     def test_config_from_env_with_overrides(self, mock_api_key, temp_data_dir):
         """Test loading config from env with overrides"""
-        with patch.dict(os.environ, {
-            'ANTHROPIC_API_KEY': mock_api_key
-        }):
-            config = SocratesConfig.from_env(
-                data_dir=temp_data_dir,
-                log_level='ERROR'
-            )
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": mock_api_key}):
+            config = SocratesConfig.from_env(data_dir=temp_data_dir, log_level="ERROR")
 
             assert config.api_key == mock_api_key
             assert config.data_dir == temp_data_dir
-            assert config.log_level == 'ERROR'
+            assert config.log_level == "ERROR"
 
     def test_config_from_dict(self, mock_api_key):
         """Test creating config from dictionary"""
         config_dict = {
-            'api_key': mock_api_key,
-            'claude_model': 'claude-opus-4-5-20251101',
-            'log_level': 'DEBUG'
+            "api_key": mock_api_key,
+            "claude_model": "claude-opus-4-5-20251101",
+            "log_level": "DEBUG",
         }
 
         config = SocratesConfig.from_dict(config_dict)
 
         assert config.api_key == mock_api_key
-        assert config.claude_model == 'claude-opus-4-5-20251101'
-        assert config.log_level == 'DEBUG'
+        assert config.claude_model == "claude-opus-4-5-20251101"
+        assert config.log_level == "DEBUG"
 
     def test_config_to_legacy_dict(self, test_config):
         """Test converting config to legacy format"""
         legacy = test_config.get_legacy_config_dict()
 
-        assert 'ANTHROPIC_API_KEY' in legacy
-        assert 'CLAUDE_MODEL' in legacy
-        assert 'DATA_DIR' in legacy
+        assert "ANTHROPIC_API_KEY" in legacy
+        assert "CLAUDE_MODEL" in legacy
+        assert "DATA_DIR" in legacy
 
     def test_config_missing_api_key_raises_error(self):
         """Test that missing API key raises error"""
@@ -115,19 +109,14 @@ class TestSocratesConfig:
     def test_config_invalid_log_level(self, mock_api_key):
         """Test that invalid log level is handled"""
         # Should not raise, but log level might not be validated at dataclass level
-        config = SocratesConfig(
-            api_key=mock_api_key,
-            log_level="INVALID"
-        )
+        config = SocratesConfig(api_key=mock_api_key, log_level="INVALID")
         assert config.log_level == "INVALID"
 
     def test_config_custom_knowledge_list(self, mock_api_key, temp_data_dir):
         """Test config with custom knowledge base"""
         knowledge = ["knowledge1.md", "knowledge2.txt"]
         config = SocratesConfig(
-            api_key=mock_api_key,
-            data_dir=temp_data_dir,
-            custom_knowledge=knowledge
+            api_key=mock_api_key, data_dir=temp_data_dir, custom_knowledge=knowledge
         )
 
         assert config.custom_knowledge == knowledge
@@ -145,44 +134,38 @@ class TestConfigBuilder:
 
     def test_builder_with_data_dir(self, mock_api_key, temp_data_dir):
         """Test builder with data directory"""
-        config = ConfigBuilder(mock_api_key) \
-            .with_data_dir(temp_data_dir) \
-            .build()
+        config = ConfigBuilder(mock_api_key).with_data_dir(temp_data_dir).build()
 
         assert config.data_dir == temp_data_dir
 
     def test_builder_with_model(self, mock_api_key):
         """Test builder with custom model"""
-        config = ConfigBuilder(mock_api_key) \
-            .with_model("claude-opus-4-5-20251101") \
-            .build()
+        config = ConfigBuilder(mock_api_key).with_model("claude-opus-4-5-20251101").build()
 
         assert config.claude_model == "claude-opus-4-5-20251101"
 
     def test_builder_with_log_level(self, mock_api_key):
         """Test builder with log level"""
-        config = ConfigBuilder(mock_api_key) \
-            .with_log_level("DEBUG") \
-            .build()
+        config = ConfigBuilder(mock_api_key).with_log_level("DEBUG").build()
 
         assert config.log_level == "DEBUG"
 
     def test_builder_with_knowledge_base(self, mock_api_key, temp_data_dir):
         """Test builder with knowledge base path"""
         kb_path = temp_data_dir / "knowledge_base.md"
-        config = ConfigBuilder(mock_api_key) \
-            .with_knowledge_base(kb_path) \
-            .build()
+        config = ConfigBuilder(mock_api_key).with_knowledge_base(kb_path).build()
 
         assert kb_path in config.custom_knowledge or kb_path == config.knowledge_base_path
 
     def test_builder_fluent_chain(self, mock_api_key, temp_data_dir):
         """Test builder method chaining"""
-        config = ConfigBuilder(mock_api_key) \
-            .with_data_dir(temp_data_dir) \
-            .with_model("claude-opus-4-5-20251101") \
-            .with_log_level("DEBUG") \
+        config = (
+            ConfigBuilder(mock_api_key)
+            .with_data_dir(temp_data_dir)
+            .with_model("claude-opus-4-5-20251101")
+            .with_log_level("DEBUG")
             .build()
+        )
 
         assert config.api_key == mock_api_key
         assert config.data_dir == temp_data_dir
@@ -204,38 +187,25 @@ class TestConfigValidation:
     def test_config_with_log_file(self, mock_api_key, temp_data_dir):
         """Test config with log file path"""
         log_file = temp_data_dir / "socrates.log"
-        config = SocratesConfig(
-            api_key=mock_api_key,
-            log_file=log_file
-        )
+        config = SocratesConfig(api_key=mock_api_key, log_file=log_file)
 
         assert config.log_file == log_file
 
     def test_config_token_warning_threshold(self, mock_api_key):
         """Test token warning threshold configuration"""
-        config = SocratesConfig(
-            api_key=mock_api_key,
-            token_warning_threshold=0.9
-        )
+        config = SocratesConfig(api_key=mock_api_key, token_warning_threshold=0.9)
 
         assert config.token_warning_threshold == 0.9
 
     def test_config_session_timeout(self, mock_api_key):
         """Test session timeout configuration"""
-        config = SocratesConfig(
-            api_key=mock_api_key,
-            session_timeout=7200
-        )
+        config = SocratesConfig(api_key=mock_api_key, session_timeout=7200)
 
         assert config.session_timeout == 7200
 
     def test_config_retry_settings(self, mock_api_key):
         """Test retry configuration"""
-        config = SocratesConfig(
-            api_key=mock_api_key,
-            max_retries=5,
-            retry_delay=2.0
-        )
+        config = SocratesConfig(api_key=mock_api_key, max_retries=5, retry_delay=2.0)
 
         assert config.max_retries == 5
         assert config.retry_delay == 2.0
@@ -248,21 +218,21 @@ class TestConfigEnvironmentVariables:
     def test_anthropic_api_key_env_var(self, temp_data_dir):
         """Test ANTHROPIC_API_KEY environment variable"""
         test_key = "sk-ant-env-test-key"
-        with patch.dict(os.environ, {'ANTHROPIC_API_KEY': test_key}):
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": test_key}):
             config = SocratesConfig.from_env()
             assert config.api_key == test_key
 
     def test_socrates_data_dir_env_var(self, mock_api_key, temp_data_dir):
         """Test SOCRATES_DATA_DIR environment variable"""
-        with patch.dict(os.environ, {'SOCRATES_DATA_DIR': str(temp_data_dir)}):
+        with patch.dict(os.environ, {"SOCRATES_DATA_DIR": str(temp_data_dir)}):
             config = SocratesConfig.from_env(api_key=mock_api_key)
             assert config.data_dir == temp_data_dir
 
     def test_socrates_log_level_env_var(self, mock_api_key):
         """Test SOCRATES_LOG_LEVEL environment variable"""
-        with patch.dict(os.environ, {'SOCRATES_LOG_LEVEL': 'WARNING'}):
+        with patch.dict(os.environ, {"SOCRATES_LOG_LEVEL": "WARNING"}):
             config = SocratesConfig.from_env(api_key=mock_api_key)
-            assert config.log_level == 'WARNING'
+            assert config.log_level == "WARNING"
 
     def test_missing_api_key_env_var(self):
         """Test that missing API key is handled"""

@@ -2,16 +2,11 @@
 Unit tests for Socrates data models
 """
 
-import pytest
 from datetime import datetime
 
-from socratic_system.models import (
-    User,
-    ProjectContext,
-    KnowledgeEntry,
-    TokenUsage,
-    ProjectNote
-)
+import pytest
+
+from socratic_system.models import KnowledgeEntry, ProjectContext, ProjectNote, TokenUsage, User
 
 
 @pytest.mark.unit
@@ -25,20 +20,16 @@ class TestUser:
 
     def test_user_fields(self, sample_user):
         """Test user fields"""
-        assert hasattr(sample_user, 'username')
-        assert hasattr(sample_user, 'passcode_hash')
-        assert hasattr(sample_user, 'created_at')
-        assert hasattr(sample_user, 'is_archived')
-        assert hasattr(sample_user, 'archived_at')
+        assert hasattr(sample_user, "username")
+        assert hasattr(sample_user, "passcode_hash")
+        assert hasattr(sample_user, "created_at")
+        assert hasattr(sample_user, "is_archived")
+        assert hasattr(sample_user, "archived_at")
 
     def test_user_timestamps(self):
         """Test user timestamp handling"""
         now = datetime.now()
-        user = User(
-            username="testuser",
-            passcode_hash="hashed",
-            created_at=now
-        )
+        user = User(username="testuser", passcode_hash="hashed", created_at=now)
 
         assert user.created_at == now
         assert isinstance(user.created_at, datetime)
@@ -50,7 +41,7 @@ class TestUser:
             passcode_hash="hashed",
             created_at=datetime.now(),
             is_archived=True,
-            archived_at=datetime.now()
+            archived_at=datetime.now(),
         )
 
         assert user.is_archived is True
@@ -69,10 +60,7 @@ class TestProjectContext:
 
     def test_project_fields(self, sample_project):
         """Test project fields"""
-        required_fields = [
-            'project_id', 'name', 'owner', 'phase',
-            'created_at', 'updated_at'
-        ]
+        required_fields = ["project_id", "name", "owner", "phase", "created_at", "updated_at"]
 
         for field in required_fields:
             assert hasattr(sample_project, field)
@@ -85,7 +73,7 @@ class TestProjectContext:
             owner="user",
             phase="completed",
             created_at=datetime.now(),
-            updated_at=datetime.now()
+            updated_at=datetime.now(),
         )
 
         assert project.phase == "completed"
@@ -99,7 +87,7 @@ class TestProjectContext:
             phase="active",
             created_at=datetime.now(),
             updated_at=datetime.now(),
-            collaborators=["user2", "user3"]
+            collaborators=["user2", "user3"],
         )
 
         assert len(project.collaborators) == 2
@@ -115,7 +103,7 @@ class TestProjectContext:
             created_at=datetime.now(),
             updated_at=datetime.now(),
             is_archived=True,
-            archived_at=datetime.now()
+            archived_at=datetime.now(),
         )
 
         assert project.is_archived is True
@@ -129,7 +117,7 @@ class TestProjectContext:
             phase="active",
             created_at=datetime.now(),
             updated_at=datetime.now(),
-            notes=[]
+            notes=[],
         )
 
         assert isinstance(project.notes, list)
@@ -146,18 +134,15 @@ class TestKnowledgeEntry:
 
     def test_knowledge_entry_fields(self, sample_knowledge_entry):
         """Test knowledge entry fields"""
-        assert hasattr(sample_knowledge_entry, 'id')
-        assert hasattr(sample_knowledge_entry, 'content')
-        assert hasattr(sample_knowledge_entry, 'category')
-        assert hasattr(sample_knowledge_entry, 'metadata')
+        assert hasattr(sample_knowledge_entry, "id")
+        assert hasattr(sample_knowledge_entry, "content")
+        assert hasattr(sample_knowledge_entry, "category")
+        assert hasattr(sample_knowledge_entry, "metadata")
 
     def test_knowledge_entry_embedding(self):
         """Test knowledge entry embedding"""
         entry = KnowledgeEntry(
-            id="test",
-            content="Test content",
-            category="test",
-            embedding=[0.1, 0.2, 0.3]
+            id="test", content="Test content", category="test", embedding=[0.1, 0.2, 0.3]
         )
 
         assert entry.embedding == [0.1, 0.2, 0.3]
@@ -167,26 +152,17 @@ class TestKnowledgeEntry:
         metadata = {
             "source": "documentation",
             "difficulty": "intermediate",
-            "tags": ["api", "rest"]
+            "tags": ["api", "rest"],
         }
 
-        entry = KnowledgeEntry(
-            id="test",
-            content="Test",
-            category="api",
-            metadata=metadata
-        )
+        entry = KnowledgeEntry(id="test", content="Test", category="api", metadata=metadata)
 
         assert entry.metadata == metadata
         assert entry.metadata["source"] == "documentation"
 
     def test_knowledge_entry_optional_embedding(self):
         """Test knowledge entry with no embedding"""
-        entry = KnowledgeEntry(
-            id="test",
-            content="Test",
-            category="test"
-        )
+        entry = KnowledgeEntry(id="test", content="Test", category="test")
 
         assert entry.embedding is None
 
@@ -208,18 +184,18 @@ class TestTokenUsage:
             output_tokens=100,
             total_tokens=300,
             model="claude-opus-4-5-20251101",
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         assert usage.total_tokens == 300
 
     def test_token_usage_fields(self, sample_token_usage):
         """Test token usage fields"""
-        assert hasattr(sample_token_usage, 'input_tokens')
-        assert hasattr(sample_token_usage, 'output_tokens')
-        assert hasattr(sample_token_usage, 'total_tokens')
-        assert hasattr(sample_token_usage, 'model')
-        assert hasattr(sample_token_usage, 'timestamp')
+        assert hasattr(sample_token_usage, "input_tokens")
+        assert hasattr(sample_token_usage, "output_tokens")
+        assert hasattr(sample_token_usage, "total_tokens")
+        assert hasattr(sample_token_usage, "model")
+        assert hasattr(sample_token_usage, "timestamp")
 
     def test_token_usage_model(self):
         """Test token usage model field"""
@@ -228,7 +204,7 @@ class TestTokenUsage:
             output_tokens=50,
             total_tokens=150,
             model="claude-sonnet-4-5-20250929",
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         assert usage.model == "claude-sonnet-4-5-20250929"
@@ -237,11 +213,7 @@ class TestTokenUsage:
         """Test token usage timestamp"""
         now = datetime.now()
         usage = TokenUsage(
-            input_tokens=100,
-            output_tokens=50,
-            total_tokens=150,
-            model="test",
-            timestamp=now
+            input_tokens=100, output_tokens=50, total_tokens=150, model="test", timestamp=now
         )
 
         assert usage.timestamp == now
@@ -259,7 +231,7 @@ class TestProjectNote:
             title="Test Note",
             content="This is a test note",
             note_type="observation",
-            created_at=datetime.now()
+            created_at=datetime.now(),
         )
 
         assert note.note_id == "note_001"
@@ -276,7 +248,7 @@ class TestProjectNote:
                 title="Title",
                 content="Content",
                 note_type=note_type,
-                created_at=datetime.now()
+                created_at=datetime.now(),
             )
 
             assert note.note_type == note_type
@@ -289,15 +261,15 @@ class TestProjectNote:
             title="Title",
             content="Content",
             note_type="observation",
-            created_at=datetime.now()
+            created_at=datetime.now(),
         )
 
-        assert hasattr(note, 'note_id')
-        assert hasattr(note, 'project_id')
-        assert hasattr(note, 'title')
-        assert hasattr(note, 'content')
-        assert hasattr(note, 'note_type')
-        assert hasattr(note, 'created_at')
+        assert hasattr(note, "note_id")
+        assert hasattr(note, "project_id")
+        assert hasattr(note, "title")
+        assert hasattr(note, "content")
+        assert hasattr(note, "note_type")
+        assert hasattr(note, "created_at")
 
     def test_project_note_search_capability(self):
         """Test if note has search capability"""
@@ -307,11 +279,11 @@ class TestProjectNote:
             title="FastAPI Tutorial",
             content="Learn how to build REST APIs with FastAPI",
             note_type="observation",
-            created_at=datetime.now()
+            created_at=datetime.now(),
         )
 
         # Check if note can be searched (if method exists)
-        if hasattr(note, 'matches_query'):
+        if hasattr(note, "matches_query"):
             assert note.matches_query("FastAPI")
             assert note.matches_query("REST")
             assert not note.matches_query("Django")
@@ -323,11 +295,7 @@ class TestModelDataTypes:
 
     def test_user_string_fields(self):
         """Test that user string fields are strings"""
-        user = User(
-            username="testuser",
-            passcode_hash="hashed_value",
-            created_at=datetime.now()
-        )
+        user = User(username="testuser", passcode_hash="hashed_value", created_at=datetime.now())
 
         assert isinstance(user.username, str)
         assert isinstance(user.passcode_hash, str)
@@ -340,7 +308,7 @@ class TestModelDataTypes:
             owner="owner_name",
             phase="active",
             created_at=datetime.now(),
-            updated_at=datetime.now()
+            updated_at=datetime.now(),
         )
 
         assert isinstance(project.project_id, str)
@@ -349,11 +317,7 @@ class TestModelDataTypes:
 
     def test_knowledge_entry_string_fields(self):
         """Test knowledge entry string fields"""
-        entry = KnowledgeEntry(
-            id="entry_001",
-            content="Some content",
-            category="general"
-        )
+        entry = KnowledgeEntry(id="entry_001", content="Some content", category="general")
 
         assert isinstance(entry.id, str)
         assert isinstance(entry.content, str)
@@ -366,7 +330,7 @@ class TestModelDataTypes:
             output_tokens=50,
             total_tokens=150,
             model="test",
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
 
         assert isinstance(usage.input_tokens, int)
@@ -380,11 +344,7 @@ class TestModelDefaults:
 
     def test_user_defaults(self):
         """Test User default values"""
-        user = User(
-            username="test",
-            passcode_hash="hashed",
-            created_at=datetime.now()
-        )
+        user = User(username="test", passcode_hash="hashed", created_at=datetime.now())
 
         assert user.is_archived is False
 
@@ -396,7 +356,7 @@ class TestModelDefaults:
             owner="user",
             phase="active",
             created_at=datetime.now(),
-            updated_at=datetime.now()
+            updated_at=datetime.now(),
         )
 
         assert project.is_archived is False
@@ -405,11 +365,7 @@ class TestModelDefaults:
 
     def test_knowledge_entry_defaults(self):
         """Test KnowledgeEntry default values"""
-        entry = KnowledgeEntry(
-            id="entry",
-            content="content",
-            category="category"
-        )
+        entry = KnowledgeEntry(id="entry", content="content", category="category")
 
         assert entry.embedding is None
         assert isinstance(entry.metadata, dict) or entry.metadata is None

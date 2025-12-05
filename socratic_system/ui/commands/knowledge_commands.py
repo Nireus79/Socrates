@@ -2,11 +2,12 @@
 
 import json
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 from colorama import Fore, Style
 
-from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.models.knowledge import KnowledgeEntry
+from socratic_system.ui.commands.base import BaseCommand
 
 
 class KnowledgeAddCommand(BaseCommand):
@@ -16,7 +17,7 @@ class KnowledgeAddCommand(BaseCommand):
         super().__init__(
             name="knowledge add",
             description="Add a new knowledge entry to current project",
-            usage="knowledge add --content=<text> --category=<cat> [--topic=<t>] [--difficulty=beginner|intermediate|advanced]"
+            usage="knowledge add --content=<text> --category=<cat> [--topic=<t>] [--difficulty=beginner|intermediate|advanced]",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -27,29 +28,30 @@ class KnowledgeAddCommand(BaseCommand):
         # Parse named arguments
         params = self._parse_args(args)
 
-        if not params.get('content'):
+        if not params.get("content"):
             return self.error("Required: --content=<knowledge content>")
-        if not params.get('category'):
+        if not params.get("category"):
             return self.error("Required: --category=<category name>")
 
         try:
-            orchestrator = context.get('orchestrator')
-            project = context.get('project')
+            orchestrator = context.get("orchestrator")
+            project = context.get("project")
 
             # Generate entry ID from content
             import hashlib
-            entry_id = hashlib.md5(params['content'].encode()).hexdigest()[:12]
+
+            entry_id = hashlib.md5(params["content"].encode()).hexdigest()[:12]
 
             # Create knowledge entry
             entry = KnowledgeEntry(
                 id=entry_id,
-                content=params['content'],
-                category=params['category'],
+                content=params["content"],
+                category=params["category"],
                 metadata={
-                    'topic': params.get('topic', 'custom'),
-                    'difficulty': params.get('difficulty', 'intermediate'),
-                    'domain': 'project_custom'
-                }
+                    "topic": params.get("topic", "custom"),
+                    "difficulty": params.get("difficulty", "intermediate"),
+                    "domain": "project_custom",
+                },
             )
 
             # Add to project knowledge
@@ -58,8 +60,7 @@ class KnowledgeAddCommand(BaseCommand):
             if success:
                 self.print_success(f"Knowledge added to project: {entry_id}")
                 return self.success(
-                    f"Added knowledge entry to {project.name}",
-                    data={'entry_id': entry_id}
+                    f"Added knowledge entry to {project.name}", data={"entry_id": entry_id}
                 )
             else:
                 return self.error("Failed to add knowledge entry")
@@ -71,8 +72,8 @@ class KnowledgeAddCommand(BaseCommand):
         """Parse named arguments from args list"""
         params = {}
         for arg in args:
-            if '=' in arg and arg.startswith('--'):
-                key, value = arg[2:].split('=', 1)
+            if "=" in arg and arg.startswith("--"):
+                key, value = arg[2:].split("=", 1)
                 params[key] = value
         return params
 
@@ -84,21 +85,23 @@ class KnowledgeListCommand(BaseCommand):
         super().__init__(
             name="knowledge list",
             description="List knowledge entries (project or global)",
-            usage="knowledge list [--project] [--limit=10]"
+            usage="knowledge list [--project] [--limit=10]",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute knowledge list command"""
         try:
-            orchestrator = context.get('orchestrator')
-            project = context.get('project')
+            orchestrator = context.get("orchestrator")
+            project = context.get("project")
 
             # Parse options
-            show_project = '--project' in args
+            show_project = "--project" in args
             limit = self._get_limit(args)
 
             if show_project and not project:
-                return self.error("No project loaded. Use '--project' with active project or omit for global knowledge")
+                return self.error(
+                    "No project loaded. Use '--project' with active project or omit for global knowledge"
+                )
 
             self.print_header(f"Knowledge Entries {'(Project)' if show_project else '(Global)'}")
 
@@ -120,11 +123,11 @@ class KnowledgeListCommand(BaseCommand):
             count = 0
             for entry in entries[:limit]:
                 count += 1
-                entry_id = entry.get('id', 'unknown')
-                content = entry.get('content', '')[:80]
-                meta = entry.get('metadata', {})
-                category = meta.get('category', 'unknown')
-                difficulty = meta.get('difficulty', 'unknown')
+                entry_id = entry.get("id", "unknown")
+                content = entry.get("content", "")[:80]
+                meta = entry.get("metadata", {})
+                category = meta.get("category", "unknown")
+                difficulty = meta.get("difficulty", "unknown")
 
                 print(f"\n{count}. {Fore.CYAN}{entry_id}{Style.RESET_ALL}")
                 print(f"   Category: {category} | Difficulty: {difficulty}")
@@ -139,9 +142,9 @@ class KnowledgeListCommand(BaseCommand):
     def _get_limit(self, args: List[str]) -> int:
         """Extract limit from args"""
         for arg in args:
-            if arg.startswith('--limit='):
+            if arg.startswith("--limit="):
                 try:
-                    return int(arg.split('=')[1])
+                    return int(arg.split("=")[1])
                 except:
                     pass
         return 10
@@ -154,7 +157,7 @@ class KnowledgeSearchCommand(BaseCommand):
         super().__init__(
             name="knowledge search",
             description="Search knowledge across global and project knowledge",
-            usage="knowledge search <query> [--project] [--top=5]"
+            usage="knowledge search <query> [--project] [--top=5]",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -163,16 +166,18 @@ class KnowledgeSearchCommand(BaseCommand):
             return self.error("Provide a search query")
 
         try:
-            orchestrator = context.get('orchestrator')
-            project = context.get('project')
+            orchestrator = context.get("orchestrator")
+            project = context.get("project")
 
             query = args[0]
-            search_project = '--project' in args
+            search_project = "--project" in args
             top_k = self._get_top_k(args)
 
             project_id = project.project_id if (search_project and project) else None
 
-            results = orchestrator.vector_db.search_similar(query, top_k=top_k, project_id=project_id)
+            results = orchestrator.vector_db.search_similar(
+                query, top_k=top_k, project_id=project_id
+            )
 
             self.print_header(f"Knowledge Search Results: '{query}'")
             if project_id:
@@ -184,10 +189,10 @@ class KnowledgeSearchCommand(BaseCommand):
 
             # Display results
             for idx, result in enumerate(results, 1):
-                content = result.get('content', '')[:100]
-                meta = result.get('metadata', {})
-                category = meta.get('category', 'unknown')
-                score = result.get('score', 0)
+                content = result.get("content", "")[:100]
+                meta = result.get("metadata", {})
+                category = meta.get("category", "unknown")
+                score = result.get("score", 0)
 
                 print(f"\n{idx}. {Fore.CYAN}{category}{Style.RESET_ALL} (relevance: {score:.2f})")
                 print(f"   {content}...")
@@ -201,9 +206,9 @@ class KnowledgeSearchCommand(BaseCommand):
     def _get_top_k(self, args: List[str]) -> int:
         """Extract top_k from args"""
         for arg in args:
-            if arg.startswith('--top='):
+            if arg.startswith("--top="):
                 try:
-                    return int(arg.split('=')[1])
+                    return int(arg.split("=")[1])
                 except:
                     pass
         return 5
@@ -216,7 +221,7 @@ class KnowledgeExportCommand(BaseCommand):
         super().__init__(
             name="knowledge export",
             description="Export project knowledge to a JSON file",
-            usage="knowledge export <filename.json>"
+            usage="knowledge export <filename.json>",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -228,8 +233,8 @@ class KnowledgeExportCommand(BaseCommand):
             return self.error("Provide a filename to export to")
 
         try:
-            orchestrator = context.get('orchestrator')
-            project = context.get('project')
+            orchestrator = context.get("orchestrator")
+            project = context.get("project")
             filename = args[0]
 
             # Export knowledge
@@ -237,13 +242,13 @@ class KnowledgeExportCommand(BaseCommand):
 
             # Write to file
             filepath = Path(filename)
-            with open(filepath, 'w', encoding='utf-8') as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 json.dump(exported, f, indent=2, ensure_ascii=False)
 
             self.print_success(f"Exported {len(exported)} entries to {filename}")
             return self.success(
                 f"Knowledge exported to {filename}",
-                data={'entry_count': len(exported), 'filename': str(filepath.absolute())}
+                data={"entry_count": len(exported), "filename": str(filepath.absolute())},
             )
 
         except Exception as e:
@@ -257,7 +262,7 @@ class KnowledgeImportCommand(BaseCommand):
         super().__init__(
             name="knowledge import",
             description="Import knowledge entries from a JSON file to current project",
-            usage="knowledge import <filename.json>"
+            usage="knowledge import <filename.json>",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -269,8 +274,8 @@ class KnowledgeImportCommand(BaseCommand):
             return self.error("Provide a filename to import from")
 
         try:
-            orchestrator = context.get('orchestrator')
-            project = context.get('project')
+            orchestrator = context.get("orchestrator")
+            project = context.get("project")
             filename = args[0]
 
             # Read file
@@ -278,14 +283,14 @@ class KnowledgeImportCommand(BaseCommand):
             if not filepath.exists():
                 return self.error(f"File not found: {filename}")
 
-            with open(filepath, 'r', encoding='utf-8') as f:
+            with open(filepath, encoding="utf-8") as f:
                 data = json.load(f)
 
             # Import entries
             if isinstance(data, list):
                 entries = data
             else:
-                entries = data.get('entries', []) or data.get('default_knowledge', [])
+                entries = data.get("entries", []) or data.get("default_knowledge", [])
 
             if not entries:
                 return self.error("No entries found in file")
@@ -295,7 +300,7 @@ class KnowledgeImportCommand(BaseCommand):
             self.print_success(f"Imported {count}/{len(entries)} entries to {project.name}")
             return self.success(
                 f"Imported {count} knowledge entries",
-                data={'imported': count, 'total': len(entries)}
+                data={"imported": count, "total": len(entries)},
             )
 
         except json.JSONDecodeError:
@@ -311,7 +316,7 @@ class KnowledgeRemoveCommand(BaseCommand):
         super().__init__(
             name="knowledge remove",
             description="Remove a knowledge entry from current project",
-            usage="knowledge remove <entry_id>"
+            usage="knowledge remove <entry_id>",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -323,7 +328,7 @@ class KnowledgeRemoveCommand(BaseCommand):
             return self.error("Provide an entry ID to remove")
 
         try:
-            orchestrator = context.get('orchestrator')
+            orchestrator = context.get("orchestrator")
             entry_id = args[0]
 
             # Delete entry
@@ -343,7 +348,7 @@ class RememberCommand(BaseCommand):
         super().__init__(
             name="remember",
             description="Quick way to remember something for this project",
-            usage="remember <text to remember>"
+            usage="remember <text to remember>",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -351,28 +356,29 @@ class RememberCommand(BaseCommand):
         if not self.require_project(context):
             return self.error("No project loaded. Load a project first")
 
-        if not args or not ' '.join(args).strip():
+        if not args or not " ".join(args).strip():
             return self.error("Tell me what to remember")
 
         try:
-            orchestrator = context.get('orchestrator')
-            project = context.get('project')
-            content = ' '.join(args)
+            orchestrator = context.get("orchestrator")
+            project = context.get("project")
+            content = " ".join(args)
 
             # Generate ID
             import hashlib
+
             entry_id = hashlib.md5(content.encode()).hexdigest()[:12]
 
             # Create entry
             entry = KnowledgeEntry(
                 id=f"remembered_{entry_id}",
                 content=content,
-                category='remembered',
+                category="remembered",
                 metadata={
-                    'topic': 'project_note',
-                    'difficulty': 'intermediate',
-                    'domain': 'remembered'
-                }
+                    "topic": "project_note",
+                    "difficulty": "intermediate",
+                    "domain": "remembered",
+                },
             )
 
             # Add to project

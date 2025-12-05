@@ -2,16 +2,16 @@
 Project database for persistent storage in Socratic RAG System
 """
 
-import os
-import logging
 import datetime
+import logging
+import os
 import pickle
 import sqlite3
-from typing import Dict, List, Optional
 from dataclasses import asdict
+from typing import Dict, List, Optional
 
-from socratic_system.models import ProjectContext, User, ProjectNote
-from socratic_system.utils.datetime_helpers import serialize_datetime, deserialize_datetime
+from socratic_system.models import ProjectContext, ProjectNote, User
+from socratic_system.utils.datetime_helpers import deserialize_datetime, serialize_datetime
 
 
 class ProjectDatabase:
@@ -28,25 +28,30 @@ class ProjectDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS projects (
                 project_id TEXT PRIMARY KEY,
                 data BLOB,
                 created_at TEXT,
                 updated_at TEXT
             )
-        ''')
+        """
+        )
 
-        cursor.execute('''
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS users (
                 username TEXT PRIMARY KEY,
                 passcode_hash TEXT,
                 data BLOB,
                 created_at TEXT
             )
-        ''')
+        """
+        )
 
-        cursor.execute('''
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS project_notes (
                 note_id TEXT PRIMARY KEY,
                 project_id TEXT NOT NULL,
@@ -54,7 +59,8 @@ class ProjectDatabase:
                 created_at TEXT,
                 FOREIGN KEY (project_id) REFERENCES projects(project_id)
             )
-        ''')
+        """
+        )
 
         conn.commit()
         conn.close()
@@ -68,10 +74,13 @@ class ProjectDatabase:
         created_at_str = serialize_datetime(project.created_at)
         updated_at_str = serialize_datetime(project.updated_at)
 
-        cursor.execute('''
+        cursor.execute(
+            """
             INSERT OR REPLACE INTO projects (project_id, data, created_at, updated_at)
             VALUES (?, ?, ?, ?)
-        ''', (project.project_id, data, created_at_str, updated_at_str))
+        """,
+            (project.project_id, data, created_at_str, updated_at_str),
+        )
 
         conn.commit()
         conn.close()
@@ -81,7 +90,7 @@ class ProjectDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('SELECT data FROM projects WHERE project_id = ?', (project_id,))
+        cursor.execute("SELECT data FROM projects WHERE project_id = ?", (project_id,))
         result = cursor.fetchone()
 
         conn.close()
@@ -89,10 +98,10 @@ class ProjectDatabase:
         if result:
             data = pickle.loads(result[0])
             # Convert datetime strings back to datetime objects if needed
-            if isinstance(data.get('created_at'), str):
-                data['created_at'] = deserialize_datetime(data['created_at'])
-            if isinstance(data.get('updated_at'), str):
-                data['updated_at'] = deserialize_datetime(data['updated_at'])
+            if isinstance(data.get("created_at"), str):
+                data["created_at"] = deserialize_datetime(data["created_at"])
+            if isinstance(data.get("updated_at"), str):
+                data["updated_at"] = deserialize_datetime(data["updated_at"])
             return ProjectContext(**data)
         return None
 
@@ -101,7 +110,7 @@ class ProjectDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('SELECT project_id, data FROM projects')
+        cursor.execute("SELECT project_id, data FROM projects")
         results = cursor.fetchall()
         conn.close()
 
@@ -111,26 +120,32 @@ class ProjectDatabase:
                 project_data = pickle.loads(data)
 
                 # Handle datetime deserialization if needed
-                if isinstance(project_data.get('updated_at'), str):
-                    project_data['updated_at'] = deserialize_datetime(project_data['updated_at'])
+                if isinstance(project_data.get("updated_at"), str):
+                    project_data["updated_at"] = deserialize_datetime(project_data["updated_at"])
 
                 # Skip archived projects unless requested
-                if project_data.get('is_archived', False) and not include_archived:
+                if project_data.get("is_archived", False) and not include_archived:
                     continue
 
                 # Check if user is owner or collaborator
-                if (project_data['owner'] == username or
-                        username in project_data.get('collaborators', [])):
-                    status = "archived" if project_data.get('is_archived', False) else "active"
+                if project_data["owner"] == username or username in project_data.get(
+                    "collaborators", []
+                ):
+                    status = "archived" if project_data.get("is_archived", False) else "active"
 
-                    projects.append({
-                        'project_id': project_id,
-                        'name': project_data['name'],
-                        'phase': project_data['phase'],
-                        'status': status,
-                        'updated_at': project_data['updated_at'].strftime("%Y-%m-%d %H:%M:%S") if isinstance(
-                            project_data['updated_at'], datetime.datetime) else str(project_data['updated_at'])
-                    })
+                    projects.append(
+                        {
+                            "project_id": project_id,
+                            "name": project_data["name"],
+                            "phase": project_data["phase"],
+                            "status": status,
+                            "updated_at": (
+                                project_data["updated_at"].strftime("%Y-%m-%d %H:%M:%S")
+                                if isinstance(project_data["updated_at"], datetime.datetime)
+                                else str(project_data["updated_at"])
+                            ),
+                        }
+                    )
             except Exception as e:
                 self.logger.warning(f"Could not load project {project_id}: {e}")
 
@@ -144,10 +159,13 @@ class ProjectDatabase:
         data = pickle.dumps(asdict(user))
         created_at_str = serialize_datetime(user.created_at)
 
-        cursor.execute('''
+        cursor.execute(
+            """
             INSERT OR REPLACE INTO users (username, passcode_hash, data, created_at)
             VALUES (?, ?, ?, ?)
-        ''', (user.username, user.passcode_hash, data, created_at_str))
+        """,
+            (user.username, user.passcode_hash, data, created_at_str),
+        )
 
         conn.commit()
         conn.close()
@@ -157,7 +175,7 @@ class ProjectDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('SELECT data FROM users WHERE username = ?', (username,))
+        cursor.execute("SELECT data FROM users WHERE username = ?", (username,))
         result = cursor.fetchone()
 
         conn.close()
@@ -165,8 +183,8 @@ class ProjectDatabase:
         if result:
             data = pickle.loads(result[0])
             # Convert datetime string back to datetime object if needed
-            if isinstance(data.get('created_at'), str):
-                data['created_at'] = deserialize_datetime(data['created_at'])
+            if isinstance(data.get("created_at"), str):
+                data["created_at"] = deserialize_datetime(data["created_at"])
             return User(**data)
         return None
 
@@ -175,7 +193,7 @@ class ProjectDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('SELECT username FROM users WHERE username = ?', (username,))
+        cursor.execute("SELECT username FROM users WHERE username = ?", (username,))
         result = cursor.fetchone()
 
         conn.close()
@@ -198,22 +216,27 @@ class ProjectDatabase:
                 conn = sqlite3.connect(self.db_path)
                 cursor = conn.cursor()
 
-                cursor.execute('SELECT project_id, data FROM projects')
+                cursor.execute("SELECT project_id, data FROM projects")
                 results = cursor.fetchall()
 
                 for project_id, data in results:
                     try:
                         project_data = pickle.loads(data)
-                        if project_data['owner'] == username and not project_data.get('is_archived', False):
+                        if project_data["owner"] == username and not project_data.get(
+                            "is_archived", False
+                        ):
                             # Archive this project
-                            project_data['is_archived'] = True
-                            project_data['archived_at'] = datetime.datetime.now()
+                            project_data["is_archived"] = True
+                            project_data["archived_at"] = datetime.datetime.now()
                             updated_data = pickle.dumps(project_data)
 
-                            cursor.execute('''
+                            cursor.execute(
+                                """
                                 UPDATE projects SET data = ?, updated_at = ?
                                 WHERE project_id = ?
-                            ''', (updated_data, datetime.datetime.now().isoformat(), project_id))
+                            """,
+                                (updated_data, datetime.datetime.now().isoformat(), project_id),
+                            )
 
                     except Exception as e:
                         self.logger.warning(f"Could not archive project {project_id}: {e}")
@@ -250,7 +273,7 @@ class ProjectDatabase:
             cursor = conn.cursor()
 
             # First, handle projects owned by this user
-            cursor.execute('SELECT project_id, data FROM projects')
+            cursor.execute("SELECT project_id, data FROM projects")
             results = cursor.fetchall()
 
             projects_to_delete = []
@@ -259,19 +282,22 @@ class ProjectDatabase:
             for project_id, data in results:
                 try:
                     project_data = pickle.loads(data)
-                    if project_data['owner'] == username:
-                        if project_data.get('collaborators'):
+                    if project_data["owner"] == username:
+                        if project_data.get("collaborators"):
                             # Transfer to first collaborator
-                            new_owner = project_data['collaborators'][0]
-                            project_data['owner'] = new_owner
-                            project_data['collaborators'].remove(new_owner)
-                            project_data['updated_at'] = datetime.datetime.now()
+                            new_owner = project_data["collaborators"][0]
+                            project_data["owner"] = new_owner
+                            project_data["collaborators"].remove(new_owner)
+                            project_data["updated_at"] = datetime.datetime.now()
 
                             updated_data = pickle.dumps(project_data)
-                            cursor.execute('''
+                            cursor.execute(
+                                """
                                 UPDATE projects SET data = ?, updated_at = ?
                                 WHERE project_id = ?
-                            ''', (updated_data, project_data['updated_at'].isoformat(), project_id))
+                            """,
+                                (updated_data, project_data["updated_at"].isoformat(), project_id),
+                            )
 
                             projects_to_transfer.append((project_id, new_owner))
                         else:
@@ -283,16 +309,17 @@ class ProjectDatabase:
 
             # Delete projects with no collaborators
             for project_id in projects_to_delete:
-                cursor.execute('DELETE FROM projects WHERE project_id = ?', (project_id,))
+                cursor.execute("DELETE FROM projects WHERE project_id = ?", (project_id,))
 
             # Delete the user
-            cursor.execute('DELETE FROM users WHERE username = ?', (username,))
+            cursor.execute("DELETE FROM users WHERE username = ?", (username,))
 
             conn.commit()
             conn.close()
 
             self.logger.info(
-                f"User {username} deleted. {len(projects_to_transfer)} projects transferred, {len(projects_to_delete)} projects deleted.")
+                f"User {username} deleted. {len(projects_to_transfer)} projects transferred, {len(projects_to_delete)} projects deleted."
+            )
             return True
 
         except Exception as e:
@@ -339,7 +366,7 @@ class ProjectDatabase:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
 
-            cursor.execute('DELETE FROM projects WHERE project_id = ?', (project_id,))
+            cursor.execute("DELETE FROM projects WHERE project_id = ?", (project_id,))
             conn.commit()
             conn.close()
             return True
@@ -353,41 +380,45 @@ class ProjectDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        if item_type == 'users':
-            cursor.execute('SELECT username, data FROM users')
+        if item_type == "users":
+            cursor.execute("SELECT username, data FROM users")
             results = cursor.fetchall()
 
             archived_users = []
             for username, data in results:
                 try:
                     user_data = pickle.loads(data)
-                    if user_data.get('is_archived', False):
-                        archived_users.append({
-                            'username': username,
-                            'archived_at': user_data.get('archived_at'),
-                            'project_count': len(user_data.get('projects', []))
-                        })
+                    if user_data.get("is_archived", False):
+                        archived_users.append(
+                            {
+                                "username": username,
+                                "archived_at": user_data.get("archived_at"),
+                                "project_count": len(user_data.get("projects", [])),
+                            }
+                        )
                 except Exception as e:
                     self.logger.warning(f"Could not load user {username}: {e}")
 
             conn.close()
             return archived_users
 
-        elif item_type == 'projects':
-            cursor.execute('SELECT project_id, data FROM projects')
+        elif item_type == "projects":
+            cursor.execute("SELECT project_id, data FROM projects")
             results = cursor.fetchall()
 
             archived_projects = []
             for project_id, data in results:
                 try:
                     project_data = pickle.loads(data)
-                    if project_data.get('is_archived', False):
-                        archived_projects.append({
-                            'project_id': project_id,
-                            'name': project_data['name'],
-                            'owner': project_data['owner'],
-                            'archived_at': project_data.get('archived_at')
-                        })
+                    if project_data.get("is_archived", False):
+                        archived_projects.append(
+                            {
+                                "project_id": project_id,
+                                "name": project_data["name"],
+                                "owner": project_data["owner"],
+                                "archived_at": project_data.get("archived_at"),
+                            }
+                        )
                 except Exception as e:
                     self.logger.warning(f"Could not load project {project_id}: {e}")
 
@@ -406,10 +437,13 @@ class ProjectDatabase:
             data = pickle.dumps(asdict(note))
             created_at_str = serialize_datetime(note.created_at)
 
-            cursor.execute('''
+            cursor.execute(
+                """
                 INSERT OR REPLACE INTO project_notes (note_id, project_id, data, created_at)
                 VALUES (?, ?, ?, ?)
-            ''', (note.note_id, note.project_id, data, created_at_str))
+            """,
+                (note.note_id, note.project_id, data, created_at_str),
+            )
 
             conn.commit()
             conn.close()
@@ -419,13 +453,15 @@ class ProjectDatabase:
             self.logger.error(f"Error saving note: {e}")
             return False
 
-    def get_project_notes(self, project_id: str, note_type: Optional[str] = None) -> List[ProjectNote]:
+    def get_project_notes(
+        self, project_id: str, note_type: Optional[str] = None
+    ) -> List[ProjectNote]:
         """Get all notes for a project, optionally filtered by type"""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
 
-            cursor.execute('SELECT data FROM project_notes WHERE project_id = ?', (project_id,))
+            cursor.execute("SELECT data FROM project_notes WHERE project_id = ?", (project_id,))
             results = cursor.fetchall()
 
             conn.close()
@@ -435,8 +471,8 @@ class ProjectDatabase:
                 try:
                     note_data = pickle.loads(data)
                     # Convert datetime strings back to datetime objects if needed
-                    if isinstance(note_data.get('created_at'), str):
-                        note_data['created_at'] = deserialize_datetime(note_data['created_at'])
+                    if isinstance(note_data.get("created_at"), str):
+                        note_data["created_at"] = deserialize_datetime(note_data["created_at"])
 
                     note = ProjectNote(**note_data)
 
@@ -464,7 +500,7 @@ class ProjectDatabase:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
 
-            cursor.execute('DELETE FROM project_notes WHERE note_id = ?', (note_id,))
+            cursor.execute("DELETE FROM project_notes WHERE note_id = ?", (note_id,))
             conn.commit()
             conn.close()
             return True

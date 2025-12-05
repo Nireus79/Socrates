@@ -4,12 +4,11 @@ Custom test runner for Socrates - works around Windows pytest I/O issues
 Executes all tests and provides detailed results
 """
 
-import sys
-import os
-import unittest
 import importlib
-from pathlib import Path
+import sys
+import unittest
 from datetime import datetime
+from pathlib import Path
 
 # Add project root to path
 project_root = Path(__file__).parent
@@ -20,7 +19,8 @@ try:
     import socrates
 except ModuleNotFoundError:
     import socratic_system as socrates
-    sys.modules['socrates'] = socrates
+
+    sys.modules["socrates"] = socrates
 
 
 def discover_and_run_tests():

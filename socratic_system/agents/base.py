@@ -6,7 +6,7 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from socratic_system.events import EventType
 
@@ -25,7 +25,7 @@ class Agent(ABC):
     - Structured error handling
     """
 
-    def __init__(self, name: str, orchestrator: 'AgentOrchestrator'):
+    def __init__(self, name: str, orchestrator: "AgentOrchestrator"):
         """
         Initialize an agent.
 
@@ -111,18 +111,10 @@ class Agent(ABC):
         # Emit structured event
         self.orchestrator.event_emitter.emit(
             event_type,
-            {
-                "agent": self.name,
-                "message": message,
-                "timestamp": datetime.now().isoformat()
-            }
+            {"agent": self.name, "message": message, "timestamp": datetime.now().isoformat()},
         )
 
-    def emit_event(
-        self,
-        event_type: EventType,
-        data: Optional[Dict[str, Any]] = None
-    ) -> None:
+    def emit_event(self, event_type: EventType, data: Optional[Dict[str, Any]] = None) -> None:
         """
         Emit a structured event through the orchestrator's event emitter.
 
@@ -150,7 +142,7 @@ class Agent(ABC):
         category: str,
         topic: Optional[str] = None,
         difficulty: str = "intermediate",
-        reason: str = "insufficient_context"
+        reason: str = "insufficient_context",
     ) -> None:
         """
         Suggest adding knowledge when agent detects a gap.
@@ -174,11 +166,14 @@ class Agent(ABC):
             ...     reason="insufficient_context"
             ... )
         """
-        self.emit_event(EventType.KNOWLEDGE_SUGGESTION, {
-            'content': content,
-            'category': category,
-            'topic': topic or category,
-            'difficulty': difficulty,
-            'reason': reason,
-            'timestamp': datetime.now().isoformat()
-        })
+        self.emit_event(
+            EventType.KNOWLEDGE_SUGGESTION,
+            {
+                "content": content,
+                "category": category,
+                "topic": topic or category,
+                "difficulty": difficulty,
+                "reason": reason,
+                "timestamp": datetime.now().isoformat(),
+            },
+        )

@@ -1,7 +1,9 @@
 """Direct query and answer commands - bypass Socratic mode for direct answers"""
 
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 from colorama import Fore, Style
+
 from socratic_system.ui.commands.base import BaseCommand
 
 
@@ -12,7 +14,7 @@ class AskCommand(BaseCommand):
         super().__init__(
             name="ask",
             description="Ask a direct question and get an answer from the system",
-            usage="ask <your question>"
+            usage="ask <your question>",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -20,13 +22,13 @@ class AskCommand(BaseCommand):
         if not self.validate_args(args, min_count=1):
             question = input(f"{Fore.WHITE}What would you like to know? ").strip()
         else:
-            question = ' '.join(args)
+            question = " ".join(args)
 
         if not question:
             return self.error("Please provide a question")
 
-        orchestrator = context.get('orchestrator')
-        project = context.get('project')
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
 
         if not orchestrator:
             return self.error("Orchestrator not available")
@@ -39,10 +41,9 @@ class AskCommand(BaseCommand):
             if orchestrator.vector_db:
                 knowledge_results = orchestrator.vector_db.search_similar(question, top_k=3)
                 if knowledge_results:
-                    relevant_context = "\n".join([
-                        f"- {result.get('content', '')[:200]}..."
-                        for result in knowledge_results
-                    ])
+                    relevant_context = "\n".join(
+                        [f"- {result.get('content', '')[:200]}..." for result in knowledge_results]
+                    )
 
             # Build prompt for direct answer
             prompt = self._build_answer_prompt(question, project, relevant_context)
@@ -58,11 +59,9 @@ class AskCommand(BaseCommand):
             if relevant_context:
                 print(f"{Fore.CYAN}[Based on project knowledge]{Style.RESET_ALL}\n")
 
-            return self.success(data={
-                'question': question,
-                'answer': answer,
-                'has_context': bool(relevant_context)
-            })
+            return self.success(
+                data={"question": question, "answer": answer, "has_context": bool(relevant_context)}
+            )
 
         except Exception as e:
             return self.error(f"Failed to get answer: {str(e)}")
@@ -106,7 +105,7 @@ class ExplainCommand(BaseCommand):
         super().__init__(
             name="explain",
             description="Get an explanation of a concept or topic in detail",
-            usage="explain <topic>"
+            usage="explain <topic>",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -114,13 +113,13 @@ class ExplainCommand(BaseCommand):
         if not self.validate_args(args, min_count=1):
             topic = input(f"{Fore.WHITE}What would you like explained? ").strip()
         else:
-            topic = ' '.join(args)
+            topic = " ".join(args)
 
         if not topic:
             return self.error("Please provide a topic")
 
-        orchestrator = context.get('orchestrator')
-        project = context.get('project')
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
 
         if not orchestrator:
             return self.error("Orchestrator not available")
@@ -133,10 +132,9 @@ class ExplainCommand(BaseCommand):
             if orchestrator.vector_db:
                 knowledge_results = orchestrator.vector_db.search_similar(topic, top_k=5)
                 if knowledge_results:
-                    relevant_context = "\n".join([
-                        f"- {result.get('content', '')[:200]}..."
-                        for result in knowledge_results
-                    ])
+                    relevant_context = "\n".join(
+                        [f"- {result.get('content', '')[:200]}..." for result in knowledge_results]
+                    )
 
             # Build prompt for explanation
             prompt = self._build_explanation_prompt(topic, project, relevant_context)
@@ -149,11 +147,13 @@ class ExplainCommand(BaseCommand):
             print(f"{Fore.CYAN}{'-' * len(topic)}{Style.RESET_ALL}")
             print(f"{Fore.WHITE}{explanation}{Style.RESET_ALL}\n")
 
-            return self.success(data={
-                'topic': topic,
-                'explanation': explanation,
-                'has_context': bool(relevant_context)
-            })
+            return self.success(
+                data={
+                    "topic": topic,
+                    "explanation": explanation,
+                    "has_context": bool(relevant_context),
+                }
+            )
 
         except Exception as e:
             return self.error(f"Failed to generate explanation: {str(e)}")
@@ -199,7 +199,7 @@ class SearchCommand(BaseCommand):
         super().__init__(
             name="search",
             description="Search the project knowledge base for information",
-            usage="search <keywords>"
+            usage="search <keywords>",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -207,12 +207,12 @@ class SearchCommand(BaseCommand):
         if not self.validate_args(args, min_count=1):
             query = input(f"{Fore.WHITE}What would you like to search for? ").strip()
         else:
-            query = ' '.join(args)
+            query = " ".join(args)
 
         if not query:
             return self.error("Please provide search terms")
 
-        orchestrator = context.get('orchestrator')
+        orchestrator = context.get("orchestrator")
 
         if not orchestrator or not orchestrator.vector_db:
             return self.error("Knowledge base not available")
@@ -225,15 +225,15 @@ class SearchCommand(BaseCommand):
 
             if not results:
                 self.print_info("No matching knowledge found")
-                return self.success(data={'query': query, 'results': []})
+                return self.success(data={"query": query, "results": []})
 
             # Display results
             print(f"\n{Fore.GREEN}Search Results for '{query}':{Style.RESET_ALL}")
             print(f"{Fore.CYAN}{'-' * 50}{Style.RESET_ALL}")
 
             for i, result in enumerate(results, 1):
-                content = result.get('content', '')
-                source = result.get('metadata', {}).get('source', 'Unknown source')
+                content = result.get("content", "")
+                source = result.get("metadata", {}).get("source", "Unknown source")
 
                 # Truncate long content
                 if len(content) > 200:
@@ -244,11 +244,9 @@ class SearchCommand(BaseCommand):
 
             print()
 
-            return self.success(data={
-                'query': query,
-                'results': len(results),
-                'results_data': results
-            })
+            return self.success(
+                data={"query": query, "results": len(results), "results_data": results}
+            )
 
         except Exception as e:
             return self.error(f"Search failed: {str(e)}")

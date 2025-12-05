@@ -2,48 +2,82 @@
 Main application class for Socratic RAG System - Command-Based CLI Interface
 """
 
-import os
-import getpass
 import datetime
-from typing import Optional, Dict, Any
+import getpass
+import os
+from typing import Any, Dict, Optional
+
 from colorama import Fore, Style
 
-from socratic_system.models import User, ProjectContext
+from socratic_system.models import ProjectContext, User
 from socratic_system.orchestration import AgentOrchestrator
 from socratic_system.ui.command_handler import CommandHandler
-from socratic_system.ui.navigation import NavigationStack
-from socratic_system.ui.context_display import ContextDisplay
-from socratic_system.ui.nlu_handler import NLUHandler, SuggestionDisplay
 from socratic_system.ui.commands import (
-    # System commands
-    HelpCommand, ExitCommand, BackCommand, MenuCommand, StatusCommand,
-    ClearCommand, PromptCommand, InfoCommand,
-    NLUEnableCommand, NLUDisableCommand, NLUStatusCommand,
-    # User commands
-    UserLoginCommand, UserCreateCommand, UserLogoutCommand,
-    UserArchiveCommand, UserDeleteCommand, UserRestoreCommand,
-    # Project commands
-    ProjectCreateCommand, ProjectLoadCommand, ProjectListCommand,
-    ProjectArchiveCommand, ProjectRestoreCommand, ProjectDeleteCommand,
-    # Session commands
-    ContinueCommand, DoneCommand, AdvanceCommand, HintCommand,
-    # Code commands
-    CodeGenerateCommand, CodeDocsCommand,
-    # Collaboration commands
-    CollabAddCommand, CollabRemoveCommand, CollabListCommand,
-    # Document commands
-    DocImportCommand, DocImportDirCommand, DocListCommand,
-    # Note commands
-    NoteAddCommand, NoteListCommand, NoteSearchCommand, NoteDeleteCommand,
-    # Conversation commands
-    ConvSearchCommand, ConvSummaryCommand,
+    AdvanceCommand,
     # Query commands (direct Q&A)
-    AskCommand, ExplainCommand, SearchCommand,
-    # Statistics commands
-    ProjectStatsCommand, ProjectProgressCommand, ProjectStatusCommand,
+    AskCommand,
+    BackCommand,
+    ClearCommand,
+    CodeDocsCommand,
+    # Code commands
+    CodeGenerateCommand,
+    # Collaboration commands
+    CollabAddCommand,
+    CollabListCommand,
+    CollabRemoveCommand,
+    # Session commands
+    ContinueCommand,
+    # Conversation commands
+    ConvSearchCommand,
+    ConvSummaryCommand,
     # Debug commands
-    DebugCommand, LogsCommand,
+    DebugCommand,
+    # Document commands
+    DocImportCommand,
+    DocImportDirCommand,
+    DocListCommand,
+    DoneCommand,
+    ExitCommand,
+    ExplainCommand,
+    # System commands
+    HelpCommand,
+    HintCommand,
+    InfoCommand,
+    LogsCommand,
+    MenuCommand,
+    NLUDisableCommand,
+    NLUEnableCommand,
+    NLUStatusCommand,
+    # Note commands
+    NoteAddCommand,
+    NoteDeleteCommand,
+    NoteListCommand,
+    NoteSearchCommand,
+    ProjectArchiveCommand,
+    # Project commands
+    ProjectCreateCommand,
+    ProjectDeleteCommand,
+    ProjectListCommand,
+    ProjectLoadCommand,
+    ProjectProgressCommand,
+    ProjectRestoreCommand,
+    # Statistics commands
+    ProjectStatsCommand,
+    ProjectStatusCommand,
+    PromptCommand,
+    SearchCommand,
+    StatusCommand,
+    UserArchiveCommand,
+    UserCreateCommand,
+    UserDeleteCommand,
+    # User commands
+    UserLoginCommand,
+    UserLogoutCommand,
+    UserRestoreCommand,
 )
+from socratic_system.ui.context_display import ContextDisplay
+from socratic_system.ui.navigation import NavigationStack
+from socratic_system.ui.nlu_handler import NLUHandler, SuggestionDisplay
 
 
 class SocraticRAGSystem:
@@ -110,7 +144,7 @@ class SocraticRAGSystem:
 
     def _get_api_key(self) -> Optional[str]:
         """Get Claude API key from environment or user input"""
-        api_key = os.getenv('API_KEY_CLAUDE')
+        api_key = os.getenv("API_KEY_CLAUDE")
         if not api_key:
             print(f"{Fore.YELLOW}Claude API key not found in environment.")
             api_key = getpass.getpass("Please enter your Claude API key: ")
@@ -128,27 +162,27 @@ class SocraticRAGSystem:
 
             choice = input(f"\n{Fore.WHITE}Choose option (1-3): ").strip()
 
-            if choice == '1' or choice.startswith('/user login'):
+            if choice == "1" or choice.startswith("/user login"):
                 result = UserLoginCommand().execute([], self._get_context())
-                if result['status'] == 'success':
-                    self.current_user = result['data']['user']
+                if result["status"] == "success":
+                    self.current_user = result["data"]["user"]
                     self.context_display.set_context(user=self.current_user)
                     return True
                 else:
-                    if result.get('message'):
-                        print(result['message'])
+                    if result.get("message"):
+                        print(result["message"])
 
-            elif choice == '2' or choice.startswith('/user create'):
+            elif choice == "2" or choice.startswith("/user create"):
                 result = UserCreateCommand().execute([], self._get_context())
-                if result['status'] == 'success':
-                    self.current_user = result['data']['user']
+                if result["status"] == "success":
+                    self.current_user = result["data"]["user"]
                     self.context_display.set_context(user=self.current_user)
                     return True
                 else:
-                    if result.get('message'):
-                        print(result['message'])
+                    if result.get("message"):
+                        print(result["message"])
 
-            elif choice == '3' or choice == '/exit':
+            elif choice == "3" or choice == "/exit":
                 print(f"\n{Fore.GREEN}Thank you for using Socratic RAG System")
                 print("..τω Ασκληπιώ οφείλομεν αλετρυόνα, απόδοτε και μη αμελήσετε..\n")
                 return False
@@ -159,12 +193,12 @@ class SocraticRAGSystem:
     def _register_commands(self) -> None:
         """Register all available commands"""
         # System commands
-        self.command_handler.register_command(HelpCommand(), aliases=['h', '?'])
-        self.command_handler.register_command(ExitCommand(), aliases=['quit', 'q'])
+        self.command_handler.register_command(HelpCommand(), aliases=["h", "?"])
+        self.command_handler.register_command(ExitCommand(), aliases=["quit", "q"])
         self.command_handler.register_command(BackCommand())
         self.command_handler.register_command(MenuCommand())
         self.command_handler.register_command(StatusCommand())
-        self.command_handler.register_command(ClearCommand(), aliases=['cls'])
+        self.command_handler.register_command(ClearCommand(), aliases=["cls"])
         self.command_handler.register_command(PromptCommand())
         self.command_handler.register_command(InfoCommand())
 
@@ -248,26 +282,28 @@ class SocraticRAGSystem:
                 result = self._process_input_with_nlu(user_input, self._get_context())
 
                 # Handle result
-                if result['status'] == 'exit':
+                if result["status"] == "exit":
                     break
-                elif result['status'] == 'error':
-                    if result.get('message'):
-                        print(result['message'])
-                elif result['status'] == 'success':
-                    if result.get('message'):
-                        print(result['message'])
+                elif result["status"] == "error":
+                    if result.get("message"):
+                        print(result["message"])
+                elif result["status"] == "success":
+                    if result.get("message"):
+                        print(result["message"])
                     # Handle navigation context changes
-                    if result.get('data', {}).get('nav_context'):
-                        nav_context = result['data']['nav_context']
+                    if result.get("data", {}).get("nav_context"):
+                        nav_context = result["data"]["nav_context"]
                         # Could implement navigation here if needed
-                elif result['status'] == 'info':
-                    if result.get('message'):
-                        print(result['message'])
-                elif result['status'] != 'idle':
+                elif result["status"] == "info":
+                    if result.get("message"):
+                        print(result["message"])
+                elif result["status"] != "idle":
                     # Unknown status
-                    print(f"{Fore.YELLOW}Command executed with status: {result['status']}{Style.RESET_ALL}")
-                    if result.get('message'):
-                        print(result['message'])
+                    print(
+                        f"{Fore.YELLOW}Command executed with status: {result['status']}{Style.RESET_ALL}"
+                    )
+                    if result.get("message"):
+                        print(result["message"])
 
             except KeyboardInterrupt:
                 print(f"\n{Fore.YELLOW}Interrupted. Type '/exit' to quit.{Style.RESET_ALL}")
@@ -283,39 +319,39 @@ class SocraticRAGSystem:
         # Interpret with NLU
         nlu_result = self.nlu_handler.interpret(user_input, context)
 
-        if nlu_result['status'] == 'success':
+        if nlu_result["status"] == "success":
             # High confidence - execute directly
-            command = nlu_result['command']
-            if nlu_result.get('message'):
-                print(nlu_result['message'])
+            command = nlu_result["command"]
+            if nlu_result.get("message"):
+                print(nlu_result["message"])
             return self.command_handler.execute(command, context)
 
-        elif nlu_result['status'] == 'suggestions':
+        elif nlu_result["status"] == "suggestions":
             # Medium confidence - show suggestions
-            if nlu_result.get('message'):
-                print(nlu_result['message'])
-            suggestions = nlu_result.get('suggestions', [])
+            if nlu_result.get("message"):
+                print(nlu_result["message"])
+            suggestions = nlu_result.get("suggestions", [])
             selected = SuggestionDisplay.show_suggestions(suggestions)
 
             if selected:
                 print(f"{Fore.CYAN}[NLU] Executing: {selected}{Style.RESET_ALL}")
                 return self.command_handler.execute(selected, context)
-            return {'status': 'idle'}
+            return {"status": "idle"}
 
         else:  # no_match or error
             return {
-                'status': 'error',
-                'message': nlu_result.get('message', 'Couldn\'t understand that.')
+                "status": "error",
+                "message": nlu_result.get("message", "Couldn't understand that."),
             }
 
     def _get_context(self) -> Dict[str, Any]:
         """Get the current application context for commands"""
         return {
-            'user': self.current_user,
-            'project': self.current_project,
-            'orchestrator': self.orchestrator,
-            'nav_stack': self.nav_stack,
-            'app': self
+            "user": self.current_user,
+            "project": self.current_project,
+            "orchestrator": self.orchestrator,
+            "nav_stack": self.nav_stack,
+            "app": self,
         }
 
 
@@ -325,5 +361,5 @@ def main():
     app.start()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

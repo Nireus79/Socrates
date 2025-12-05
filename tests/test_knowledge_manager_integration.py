@@ -9,13 +9,14 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from socratic_system.orchestration.orchestrator import AgentOrchestrator
-from socratic_system.config import SocratesConfig
-from socratic_system.events import EventType
-import tempfile
+import gc
 import os
 import shutil
-import gc
+import tempfile
+
+from socratic_system.config import SocratesConfig
+from socratic_system.events import EventType
+from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
 
 def test_knowledge_manager_initialization():
@@ -27,7 +28,7 @@ def test_knowledge_manager_initialization():
             data_dir=tmpdir,
             projects_db_path=os.path.join(tmpdir, "projects.db"),
             vector_db_path=os.path.join(tmpdir, "vector_db"),
-            knowledge_base_path=None
+            knowledge_base_path=None,
         )
 
         orchestrator = AgentOrchestrator(config)
@@ -35,7 +36,7 @@ def test_knowledge_manager_initialization():
         # Verify knowledge_manager exists
         assert orchestrator.knowledge_manager is not None
         assert orchestrator.knowledge_manager.name == "knowledge_manager"
-        assert hasattr(orchestrator.knowledge_manager, 'suggestions')
+        assert hasattr(orchestrator.knowledge_manager, "suggestions")
 
         # Clean up resources
         del orchestrator
@@ -59,42 +60,45 @@ def test_knowledge_suggestion_collection():
             data_dir=tmpdir,
             projects_db_path=os.path.join(tmpdir, "projects.db"),
             vector_db_path=os.path.join(tmpdir, "vector_db"),
-            knowledge_base_path=None
+            knowledge_base_path=None,
         )
 
         orchestrator = AgentOrchestrator(config)
         project_id = "test_project"
 
         # Emit a knowledge suggestion through event system
-        orchestrator.event_emitter.emit(EventType.KNOWLEDGE_SUGGESTION, {
-            'content': 'Test knowledge content',
-            'category': 'test_category',
-            'topic': 'test_topic',
-            'difficulty': 'beginner',
-            'reason': 'insufficient_context',
-            'agent': 'test_agent',
-            'project_id': project_id
-        })
+        orchestrator.event_emitter.emit(
+            EventType.KNOWLEDGE_SUGGESTION,
+            {
+                "content": "Test knowledge content",
+                "category": "test_category",
+                "topic": "test_topic",
+                "difficulty": "beginner",
+                "reason": "insufficient_context",
+                "agent": "test_agent",
+                "project_id": project_id,
+            },
+        )
 
         # Small delay to ensure event is processed
         import time
+
         time.sleep(0.1)
 
         # Query suggestions
-        result = orchestrator.process_request('knowledge_manager', {
-            'action': 'get_suggestions',
-            'project_id': project_id,
-            'status': 'pending'
-        })
+        result = orchestrator.process_request(
+            "knowledge_manager",
+            {"action": "get_suggestions", "project_id": project_id, "status": "pending"},
+        )
 
-        assert result['status'] == 'success'
-        assert result['count'] > 0
-        assert len(result['suggestions']) > 0
+        assert result["status"] == "success"
+        assert result["count"] > 0
+        assert len(result["suggestions"]) > 0
 
-        suggestion = result['suggestions'][0]
-        assert suggestion['content'] == 'Test knowledge content'
-        assert suggestion['category'] == 'test_category'
-        assert suggestion['status'] == 'pending'
+        suggestion = result["suggestions"][0]
+        assert suggestion["content"] == "Test knowledge content"
+        assert suggestion["category"] == "test_category"
+        assert suggestion["status"] == "pending"
 
         del orchestrator
         gc.collect()
@@ -116,54 +120,59 @@ def test_knowledge_suggestion_approval():
             data_dir=tmpdir,
             projects_db_path=os.path.join(tmpdir, "projects.db"),
             vector_db_path=os.path.join(tmpdir, "vector_db"),
-            knowledge_base_path=None
+            knowledge_base_path=None,
         )
 
         orchestrator = AgentOrchestrator(config)
         project_id = "test_project"
 
         # Create a suggestion
-        orchestrator.event_emitter.emit(EventType.KNOWLEDGE_SUGGESTION, {
-            'content': 'Python decorators modify function behavior',
-            'category': 'python_advanced',
-            'topic': 'decorators',
-            'difficulty': 'intermediate',
-            'reason': 'insufficient_context',
-            'agent': 'code_generator',
-            'project_id': project_id
-        })
+        orchestrator.event_emitter.emit(
+            EventType.KNOWLEDGE_SUGGESTION,
+            {
+                "content": "Python decorators modify function behavior",
+                "category": "python_advanced",
+                "topic": "decorators",
+                "difficulty": "intermediate",
+                "reason": "insufficient_context",
+                "agent": "code_generator",
+                "project_id": project_id,
+            },
+        )
 
         import time
+
         time.sleep(0.1)
 
         # Get the suggestion
-        result = orchestrator.process_request('knowledge_manager', {
-            'action': 'get_suggestions',
-            'project_id': project_id,
-            'status': 'pending'
-        })
+        result = orchestrator.process_request(
+            "knowledge_manager",
+            {"action": "get_suggestions", "project_id": project_id, "status": "pending"},
+        )
 
-        assert result['count'] == 1
-        suggestion_id = result['suggestions'][0]['id']
+        assert result["count"] == 1
+        suggestion_id = result["suggestions"][0]["id"]
 
         # Approve the suggestion
-        approve_result = orchestrator.process_request('knowledge_manager', {
-            'action': 'approve_suggestion',
-            'project_id': project_id,
-            'suggestion_id': suggestion_id
-        })
+        approve_result = orchestrator.process_request(
+            "knowledge_manager",
+            {
+                "action": "approve_suggestion",
+                "project_id": project_id,
+                "suggestion_id": suggestion_id,
+            },
+        )
 
-        assert approve_result['status'] == 'success'
-        assert 'Knowledge added' in approve_result['message']
+        assert approve_result["status"] == "success"
+        assert "Knowledge added" in approve_result["message"]
 
         # Verify suggestion is now approved
-        queue_result = orchestrator.process_request('knowledge_manager', {
-            'action': 'get_queue_status',
-            'project_id': project_id
-        })
+        queue_result = orchestrator.process_request(
+            "knowledge_manager", {"action": "get_queue_status", "project_id": project_id}
+        )
 
-        assert queue_result['approved'] == 1
-        assert queue_result['pending'] == 0
+        assert queue_result["approved"] == 1
+        assert queue_result["pending"] == 0
 
         del orchestrator
         gc.collect()
@@ -185,7 +194,7 @@ def test_knowledge_queue_status():
             data_dir=tmpdir,
             projects_db_path=os.path.join(tmpdir, "projects.db"),
             vector_db_path=os.path.join(tmpdir, "vector_db"),
-            knowledge_base_path=None
+            knowledge_base_path=None,
         )
 
         orchestrator = AgentOrchestrator(config)
@@ -193,28 +202,31 @@ def test_knowledge_queue_status():
 
         # Add 3 suggestions
         for i in range(3):
-            orchestrator.event_emitter.emit(EventType.KNOWLEDGE_SUGGESTION, {
-                'content': f'Test content {i}',
-                'category': 'test_category',
-                'topic': 'test_topic',
-                'difficulty': 'beginner',
-                'reason': 'insufficient_context',
-                'agent': 'test_agent',
-                'project_id': project_id
-            })
+            orchestrator.event_emitter.emit(
+                EventType.KNOWLEDGE_SUGGESTION,
+                {
+                    "content": f"Test content {i}",
+                    "category": "test_category",
+                    "topic": "test_topic",
+                    "difficulty": "beginner",
+                    "reason": "insufficient_context",
+                    "agent": "test_agent",
+                    "project_id": project_id,
+                },
+            )
 
         import time
+
         time.sleep(0.2)
 
         # Check status
-        result = orchestrator.process_request('knowledge_manager', {
-            'action': 'get_queue_status',
-            'project_id': project_id
-        })
+        result = orchestrator.process_request(
+            "knowledge_manager", {"action": "get_queue_status", "project_id": project_id}
+        )
 
-        assert result['status'] == 'success'
-        assert result['pending'] == 3
-        assert result['total'] == 3
+        assert result["status"] == "success"
+        assert result["pending"] == 3
+        assert result["total"] == 3
 
         del orchestrator
         gc.collect()
@@ -236,51 +248,56 @@ def test_knowledge_suggestion_rejection():
             data_dir=tmpdir,
             projects_db_path=os.path.join(tmpdir, "projects.db"),
             vector_db_path=os.path.join(tmpdir, "vector_db"),
-            knowledge_base_path=None
+            knowledge_base_path=None,
         )
 
         orchestrator = AgentOrchestrator(config)
         project_id = "test_project"
 
         # Create a suggestion
-        orchestrator.event_emitter.emit(EventType.KNOWLEDGE_SUGGESTION, {
-            'content': 'Test content',
-            'category': 'test_category',
-            'topic': 'test_topic',
-            'difficulty': 'beginner',
-            'reason': 'insufficient_context',
-            'agent': 'test_agent',
-            'project_id': project_id
-        })
+        orchestrator.event_emitter.emit(
+            EventType.KNOWLEDGE_SUGGESTION,
+            {
+                "content": "Test content",
+                "category": "test_category",
+                "topic": "test_topic",
+                "difficulty": "beginner",
+                "reason": "insufficient_context",
+                "agent": "test_agent",
+                "project_id": project_id,
+            },
+        )
 
         import time
+
         time.sleep(0.1)
 
         # Get the suggestion ID
-        result = orchestrator.process_request('knowledge_manager', {
-            'action': 'get_suggestions',
-            'project_id': project_id,
-            'status': 'pending'
-        })
+        result = orchestrator.process_request(
+            "knowledge_manager",
+            {"action": "get_suggestions", "project_id": project_id, "status": "pending"},
+        )
 
-        suggestion_id = result['suggestions'][0]['id']
+        suggestion_id = result["suggestions"][0]["id"]
 
         # Reject the suggestion
-        reject_result = orchestrator.process_request('knowledge_manager', {
-            'action': 'reject_suggestion',
-            'project_id': project_id,
-            'suggestion_id': suggestion_id
-        })
+        reject_result = orchestrator.process_request(
+            "knowledge_manager",
+            {
+                "action": "reject_suggestion",
+                "project_id": project_id,
+                "suggestion_id": suggestion_id,
+            },
+        )
 
-        assert reject_result['status'] == 'success'
+        assert reject_result["status"] == "success"
 
         # Verify it's now rejected
-        queue_result = orchestrator.process_request('knowledge_manager', {
-            'action': 'get_queue_status',
-            'project_id': project_id
-        })
+        queue_result = orchestrator.process_request(
+            "knowledge_manager", {"action": "get_queue_status", "project_id": project_id}
+        )
 
-        assert queue_result['rejected'] == 1
+        assert queue_result["rejected"] == 1
 
         del orchestrator
         gc.collect()
@@ -293,7 +310,7 @@ def test_knowledge_suggestion_rejection():
             pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("\n[TEST] Knowledge Manager Integration Tests\n")
 
     try:
@@ -310,5 +327,6 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"\n[ERROR] Unexpected error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

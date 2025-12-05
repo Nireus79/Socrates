@@ -3,9 +3,9 @@ Base class for conflict detection in Socratic RAG System
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
-from socratic_system.models import ProjectContext, ConflictInfo
+from socratic_system.models import ConflictInfo, ProjectContext
 
 
 class ConflictChecker(ABC):
@@ -21,10 +21,7 @@ class ConflictChecker(ABC):
         self.orchestrator = orchestrator
 
     def check_conflicts(
-        self,
-        project: ProjectContext,
-        new_insights: Dict[str, Any],
-        current_user: str
+        self, project: ProjectContext, new_insights: Dict[str, Any], current_user: str
     ) -> List[ConflictInfo]:
         """
         Template method defining the conflict checking algorithm.
@@ -47,12 +44,7 @@ class ConflictChecker(ABC):
         # Step 4: Check each new value against existing values
         conflicts = []
         for new_value in new_values:
-            conflict = self._find_conflict(
-                new_value,
-                existing_values,
-                project,
-                current_user
-            )
+            conflict = self._find_conflict(new_value, existing_values, project, current_user)
             if conflict:
                 conflicts.append(conflict)
 
@@ -96,11 +88,7 @@ class ConflictChecker(ABC):
 
     @abstractmethod
     def _find_conflict(
-        self,
-        new_value: str,
-        existing_values: List[str],
-        project: ProjectContext,
-        current_user: str
+        self, new_value: str, existing_values: List[str], project: ProjectContext, current_user: str
     ) -> Optional[ConflictInfo]:
         """
         Determine if new_value conflicts with any existing_values.
@@ -118,7 +106,7 @@ class ConflictChecker(ABC):
         project: ProjectContext,
         current_user: str,
         severity: str = "medium",
-        suggestions: Optional[List[str]] = None
+        suggestions: Optional[List[str]] = None,
     ) -> ConflictInfo:
         """Helper to create ConflictInfo object"""
         import datetime
@@ -137,5 +125,5 @@ class ConflictChecker(ABC):
             old_timestamp=now,
             new_timestamp=now,
             severity=severity,
-            suggestions=suggestions or []
+            suggestions=suggestions or [],
         )

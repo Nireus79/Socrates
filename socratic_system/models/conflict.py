@@ -9,6 +9,7 @@ from typing import List
 @dataclass
 class ConflictInfo:
     """Represents a conflict detected in project specifications"""
+
     conflict_id: str
     conflict_type: str  # 'tech_stack', 'requirements', 'goals', 'constraints'
     old_value: str

@@ -1,8 +1,10 @@
 """Context display for showing current application state"""
 
 from typing import Optional
+
 from colorama import Fore, Style
-from socratic_system.models import User, ProjectContext
+
+from socratic_system.models import ProjectContext, User
 
 
 class ContextDisplay:
@@ -17,7 +19,9 @@ class ContextDisplay:
         self.current_user: Optional[User] = None
         self.current_project: Optional[ProjectContext] = None
 
-    def set_context(self, user: Optional[User] = None, project: Optional[ProjectContext] = None) -> None:
+    def set_context(
+        self, user: Optional[User] = None, project: Optional[ProjectContext] = None
+    ) -> None:
         """
         Update the current context to display.
 
@@ -64,7 +68,7 @@ class ContextDisplay:
         # Title bar
         lines.append(f"{Fore.CYAN}{'═' * 50}")
         lines.append("Socratic RAG System")
-        lines.append('═' * 50)
+        lines.append("═" * 50)
 
         # User info
         if self.current_user:
@@ -79,11 +83,11 @@ class ContextDisplay:
             lines.append(f"Phase: {phase_color}{self.current_project.phase}{Fore.WHITE}")
 
             # Progress bar
-            progress = getattr(self.current_project, 'progress', 0)
+            progress = getattr(self.current_project, "progress", 0)
             lines.append(f"Progress: {self._get_progress_bar(progress)} {progress}%")
 
             # Status
-            status = getattr(self.current_project, 'status', 'active')
+            status = getattr(self.current_project, "status", "active")
             status_color = self._get_status_color(status)
             lines.append(f"Status: {status_color}{status}{Fore.WHITE}")
         else:
@@ -91,7 +95,7 @@ class ContextDisplay:
 
         lines.append(f"{Fore.CYAN}{'═' * 50}{Style.RESET_ALL}")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def get_project_summary(self) -> str:
         """
@@ -124,7 +128,7 @@ class ContextDisplay:
             lines.append(f"\n{Fore.CYAN}Tech Stack:{Style.RESET_ALL}")
             lines.append(f"  {', '.join(project.tech_stack)}")
 
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     @staticmethod
     def _get_progress_bar(progress: int, width: int = 20) -> str:
@@ -139,17 +143,17 @@ class ContextDisplay:
             Formatted progress bar
         """
         filled = int(width * progress / 100)
-        bar = '█' * filled + '░' * (width - filled)
+        bar = "█" * filled + "░" * (width - filled)
         return f"{Fore.GREEN}{bar}{Style.RESET_ALL}"
 
     @staticmethod
     def _get_phase_color(phase: str) -> str:
         """Get color code for a project phase."""
         colors = {
-            'discovery': Fore.YELLOW,
-            'analysis': Fore.CYAN,
-            'design': Fore.BLUE,
-            'implementation': Fore.GREEN,
+            "discovery": Fore.YELLOW,
+            "analysis": Fore.CYAN,
+            "design": Fore.BLUE,
+            "implementation": Fore.GREEN,
         }
         return colors.get(phase, Fore.WHITE)
 
@@ -157,14 +161,14 @@ class ContextDisplay:
     def _get_status_color(status: str) -> str:
         """Get color code for a project status."""
         colors = {
-            'active': Fore.GREEN,
-            'completed': Fore.BLUE,
-            'on-hold': Fore.YELLOW,
-            'archived': Fore.MAGENTA,
+            "active": Fore.GREEN,
+            "completed": Fore.BLUE,
+            "on-hold": Fore.YELLOW,
+            "archived": Fore.MAGENTA,
         }
         return colors.get(status, Fore.WHITE)
 
-    def print_divider(self, char: str = '─', width: int = 50) -> None:
+    def print_divider(self, char: str = "─", width: int = 50) -> None:
         """Print a horizontal divider."""
         print(f"{Fore.CYAN}{char * width}{Style.RESET_ALL}")
 

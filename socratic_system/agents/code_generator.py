@@ -2,9 +2,10 @@
 Code generation agent for Socratic RAG System
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 from socratic_system.models import ProjectContext
+
 from .base import Agent
 
 
@@ -16,18 +17,18 @@ class CodeGeneratorAgent(Agent):
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process code generation requests"""
-        action = request.get('action')
+        action = request.get("action")
 
-        if action == 'generate_script':
+        if action == "generate_script":
             return self._generate_script(request)
-        elif action == 'generate_documentation':
+        elif action == "generate_documentation":
             return self._generate_documentation(request)
 
-        return {'status': 'error', 'message': 'Unknown action'}
+        return {"status": "error", "message": "Unknown action"}
 
     def _generate_script(self, request: Dict) -> Dict:
         """Generate code for the project"""
-        project = request.get('project')
+        project = request.get("project")
 
         # Build comprehensive context
         context = self._build_generation_context(project)
@@ -37,25 +38,16 @@ class CodeGeneratorAgent(Agent):
 
         self.log(f"Generated script for project '{project.name}'")
 
-        return {
-            'status': 'success',
-            'script': script,
-            'context_used': context
-        }
+        return {"status": "success", "script": script, "context_used": context}
 
     def _generate_documentation(self, request: Dict) -> Dict:
         """Generate documentation for code"""
-        project = request.get('project')
-        script = request.get('script')
+        project = request.get("project")
+        script = request.get("script")
 
-        documentation = self.orchestrator.claude_client.generate_documentation(
-            project, script
-        )
+        documentation = self.orchestrator.claude_client.generate_documentation(project, script)
 
-        return {
-            'status': 'success',
-            'documentation': documentation
-        }
+        return {"status": "success", "documentation": documentation}
 
     def _build_generation_context(self, project: ProjectContext) -> str:
         """Build comprehensive context for code generation"""
@@ -67,7 +59,7 @@ class CodeGeneratorAgent(Agent):
             f"Requirements: {', '.join(project.requirements)}",
             f"Constraints: {', '.join(project.constraints)}",
             f"Target: {project.deployment_target}",
-            f"Style: {project.code_style}"
+            f"Style: {project.code_style}",
         ]
 
         # Add conversation insights
@@ -75,7 +67,7 @@ class CodeGeneratorAgent(Agent):
             recent_responses = project.conversation_history[-5:]
             context_parts.append("Recent Discussion:")
             for msg in recent_responses:
-                if msg.get('type') == 'user':
+                if msg.get("type") == "user":
                     context_parts.append(f"- {msg['content']}")
 
         return "\n".join(context_parts)

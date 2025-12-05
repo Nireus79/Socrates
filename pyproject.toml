@@ -106,6 +106,8 @@ extend-exclude = '''
 [tool.ruff]
 line-length = 100
 target-version = "py38"
+
+[tool.ruff.lint]
 select = [
     "E",     # pycodestyle errors
     "W",     # pycodestyle warnings
@@ -117,7 +119,6 @@ select = [
 ]
 ignore = [
     "E501",  # line too long (handled by black)
-    "W503",  # line break before binary operator
 ]
 
 [tool.isort]

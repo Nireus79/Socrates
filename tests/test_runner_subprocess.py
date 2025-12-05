@@ -7,6 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+
 def run_tests_subprocess():
     """Run pytest in a subprocess to avoid capture module issues"""
 
@@ -18,12 +19,14 @@ def run_tests_subprocess():
 
     cmd = [
         sys.executable,
-        "-m", "pytest",
+        "-m",
+        "pytest",
         "tests/",
         "-v",
         "-s",  # No capture
         "--tb=short",
-        "-p", "no:cacheprovider",
+        "-p",
+        "no:cacheprovider",
         "--co",  # Collect only first
     ]
 
@@ -33,8 +36,8 @@ def run_tests_subprocess():
 
     if result.returncode == 0:
         # Count tests
-        lines = result.stdout.split('\n')
-        test_count = len([l for l in lines if '<Function' in l or '<Method' in l])
+        lines = result.stdout.split("\n")
+        test_count = len([l for l in lines if "<Function" in l or "<Method" in l])
         print(f"Found {test_count} tests")
         print()
 
@@ -45,12 +48,14 @@ def run_tests_subprocess():
         # Use -x to stop on first failure, --tb=line for minimal output
         cmd = [
             sys.executable,
-            "-m", "pytest",
+            "-m",
+            "pytest",
             "tests/",
             "-v",
             "-s",
             "--tb=short",
-            "-p", "no:cacheprovider",
+            "-p",
+            "no:cacheprovider",
         ]
 
         result = subprocess.run(cmd, cwd=str(Path(__file__).parent))

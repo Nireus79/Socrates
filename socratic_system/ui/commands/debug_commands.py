@@ -1,10 +1,12 @@
 """Debug and logging commands"""
 
-from typing import Dict, Any, List
-from colorama import Fore, Style
-from socratic_system.ui.commands.base import BaseCommand
-from socratic_system.utils.logger import set_debug_mode, is_debug_mode
 from pathlib import Path
+from typing import Any, Dict, List
+
+from colorama import Fore, Style
+
+from socratic_system.ui.commands.base import BaseCommand
+from socratic_system.utils.logger import is_debug_mode, set_debug_mode
 
 
 class DebugCommand(BaseCommand):
@@ -14,7 +16,7 @@ class DebugCommand(BaseCommand):
         super().__init__(
             name="debug",
             description="Toggle debug mode (shows detailed logs in terminal)",
-            usage="debug [on|off]"
+            usage="debug [on|off]",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -24,11 +26,11 @@ class DebugCommand(BaseCommand):
         # Parse argument
         if args:
             mode = args[0].lower()
-            if mode == 'on':
+            if mode == "on":
                 set_debug_mode(True)
                 self.print_success("Debug mode enabled - logs will be printed to terminal")
                 return self.success(message="Debug mode is now ON")
-            elif mode == 'off':
+            elif mode == "off":
                 set_debug_mode(False)
                 self.print_success("Debug mode disabled - only warnings and errors shown")
                 return self.success(message="Debug mode is now OFF")
@@ -47,11 +49,7 @@ class LogsCommand(BaseCommand):
     """View recent logs from the log file"""
 
     def __init__(self):
-        super().__init__(
-            name="logs",
-            description="View recent log entries",
-            usage="logs [lines]"
-        )
+        super().__init__(name="logs", description="View recent log entries", usage="logs [lines]")
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute logs command"""
@@ -64,34 +62,36 @@ class LogsCommand(BaseCommand):
                 return self.error(f"Invalid number: {args[0]}")
 
         # Read log file
-        log_file = Path('socratic_logs/socratic.log')
+        log_file = Path("socratic_logs/socratic.log")
         if not log_file.exists():
             return self.info("No log file found yet")
 
         try:
-            with open(log_file, 'r') as f:
+            with open(log_file) as f:
                 lines = f.readlines()
 
             # Get last N lines
             recent_lines = lines[-num_lines:] if len(lines) > num_lines else lines
 
-            print(f"\n{Fore.CYAN}Recent log entries (last {len(recent_lines)} lines):{Style.RESET_ALL}\n")
+            print(
+                f"\n{Fore.CYAN}Recent log entries (last {len(recent_lines)} lines):{Style.RESET_ALL}\n"
+            )
             for line in recent_lines:
                 # Color code by log level
                 line = line.strip()
-                if '[DEBUG]' in line:
+                if "[DEBUG]" in line:
                     print(f"{Fore.BLUE}{line}{Style.RESET_ALL}")
-                elif '[INFO]' in line:
+                elif "[INFO]" in line:
                     print(f"{Fore.GREEN}{line}{Style.RESET_ALL}")
-                elif '[WARNING]' in line:
+                elif "[WARNING]" in line:
                     print(f"{Fore.YELLOW}{line}{Style.RESET_ALL}")
-                elif '[ERROR]' in line:
+                elif "[ERROR]" in line:
                     print(f"{Fore.RED}{line}{Style.RESET_ALL}")
                 else:
                     print(line)
 
             print()
-            return self.success(data={'lines_shown': len(recent_lines)})
+            return self.success(data={"lines_shown": len(recent_lines)})
 
         except Exception as e:
             return self.error(f"Failed to read log file: {e}")
@@ -102,15 +102,13 @@ class StatusCommand(BaseCommand):
 
     def __init__(self):
         super().__init__(
-            name="status",
-            description="Show system status and debug information",
-            usage="status"
+            name="status", description="Show system status and debug information", usage="status"
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute status command"""
         debug_state = "ON" if is_debug_mode() else "OFF"
-        log_file = Path('socratic_logs/socratic.log')
+        log_file = Path("socratic_logs/socratic.log")
 
         print(f"\n{Fore.CYAN}System Status:{Style.RESET_ALL}")
         print(f"  Debug Mode:        {debug_state}")
@@ -118,19 +116,19 @@ class StatusCommand(BaseCommand):
         if log_file.exists():
             print(f"  Log File Size:     {log_file.stat().st_size / 1024:.1f} KB")
         else:
-            print(f"  Log File Size:     No logs yet")
+            print("  Log File Size:     No logs yet")
 
         # User and project info
-        user = context.get('user')
-        project = context.get('project')
+        user = context.get("user")
+        project = context.get("project")
         print(f"\n{Fore.CYAN}Context:{Style.RESET_ALL}")
         print(f"  Current User:      {user.username if user else 'None'}")
         print(f"  Current Project:   {project.name if project else 'None'}")
 
         print(f"\n{Fore.CYAN}Available Commands:{Style.RESET_ALL}")
-        print(f"  /debug [on|off]    - Toggle debug mode")
-        print(f"  /logs [lines]      - View recent logs")
-        print(f"  /status            - Show this status")
+        print("  /debug [on|off]    - Toggle debug mode")
+        print("  /logs [lines]      - View recent logs")
+        print("  /status            - Show this status")
         print()
 
         return self.success()

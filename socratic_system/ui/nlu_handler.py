@@ -7,14 +7,17 @@ into structured slash commands without modifying the existing command system.
 
 import json
 import re
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
+
 from colorama import Fore, Style
 
 
 class CommandSuggestion:
     """Represents a suggested command interpretation"""
 
-    def __init__(self, command: str, confidence: float, reasoning: str, args: Optional[List[str]] = None):
+    def __init__(
+        self, command: str, confidence: float, reasoning: str, args: Optional[List[str]] = None
+    ):
         """
         Initialize a command suggestion.
 
@@ -32,10 +35,10 @@ class CommandSuggestion:
     def to_dict(self) -> Dict[str, Any]:
         """Convert suggestion to dictionary"""
         return {
-            'command': self.command,
-            'confidence': self.confidence,
-            'reasoning': self.reasoning,
-            'args': self.args
+            "command": self.command,
+            "confidence": self.confidence,
+            "reasoning": self.reasoning,
+            "args": self.args,
         }
 
     def get_full_command(self) -> str:
@@ -53,7 +56,7 @@ class NLUHandler:
     slash commands that can be executed by the CommandHandler.
     """
 
-    def __init__(self, claude_client: 'ClaudeClient', command_handler: 'CommandHandler'):
+    def __init__(self, claude_client: "ClaudeClient", command_handler: "CommandHandler"):
         """
         Initialize NLU Handler.
 
@@ -74,12 +77,12 @@ class NLUHandler:
 
         # Simple phrase patterns for common commands (avoids API calls)
         self.quick_patterns = {
-            r'\b(exit|quit|bye|goodbye)\b': '/exit',
-            r'\b(help|what can you do|show help)\b': '/help',
-            r'\bclear\b': '/clear',
-            r'\bback\b': '/back',
-            r'\bmenu\b': '/menu',
-            r'\bstatus\b': '/status',
+            r"\b(exit|quit|bye|goodbye)\b": "/exit",
+            r"\b(help|what can you do|show help)\b": "/help",
+            r"\bclear\b": "/clear",
+            r"\bback\b": "/back",
+            r"\bmenu\b": "/menu",
+            r"\bstatus\b": "/status",
         }
 
     def is_enabled(self) -> bool:
@@ -111,7 +114,7 @@ class NLUHandler:
             return True
 
         # Skip if starts with slash (already a command)
-        if stripped.startswith('/'):
+        if stripped.startswith("/"):
             return True
 
         # Skip if NLU is disabled
@@ -150,7 +153,7 @@ class NLUHandler:
         normalized = user_input.lower().strip()
 
         # Only cache successful high-confidence results
-        if result['status'] == 'success':
+        if result["status"] == "success":
             # Limit cache size (FIFO)
             if len(self._interpretation_cache) >= self._cache_max_size:
                 first_key = next(iter(self._interpretation_cache))
@@ -182,9 +185,9 @@ class NLUHandler:
         quick_match = self.try_quick_match(user_input)
         if quick_match:
             result = {
-                'status': 'success',
-                'command': quick_match,
-                'message': f"{Fore.CYAN}[NLU] Interpreted as: {quick_match}{Style.RESET_ALL}"
+                "status": "success",
+                "command": quick_match,
+                "message": f"{Fore.CYAN}[NLU] Interpreted as: {quick_match}{Style.RESET_ALL}",
             }
             self._cache_interpretation(user_input, result)
             return result
@@ -203,33 +206,33 @@ class NLUHandler:
             response_text = self.claude_client.generate_response(
                 prompt=prompt,
                 max_tokens=800,
-                temperature=0.3  # Lower temperature for consistent parsing
+                temperature=0.3,  # Lower temperature for consistent parsing
             )
 
             # Parse Claude's JSON response
             parsed_result = self._parse_nlu_response(response_text)
 
-            if not parsed_result or 'interpretations' not in parsed_result:
+            if not parsed_result or "interpretations" not in parsed_result:
                 return {
-                    'status': 'no_match',
-                    'message': f"{Fore.YELLOW}I couldn't understand that. Type '/help' to see available commands.{Style.RESET_ALL}"
+                    "status": "no_match",
+                    "message": f"{Fore.YELLOW}I couldn't understand that. Type '/help' to see available commands.{Style.RESET_ALL}",
                 }
 
-            interpretations = parsed_result['interpretations']
+            interpretations = parsed_result["interpretations"]
 
             if not interpretations:
                 return {
-                    'status': 'no_match',
-                    'message': f"{Fore.YELLOW}I couldn't find a matching command. Type '/help' to see available commands.{Style.RESET_ALL}"
+                    "status": "no_match",
+                    "message": f"{Fore.YELLOW}I couldn't find a matching command. Type '/help' to see available commands.{Style.RESET_ALL}",
                 }
 
             # Convert to CommandSuggestion objects
             suggestions = [
                 CommandSuggestion(
-                    command=interp['command'],
-                    confidence=interp['confidence'],
-                    reasoning=interp['reasoning'],
-                    args=interp.get('args', [])
+                    command=interp["command"],
+                    confidence=interp["confidence"],
+                    reasoning=interp["reasoning"],
+                    args=interp.get("args", []),
                 )
                 for interp in interpretations[:3]  # Limit to top 3
             ]
@@ -240,9 +243,9 @@ class NLUHandler:
             # High confidence threshold: execute directly
             if top_suggestion.confidence >= 0.85:
                 result = {
-                    'status': 'success',
-                    'command': top_suggestion.get_full_command(),
-                    'message': f"{Fore.CYAN}[NLU] Interpreted as: {top_suggestion.get_full_command()}{Style.RESET_ALL}"
+                    "status": "success",
+                    "command": top_suggestion.get_full_command(),
+                    "message": f"{Fore.CYAN}[NLU] Interpreted as: {top_suggestion.get_full_command()}{Style.RESET_ALL}",
                 }
                 self._cache_interpretation(user_input, result)
                 return result
@@ -250,23 +253,23 @@ class NLUHandler:
             # Medium confidence: show suggestions
             elif top_suggestion.confidence >= 0.5:
                 return {
-                    'status': 'suggestions',
-                    'suggestions': suggestions,
-                    'message': f"{Fore.YELLOW}Did you mean one of these?{Style.RESET_ALL}"
+                    "status": "suggestions",
+                    "suggestions": suggestions,
+                    "message": f"{Fore.YELLOW}Did you mean one of these?{Style.RESET_ALL}",
                 }
 
             # Low confidence: no match
             else:
                 return {
-                    'status': 'no_match',
-                    'message': f"{Fore.YELLOW}I couldn't understand that. Type '/help' to see available commands.{Style.RESET_ALL}"
+                    "status": "no_match",
+                    "message": f"{Fore.YELLOW}I couldn't understand that. Type '/help' to see available commands.{Style.RESET_ALL}",
                 }
 
         except Exception as e:
             print(f"{Fore.RED}NLU Error: {str(e)}{Style.RESET_ALL}")
             return {
-                'status': 'error',
-                'message': f"{Fore.RED}Error interpreting command. Type '/help' for available commands.{Style.RESET_ALL}"
+                "status": "error",
+                "message": f"{Fore.RED}Error interpreting command. Type '/help' for available commands.{Style.RESET_ALL}",
             }
 
     def _get_command_metadata(self) -> str:
@@ -289,16 +292,18 @@ class NLUHandler:
         categories = {}
         for name, cmd in commands.items():
             parts = name.split()
-            category = parts[0] if parts else 'system'
+            category = parts[0] if parts else "system"
 
             if category not in categories:
                 categories[category] = []
 
-            categories[category].append({
-                'name': name,
-                'usage': cmd.usage or name,
-                'description': cmd.description or 'No description'
-            })
+            categories[category].append(
+                {
+                    "name": name,
+                    "usage": cmd.usage or name,
+                    "description": cmd.description or "No description",
+                }
+            )
 
         # Format as text
         metadata_parts = []
@@ -308,7 +313,7 @@ class NLUHandler:
             for cmd in cmds:
                 metadata_parts.append(f"  /{cmd['usage']} - {cmd['description']}")
 
-        self._command_metadata = '\n'.join(metadata_parts)
+        self._command_metadata = "\n".join(metadata_parts)
         return self._command_metadata
 
     def _build_context_summary(self, context: Dict[str, Any]) -> str:
@@ -323,20 +328,22 @@ class NLUHandler:
         """
         parts = []
 
-        user = context.get('user')
+        user = context.get("user")
         if user:
             parts.append(f"Logged in as: {user.username}")
 
-        project = context.get('project')
+        project = context.get("project")
         if project:
             parts.append(f"Current project: {project.name}")
             parts.append(f"Project phase: {project.phase}")
         else:
             parts.append("No project loaded")
 
-        return ' | '.join(parts) if parts else 'No context'
+        return " | ".join(parts) if parts else "No context"
 
-    def _build_nlu_prompt(self, user_input: str, command_metadata: str, context_summary: str) -> str:
+    def _build_nlu_prompt(
+        self, user_input: str, command_metadata: str, context_summary: str
+    ) -> str:
         """
         Build the prompt for Claude to interpret natural language.
 
@@ -403,14 +410,14 @@ Return only the JSON response, no additional text."""
             text = response_text.strip()
 
             # Remove markdown code blocks if present
-            if text.startswith('```json'):
-                text = text.replace('```json', '').replace('```', '').strip()
-            elif text.startswith('```'):
-                text = text.replace('```', '').strip()
+            if text.startswith("```json"):
+                text = text.replace("```json", "").replace("```", "").strip()
+            elif text.startswith("```"):
+                text = text.replace("```", "").strip()
 
             # Find JSON object
-            start = text.find('{')
-            end = text.rfind('}') + 1
+            start = text.find("{")
+            end = text.rfind("}") + 1
 
             if start >= 0 and end > start:
                 json_text = text[start:end]
@@ -442,8 +449,10 @@ class SuggestionDisplay:
 
         for i, suggestion in enumerate(suggestions, 1):
             confidence_display = f"{suggestion.confidence * 100:.0f}%"
-            print(f"  {Fore.CYAN}[{i}]{Style.RESET_ALL} {suggestion.get_full_command()} "
-                  f"{Fore.GREEN}({confidence_display}){Style.RESET_ALL}")
+            print(
+                f"  {Fore.CYAN}[{i}]{Style.RESET_ALL} {suggestion.get_full_command()} "
+                f"{Fore.GREEN}({confidence_display}){Style.RESET_ALL}"
+            )
             print(f"      {Fore.WHITE}{suggestion.reasoning}{Style.RESET_ALL}\n")
 
         print(f"  {Fore.CYAN}[0]{Style.RESET_ALL} None of these / Cancel\n")
@@ -451,7 +460,9 @@ class SuggestionDisplay:
         # Get user selection
         while True:
             try:
-                choice = input(f"{Fore.WHITE}Select option (0-{len(suggestions)}): {Style.RESET_ALL}").strip()
+                choice = input(
+                    f"{Fore.WHITE}Select option (0-{len(suggestions)}): {Style.RESET_ALL}"
+                ).strip()
 
                 if not choice:
                     continue
@@ -459,14 +470,18 @@ class SuggestionDisplay:
                 choice_num = int(choice)
 
                 if choice_num == 0:
-                    print(f"{Fore.YELLOW}Cancelled. Type '/help' to see available commands.{Style.RESET_ALL}")
+                    print(
+                        f"{Fore.YELLOW}Cancelled. Type '/help' to see available commands.{Style.RESET_ALL}"
+                    )
                     return None
 
                 if 1 <= choice_num <= len(suggestions):
                     selected = suggestions[choice_num - 1]
                     return selected.get_full_command()
 
-                print(f"{Fore.RED}Invalid choice. Please enter 0-{len(suggestions)}.{Style.RESET_ALL}")
+                print(
+                    f"{Fore.RED}Invalid choice. Please enter 0-{len(suggestions)}.{Style.RESET_ALL}"
+                )
 
             except ValueError:
                 print(f"{Fore.RED}Please enter a number.{Style.RESET_ALL}")

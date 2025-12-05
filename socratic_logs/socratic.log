@@ -119,3 +119,65 @@
 [2025-12-05 03:24:12] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #4)
 [2025-12-05 03:24:12] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
 [2025-12-05 03:24:17] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: You've described four distinct capabilities - profile setup, profile analysis, character evaluation,...
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:36:28] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-05 10:37:22] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
