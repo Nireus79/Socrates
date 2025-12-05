@@ -29,6 +29,7 @@ class EventType(Enum):
 
     # Knowledge and learning events
     KNOWLEDGE_LOADED = "knowledge.loaded"
+    KNOWLEDGE_SUGGESTION = "knowledge.suggestion"
     DOCUMENT_IMPORTED = "document.imported"
     DOCUMENTS_INDEXED = "documents.indexed"
 

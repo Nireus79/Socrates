@@ -143,3 +143,42 @@ class Agent(ABC):
             data["agent"] = self.name
 
         self.orchestrator.event_emitter.emit(event_type, data)
+
+    def suggest_knowledge_addition(
+        self,
+        content: str,
+        category: str,
+        topic: Optional[str] = None,
+        difficulty: str = "intermediate",
+        reason: str = "insufficient_context"
+    ) -> None:
+        """
+        Suggest adding knowledge when agent detects a gap.
+
+        This enables automatic knowledge enrichment when agents encounter
+        topics or patterns that should be remembered for the project.
+
+        Args:
+            content: The knowledge content to remember
+            category: Knowledge category (e.g., 'technical', 'domain_specific')
+            topic: Specific topic within category
+            difficulty: beginner, intermediate, or advanced
+            reason: Why this knowledge is being suggested (insufficient_context, pattern_detected, etc.)
+
+        Example:
+            >>> self.suggest_knowledge_addition(
+            ...     content="REST APIs use HTTP methods for CRUD operations",
+            ...     category="api_design",
+            ...     topic="rest_conventions",
+            ...     difficulty="intermediate",
+            ...     reason="insufficient_context"
+            ... )
+        """
+        self.emit_event(EventType.KNOWLEDGE_SUGGESTION, {
+            'content': content,
+            'category': category,
+            'topic': topic or category,
+            'difficulty': difficulty,
+            'reason': reason,
+            'timestamp': datetime.now().isoformat()
+        })

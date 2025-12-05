@@ -33,3 +33,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# Get-ChildItem -Directory -Filter __pycache__ -Recurse | Remove-Item -Recurse -Force
