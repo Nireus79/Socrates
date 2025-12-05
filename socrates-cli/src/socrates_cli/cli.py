@@ -5,7 +5,6 @@ Provides a user-friendly command-line interface to the Socrates AI library.
 Uses Click for command-line argument parsing and colorama for colored output.
 """
 
-import os
 import sys
 import logging
 from pathlib import Path
@@ -20,8 +19,7 @@ init(autoreset=True)
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("socrates_cli")
 
@@ -45,10 +43,19 @@ def main(ctx):
 
 
 @main.command()
-@click.option('--api-key', envvar='ANTHROPIC_API_KEY', prompt=False, hide_input=True,
-              help='Claude API key (or set ANTHROPIC_API_KEY env var)')
-@click.option('--data-dir', type=click.Path(), default=None,
-              help='Data directory for storing projects (defaults to ~/.socrates)')
+@click.option(
+    "--api-key",
+    envvar="ANTHROPIC_API_KEY",
+    prompt=False,
+    hide_input=True,
+    help="Claude API key (or set ANTHROPIC_API_KEY env var)",
+)
+@click.option(
+    "--data-dir",
+    type=click.Path(),
+    default=None,
+    help="Data directory for storing projects (defaults to ~/.socrates)",
+)
 def init(api_key, data_dir):
     """
     Initialize Socrates configuration.
@@ -56,7 +63,7 @@ def init(api_key, data_dir):
     Creates necessary directories and validates your Claude API key.
     """
     if not api_key:
-        api_key = click.prompt('Enter your Claude API key', hide_input=True)
+        api_key = click.prompt("Enter your Claude API key", hide_input=True)
 
     try:
         # Test the configuration
@@ -86,31 +93,37 @@ def project():
     pass
 
 
-@project.command('create')
-@click.option('--name', prompt='Project name', help='Name of the project')
-@click.option('--owner', prompt='Owner username', help='Project owner')
-@click.option('--description', default='', help='Project description')
+@project.command("create")
+@click.option("--name", prompt="Project name", help="Name of the project")
+@click.option("--owner", prompt="Owner username", help="Project owner")
+@click.option("--description", default="", help="Project description")
 def project_create(name, owner, description):
     """Create a new project."""
     try:
         config = socrates.SocratesConfig.from_env()
         orchestrator = socrates.create_orchestrator(config)
 
-        result = orchestrator.process_request('project_manager', {
-            'action': 'create_project',
-            'project_name': name,
-            'owner': owner,
-            'description': description
-        })
+        result = orchestrator.process_request(
+            "project_manager",
+            {
+                "action": "create_project",
+                "project_name": name,
+                "owner": owner,
+                "description": description,
+            },
+        )
 
-        if result.get('status') == 'success':
-            project = result.get('project')
+        if result.get("status") == "success":
+            project = result.get("project")
             click.echo(f"{Fore.GREEN}✓ Project created successfully!{Style.RESET_ALL}")
             click.echo(f"  Project ID: {project.project_id}")
             click.echo(f"  Name: {project.name}")
             click.echo(f"  Phase: {project.phase}")
         else:
-            click.echo(f"{Fore.RED}✗ Failed to create project: {result.get('message')}{Style.RESET_ALL}", err=True)
+            click.echo(
+                f"{Fore.RED}✗ Failed to create project: {result.get('message')}{Style.RESET_ALL}",
+                err=True,
+            )
             sys.exit(1)
 
     except Exception as e:
@@ -118,30 +131,33 @@ def project_create(name, owner, description):
         sys.exit(1)
 
 
-@project.command('list')
-@click.option('--owner', default=None, help='Filter by project owner')
+@project.command("list")
+@click.option("--owner", default=None, help="Filter by project owner")
 def project_list(owner):
     """List projects."""
     try:
         config = socrates.SocratesConfig.from_env()
         orchestrator = socrates.create_orchestrator(config)
 
-        result = orchestrator.process_request('project_manager', {
-            'action': 'list_projects',
-            'owner': owner
-        })
+        result = orchestrator.process_request(
+            "project_manager", {"action": "list_projects", "owner": owner}
+        )
 
-        projects = result.get('projects', [])
+        projects = result.get("projects", [])
 
         if not projects:
             click.echo(f"{Fore.YELLOW}No projects found{Style.RESET_ALL}")
             return
 
-        click.echo(f"{Fore.CYAN}{'ID':<8} {'Name':<20} {'Phase':<12} {'Owner':<15}{Style.RESET_ALL}")
+        click.echo(
+            f"{Fore.CYAN}{'ID':<8} {'Name':<20} {'Phase':<12} {'Owner':<15}{Style.RESET_ALL}"
+        )
         click.echo("-" * 55)
 
         for project in projects:
-            click.echo(f"{project['project_id']:<8} {project['name']:<20} {project['phase']:<12} {project['owner']:<15}")
+            click.echo(
+                f"{project['project_id']:<8} {project['name']:<20} {project['phase']:<12} {project['owner']:<15}"
+            )
 
     except Exception as e:
         click.echo(f"{Fore.RED}✗ Error: {e}{Style.RESET_ALL}", err=True)
@@ -154,8 +170,8 @@ def code():
     pass
 
 
-@code.command('generate')
-@click.option('--project-id', prompt='Project ID', help='Project ID to generate code for')
+@code.command("generate")
+@click.option("--project-id", prompt="Project ID", help="Project ID to generate code for")
 def generate_code(project_id):
     """Generate code for a project."""
     try:
@@ -163,27 +179,25 @@ def generate_code(project_id):
         orchestrator = socrates.create_orchestrator(config)
 
         # Load the project
-        project_result = orchestrator.process_request('project_manager', {
-            'action': 'load_project',
-            'project_id': project_id
-        })
+        project_result = orchestrator.process_request(
+            "project_manager", {"action": "load_project", "project_id": project_id}
+        )
 
-        if project_result.get('status') != 'success':
+        if project_result.get("status") != "success":
             click.echo(f"{Fore.RED}✗ Project not found{Style.RESET_ALL}", err=True)
             sys.exit(1)
 
-        project = project_result['project']
+        project = project_result["project"]
 
         # Generate code
         click.echo(f"{Fore.CYAN}Generating code for project '{project.name}'...{Style.RESET_ALL}")
 
-        code_result = orchestrator.process_request('code_generator', {
-            'action': 'generate_code',
-            'project': project
-        })
+        code_result = orchestrator.process_request(
+            "code_generator", {"action": "generate_code", "project": project}
+        )
 
-        script = code_result.get('script', '')
-        lines = len(script.split('\n'))
+        script = code_result.get("script", "")
+        lines = len(script.split("\n"))
 
         click.echo(f"{Fore.GREEN}✓ Code generated successfully!{Style.RESET_ALL}")
         click.echo(f"  Lines of code: {lines}")
@@ -197,8 +211,12 @@ def generate_code(project_id):
 
 
 @main.command()
-@click.option('--log-level', type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR']),
-              default='INFO', help='Logging level')
+@click.option(
+    "--log-level",
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]),
+    default="INFO",
+    help="Logging level",
+)
 def info(log_level):
     """Show Socrates system information."""
     try:
@@ -220,7 +238,7 @@ def info(log_level):
         try:
             orchestrator.claude_client.test_connection()
             click.echo(f"{Fore.GREEN}✓ Claude API Connection: OK{Style.RESET_ALL}")
-        except Exception as e:
+        except Exception:
             click.echo(f"{Fore.RED}✗ Claude API Connection: FAILED{Style.RESET_ALL}")
 
         click.echo("")
@@ -230,5 +248,5 @@ def info(log_level):
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

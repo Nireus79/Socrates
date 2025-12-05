@@ -22,3 +22,5 @@ tests/test_nlu_handler.py
 tests/test_orchestrator_integration.py
 tests/test_performance.py
 tests/test_phase4_verification.py
+tests/test_recent_fixes.py
+tests/test_runner_subprocess.py

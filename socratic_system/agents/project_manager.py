@@ -21,28 +21,23 @@ class ProjectManagerAgent(Agent):
         """Process project management requests"""
         action = request.get("action")
 
-        if action == "create_project":
-            return self._create_project(request)
-        elif action == "load_project":
-            return self._load_project(request)
-        elif action == "save_project":
-            return self._save_project(request)
-        elif action == "add_collaborator":
-            return self._add_collaborator(request)
-        elif action == "list_projects":
-            return self._list_projects(request)
-        elif action == "list_collaborators":
-            return self._list_collaborators(request)
-        elif action == "remove_collaborator":
-            return self._remove_collaborator(request)
-        elif action == "archive_project":
-            return self._archive_project(request)
-        elif action == "restore_project":
-            return self._restore_project(request)
-        elif action == "delete_project_permanently":
-            return self._delete_project_permanently(request)
-        elif action == "get_archived_projects":
-            return self._get_archived_projects(request)
+        action_handlers = {
+            "create_project": self._create_project,
+            "load_project": self._load_project,
+            "save_project": self._save_project,
+            "add_collaborator": self._add_collaborator,
+            "list_projects": self._list_projects,
+            "list_collaborators": self._list_collaborators,
+            "remove_collaborator": self._remove_collaborator,
+            "archive_project": self._archive_project,
+            "restore_project": self._restore_project,
+            "delete_project_permanently": self._delete_project_permanently,
+            "get_archived_projects": self._get_archived_projects,
+        }
+
+        handler = action_handlers.get(action)
+        if handler:
+            return handler(request)
 
         return {"status": "error", "message": "Unknown action"}
 

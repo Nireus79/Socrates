@@ -17,9 +17,9 @@ Installation:
 4. Use IDE event listeners to trigger Socratic interactions
 """
 
-from pathlib import Path
-from typing import Optional, Callable, Dict, Any
 import logging
+from pathlib import Path
+from typing import Any, Callable, Dict, Optional
 
 try:
     import socrates
@@ -59,10 +59,10 @@ class SocratesBridge:
 
         # Event callbacks
         self._callbacks = {
-            'on_question_generated': [],
-            'on_code_generated': [],
-            'on_error': [],
-            'on_event': []
+            "on_question_generated": [],
+            "on_code_generated": [],
+            "on_error": [],
+            "on_event": [],
         }
 
         # Setup event listeners
@@ -86,165 +86,152 @@ class SocratesBridge:
             socrates.EventType.PROJECT_CREATED,
             socrates.EventType.AGENT_START,
             socrates.EventType.AGENT_COMPLETE,
-            socrates.EventType.TOKEN_USAGE
+            socrates.EventType.TOKEN_USAGE,
         ]:
             emitter.on(event_type, self._on_any_event)
 
     def _on_question_generated(self, event_type, data):
         """Handle question generation event"""
-        for callback in self._callbacks['on_question_generated']:
+        for callback in self._callbacks["on_question_generated"]:
             callback(data)
 
     def _on_code_generated(self, event_type, data):
         """Handle code generation event"""
-        for callback in self._callbacks['on_code_generated']:
+        for callback in self._callbacks["on_code_generated"]:
             callback(data)
 
     def _on_agent_error(self, event_type, data):
         """Handle agent error event"""
-        for callback in self._callbacks['on_error']:
+        for callback in self._callbacks["on_error"]:
             callback(data)
 
     def _on_any_event(self, event_type, data):
         """Forward all events to callbacks"""
-        for callback in self._callbacks['on_event']:
+        for callback in self._callbacks["on_event"]:
             callback(event_type.value, data)
 
     def on_question_generated(self, callback: Callable) -> None:
         """Register callback for question generation"""
-        self._callbacks['on_question_generated'].append(callback)
+        self._callbacks["on_question_generated"].append(callback)
 
     def on_code_generated(self, callback: Callable) -> None:
         """Register callback for code generation"""
-        self._callbacks['on_code_generated'].append(callback)
+        self._callbacks["on_code_generated"].append(callback)
 
     def on_error(self, callback: Callable) -> None:
         """Register callback for errors"""
-        self._callbacks['on_error'].append(callback)
+        self._callbacks["on_error"].append(callback)
 
     def on_event(self, callback: Callable) -> None:
         """Register callback for all events"""
-        self._callbacks['on_event'].append(callback)
+        self._callbacks["on_event"].append(callback)
 
     # Project Management
 
     def create_project(self, name: str, owner: str, description: str = "") -> Dict[str, Any]:
         """Create a new project"""
-        result = self.orchestrator.process_request('project_manager', {
-            'action': 'create_project',
-            'project_name': name,
-            'owner': owner,
-            'description': description
-        })
+        result = self.orchestrator.process_request(
+            "project_manager",
+            {
+                "action": "create_project",
+                "project_name": name,
+                "owner": owner,
+                "description": description,
+            },
+        )
 
-        if result.get('status') == 'success':
-            return {
-                'success': True,
-                'project': result.get('project')
-            }
-        return {
-            'success': False,
-            'error': result.get('message', 'Failed to create project')
-        }
+        if result.get("status") == "success":
+            return {"success": True, "project": result.get("project")}
+        return {"success": False, "error": result.get("message", "Failed to create project")}
 
     def list_projects(self, owner: Optional[str] = None) -> Dict[str, Any]:
         """List projects"""
-        result = self.orchestrator.process_request('project_manager', {
-            'action': 'list_projects',
-            'owner': owner
-        })
+        result = self.orchestrator.process_request(
+            "project_manager", {"action": "list_projects", "owner": owner}
+        )
 
-        return {
-            'projects': result.get('projects', []),
-            'total': len(result.get('projects', []))
-        }
+        return {"projects": result.get("projects", []), "total": len(result.get("projects", []))}
 
     def load_project(self, project_id: str) -> Optional[Dict[str, Any]]:
         """Load a specific project"""
-        result = self.orchestrator.process_request('project_manager', {
-            'action': 'load_project',
-            'project_id': project_id
-        })
+        result = self.orchestrator.process_request(
+            "project_manager", {"action": "load_project", "project_id": project_id}
+        )
 
-        if result.get('status') == 'success':
-            return result.get('project')
+        if result.get("status") == "success":
+            return result.get("project")
         return None
 
     # Question Management
 
     def ask_question(self, project_id: str, topic: Optional[str] = None) -> Dict[str, Any]:
         """Generate a Socratic question"""
-        result = self.orchestrator.process_request('question_generator', {
-            'action': 'generate_question',
-            'project_id': project_id,
-            'topic': topic
-        })
+        result = self.orchestrator.process_request(
+            "question_generator",
+            {"action": "generate_question", "project_id": project_id, "topic": topic},
+        )
 
-        if result.get('status') == 'success':
+        if result.get("status") == "success":
             return {
-                'success': True,
-                'question_id': result.get('question_id'),
-                'question': result.get('question'),
-                'context': result.get('context'),
-                'hints': result.get('hints', [])
+                "success": True,
+                "question_id": result.get("question_id"),
+                "question": result.get("question"),
+                "context": result.get("context"),
+                "hints": result.get("hints", []),
             }
-        return {
-            'success': False,
-            'error': result.get('message', 'Failed to generate question')
-        }
+        return {"success": False, "error": result.get("message", "Failed to generate question")}
 
     def evaluate_response(self, project_id: str, question_id: str, response: str) -> Dict[str, Any]:
         """Evaluate user's response to a question"""
-        result = self.orchestrator.process_request('response_evaluator', {
-            'action': 'evaluate_response',
-            'project_id': project_id,
-            'question_id': question_id,
-            'user_response': response
-        })
+        result = self.orchestrator.process_request(
+            "response_evaluator",
+            {
+                "action": "evaluate_response",
+                "project_id": project_id,
+                "question_id": question_id,
+                "user_response": response,
+            },
+        )
 
-        if result.get('status') == 'success':
+        if result.get("status") == "success":
             return {
-                'success': True,
-                'feedback': result.get('feedback'),
-                'is_correct': result.get('is_correct', False),
-                'insights': result.get('insights', [])
+                "success": True,
+                "feedback": result.get("feedback"),
+                "is_correct": result.get("is_correct", False),
+                "insights": result.get("insights", []),
             }
-        return {
-            'success': False,
-            'error': result.get('message', 'Failed to evaluate response')
-        }
+        return {"success": False, "error": result.get("message", "Failed to evaluate response")}
 
     # Code Generation
 
-    def generate_code(self, project_id: str, specification: str = "", language: str = "python") -> Dict[str, Any]:
+    def generate_code(
+        self, project_id: str, specification: str = "", language: str = "python"
+    ) -> Dict[str, Any]:
         """Generate code for a project"""
         # Load project first
         project = self.load_project(project_id)
         if not project:
-            return {
-                'success': False,
-                'error': f'Project {project_id} not found'
-            }
+            return {"success": False, "error": f"Project {project_id} not found"}
 
-        result = self.orchestrator.process_request('code_generator', {
-            'action': 'generate_code',
-            'project': project,
-            'specification': specification,
-            'language': language
-        })
+        result = self.orchestrator.process_request(
+            "code_generator",
+            {
+                "action": "generate_code",
+                "project": project,
+                "specification": specification,
+                "language": language,
+            },
+        )
 
-        if result.get('status') == 'success':
+        if result.get("status") == "success":
             return {
-                'success': True,
-                'code': result.get('script', ''),
-                'explanation': result.get('explanation'),
-                'language': language,
-                'token_usage': result.get('token_usage')
+                "success": True,
+                "code": result.get("script", ""),
+                "explanation": result.get("explanation"),
+                "language": language,
+                "token_usage": result.get("token_usage"),
             }
-        return {
-            'success': False,
-            'error': result.get('message', 'Failed to generate code')
-        }
+        return {"success": False, "error": result.get("message", "Failed to generate code")}
 
     # Testing Connection
 
@@ -286,8 +273,7 @@ class SocratesToolWindowFactory:
         api_key = self._get_api_key_from_settings()
         if api_key:
             self.socrates_bridge = SocratesBridge(
-                api_key=api_key,
-                project_dir=str(self.pycharm_project.base_path)
+                api_key=api_key, project_dir=str(self.pycharm_project.base_path)
             )
 
             # Register event handlers
@@ -299,7 +285,7 @@ class SocratesToolWindowFactory:
         """Display a question in PyCharm UI"""
         # This would update the PyCharm tool window
         print(f"Question: {data.get('question')}")
-        if data.get('hints'):
+        if data.get("hints"):
             print(f"Hints: {', '.join(data['hints'])}")
 
     def _display_code(self, data: Dict[str, Any]):
@@ -328,11 +314,10 @@ class SocratesToolWindowFactory:
 
         # Get initial question
         result = self.socrates_bridge.ask_question(project_id)
-        if result['success']:
-            self._display_question({
-                'question': result['question'],
-                'hints': result.get('hints', [])
-            })
+        if result["success"]:
+            self._display_question(
+                {"question": result["question"], "hints": result.get("hints", [])}
+            )
 
     def submit_response(self, response: str):
         """Submit user response to current question"""
@@ -340,23 +325,20 @@ class SocratesToolWindowFactory:
             return
 
         result = self.socrates_bridge.ask_question(self.current_project_id)
-        if result['success']:
-            question_id = result['question_id']
+        if result["success"]:
+            question_id = result["question_id"]
             evaluation = self.socrates_bridge.evaluate_response(
-                self.current_project_id,
-                question_id,
-                response
+                self.current_project_id, question_id, response
             )
 
-            if evaluation['success']:
+            if evaluation["success"]:
                 print(f"Feedback: {evaluation['feedback']}")
                 # Ask next question
                 next_q = self.socrates_bridge.ask_question(self.current_project_id)
-                if next_q['success']:
-                    self._display_question({
-                        'question': next_q['question'],
-                        'hints': next_q.get('hints', [])
-                    })
+                if next_q["success"]:
+                    self._display_question(
+                        {"question": next_q["question"], "hints": next_q.get("hints", [])}
+                    )
 
 
 # Example usage in a PyCharm plugin action
@@ -377,10 +359,10 @@ class GenerateCodeAction:
         # Generate code
         result = self.bridge.generate_code(project_id, specification, language="python")
 
-        if result['success']:
+        if result["success"]:
             # Insert code into current editor
-            code = result['code']
-            explanation = result['explanation']
+            code = result["code"]
+            explanation = result["explanation"]
 
             # In real plugin:
             # editor = data_context.get_required_data(CommonDataKeys.EDITOR)

@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: socrates-ai
-Version: 0.5.0
+Version: 0.6.0
 Summary: A Socratic method tutoring system powered by Claude AI with multi-agent orchestration
 Author: Socrates AI Contributors
 Maintainer: Socrates AI Contributors
@@ -49,6 +49,8 @@ Requires-Dist: sphinx-autodoc-typehints>=1.19; extra == "docs"
 # Socrates AI
 
 A Socratic method tutoring system powered by Claude AI with multi-agent orchestration, RAG (Retrieval-Augmented Generation), and event-driven architecture.
+Helps users and collaborators, design and develop projects of various domains.
+Ideal for vibe coding
 
 > **Status**: Beta (v0.5.0)
 > **License**: MIT

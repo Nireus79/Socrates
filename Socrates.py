@@ -6,6 +6,7 @@ Launches the main application with proper initialization and error handling.
 """
 
 import sys
+
 from colorama import Fore
 
 
@@ -27,6 +28,7 @@ def main():
     except Exception as e:
         print(f"{Fore.RED}Fatal error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

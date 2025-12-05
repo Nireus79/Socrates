@@ -111,7 +111,7 @@ class DocumentAgent(Agent):
         files_to_process = []
 
         if recursive:
-            for root, dirs, files in os.walk(directory_path):
+            for root, _, files in os.walk(directory_path):
                 for file in files:
                     if any(file.endswith(ext) for ext in supported_extensions):
                         files_to_process.append(os.path.join(root, file))

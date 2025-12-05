@@ -296,7 +296,9 @@ class ClaudeClient:
             return True
         except Exception as e:
             self.logger.error(f"Claude API connection test failed: {e}")
-            raise APIError(f"Failed to connect to Claude API: {e}", error_type="CONNECTION_ERROR")
+            raise APIError(
+                f"Failed to connect to Claude API: {e}", error_type="CONNECTION_ERROR"
+            ) from e
 
     # Helper Methods
 
@@ -396,7 +398,7 @@ class ClaudeClient:
             )
             raise APIError(
                 f"Error generating Socratic question: {e}", error_type="GENERATION_ERROR"
-            )
+            ) from e
 
     def generate_suggestions(self, current_question: str, project: ProjectContext) -> str:
         """Generate helpful suggestions when user can't answer a question"""
@@ -537,7 +539,7 @@ class ClaudeClient:
             self.orchestrator.event_emitter.emit(
                 EventType.LOG_ERROR, {"message": f"Failed to generate response: {e}"}
             )
-            raise APIError(f"Error generating response: {e}", error_type="GENERATION_ERROR")
+            raise APIError(f"Error generating response: {e}", error_type="GENERATION_ERROR") from e
 
     async def generate_response_async(
         self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7
@@ -571,4 +573,4 @@ class ClaudeClient:
 
         except Exception as e:
             self.logger.error(f"Error generating response (async): {e}")
-            raise APIError(f"Error generating response: {e}", error_type="GENERATION_ERROR")
+            raise APIError(f"Error generating response: {e}", error_type="GENERATION_ERROR") from e

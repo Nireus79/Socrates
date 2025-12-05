@@ -14,12 +14,10 @@ Generates:
 - Feature documentation
 """
 
-import os
-import sys
 import ast
-from pathlib import Path
-from typing import Dict, List, Tuple
 from collections import defaultdict
+from pathlib import Path
+from typing import Dict
 
 
 class DocstringExtractor(ast.NodeVisitor):
@@ -48,10 +46,7 @@ class DocstringExtractor(ast.NodeVisitor):
                     methods[item.name] = method_doc
 
         if docstring:
-            self.classes[node.name] = {
-                "docstring": docstring,
-                "methods": methods
-            }
+            self.classes[node.name] = {"docstring": docstring, "methods": methods}
 
     def visit_FunctionDef(self, node):
         """Extract function docstring"""
@@ -62,7 +57,7 @@ class DocstringExtractor(ast.NodeVisitor):
 
     def _is_method(self, node) -> bool:
         """Check if function is a method (will be caught by visit_ClassDef)"""
-        return hasattr(node, '_parent') and isinstance(node._parent, ast.ClassDef)
+        return hasattr(node, "_parent") and isinstance(node._parent, ast.ClassDef)
 
 
 def extract_from_file(filepath: Path) -> Dict:
@@ -77,7 +72,7 @@ def extract_from_file(filepath: Path) -> Dict:
         return {
             "module_doc": extractor.module_doc,
             "classes": extractor.classes,
-            "functions": extractor.functions
+            "functions": extractor.functions,
         }
     except Exception as e:
         print(f"[ERROR] Failed to parse {filepath}: {e}")
@@ -143,15 +138,15 @@ def generate_test_docs() -> str:
             docs = extract_from_file(test_file)
 
             if docs["classes"]:
-                test_name = test_file.stem.replace("test_", "")
-
                 for class_name, class_info in docs["classes"].items():
                     category = class_name.replace("Test", "")
-                    test_categories[category].append({
-                        "class": class_name,
-                        "doc": class_info["docstring"],
-                        "methods": class_info["methods"]
-                    })
+                    test_categories[category].append(
+                        {
+                            "class": class_name,
+                            "doc": class_info["docstring"],
+                            "methods": class_info["methods"],
+                        }
+                    )
 
     # Generate output by category
     for category, tests in sorted(test_categories.items()):
@@ -182,56 +177,56 @@ def generate_feature_docs() -> str:
             "Flexible SocratesConfig with environment variable support",
             "ConfigBuilder fluent API for easy configuration",
             "Cross-platform default paths",
-            "Custom knowledge base support"
+            "Custom knowledge base support",
         ],
         "Event System": [
             "Thread-safe EventEmitter",
             "30+ event types for all operations",
             "Support for one-time listeners",
-            "Event listener removal and management"
+            "Event listener removal and management",
         ],
         "Multi-Agent Orchestration": [
             "9 specialized agents for different tasks",
             "Agent coordination and scheduling",
             "Event-driven communication",
-            "Error handling and recovery"
+            "Error handling and recovery",
         ],
         "Database Layer": [
             "SQLite project database",
             "ChromaDB vector database",
             "Soft delete for projects and users",
-            "Full-text search support"
+            "Full-text search support",
         ],
         "REST API": [
             "FastAPI-based HTTP API",
             "10+ endpoints for all functionality",
             "WebSocket support for real-time updates",
-            "CORS support for web frontends"
+            "CORS support for web frontends",
         ],
         "CLI Tool": [
             "Click-based command-line interface",
             "Project management commands",
             "Code generation from CLI",
-            "System diagnostics"
+            "System diagnostics",
         ],
         "IDE Integration": [
             "PyCharm plugin support",
             "VS Code extension support",
             "JSON-RPC communication protocol",
-            "Event forwarding to IDEs"
+            "Event forwarding to IDEs",
         ],
         "Testing": [
             "150+ comprehensive tests",
             "Unit, integration, and E2E tests",
             "Performance benchmarks",
-            "Load testing framework"
+            "Load testing framework",
         ],
         "CI/CD Pipeline": [
             "Automated testing on multiple platforms",
             "Code quality checks",
             "Automated PyPI publishing",
-            "Release management automation"
-        ]
+            "Release management automation",
+        ],
     }
 
     for feature, items in features.items():
