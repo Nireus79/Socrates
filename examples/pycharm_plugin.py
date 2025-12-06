@@ -404,7 +404,7 @@ def demo():
     print("=" * 60)
     try:
         result = bridge.create_project(
-            project_name="Example API Project",
+            name="Example API Project",
             owner="demo_user",
             description="A demonstration project"
         )
