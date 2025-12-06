@@ -38,7 +38,7 @@ import sys
 from typing import Any, Dict, Optional
 
 try:
-    import socrates
+    import socrates_ai
 except ImportError:
     print("Install socrates-ai: pip install socrates-ai")
     raise

@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: socrates-ai
-Version: 0.6.0
+Version: 0.6.3
 Summary: A Socratic method tutoring system powered by Claude AI with multi-agent orchestration
 Author: Socrates AI Contributors
 Maintainer: Socrates AI Contributors
@@ -26,6 +26,7 @@ Classifier: Topic :: Education
 Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
+License-File: LICENSE
 Requires-Dist: anthropic>=0.7.0
 Requires-Dist: chromadb>=0.3.0
 Requires-Dist: sentence-transformers>=2.2.0
@@ -45,6 +46,7 @@ Provides-Extra: docs
 Requires-Dist: sphinx>=5.0; extra == "docs"
 Requires-Dist: sphinx-rtd-theme>=1.0; extra == "docs"
 Requires-Dist: sphinx-autodoc-typehints>=1.19; extra == "docs"
+Dynamic: license-file
 
 # Socrates AI
 
