@@ -93,7 +93,7 @@ class SocratesWorkflow:
             if result.get("status") == "success":
                 project = result.get("project")
                 self.project_id = project.project_id
-                print(f"✓ Project created successfully!")
+                print("✓ Project created successfully!")
                 print(f"  ID: {self.project_id}")
                 print(f"  Name: {project.name}")
                 print(f"  Owner: {project.owner}")
@@ -116,34 +116,38 @@ class SocratesWorkflow:
             return
 
         try:
+            # Load the project first
+            proj_result = self.orchestrator.process_request(
+                "project_manager",
+                {
+                    "action": "load_project",
+                    "project_id": self.project_id,
+                },
+            )
+
+            if proj_result.get("status") != "success":
+                print(f"✗ Could not load project: {proj_result.get('message')}")
+                return
+
+            project = proj_result.get("project")
+
             # Generate an actual Socratic question from Claude
             result = self.orchestrator.process_request(
                 "socratic_counselor",
                 {
                     "action": "generate_question",
-                    "project_id": self.project_id,
-                    "topic": "REST API Design",
-                    "difficulty_level": "intermediate",
+                    "project": project,
                 },
             )
 
             if result.get("status") == "success":
                 question = result.get("question")
-                hints = result.get("hints", [])
 
                 print("✓ Claude AI generated a Socratic question:")
                 print()
                 print(f"  QUESTION: {question}")
-
-                if hints:
-                    print()
-                    print("  HINTS:")
-                    for i, hint in enumerate(hints, 1):
-                        print(f"    {i}. {hint}")
-
                 print()
-                print(f"  Question ID: {result.get('question_id')}")
-                print(f"  Context: {result.get('context', 'REST API Design')}")
+                print(f"  Phase: {project.phase}")
 
             else:
                 print(f"✗ Failed to generate question: {result.get('message')}")
@@ -205,7 +209,7 @@ class SocratesWorkflow:
                     print(f"  {explanation[:300]}...")
 
                 print()
-                print(f"  Language: python")
+                print("  Language: python")
 
             else:
                 print(f"✗ Failed to generate code: {result.get('message')}")
