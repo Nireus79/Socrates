@@ -34,6 +34,7 @@ Implements JSON-RPC methods that VS Code extension calls.
 
 import json
 import logging
+import os
 import sys
 from typing import Any, Dict, Optional
 
@@ -60,7 +61,7 @@ class SocratesRPCServer:
     def __init__(self):
         """Initialize RPC server"""
         self.logger = logging.getLogger("socrates.vscode.server")
-        self.orchestrator: Optional[socrates.AgentOrchestrator] = None
+        self.orchestrator: Optional[socrates_ai.AgentOrchestrator] = None
         self.initialized = False
 
         # Setup logging to file (stderr is reserved for RPC protocol)
@@ -68,18 +69,57 @@ class SocratesRPCServer:
         fh.setLevel(logging.INFO)
         self.logger.addHandler(fh)
 
-    def initialize(self, api_key: str, workspace_dir: Optional[str] = None) -> Dict[str, Any]:
-        """Initialize Socrates library connection"""
+    def initialize(self, api_key: str = None, workspace_dir: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Initialize Socrates library connection.
+
+        IMPORTANT: API Key Security
+        ----------------------------
+        The API key should be provided via the ANTHROPIC_API_KEY environment variable,
+        NOT hardcoded in configuration files or passed directly.
+
+        Setup Instructions:
+
+        VS Code Settings:
+        1. DO NOT store API key in VS Code settings.json
+        2. Instead, set the ANTHROPIC_API_KEY environment variable
+        3. VS Code will automatically detect it from your system environment
+
+        Linux/macOS:
+            export ANTHROPIC_API_KEY="your-api-key-here"
+            # Add to ~/.bashrc, ~/.zshrc, or ~/.profile to persist
+
+        Windows (PowerShell):
+            $env:ANTHROPIC_API_KEY="your-api-key-here"
+            # To persist: [Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "your-key", "User")
+
+        Windows (Command Prompt):
+            set ANTHROPIC_API_KEY=your-api-key-here
+
+        VS Code Launch:
+            Restart VS Code after setting the environment variable to pick it up.
+        """
         try:
             from pathlib import Path
 
-            config_builder = socrates.ConfigBuilder(api_key)
+            # Prefer environment variable over passed parameter
+            api_key_to_use = os.environ.get("ANTHROPIC_API_KEY") or api_key
+
+            if not api_key_to_use:
+                error_msg = (
+                    "ANTHROPIC_API_KEY environment variable not set and no API key provided. "
+                    "Please set ANTHROPIC_API_KEY in your system environment variables."
+                )
+                self.logger.error(error_msg)
+                return {"status": "error", "message": error_msg}
+
+            config_builder = socrates_ai.ConfigBuilder(api_key_to_use)
             if workspace_dir:
                 data_dir = Path(workspace_dir) / ".socrates"
                 config_builder = config_builder.with_data_dir(data_dir)
 
             config = config_builder.build()
-            self.orchestrator = socrates.create_orchestrator(config)
+            self.orchestrator = socrates_ai.create_orchestrator(config)
 
             # Test connection
             self.orchestrator.claude_client.test_connection()
@@ -89,7 +129,7 @@ class SocratesRPCServer:
 
             return {
                 "status": "success",
-                "version": socrates.__version__,
+                "version": socrates_ai.__version__,
                 "model": config.claude_model,
                 "data_dir": str(config.data_dir),
             }
@@ -252,10 +292,10 @@ class SocratesRPCServer:
             return {
                 "status": "success",
                 "initialized": True,
-                "version": socrates.__version__,
+                "version": socrates_ai.__version__,
                 "model": self.orchestrator.config.claude_model,
             }
-        return {"status": "success", "initialized": False, "version": socrates.__version__}
+        return {"status": "success", "initialized": False, "version": socrates_ai.__version__}
 
 
 class JSONRPCHandler:
@@ -335,12 +375,20 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Register commands
     let initCmd = vscode.commands.registerCommand('socrates.initialize', () => {
-        const apiKey = vscode.workspace.getConfiguration('socrates').get('apiKey');
+        // NOTE: API key should be set via ANTHROPIC_API_KEY environment variable
+        // DO NOT store in VS Code settings for security reasons
+        // The Python server will read ANTHROPIC_API_KEY from the environment
+
         const workspaceDir = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
 
-        connection.sendRequest('initialize', { api_key: apiKey, workspace_dir: workspaceDir })
+        // Don't pass api_key - let the Python server read it from environment
+        connection.sendRequest('initialize', { workspace_dir: workspaceDir })
             .then(result => {
-                vscode.window.showInformationMessage('Socrates initialized!');
+                if (result.status === 'success') {
+                    vscode.window.showInformationMessage('Socrates initialized!');
+                } else {
+                    vscode.window.showErrorMessage(`Initialization failed: ${result.message}`);
+                }
             });
     });
 

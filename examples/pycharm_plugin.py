@@ -18,6 +18,7 @@ Installation:
 """
 
 import logging
+import os
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
@@ -304,9 +305,46 @@ class SocratesToolWindowFactory:
         # Notifications.Bus.notify(notification)
 
     def _get_api_key_from_settings(self) -> Optional[str]:
-        """Get API key from PyCharm settings"""
-        # In real plugin, would read from IDE settings storage
-        return None
+        """
+        Get API key from environment variable.
+
+        The API key should be stored in the ANTHROPIC_API_KEY environment variable
+        for security reasons. Do NOT hardcode API keys in source files.
+
+        Setup Instructions:
+
+        Linux/macOS:
+            export ANTHROPIC_API_KEY="your-api-key-here"
+            # Add to ~/.bashrc, ~/.zshrc, or ~/.profile to persist
+
+        Windows (PowerShell):
+            $env:ANTHROPIC_API_KEY="your-api-key-here"
+            # To persist: [Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "your-key", "User")
+
+        Windows (Command Prompt):
+            set ANTHROPIC_API_KEY=your-api-key-here
+            # To persist: setx ANTHROPIC_API_KEY "your-api-key-here"
+
+        PyCharm IDE:
+            1. Go to: Run → Edit Configurations
+            2. Select your run configuration
+            3. Under "Environment variables", add:
+               ANTHROPIC_API_KEY=your-api-key-here
+
+        Alternative (via .env file):
+            1. Create a .env file in your project root (do NOT commit this!)
+            2. Add: ANTHROPIC_API_KEY=your-api-key-here
+            3. Load it with: python-dotenv (pip install python-dotenv)
+        """
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+
+        if not api_key:
+            self.logger.error(
+                "ANTHROPIC_API_KEY environment variable not set. "
+                "Please set it to your Claude API key."
+            )
+
+        return api_key
 
     def start_interactive_session(self, project_id: str):
         """Start an interactive Socratic learning session"""
