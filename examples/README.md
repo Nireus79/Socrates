@@ -491,3 +491,65 @@ class UserSession:
 For questions or issues:
 - GitHub Issues: https://github.com/Nireus79/Socrates/issues
 - Documentation: https://socrates-ai.readthedocs.io
+
+  PyCharm Plugin (pycharm_plugin.py)
+
+  Purpose: Shows how to integrate Socrates AI directly into PyCharm IDE
+
+  What it enables:
+  - Socratic questions appear in a PyCharm tool window
+  - Ask questions about code you're working on
+  - Generate code from specifications
+  - Get learning guidance without leaving the editor
+  - Real-time event notifications in the IDE
+
+  Use case: A developer working in PyCharm can:
+  1. Right-click on a code problem
+  2. Get a Socratic question to guide their thinking
+  3. See code generation suggestions
+  4. Learn while coding
+
+  VS Code Extension (vscode_extension.py)
+
+  Purpose: Shows how to integrate Socrates AI as a VS Code extension
+
+  What it enables:
+  - Same functionality but for VS Code
+  - Socratic questions in the editor
+  - Code generation suggestions
+  - Learning assistance while coding
+  - Command palette integration
+
+  Use case: A developer working in VS Code can:
+  1. Use Socrates commands from the command palette
+  2. Get questions and guidance inline
+  3. Generate code directly in the editor
+  4. Learn interactively
+
+  React Frontend Server (react_frontend_server.py)
+
+  Purpose: Shows how to build a web application with Socrates as the backend
+
+  What it enables:
+  - Web-based tutoring interface
+  - REST API for all Socrates functionality
+  - WebSocket for real-time events
+  - Can be used with any frontend (React, Vue, etc.)
+  - Multi-user support
+
+  Use case: A web application where:
+  1. Users login and create projects
+  2. Get Socratic questions through the web interface
+  3. Chat with Claude about their learning
+  4. See real-time progress
+
+  ---
+  Summary
+
+  | Component                | For               | Use Case                             |
+  |--------------------------|-------------------|--------------------------------------|
+  | socrates-ai library      | Python developers | Use directly in code                 |
+  | pycharm_plugin.py        | PyCharm users     | IDE integration in PyCharm           |
+  | vscode_extension.py      | VS Code users     | IDE integration in VS Code           |
+  | react_frontend_server.py | Web developers    | Build web apps with Socrates backend |
+
