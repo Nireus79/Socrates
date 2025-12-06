@@ -72,7 +72,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 try:
-    import socrates
+    import socrates_ai
 except ImportError:
     print("Install socrates-ai: pip install socrates-ai")
     raise

@@ -10,9 +10,6 @@
       <change beforePath="$PROJECT_DIR$/socrates_ai.egg-info/PKG-INFO" beforeDir="false" afterPath="$PROJECT_DIR$/socrates_ai.egg-info/PKG-INFO" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socrates_ai.egg-info/SOURCES.txt" beforeDir="false" afterPath="$PROJECT_DIR$/socrates_ai.egg-info/SOURCES.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/agents/document_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/document_processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/clients/claude_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/clients/claude_client.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

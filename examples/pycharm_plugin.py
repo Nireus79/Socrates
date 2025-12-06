@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
 try:
-    import socrates
+    import socrates_ai
 except ImportError:
     print("Install socrates-ai: pip install socrates-ai")
     raise
