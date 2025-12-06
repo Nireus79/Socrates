@@ -49,13 +49,13 @@ class SocratesBridge:
         self.logger = logging.getLogger(__name__)
 
         # Create configuration
-        config_builder = socrates.ConfigBuilder(api_key)
+        config_builder = socrates_ai.ConfigBuilder(api_key)
         if project_dir:
             data_dir = Path(project_dir) / ".socrates"
             config_builder = config_builder.with_data_dir(data_dir)
 
         self.config = config_builder.build()
-        self.orchestrator = socrates.create_orchestrator(self.config)
+        self.orchestrator = socrates_ai.create_orchestrator(self.config)
 
         # Event callbacks
         self._callbacks = {
@@ -73,20 +73,20 @@ class SocratesBridge:
         emitter = self.orchestrator.event_emitter
 
         # Listen for question generation
-        emitter.on(socrates.EventType.QUESTION_GENERATED, self._on_question_generated)
+        emitter.on(socrates_ai.EventType.QUESTION_GENERATED, self._on_question_generated)
 
         # Listen for code generation
-        emitter.on(socrates.EventType.CODE_GENERATED, self._on_code_generated)
+        emitter.on(socrates_ai.EventType.CODE_GENERATED, self._on_code_generated)
 
         # Listen for errors
-        emitter.on(socrates.EventType.AGENT_ERROR, self._on_agent_error)
+        emitter.on(socrates_ai.EventType.AGENT_ERROR, self._on_agent_error)
 
         # Listen for all events for logging
         for event_type in [
-            socrates.EventType.PROJECT_CREATED,
-            socrates.EventType.AGENT_START,
-            socrates.EventType.AGENT_COMPLETE,
-            socrates.EventType.TOKEN_USAGE,
+            socrates_ai.EventType.PROJECT_CREATED,
+            socrates_ai.EventType.AGENT_START,
+            socrates_ai.EventType.AGENT_COMPLETE,
+            socrates_ai.EventType.TOKEN_USAGE,
         ]:
             emitter.on(event_type, self._on_any_event)
 
