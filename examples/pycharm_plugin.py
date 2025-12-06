@@ -417,14 +417,8 @@ def demo():
     print("Demo: Asking a Socratic question...")
     print("=" * 60)
     try:
-        result = bridge.ask_question(
-            project_id="demo_project",
-            topic="API Design",
-            difficulty="beginner"
-        )
+        result = bridge.ask_question(project_id="demo_project")
         print(f"✓ Question: {result.get('question')}")
-        if result.get('hints'):
-            print(f"  Hints: {result['hints']}")
     except Exception as e:
         print(f"✗ Error asking question: {e}")
 

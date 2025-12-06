@@ -453,7 +453,7 @@ def demo():
     print("\n" + "=" * 60)
     print("Demo: Creating a project...")
     print("=" * 60)
-    result = server.create_project(
+    result = server.createProject(
         name="Example Project",
         owner="demo_user",
         description="A demo project"
@@ -464,10 +464,8 @@ def demo():
     print("\n" + "=" * 60)
     print("Demo: Asking a Socratic question...")
     print("=" * 60)
-    result = server.ask_question(
-        project_id="demo_proj",
-        topic="API Design",
-        difficulty="beginner"
+    result = server.askQuestion(
+        project_id="demo_proj"
     )
     print(f"✓ Question: {result}")
 
