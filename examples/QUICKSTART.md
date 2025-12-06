@@ -210,7 +210,7 @@ See the `examples/` directory for:
 Run examples:
 ```bash
 # Full workflow
-python examples/complete_workflow.py
+python examples/Socrates.py
 
 # Web server
 python examples/react_frontend_server.py

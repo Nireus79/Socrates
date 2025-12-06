@@ -4,12 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.5.0">
+    <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.6.6">
       <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates_ai.egg-info/PKG-INFO" beforeDir="false" afterPath="$PROJECT_DIR$/socrates_ai.egg-info/PKG-INFO" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates_ai.egg-info/SOURCES.txt" beforeDir="false" afterPath="$PROJECT_DIR$/socrates_ai.egg-info/SOURCES.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,6 +47,7 @@
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\themi\PycharmProjects\Socrates\examples" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\socratic_data" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\tests" />
     </key>
@@ -110,12 +108,30 @@
       <option name="project" value="LOCAL" />
       <updated>1764920919225</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="0.6.3">
+      <option name="closed" value="true" />
+      <created>1765003327659</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1765003327659</updated>
+    </task>
+    <task id="LOCAL-00004" summary="0.6.6">
+      <option name="closed" value="true" />
+      <created>1765005886061</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1765005886061</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="modularized socratic7" />
     <MESSAGE value="0.5.0" />
-    <option name="LAST_COMMIT_MESSAGE" value="0.5.0" />
+    <MESSAGE value="0.6.3" />
+    <MESSAGE value="0.6.6" />
+    <option name="LAST_COMMIT_MESSAGE" value="0.6.6" />
   </component>
 </project>
