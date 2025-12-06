@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socrates-ai"
-version = "0.6.1"
+version = "0.6.2"
 description = "A Socratic method tutoring system powered by Claude AI with multi-agent orchestration"
 readme = "README.md"
 license = {text = "MIT"}
@@ -77,7 +77,21 @@ Repository = "https://github.com/Nireus79/Socrates"
 Changelog = "https://github.com/Nireus79/Socrates/releases"
 
 [tool.setuptools]
-packages = ["socratic_system"]
+packages = [
+    "socratic_system",
+    "socratic_system.agents",
+    "socratic_system.clients",
+    "socratic_system.config",
+    "socratic_system.conflict_resolution",
+    "socratic_system.database",
+    "socratic_system.events",
+    "socratic_system.exceptions",
+    "socratic_system.models",
+    "socratic_system.orchestration",
+    "socratic_system.ui",
+    "socratic_system.ui.commands",
+    "socratic_system.utils",
+]
 
 [tool.setuptools.package-data]
 socratic_system = [
