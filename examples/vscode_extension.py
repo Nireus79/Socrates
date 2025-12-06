@@ -307,6 +307,7 @@ class JSONRPCHandler:
 
     def handle_message(self, message: str) -> str:
         """Handle incoming JSON-RPC message"""
+        msg_id = None
         try:
             request = json.loads(message)
             method = request.get("method")
@@ -330,7 +331,7 @@ class JSONRPCHandler:
             return json.dumps(
                 {
                     "jsonrpc": "2.0",
-                    "id": request.get("id") if "request" in locals() else None,
+                    "id": msg_id,
                     "error": {"code": -32603, "message": str(e)},
                 }
             )

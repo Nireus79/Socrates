@@ -264,6 +264,7 @@ class SocratesToolWindowFactory:
         self.pycharm_project = project
         self.socrates_bridge = None
         self.current_project_id = None
+        self.logger = logging.getLogger(__name__)
 
     def create_tool_window_content(self, tool_window):
         """Create the Socrates tool window in PyCharm"""

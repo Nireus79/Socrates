@@ -114,21 +114,21 @@ class SocratesAppState:
     """Manages application state and Socrates connection"""
 
     def __init__(self):
-        self.orchestrator: Optional[socrates.AgentOrchestrator] = None
+        self.orchestrator: Optional[socrates_ai.AgentOrchestrator] = None
         self.event_history: list = []
         self.max_history = 100
         self.websocket_clients = set()
 
     async def initialize(self, api_key: str, data_dir: Optional[str] = None):
         """Initialize Socrates orchestrator"""
-        config_builder = socrates.ConfigBuilder(api_key)
+        config_builder = socrates_ai.ConfigBuilder(api_key)
         if data_dir:
             from pathlib import Path
 
             config_builder = config_builder.with_data_dir(Path(data_dir))
 
         config = config_builder.build()
-        self.orchestrator = socrates.create_orchestrator(config)
+        self.orchestrator = socrates_ai.create_orchestrator(config)
 
         # Setup event listeners
         self._setup_event_listeners()
@@ -157,12 +157,12 @@ class SocratesAppState:
         # Register listener for all event types
         emitter = self.orchestrator.event_emitter
         for event_type in [
-            socrates.EventType.PROJECT_CREATED,
-            socrates.EventType.CODE_GENERATED,
-            socrates.EventType.QUESTION_GENERATED,
-            socrates.EventType.AGENT_START,
-            socrates.EventType.AGENT_COMPLETE,
-            socrates.EventType.TOKEN_USAGE,
+            socrates_ai.EventType.PROJECT_CREATED,
+            socrates_ai.EventType.CODE_GENERATED,
+            socrates_ai.EventType.QUESTION_GENERATED,
+            socrates_ai.EventType.AGENT_START,
+            socrates_ai.EventType.AGENT_COMPLETE,
+            socrates_ai.EventType.TOKEN_USAGE,
         ]:
             emitter.on(event_type, on_event)
 
@@ -250,7 +250,7 @@ async def get_info():
 
     return {
         "version": "8.0.0",
-        "library_version": socrates.__version__,
+        "library_version": socrates_ai.__version__,
         "model": state.orchestrator.config.claude_model,
         "initialized": True,
     }
