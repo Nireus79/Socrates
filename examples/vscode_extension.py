@@ -205,49 +205,30 @@ class SocratesRPCServer:
         """Ask a Socratic question"""
         self._check_initialized()
 
+        # Load project first
+        project_result = self.orchestrator.process_request(
+            "project_manager", {"action": "load_project", "project_id": project_id}
+        )
+
+        if project_result.get("status") != "success":
+            return {"status": "error", "message": f"Project {project_id} not found"}
+
+        project = project_result.get("project")
+
         result = self.orchestrator.process_request(
-            "question_generator",
+            "socratic_counselor",
             {
                 "action": "generate_question",
-                "project_id": project_id,
-                "topic": topic,
-                "difficulty_level": difficulty,
+                "project": project,
             },
         )
 
         if result.get("status") == "success":
             return {
                 "status": "success",
-                "question_id": result.get("question_id"),
                 "question": result.get("question"),
-                "context": result.get("context"),
-                "hints": result.get("hints", []),
             }
         return {"status": "error", "message": result.get("message", "Failed to generate question")}
-
-    def evaluateResponse(self, project_id: str, question_id: str, response: str) -> Dict[str, Any]:
-        """Evaluate user response"""
-        self._check_initialized()
-
-        result = self.orchestrator.process_request(
-            "response_evaluator",
-            {
-                "action": "evaluate_response",
-                "project_id": project_id,
-                "question_id": question_id,
-                "user_response": response,
-            },
-        )
-
-        if result.get("status") == "success":
-            return {
-                "status": "success",
-                "feedback": result.get("feedback"),
-                "is_correct": result.get("is_correct", False),
-                "insights": result.get("insights", []),
-                "next_topic": result.get("next_topic"),
-            }
-        return {"status": "error", "message": result.get("message", "Failed to evaluate response")}
 
     def generateCode(
         self, project_id: str, specification: str = "", language: str = "python"
