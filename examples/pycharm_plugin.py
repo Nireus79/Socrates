@@ -413,18 +413,70 @@ class GenerateCodeAction:
             print(f"Error: {result['error']}")
 
 
+def demo():
+    """Demo the Socrates Bridge with actual API calls"""
+    import os
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        print("ERROR: ANTHROPIC_API_KEY environment variable not set")
+        print("Please set it and try again: export ANTHROPIC_API_KEY='your-key'")
+        return
+
+    print("Initializing Socrates Bridge...")
+    bridge = SocratesBridge(api_key=api_key, project_dir=None)
+
+    print("\nBridge initialized successfully!")
+    print(f"Orchestrator: {bridge.orchestrator}")
+    print(f"Config: {bridge.config.claude_model}")
+
+    # Demo: Create a project
+    print("\n" + "=" * 60)
+    print("Demo: Creating a project...")
+    print("=" * 60)
+    try:
+        result = bridge.create_project(
+            project_name="Example API Project",
+            owner="demo_user",
+            description="A demonstration project"
+        )
+        print(f"✓ Project created: {result}")
+    except Exception as e:
+        print(f"✗ Error creating project: {e}")
+
+    # Demo: Ask a question
+    print("\n" + "=" * 60)
+    print("Demo: Asking a Socratic question...")
+    print("=" * 60)
+    try:
+        result = bridge.ask_question(
+            project_id="demo_project",
+            topic="API Design",
+            difficulty="beginner"
+        )
+        print(f"✓ Question: {result.get('question')}")
+        if result.get('hints'):
+            print(f"  Hints: {result['hints']}")
+    except Exception as e:
+        print(f"✗ Error asking question: {e}")
+
+
 if __name__ == "__main__":
-    # Example usage
-    print("PyCharm Plugin Integration Example")
-    print("-" * 50)
-    print()
-    print("This module provides SocratesBridge for PyCharm plugin development.")
-    print()
-    print("In your PyCharm plugin:")
-    print("1. Install: pip install socrates-ai")
-    print("2. Initialize: bridge = SocratesBridge(api_key='...')")
-    print("3. Register callbacks: bridge.on_question_generated(callback)")
-    print("4. Use methods: bridge.ask_question(), bridge.generate_code(), etc.")
-    print()
-    print("For full plugin development, see:")
-    print("https://plugins.jetbrains.com/docs/intellij/welcome.html")
+    import sys
+
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print("PyCharm Plugin Integration Example")
+        print("-" * 50)
+        print()
+        print("This module provides SocratesBridge for PyCharm plugin development.")
+        print()
+        print("In your PyCharm plugin:")
+        print("1. Install: pip install socrates-ai")
+        print("2. Initialize: bridge = SocratesBridge(api_key='...')")
+        print("3. Register callbacks: bridge.on_question_generated(callback)")
+        print("4. Use methods: bridge.ask_question(), bridge.generate_code(), etc.")
+        print()
+        print("For full plugin development, see:")
+        print("https://plugins.jetbrains.com/docs/intellij/welcome.html")
+    else:
+        demo()

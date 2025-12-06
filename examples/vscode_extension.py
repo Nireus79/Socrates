@@ -444,13 +444,73 @@ def main():
     handler.run()
 
 
+def demo():
+    """Demo the RPC server with actual calls"""
+    import os
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        print("ERROR: ANTHROPIC_API_KEY environment variable not set")
+        print("Please set it and try again: export ANTHROPIC_API_KEY='your-key'")
+        return
+
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
+    print("Initializing Socrates RPC Server...")
+    server = SocratesRPCServer()
+
+    # Initialize
+    print("\n" + "=" * 60)
+    print("Demo: Initializing server...")
+    print("=" * 60)
+    result = server.initialize(workspace_dir=None)
+    print(f"✓ Server initialized: {result}")
+
+    # Create project
+    print("\n" + "=" * 60)
+    print("Demo: Creating a project...")
+    print("=" * 60)
+    result = server.create_project(
+        name="Example Project",
+        owner="demo_user",
+        description="A demo project"
+    )
+    print(f"✓ Project created: {result}")
+
+    # Ask question
+    print("\n" + "=" * 60)
+    print("Demo: Asking a Socratic question...")
+    print("=" * 60)
+    result = server.ask_question(
+        project_id="demo_proj",
+        topic="API Design",
+        difficulty="beginner"
+    )
+    print(f"✓ Question: {result}")
+
+
 if __name__ == "__main__":
-    # Print example instead of running
+    # Demo by default, use --example to show TypeScript code
     if len(sys.argv) > 1 and sys.argv[1] == "--example":
         print("VS Code Extension Integration Example")
         print("-" * 50)
         print()
         print("Extension TypeScript code:")
         print(VSCODE_EXTENSION_EXAMPLE)
-    else:
+    elif len(sys.argv) > 1 and (sys.argv[1] == "--help" or sys.argv[1] == "-h"):
+        print("VS Code RPC Server Example")
+        print("-" * 50)
+        print()
+        print("Usage: python vscode_extension.py [OPTIONS]")
+        print()
+        print("Options:")
+        print("  (default)     Run demo with actual API calls")
+        print("  --example     Show TypeScript extension code")
+        print("  --server      Run as RPC server (for VS Code)")
+        print("  --help        Show this help message")
+    elif len(sys.argv) > 1 and sys.argv[1] == "--server":
         main()
+    else:
+        demo()
