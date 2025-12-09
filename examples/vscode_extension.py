@@ -36,6 +36,8 @@ import json
 import logging
 import os
 import sys
+import tempfile
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 try:
@@ -65,11 +67,12 @@ class SocratesRPCServer:
         self.initialized = False
 
         # Setup logging to file (stderr is reserved for RPC protocol)
-        fh = logging.FileHandler("/tmp/socrates_vscode.log")
+        log_path = Path(tempfile.gettempdir()) / "socrates_vscode.log"
+        fh = logging.FileHandler(log_path)
         fh.setLevel(logging.INFO)
         self.logger.addHandler(fh)
 
-    def initialize(self, api_key: str = None, workspace_dir: Optional[str] = None) -> Dict[str, Any]:
+    def initialize(self, api_key: Optional[str] = None, workspace_dir: Optional[str] = None) -> Dict[str, Any]:
         """
         Initialize Socrates library connection.
 
@@ -183,6 +186,7 @@ class SocratesRPCServer:
 
         projects = []
         for p in result.get("projects", []):
+            updated_at = p.get("updated_at", "")
             projects.append(
                 {
                     "project_id": p["project_id"],
@@ -190,9 +194,9 @@ class SocratesRPCServer:
                     "owner": p["owner"],
                     "phase": p["phase"],
                     "updated_at": (
-                        p.get("updated_at", "").isoformat()
-                        if hasattr(p.get("updated_at"), "isoformat")
-                        else str(p.get("updated_at", ""))
+                        updated_at.isoformat()
+                        if hasattr(updated_at, "isoformat")
+                        else str(updated_at)
                     ),
                 }
             )

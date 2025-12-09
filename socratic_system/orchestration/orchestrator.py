@@ -69,8 +69,12 @@ class AgentOrchestrator:
         self.event_emitter = EventEmitter()
 
         # Initialize database components with configured paths
+        self.logger.info("Initializing database components...")
         self.database = ProjectDatabase(str(self.config.projects_db_path))
-        self.vector_db = VectorDatabase(str(self.config.vector_db_path))
+        self.vector_db = VectorDatabase(
+            str(self.config.vector_db_path), embedding_model=self.config.embedding_model
+        )
+        self.logger.info("Database components initialized successfully")
 
         # Initialize Claude client
         self.claude_client = ClaudeClient(self.config.api_key, self)
@@ -91,7 +95,13 @@ class AgentOrchestrator:
             },
         )
 
+        # Log initialization summary
+        self.logger.info("=" * 70)
         self.logger.info("Socratic RAG System initialized successfully!")
+        self.logger.info(f"  Configuration: {self.config}")
+        self.logger.info(f"  Projects DB: {self.config.projects_db_path}")
+        self.logger.info(f"  Vector DB: {self.config.vector_db_path}")
+        self.logger.info("=" * 70)
 
     def _initialize_agents(self) -> None:
         """Initialize agents after orchestrator is fully set up"""
@@ -109,6 +119,7 @@ class AgentOrchestrator:
     def _load_knowledge_base(self) -> None:
         """Load default knowledge base from config file if not already loaded"""
         if self.vector_db.knowledge_loaded:
+            self.logger.debug("Knowledge base already loaded, skipping initialization")
             return
 
         self.logger.info("Loading knowledge base...")
@@ -118,57 +129,98 @@ class AgentOrchestrator:
         knowledge_data = self._load_knowledge_config()
 
         if not knowledge_data:
-            self.logger.warning("No knowledge base config found")
+            self.logger.warning("No knowledge base config found - system will run with empty knowledge base")
             self.event_emitter.emit(
                 EventType.LOG_WARNING, {"message": "No knowledge base config found"}
             )
             return
 
+        self.logger.info(f"Found {len(knowledge_data)} knowledge entries to load")
+
+        loaded_count = 0
+        error_count = 0
+
         for entry_data in knowledge_data:
             try:
                 entry = KnowledgeEntry(**entry_data)
                 self.vector_db.add_knowledge(entry)
+                loaded_count += 1
             except Exception as e:
-                self.logger.error(f"Failed to add knowledge entry: {e}")
+                self.logger.error(f"Failed to add knowledge entry '{entry_data.get('id', 'unknown')}': {e}")
+                error_count += 1
 
         self.vector_db.knowledge_loaded = True
 
-        self.event_emitter.emit(
-            EventType.KNOWLEDGE_LOADED, {"entry_count": len(knowledge_data), "status": "success"}
-        )
+        # Log summary
+        summary = f"Knowledge base loaded: {loaded_count} entries added"
+        if error_count > 0:
+            summary += f" ({error_count} failed)"
+        self.logger.info(summary)
 
-        self.logger.info(f"Knowledge base loaded ({len(knowledge_data)} entries)")
+        self.event_emitter.emit(
+            EventType.KNOWLEDGE_LOADED,
+            {
+                "entry_count": loaded_count,
+                "error_count": error_count,
+                "status": "success" if error_count == 0 else "partial"
+            }
+        )
 
     def _load_knowledge_config(self) -> List[Dict[str, Any]]:
         """Load knowledge base from JSON configuration file"""
         # Try the configured knowledge base path first
         if self.config.knowledge_base_path:
             config_path = Path(self.config.knowledge_base_path)
+            source = "configured path"
         else:
             # Fall back to default location
             config_path = Path(__file__).parent.parent / "config" / "knowledge_base.json"
+            source = "default location"
+
+        self.logger.debug(f"Attempting to load knowledge base from {source}: {config_path}")
 
         try:
             if not config_path.exists():
-                self.logger.debug(f"Knowledge config not found: {config_path}")
+                self.logger.debug(f"Knowledge config not found at {source}: {config_path}")
                 return []
 
+            self.logger.debug(f"Knowledge base file found at: {config_path}")
             with open(config_path, encoding="utf-8") as f:
                 config = json.load(f)
 
             knowledge_entries = config.get("default_knowledge", [])
             if knowledge_entries:
+                self.logger.info(f"Successfully loaded {len(knowledge_entries)} knowledge entries from {source}")
                 return knowledge_entries
             else:
-                self.logger.warning("No 'default_knowledge' entries in config")
+                self.logger.warning(f"No 'default_knowledge' entries found in config at {source}")
                 return []
 
         except json.JSONDecodeError as e:
-            self.logger.error(f"Invalid JSON in knowledge config: {e}")
+            self.logger.error(f"Invalid JSON in knowledge config at {config_path}: {e}")
             return []
         except Exception as e:
-            self.logger.error(f"Failed to load knowledge config: {e}")
+            self.logger.error(f"Failed to load knowledge config from {config_path}: {e}")
             return []
+
+    def set_model(self, model_name: str) -> bool:
+        """
+        Update the Claude model at runtime.
+
+        Args:
+            model_name: The new model name to use
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            self.config.update_model(model_name)
+            self.claude_client.model = model_name
+            self.logger.info(f"Model updated to {model_name}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error updating model: {e}")
+            return False
 
     def process_request(self, agent_name: str, request: Dict[str, Any]) -> Dict[str, Any]:
         """

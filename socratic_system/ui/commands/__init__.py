@@ -2,6 +2,7 @@
 
 from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.ui.commands.code_commands import CodeDocsCommand, CodeGenerateCommand
+from socratic_system.ui.commands.model_commands import ModelCommand
 from socratic_system.ui.commands.collab_commands import (
     CollabAddCommand,
     CollabListCommand,
@@ -81,6 +82,7 @@ __all__ = [
     "ClearCommand",
     "PromptCommand",
     "InfoCommand",
+    "ModelCommand",
     "NLUEnableCommand",
     "NLUDisableCommand",
     "NLUStatusCommand",

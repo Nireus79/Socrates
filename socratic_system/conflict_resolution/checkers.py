@@ -2,12 +2,15 @@
 Concrete conflict checker implementations for Socratic RAG System
 """
 
+import logging
 from typing import Any, Dict, List, Optional
 
 from socratic_system.models import ConflictInfo, ProjectContext
 
 from .base import ConflictChecker
 from .rules import find_conflict_category
+
+logger = logging.getLogger(__name__)
 
 
 class TechStackConflictChecker(ConflictChecker):
@@ -139,8 +142,8 @@ Only respond with valid JSON."""
                         "suggestions": data.get("suggestions", []),
                     }
                 ]
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to detect semantic conflicts in requirements: {e}")
 
         return []
 
@@ -206,8 +209,8 @@ Respond in JSON:
 
             if data.get("has_conflict"):
                 return [{"severity": data.get("severity", "medium")}]
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to detect semantic conflicts in goals: {e}")
 
         return []
 
@@ -286,7 +289,7 @@ Respond in JSON:
                         "severity": data.get("severity", "medium"),
                     }
                 ]
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to detect semantic conflicts in constraints: {e}")
 
         return []

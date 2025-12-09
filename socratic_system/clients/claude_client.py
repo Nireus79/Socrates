@@ -469,8 +469,9 @@ class ClaudeClient:
 
             return response.content[0].text.strip()
 
-        except Exception:
+        except Exception as e:
             # Fallback suggestions if Claude API fails
+            self.logger.warning(f"Error generating suggestions, using fallback: {e}")
             fallback_suggestions = {
                 "discovery": """Here are some suggestions to help you think through this:
 

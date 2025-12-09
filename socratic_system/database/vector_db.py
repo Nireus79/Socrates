@@ -8,20 +8,29 @@ from typing import Dict, List, Optional
 import chromadb
 from sentence_transformers import SentenceTransformer
 
-from socratic_system.config import CONFIG
 from socratic_system.models import KnowledgeEntry
 
 
 class VectorDatabase:
     """Vector database for storing and searching knowledge entries"""
 
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str, embedding_model: str = "all-MiniLM-L6-v2"):
         self.db_path = db_path
+        self.embedding_model_name = embedding_model
         self.logger = logging.getLogger("socrates.database.vector")
+
+        self.logger.info(f"Initializing vector database: {self.db_path}")
         self.client = chromadb.PersistentClient(path=db_path)
+        self.logger.debug("ChromaDB client created")
+
         self.collection = self.client.get_or_create_collection("socratic_knowledge")
-        self.embedding_model = SentenceTransformer(CONFIG["EMBEDDING_MODEL"])
-        self.knowledge_loaded = False  # FIX: Track if knowledge is already loaded
+        self.logger.debug("Vector collection 'socratic_knowledge' initialized")
+
+        self.logger.info(f"Loading embedding model: {self.embedding_model_name}")
+        self.embedding_model = SentenceTransformer(self.embedding_model_name)
+        self.logger.info("Vector database initialized successfully")
+
+        self.knowledge_loaded = False  # Track if knowledge is already loaded
 
     def add_knowledge(self, entry: KnowledgeEntry):
         """Add knowledge entry to vector database"""
@@ -31,8 +40,9 @@ class VectorDatabase:
             if existing["ids"]:
                 self.logger.debug(f"Knowledge entry '{entry.id}' already exists, skipping...")
                 return
-        except Exception:
-            pass  # Entry doesn't exist, proceed with adding
+        except (KeyError, ValueError) as e:
+            # Entry doesn't exist or invalid query, proceed with adding
+            self.logger.debug(f"Entry '{entry.id}' not found or invalid query, will proceed: {e}")
 
         if not entry.embedding:
             embedding_result = self.embedding_model.encode(entry.content)
