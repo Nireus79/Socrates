@@ -36,7 +36,7 @@ classifiers = [
 requires-python = ">=3.8"
 
 dependencies = [
-    "socrates-ai>=8.0.0",
+    "socrates-ai>=0.6.0",
     "colorama>=0.4.6",
     "click>=8.0.0",
 ]
@@ -60,6 +60,9 @@ Repository = "https://github.com/Nireus79/Socrates"
 
 [tool.setuptools]
 packages = ["socrates_cli"]
+
+[tool.setuptools.package-dir]
+"" = "src"
 
 [tool.black]
 line-length = 100

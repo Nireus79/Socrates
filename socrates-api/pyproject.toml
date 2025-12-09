@@ -36,7 +36,7 @@ classifiers = [
 requires-python = ">=3.8"
 
 dependencies = [
-    "socrates-ai>=8.0.0",
+    "socrates-ai>=0.6.0",
     "fastapi>=0.100.0",
     "uvicorn[standard]>=0.23.0",
     "pydantic>=2.0.0",
@@ -64,6 +64,9 @@ Repository = "https://github.com/Nireus79/Socrates"
 
 [tool.setuptools]
 packages = ["socrates_api"]
+
+[tool.setuptools.package-dir]
+"" = "src"
 
 [tool.black]
 line-length = 100
