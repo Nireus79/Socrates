@@ -72,7 +72,9 @@ class SocratesRPCServer:
         fh.setLevel(logging.INFO)
         self.logger.addHandler(fh)
 
-    def initialize(self, api_key: Optional[str] = None, workspace_dir: Optional[str] = None) -> Dict[str, Any]:
+    def initialize(
+        self, api_key: Optional[str] = None, workspace_dir: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Initialize Socrates library connection.
 
@@ -458,9 +460,7 @@ def demo():
     print("Demo: Creating a project...")
     print("=" * 60)
     result = server.createProject(
-        name="Example Project",
-        owner="demo_user",
-        description="A demo project"
+        name="Example Project", owner="demo_user", description="A demo project"
     )
     print(f"✓ Project created: {result}")
 
@@ -468,9 +468,7 @@ def demo():
     print("\n" + "=" * 60)
     print("Demo: Asking a Socratic question...")
     print("=" * 60)
-    result = server.askQuestion(
-        project_id="demo_proj"
-    )
+    result = server.askQuestion(project_id="demo_proj")
     print(f"✓ Question: {result}")
 
 

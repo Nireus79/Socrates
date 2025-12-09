@@ -129,7 +129,9 @@ class AgentOrchestrator:
         knowledge_data = self._load_knowledge_config()
 
         if not knowledge_data:
-            self.logger.warning("No knowledge base config found - system will run with empty knowledge base")
+            self.logger.warning(
+                "No knowledge base config found - system will run with empty knowledge base"
+            )
             self.event_emitter.emit(
                 EventType.LOG_WARNING, {"message": "No knowledge base config found"}
             )
@@ -146,7 +148,9 @@ class AgentOrchestrator:
                 self.vector_db.add_knowledge(entry)
                 loaded_count += 1
             except Exception as e:
-                self.logger.error(f"Failed to add knowledge entry '{entry_data.get('id', 'unknown')}': {e}")
+                self.logger.error(
+                    f"Failed to add knowledge entry '{entry_data.get('id', 'unknown')}': {e}"
+                )
                 error_count += 1
 
         self.vector_db.knowledge_loaded = True
@@ -162,8 +166,8 @@ class AgentOrchestrator:
             {
                 "entry_count": loaded_count,
                 "error_count": error_count,
-                "status": "success" if error_count == 0 else "partial"
-            }
+                "status": "success" if error_count == 0 else "partial",
+            },
         )
 
     def _load_knowledge_config(self) -> List[Dict[str, Any]]:
@@ -190,7 +194,9 @@ class AgentOrchestrator:
 
             knowledge_entries = config.get("default_knowledge", [])
             if knowledge_entries:
-                self.logger.info(f"Successfully loaded {len(knowledge_entries)} knowledge entries from {source}")
+                self.logger.info(
+                    f"Successfully loaded {len(knowledge_entries)} knowledge entries from {source}"
+                )
                 return knowledge_entries
             else:
                 self.logger.warning(f"No 'default_knowledge' entries found in config at {source}")
