@@ -161,6 +161,13 @@ python_classes = "Test*"
 python_functions = "test_*"
 asyncio_mode = "auto"
 addopts = "--strict-markers --tb=short"
+markers = [
+    "unit: Unit tests (no external dependencies)",
+    "integration: Integration tests (require mocking or local setup)",
+    "slow: Tests that take >1 second",
+    "requires_api: Tests requiring valid API key",
+    "e2e: End-to-end tests",
+]
 
 [tool.coverage.run]
 source = ["socratic_system"]
