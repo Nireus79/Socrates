@@ -22,8 +22,11 @@ except ModuleNotFoundError:
 @pytest.fixture
 def temp_data_dir():
     """Create a temporary directory for test data"""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        yield Path(tmpdir)
+    tmpdir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+    try:
+        yield Path(tmpdir.name)
+    finally:
+        tmpdir.cleanup()
 
 
 @pytest.fixture
