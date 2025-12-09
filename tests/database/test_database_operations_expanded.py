@@ -38,19 +38,23 @@ class TestProjectDatabaseOperations:
             project = ProjectContext(
                 project_id="complex-001",
                 name="Complex Project",
-                description="Project with complex data",
                 owner="testuser",
+                collaborators=["alice", "bob"],
                 phase="implementation",
                 goals="Build scalable system",
                 tech_stack=["Python", "FastAPI", "PostgreSQL", "Redis", "Docker"],
                 requirements=["High performance", "Scalability", "Security", "Monitoring"],
                 constraints=["Budget limit", "Team size", "Timeline"],
+                team_structure="Full remote team",
+                language_preferences="en",
                 deployment_target="Kubernetes",
                 code_style="PEP 8",
                 conversation_history=[
                     {"type": "user", "content": "Build API"},
                     {"type": "assistant", "content": "I'll help build an API"},
-                ]
+                ],
+                created_at=datetime.now(),
+                updated_at=datetime.now()
             )
 
             orchestrator.database.save_project(project)
@@ -100,9 +104,20 @@ class TestProjectDatabaseOperations:
                 project = ProjectContext(
                     project_id=f"project-{i}",
                     name=f"Project {i}",
-                    description=f"Description {i}",
                     owner="testuser",
-                    phase="planning"
+                    collaborators=[],
+                    phase="planning",
+                    goals="",
+                    tech_stack=[],
+                    requirements=[],
+                    constraints=[],
+                    team_structure="",
+                    language_preferences="en",
+                    deployment_target="",
+                    code_style="",
+                    conversation_history=[],
+                    created_at=datetime.now(),
+                    updated_at=datetime.now()
                 )
                 projects.append(project)
                 orchestrator.database.save_project(project)
@@ -121,15 +136,20 @@ class TestProjectDatabaseOperations:
             project = ProjectContext(
                 project_id="empty-001",
                 name="Minimal Project",
-                description="",
                 owner="testuser",
+                collaborators=[],
                 phase="planning",
                 goals="",
                 tech_stack=[],
                 requirements=[],
                 constraints=[],
+                team_structure="",
+                language_preferences="en",
                 deployment_target="",
-                code_style=""
+                code_style="",
+                conversation_history=[],
+                created_at=datetime.now(),
+                updated_at=datetime.now()
             )
 
             orchestrator.database.save_project(project)
@@ -285,9 +305,20 @@ class TestDatabaseIntegration:
             project = ProjectContext(
                 project_id="user-project",
                 name="User's Project",
-                description="",
                 owner=user.username,
-                phase="planning"
+                collaborators=[],
+                phase="planning",
+                goals="",
+                tech_stack=[],
+                requirements=[],
+                constraints=[],
+                team_structure="",
+                language_preferences="en",
+                deployment_target="",
+                code_style="",
+                conversation_history=[],
+                created_at=datetime.now(),
+                updated_at=datetime.now()
             )
             orchestrator.database.save_project(project)
 
@@ -314,9 +345,20 @@ class TestDatabaseIntegration:
             project = ProjectContext(
                 project_id="consistency-proj",
                 name="Consistency Test",
-                description="",
                 owner="consistency-test",
-                phase="planning"
+                collaborators=[],
+                phase="planning",
+                goals="",
+                tech_stack=[],
+                requirements=[],
+                constraints=[],
+                team_structure="",
+                language_preferences="en",
+                deployment_target="",
+                code_style="",
+                conversation_history=[],
+                created_at=datetime.now(),
+                updated_at=datetime.now()
             )
             orchestrator.database.save_project(project)
 
@@ -337,16 +379,23 @@ class TestDatabaseIntegration:
             large_project = ProjectContext(
                 project_id="large-001",
                 name="Large Project",
-                description="x" * 10000,  # Large description
                 owner="testuser",
+                collaborators=[],
                 phase="implementation",
                 goals="x" * 5000,
                 tech_stack=[f"tech{i}" for i in range(100)],
                 requirements=[f"req{i}" for i in range(100)],
+                constraints=[],
+                team_structure="",
+                language_preferences="en",
+                deployment_target="",
+                code_style="",
                 conversation_history=[
                     {"type": "user", "content": f"msg{i}"}
                     for i in range(50)
-                ]
+                ],
+                created_at=datetime.now(),
+                updated_at=datetime.now()
             )
 
             orchestrator.database.save_project(large_project)
@@ -364,16 +413,25 @@ class TestDatabaseIntegration:
             project = ProjectContext(
                 project_id="special-001",
                 name="Project with special chars: @#$%^&*()",
-                description="Description with emojis 😀 🎉 🚀",
                 owner="user@example.com",
+                collaborators=[],
                 phase="planning",
                 goals="Build system with special chars & symbols",
                 tech_stack=["C++", "C#", ".NET"],
+                requirements=[],
+                constraints=[],
+                team_structure="",
+                language_preferences="en",
+                deployment_target="",
+                code_style="",
+                conversation_history=[],
+                created_at=datetime.now(),
+                updated_at=datetime.now()
             )
 
             orchestrator.database.save_project(project)
             loaded = orchestrator.database.load_project(project.project_id)
 
             assert loaded.name == project.name
-            assert loaded.description == project.description
+            assert loaded.goals == project.goals
             assert "C++" in loaded.tech_stack
