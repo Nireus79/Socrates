@@ -2,7 +2,6 @@
 
 from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.ui.commands.code_commands import CodeDocsCommand, CodeGenerateCommand
-from socratic_system.ui.commands.model_commands import ModelCommand
 from socratic_system.ui.commands.collab_commands import (
     CollabAddCommand,
     CollabListCommand,
@@ -24,6 +23,7 @@ from socratic_system.ui.commands.knowledge_commands import (
     KnowledgeSearchCommand,
     RememberCommand,
 )
+from socratic_system.ui.commands.model_commands import ModelCommand
 from socratic_system.ui.commands.note_commands import (
     NoteAddCommand,
     NoteDeleteCommand,

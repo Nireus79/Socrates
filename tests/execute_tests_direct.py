@@ -228,7 +228,7 @@ try:
         time.sleep(0.1)
         try:
             shutil.rmtree(tmpdir, ignore_errors=True)
-        except:
+        except Exception:
             pass
 except Exception as e:
     print(f"[FAIL] ProjectManagerAgent test failed: {str(e)[:100]}")
@@ -277,7 +277,7 @@ try:
         time.sleep(0.1)
         try:
             shutil.rmtree(tmpdir, ignore_errors=True)
-        except:
+        except Exception:
             pass
 except Exception as e:
     print(f"[FAIL] CodeGeneratorAgent test failed: {str(e)[:100]}")
@@ -323,7 +323,7 @@ try:
         if hasattr(orchestrator, "database") and hasattr(orchestrator.database, "_db"):
             try:
                 orchestrator.database._db.close()
-            except:
+            except Exception:
                 pass
 
         print("[PASS] KnowledgeManagerAgent initialization works")
@@ -336,7 +336,7 @@ try:
         time.sleep(0.2)
         try:
             shutil.rmtree(tmpdir, ignore_errors=True)
-        except:
+        except Exception:
             pass
 except Exception as e:
     print(f"[FAIL] KnowledgeManagerAgent test failed: {str(e)[:100]}")

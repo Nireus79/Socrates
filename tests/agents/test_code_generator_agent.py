@@ -448,13 +448,13 @@ def process_data(data):
 
             # First call fails, second succeeds (simulating retry)
             orchestrator.claude_client.generate_code = MagicMock(
-                side_effect=[Exception("Temporary API error"), "# Code after retry"]
+                side_effect=[RuntimeError("Temporary API error"), "# Code after retry"]
             )
 
             request = {"action": "generate_script", "project": sample_project}
 
             # First attempt fails
-            with pytest.raises(Exception):
+            with pytest.raises(RuntimeError):
                 agent.process(request)
 
             # Reset mock
