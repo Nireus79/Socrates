@@ -55,11 +55,12 @@ class TestTechStackConflictChecker:
 
             # Adding same tech should not create conflict
             insights = {"tech_stack": ["Python"]}
-            result = checker.check(insights, project, "testuser")
+            results = checker.check_conflicts(project, insights, "testuser")
 
             # Should not detect conflict for duplicate tech
-            if result:
-                assert isinstance(result, ConflictInfo)
+            if results:
+                for result in results:
+                    assert isinstance(result, ConflictInfo)
 
     def test_detect_conflicting_tech(self, test_config):
         """Test detecting conflicting technologies"""
@@ -89,10 +90,12 @@ class TestTechStackConflictChecker:
 
             # Add conflicting tech
             insights = {"tech_stack": ["Node.js"]}
-            result = checker.check(insights, project, "testuser")
+            results = checker.check_conflicts(project, insights, "testuser")
 
-            # Result can be ConflictInfo or None depending on conflict rules
-            assert result is None or isinstance(result, ConflictInfo)
+            # Results can be empty list or contain ConflictInfo objects
+            assert isinstance(results, list)
+            for result in results:
+                assert isinstance(result, ConflictInfo)
 
     def test_extract_tech_stack_values(self, test_config):
         """Test extracting tech stack from insights"""
@@ -178,10 +181,12 @@ class TestRequirementsConflictChecker:
             )
 
             insights = {"requirements": ["High Performance"]}
-            result = checker.check(insights, project, "testuser")
+            results = checker.check_conflicts(project, insights, "testuser")
 
-            # Same requirement should return None (no conflict)
-            assert result is None or isinstance(result, ConflictInfo)
+            # Same requirement should return empty list (no conflict)
+            assert isinstance(results, list)
+            for result in results:
+                assert isinstance(result, ConflictInfo)
 
     def test_extract_requirements_values(self, test_config):
         """Test extracting requirements from insights"""
@@ -310,12 +315,12 @@ class TestConflictResolutionWorkflow:
             tech_insights = {"tech_stack": ["Node.js"]}
             req_insights = {"requirements": ["Real-time"]}
 
-            tech_conflict = tech_checker.check(tech_insights, project, "user1")
-            req_conflict = req_checker.check(req_insights, project, "user2")
+            tech_results = tech_checker.check_conflicts(project, tech_insights, "user1")
+            req_results = req_checker.check_conflicts(project, req_insights, "user2")
 
             # Should complete without errors
-            assert tech_conflict is None or isinstance(tech_conflict, ConflictInfo)
-            assert req_conflict is None or isinstance(req_conflict, ConflictInfo)
+            assert isinstance(tech_results, list)
+            assert isinstance(req_results, list)
 
     def test_conflict_detection_with_multiple_techs(self, test_config):
         """Test conflict detection with multiple technologies"""
@@ -348,10 +353,10 @@ class TestConflictResolutionWorkflow:
 
             for tech in test_techs:
                 insights = {"tech_stack": [tech]}
-                result = checker.check(insights, project, "testuser")
+                results = checker.check_conflicts(project, insights, "testuser")
 
                 # Should handle all cases gracefully
-                assert result is None or isinstance(result, ConflictInfo)
+                assert isinstance(results, list)
 
     def test_conflict_with_same_project_author(self, test_config):
         """Test that conflicts can occur even from same author"""
@@ -380,10 +385,10 @@ class TestConflictResolutionWorkflow:
 
             # Same user adding different tech
             insights = {"tech_stack": ["Java"]}
-            result = checker.check(insights, project, "sameuser")
+            results = checker.check_conflicts(project, insights, "sameuser")
 
             # Should still detect potential conflicts
-            assert result is None or isinstance(result, ConflictInfo)
+            assert isinstance(results, list)
 
     def test_empty_conflict_check(self, test_config):
         """Test checking conflicts with empty insights"""
@@ -412,10 +417,10 @@ class TestConflictResolutionWorkflow:
 
             # Empty tech stack in insights
             insights = {"tech_stack": []}
-            result = checker.check(insights, project, "testuser")
+            results = checker.check_conflicts(project, insights, "testuser")
 
             # Should handle empty gracefully
-            assert result is None
+            assert results == []
 
     def test_conflict_suggestions_generation(self, test_config):
         """Test that conflict suggestions are generated"""
@@ -443,8 +448,9 @@ class TestConflictResolutionWorkflow:
             )
 
             insights = {"tech_stack": ["PostgreSQL"]}
-            result = checker.check(insights, project, "testuser")
+            results = checker.check_conflicts(project, insights, "testuser")
 
             # If conflict detected, should have suggestions
-            if result and isinstance(result, ConflictInfo):
+            for result in results:
+                assert isinstance(result, ConflictInfo)
                 assert isinstance(result.suggestions, list)

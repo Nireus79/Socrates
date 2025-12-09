@@ -82,6 +82,7 @@ def sample_user():
         username="testuser",
         passcode_hash="hashed_password",
         created_at=datetime.datetime.now(),
+        projects=[],
         is_archived=False,
         archived_at=None,
     )
@@ -98,14 +99,21 @@ def sample_project():
         project_id="test_proj_001",
         name="Test Project",
         owner="testuser",
-        description="A test project",
+        collaborators=[],
         phase="active",
+        goals="Test project goals",
+        tech_stack=[],
+        requirements=[],
+        constraints=[],
+        team_structure="",
+        language_preferences="en",
+        deployment_target="",
+        code_style="",
+        conversation_history=[],
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
         is_archived=False,
         archived_at=None,
-        collaborators=[],
-        notes=[],
     )
 
 
