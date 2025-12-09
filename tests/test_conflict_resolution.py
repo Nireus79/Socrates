@@ -226,8 +226,8 @@ class TestConflictResolution:
         )
 
         # Merge: combine unique items
-        old_reqs = set(r.strip() for r in conflict.old_value.split(","))
-        new_reqs = set(r.strip() for r in conflict.new_value.split(","))
+        old_reqs = {r.strip() for r in conflict.old_value.split(",")}
+        new_reqs = {r.strip() for r in conflict.new_value.split(",")}
         merged = old_reqs | new_reqs  # Union of both
 
         assert "Authentication" in merged

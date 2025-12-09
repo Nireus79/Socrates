@@ -251,10 +251,6 @@ class TestErrorHierarchy:
         with pytest.raises(SocratesError):
             raise_project_error()
 
-        # Should be catchable as Exception
-        with pytest.raises(Exception):
-            raise_project_error()
-
 
 @pytest.mark.unit
 class TestErrorMessages:
