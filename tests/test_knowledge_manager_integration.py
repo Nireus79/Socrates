@@ -2,21 +2,20 @@
 Integration tests for KnowledgeManagerAgent with orchestrator
 """
 
-import sys
-from pathlib import Path
-
-# Add parent directory to path
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
-
 import gc
 import os
 import shutil
+import sys
 import tempfile
+from pathlib import Path
 
 from socratic_system.config import SocratesConfig
 from socratic_system.events import EventType
 from socratic_system.orchestration.orchestrator import AgentOrchestrator
+
+# Add parent directory to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 
 def test_knowledge_manager_initialization():
