@@ -6,8 +6,8 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
-
 import socrates
+
 from socratic_system.agents.project_manager import ProjectManagerAgent
 from socratic_system.models import ProjectContext
 

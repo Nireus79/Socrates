@@ -5,8 +5,8 @@ Tests for CodeGeneratorAgent - Code generation and documentation
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 import socrates
+
 from socratic_system.agents.code_generator import CodeGeneratorAgent
 
 

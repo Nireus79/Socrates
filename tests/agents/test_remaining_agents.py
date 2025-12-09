@@ -6,7 +6,6 @@ ConflictDetector, SystemMonitor, UserManager, NoteManager
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 import socrates
 
 

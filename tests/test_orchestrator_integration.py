@@ -5,8 +5,8 @@ Integration tests for Socrates orchestrator
 from unittest.mock import Mock, patch
 
 import pytest
-
 import socrates
+
 from socratic_system.orchestration import AgentOrchestrator
 
 
