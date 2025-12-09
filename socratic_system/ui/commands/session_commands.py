@@ -140,14 +140,18 @@ class ContinueCommand(BaseCommand):
                 continue
 
             # Handle special responses (done, advance, help, etc)
-            handled, should_continue = self._handle_special_response(response, orchestrator, project)
+            handled, should_continue = self._handle_special_response(
+                response, orchestrator, project
+            )
             if handled:
                 if not should_continue:
                     break
                 if response.lower() in ["help", "suggestions", "hint"]:
                     suggestions = orchestrator.claude_client.generate_suggestions(question, project)
                     print(f"\n{Fore.MAGENTA}💡 {suggestions}")
-                    print(f"{Fore.YELLOW}Now, would you like to try answering the question?{Style.RESET_ALL}")
+                    print(
+                        f"{Fore.YELLOW}Now, would you like to try answering the question?{Style.RESET_ALL}"
+                    )
                 continue
 
             # Process normal answer

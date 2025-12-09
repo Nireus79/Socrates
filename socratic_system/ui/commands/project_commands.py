@@ -102,7 +102,9 @@ class ProjectLoadCommand(BaseCommand):
 
         return all_projects
 
-    def _load_selected_project(self, project_info: Dict[str, Any], orchestrator, app) -> Dict[str, Any]:
+    def _load_selected_project(
+        self, project_info: Dict[str, Any], orchestrator, app
+    ) -> Dict[str, Any]:
         """
         Load selected project and update app context.
 
@@ -387,7 +389,9 @@ class ProjectDeleteCommand(BaseCommand):
             usage="project delete",
         )
 
-    def _get_owned_projects(self, user, orchestrator, result: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _get_owned_projects(
+        self, user, orchestrator, result: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """
         Get list of projects owned by the user.
 

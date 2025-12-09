@@ -103,12 +103,8 @@ class SocratesConfig:
         self.projects_db_path = self._ensure_path(
             self.projects_db_path, self.data_dir / "projects.db"
         )
-        self.vector_db_path = self._ensure_path(
-            self.vector_db_path, self.data_dir / "vector_db"
-        )
-        self.log_file = self._ensure_path(
-            self.log_file, self.data_dir / "logs" / "socrates.log"
-        )
+        self.vector_db_path = self._ensure_path(self.vector_db_path, self.data_dir / "vector_db")
+        self.log_file = self._ensure_path(self.log_file, self.data_dir / "logs" / "socrates.log")
 
         # Set knowledge_base_path if not explicitly set
         self._setup_knowledge_base_path()

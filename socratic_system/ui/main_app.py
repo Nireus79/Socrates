@@ -290,9 +290,7 @@ class SocraticRAGSystem:
                 print(result["message"])
         elif result["status"] != "idle":
             # Unknown status
-            print(
-                f"{Fore.YELLOW}Command executed with status: {result['status']}{Style.RESET_ALL}"
-            )
+            print(f"{Fore.YELLOW}Command executed with status: {result['status']}{Style.RESET_ALL}")
             if result.get("message"):
                 print(result["message"])
         return True

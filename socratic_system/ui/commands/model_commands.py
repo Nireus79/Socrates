@@ -62,12 +62,18 @@ class ModelCommand(BaseCommand):
         current_model = orchestrator.config.claude_model
 
         for short_name, full_name in AVAILABLE_MODELS.items():
-            is_current = " " + Fore.GREEN + "✓ (current)" + Style.RESET_ALL if full_name == current_model else ""
+            is_current = (
+                " " + Fore.GREEN + "✓ (current)" + Style.RESET_ALL
+                if full_name == current_model
+                else ""
+            )
             print(f"  {Fore.WHITE}{short_name:<10}{Style.RESET_ALL} {full_name}{is_current}")
 
         return self.success(data={"models": AVAILABLE_MODELS})
 
-    def _set_model(self, args: List[str], orchestrator, app, context: Dict[str, Any]) -> Dict[str, Any]:
+    def _set_model(
+        self, args: List[str], orchestrator, app, context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Set/switch to a new model"""
         if not args:
             return self.error("Model name required. Usage: /model set <model_name>")
@@ -88,7 +94,9 @@ class ModelCommand(BaseCommand):
         if orchestrator.set_model(full_model_name):
             # Update user's preferred model if logged in
             if app.current_user:
-                orchestrator.database.update_user_model_preference(app.current_user.username, full_model_name)
+                orchestrator.database.update_user_model_preference(
+                    app.current_user.username, full_model_name
+                )
                 app.current_user.preferred_model = full_model_name
 
             model_short_name = self._get_model_name_from_full(full_model_name)

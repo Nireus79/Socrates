@@ -37,7 +37,7 @@ def run_tests_subprocess():
     if result.returncode == 0:
         # Count tests
         lines = result.stdout.split("\n")
-        test_count = len([l for l in lines if "<Function" in l or "<Method" in l])
+        test_count = len([line for line in lines if "<Function" in line or "<Method" in line])
         print(f"Found {test_count} tests")
         print()
 

@@ -131,7 +131,7 @@ def test_no_circular_imports():
 
     # Try importing the main module which imports all others
     try:
-        import socratic_system
+        import socratic_system as _  # noqa: F401
 
         print(f"{GREEN}[OK] PASS{RESET}: No circular imports detected in socratic_system")
         test_results["passed"] += 1
