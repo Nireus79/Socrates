@@ -38,12 +38,13 @@ from socratic_system.ui.commands.project_commands import (
     ProjectLoadCommand,
     ProjectRestoreCommand,
 )
-from socratic_system.ui.commands.query_commands import AskCommand, ExplainCommand, SearchCommand
+from socratic_system.ui.commands.query_commands import ExplainCommand, SearchCommand
 from socratic_system.ui.commands.session_commands import (
     AdvanceCommand,
-    ContinueCommand,
+    ChatCommand,
     DoneCommand,
     HintCommand,
+    ModeCommand,
 )
 from socratic_system.ui.commands.stats_commands import (
     ProjectProgressCommand,
@@ -98,10 +99,11 @@ __all__ = [
     "ProjectArchiveCommand",
     "ProjectRestoreCommand",
     "ProjectDeleteCommand",
-    "ContinueCommand",
+    "ChatCommand",
     "DoneCommand",
     "AdvanceCommand",
     "HintCommand",
+    "ModeCommand",
     "CodeGenerateCommand",
     "CodeDocsCommand",
     "CollabAddCommand",
@@ -116,7 +118,6 @@ __all__ = [
     "NoteDeleteCommand",
     "ConvSearchCommand",
     "ConvSummaryCommand",
-    "AskCommand",
     "ExplainCommand",
     "SearchCommand",
     "ProjectStatsCommand",

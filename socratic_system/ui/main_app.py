@@ -14,8 +14,6 @@ from socratic_system.orchestration import AgentOrchestrator
 from socratic_system.ui.command_handler import CommandHandler
 from socratic_system.ui.commands import (
     AdvanceCommand,
-    # Query commands (direct Q&A)
-    AskCommand,
     BackCommand,
     ClearCommand,
     CodeDocsCommand,
@@ -26,7 +24,7 @@ from socratic_system.ui.commands import (
     CollabListCommand,
     CollabRemoveCommand,
     # Session commands
-    ContinueCommand,
+    ChatCommand,
     # Conversation commands
     ConvSearchCommand,
     ConvSummaryCommand,
@@ -45,6 +43,7 @@ from socratic_system.ui.commands import (
     InfoCommand,
     LogsCommand,
     MenuCommand,
+    ModeCommand,
     NLUDisableCommand,
     NLUEnableCommand,
     NLUStatusCommand,
@@ -224,7 +223,8 @@ class SocraticRAGSystem:
         self.command_handler.register_command(ProjectDeleteCommand())
 
         # Session commands
-        self.command_handler.register_command(ContinueCommand())
+        self.command_handler.register_command(ChatCommand())
+        self.command_handler.register_command(ModeCommand())
         self.command_handler.register_command(DoneCommand())
         self.command_handler.register_command(AdvanceCommand())
         self.command_handler.register_command(HintCommand())
@@ -263,7 +263,6 @@ class SocraticRAGSystem:
         self.command_handler.register_command(LogsCommand())
 
         # Query/Answer commands
-        self.command_handler.register_command(AskCommand())
         self.command_handler.register_command(ExplainCommand())
         self.command_handler.register_command(SearchCommand())
 
