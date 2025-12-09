@@ -181,7 +181,7 @@ class TestOrchestratorRequestProcessing:
             orchestrator = AgentOrchestrator(test_config)
 
             # Process multiple requests
-            for i in range(3):
+            for _i in range(3):
                 result = orchestrator.process_request(
                     "project_manager", {"action": "list_projects"}
                 )

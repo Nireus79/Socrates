@@ -256,7 +256,7 @@ class TestMemoryUsage:
         emitter = socrates.EventEmitter()
 
         def register_many_listeners():
-            for i in range(100):
+            for _i in range(100):
                 callback = Mock()
                 emitter.on(socrates.EventType.LOG_INFO, callback)
 
