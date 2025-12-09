@@ -47,7 +47,7 @@ def test_knowledge_manager_initialization():
         # Force cleanup of temp directory
         try:
             shutil.rmtree(tmpdir, ignore_errors=True)
-        except:
+        except Exception:
             pass
 
 
@@ -107,7 +107,7 @@ def test_knowledge_suggestion_collection():
     finally:
         try:
             shutil.rmtree(tmpdir, ignore_errors=True)
-        except:
+        except Exception:
             pass
 
 
@@ -181,7 +181,7 @@ def test_knowledge_suggestion_approval():
     finally:
         try:
             shutil.rmtree(tmpdir, ignore_errors=True)
-        except:
+        except Exception:
             pass
 
 
@@ -235,7 +235,7 @@ def test_knowledge_queue_status():
     finally:
         try:
             shutil.rmtree(tmpdir, ignore_errors=True)
-        except:
+        except Exception:
             pass
 
 
@@ -306,7 +306,7 @@ def test_knowledge_suggestion_rejection():
     finally:
         try:
             shutil.rmtree(tmpdir, ignore_errors=True)
-        except:
+        except Exception:
             pass
 
 

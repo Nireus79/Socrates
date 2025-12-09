@@ -155,7 +155,7 @@ def test_phase4_complete_workflow():
     finally:
         try:
             shutil.rmtree(tmpdir, ignore_errors=True)
-        except:
+        except Exception:
             pass
 
 
@@ -193,7 +193,7 @@ def test_agent_has_suggest_method():
     finally:
         try:
             shutil.rmtree(tmpdir, ignore_errors=True)
-        except:
+        except Exception:
             pass
 
 

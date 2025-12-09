@@ -59,7 +59,7 @@ class SocratesAPIUser(HttpUser):
                 try:
                     data = response.json()
                     self.project_id = data.get("project_id")
-                except:
+                except Exception:
                     pass
             elif response.status_code in [400, 503]:
                 response.failure(f"Failed to create project: {response.status_code}")

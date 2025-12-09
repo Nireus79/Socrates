@@ -215,7 +215,7 @@ class TestOrchestratorErrorHandling:
             # Process request that might fail
             try:
                 orchestrator.process_request("nonexistent_agent", {})
-            except:
+            except Exception:
                 pass
 
             # Error event might be emitted
