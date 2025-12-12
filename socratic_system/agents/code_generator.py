@@ -65,8 +65,8 @@ class CodeGeneratorAgent(Agent):
         project = request.get("project")
         artifact = request.get("artifact") or request.get("script")  # Support both
 
-        if not project or not artifact:
-            return {"status": "error", "message": "Project and artifact are required"}
+        if not project:
+            return {"status": "error", "message": "Project is required"}
 
         # Determine artifact type
         artifact_type_map = {
@@ -79,16 +79,27 @@ class CodeGeneratorAgent(Agent):
         }
         artifact_type = artifact_type_map.get(project.project_type, "code")
 
-        documentation = self.orchestrator.claude_client.generate_documentation(
-            project, artifact, artifact_type
-        )
+        # Log when artifact is missing (but still try to generate)
+        if not artifact:
+            self.log(f"WARNING: Generating {artifact_type} documentation without artifact")
 
-        self.log(f"Generated documentation for {artifact_type}")
+        try:
+            documentation = self.orchestrator.claude_client.generate_documentation(
+                project, artifact, artifact_type
+            )
 
-        return {
-            "status": "success",
-            "documentation": documentation,
-        }
+            self.log(f"Generated documentation for {artifact_type}")
+
+            return {
+                "status": "success",
+                "documentation": documentation,
+            }
+        except Exception as e:
+            self.log(f"ERROR: Failed to generate documentation: {e}")
+            return {
+                "status": "error",
+                "message": f"Documentation generation failed: {str(e)}",
+            }
 
     def _build_generation_context(self, project: ProjectContext) -> str:
         """Build comprehensive context for code generation"""
