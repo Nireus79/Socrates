@@ -27,9 +27,14 @@ def _patched_print(*args, **kwargs):
     try:
         return _original_print(*args, **kwargs)
     except ValueError as e:
-        if "closed file" in str(e):
-            # File is closed, skip printing (likely in test cleanup)
+        if "closed file" in str(e) or "I/O operation on closed file" in str(e):
+            # File is closed, skip printing (likely in test cleanup or when stdout was redirected)
+            # Don't raise an error - just skip printing silently
             return
+        # If it's a different ValueError, re-raise it
+        raise
+    except Exception:
+        # For any other exception, let it propagate
         raise
 
 

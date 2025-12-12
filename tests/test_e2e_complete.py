@@ -79,7 +79,7 @@ def orchestrator(temp_data_dir):
                 orch.database.projects = {}
                 orch.database.notes = {}
 
-                return orch
+                yield orch
 
 
 @pytest.fixture
