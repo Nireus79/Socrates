@@ -17,6 +17,7 @@ class EventType(Enum):
     PROJECT_CREATED = "project.created"
     PROJECT_LOADED = "project.loaded"
     PROJECT_SAVED = "project.saved"
+    PROJECT_UPDATED = "project.updated"
     PROJECT_ARCHIVED = "project.archived"
     PROJECT_RESTORED = "project.restored"
     PROJECT_DELETED = "project.deleted"
@@ -36,6 +37,7 @@ class EventType(Enum):
     # Socratic dialogue events
     QUESTION_GENERATED = "question.generated"
     RESPONSE_RECEIVED = "response.received"
+    RESPONSE_ANALYZED = "response.analyzed"
     PHASE_ADVANCED = "phase.advanced"
     HINT_PROVIDED = "hint.provided"
 
