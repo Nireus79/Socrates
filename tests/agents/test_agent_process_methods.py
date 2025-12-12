@@ -466,7 +466,7 @@ class TestAgentRequestValidation:
         assert result["status"] == "error"
 
     def test_project_manager_handles_missing_user(self, mock_orchestrator):
-        """Test ProjectManagerAgent handles missing user."""
+        """Test ProjectManagerAgent auto-creates missing user on project creation."""
         agent = ProjectManagerAgent(mock_orchestrator)
         mock_orchestrator.database.load_user.return_value = None
 
@@ -479,7 +479,10 @@ class TestAgentRequestValidation:
 
         result = agent.process(request)
 
-        assert result["status"] == "error"
+        # System should auto-create user and succeed
+        assert result["status"] == "success"
+        # Verify save_user was called to create the user
+        assert mock_orchestrator.database.save_user.called
 
 
 class TestAgentDataTransformation:

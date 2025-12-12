@@ -71,7 +71,6 @@ class ProjectManagerAgent(Agent):
         # Create user if they don't exist (for automation/testing)
         if user is None:
             from socratic_system.models.user import User
-            import datetime
             user = User(
                 username=owner,
                 passcode_hash="",  # Empty hash - will need password reset to use UI

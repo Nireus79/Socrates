@@ -6,13 +6,31 @@ getting recommendations, and viewing progression trends.
 """
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
 
 from socratic_system.core.analytics_calculator import AnalyticsCalculator
 from socratic_system.ui.analytics_display import AnalyticsDisplay
 from socratic_system.ui.commands.base import BaseCommand
 
 logger = logging.getLogger(__name__)
+
+
+def _safe_display(display_func: Callable, *args, **kwargs) -> None:
+    """
+    Safely call a display function, handling closed file errors gracefully.
+
+    In test environments, stdout/stderr may be closed prematurely by pytest,
+    causing "ValueError: I/O operation on closed file" when trying to print.
+    This wrapper silently skips display in such cases since display is optional.
+    """
+    try:
+        display_func(*args, **kwargs)
+    except ValueError as e:
+        if "closed file" in str(e):
+            # Stdout is closed (likely in a test environment), skip display
+            logger.debug(f"Skipping display: {str(e)}")
+        else:
+            raise
 
 
 class AnalyticsAnalyzeCommand(BaseCommand):
@@ -65,7 +83,7 @@ class AnalyticsAnalyzeCommand(BaseCommand):
 
             # Display results
             logger.debug("Displaying category analysis")
-            AnalyticsDisplay.display_category_analysis(analysis, phase)
+            _safe_display(AnalyticsDisplay.display_category_analysis, analysis, phase)
 
             return {"status": "success", "analysis": analysis}
 
@@ -108,7 +126,7 @@ class AnalyticsRecommendCommand(BaseCommand):
 
             # Display results
             logger.debug("Displaying recommendations")
-            AnalyticsDisplay.display_recommendations(recommendations, questions)
+            _safe_display(AnalyticsDisplay.display_recommendations, recommendations, questions)
 
             return {
                 "status": "success",
@@ -154,7 +172,7 @@ class AnalyticsTrendsCommand(BaseCommand):
 
             # Display results
             logger.debug("Displaying trends")
-            AnalyticsDisplay.display_trends(trends, project.maturity_history)
+            _safe_display(AnalyticsDisplay.display_trends, trends, project.maturity_history)
 
             return {"status": "success", "trends": trends}
 
@@ -194,7 +212,7 @@ class AnalyticsSummaryCommand(BaseCommand):
 
             # Display summary from real-time metrics
             logger.debug("Displaying analytics summary")
-            AnalyticsDisplay.display_summary(project.analytics_metrics, project)
+            _safe_display(AnalyticsDisplay.display_summary, project.analytics_metrics, project)
 
             return {"status": "success", "metrics": project.analytics_metrics}
 
@@ -229,7 +247,7 @@ class AnalyticsBreakdownCommand(BaseCommand):
 
             # Display detailed breakdown
             logger.debug("Displaying detailed breakdown")
-            AnalyticsDisplay.display_detailed_breakdown(project)
+            _safe_display(AnalyticsDisplay.display_detailed_breakdown, project)
 
             return {"status": "success"}
 
@@ -264,7 +282,7 @@ class AnalyticsStatusCommand(BaseCommand):
 
             # Display completion status
             logger.debug("Displaying completion status")
-            AnalyticsDisplay.display_completion_status(project)
+            _safe_display(AnalyticsDisplay.display_completion_status, project)
 
             return {"status": "success"}
 

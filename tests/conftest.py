@@ -7,6 +7,7 @@ Handles:
 - Mock object configuration
 """
 
+import builtins
 import sys
 from unittest.mock import MagicMock
 
@@ -16,6 +17,24 @@ import pytest
 # Issue: https://github.com/pytest-dev/pytest/issues/9920
 # When running on Windows, pytest closes the capture file prematurely,
 # causing "ValueError: I/O operation on closed file" during cleanup.
+
+# Patch builtins.print to handle closed file errors gracefully
+_original_print = builtins.print
+
+
+def _patched_print(*args, **kwargs):
+    """Patched print() that handles closed file errors gracefully."""
+    try:
+        return _original_print(*args, **kwargs)
+    except ValueError as e:
+        if "closed file" in str(e):
+            # File is closed, skip printing (likely in test cleanup)
+            return
+        raise
+
+
+builtins.print = _patched_print
+
 
 # Patch pytest.capture.FDCapture methods to handle closed files gracefully
 try:

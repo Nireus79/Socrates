@@ -5,12 +5,24 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.6.6">
-      <change beforePath="$PROJECT_DIR$/tests/test_e2e_interconnection.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_e2e_interconnection.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/project_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/project_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/database/vector_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/vector_db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/pytest.log" beforeDir="false" afterPath="$PROJECT_DIR$/tests/pytest.log" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
