@@ -153,7 +153,7 @@ def sample_project():
 
 @pytest.fixture
 def sample_user():
-    """Create a sample user for testing."""
+    """Create a sample free tier user for testing."""
     import datetime
 
     from socratic_system.models import User
@@ -163,6 +163,25 @@ def sample_user():
         passcode_hash="hash123",
         created_at=datetime.datetime.now(),
         projects=["test-proj-123"],
+        subscription_tier="free",
+    )
+    user.questions_used_this_month = 0
+    return user
+
+
+@pytest.fixture
+def pro_user():
+    """Create a sample pro tier user for testing team collaboration features."""
+    import datetime
+
+    from socratic_system.models import User
+
+    user = User(
+        username="prouser",
+        passcode_hash="hash123",
+        created_at=datetime.datetime.now(),
+        projects=["pro-proj-001"],
+        subscription_tier="pro",
     )
     user.questions_used_this_month = 0
     return user
