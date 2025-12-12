@@ -95,6 +95,10 @@ class SocratesConfig:
 
     def __post_init__(self) -> None:
         """Initialize derived paths and create directories"""
+        # Validate required API key
+        if not self.api_key:
+            raise ValueError("api_key is required and cannot be empty")
+
         # Ensure data_dir is a Path object
         if isinstance(self.data_dir, str):
             self.data_dir = Path(self.data_dir)
@@ -180,6 +184,7 @@ class SocratesConfig:
             Dictionary with legacy config format
         """
         return {
+            "ANTHROPIC_API_KEY": self.api_key,
             "MAX_CONTEXT_LENGTH": self.max_context_length,
             "EMBEDDING_MODEL": self.embedding_model,
             "CLAUDE_MODEL": self.claude_model,

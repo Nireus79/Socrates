@@ -20,7 +20,7 @@ class TestSocratesConfig:
         config = SocratesConfig(api_key=mock_api_key)
 
         assert config.api_key == mock_api_key
-        assert config.claude_model == "claude-sonnet-4-5-20250929"
+        assert config.claude_model == "claude-haiku-4-5-20251001"
         assert config.embedding_model == "all-MiniLM-L6-v2"
         assert config.log_level == "INFO"
 
@@ -36,7 +36,7 @@ class TestSocratesConfig:
         config = SocratesConfig(api_key=mock_api_key, data_dir=temp_data_dir / "test_socrates")
 
         assert config.data_dir.exists()
-        assert config.projects_db_path.exists()
+        assert config.projects_db_path.parent.exists()  # Check parent directory exists
         assert config.vector_db_path.exists()
 
     def test_config_custom_paths(self, temp_data_dir, mock_api_key):

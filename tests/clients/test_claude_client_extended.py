@@ -423,12 +423,13 @@ class TestClaudeClientSocraticQuestions:
 
     def test_generate_socratic_question_error(self, client):
         """Test Socratic question generation with error."""
+        from socratic_system.exceptions import APIError
+
         client.client = MagicMock()
         client.client.messages.create.side_effect = Exception("API Error")
 
-        result = client.generate_socratic_question("Design a web application")
-
-        assert isinstance(result, str)
+        with pytest.raises(APIError):
+            client.generate_socratic_question("Design a web application")
 
 
 class TestClaudeClientGenerateSuggestions:
@@ -515,28 +516,26 @@ class TestClaudeClientGenerateResponse:
         """Test response generation with conversation context."""
         mock_response = MagicMock()
         mock_response.content[0].text = "Contextual response"
+        mock_response.usage.input_tokens = 100
+        mock_response.usage.output_tokens = 50
 
         client.client = MagicMock()
         client.client.messages.create.return_value = mock_response
 
-        messages = [
-            {"role": "user", "content": "Previous message"},
-            {"role": "assistant", "content": "Previous response"},
-        ]
-
-        result = client.generate_response("Current question", messages=messages)
+        # Note: generate_response doesn't accept messages parameter directly
+        result = client.generate_response("Current question")
 
         assert isinstance(result, str)
 
     def test_generate_response_error(self, client):
         """Test response generation error handling."""
+        from socratic_system.exceptions import APIError
+
         client.client = MagicMock()
         client.client.messages.create.side_effect = Exception("API Error")
 
-        result = client.generate_response("Question")
-
-        # Should return error message
-        assert isinstance(result, str)
+        with pytest.raises(APIError):
+            client.generate_response("Question")
 
 
 class TestClaudeClientAsync:

@@ -340,9 +340,10 @@ class TestAgentLogging:
 class TestAgentErrorHandling:
     """Tests for agent error handling."""
 
-    def test_process_with_exception(self, mock_orchestrator):
+    def test_process_with_exception(self, mock_orchestrator, sample_user):
         """Test agent handles exceptions in process."""
         agent = SocraticCounselorAgent(mock_orchestrator)
+        mock_orchestrator.database.load_user.return_value = sample_user
         agent.orchestrator.claude_client.generate_socratic_question.side_effect = Exception(
             "API Error"
         )
@@ -367,6 +368,7 @@ class TestAgentErrorHandling:
                 created_at=datetime.datetime.now(),
                 updated_at=datetime.datetime.now(),
             ),
+            "current_user": "testuser",
         }
 
         result = agent.process(request)

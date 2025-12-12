@@ -113,14 +113,14 @@ def mock_claude_client():
 
 
 @pytest.fixture
-def test_config():
+def test_config(mock_api_key, tmp_path):
     """Create a test configuration object."""
-    from unittest.mock import MagicMock
+    from socratic_system.config import SocratesConfig
 
-    config = MagicMock()
-    config.claude_model = "claude-3-5-sonnet-20241022"
-    config.db_url = "sqlite:///test.db"
-    config.debug = True
+    config = SocratesConfig(
+        api_key=mock_api_key,
+        data_dir=tmp_path / "socrates",
+    )
     return config
 
 
@@ -166,6 +166,18 @@ def sample_user():
     )
     user.questions_used_this_month = 0
     return user
+
+
+@pytest.fixture
+def mock_api_key():
+    """Create a mock API key for testing."""
+    return "sk-test-key-12345"
+
+
+@pytest.fixture
+def temp_data_dir(tmp_path):
+    """Create a temporary data directory for testing."""
+    return tmp_path
 
 
 # Pytest hooks for better error handling

@@ -23,6 +23,9 @@ class SubscriptionChecker:
         Returns:
             (has_access: bool, error_message: Optional[str])
         """
+        if user is None:
+            return False, "User not found. Please log in to access commands."
+
         # Check if command requires specific feature
         required_feature = COMMAND_FEATURE_MAP.get(command_name)
 
@@ -61,6 +64,9 @@ class SubscriptionChecker:
         Returns:
             (can_create: bool, error_message: Optional[str])
         """
+        if user is None:
+            return False, "User not found. Please log in to create projects."
+
         user_tier = user.subscription_tier.lower()
         limits = get_tier_limits(user_tier)
 
@@ -131,6 +137,9 @@ class SubscriptionChecker:
         Returns:
             (can_ask: bool, error_message: Optional[str])
         """
+        if user is None:
+            return False, "User not found. Please log in to ask questions."
+
         # Reset usage if needed
         user.reset_monthly_usage_if_needed()
 

@@ -51,6 +51,18 @@ class ProjectManagerAgent(Agent):
         owner = request.get("owner")
         project_type = request.get("project_type", "software")  # Default to software
 
+        # Validate required fields
+        if not project_name:
+            return {
+                "status": "error",
+                "message": "project_name is required to create a project",
+            }
+        if not owner:
+            return {
+                "status": "error",
+                "message": "owner is required to create a project",
+            }
+
         # NEW: Check project limit
         from socratic_system.subscription.checker import SubscriptionChecker
 

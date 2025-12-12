@@ -7,13 +7,16 @@
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.6.6">
       <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/core/test_learning_engine.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/core/test_learning_engine.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_analytics_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_analytics_integration.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_claude_categorization.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_claude_categorization.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_orchestration_expansion.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_orchestration_expansion.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_performance.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_performance.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/ui/commands/test_subscription_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/ui/commands/test_subscription_commands.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/utils/test_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/utils/test_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/project_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/project_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/subscription/checker.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/subscription/checker.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/agents/test_agent_process_methods.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/agents/test_agent_process_methods.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/clients/test_claude_client_extended.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/clients/test_claude_client_extended.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/conftest.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/conftest.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/core/test_analytics_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/core/test_analytics_calculator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/pytest.log" beforeDir="false" afterPath="$PROJECT_DIR$/tests/pytest.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_config.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
