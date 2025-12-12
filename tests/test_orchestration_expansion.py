@@ -27,7 +27,6 @@ class TestOrchestratorAdvancedConfiguration:
     def test_orchestrator_config_affects_components(self, mock_orchestrator, test_config):
         """Test that config changes affect all components"""
         with patch("anthropic.Anthropic"):
-            original_path = test_config.projects_db_path
             test_config.projects_db_path = "/tmp/test_db"
 
             orchestrator = AgentOrchestrator(test_config)
@@ -351,7 +350,7 @@ class TestOrchestratorResourceManagement:
             orchestrator = AgentOrchestrator(test_config)
 
             # Make multiple requests
-            for i in range(5):
+            for _i in range(5):
                 result = orchestrator.process_request(
                     "project_manager", {"action": "list_projects"}
                 )

@@ -48,29 +48,25 @@ class TestDebugLogger:
     def test_debug_logging(self):
         """Test debug level logging"""
         DebugLogger.set_debug_mode(True)
-        logger = DebugLogger.get_logger("test")
+        DebugLogger.get_logger("test")
 
         # Should not raise error
         DebugLogger.debug("Test debug message", component="test")
 
     def test_info_logging(self):
         """Test info level logging"""
-        logger = DebugLogger()
         DebugLogger.info("Test info message", component="test")
 
     def test_warning_logging(self):
         """Test warning level logging"""
-        logger = DebugLogger()
         DebugLogger.warning("Test warning message", component="test")
 
     def test_error_logging(self):
         """Test error level logging"""
-        logger = DebugLogger()
         DebugLogger.error("Test error message", component="test")
 
     def test_error_logging_with_exception(self):
         """Test error logging with exception"""
-        logger = DebugLogger()
 
         try:
             raise ValueError("Test exception")

@@ -559,7 +559,7 @@ class TestSubscriptionCompareCommand:
         """Test compare ignores any provided arguments."""
         context = {}
 
-        with patch("builtins.print") as mock_print:
+        with patch("builtins.print"):
             # Should work the same regardless of args
             result1 = command.execute([], context)
             result2 = command.execute(["ignored"], context)

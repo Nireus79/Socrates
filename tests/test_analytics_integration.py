@@ -96,7 +96,6 @@ class TestAnalyticsEndToEndFlow:
             {"project": sample_project, "insights": insights_1}
         )
 
-        velocity_after_1 = sample_project.analytics_metrics.get("velocity", 0.0)
         sessions_after_1 = sample_project.analytics_metrics.get("total_qa_sessions", 0)
 
         # Second Q&A session
@@ -182,7 +181,6 @@ class TestAnalyticsEndToEndFlow:
         )
 
         discovery_sessions = sample_project.analytics_metrics["total_qa_sessions"]
-        discovery_velocity = sample_project.analytics_metrics["velocity"]
 
         # Move to next phase
         sample_project.phase = "analysis"
@@ -656,7 +654,7 @@ class TestAnalyticsDataConsistency:
         discovery_score = sample_project.phase_maturity_scores.get("discovery", 0.0)
 
         # Recalculate maturity
-        result = quality_controller._calculate_phase_maturity(
+        quality_controller._calculate_phase_maturity(
             {"project": sample_project, "phase": "discovery"}
         )
 

@@ -14,6 +14,7 @@ import pytest
 from socratic_system.config import SocratesConfig
 from socratic_system.events.event_emitter import EventEmitter
 from socratic_system.events.event_types import EventType
+from socratic_system.orchestration import AgentOrchestrator
 
 
 @pytest.fixture
@@ -52,12 +53,7 @@ class TestConfigPerformance:
         """Benchmark ConfigBuilder"""
 
         def build_config():
-            return (
-                socrates.ConfigBuilder(mock_api_key)
-                .with_data_dir(temp_data_dir)
-                .with_log_level("DEBUG")
-                .build()
-            )
+            return SocratesConfig(api_key=mock_api_key, data_dir=temp_data_dir)
 
         result = benchmark(build_config)
         assert result is not None
@@ -116,7 +112,7 @@ class TestOrchestratorPerformance:
 
         def create_orchestrator():
             with patch("anthropic.Anthropic"):
-                return socrates.AgentOrchestrator(benchmark_config)
+                return AgentOrchestrator(benchmark_config)
 
         result = benchmark(create_orchestrator)
         assert result is not None
@@ -124,7 +120,7 @@ class TestOrchestratorPerformance:
     def test_orchestrator_request_benchmark(self, benchmark, benchmark_config):
         """Benchmark request processing"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(benchmark_config)
+            orchestrator = AgentOrchestrator(benchmark_config)
 
             def process_request():
                 return orchestrator.process_request("project_manager", {"action": "list_projects"})

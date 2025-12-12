@@ -205,7 +205,7 @@ class TestOrchestratorRequests:
 
         mock_orchestrator.process_request.side_effect = Exception("Invalid action")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Invalid action"):
             mock_orchestrator.process_request("agent", request)
 
     def test_concurrent_requests(self, mock_orchestrator):
@@ -263,7 +263,7 @@ class TestAgentCoordination:
         # Agent 1 fails
         mock_orchestrator.process_request.side_effect = Exception("Agent 1 failed")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Agent 1 failed"):
             mock_orchestrator.process_request("agent1", {"action": "test"})
 
         # Error should be catchable by orchestrator

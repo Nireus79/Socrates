@@ -126,8 +126,8 @@ def test_project_type_aware_categorization():
         print(f"  - {spec['category']}")
 
     # Verify categories are different
-    software_cats = set(s["category"] for s in result_sw)
-    business_cats = set(s["category"] for s in result_biz)
+    software_cats = {s["category"] for s in result_sw}
+    business_cats = {s["category"] for s in result_biz}
 
     print(f"\n[OK] Software categories: {software_cats}")
     print(f"[OK] Business categories: {business_cats}")

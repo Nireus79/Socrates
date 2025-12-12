@@ -292,7 +292,7 @@ class TestLearningIntegration:
         )
 
         # Simulate observations
-        for i in range(5):
+        for _i in range(5):
             pattern.frequency += 1
             pattern.last_observed = datetime.datetime.now()
 
