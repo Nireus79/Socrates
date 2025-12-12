@@ -59,10 +59,14 @@ class TestEventEmitter:
         mock_event_emitter.on(EventType.PROJECT_CREATED, callback)
         mock_event_emitter.emit(EventType.PROJECT_CREATED, test_data)
 
-        # Callback should be called with event type and data
+        # Callback should be called with data (event type is implicit from subscription)
         callback.assert_called_once()
         args = callback.call_args
-        assert args[0][1] == test_data  # Second argument is the data
+        # call_args[0] is the tuple of positional arguments, [0] gets the first (only) argument
+        received_data = args[0][0]
+        assert received_data["key"] == test_data["key"]
+        assert received_data["number"] == test_data["number"]
+        assert "timestamp" in received_data  # Timestamp is added by emit
 
     def test_different_event_types(self, mock_event_emitter):
         """Test that different event types don't trigger wrong callbacks"""
@@ -250,9 +254,14 @@ class TestEventData:
 
         mock_event_emitter.emit(EventType.AGENT_COMPLETE, complex_data)
 
-        # Callback should receive the complex data
+        # Callback should receive the complex data (plus timestamp added by emit)
         args = callback.call_args
-        assert args[0][1] == complex_data
+        received_data = args[0][0]  # First (only) positional argument
+        assert received_data["agent"] == complex_data["agent"]
+        assert received_data["results"] == complex_data["results"]
+        assert received_data["nested"] == complex_data["nested"]
+        assert received_data["tokens"] == complex_data["tokens"]
+        assert "timestamp" in received_data  # Timestamp should be added
 
     def test_event_data_immutability_concern(self, mock_event_emitter):
         """Test that event data mutations don't affect original"""

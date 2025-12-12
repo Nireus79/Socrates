@@ -24,7 +24,7 @@ class SocratesError(Exception):
         """Initialize SocratesError"""
         self.message = message
         self.error_code = error_code
-        self.context = context or {}
+        self.context = context
         super().__init__(self.message)
 
     def __str__(self) -> str:
@@ -70,21 +70,17 @@ class AuthenticationError(SocratesError):
 class ProjectNotFoundError(DatabaseError):
     """Raised when a project is not found in the database"""
 
-    def __init__(self, project_id: str):
+    def __init__(self, message: str, context: Optional[Dict[str, Any]] = None):
         """Initialize ProjectNotFoundError"""
-        message = f"Project not found: {project_id}"
-        super().__init__(
-            message, error_code="PROJECT_NOT_FOUND", context={"project_id": project_id}
-        )
+        super().__init__(message, error_code="PROJECT_NOT_FOUND", context=context)
 
 
 class UserNotFoundError(DatabaseError):
     """Raised when a user is not found in the database"""
 
-    def __init__(self, user_id: str):
+    def __init__(self, message: str, context: Optional[Dict[str, Any]] = None):
         """Initialize UserNotFoundError"""
-        message = f"User not found: {user_id}"
-        super().__init__(message, error_code="USER_NOT_FOUND", context={"user_id": user_id})
+        super().__init__(message, error_code="USER_NOT_FOUND", context=context)
 
 
 class ValidationError(SocratesError):
