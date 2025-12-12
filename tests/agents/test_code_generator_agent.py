@@ -99,9 +99,9 @@ class TestCodeGeneratorAgentScriptGeneration:
             orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
-            # Mock the generate_code method
+            # Mock the generate_artifact method
             mock_code = "def hello():\n    print('Hello, World!')"
-            orchestrator.claude_client.generate_code = MagicMock(return_value=mock_code)
+            orchestrator.claude_client.generate_artifact = MagicMock(return_value=mock_code)
 
             sample_project.goals = "Create a simple greeting function"
             sample_project.tech_stack = ["Python"]
@@ -113,7 +113,7 @@ class TestCodeGeneratorAgentScriptGeneration:
             assert result["status"] == "success"
             assert result["script"] == mock_code
             assert "context_used" in result
-            orchestrator.claude_client.generate_code.assert_called_once()
+            orchestrator.claude_client.generate_artifact.assert_called_once()
 
     def test_generate_script_api_error(self, mock_orchestrator, sample_project):
         """Test handling of API errors during code generation"""
@@ -122,7 +122,7 @@ class TestCodeGeneratorAgentScriptGeneration:
             agent = CodeGeneratorAgent(orchestrator)
 
             # Mock API error
-            orchestrator.claude_client.generate_code = MagicMock(
+            orchestrator.claude_client.generate_artifact = MagicMock(
                 side_effect=Exception("API Error: Rate limited")
             )
 
@@ -145,7 +145,7 @@ class TestCodeGeneratorAgentScriptGeneration:
 
             sample_project.goals = "Build API endpoints"
             sample_project.requirements = ["CRUD operations", "Validation"]
-            orchestrator.claude_client.generate_code = MagicMock(return_value="# Generated code")
+            orchestrator.claude_client.generate_artifact = MagicMock(return_value="# Generated code")
 
             request = {"action": "generate_script", "project": sample_project}
 
@@ -279,7 +279,7 @@ class TestCodeGeneratorAgentErrorHandling:
             orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
-            orchestrator.claude_client.generate_code = MagicMock(
+            orchestrator.claude_client.generate_artifact = MagicMock(
                 side_effect=AttributeError("'NoneType' object has no attribute 'name'")
             )
 
@@ -323,14 +323,14 @@ class TestCodeGeneratorAgentLanguageSupport:
             sample_project.language_preferences = language
 
             mock_code = f"// {language} code example"
-            orchestrator.claude_client.generate_code = MagicMock(return_value=mock_code)
+            orchestrator.claude_client.generate_artifact = MagicMock(return_value=mock_code)
 
             request = {"action": "generate_script", "project": sample_project}
 
             result = agent.process(request)
 
             assert result["status"] == "success"
-            orchestrator.claude_client.generate_code.assert_called_once()
+            orchestrator.claude_client.generate_artifact.assert_called_once()
 
 
 @pytest.mark.unit
@@ -345,7 +345,7 @@ class TestCodeGeneratorAgentLogging:
 
             # Track log calls
             agent.log = MagicMock()
-            orchestrator.claude_client.generate_code = MagicMock(return_value="# code")
+            orchestrator.claude_client.generate_artifact = MagicMock(return_value="# code")
 
             request = {"action": "generate_script", "project": sample_project}
 
@@ -372,7 +372,7 @@ def process_data(data):
 """
             mock_docs = "# Process Data\nDoubles each element in the input list."
 
-            orchestrator.claude_client.generate_code = MagicMock(return_value=mock_code)
+            orchestrator.claude_client.generate_artifact = MagicMock(return_value=mock_code)
             orchestrator.claude_client.generate_documentation = MagicMock(return_value=mock_docs)
 
             sample_project.goals = "Create data processing utilities"
@@ -427,7 +427,7 @@ def process_data(data):
             ]
 
             mock_code = "# Microservices starter code"
-            orchestrator.claude_client.generate_code = MagicMock(return_value=mock_code)
+            orchestrator.claude_client.generate_artifact = MagicMock(return_value=mock_code)
 
             request = {"action": "generate_script", "project": sample_project}
 
@@ -446,7 +446,7 @@ def process_data(data):
             agent = CodeGeneratorAgent(orchestrator)
 
             # First call fails, second succeeds (simulating retry)
-            orchestrator.claude_client.generate_code = MagicMock(
+            orchestrator.claude_client.generate_artifact = MagicMock(
                 side_effect=[RuntimeError("Temporary API error"), "# Code after retry"]
             )
 
@@ -457,8 +457,8 @@ def process_data(data):
                 agent.process(request)
 
             # Reset mock
-            orchestrator.claude_client.generate_code.reset_mock()
-            orchestrator.claude_client.generate_code.return_value = "# Code after retry"
+            orchestrator.claude_client.generate_artifact.reset_mock()
+            orchestrator.claude_client.generate_artifact.return_value = "# Code after retry"
 
             # Second attempt succeeds
             result = agent.process(request)
