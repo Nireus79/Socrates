@@ -127,13 +127,16 @@ class EventEmitter:
         if data is None:
             data = {}
 
+        # Handle both EventType enum and string event types
+        event_name = event_type.value if isinstance(event_type, EventType) else str(event_type)
+
         # Add timestamp if not already present
         if "timestamp" not in data:
             data["timestamp"] = datetime.now().isoformat()
 
         # Log to Python logger (unless skipped)
         if not skip_logging:
-            self._logger.debug(f"Event: {event_type.value} - {data}")
+            self._logger.debug(f"Event: {event_name} - {data}")
 
         # Notify all listeners
         with self._lock:
@@ -144,7 +147,7 @@ class EventEmitter:
                 callback(data)
             except Exception as e:
                 self._logger.error(
-                    f"Error in event listener for {event_type.value}: {e}", exc_info=e
+                    f"Error in event listener for {event_name}: {e}", exc_info=e
                 )
 
     def listener_count(self, event_type: Optional[EventType] = None) -> int:
