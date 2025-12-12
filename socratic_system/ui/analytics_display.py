@@ -34,7 +34,7 @@ class AnalyticsDisplay:
                 bar = AnalyticsDisplay._create_progress_bar(cat_info["percentage"])
                 cat_display = cat_info["category"].replace("_", " ").title()
                 print(
-                    f"  • {cat_display}: {cat_info['percentage']:.1f}% {bar} "
+                    f"  - {cat_display}: {cat_info['percentage']:.1f}% {bar} "
                     f"({cat_info['current']:.1f}/{cat_info['target']:.0f} pts)"
                 )
 
@@ -45,7 +45,7 @@ class AnalyticsDisplay:
                 bar = AnalyticsDisplay._create_progress_bar(cat_info["percentage"])
                 cat_display = cat_info["category"].replace("_", " ").title()
                 print(
-                    f"  • {cat_display}: {cat_info['percentage']:.1f}% {bar} "
+                    f"  - {cat_display}: {cat_info['percentage']:.1f}% {bar} "
                     f"({cat_info['current']:.1f}/{cat_info['target']:.0f} pts)"
                 )
 
@@ -54,14 +54,14 @@ class AnalyticsDisplay:
             print("\nMissing Categories (0 specs):")
             for cat in missing[:5]:
                 cat_display = cat.replace("_", " ").title()
-                print(f"  • {cat_display}")
+                print(f"  - {cat_display}")
             if len(missing) > 5:
                 print(f"  ... and {len(missing) - 5} more")
 
         # Balance assessment
         print(f"\nCategory Balance: {balance.get('status', 'UNKNOWN')}")
         for message in balance.get("messages", []):
-            print(f"  → {message}")
+            print(f"  - {message}")
 
         print()
 
@@ -88,7 +88,7 @@ class AnalyticsDisplay:
                 gap = rec.get("gap", 0.0)
 
                 print(f"\n  {i}. {cat_display}")
-                print(f"     Current: {current:.0f}% → Target: {target:.0f}% (gap: {gap:.0f}%)")
+                print(f"     Current: {current:.0f}% -> Target: {target:.0f}% (gap: {gap:.0f}%)")
                 print(f"     Action: {rec['action']}")
 
         if medium_priority:
@@ -138,7 +138,7 @@ class AnalyticsDisplay:
         if insights:
             print("\nKey Insights:")
             for insight in insights:
-                print(f"  • {insight}")
+                print(f"  - {insight}")
 
         print()
 
@@ -168,14 +168,14 @@ class AnalyticsDisplay:
         if weak:
             print(f"\nWeak Categories ({len(weak)}):")
             for cat in weak[:3]:
-                print(f"  • {cat.replace('_', ' ').title()}")
+                print(f"  - {cat.replace('_', ' ').title()}")
             if len(weak) > 3:
                 print(f"  ... and {len(weak) - 3} more")
 
         if strong:
             print(f"\nStrong Categories ({len(strong)}):")
             for cat in strong[:3]:
-                print(f"  • {cat.replace('_', ' ').title()}")
+                print(f"  - {cat.replace('_', ' ').title()}")
             if len(strong) > 3:
                 print(f"  ... and {len(strong) - 3} more")
 
@@ -199,7 +199,7 @@ class AnalyticsDisplay:
         """
         filled = int((percentage / 100.0) * width)
         empty = width - filled
-        return "[" + "█" * filled + "░" * empty + "]"
+        return "[" + "=" * filled + "-" * empty + "]"
 
     @staticmethod
     def _create_trend_chart(qa_events: List[Dict], height: int = 8) -> str:
@@ -231,18 +231,18 @@ class AnalyticsDisplay:
         # Y-axis labels and data
         for level in range(height, -1, -1):
             threshold = (level / height) * max_score
-            line = f"{threshold:4.0f}% │"
+            line = f"{threshold:4.0f}% |"
 
             for score in scores:
                 if score >= threshold:
-                    line += " ▲ "
+                    line += " * "
                 else:
                     line += "   "
 
             chart_lines.append(line)
 
         # X-axis
-        x_axis = "     │" + "───" * len(scores) + "→"
+        x_axis = "     |" + "---" * len(scores) + ">"
         chart_lines.append(x_axis)
 
         # X-axis labels
@@ -313,16 +313,16 @@ class AnalyticsDisplay:
             score = project.phase_maturity_scores.get(phase, 0.0)
 
             if phase == current_phase:
-                marker = "→ "
+                marker = ">> "
                 status = "CURRENT"
             elif phases.index(phase) < phases.index(current_phase):
-                marker = "✓ "
+                marker = "[X]"
                 status = "COMPLETED"
             else:
-                marker = "  "
+                marker = "   "
                 status = "UPCOMING"
 
             bar = AnalyticsDisplay._create_progress_bar(score, width=30)
-            print(f"{marker}{phase.upper():20} {score:5.1f}% {bar} [{status}]")
+            print(f"{marker} {phase.upper():20} {score:5.1f}% {bar} [{status}]")
 
         print()

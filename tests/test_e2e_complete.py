@@ -153,7 +153,11 @@ class TestProjectManagementWorkflow:
     def setup_authenticated_user(self, app):
         """Helper to set up authenticated user"""
         user = User(
-            username="projecttest", passcode_hash="hash", created_at=datetime.now(), projects=[]
+            username="projecttest",
+            passcode_hash="hash",
+            created_at=datetime.now(),
+            projects=[],
+            subscription_tier="pro",  # Pro tier allows multiple projects
         )
         app.orchestrator.database.save_user(user)
         app.current_user = user
@@ -166,7 +170,7 @@ class TestProjectManagementWorkflow:
 
         cmd = ProjectCreateCommand()
 
-        with patch("builtins.input", return_value=""):
+        with patch("builtins.input", side_effect=["1"]):  # Select project type 1
             result = cmd.execute(
                 ["Test Project"],
                 {"orchestrator": app.orchestrator, "user": app.current_user, "app": app},
@@ -183,7 +187,7 @@ class TestProjectManagementWorkflow:
 
         # Create a test project
         cmd_create = ProjectCreateCommand()
-        with patch("builtins.input", return_value=""):
+        with patch("builtins.input", side_effect=["1"]):  # Select project type 1
             cmd_create.execute(
                 ["Project 1"], {"orchestrator": app.orchestrator, "user": user, "app": app}
             )
@@ -201,7 +205,7 @@ class TestProjectManagementWorkflow:
         # Create and save a project with unique name
         project_name = f"Load Test {id(app)}"
         cmd_create = ProjectCreateCommand()
-        with patch("builtins.input", return_value=""):
+        with patch("builtins.input", side_effect=["1"]):  # Select project type 1
             cmd_create.execute(
                 [project_name], {"orchestrator": app.orchestrator, "user": user, "app": app}
             )
@@ -246,7 +250,13 @@ class TestNotesSystemWorkflow:
         # Use unique IDs to avoid test isolation issues
         test_id = id(app)
         username = f"notestest_{test_id}"
-        user = User(username=username, passcode_hash="hash", created_at=datetime.now(), projects=[])
+        user = User(
+            username=username,
+            passcode_hash="hash",
+            created_at=datetime.now(),
+            projects=[],
+            subscription_tier="pro",  # Pro tier allows multiple projects
+        )
         app.orchestrator.database.save_user(user)
         app.current_user = user
 
@@ -557,7 +567,13 @@ class TestCollaborationWorkflow:
 
     def setup_project_with_users(self, app):
         """Helper to set up project and multiple users"""
-        owner = User(username="owner", passcode_hash="hash", created_at=datetime.now(), projects=[])
+        owner = User(
+            username="owner",
+            passcode_hash="hash",
+            created_at=datetime.now(),
+            projects=[],
+            subscription_tier="pro",  # Pro tier allows team collaboration
+        )
         collab = User(
             username="collaborator", passcode_hash="hash", created_at=datetime.now(), projects=[]
         )
@@ -761,10 +777,14 @@ class TestCompleteE2EWorkflow:
         assert result["status"] == "success", f"Error: {result.get('message', 'Unknown error')}"
         print(f"   ✓ User created: {e2e_username}")
 
+        # Upgrade user to pro tier for testing multiple features
+        app.current_user.subscription_tier = "pro"
+        app.orchestrator.database.save_user(app.current_user)
+
         # 2. Create project
         print("\n2. Creating project...")
         cmd_project = ProjectCreateCommand()
-        with patch("builtins.input", return_value=""):
+        with patch("builtins.input", side_effect=["1"]):  # Select project type 1
             result = cmd_project.execute(
                 ["E2E Test Project"],
                 {"orchestrator": app.orchestrator, "user": app.current_user, "app": app},

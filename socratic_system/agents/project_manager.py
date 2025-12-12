@@ -68,7 +68,7 @@ class ProjectManagerAgent(Agent):
 
         user = self.orchestrator.database.load_user(owner)
         active_projects = self.orchestrator.database.get_user_projects(owner)
-        active_count = len([p for p in active_projects if not p.is_archived])
+        active_count = len([p for p in active_projects if p.get("status") != "archived"])
 
         can_create, error_message = SubscriptionChecker.check_project_limit(user, active_count)
         if not can_create:
