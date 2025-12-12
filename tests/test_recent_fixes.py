@@ -29,14 +29,15 @@ class TestVectorDBFilter:
         assert result is None
 
     def test_build_filter_returns_eq_when_project_specified(self):
-        """When project_id is provided, should return $eq filter."""
+        """When project_id is provided, should return $or filter for global + project knowledge."""
         mock_vector_db = Mock(spec=VectorDatabase)
         project_id = "proj_test_123"
 
         result = VectorDatabase._build_project_filter(mock_vector_db, project_id)
 
-        # Should return $eq filter without $exists
-        assert result == {"project_id": {"$eq": project_id}}
+        # Should return $or filter that includes both global and project-specific knowledge
+        assert "$or" in result
+        assert len(result["$or"]) == 2
         assert "$exists" not in str(result)
 
     def test_build_filter_with_various_project_ids(self):
@@ -47,16 +48,19 @@ class TestVectorDBFilter:
 
         for proj_id in test_cases:
             result = VectorDatabase._build_project_filter(mock_vector_db, proj_id)
-            assert result == {"project_id": {"$eq": proj_id}}
+            # Should return $or filter with global + project-specific knowledge
+            assert "$or" in result
+            assert len(result["$or"]) == 2
 
     def test_search_similar_uses_filter(self):
         """Verify _build_project_filter is correct when used in search_similar."""
         # This is simpler - just test the filter function behavior
         mock_vector_db = Mock(spec=VectorDatabase)
 
-        # Test filter is correctly built for project search
+        # Test filter is correctly built for project search - should include both global and project knowledge
         filter_with_project = VectorDatabase._build_project_filter(mock_vector_db, "proj_123")
-        assert filter_with_project == {"project_id": {"$eq": "proj_123"}}
+        assert "$or" in filter_with_project
+        assert len(filter_with_project["$or"]) == 2
 
         # Test filter for no project returns None
         filter_no_project = VectorDatabase._build_project_filter(mock_vector_db, None)
