@@ -151,6 +151,23 @@ def sample_project():
     )
 
 
+@pytest.fixture
+def sample_user():
+    """Create a sample user for testing."""
+    import datetime
+
+    from socratic_system.models import User
+
+    user = User(
+        username="testuser",
+        passcode_hash="hash123",
+        created_at=datetime.datetime.now(),
+        projects=["test-proj-123"],
+    )
+    user.questions_used_this_month = 0
+    return user
+
+
 # Pytest hooks for better error handling
 def pytest_configure(config):
     """Configure pytest with custom markers and settings."""
