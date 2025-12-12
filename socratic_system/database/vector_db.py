@@ -265,17 +265,26 @@ class VectorDatabase:
         """Build ChromaDB where filter for project_id
 
         Args:
-            project_id: Project ID to filter by, or None for no filtering
+            project_id: Project ID to filter by, or None for global search
 
         Returns:
-            ChromaDB where filter dict, or None if no filtering needed
+            ChromaDB where filter dict. Returns None for truly global search (all knowledge).
+            For project-specific search, returns $or filter for global + project knowledge.
         """
         if project_id is None:
-            # No filtering - search all knowledge
+            # Global search: Return None (no filter) to search ALL knowledge
+            # This is the simplest approach given ChromaDB's operator limitations
             return None
         else:
-            # Search only project-specific knowledge
-            return {"project_id": {"$eq": project_id}}
+            # Project-specific search: Get both global AND project-specific knowledge
+            # Global knowledge is identified by scope != "project"
+            # Project knowledge is identified by matching project_id
+            return {
+                "$or": [
+                    {"scope": {"$ne": "project"}},  # Global knowledge (non-project scope)
+                    {"project_id": {"$eq": project_id}},  # Project-specific knowledge for this project
+                ]
+            }
 
     def delete_project_knowledge(self, project_id: str) -> int:
         """Delete all knowledge entries for a project

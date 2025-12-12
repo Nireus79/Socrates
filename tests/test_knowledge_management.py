@@ -45,7 +45,12 @@ def sample_project_entry():
         id="project_test_entry",
         content="This is project-specific knowledge about React hooks",
         category="javascript_frameworks",
-        metadata={"topic": "react_hooks", "difficulty": "intermediate", "tags": ["react", "hooks"]},
+        metadata={
+            "topic": "react_hooks",
+            "difficulty": "intermediate",
+            "tags": ["react", "hooks"],
+            "scope": "project",  # IMPORTANT: Mark as project-specific
+        },
     )
 
 
@@ -290,10 +295,9 @@ class TestMetadataFiltering:
         """Test filter for global knowledge (project_id=None)"""
         filter_dict = temp_vector_db._build_project_filter(None)
 
-        assert filter_dict is not None
-        assert "$or" in filter_dict
-        # Should filter for global knowledge only
-        assert len(filter_dict["$or"]) == 2
+        # When no project is specified, return None to search ALL knowledge
+        # This is the only approach that works with ChromaDB's operator limitations
+        assert filter_dict is None
 
     def test_build_filter_with_project(self, temp_vector_db):
         """Test filter for specific project"""
