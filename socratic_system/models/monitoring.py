@@ -13,5 +13,6 @@ class TokenUsage:
     input_tokens: int
     output_tokens: int
     total_tokens: int
-    cost_estimate: float
     timestamp: datetime.datetime
+    model: str = "claude-opus-4-5-20251101"
+    cost_estimate: float = 0.0

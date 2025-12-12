@@ -13,5 +13,5 @@ class KnowledgeEntry:
     id: str
     content: str
     category: str
-    metadata: Dict[str, Any]
     embedding: Optional[List[float]] = None
+    metadata: Optional[Dict[str, Any]] = None

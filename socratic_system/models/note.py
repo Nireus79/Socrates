@@ -12,11 +12,11 @@ class ProjectNote:
 
     note_id: str
     project_id: str
-    note_type: str  # 'design', 'bug', 'idea', 'task', 'general'
     title: str
     content: str
-    created_at: datetime.datetime
-    created_by: str
+    note_type: str = "general"  # 'design', 'bug', 'idea', 'task', 'general'
+    created_at: datetime.datetime = field(default_factory=datetime.datetime.now)
+    created_by: str = "system"
     tags: List[str] = field(default_factory=list)
 
     @classmethod

@@ -132,7 +132,7 @@ def sample_project():
     from socratic_system.models import ProjectContext
 
     return ProjectContext(
-        project_id="test-proj-123",
+        project_id="test_proj_001",
         name="Test Project",
         owner="testuser",
         collaborators=[],
@@ -186,6 +186,37 @@ def mock_event_emitter():
     from socratic_system.events.event_emitter import EventEmitter
 
     return EventEmitter()
+
+
+@pytest.fixture
+def sample_knowledge_entry():
+    """Create a sample knowledge entry for testing."""
+    from socratic_system.models import KnowledgeEntry
+
+    return KnowledgeEntry(
+        id="test_knowledge_001",
+        content="REST API design best practices and patterns for building scalable services",
+        category="api_design",
+        embedding=[0.1, 0.2, 0.3, 0.4, 0.5],
+        metadata={"source": "documentation", "difficulty": "intermediate", "tags": ["REST", "API"]},
+    )
+
+
+@pytest.fixture
+def sample_token_usage():
+    """Create a sample token usage record for testing."""
+    import datetime
+
+    from socratic_system.models import TokenUsage
+
+    return TokenUsage(
+        input_tokens=100,
+        output_tokens=50,
+        total_tokens=150,
+        model="claude-opus-4-5-20251101",
+        timestamp=datetime.datetime.now(),
+        cost_estimate=0.001,
+    )
 
 
 # Pytest hooks for better error handling

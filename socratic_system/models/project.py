@@ -16,21 +16,21 @@ class ProjectContext:
     project_id: str
     name: str
     owner: str
-    collaborators: List[
-        str
-    ]  # DEPRECATED: Kept for backward compatibility. Use team_members instead.
-    goals: str
-    requirements: List[str]
-    tech_stack: List[str]
-    constraints: List[str]
-    team_structure: str
-    language_preferences: str
-    deployment_target: str
-    code_style: str
     phase: str
-    conversation_history: List[Dict]
     created_at: datetime.datetime
     updated_at: datetime.datetime
+    collaborators: List[
+        str
+    ] = None  # DEPRECATED: Kept for backward compatibility. Use team_members instead.
+    goals: str = ""
+    requirements: List[str] = None
+    tech_stack: List[str] = None
+    constraints: List[str] = None
+    team_structure: str = "individual"
+    language_preferences: str = "python"
+    deployment_target: str = "local"
+    code_style: str = "standard"
+    conversation_history: List[Dict] = None
     chat_mode: str = "socratic"  # "socratic" or "direct" mode
     is_archived: bool = False
     archived_at: Optional[datetime.datetime] = None
@@ -46,6 +46,9 @@ class ProjectContext:
     )
     pending_questions: Optional[List[Dict]] = None  # Question queue for team projects
 
+    # Notes tracking
+    notes: Optional[List[Dict]] = None  # Project notes list
+
     # Maturity tracking fields
     phase_maturity_scores: Dict[str, float] = None  # Per-phase maturity (0-100)
     category_scores: Dict[str, Dict[str, float]] = None  # Category scores by phase
@@ -59,6 +62,20 @@ class ProjectContext:
 
     def __post_init__(self):
         """Initialize default values and migrate legacy collaborators to team_members"""
+        # Initialize list fields with defaults
+        if self.collaborators is None:
+            self.collaborators = []
+        if self.requirements is None:
+            self.requirements = []
+        if self.tech_stack is None:
+            self.tech_stack = []
+        if self.constraints is None:
+            self.constraints = []
+        if self.conversation_history is None:
+            self.conversation_history = []
+        if self.notes is None:
+            self.notes = []
+
         # Migrate old collaborators to team_members if needed (backward compatibility)
         if self.team_members is None and self.collaborators:
             self.team_members = []

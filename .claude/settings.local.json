@@ -49,7 +49,9 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nfix: Resolve test failures and add missing fixtures\n\n- Add missing test fixtures (mock_api_key, temp_data_dir) to conftest.py\n- Fix config tests to match actual SocratesConfig implementation\n- Update SocratesConfig to validate API key and include it in legacy dict\n- Fix agent tests by providing proper user fixtures\n- Add input validation to ProjectManagerAgent._create_project\n- Handle None users gracefully in SubscriptionChecker methods\n- Fix async test support by installing pytest-asyncio\n- Update client test expectations to match actual error handling\n- Fix analytics calculator test expectations to match actual return values\n- Ensure proper initialization of ProjectContext in tests\n\nThese changes fix ~150+ test failures across the test suite.\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(timeout 30 python -m pytest:*)",
       "Bash(timeout 120 python -m pytest:*)",
-      "Bash(timeout 150 python -m pytest:*)"
+      "Bash(timeout 150 python -m pytest:*)",
+      "Bash(timeout 180 python:*)",
+      "Bash(timeout 300 python -m pytest:*)"
     ],
     "deny": [],
     "ask": []
