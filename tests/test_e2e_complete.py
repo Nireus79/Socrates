@@ -68,17 +68,18 @@ def orchestrator(temp_data_dir):
     # Mock API key for testing
     with patch.dict(os.environ, {"API_KEY_CLAUDE": "test-key"}):
         with patch("socratic_system.orchestration.orchestrator.ClaudeClient"):
-            orch = AgentOrchestrator("test-key")
-            orch.claude_client = MagicMock()
-            orch.claude_client.generate_response = MagicMock(return_value="Test response")
-            orch.claude_client.generate_suggestions = MagicMock(return_value="Test suggestions")
+            with patch("socratic_system.orchestration.orchestrator.VectorDatabase"):
+                orch = AgentOrchestrator("test-key")
+                orch.claude_client = MagicMock()
+                orch.claude_client.generate_response = MagicMock(return_value="Test response")
+                orch.claude_client.generate_suggestions = MagicMock(return_value="Test suggestions")
 
-            # Clear all data before test
-            orch.database.users = {}
-            orch.database.projects = {}
-            orch.database.notes = {}
+                # Clear all data before test
+                orch.database.users = {}
+                orch.database.projects = {}
+                orch.database.notes = {}
 
-            return orch
+                return orch
 
 
 @pytest.fixture

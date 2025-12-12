@@ -13,6 +13,7 @@ Tests cover:
 import datetime
 import os
 import tempfile
+from decimal import Decimal
 
 import pytest
 
@@ -271,10 +272,11 @@ class TestProjectDatabaseLearningOperations:
             id="eff-001",
             user_id="testuser",
             question_template_id="qt-001",
-            times_used=5,
-            positive_responses=4,
-            negative_responses=1,
-            effectiveness_score=0.8,
+            role="PM",
+            times_asked=5,
+            times_answered_well=4,
+            average_answer_length=250,
+            effectiveness_score=Decimal("0.8"),
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
@@ -291,10 +293,11 @@ class TestProjectDatabaseLearningOperations:
             id="eff-002",
             user_id="testuser",
             question_template_id="qt-002",
-            times_used=3,
-            positive_responses=2,
-            negative_responses=1,
-            effectiveness_score=0.67,
+            role="BA",
+            times_asked=3,
+            times_answered_well=2,
+            average_answer_length=200,
+            effectiveness_score=Decimal("0.67"),
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
@@ -310,9 +313,8 @@ class TestProjectDatabaseLearningOperations:
             id="pat-001",
             user_id="testuser",
             pattern_type="quick_responder",
-            frequency=10,
-            last_observed=datetime.datetime.now(),
-            metadata={"avg_response_time": 2.5},
+            pattern_data={"avg_response_time": 2.5},
+            learned_from_projects=["proj-001"],
             learned_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
@@ -329,15 +331,14 @@ class TestProjectDatabaseLearningOperations:
             id="pat-002",
             user_id="testuser",
             pattern_type="thorough_responder",
-            frequency=5,
-            last_observed=datetime.datetime.now(),
-            metadata={},
+            pattern_data={},
+            learned_from_projects=[],
             learned_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
 
         temp_db.save_behavior_pattern(pattern)
-        patterns = temp_db.get_behavior_patterns("testuser")
+        patterns = temp_db.get_user_behavior_patterns("testuser")
 
         assert isinstance(patterns, list)
 
@@ -348,12 +349,16 @@ class TestProjectDatabaseLLMConfiguration:
     def test_save_llm_config(self, temp_db):
         """Test saving LLM provider configuration."""
         config = LLMProviderConfig(
-            provider_name="Claude",
-            model_name="claude-3-sonnet-20240229",
-            api_key_encrypted="encrypted_key",
+            id="config-001",
+            provider="claude",
+            user_id="testuser",
             is_default=True,
-            temperature=0.7,
-            max_tokens=2048,
+            enabled=True,
+            settings={
+                "model": "claude-3-sonnet-20240229",
+                "temperature": 0.7,
+                "max_tokens": 2048,
+            },
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
@@ -367,38 +372,47 @@ class TestProjectDatabaseLLMConfiguration:
     def test_get_llm_configs(self, temp_db):
         """Test retrieving LLM configurations."""
         config = LLMProviderConfig(
-            provider_name="OpenAI",
-            model_name="gpt-4",
-            api_key_encrypted="encrypted",
+            id="config-002",
+            provider="openai",
+            user_id="testuser",
             is_default=False,
-            temperature=0.8,
-            max_tokens=4096,
+            enabled=True,
+            settings={
+                "model": "gpt-4",
+                "temperature": 0.8,
+                "max_tokens": 4096,
+            },
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
 
         temp_db.save_llm_config(config)
-        configs = temp_db.get_llm_configs()
+        configs = temp_db.get_user_llm_configs("testuser")
 
         assert isinstance(configs, list)
 
     def test_get_default_llm_config(self, temp_db):
-        """Test retrieving default LLM configuration."""
+        """Test retrieving LLM configuration by provider."""
         config = LLMProviderConfig(
-            provider_name="Default",
-            model_name="default-model",
-            api_key_encrypted="key",
+            id="config-003",
+            provider="claude",
+            user_id="testuser",
             is_default=True,
-            temperature=0.5,
-            max_tokens=1024,
+            enabled=True,
+            settings={
+                "model": "claude-haiku-4-5-20251001",
+                "temperature": 0.5,
+                "max_tokens": 1024,
+            },
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
 
         temp_db.save_llm_config(config)
-        default = temp_db.get_default_llm_config()
+        retrieved = temp_db.get_user_llm_config("testuser", "claude")
 
-        assert default is not None
+        assert retrieved is not None
+        assert retrieved.provider == "claude"
 
 
 class TestProjectDatabaseUsageTracking:
@@ -409,58 +423,61 @@ class TestProjectDatabaseUsageTracking:
         usage = LLMUsageRecord(
             id="usage-001",
             user_id="testuser",
-            project_id=sample_project.project_id,
-            model_used="claude-3-sonnet-20240229",
+            provider="claude",
+            model="claude-3-sonnet-20240229",
             input_tokens=100,
             output_tokens=50,
-            total_cost=0.05,
-            operation_type="extract_insights",
+            total_tokens=150,
+            cost=0.05,
+            success=True,
             timestamp=datetime.datetime.now(),
         )
 
         try:
-            temp_db.record_llm_usage(usage)
+            temp_db.save_usage_record(usage)
             assert True
         except Exception as e:
             pytest.fail(f"Failed to record LLM usage: {e}")
 
     def test_get_user_usage_summary(self, temp_db):
-        """Test getting user's LLM usage summary."""
+        """Test getting user's LLM usage records."""
         usage = LLMUsageRecord(
             id="usage-002",
             user_id="testuser",
-            project_id="proj-001",
-            model_used="claude-3-sonnet",
+            provider="claude",
+            model="claude-3-sonnet",
             input_tokens=200,
             output_tokens=100,
-            total_cost=0.10,
-            operation_type="generate_code",
+            total_tokens=300,
+            cost=0.10,
+            success=True,
             timestamp=datetime.datetime.now(),
         )
 
-        temp_db.record_llm_usage(usage)
-        summary = temp_db.get_user_usage_summary("testuser")
+        temp_db.save_usage_record(usage)
+        records = temp_db.get_usage_records("testuser")
 
-        assert isinstance(summary, dict)
+        assert isinstance(records, list)
 
     def test_get_monthly_usage(self, temp_db):
-        """Test getting monthly LLM usage."""
+        """Test getting monthly LLM usage records."""
         usage = LLMUsageRecord(
             id="usage-003",
             user_id="testuser",
-            project_id="proj-001",
-            model_used="gpt-4",
+            provider="openai",
+            model="gpt-4",
             input_tokens=150,
             output_tokens=75,
-            total_cost=0.08,
-            operation_type="generate_response",
+            total_tokens=225,
+            cost=0.08,
+            success=True,
             timestamp=datetime.datetime.now(),
         )
 
-        temp_db.record_llm_usage(usage)
-        monthly = temp_db.get_monthly_usage("testuser")
+        temp_db.save_usage_record(usage)
+        records = temp_db.get_usage_records("testuser", days=30)
 
-        assert isinstance(monthly, dict)
+        assert isinstance(records, list)
 
 
 class TestProjectDatabaseAPIKeys:
@@ -469,13 +486,13 @@ class TestProjectDatabaseAPIKeys:
     def test_save_api_key(self, temp_db):
         """Test saving an API key."""
         key_record = APIKeyRecord(
-            key_id="key-001",
+            id="key-001",
             user_id="testuser",
-            provider="anthropic",
+            provider="claude",
             encrypted_key="encrypted_secret",
-            is_active=True,
+            key_hash="hash_of_key",
             created_at=datetime.datetime.now(),
-            last_used=datetime.datetime.now(),
+            last_used_at=datetime.datetime.now(),
         )
 
         try:
@@ -485,36 +502,37 @@ class TestProjectDatabaseAPIKeys:
             pytest.fail(f"Failed to save API key: {e}")
 
     def test_get_api_keys(self, temp_db):
-        """Test retrieving API keys for a user."""
+        """Test retrieving API key by provider."""
         key_record = APIKeyRecord(
-            key_id="key-002",
+            id="key-002",
             user_id="testuser",
             provider="openai",
             encrypted_key="secret",
-            is_active=True,
+            key_hash="hash_of_secret",
             created_at=datetime.datetime.now(),
-            last_used=datetime.datetime.now(),
+            last_used_at=datetime.datetime.now(),
         )
 
         temp_db.save_api_key(key_record)
-        keys = temp_db.get_api_keys("testuser")
+        key = temp_db.get_api_key("testuser", "openai")
 
-        assert isinstance(keys, list)
+        assert key is not None
+        assert key.provider == "openai"
 
     def test_deactivate_api_key(self, temp_db):
-        """Test deactivating an API key."""
+        """Test deleting an API key."""
         key_record = APIKeyRecord(
-            key_id="key-003",
+            id="key-003",
             user_id="testuser",
-            provider="anthropic",
+            provider="claude",
             encrypted_key="key",
-            is_active=True,
+            key_hash="hash_of_key",
             created_at=datetime.datetime.now(),
-            last_used=None,
+            last_used_at=None,
         )
 
         temp_db.save_api_key(key_record)
-        success = temp_db.deactivate_api_key("key-003")
+        success = temp_db.delete_api_key("testuser", "claude")
 
         assert success is True
 
