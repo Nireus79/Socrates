@@ -67,6 +67,20 @@ class ProjectManagerAgent(Agent):
         from socratic_system.subscription.checker import SubscriptionChecker
 
         user = self.orchestrator.database.load_user(owner)
+
+        # Create user if they don't exist (for automation/testing)
+        if user is None:
+            from socratic_system.models.user import User
+            import datetime
+            user = User(
+                username=owner,
+                passcode_hash="",  # Empty hash - will need password reset to use UI
+                created_at=datetime.datetime.now(),
+                projects=[],
+                subscription_tier="pro"  # Default to pro tier for auto-created users
+            )
+            self.orchestrator.database.save_user(user)
+
         active_projects = self.orchestrator.database.get_user_projects(owner)
         active_count = len([p for p in active_projects if p.get("status") != "archived"])
 
