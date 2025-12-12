@@ -18,7 +18,7 @@ from socratic_system.agents import (
     CodeGeneratorAgent,
     ConflictDetectorAgent,
     ContextAnalyzerAgent,
-    DocumentAgent,
+    DocumentProcessorAgent,
     ProjectManagerAgent,
     QualityControllerAgent,
     SocraticCounselorAgent,
@@ -115,9 +115,9 @@ class AgentOrchestrator:
         self.code_generator = CodeGeneratorAgent(self)
         self.system_monitor = SystemMonitorAgent(self)
         self.conflict_detector = ConflictDetectorAgent(self)
-        self.document_agent = DocumentAgent(self)
+        self.document_processor = DocumentProcessorAgent(self)
         self.user_manager = UserManagerAgent(self)
-        self.note_manager = NoteManagerAgent("note_manager", self)
+        self.note_manager = NoteManagerAgent(self)
         self.knowledge_manager = KnowledgeManagerAgent("knowledge_manager", self)
         self.quality_controller = QualityControllerAgent(self)
         self.learning_agent = UserLearningAgent(self)

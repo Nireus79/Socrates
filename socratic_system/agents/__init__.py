@@ -4,7 +4,8 @@ from .base import Agent
 from .code_generator import CodeGeneratorAgent
 from .conflict_detector import ConflictDetectorAgent
 from .context_analyzer import ContextAnalyzerAgent
-from .document_processor import DocumentAgent
+from .document_processor import DocumentProcessorAgent
+from .note_manager import NoteManagerAgent
 from .project_manager import ProjectManagerAgent
 from .quality_controller import QualityControllerAgent
 from .socratic_counselor import SocraticCounselorAgent
@@ -20,6 +21,7 @@ __all__ = [
     "CodeGeneratorAgent",
     "SystemMonitorAgent",
     "ConflictDetectorAgent",
-    "DocumentAgent",
+    "DocumentProcessorAgent",
+    "NoteManagerAgent",
     "QualityControllerAgent",
 ]

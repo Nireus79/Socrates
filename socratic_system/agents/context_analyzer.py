@@ -38,14 +38,25 @@ class ContextAnalyzerAgent(Agent):
     def _analyze_context(self, request: Dict) -> Dict:
         """Analyze project context and patterns"""
         project = request.get("project")
+        conversation = request.get("conversation")
+
+        # Use conversation from request if project not provided
+        if project and project.conversation_history:
+            history = project.conversation_history
+        elif conversation:
+            history = conversation
+        else:
+            return {"status": "error", "message": "project or conversation required"}
 
         # Analyze conversation patterns
-        patterns = self._identify_patterns(project.conversation_history)
+        analysis = self._identify_patterns(history)
 
-        # Get relevant knowledge
-        relevant_knowledge = self.orchestrator.vector_db.search_similar(project.goals, top_k=5)
+        # Get relevant knowledge if project is available
+        relevant_knowledge = []
+        if project and project.goals:
+            relevant_knowledge = self.orchestrator.vector_db.search_similar(project.goals, top_k=5)
 
-        return {"status": "success", "patterns": patterns, "relevant_knowledge": relevant_knowledge}
+        return {"status": "success", "analysis": analysis, "relevant_knowledge": relevant_knowledge}
 
     def get_context_summary(self, project: ProjectContext) -> str:
         """Generate comprehensive project summary"""

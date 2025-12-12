@@ -12,11 +12,11 @@ from socratic_system.utils.logger import get_logger
 from .base import Agent
 
 
-class DocumentAgent(Agent):
+class DocumentProcessorAgent(Agent):
     """Handles document import and processing - extracts content and stores in vector database"""
 
     def __init__(self, orchestrator):
-        super().__init__("DocumentAgent", orchestrator)
+        super().__init__("DocumentProcessor", orchestrator)
         self.logger = get_logger("document_processor")
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:

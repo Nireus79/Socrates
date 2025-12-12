@@ -12,9 +12,9 @@ if TYPE_CHECKING:
 class NoteManagerAgent(Agent):
     """Agent for managing project notes"""
 
-    def __init__(self, name: str, orchestrator: "AgentOrchestrator"):
+    def __init__(self, orchestrator: "AgentOrchestrator"):
         """Initialize note manager agent"""
-        super().__init__(name, orchestrator)
+        super().__init__("NoteManager", orchestrator)
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """

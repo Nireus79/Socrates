@@ -52,7 +52,8 @@
       "Bash(timeout 150 python -m pytest:*)",
       "Bash(timeout 180 python:*)",
       "Bash(timeout 300 python -m pytest:*)",
-      "Bash(timeout 400 python -m pytest:*)"
+      "Bash(timeout 400 python -m pytest:*)",
+      "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && grep \"\"^class.*Agent\"\" {}')"
     ],
     "deny": [],
     "ask": []

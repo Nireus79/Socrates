@@ -100,7 +100,7 @@ def test_imports():
         ("socratic_system.agents", "CodeGeneratorAgent", "CodeGeneratorAgent"),
         ("socratic_system.agents", "SystemMonitorAgent", "SystemMonitorAgent"),
         ("socratic_system.agents", "ConflictDetectorAgent", "ConflictDetectorAgent"),
-        ("socratic_system.agents", "DocumentAgent", "DocumentAgent"),
+        ("socratic_system.agents", "DocumentProcessorAgent", "DocumentProcessorAgent"),
         ("socratic_system.conflict_resolution", "ConflictChecker", "ConflictChecker"),
         (
             "socratic_system.conflict_resolution",

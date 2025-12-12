@@ -437,25 +437,25 @@ class TestAgentErrorHandling:
                 assert "status" in result
 
     @pytest.mark.parametrize(
-        "agent_class,agent_name",
+        "agent_class,agent_name,module_name",
         [
-            ("SocraticCounselorAgent", "SocraticCounselor"),
-            ("ContextAnalyzerAgent", "ContextAnalyzer"),
-            ("DocumentProcessorAgent", "DocumentProcessor"),
-            ("ConflictDetectorAgent", "ConflictDetector"),
-            ("SystemMonitorAgent", "SystemMonitor"),
-            ("UserManagerAgent", "UserManager"),
-            ("NoteManagerAgent", "NoteManager"),
+            ("SocraticCounselorAgent", "SocraticCounselor", "socratic_counselor"),
+            ("ContextAnalyzerAgent", "ContextAnalyzer", "context_analyzer"),
+            ("DocumentProcessorAgent", "DocumentProcessor", "document_processor"),
+            ("ConflictDetectorAgent", "ConflictDetector", "conflict_detector"),
+            ("SystemMonitorAgent", "SystemMonitor", "system_monitor"),
+            ("UserManagerAgent", "UserManager", "user_manager"),
+            ("NoteManagerAgent", "NoteManager", "note_manager"),
         ],
     )
-    def test_agent_initialization_all(self, mock_orchestrator, agent_class, agent_name):
+    def test_agent_initialization_all(self, mock_orchestrator, agent_class, agent_name, module_name):
         """Test all agents initialize with correct names"""
         with patch("anthropic.Anthropic"):
             orchestrator = mock_orchestrator
 
-            # Dynamic import
+            # Dynamic import using explicit module names
             module = __import__(
-                f"socratic_system.agents.{agent_name.lower()}", fromlist=[agent_class]
+                f"socratic_system.agents.{module_name}", fromlist=[agent_class]
             )
             AgentClass = getattr(module, agent_class)
             agent = AgentClass(orchestrator)
