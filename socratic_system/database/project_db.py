@@ -411,14 +411,16 @@ class ProjectDatabase:
 
             # Delete the user
             cursor.execute("DELETE FROM users WHERE username = ?", (username,))
+            user_deleted = cursor.rowcount > 0
 
             conn.commit()
             conn.close()
 
-            self.logger.info(
-                f"User {username} deleted. {len(projects_to_transfer)} projects transferred, {len(projects_to_delete)} projects deleted."
-            )
-            return True
+            if user_deleted:
+                self.logger.info(
+                    f"User {username} deleted. {len(projects_to_transfer)} projects transferred, {len(projects_to_delete)} projects deleted."
+                )
+            return user_deleted
 
         except Exception as e:
             self.logger.error(f"Error permanently deleting user: {e}")
@@ -466,8 +468,9 @@ class ProjectDatabase:
 
             cursor.execute("DELETE FROM projects WHERE project_id = ?", (project_id,))
             conn.commit()
+            deleted = cursor.rowcount > 0
             conn.close()
-            return True
+            return deleted
 
         except Exception as e:
             self.logger.error(f"Error permanently deleting project: {e}")

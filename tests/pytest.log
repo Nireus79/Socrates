@@ -1,16 +1,311 @@
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Created project 'Test API Project' (type: software) with ID 22e842de-a452-4046-a0c1-da6661c0ac2f
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Loaded project 'Test Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Saved project 'Test Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Added 'newcollaborator' as creator to project 'Pro Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Removed collaborator 'user_to_remove' from project 'Test Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Archived project 'Test Project' (ID: test_proj_001)
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Restored project 'Test Project' (ID: test_proj_001)
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: PERMANENTLY DELETED project 'Test Project' (ID: test_proj_001)
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Created project 'Lifecycle Test Project' (type: software) with ID 933bb45f-fe65-4724-979d-e61531f72f63
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Loaded project 'Lifecycle Test Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Saved project 'Lifecycle Test Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Archived project 'Lifecycle Test Project' (ID: 933bb45f-fe65-4724-979d-e61531f72f63)
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Restored project 'Lifecycle Test Project' (ID: 933bb45f-fe65-4724-979d-e61531f72f63)
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Added 'collaborator_0' as creator to project 'Pro Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Added 'collaborator_1' as creator to project 'Pro Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Added 'collaborator_2' as creator to project 'Pro Project'
+ERROR    socrates.clients.claude:claude_client.py:102 Error extracting insights: '<=' not supported between instances of 'int' and 'MagicMock'
+ERROR    socrates.clients.claude:claude_client.py:102 Error extracting insights: API Rate Limited
+WARNING  socrates.clients.claude:claude_client.py:678 No JSON object found in response
+ERROR    socrates.clients.claude:claude_client.py:102 Error extracting insights: '<=' not supported between instances of 'int' and 'MagicMock'
+ERROR    socrates.clients.claude:claude_client.py:102 Error extracting insights: '<=' not supported between instances of 'int' and 'MagicMock'
+ERROR    socrates.clients.claude:claude_client.py:102 Error extracting insights: '<=' not supported between instances of 'int' and 'MagicMock'
+WARNING  socrates.clients.claude:claude_client.py:678 No JSON object found in response
+WARNING  socrates.clients.claude:claude_client.py:682 Failed to parse JSON response: Extra data: line 1 column 12 (char 11)
+WARNING  socrates.clients.claude:claude_client.py:682 Failed to parse JSON response: Expecting value: line 1 column 9 (char 8)
+ERROR    socrates.clients.claude:claude_client.py:704 Error generating Socratic question: API Error
+WARNING  socrates.clients.claude:claude_client.py:783 Error generating suggestions, using fallback: API Error
+ERROR    socrates.clients.claude:claude_client.py:848 Error generating response: API Error
+DEBUG    asyncio:proactor_events.py:634 Using proactor: IocpProactor
+DEBUG    asyncio:proactor_events.py:634 Using proactor: IocpProactor
+DEBUG    asyncio:proactor_events.py:634 Using proactor: IocpProactor
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:50 Analyzing category performance for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:93 Category 'architecture' is strong: 80.0%
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:82 Category 'api' is weak: 20.0%
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:99 Category analysis: 1 strong, 1 weak, 0 missing
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 60.0% (max: 80.0%, min: 20.0%)
+WARNING  socratic_system.core.analytics_calculator:analytics_calculator.py:192 Category balance imbalanced: architecture=80% vs api=20%
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:116 Identifying weak categories for phase: design
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:130 Found 1 weak categories (< 30%) in design: ['api']
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:135 Identifying strong categories for phase: design
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:149 Found 1 strong categories (> 70%) in design: ['architecture']
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 60.0% (max: 80.0%, min: 20.0%)
+WARNING  socratic_system.core.analytics_calculator:analytics_calculator.py:192 Category balance imbalanced: architecture=80% vs api=20%
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:209 Identifying missing categories across all phases
+WARNING  socratic_system.core.analytics_calculator:analytics_calculator.py:228 Phase discovery has 6 missing categories
+WARNING  socratic_system.core.analytics_calculator:analytics_calculator.py:228 Phase analysis has 8 missing categories
+WARNING  socratic_system.core.analytics_calculator:analytics_calculator.py:228 Phase design has 8 missing categories
+WARNING  socratic_system.core.analytics_calculator:analytics_calculator.py:228 Phase implementation has 8 missing categories
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:230 Total missing categories across phases: 30
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:50 Analyzing category performance for phase: discovery
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:82 Category 'goals' is weak: 0.0%
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:99 Category analysis: 0 strong, 1 weak, 0 missing
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: discovery
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 0.0% (max: 0.0%, min: 0.0%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:202 Category balance is good (gap: 0%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:246 Calculating velocity from maturity history
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:257 No Q&A response events found, velocity = 0.0
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:246 Calculating velocity from maturity history
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:249 No maturity history available, velocity = 0.0
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:246 Calculating velocity from maturity history
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:257 No Q&A response events found, velocity = 0.0
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:274 Analyzing progression trends for project in phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:246 Calculating velocity from maturity history
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:257 No Q&A response events found, velocity = 0.0
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:282 Analyzed 0 Q&A events for trend analysis
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:545 Generating insights from 0 Q&A events, velocity=0.00
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:552 No Q&A events provided, returning empty insights
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:294 Progression trend analysis: 0 sessions, velocity=0.00, score=0.0%
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:301 Identifying plateau periods in maturity progression
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:308 Not enough Q&A events (0) to identify plateaus (need >= 3)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:301 Identifying plateau periods in maturity progression
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:308 Not enough Q&A events (0) to identify plateaus (need >= 3)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:352 Generating recommendations for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:373 Adding weak category recommendation: api (20.0%), priority=medium, gap=50.0
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:390 Found 1 weak categories (< 30%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: design_patterns
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: code_organization
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: api_design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: workflow
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: error_handling
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: state_management
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: ui_ux
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:427 Found 7 missing/zero-spec categories
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 60.0% (max: 80.0%, min: 20.0%)
+WARNING  socratic_system.core.analytics_calculator:analytics_calculator.py:192 Category balance imbalanced: architecture=80% vs api=20%
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:432 Adding balance recommendation due to imbalanced category distribution
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:450 Generated 9 recommendations, returning top 9
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:352 Generating recommendations for phase: discovery
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:373 Adding weak category recommendation: goals (10.0%), priority=high, gap=60.0
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:373 Adding weak category recommendation: requirements (0.0%), priority=high, gap=70.0
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:390 Found 2 weak categories (< 30%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: problem_definition
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: target_audience
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: competitive_analysis
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: scope
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: constraints
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: success_metrics
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:427 Found 6 missing/zero-spec categories
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: discovery
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 10.0% (max: 10.0%, min: 0.0%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:202 Category balance is good (gap: 10%)
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:450 Generated 8 recommendations, returning top 8
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:457 Suggesting next 5 questions for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:352 Generating recommendations for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:373 Adding weak category recommendation: api (20.0%), priority=medium, gap=50.0
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:390 Found 1 weak categories (< 30%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: design_patterns
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: code_organization
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: api_design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: workflow
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: error_handling
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: state_management
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: ui_ux
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:427 Found 7 missing/zero-spec categories
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 60.0% (max: 80.0%, min: 20.0%)
+WARNING  socratic_system.core.analytics_calculator:analytics_calculator.py:192 Category balance imbalanced: architecture=80% vs api=20%
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:432 Adding balance recommendation due to imbalanced category distribution
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:450 Generated 9 recommendations, returning top 9
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:470 Generated question for category 'design_patterns': Can you elaborate on design patterns?...
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:470 Generated question for category 'code_organization': Can you elaborate on code organization?...
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:470 Generated question for category 'api_design': How will your API be structured?...
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:470 Generated question for category 'workflow': Can you elaborate on workflow?...
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:470 Generated question for category 'error_handling': Can you elaborate on error handling?...
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:474 Generated 5 suggested questions targeting weak areas
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:457 Suggesting next 3 questions for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:352 Generating recommendations for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:373 Adding weak category recommendation: api (20.0%), priority=medium, gap=50.0
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:390 Found 1 weak categories (< 30%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: design_patterns
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: code_organization
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: api_design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: workflow
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: error_handling
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: state_management
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: ui_ux
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:427 Found 7 missing/zero-spec categories
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 60.0% (max: 80.0%, min: 20.0%)
+WARNING  socratic_system.core.analytics_calculator:analytics_calculator.py:192 Category balance imbalanced: architecture=80% vs api=20%
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:432 Adding balance recommendation due to imbalanced category distribution
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:450 Generated 9 recommendations, returning top 9
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:470 Generated question for category 'design_patterns': Can you elaborate on design patterns?...
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:470 Generated question for category 'code_organization': Can you elaborate on code organization?...
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:470 Generated question for category 'api_design': How will your API be structured?...
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:474 Generated 3 suggested questions targeting weak areas
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:457 Suggesting next 0 questions for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:352 Generating recommendations for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:373 Adding weak category recommendation: api (20.0%), priority=medium, gap=50.0
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:390 Found 1 weak categories (< 30%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: design_patterns
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: code_organization
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: api_design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: workflow
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: error_handling
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: state_management
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: ui_ux
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:427 Found 7 missing/zero-spec categories
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 60.0% (max: 80.0%, min: 20.0%)
+WARNING  socratic_system.core.analytics_calculator:analytics_calculator.py:192 Category balance imbalanced: architecture=80% vs api=20%
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:432 Adding balance recommendation due to imbalanced category distribution
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:450 Generated 9 recommendations, returning top 9
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:474 Generated 0 suggested questions targeting weak areas
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=business
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: business
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:50 Analyzing category performance for phase: implementation
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:93 Category 'code_quality' is strong: 75.0%
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:99 Category analysis: 1 strong, 0 weak, 0 missing
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: implementation
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 0.0% (max: 75.0%, min: 75.0%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:202 Category balance is good (gap: 0%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:50 Analyzing category performance for phase: discovery
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:99 Category analysis: 0 strong, 0 weak, 0 missing
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: discovery
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:164 No category scores found for phase discovery
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:50 Analyzing category performance for phase: discovery
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:99 Category analysis: 0 strong, 0 weak, 0 missing
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: discovery
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:164 No category scores found for phase discovery
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:50 Analyzing category performance for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:93 Category 'perfect_category' is strong: 100.0%
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:99 Category analysis: 1 strong, 0 weak, 0 missing
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 0.0% (max: 100.0%, min: 100.0%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:202 Category balance is good (gap: 0%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:50 Analyzing category performance for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:93 Category 'large_category' is strong: 100000000.0%
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:99 Category analysis: 1 strong, 0 weak, 0 missing
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 0.0% (max: 100000000.0%, min: 100000000.0%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:202 Category balance is good (gap: 0%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:50 Analyzing category performance for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:93 Category 'architecture' is strong: 80.0%
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:82 Category 'api' is weak: 20.0%
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:99 Category analysis: 1 strong, 1 weak, 0 missing
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 60.0% (max: 80.0%, min: 20.0%)
+WARNING  socratic_system.core.analytics_calculator:analytics_calculator.py:192 Category balance imbalanced: architecture=80% vs api=20%
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:246 Calculating velocity from maturity history
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:257 No Q&A response events found, velocity = 0.0
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:274 Analyzing progression trends for project in phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:246 Calculating velocity from maturity history
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:257 No Q&A response events found, velocity = 0.0
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:282 Analyzed 0 Q&A events for trend analysis
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:545 Generating insights from 0 Q&A events, velocity=0.00
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:552 No Q&A events provided, returning empty insights
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:294 Progression trend analysis: 0 sessions, velocity=0.00, score=0.0%
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:352 Generating recommendations for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:373 Adding weak category recommendation: api (20.0%), priority=medium, gap=50.0
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:390 Found 1 weak categories (< 30%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: design_patterns
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: code_organization
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: api_design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: workflow
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: error_handling
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: state_management
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: ui_ux
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:427 Found 7 missing/zero-spec categories
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 60.0% (max: 80.0%, min: 20.0%)
+WARNING  socratic_system.core.analytics_calculator:analytics_calculator.py:192 Category balance imbalanced: architecture=80% vs api=20%
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:432 Adding balance recommendation due to imbalanced category distribution
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:450 Generated 9 recommendations, returning top 9
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:457 Suggesting next 5 questions for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:352 Generating recommendations for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:373 Adding weak category recommendation: api (20.0%), priority=medium, gap=50.0
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:390 Found 1 weak categories (< 30%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: design_patterns
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: code_organization
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: api_design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: workflow
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: error_handling
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: state_management
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: ui_ux
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:427 Found 7 missing/zero-spec categories
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: design
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 60.0% (max: 80.0%, min: 20.0%)
+WARNING  socratic_system.core.analytics_calculator:analytics_calculator.py:192 Category balance imbalanced: architecture=80% vs api=20%
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:432 Adding balance recommendation due to imbalanced category distribution
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:450 Generated 9 recommendations, returning top 9
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:470 Generated question for category 'design_patterns': Can you elaborate on design patterns?...
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:470 Generated question for category 'code_organization': Can you elaborate on code organization?...
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:470 Generated question for category 'api_design': How will your API be structured?...
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:470 Generated question for category 'workflow': Can you elaborate on workflow?...
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:470 Generated question for category 'error_handling': Can you elaborate on error handling?...
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:474 Generated 5 suggested questions targeting weak areas
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:32 Initializing AnalyticsCalculator with project_type=software
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:35 AnalyticsCalculator initialized with 4 phases for project type: software
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:352 Generating recommendations for phase: discovery
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:390 Found 0 weak categories (< 30%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: problem_definition
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: target_audience
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: competitive_analysis
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: scope
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: constraints
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: success_metrics
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:427 Found 6 missing/zero-spec categories
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: discovery
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 0.0% (max: 30.0%, min: 30.0%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:202 Category balance is good (gap: 0%)
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:450 Generated 6 recommendations, returning top 6
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:352 Generating recommendations for phase: discovery
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:390 Found 0 weak categories (< 30%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: problem_definition
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: target_audience
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: competitive_analysis
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: scope
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: constraints
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:397 Adding missing category recommendation: success_metrics
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:427 Found 6 missing/zero-spec categories
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:159 Analyzing category balance for phase: discovery
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:184 Balance gap: 0.0% (max: 80.0%, min: 80.0%)
+DEBUG    socratic_system.core.analytics_calculator:analytics_calculator.py:202 Category balance is good (gap: 0%)
+INFO     socratic_system.core.analytics_calculator:analytics_calculator.py:450 Generated 6 recommendations, returning top 6
+INFO     socrates.database.projects:project_db.py:420 User testuser deleted. 0 projects transferred, 0 projects deleted.

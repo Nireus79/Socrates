@@ -78,15 +78,28 @@ class TestVectorEmbeddings:
 
     def test_similarity_computation(self):
         """Test computing similarity between embeddings."""
-        emb1 = [0.1] * 384
-        emb2 = [0.1] * 384
-        emb3 = [0.5] * 384
+        import math
 
-        # Compute dot product (simple similarity)
-        sim_1_2 = sum(a * b for a, b in zip(emb1, emb2))
-        sim_1_3 = sum(a * b for a, b in zip(emb1, emb3))
+        # Create embeddings with different directions
+        emb1 = [1.0] + [0.0] * 383  # First element only
+        emb2 = [1.0] + [0.0] * 383  # Same as emb1 (identical)
+        emb3 = [0.0] * 383 + [1.0]  # Last element only (orthogonal)
 
-        # Same embeddings should have higher similarity
+        # Compute cosine similarity (normalized dot product)
+        def cosine_similarity(a, b):
+            dot = sum(x * y for x, y in zip(a, b))
+            mag_a = math.sqrt(sum(x * x for x in a))
+            mag_b = math.sqrt(sum(x * x for x in b))
+            return dot / (mag_a * mag_b) if mag_a > 0 and mag_b > 0 else 0
+
+        sim_1_2 = cosine_similarity(emb1, emb2)
+        sim_1_3 = cosine_similarity(emb1, emb3)
+
+        # Identical embeddings should have cosine similarity of 1.0
+        assert sim_1_2 == 1.0
+        # Orthogonal embeddings should have cosine similarity of 0.0
+        assert sim_1_3 == 0.0
+        # Same embeddings should have higher similarity than orthogonal
         assert sim_1_2 > sim_1_3
 
 

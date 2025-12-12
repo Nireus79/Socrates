@@ -53,7 +53,9 @@
       "Bash(timeout 180 python:*)",
       "Bash(timeout 300 python -m pytest:*)",
       "Bash(timeout 400 python -m pytest:*)",
-      "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && grep \"\"^class.*Agent\"\" {}')"
+      "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && grep \"\"^class.*Agent\"\" {}')",
+      "Bash(for test_file in tests/test_*.py tests/agents/test_*.py tests/database/test_*.py tests/clients/test_*.py)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

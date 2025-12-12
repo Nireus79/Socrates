@@ -388,7 +388,7 @@ class TestAnalyticsCommandsIntegration:
         mock_orchestrator.get_current_project = MagicMock(return_value=project_with_data)
 
         command = AnalyticsAnalyzeCommand(mock_orchestrator)
-        result = command.execute([])
+        result = command.execute([], {"project": project_with_data})
 
         assert result["status"] == "success"
         assert "analysis" in result
@@ -402,7 +402,7 @@ class TestAnalyticsCommandsIntegration:
         mock_orchestrator.get_current_project = MagicMock(return_value=project_with_data)
 
         command = AnalyticsRecommendCommand(mock_orchestrator)
-        result = command.execute([])
+        result = command.execute([], {"project": project_with_data})
 
         assert result["status"] == "success"
         assert "recommendations" in result
@@ -415,7 +415,7 @@ class TestAnalyticsCommandsIntegration:
         mock_orchestrator.get_current_project = MagicMock(return_value=project_with_data)
 
         command = AnalyticsTrendsCommand(mock_orchestrator)
-        result = command.execute([])
+        result = command.execute([], {"project": project_with_data})
 
         assert result["status"] == "success"
         assert "trends" in result
@@ -429,7 +429,7 @@ class TestAnalyticsCommandsIntegration:
         mock_orchestrator.get_current_project = MagicMock(return_value=project_with_data)
 
         command = AnalyticsSummaryCommand(mock_orchestrator)
-        result = command.execute([])
+        result = command.execute([], {"project": project_with_data})
 
         assert result["status"] == "success"
         assert "metrics" in result

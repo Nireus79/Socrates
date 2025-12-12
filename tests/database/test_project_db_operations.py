@@ -116,23 +116,24 @@ class TestProjectDatabaseProjectOperations:
         assert loaded is None
 
     def test_delete_project(self, temp_db, sample_project):
-        """Test deleting a project."""
+        """Test deleting a project permanently."""
         temp_db.save_project(sample_project)
-        success = temp_db.delete_project(sample_project.project_id)
+        success = temp_db.permanently_delete_project(sample_project.project_id)
 
         assert success is True
 
     def test_delete_nonexistent_project(self, temp_db):
         """Test deleting a project that doesn't exist."""
-        success = temp_db.delete_project("nonexistent")
+        success = temp_db.permanently_delete_project("nonexistent")
 
         assert success is False
 
     def test_list_all_projects(self, temp_db, sample_project):
-        """Test listing all projects."""
+        """Test listing projects for a user."""
         temp_db.save_project(sample_project)
 
-        projects = temp_db.list_all_projects()
+        # Use get_user_projects instead of list_all_projects
+        projects = temp_db.get_user_projects(sample_project.owner, include_archived=False)
 
         assert isinstance(projects, list)
         assert len(projects) >= 1
@@ -179,9 +180,9 @@ class TestProjectDatabaseUserOperations:
         assert loaded is None
 
     def test_delete_user(self, temp_db, sample_user):
-        """Test deleting a user."""
+        """Test permanently deleting a user."""
         temp_db.save_user(sample_user)
-        success = temp_db.delete_user(sample_user.username)
+        success = temp_db.permanently_delete_user(sample_user.username)
 
         assert success is True
 
@@ -201,7 +202,7 @@ class TestProjectDatabaseNotesOperations:
     """Tests for project notes."""
 
     def test_add_note(self, temp_db, sample_project):
-        """Test adding a note to a project."""
+        """Test saving a note to a project."""
         temp_db.save_project(sample_project)
 
         note = ProjectNote(
@@ -216,10 +217,10 @@ class TestProjectDatabaseNotesOperations:
         )
 
         try:
-            temp_db.add_note(note)
-            assert True
+            success = temp_db.save_note(note)
+            assert success is True
         except Exception as e:
-            pytest.fail(f"Failed to add note: {e}")
+            pytest.fail(f"Failed to save note: {e}")
 
     def test_get_project_notes(self, temp_db, sample_project):
         """Test retrieving notes for a project."""
@@ -236,7 +237,7 @@ class TestProjectDatabaseNotesOperations:
             tags=[],
         )
 
-        temp_db.add_note(note)
+        temp_db.save_note(note)
         notes = temp_db.get_project_notes(sample_project.project_id)
 
         assert isinstance(notes, list)
@@ -257,7 +258,7 @@ class TestProjectDatabaseNotesOperations:
             tags=[],
         )
 
-        temp_db.add_note(note)
+        temp_db.save_note(note)
         success = temp_db.delete_note("note-003")
 
         assert success is True
