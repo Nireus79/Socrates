@@ -126,7 +126,7 @@ def test_config(mock_api_key, tmp_path):
 
 @pytest.fixture
 def sample_project():
-    """Create a sample project for testing."""
+    """Create a sample free tier project for testing solo features."""
     import datetime
 
     from socratic_system.models import ProjectContext
@@ -145,6 +145,33 @@ def sample_project():
         deployment_target="cloud",
         code_style="documented",
         phase="planning",
+        conversation_history=[],
+        created_at=datetime.datetime.now(),
+        updated_at=datetime.datetime.now(),
+    )
+
+
+@pytest.fixture
+def pro_project():
+    """Create a sample pro tier project for testing team collaboration."""
+    import datetime
+
+    from socratic_system.models import ProjectContext
+
+    return ProjectContext(
+        project_id="pro_proj_001",
+        name="Pro Project",
+        owner="prouser",
+        collaborators=[],
+        goals="Build a collaborative application",
+        requirements=["Multi-user support", "Team features"],
+        tech_stack=["Python", "FastAPI", "PostgreSQL"],
+        constraints=["Performance", "Scalability"],
+        team_structure="team",
+        language_preferences="python",
+        deployment_target="cloud",
+        code_style="documented",
+        phase="design",
         conversation_history=[],
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),

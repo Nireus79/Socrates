@@ -1,8 +1,16 @@
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Created project 'Test API Project' (type: software) with ID 2e7be15f-07ab-476b-a7ca-225ddf885f8f
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Loaded project '<MagicMock name='mock.database.load_project().name' id='1479395826128'>'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Loaded project '<MagicMock name='mock.database.load_project().name' id='1479394045120'>'
+INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Created project 'Test API Project' (type: software) with ID 22e842de-a452-4046-a0c1-da6661c0ac2f
+INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Loaded project 'Test Project'
 INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Saved project 'Test Project'
+INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Added 'newcollaborator' as creator to project 'Pro Project'
 INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Removed collaborator 'user_to_remove' from project 'Test Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Created project 'Lifecycle Test Project' (type: software) with ID 2be68c36-d4fb-436d-8827-70b8655ace9b
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Loaded project '<MagicMock name='mock.database.load_project().name' id='1479395416672'>'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Saved project '<MagicMock name='mock.database.load_project().name' id='1479395416672'>'
+INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Archived project 'Test Project' (ID: test_proj_001)
+INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Restored project 'Test Project' (ID: test_proj_001)
+INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: PERMANENTLY DELETED project 'Test Project' (ID: test_proj_001)
+INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Created project 'Lifecycle Test Project' (type: software) with ID 933bb45f-fe65-4724-979d-e61531f72f63
+INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Loaded project 'Lifecycle Test Project'
+INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Saved project 'Lifecycle Test Project'
+INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Archived project 'Lifecycle Test Project' (ID: 933bb45f-fe65-4724-979d-e61531f72f63)
+INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Restored project 'Lifecycle Test Project' (ID: 933bb45f-fe65-4724-979d-e61531f72f63)
+INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Added 'collaborator_0' as creator to project 'Pro Project'
+INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Added 'collaborator_1' as creator to project 'Pro Project'
+INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Added 'collaborator_2' as creator to project 'Pro Project'
