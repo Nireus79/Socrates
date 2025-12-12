@@ -180,6 +180,14 @@ def temp_data_dir(tmp_path):
     return tmp_path
 
 
+@pytest.fixture
+def mock_event_emitter():
+    """Create a mock event emitter for testing."""
+    from socratic_system.events.event_emitter import EventEmitter
+
+    return EventEmitter()
+
+
 # Pytest hooks for better error handling
 def pytest_configure(config):
     """Configure pytest with custom markers and settings."""

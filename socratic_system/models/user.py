@@ -14,7 +14,7 @@ class User:
     username: str
     passcode_hash: str
     created_at: datetime.datetime
-    projects: List[str]
+    projects: List[str] = None  # User can start with no projects
     is_archived: bool = False
     archived_at: Optional[datetime.datetime] = None
 
@@ -29,7 +29,11 @@ class User:
     usage_reset_date: Optional[datetime.datetime] = None
 
     def __post_init__(self):
-        """Initialize subscription fields for new users."""
+        """Initialize projects list and subscription fields for new users."""
+        if self.projects is None:
+            self.projects = []
+
+        # Initialize subscription fields for new users
         if self.subscription_start is None:
             self.subscription_start = datetime.datetime.now()
 
