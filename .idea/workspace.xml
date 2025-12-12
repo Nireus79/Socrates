@@ -11,6 +11,7 @@
       <change beforePath="$PROJECT_DIR$/socratic_system/database/project_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/project_db.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/database/test_project_db_operations.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/database/test_project_db_operations.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/database/test_vector_db_operations.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/database/test_vector_db_operations.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/pytest.log" beforeDir="false" afterPath="$PROJECT_DIR$/tests/pytest.log" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/test_analytics_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_analytics_integration.py" afterDir="false" />
     </list>

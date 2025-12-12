@@ -80,7 +80,7 @@ def test_2_event_types():
     print("\n[OK] TEST 2 PASSED: All event types exist and accessible")
 
 
-def test_3_quality_controller_agent(project):
+def test_3_quality_controller_agent():
     """Test 3: Quality Controller Agent - Basic functionality"""
     print("\n" + "=" * 70)
     print("TEST 3: Quality Controller Agent Initialization")
@@ -125,11 +125,51 @@ def test_3_quality_controller_agent(project):
     return agent
 
 
-def test_4_maturity_calculation(agent, project):
+def test_4_maturity_calculation():
     """Test 4: Maturity calculation with empty specs"""
     print("\n" + "=" * 70)
     print("TEST 4: Maturity Calculation - Empty Specs")
     print("=" * 70)
+
+    import datetime
+    from socratic_system.models import ProjectContext
+    from socratic_system.agents import QualityControllerAgent
+
+    # Create a mock orchestrator with minimal setup
+    class MockClaudeClient:
+        pass
+
+    class MockEventEmitter:
+        def emit(self, event_type, data=None):
+            pass
+
+    class MockOrchestrator:
+        def __init__(self):
+            self.claude_client = MockClaudeClient()
+            self.event_emitter = MockEventEmitter()
+
+    orchestrator = MockOrchestrator()
+    agent = QualityControllerAgent(orchestrator)
+
+    # Create a sample project
+    project = ProjectContext(
+        project_id="test_proj",
+        name="Test Project",
+        owner="testuser",
+        collaborators=[],
+        goals="Test goals",
+        requirements=["Req1"],
+        tech_stack=["Python"],
+        constraints=[],
+        team_structure="individual",
+        language_preferences="python",
+        deployment_target="cloud",
+        code_style="clean",
+        phase="discovery",
+        conversation_history=[],
+        created_at=datetime.datetime.now(),
+        updated_at=datetime.datetime.now(),
+    )
 
     # Calculate maturity with no specs (should be 0%)
     result = agent._calculate_phase_maturity({"project": project, "phase": "discovery"})
@@ -153,11 +193,51 @@ def test_4_maturity_calculation(agent, project):
     return maturity
 
 
-def test_5_maturity_with_specs(agent, project):
+def test_5_maturity_with_specs():
     """Test 5: Maturity calculation with specs"""
     print("\n" + "=" * 70)
     print("TEST 5: Maturity Calculation - With Specs")
     print("=" * 70)
+
+    import datetime
+    from socratic_system.models import ProjectContext
+    from socratic_system.agents import QualityControllerAgent
+
+    # Create a mock orchestrator with minimal setup
+    class MockClaudeClient:
+        pass
+
+    class MockEventEmitter:
+        def emit(self, event_type, data=None):
+            pass
+
+    class MockOrchestrator:
+        def __init__(self):
+            self.claude_client = MockClaudeClient()
+            self.event_emitter = MockEventEmitter()
+
+    orchestrator = MockOrchestrator()
+    agent = QualityControllerAgent(orchestrator)
+
+    # Create a sample project
+    project = ProjectContext(
+        project_id="test_proj",
+        name="Test Project",
+        owner="testuser",
+        collaborators=[],
+        goals="Build a web application",
+        requirements=["Requirement 1"],
+        tech_stack=["Python"],
+        constraints=[],
+        team_structure="individual",
+        language_preferences="python",
+        deployment_target="cloud",
+        code_style="clean",
+        phase="discovery",
+        conversation_history=[],
+        created_at=datetime.datetime.now(),
+        updated_at=datetime.datetime.now(),
+    )
 
     # Add specs to discovery phase
     project.categorized_specs["discovery"] = [
@@ -217,11 +297,29 @@ def test_5_maturity_with_specs(agent, project):
     return project
 
 
-def test_6_categorization(agent):
+def test_6_categorization():
     """Test 6: Insight categorization"""
     print("\n" + "=" * 70)
     print("TEST 6: Insight Categorization")
     print("=" * 70)
+
+    # Create a mock orchestrator with minimal setup
+    class MockClaudeClient:
+        pass
+
+    class MockEventEmitter:
+        def emit(self, event_type, data=None):
+            pass
+
+    class MockOrchestrator:
+        def __init__(self):
+            self.claude_client = MockClaudeClient()
+            self.event_emitter = MockEventEmitter()
+
+    from socratic_system.agents import QualityControllerAgent
+
+    orchestrator = MockOrchestrator()
+    agent = QualityControllerAgent(orchestrator)
 
     insights = {
         "goals": ["Build a web app", "Help users"],
@@ -245,11 +343,51 @@ def test_6_categorization(agent):
     print("\n[OK] TEST 6 PASSED: Insight categorization works correctly")
 
 
-def test_7_advancement_verification(agent, project):
+def test_7_advancement_verification():
     """Test 7: Advancement verification"""
     print("\n" + "=" * 70)
     print("TEST 7: Advancement Verification")
     print("=" * 70)
+
+    import datetime
+    from socratic_system.models import ProjectContext
+    from socratic_system.agents import QualityControllerAgent
+
+    # Create a mock orchestrator with minimal setup
+    class MockClaudeClient:
+        pass
+
+    class MockEventEmitter:
+        def emit(self, event_type, data=None):
+            pass
+
+    class MockOrchestrator:
+        def __init__(self):
+            self.claude_client = MockClaudeClient()
+            self.event_emitter = MockEventEmitter()
+
+    orchestrator = MockOrchestrator()
+    agent = QualityControllerAgent(orchestrator)
+
+    # Create a sample project
+    project = ProjectContext(
+        project_id="test_proj",
+        name="Test Project",
+        owner="testuser",
+        collaborators=[],
+        goals="Test goals",
+        requirements=["Req1"],
+        tech_stack=["Python"],
+        constraints=[],
+        team_structure="individual",
+        language_preferences="python",
+        deployment_target="cloud",
+        code_style="clean",
+        phase="discovery",
+        conversation_history=[],
+        created_at=datetime.datetime.now(),
+        updated_at=datetime.datetime.now(),
+    )
 
     # Test verification with low maturity
     result = agent._verify_advancement({"project": project, "from_phase": "discovery"})
