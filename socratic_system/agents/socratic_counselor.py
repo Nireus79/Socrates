@@ -78,6 +78,11 @@ class SocraticCounselorAgent(Agent):
         """Generate the next Socratic question with usage tracking"""
         project = request.get("project")
         current_user = request.get("current_user")  # NEW: Accept current user for role context
+
+        # Validate that project exists
+        if not project:
+            return {"status": "error", "message": "Project context is required to generate questions"}
+
         context = self.orchestrator.context_analyzer.get_context_summary(project)
 
         # NEW: Check question limit

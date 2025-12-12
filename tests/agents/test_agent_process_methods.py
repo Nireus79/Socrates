@@ -48,7 +48,20 @@ def sample_project():
         deployment_target="cloud",
         code_style="documented",
         phase="design",
-        conversation_history=["Q: What are the goals?", "A: Build an app"],
+        conversation_history=[
+            {
+                "timestamp": datetime.datetime.now().isoformat(),
+                "type": "assistant",
+                "content": "What are the goals?",
+                "phase": "design",
+            },
+            {
+                "timestamp": datetime.datetime.now().isoformat(),
+                "type": "user",
+                "content": "Build an app",
+                "phase": "design",
+            },
+        ],
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
     )
@@ -124,12 +137,17 @@ class TestSocraticCounselorAgent:
 
         assert result["status"] == "error"
 
-    def test_process_missing_project(self, agent):
+    def test_process_missing_project(self, agent, sample_user):
         """Test processing request without project."""
-        request = {"action": "generate_question"}
+        # Setup mock user with required attributes
+        sample_user.questions_used_this_month = 0
+        agent.orchestrator.database.load_user.return_value = sample_user
+
+        request = {"action": "generate_question", "current_user": "testuser"}
 
         result = agent.process(request)
 
+        # Should return error because project is missing
         assert result["status"] == "error"
 
 

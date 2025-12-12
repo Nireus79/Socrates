@@ -76,16 +76,17 @@ class TestQuestionEffectiveness:
             id="eff-1",
             user_id="testuser",
             question_template_id="qt-1",
-            times_used=5,
-            positive_responses=4,
-            negative_responses=1,
+            role="lead",
+            times_asked=5,
+            times_answered_well=4,
+            average_answer_length=150,
             effectiveness_score=0.8,
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
 
         assert effectiveness.id == "eff-1"
-        assert effectiveness.times_used == 5
+        assert effectiveness.times_asked == 5
         assert effectiveness.effectiveness_score == 0.8
 
     def test_effectiveness_score_calculation(self):
@@ -94,17 +95,18 @@ class TestQuestionEffectiveness:
             id="eff-2",
             user_id="user1",
             question_template_id="qt-2",
-            times_used=10,
-            positive_responses=9,
-            negative_responses=1,
+            role="lead",
+            times_asked=10,
+            times_answered_well=9,
+            average_answer_length=200,
             effectiveness_score=0.9,
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
 
-        # Score should be positive_responses / times_used
+        # Score should be times_answered_well / times_asked
         expected_score = 9 / 10
-        assert abs(effectiveness.effectiveness_score - expected_score) < 0.01
+        assert abs(float(effectiveness.effectiveness_score) - expected_score) < 0.01
 
     def test_zero_usage_effectiveness(self):
         """Test effectiveness with zero usage."""
@@ -112,15 +114,16 @@ class TestQuestionEffectiveness:
             id="eff-3",
             user_id="user2",
             question_template_id="qt-3",
-            times_used=0,
-            positive_responses=0,
-            negative_responses=0,
+            role="analyst",
+            times_asked=0,
+            times_answered_well=0,
+            average_answer_length=0,
             effectiveness_score=0.0,
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
 
-        assert effectiveness.times_used == 0
+        assert effectiveness.times_asked == 0
         assert effectiveness.effectiveness_score == 0.0
 
     def test_perfect_effectiveness(self):
@@ -129,9 +132,10 @@ class TestQuestionEffectiveness:
             id="eff-4",
             user_id="user3",
             question_template_id="qt-4",
-            times_used=5,
-            positive_responses=5,
-            negative_responses=0,
+            role="specialist",
+            times_asked=5,
+            times_answered_well=5,
+            average_answer_length=250,
             effectiveness_score=1.0,
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
@@ -149,38 +153,37 @@ class TestBehaviorPatterns:
             id="pat-1",
             user_id="testuser",
             pattern_type="quick_responder",
-            frequency=10,
-            last_observed=datetime.datetime.now(),
-            metadata={"avg_response_time": 2.5},
+            pattern_data={"avg_response_time": 2.5},
+            confidence=0.8,
+            learned_from_projects=["proj-1"],
             learned_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
 
         assert pattern.id == "pat-1"
         assert pattern.pattern_type == "quick_responder"
-        assert pattern.frequency == 10
+        assert pattern.pattern_data["avg_response_time"] == 2.5
 
     def test_pattern_with_metadata(self):
         """Test behavior pattern with metadata."""
-        metadata = {
+        pattern_data = {
             "avg_response_time": 3.2,
             "typical_response_length": "medium",
-            "confidence": 0.85,
         }
 
         pattern = UserBehaviorPattern(
             id="pat-2",
             user_id="user1",
             pattern_type="thorough_responder",
-            frequency=7,
-            last_observed=datetime.datetime.now(),
-            metadata=metadata,
+            pattern_data=pattern_data,
+            confidence=0.85,
+            learned_from_projects=["proj-1", "proj-2"],
             learned_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
 
-        assert pattern.metadata["avg_response_time"] == 3.2
-        assert pattern.metadata["confidence"] == 0.85
+        assert pattern.pattern_data["avg_response_time"] == 3.2
+        assert float(pattern.confidence) == 0.85
 
     def test_pattern_types(self):
         """Test different behavior pattern types."""
@@ -197,9 +200,9 @@ class TestBehaviorPatterns:
                 id=f"pat-{ptype}",
                 user_id="user",
                 pattern_type=ptype,
-                frequency=5,
-                last_observed=datetime.datetime.now(),
-                metadata={},
+                pattern_data={},
+                confidence=0.7,
+                learned_from_projects=[],
                 learned_at=datetime.datetime.now(),
                 updated_at=datetime.datetime.now(),
             )
@@ -207,23 +210,26 @@ class TestBehaviorPatterns:
             assert pattern.pattern_type == ptype
 
     def test_pattern_frequency_tracking(self):
-        """Test pattern frequency increases with observation."""
+        """Test pattern tracking with increased confidence."""
         pattern = UserBehaviorPattern(
             id="pat-3",
             user_id="user2",
             pattern_type="test_pattern",
-            frequency=1,
-            last_observed=datetime.datetime.now(),
-            metadata={},
+            pattern_data={"observation_count": 1},
+            confidence=0.5,
+            learned_from_projects=["proj-1"],
             learned_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
 
-        # Simulate observing pattern multiple times
-        initial_freq = pattern.frequency
-        pattern.frequency += 4
+        # Simulate observing pattern multiple times (increase confidence and observation count)
+        initial_confidence = float(pattern.confidence)
+        pattern.pattern_data["observation_count"] = 5
+        from decimal import Decimal
+        pattern.confidence = Decimal("0.9")
 
-        assert pattern.frequency == initial_freq + 4
+        assert pattern.pattern_data["observation_count"] == 5
+        assert float(pattern.confidence) > initial_confidence
 
 
 class TestLearningData:
@@ -267,9 +273,10 @@ class TestLearningIntegration:
             id="workflow-1",
             user_id="user",
             question_template_id="qt",
-            times_used=3,
-            positive_responses=2,
-            negative_responses=1,
+            role="lead",
+            times_asked=3,
+            times_answered_well=2,
+            average_answer_length=150,
             effectiveness_score=0.67,
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
@@ -284,20 +291,19 @@ class TestLearningIntegration:
             id="workflow-2",
             user_id="user",
             pattern_type="collaborative",
-            frequency=0,
-            last_observed=None,
-            metadata={},
+            pattern_data={"observation_count": 0},
+            confidence=0.3,
+            learned_from_projects=[],
             learned_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
 
-        # Simulate observations
-        for _i in range(5):
-            pattern.frequency += 1
-            pattern.last_observed = datetime.datetime.now()
+        # Simulate observations by updating pattern data
+        pattern.pattern_data["observation_count"] = 5
+        pattern.updated_at = datetime.datetime.now()
 
-        assert pattern.frequency == 5
-        assert pattern.last_observed is not None
+        assert pattern.pattern_data["observation_count"] == 5
+        assert pattern.updated_at is not None
 
     def test_learning_improvement_tracking(self):
         """Test tracking learning improvements."""
@@ -306,9 +312,10 @@ class TestLearningIntegration:
             id="improve-1",
             user_id="user",
             question_template_id="qt",
-            times_used=10,
-            positive_responses=5,
-            negative_responses=5,
+            role="lead",
+            times_asked=10,
+            times_answered_well=5,
+            average_answer_length=100,
             effectiveness_score=0.5,
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
@@ -319,9 +326,10 @@ class TestLearningIntegration:
             id="improve-2",
             user_id="user",
             question_template_id="qt",
-            times_used=20,
-            positive_responses=18,
-            negative_responses=2,
+            role="lead",
+            times_asked=20,
+            times_answered_well=18,
+            average_answer_length=200,
             effectiveness_score=0.9,
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
@@ -340,31 +348,32 @@ class TestLearningEdgeCases:
             id="large-1",
             user_id="user",
             question_template_id="qt",
-            times_used=10000,
-            positive_responses=9500,
-            negative_responses=500,
+            role="lead",
+            times_asked=10000,
+            times_answered_well=9500,
+            average_answer_length=300,
             effectiveness_score=0.95,
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
 
-        assert eff.times_used == 10000
+        assert eff.times_asked == 10000
         assert eff.effectiveness_score == 0.95
 
     def test_pattern_with_empty_metadata(self):
-        """Test pattern with empty metadata."""
+        """Test pattern with empty pattern_data."""
         pattern = UserBehaviorPattern(
             id="empty-meta",
             user_id="user",
             pattern_type="test",
-            frequency=5,
-            last_observed=datetime.datetime.now(),
-            metadata={},
+            pattern_data={},
+            confidence=0.5,
+            learned_from_projects=[],
             learned_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
 
-        assert pattern.metadata == {}
+        assert pattern.pattern_data == {}
 
     def test_multiple_patterns_same_user(self):
         """Test user with multiple patterns."""
@@ -373,9 +382,9 @@ class TestLearningEdgeCases:
                 id=f"multi-{i}",
                 user_id="user",
                 pattern_type=ptype,
-                frequency=i,
-                last_observed=datetime.datetime.now(),
-                metadata={},
+                pattern_data={"index": i},
+                confidence=0.5 + (i * 0.1),
+                learned_from_projects=[],
                 learned_at=datetime.datetime.now(),
                 updated_at=datetime.datetime.now(),
             )

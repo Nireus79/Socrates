@@ -219,6 +219,7 @@ class TestClaudeClientConflictResolution:
     @pytest.fixture
     def conflict(self):
         """Create a test conflict."""
+        import datetime
         return ConflictInfo(
             conflict_id="conf123",
             conflict_type="specification",
@@ -226,8 +227,10 @@ class TestClaudeClientConflictResolution:
             new_value="Use JavaScript",
             old_author="user1",
             new_author="user2",
+            old_timestamp=datetime.datetime.now().isoformat(),
+            new_timestamp=datetime.datetime.now().isoformat(),
             severity="medium",
-            created_at=None,
+            suggestions=["Consider both approaches", "Evaluate performance"],
         )
 
     @pytest.fixture
