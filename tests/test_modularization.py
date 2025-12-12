@@ -25,7 +25,7 @@ def print_header(text):
     print(f"{BLUE}{BOLD}{'='*60}{RESET}\n")
 
 
-def test_import(module_name, description=""):
+def check_import(module_name, description=""):
     """Test if a module can be imported"""
     desc = description or f"Importing {module_name}"
     try:
@@ -76,7 +76,7 @@ def test_module_structure():
     ]
 
     for module in expected_modules:
-        test_import(module, f"Module: {module}")
+        check_import(module, f"Module: {module}")
 
 
 def test_imports():
