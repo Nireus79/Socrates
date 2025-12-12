@@ -231,10 +231,12 @@ class TestEventPropagation:
 class TestCollaborationAndConflictDetection:
     """Test: Multi-user collaboration with conflict detection"""
 
-    def test_two_user_project_workflow(self, mock_orchestrator, sample_user):
+    def test_two_user_project_workflow(self, mock_orchestrator, pro_user):
         """Test two users collaborating on same project"""
         with patch("anthropic.Anthropic"):
             orchestrator = mock_orchestrator
+            # Configure mock to return pro_user who has team collaboration enabled
+            orchestrator.database.load_user.return_value = pro_user
             from socratic_system.agents.project_manager import ProjectManagerAgent
 
             proj_mgr = ProjectManagerAgent(orchestrator)
@@ -258,7 +260,8 @@ class TestCollaborationAndConflictDetection:
             project.requirements = ["Alice's requirement 1"]
 
             # User 2 tries to update same project concurrently
-            project2 = project.copy()
+            from copy import deepcopy
+            project2 = deepcopy(project)
             project2.goals = "Bob's goals"
             project2.requirements = ["Bob's requirement 2"]
 
@@ -349,7 +352,7 @@ class TestErrorRecoveryAcrossLayers:
             code_gen = CodeGeneratorAgent(orchestrator)
 
             # First attempt: API failure
-            orchestrator.claude_client.generate_code = MagicMock(
+            orchestrator.claude_client.generate_artifact = MagicMock(
                 side_effect=Exception("API Rate Limited")
             )
 
@@ -365,7 +368,7 @@ class TestErrorRecoveryAcrossLayers:
                 assert "Rate Limited" in str(e)
 
             # Second attempt: Retry with success
-            orchestrator.claude_client.generate_code = MagicMock(return_value="# Code after retry")
+            orchestrator.claude_client.generate_artifact = MagicMock(return_value="# Code after retry")
 
             result = code_gen.process(gen_req)
             assert result["status"] == "success"
@@ -406,6 +409,16 @@ class TestMultiProjectContextIsolation:
             # Save both
             proj_mgr.process({"action": "save_project", "project": proj_a})
             proj_mgr.process({"action": "save_project", "project": proj_b})
+
+            # Configure mock to return the saved projects
+            def load_project_side_effect(project_id):
+                if project_id == proj_a.project_id:
+                    return proj_a
+                elif project_id == proj_b.project_id:
+                    return proj_b
+                return None
+
+            orchestrator.database.load_project.side_effect = load_project_side_effect
 
             # Load Project A - verify isolation
             load_a_req = {"action": "load_project", "project_id": proj_a.project_id}
