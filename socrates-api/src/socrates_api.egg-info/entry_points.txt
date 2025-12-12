@@ -1,0 +1,2 @@
+[console_scripts]
+socrates-api = socrates_api.main:run

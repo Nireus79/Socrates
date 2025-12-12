@@ -187,14 +187,14 @@ class DocumentAgent(Agent):
             # Handle PDF files
             elif file_ext == ".pdf":
                 try:
-                    import PyPDF2
+                    from pypdf import PdfReader
 
                     with open(file_path, "rb") as f:
-                        pdf_reader = PyPDF2.PdfReader(f)
+                        pdf_reader = PdfReader(f)
                         for page in pdf_reader.pages:
                             content += page.extract_text() + "\n"
                 except ImportError:
-                    self.logger.warning("PyPDF2 not installed, trying alternative PDF reading")
+                    self.logger.warning("pypdf not installed, trying alternative PDF reading")
                     # Fallback: read as text (won't work for binary PDFs)
                     with open(file_path, encoding="utf-8", errors="ignore") as f:
                         content = f.read()

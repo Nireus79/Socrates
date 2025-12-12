@@ -45,7 +45,7 @@ class SocratesConfig:
     api_key: str
 
     # Model Configuration
-    claude_model: str = "claude-sonnet-4-5-20250929"
+    claude_model: str = "claude-haiku-4-5-20251001"
     embedding_model: str = "all-MiniLM-L6-v2"
 
     # Storage Configuration
@@ -141,7 +141,7 @@ class SocratesConfig:
 
         config_dict = {
             "api_key": api_key,
-            "claude_model": os.getenv("CLAUDE_MODEL", "claude-sonnet-4-5-20250929"),
+            "claude_model": os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001"),
             "data_dir": Path(os.getenv("SOCRATES_DATA_DIR", Path.home() / ".socrates")),
             "log_level": os.getenv("SOCRATES_LOG_LEVEL", "INFO"),
         }
@@ -274,7 +274,7 @@ def _get_legacy_config() -> Dict[str, Any]:
         return {
             "MAX_CONTEXT_LENGTH": 8000,
             "EMBEDDING_MODEL": "all-MiniLM-L6-v2",
-            "CLAUDE_MODEL": "claude-sonnet-4-5-20250929",
+            "CLAUDE_MODEL": "claude-haiku-4-5-20251001",
             "MAX_RETRIES": 3,
             "RETRY_DELAY": 1,
             "TOKEN_WARNING_THRESHOLD": 0.8,

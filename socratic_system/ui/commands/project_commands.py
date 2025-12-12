@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
+from socratic_system.core import get_all_project_types, get_project_type_description
 from socratic_system.ui.commands.base import BaseCommand
 
 
@@ -29,6 +30,9 @@ class ProjectCreateCommand(BaseCommand):
         if not project_name:
             return self.error("Project name cannot be empty")
 
+        # Ask about project type
+        project_type = self._ask_project_type()
+
         orchestrator = context.get("orchestrator")
         app = context.get("app")
         user = context.get("user")
@@ -39,7 +43,12 @@ class ProjectCreateCommand(BaseCommand):
         # Create project using orchestrator
         result = orchestrator.process_request(
             "project_manager",
-            {"action": "create_project", "project_name": project_name, "owner": user.username},
+            {
+                "action": "create_project",
+                "project_name": project_name,
+                "owner": user.username,
+                "project_type": project_type,
+            },
         )
 
         if result["status"] == "success":
@@ -48,14 +57,34 @@ class ProjectCreateCommand(BaseCommand):
             app.context_display.set_context(project=project)
 
             self.print_success(f"Project '{project_name}' created successfully!")
+            print(
+                f"{Fore.CYAN}Project Type: {Style.RESET_ALL}{get_project_type_description(project_type)}"
+            )
             print(f"\n{Fore.CYAN}Next steps:{Style.RESET_ALL}")
-            print("  • Use /continue to start the Socratic session")
+            print("  • Use /chat to start the Socratic session")
             print("  • Use /collab add <username> to invite collaborators")
             print("  • Use /docs import <path> to import documents")
 
             return self.success(data={"project": project})
         else:
             return self.error(result.get("message", "Failed to create project"))
+
+    def _ask_project_type(self) -> str:
+        """Ask user to select project type"""
+        project_types = get_all_project_types()
+
+        print(f"\n{Fore.CYAN}What type of project are you building?{Style.RESET_ALL}")
+        for i, ptype in enumerate(project_types, 1):
+            description = get_project_type_description(ptype)
+            print(f"{i}. {description}")
+
+        while True:
+            choice = input(f"\n{Fore.WHITE}Select project type (1-{len(project_types)}): ").strip()
+            if choice.isdigit() and 1 <= int(choice) <= len(project_types):
+                return project_types[int(choice) - 1]
+            print(
+                f"{Fore.RED}Invalid choice. Please enter a number between 1 and {len(project_types)}.{Style.RESET_ALL}"
+            )
 
 
 class ProjectLoadCommand(BaseCommand):

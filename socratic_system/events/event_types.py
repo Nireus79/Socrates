@@ -49,6 +49,14 @@ class EventType(Enum):
     CONFLICT_RESOLVED = "conflict.resolved"
     CONTEXT_ANALYZED = "context.analyzed"
 
+    # Quality and maturity events
+    PHASE_MATURITY_UPDATED = "phase.maturity.updated"
+    PHASE_READY_TO_ADVANCE = "phase.ready.to.advance"
+    QUALITY_CHECK_PASSED = "quality.check.passed"
+    QUALITY_CHECK_WARNING = "quality.check.warning"
+    MATURITY_MILESTONE = "maturity.milestone"
+    LEARNING_METRICS_UPDATED = "learning.metrics.updated"
+
     # Note events
     NOTE_ADDED = "note.added"
     NOTE_UPDATED = "note.updated"

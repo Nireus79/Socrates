@@ -197,6 +197,23 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating suggestions: {e}"
 
+    def generate_artifact(self, context: str, project_type: str) -> str:
+        """Generate project-type-appropriate artifact"""
+        if project_type == "software":
+            return self.generate_code(context)
+        elif project_type == "business":
+            return self.generate_business_plan(context)
+        elif project_type == "research":
+            return self.generate_research_protocol(context)
+        elif project_type == "creative":
+            return self.generate_creative_brief(context)
+        elif project_type == "marketing":
+            return self.generate_marketing_plan(context)
+        elif project_type == "educational":
+            return self.generate_curriculum(context)
+        else:
+            return self.generate_code(context)  # Default to code
+
     def generate_code(self, context: str) -> str:
         """Generate code based on project context"""
         prompt = f"""
@@ -238,18 +255,242 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating code: {e}"
 
-    def generate_documentation(self, project: ProjectContext, script: str) -> str:
-        """Generate documentation for the project and script"""
+    def generate_business_plan(self, context: str) -> str:
+        """Generate business plan document"""
         prompt = f"""
-        Create comprehensive documentation for this project:
+        Generate a comprehensive business plan based on this context:
 
-        Project: {project.name}
-        Goals: {project.goals}
-        Tech Stack: {', '.join(project.tech_stack)}
+        {context}
 
-        Script:
-        {script[:2000]}...
+        Please create a professional business plan including:
+        1. Executive Summary - Brief overview of the business opportunity
+        2. Market Analysis & Opportunity - Market size, trends, competitive landscape
+        3. Business Model & Revenue Streams - How the business generates revenue
+        4. Value Proposition - Unique advantages and customer benefits
+        5. Go-to-Market Strategy - Launch and acquisition plan
+        6. Financial Projections - Revenue forecasts, profitability timeline
+        7. Competitive Advantage - Key differentiators
+        8. Risk Analysis & Mitigation - Key risks and mitigation strategies
+        9. Implementation Timeline - Phase-by-phase roadmap
+        10. Resource Requirements - Team, funding, and operational needs
 
+        Format as a professional business plan document with clear sections and bullet points.
+        """
+
+        try:
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=4000,
+                temperature=0.7,
+                messages=[{"role": "user", "content": prompt}],
+            )
+
+            # Track token usage
+            self.orchestrator.system_monitor.process(
+                {
+                    "action": "track_tokens",
+                    "input_tokens": response.usage.input_tokens,
+                    "output_tokens": response.usage.output_tokens,
+                    "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
+                    "cost_estimate": self._calculate_cost(response.usage),
+                }
+            )
+
+            return response.content[0].text
+
+        except Exception as e:
+            return f"Error generating business plan: {e}"
+
+    def generate_research_protocol(self, context: str) -> str:
+        """Generate research protocol and methodology document"""
+        prompt = f"""
+        Generate a detailed research protocol and methodology document based on this context:
+
+        {context}
+
+        Please create a comprehensive research protocol including:
+        1. Research Question & Hypothesis - Clear statement of inquiry
+        2. Literature Review Summary - Current state of knowledge
+        3. Research Gap - What is unknown and why it matters
+        4. Methodology & Research Design - Approach and justification
+        5. Data Collection Plan - Methods, instruments, and timeline
+        6. Analysis Approach - Statistical or qualitative analysis strategy
+        7. Ethical Considerations - IRB requirements, informed consent, data protection
+        8. Quality Assurance & Validation - Reliability and validity measures
+        9. Timeline & Resources - Detailed project schedule and required resources
+        10. Expected Outcomes - Anticipated findings and impact
+
+        Format as a formal research protocol document suitable for academic or professional review.
+        """
+
+        try:
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=4000,
+                temperature=0.7,
+                messages=[{"role": "user", "content": prompt}],
+            )
+
+            # Track token usage
+            self.orchestrator.system_monitor.process(
+                {
+                    "action": "track_tokens",
+                    "input_tokens": response.usage.input_tokens,
+                    "output_tokens": response.usage.output_tokens,
+                    "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
+                    "cost_estimate": self._calculate_cost(response.usage),
+                }
+            )
+
+            return response.content[0].text
+
+        except Exception as e:
+            return f"Error generating research protocol: {e}"
+
+    def generate_creative_brief(self, context: str) -> str:
+        """Generate creative/design brief document"""
+        prompt = f"""
+        Generate a comprehensive creative brief and design specifications based on this context:
+
+        {context}
+
+        Please create a professional creative brief including:
+        1. Project Overview - Purpose and vision
+        2. Target Audience - Demographics, psychographics, preferences
+        3. Brand Identity - Core values, personality, positioning
+        4. Design Principles - Aesthetic direction and guidelines
+        5. Visual Style - Color palette, typography, imagery style
+        6. Content Strategy - Messaging, tone, key communication points
+        7. Brand Guidelines - Logo usage, consistency requirements
+        8. Deliverables - Specific outputs and formats needed
+        9. Success Metrics - How to measure creative effectiveness
+        10. Timeline & Resources - Project schedule and team requirements
+
+        Format as a professional creative brief document with visual style descriptions and clear guidelines.
+        """
+
+        try:
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=4000,
+                temperature=0.7,
+                messages=[{"role": "user", "content": prompt}],
+            )
+
+            # Track token usage
+            self.orchestrator.system_monitor.process(
+                {
+                    "action": "track_tokens",
+                    "input_tokens": response.usage.input_tokens,
+                    "output_tokens": response.usage.output_tokens,
+                    "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
+                    "cost_estimate": self._calculate_cost(response.usage),
+                }
+            )
+
+            return response.content[0].text
+
+        except Exception as e:
+            return f"Error generating creative brief: {e}"
+
+    def generate_marketing_plan(self, context: str) -> str:
+        """Generate marketing campaign plan document"""
+        prompt = f"""
+        Generate a comprehensive marketing campaign plan based on this context:
+
+        {context}
+
+        Please create a detailed marketing plan including:
+        1. Campaign Overview - Objectives and success criteria
+        2. Target Market Analysis - Audience segments, needs, behaviors
+        3. Market Positioning - Competitive advantages and differentiation
+        4. Campaign Strategy - Key messages and tactical approach
+        5. Channel Strategy - Marketing channels and media mix
+        6. Content Plan - Content types, themes, and distribution
+        7. Campaign Timeline - Launch date, duration, key milestones
+        8. Budget Allocation - Resource distribution across channels
+        9. Performance Metrics - KPIs and measurement approach
+        10. Risk Mitigation - Contingency plans for common challenges
+
+        Format as a professional marketing campaign plan with clear sections and actionable recommendations.
+        """
+
+        try:
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=4000,
+                temperature=0.7,
+                messages=[{"role": "user", "content": prompt}],
+            )
+
+            # Track token usage
+            self.orchestrator.system_monitor.process(
+                {
+                    "action": "track_tokens",
+                    "input_tokens": response.usage.input_tokens,
+                    "output_tokens": response.usage.output_tokens,
+                    "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
+                    "cost_estimate": self._calculate_cost(response.usage),
+                }
+            )
+
+            return response.content[0].text
+
+        except Exception as e:
+            return f"Error generating marketing plan: {e}"
+
+    def generate_curriculum(self, context: str) -> str:
+        """Generate educational curriculum document"""
+        prompt = f"""
+        Generate a comprehensive curriculum design document based on this context:
+
+        {context}
+
+        Please create a detailed curriculum including:
+        1. Course Overview - Learning objectives and target audience
+        2. Curriculum Philosophy - Teaching approach and pedagogical foundation
+        3. Learning Outcomes - Specific competencies students will achieve
+        4. Content Structure - Topics, units, and learning progression
+        5. Module Design - Detailed breakdown of each module or unit
+        6. Assessment Strategy - Formative and summative assessment methods
+        7. Learning Activities - Instructional activities and engagement strategies
+        8. Resources & Materials - Required textbooks, tools, and multimedia
+        9. Lesson Plan Template - Framework for individual lessons
+        10. Evaluation Plan - How to measure curriculum effectiveness and student progress
+
+        Format as a professional curriculum document suitable for educators and training programs.
+        """
+
+        try:
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=4000,
+                temperature=0.7,
+                messages=[{"role": "user", "content": prompt}],
+            )
+
+            # Track token usage
+            self.orchestrator.system_monitor.process(
+                {
+                    "action": "track_tokens",
+                    "input_tokens": response.usage.input_tokens,
+                    "output_tokens": response.usage.output_tokens,
+                    "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
+                    "cost_estimate": self._calculate_cost(response.usage),
+                }
+            )
+
+            return response.content[0].text
+
+        except Exception as e:
+            return f"Error generating curriculum: {e}"
+
+    def generate_documentation(
+        self, project: ProjectContext, artifact: str, artifact_type: str = "code"
+    ) -> str:
+        """Generate documentation for any artifact type"""
+        doc_instructions = {
+            "code": """
         Please include:
         1. Project overview and purpose
         2. Installation instructions
@@ -257,6 +498,74 @@ class ClaudeClient:
         4. API documentation (if applicable)
         5. Configuration options
         6. Troubleshooting section
+        """,
+            "business_plan": """
+        Please include:
+        1. Implementation roadmap and phases
+        2. Resource allocation and team structure
+        3. Success metrics and KPIs
+        4. Contingency plans
+        5. Key stakeholder roles and responsibilities
+        6. Quick reference guides for each section
+        """,
+            "research_protocol": """
+        Please include:
+        1. Supplementary technical guidance for researchers
+        2. Data management best practices
+        3. Analysis procedure details and decision trees
+        4. Troubleshooting guide for common issues
+        5. References and additional resources
+        6. Appendices with templates and forms
+        """,
+            "creative_brief": """
+        Please include:
+        1. Creative process and workflow
+        2. Production guidelines and specifications
+        3. Asset organization and file structure
+        4. Revision and approval process
+        5. Quick reference guides for key assets
+        6. Common variations and use cases
+        """,
+            "marketing_plan": """
+        Please include:
+        1. Campaign execution roadmap
+        2. Content calendar and publishing schedule
+        3. Team roles and communication plan
+        4. Campaign monitoring and analytics setup
+        5. Budget tracking and optimization
+        6. Contingency tactics and pivot strategies
+        """,
+            "curriculum": """
+        Please include:
+        1. Instructor preparation guidelines
+        2. Day-by-day lesson delivery tips
+        3. Student assessment rubrics
+        4. Resource links and supplementary materials
+        5. Troubleshooting common student challenges
+        6. Accommodation and differentiation strategies
+        """,
+        }
+
+        doc_section = doc_instructions.get(artifact_type, doc_instructions["code"])
+
+        # Handle None or missing artifact
+        artifact_preview = (
+            (artifact[:2000] if artifact else "") + "..."
+            if artifact
+            else "(No artifact generated yet)"
+        )
+
+        prompt = f"""
+        Create comprehensive implementation documentation for this {artifact_type} project:
+
+        Project: {project.name}
+        Goals: {project.goals}
+        Phase: {project.phase}
+
+        {artifact_type.replace('_', ' ').title()}:
+        {artifact_preview}
+
+        {doc_section}
         """
 
         try:

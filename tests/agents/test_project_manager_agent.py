@@ -6,7 +6,6 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
-import socrates
 
 from socratic_system.agents.project_manager import ProjectManagerAgent
 from socratic_system.models import ProjectContext
@@ -16,20 +15,20 @@ from socratic_system.models import ProjectContext
 class TestProjectManagerAgentCreation:
     """Tests for ProjectManagerAgent initialization and creation"""
 
-    def test_agent_initialization(self, test_config):
+    def test_agent_initialization(self, mock_orchestrator):
         """Test ProjectManagerAgent initializes correctly"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             assert agent is not None
             assert agent.name == "ProjectManager"
             assert agent.orchestrator == orchestrator
 
-    def test_create_project_success(self, test_config, sample_user):
+    def test_create_project_success(self, mock_orchestrator, sample_user):
         """Test successful project creation"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             request = {
@@ -46,10 +45,10 @@ class TestProjectManagerAgentCreation:
             assert result["project"].owner == sample_user.username
             assert result["project"].phase == "discovery"
 
-    def test_create_project_with_invalid_data(self, test_config):
+    def test_create_project_with_invalid_data(self, mock_orchestrator):
         """Test project creation with missing required fields"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             # Missing owner
@@ -66,10 +65,10 @@ class TestProjectManagerAgentCreation:
 class TestProjectManagerAgentProjectOperations:
     """Tests for project retrieval, update, and deletion"""
 
-    def test_load_project_success(self, test_config, sample_project):
+    def test_load_project_success(self, mock_orchestrator, sample_project):
         """Test loading an existing project"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             # Save project first
@@ -82,10 +81,10 @@ class TestProjectManagerAgentProjectOperations:
             assert result["status"] == "success"
             assert result["project"].name == sample_project.name
 
-    def test_load_project_not_found(self, test_config):
+    def test_load_project_not_found(self, mock_orchestrator):
         """Test loading a non-existent project"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             request = {"action": "load_project", "project_id": "nonexistent_id_12345"}
@@ -95,10 +94,10 @@ class TestProjectManagerAgentProjectOperations:
             assert result["status"] == "error"
             assert "not found" in result["message"].lower()
 
-    def test_save_project_updates_timestamp(self, test_config, sample_project):
+    def test_save_project_updates_timestamp(self, mock_orchestrator, sample_project):
         """Test that saving a project updates its timestamp"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             # Save project first
@@ -120,10 +119,10 @@ class TestProjectManagerAgentProjectOperations:
 class TestProjectManagerAgentCollaborators:
     """Tests for collaborator management"""
 
-    def test_add_collaborator_success(self, test_config, sample_project):
+    def test_add_collaborator_success(self, mock_orchestrator, sample_project):
         """Test adding a collaborator to project"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             orchestrator.database.save_project(sample_project)
@@ -139,10 +138,10 @@ class TestProjectManagerAgentCollaborators:
             assert result["status"] == "success"
             assert "newcollaborator" in sample_project.collaborators
 
-    def test_add_duplicate_collaborator(self, test_config, sample_project):
+    def test_add_duplicate_collaborator(self, mock_orchestrator, sample_project):
         """Test adding a collaborator who is already on the project"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             sample_project.collaborators = ["existing_user"]
@@ -159,10 +158,10 @@ class TestProjectManagerAgentCollaborators:
             assert result["status"] == "error"
             assert "already" in result["message"].lower()
 
-    def test_list_collaborators(self, test_config, sample_project):
+    def test_list_collaborators(self, mock_orchestrator, sample_project):
         """Test listing all collaborators for a project"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             sample_project.collaborators = ["user1", "user2", "user3"]
@@ -183,10 +182,10 @@ class TestProjectManagerAgentCollaborators:
                 for c in result["collaborators"]
             )
 
-    def test_remove_collaborator_success(self, test_config, sample_project):
+    def test_remove_collaborator_success(self, mock_orchestrator, sample_project):
         """Test removing a collaborator from project"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             sample_project.collaborators = ["user_to_remove"]
@@ -204,10 +203,10 @@ class TestProjectManagerAgentCollaborators:
             assert result["status"] == "success"
             assert "user_to_remove" not in sample_project.collaborators
 
-    def test_remove_collaborator_not_owner(self, test_config, sample_project):
+    def test_remove_collaborator_not_owner(self, mock_orchestrator, sample_project):
         """Test that non-owners cannot remove collaborators"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             sample_project.collaborators = ["user_to_remove"]
@@ -225,10 +224,10 @@ class TestProjectManagerAgentCollaborators:
             assert result["status"] == "error"
             assert "owner" in result["message"].lower()
 
-    def test_remove_owner_fails(self, test_config, sample_project):
+    def test_remove_owner_fails(self, mock_orchestrator, sample_project):
         """Test that owner cannot be removed from project"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             orchestrator.database.save_project(sample_project)
@@ -250,10 +249,10 @@ class TestProjectManagerAgentCollaborators:
 class TestProjectManagerAgentProjectListing:
     """Tests for listing projects"""
 
-    def test_list_projects_for_user(self, test_config, sample_user):
+    def test_list_projects_for_user(self, mock_orchestrator, sample_user):
         """Test listing all projects owned by a user"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             # Create multiple projects
@@ -292,10 +291,10 @@ class TestProjectManagerAgentProjectListing:
 class TestProjectManagerAgentArchiving:
     """Tests for project archiving and restoration"""
 
-    def test_archive_project_success(self, test_config, sample_project):
+    def test_archive_project_success(self, mock_orchestrator, sample_project):
         """Test successfully archiving a project"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             orchestrator.database.save_project(sample_project)
@@ -311,10 +310,10 @@ class TestProjectManagerAgentArchiving:
             assert result["status"] == "success"
             assert "archived" in result["message"].lower()
 
-    def test_archive_project_not_owner(self, test_config, sample_project):
+    def test_archive_project_not_owner(self, mock_orchestrator, sample_project):
         """Test that non-owners cannot archive project"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             orchestrator.database.save_project(sample_project)
@@ -330,10 +329,10 @@ class TestProjectManagerAgentArchiving:
             assert result["status"] == "error"
             assert "owner" in result["message"].lower()
 
-    def test_archive_nonexistent_project(self, test_config):
+    def test_archive_nonexistent_project(self, mock_orchestrator):
         """Test archiving a non-existent project"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             request = {
@@ -346,10 +345,10 @@ class TestProjectManagerAgentArchiving:
 
             assert result["status"] == "error"
 
-    def test_restore_project_success(self, test_config, sample_project):
+    def test_restore_project_success(self, mock_orchestrator, sample_project):
         """Test successfully restoring an archived project"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             orchestrator.database.save_project(sample_project)
@@ -371,10 +370,10 @@ class TestProjectManagerAgentArchiving:
 class TestProjectManagerAgentDeletion:
     """Tests for permanent project deletion"""
 
-    def test_delete_project_requires_confirmation(self, test_config, sample_project):
+    def test_delete_project_requires_confirmation(self, mock_orchestrator, sample_project):
         """Test that project deletion requires confirmation"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             orchestrator.database.save_project(sample_project)
@@ -392,10 +391,10 @@ class TestProjectManagerAgentDeletion:
             assert result["status"] == "error"
             assert "DELETE" in result["message"]
 
-    def test_delete_project_success_with_confirmation(self, test_config, sample_project):
+    def test_delete_project_success_with_confirmation(self, mock_orchestrator, sample_project):
         """Test successful permanent project deletion with proper confirmation"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             orchestrator.database.save_project(sample_project)
@@ -412,10 +411,10 @@ class TestProjectManagerAgentDeletion:
             assert result["status"] == "success"
             assert "deleted" in result["message"].lower()
 
-    def test_delete_project_not_owner(self, test_config, sample_project):
+    def test_delete_project_not_owner(self, mock_orchestrator, sample_project):
         """Test that non-owners cannot delete project"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             orchestrator.database.save_project(sample_project)
@@ -437,10 +436,10 @@ class TestProjectManagerAgentDeletion:
 class TestProjectManagerAgentErrorHandling:
     """Tests for error scenarios and edge cases"""
 
-    def test_unknown_action(self, test_config):
+    def test_unknown_action(self, mock_orchestrator):
         """Test handling of unknown action"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             request = {"action": "unknown_action_xyz"}
@@ -450,10 +449,10 @@ class TestProjectManagerAgentErrorHandling:
             assert result["status"] == "error"
             assert "unknown" in result["message"].lower()
 
-    def test_missing_action(self, test_config):
+    def test_missing_action(self, mock_orchestrator):
         """Test handling of missing action field"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             request = {}
@@ -462,10 +461,10 @@ class TestProjectManagerAgentErrorHandling:
 
             assert result["status"] == "error"
 
-    def test_get_archived_projects(self, test_config):
+    def test_get_archived_projects(self, mock_orchestrator):
         """Test retrieving archived projects list"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             request = {"action": "get_archived_projects"}
@@ -480,10 +479,10 @@ class TestProjectManagerAgentErrorHandling:
 class TestProjectManagerAgentIntegration:
     """Integration tests for ProjectManagerAgent workflows"""
 
-    def test_full_project_lifecycle(self, test_config, sample_user):
+    def test_full_project_lifecycle(self, mock_orchestrator, sample_user):
         """Test complete project lifecycle: create -> load -> save -> archive -> restore"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             # Create project
@@ -526,10 +525,10 @@ class TestProjectManagerAgentIntegration:
             restore_result = agent.process(restore_request)
             assert restore_result["status"] == "success"
 
-    def test_collaboration_workflow(self, test_config, sample_project):
+    def test_collaboration_workflow(self, mock_orchestrator, sample_project):
         """Test adding/removing collaborators and listing them"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = ProjectManagerAgent(orchestrator)
 
             orchestrator.database.save_project(sample_project)

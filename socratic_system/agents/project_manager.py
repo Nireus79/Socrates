@@ -4,17 +4,20 @@ Project management agent for Socratic RAG System
 
 import datetime
 import uuid
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict
 
-from socratic_system.models import ProjectContext
+from socratic_system.models import VALID_ROLES, ProjectContext, TeamMemberRole
 
 from .base import Agent
+
+if TYPE_CHECKING:
+    from socratic_system.orchestration import AgentOrchestrator
 
 
 class ProjectManagerAgent(Agent):
     """Manages project lifecycle including creation, loading, saving, and collaboration"""
 
-    def __init__(self, orchestrator):
+    def __init__(self, orchestrator: "AgentOrchestrator") -> None:
         super().__init__("ProjectManager", orchestrator)
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -26,6 +29,7 @@ class ProjectManagerAgent(Agent):
             "load_project": self._load_project,
             "save_project": self._save_project,
             "add_collaborator": self._add_collaborator,
+            "update_member_role": self._update_member_role,
             "list_projects": self._list_projects,
             "list_collaborators": self._list_collaborators,
             "remove_collaborator": self._remove_collaborator,
@@ -42,9 +46,24 @@ class ProjectManagerAgent(Agent):
         return {"status": "error", "message": "Unknown action"}
 
     def _create_project(self, request: Dict) -> Dict:
-        """Create a new project"""
+        """Create a new project with quota checking"""
         project_name = request.get("project_name")
         owner = request.get("owner")
+        project_type = request.get("project_type", "software")  # Default to software
+
+        # NEW: Check project limit
+        from socratic_system.subscription.checker import SubscriptionChecker
+
+        user = self.orchestrator.database.load_user(owner)
+        active_projects = self.orchestrator.database.get_user_projects(owner)
+        active_count = len([p for p in active_projects if not p.is_archived])
+
+        can_create, error_message = SubscriptionChecker.check_project_limit(user, active_count)
+        if not can_create:
+            return {
+                "status": "error",
+                "message": error_message,
+            }
 
         project_id = str(uuid.uuid4())
         project = ProjectContext(
@@ -64,10 +83,11 @@ class ProjectManagerAgent(Agent):
             conversation_history=[],
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
+            project_type=project_type,
         )
 
         self.orchestrator.database.save_project(project)
-        self.log(f"Created project '{project_name}' with ID {project_id}")
+        self.log(f"Created project '{project_name}' (type: {project_type}) with ID {project_id}")
 
         return {"status": "success", "project": project}
 
@@ -91,17 +111,98 @@ class ProjectManagerAgent(Agent):
         return {"status": "success"}
 
     def _add_collaborator(self, request: Dict) -> Dict:
-        """Add a collaborator to a project"""
+        """Add a collaborator to a project with team size checking"""
         project = request.get("project")
         username = request.get("username")
+        role = request.get("role", "creator")  # Default to creator role
 
+        # Validate role
+        if role not in VALID_ROLES:
+            return {
+                "status": "error",
+                "message": f"Invalid role: {role}. Valid roles: {', '.join(VALID_ROLES)}",
+            }
+
+        # NEW: Check team member limit
+        from socratic_system.subscription.checker import SubscriptionChecker
+
+        user = self.orchestrator.database.load_user(project.owner)
+        current_team_size = len(project.team_members or [])
+
+        can_add, error_message = SubscriptionChecker.check_team_member_limit(
+            user, current_team_size
+        )
+        if not can_add:
+            return {
+                "status": "error",
+                "message": error_message,
+            }
+
+        # Check if user already in team_members
+        for member in project.team_members or []:
+            if member.username == username:
+                return {"status": "error", "message": "User already a team member"}
+
+        # Create new team member
+        new_member = TeamMemberRole(
+            username=username, role=role, skills=[], joined_at=datetime.datetime.now()
+        )
+
+        # Add to team_members
+        if project.team_members is None:
+            project.team_members = []
+        project.team_members.append(new_member)
+
+        # Update deprecated collaborators list for backward compatibility
+        if project.collaborators is None:
+            project.collaborators = []
         if username not in project.collaborators:
             project.collaborators.append(username)
-            self.orchestrator.database.save_project(project)
-            self.log(f"Added collaborator '{username}' to project '{project.name}'")
-            return {"status": "success"}
-        else:
-            return {"status": "error", "message": "User already a collaborator"}
+
+        self.orchestrator.database.save_project(project)
+        self.log(f"Added '{username}' as {role} to project '{project.name}'")
+
+        return {
+            "status": "success",
+            "message": f"Added {username} as {role}",
+            "member": new_member.to_dict(),
+        }
+
+    def _update_member_role(self, request: Dict) -> Dict:
+        """Update a team member's role"""
+        project = request.get("project")
+        username = request.get("username")
+        new_role = request.get("role")
+
+        # Validate role
+        if new_role not in VALID_ROLES:
+            return {
+                "status": "error",
+                "message": f"Invalid role: {new_role}. Valid roles: {', '.join(VALID_ROLES)}",
+            }
+
+        # Find and update member
+        member_found = False
+        old_role = None
+        for member in project.team_members or []:
+            if member.username == username:
+                old_role = member.role
+                member.role = new_role
+                member_found = True
+                break
+
+        if not member_found:
+            return {"status": "error", "message": f"User {username} not in project"}
+
+        self.orchestrator.database.save_project(project)
+        self.log(
+            f"Updated {username} role from {old_role} to {new_role} in project '{project.name}'"
+        )
+
+        return {
+            "status": "success",
+            "message": f"Updated {username} role from {old_role} to {new_role}",
+        }
 
     def _list_projects(self, request: Dict) -> Dict:
         """List projects for a user"""
@@ -110,16 +211,30 @@ class ProjectManagerAgent(Agent):
         return {"status": "success", "projects": projects}
 
     def _list_collaborators(self, request: Dict) -> Dict:
-        """List all collaborators for a project"""
+        """List all team members for a project with their roles"""
         project = request.get("project")
 
         collaborators_info = []
-        # Add owner info
-        collaborators_info.append({"username": project.owner, "role": "owner"})
 
-        # Add collaborators info
-        for collaborator in project.collaborators:
-            collaborators_info.append({"username": collaborator, "role": "collaborator"})
+        # Use team_members if available
+        if project.team_members:
+            for member in project.team_members:
+                collaborators_info.append(
+                    {
+                        "username": member.username,
+                        "role": member.role,
+                        "joined_at": member.joined_at.isoformat(),
+                        "is_owner": member.username == project.owner,
+                        "skills": member.skills,
+                    }
+                )
+        else:
+            # Fallback to old collaborators list for backward compatibility
+            collaborators_info.append({"username": project.owner, "role": "lead", "is_owner": True})
+            for collaborator in project.collaborators or []:
+                collaborators_info.append(
+                    {"username": collaborator, "role": "creator", "is_owner": False}
+                )
 
         return {
             "status": "success",

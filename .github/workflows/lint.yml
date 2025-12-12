@@ -67,7 +67,7 @@ jobs:
 
       - name: Type check with mypy
         run: |
-          mypy socratic_system --ignore-missing-imports --no-error-summary || true
+          mypy socratic_system --ignore-missing-imports --no-error-summary
 
   security:
     name: Security Audit
@@ -88,11 +88,11 @@ jobs:
 
       - name: Run bandit security check
         run: |
-          bandit -r socratic_system socrates_cli socrates_api -ll || true
+          bandit -r socratic_system socrates_cli socrates_api -ll
 
       - name: Check dependencies with safety
         run: |
-          safety check --json || true
+          safety check --json
 
   dependencies:
     name: Dependency Check
@@ -115,7 +115,7 @@ jobs:
 
       - name: Check for outdated packages
         run: |
-          pip list --outdated || true
+          pip list --outdated
 
   docs:
     name: Documentation Check
@@ -135,7 +135,7 @@ jobs:
 
       - name: Check docstrings
         run: |
-          pydocstyle socratic_system --ignore=D100,D104 || true
+          pydocstyle socratic_system --ignore=D100,D104
 
   code-coverage:
     name: Code Coverage Threshold
@@ -173,10 +173,13 @@ jobs:
         run: |
           if [[ "${{ needs.ruff.result }}" != "success" || \
                 "${{ needs.black.result }}" != "success" || \
-                "${{ needs.docs.result }}" != "success" ]]; then
+                "${{ needs.mypy.result }}" != "success" || \
+                "${{ needs.security.result }}" != "success" || \
+                "${{ needs.dependencies.result }}" != "success" || \
+                "${{ needs.docs.result }}" != "success" || \
+                "${{ needs.code-coverage.result }}" != "success" ]]; then
             echo "Some quality checks failed"
             exit 1
           else
             echo "All quality checks passed!"
           fi
-        continue-on-error: true

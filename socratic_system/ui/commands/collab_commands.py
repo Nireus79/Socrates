@@ -4,17 +4,18 @@ from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
+from socratic_system.models import VALID_ROLES
 from socratic_system.ui.commands.base import BaseCommand
 
 
 class CollabAddCommand(BaseCommand):
-    """Add a collaborator to the current project"""
+    """Add a collaborator to the current project with optional role"""
 
     def __init__(self):
         super().__init__(
             name="collab add",
-            description="Add a collaborator to the current project",
-            usage="collab add <username>",
+            description="Add a collaborator to the current project with specified role",
+            usage="collab add <username> [role]",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -24,11 +25,18 @@ class CollabAddCommand(BaseCommand):
 
         if not self.validate_args(args, min_count=1):
             username = input(f"{Fore.WHITE}Username to add: ").strip()
+            print(f"{Fore.YELLOW}Available roles: {', '.join(VALID_ROLES)}")
+            role = input(f"{Fore.WHITE}Role [{VALID_ROLES[0]}]: ").strip() or VALID_ROLES[0]
         else:
             username = args[0]
+            role = args[1] if len(args) > 1 else "creator"
 
         if not username:
             return self.error("Username cannot be empty")
+
+        # Validate role
+        if role not in VALID_ROLES:
+            return self.error(f"Invalid role '{role}'. Valid roles: {', '.join(VALID_ROLES)}")
 
         orchestrator = context.get("orchestrator")
         project = context.get("project")
@@ -49,26 +57,26 @@ class CollabAddCommand(BaseCommand):
         if username == project.owner:
             return self.error("User is already the project owner")
 
-        # Check if already collaborator
-        if username in project.collaborators:
-            return self.error(f"User '{username}' is already a collaborator")
+        # Check if already team member
+        for member in project.team_members or []:
+            if member.username == username:
+                return self.error(f"User '{username}' is already a team member")
 
-        # Add collaborator
+        # Add collaborator with role
         result = orchestrator.process_request(
             "project_manager",
-            {"action": "add_collaborator", "project": project, "username": username},
+            {"action": "add_collaborator", "project": project, "username": username, "role": role},
         )
 
         if result["status"] == "success":
-            self.print_success(f"Added '{username}' as collaborator!")
-            project.collaborators.append(username)
+            self.print_success(f"Added '{username}' as {role}!")
 
             # Save project
             orchestrator.process_request(
                 "project_manager", {"action": "save_project", "project": project}
             )
 
-            return self.success(data={"collaborator": username})
+            return self.success(data={"collaborator": username, "role": role})
         else:
             return self.error(result.get("message", "Failed to add collaborator"))
 
@@ -218,22 +226,115 @@ class CollabListCommand(BaseCommand):
         )
 
         if result["status"] == "success":
-            print(f"\n{Fore.CYAN}Collaborators for '{project.name}':{Style.RESET_ALL}")
+            print(f"\n{Fore.CYAN}Team Members for '{project.name}':{Style.RESET_ALL}\n")
 
             members = result.get("collaborators", [])
 
             if not members:
-                self.print_info("No collaborators")
+                self.print_info("No team members")
                 return self.success()
 
+            # Display header
+            print(f"{Fore.WHITE}{'Username':<20} {'Role':<15} {'Status':<15}{Style.RESET_ALL}")
+            print(f"{Fore.WHITE}{'-'*50}{Style.RESET_ALL}")
+
             for member in members:
-                role_color = Fore.GREEN if member["role"] == "owner" else Fore.WHITE
-                role_symbol = "[USER]" if member["role"] == "collaborator" else "[OWNER]"
-                print(
-                    f"{role_color}{role_symbol} {member['username']:20} ({member['role']}){Style.RESET_ALL}"
+                username = member["username"]
+                role = member["role"]
+                is_owner = member.get("is_owner", False)
+
+                # Format role with color
+                role_display = (
+                    f"{Fore.GREEN}{role}{Style.RESET_ALL}"
+                    if role == "lead"
+                    else f"{Fore.CYAN}{role}{Style.RESET_ALL}"
                 )
+
+                # Format status
+                status = (
+                    f"{Fore.YELLOW}OWNER{Style.RESET_ALL}"
+                    if is_owner
+                    else f"{Fore.WHITE}Member{Style.RESET_ALL}"
+                )
+
+                print(f"{username:<20} {role_display:<30} {status}")
 
             print()
             return self.success(data={"collaborators": members})
         else:
             return self.error(result.get("message", "Failed to list collaborators"))
+
+
+class CollabRoleCommand(BaseCommand):
+    """Update a team member's role"""
+
+    def __init__(self):
+        super().__init__(
+            name="collab role",
+            description="Update a team member's role",
+            usage="collab role <username> <new_role>",
+        )
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute collab role command"""
+        if not self.require_project(context):
+            return self.error("No project loaded")
+
+        if not self.validate_args(args, min_count=2):
+            print(f"{Fore.YELLOW}Available roles: {', '.join(VALID_ROLES)}")
+            username = input(f"{Fore.WHITE}Username: ").strip()
+            new_role = input(f"{Fore.WHITE}New role: ").strip()
+        else:
+            username = args[0]
+            new_role = args[1]
+
+        if not username or not new_role:
+            return self.error("Username and role cannot be empty")
+
+        # Validate role
+        if new_role not in VALID_ROLES:
+            return self.error(f"Invalid role '{new_role}'. Valid roles: {', '.join(VALID_ROLES)}")
+
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
+        user = context.get("user")
+
+        if not orchestrator or not project or not user:
+            return self.error("Required context not available")
+
+        # Only owner can change roles
+        if user.username != project.owner:
+            return self.error("Only the project owner can change roles")
+
+        # Find team member to verify exists
+        member_found = False
+        for member in project.team_members or []:
+            if member.username == username:
+                member_found = True
+                break
+
+        if not member_found:
+            return self.error(f"User '{username}' is not a team member in this project")
+
+        # Update role
+        result = orchestrator.process_request(
+            "project_manager",
+            {
+                "action": "update_member_role",
+                "project": project,
+                "username": username,
+                "role": new_role,
+            },
+        )
+
+        if result["status"] == "success":
+            self.print_success(f"Updated '{username}' role to {new_role}!")
+
+            # Save project
+            orchestrator.process_request(
+                "project_manager", {"action": "save_project", "project": project}
+            )
+
+            return self.success(data={"username": username, "new_role": new_role})
+        else:
+            return self.error(result.get("message", "Failed to update role"))

@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git remote add:*)",
+      "Bash(gh run view:*)",
+      "Bash(git config:*)",
+      "Bash(paste - -)",
+      "Bash(ruff:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(isort:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(cat:*)",
+      "Bash(python -c:*)",
+      "Bash(python test_maturity_implementation.py:*)",
+      "Bash(python:*)",
+      "Bash(ls -lh \"C:\\Users\\themi\\PycharmProjects\\Socrates\\docs\"\" | grep -E \".md \")",
+      "Bash(python -m pytest:*)",
+      "Bash(python -m py_compile:*)",
+      "Bash(timeout 60 python:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(\"tests/ui/test_commands.py::TestUserLoginCommand::test_user_login_success\" )",
+      "Bash(\"tests/ui/test_commands.py::TestUserCreateCommand::test_user_create_success\" )",
+      "Bash(\"tests/clients/test_claude_client.py::TestClaudeClientExtractInsights::test_extract_insights_with_project_context\" )",
+      "Bash(\"tests/clients/test_claude_client.py::TestClaudeClientErrorHandling::test_claude_client_handles_api_error\" )",
+      "Bash(\"tests/clients/test_claude_client.py::TestClaudeClientIntegration::test_claude_client_with_different_projects\" )",
+      "Bash(\"tests/ui/test_command_handler.py::TestCommandHandler::test_get_commands_by_prefix_case_insensitive\" )",
+      "Bash(\"tests/test_orchestrator_integration.py::TestOrchestratorEventEmission::test_orchestrator_listener_registration\" )",
+      "Bash(dir:*)",
+      "Bash(python -m ruff check:*)",
+      "Bash(python -m black:*)",
+      "Bash(python -m mypy:*)",
+      "Bash(pip install:*)",
+      "Bash(python -m bandit:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

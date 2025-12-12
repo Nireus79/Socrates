@@ -2,7 +2,8 @@
 Tests for CommandHandler - Command parsing, routing, and execution
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+
 import pytest
 
 from socratic_system.ui.command_handler import CommandHandler
@@ -400,12 +401,14 @@ class TestCommandQueries:
             def execute(self, args, context):
                 return {"status": "success"}
 
-        handler.register_commands([
-            TestCommand(name="project create"),
-            TestCommand(name="project list"),
-            TestCommand(name="project delete"),
-            TestCommand(name="user login"),
-        ])
+        handler.register_commands(
+            [
+                TestCommand(name="project create"),
+                TestCommand(name="project list"),
+                TestCommand(name="project delete"),
+                TestCommand(name="user login"),
+            ]
+        )
 
         project_cmds = handler.get_commands_by_prefix("project")
 
@@ -539,13 +542,15 @@ class TestCommandHandlerIntegration:
                 return {"status": "success"}
 
         # Register commands from different categories
-        handler.register_commands([
-            GenericCommand(name="user login"),
-            GenericCommand(name="user create"),
-            GenericCommand(name="project create"),
-            GenericCommand(name="project list"),
-            GenericCommand(name="help"),
-        ])
+        handler.register_commands(
+            [
+                GenericCommand(name="user login"),
+                GenericCommand(name="user create"),
+                GenericCommand(name="project create"),
+                GenericCommand(name="project list"),
+                GenericCommand(name="help"),
+            ]
+        )
 
         # All should be registered
         assert len(handler.commands) == 5

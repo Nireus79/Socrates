@@ -12,64 +12,74 @@ from colorama import Fore, Style
 from socratic_system.models import ProjectContext, User
 from socratic_system.orchestration import AgentOrchestrator
 from socratic_system.ui.command_handler import CommandHandler
-from socratic_system.ui.commands import (
+from socratic_system.ui.commands import (  # Analytics commands; Code commands; Finalize commands; Collaboration commands; Skills commands; Session commands; Conversation commands; Debug commands; Document commands; System commands; Note commands; Project commands; Statistics commands; User commands; Subscription commands
     AdvanceCommand,
+    AnalyticsAnalyzeCommand,
+    AnalyticsBreakdownCommand,
+    AnalyticsRecommendCommand,
+    AnalyticsStatusCommand,
+    AnalyticsSummaryCommand,
+    AnalyticsTrendsCommand,
     BackCommand,
+    ChatCommand,
     ClearCommand,
     CodeDocsCommand,
-    # Code commands
     CodeGenerateCommand,
-    # Collaboration commands
     CollabAddCommand,
     CollabListCommand,
     CollabRemoveCommand,
-    # Session commands
-    ChatCommand,
-    # Conversation commands
+    CollabRoleCommand,
     ConvSearchCommand,
     ConvSummaryCommand,
-    # Debug commands
     DebugCommand,
-    # Document commands
     DocImportCommand,
     DocImportDirCommand,
     DocListCommand,
     DoneCommand,
     ExitCommand,
     ExplainCommand,
-    # System commands
+    FinalizeDocsCommand,
+    FinalizeGenerateCommand,
     HelpCommand,
     HintCommand,
     InfoCommand,
+    LLMCommand,
     LogsCommand,
+    MaturityCommand,
+    MaturityHistoryCommand,
+    MaturityStatusCommand,
+    MaturitySummaryCommand,
     MenuCommand,
     ModeCommand,
+    ModelCommand,
     NLUDisableCommand,
     NLUEnableCommand,
     NLUStatusCommand,
-    # Note commands
     NoteAddCommand,
     NoteDeleteCommand,
     NoteListCommand,
     NoteSearchCommand,
     ProjectArchiveCommand,
-    # Project commands
     ProjectCreateCommand,
     ProjectDeleteCommand,
     ProjectListCommand,
     ProjectLoadCommand,
     ProjectProgressCommand,
     ProjectRestoreCommand,
-    # Statistics commands
     ProjectStatsCommand,
     ProjectStatusCommand,
     PromptCommand,
     SearchCommand,
+    SkillsListCommand,
+    SkillsSetCommand,
     StatusCommand,
+    SubscriptionCompareCommand,
+    SubscriptionDowngradeCommand,
+    SubscriptionStatusCommand,
+    SubscriptionUpgradeCommand,
     UserArchiveCommand,
     UserCreateCommand,
     UserDeleteCommand,
-    # User commands
     UserLoginCommand,
     UserLogoutCommand,
     UserRestoreCommand,
@@ -200,6 +210,8 @@ class SocraticRAGSystem:
         self.command_handler.register_command(ClearCommand(), aliases=["cls"])
         self.command_handler.register_command(PromptCommand())
         self.command_handler.register_command(InfoCommand())
+        self.command_handler.register_command(ModelCommand())
+        self.command_handler.register_command(LLMCommand(), aliases=["llm"])
 
         # NLU control commands
         self.command_handler.register_command(NLUEnableCommand())
@@ -213,6 +225,12 @@ class SocraticRAGSystem:
         self.command_handler.register_command(UserArchiveCommand())
         self.command_handler.register_command(UserDeleteCommand())
         self.command_handler.register_command(UserRestoreCommand())
+
+        # Subscription commands
+        self.command_handler.register_command(SubscriptionStatusCommand())
+        self.command_handler.register_command(SubscriptionUpgradeCommand())
+        self.command_handler.register_command(SubscriptionDowngradeCommand())
+        self.command_handler.register_command(SubscriptionCompareCommand())
 
         # Project commands
         self.command_handler.register_command(ProjectCreateCommand())
@@ -233,10 +251,19 @@ class SocraticRAGSystem:
         self.command_handler.register_command(CodeGenerateCommand())
         self.command_handler.register_command(CodeDocsCommand())
 
+        # Finalize commands (project type-agnostic artifact generation)
+        self.command_handler.register_command(FinalizeGenerateCommand())
+        self.command_handler.register_command(FinalizeDocsCommand())
+
         # Collaboration commands
         self.command_handler.register_command(CollabAddCommand())
         self.command_handler.register_command(CollabRemoveCommand())
         self.command_handler.register_command(CollabListCommand())
+        self.command_handler.register_command(CollabRoleCommand())
+
+        # Skills commands
+        self.command_handler.register_command(SkillsSetCommand())
+        self.command_handler.register_command(SkillsListCommand())
 
         # Document commands
         self.command_handler.register_command(DocImportCommand())
@@ -257,6 +284,32 @@ class SocraticRAGSystem:
         self.command_handler.register_command(ProjectStatsCommand())
         self.command_handler.register_command(ProjectProgressCommand())
         self.command_handler.register_command(ProjectStatusCommand())
+
+        # Maturity tracking commands
+        self.command_handler.register_command(MaturityCommand())
+        self.command_handler.register_command(MaturitySummaryCommand())
+        self.command_handler.register_command(MaturityHistoryCommand())
+        self.command_handler.register_command(MaturityStatusCommand())
+
+        # Analytics commands
+        self.command_handler.register_command(
+            AnalyticsAnalyzeCommand(self.orchestrator), aliases=["aa"]
+        )
+        self.command_handler.register_command(
+            AnalyticsRecommendCommand(self.orchestrator), aliases=["ar"]
+        )
+        self.command_handler.register_command(
+            AnalyticsTrendsCommand(self.orchestrator), aliases=["at"]
+        )
+        self.command_handler.register_command(
+            AnalyticsSummaryCommand(self.orchestrator), aliases=["as"]
+        )
+        self.command_handler.register_command(
+            AnalyticsBreakdownCommand(self.orchestrator), aliases=["abd"]
+        )
+        self.command_handler.register_command(
+            AnalyticsStatusCommand(self.orchestrator), aliases=["ast"]
+        )
 
         # Debug commands
         self.command_handler.register_command(DebugCommand())

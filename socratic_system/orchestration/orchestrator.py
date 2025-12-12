@@ -20,12 +20,16 @@ from socratic_system.agents import (
     ContextAnalyzerAgent,
     DocumentAgent,
     ProjectManagerAgent,
+    QualityControllerAgent,
     SocraticCounselorAgent,
     SystemMonitorAgent,
     UserManagerAgent,
 )
 from socratic_system.agents.knowledge_manager import KnowledgeManagerAgent
+from socratic_system.agents.learning_agent import UserLearningAgent
+from socratic_system.agents.multi_llm_agent import MultiLLMAgent
 from socratic_system.agents.note_manager import NoteManagerAgent
+from socratic_system.agents.question_queue_agent import QuestionQueueAgent
 from socratic_system.clients import ClaudeClient
 from socratic_system.config import SocratesConfig
 from socratic_system.database import ProjectDatabase, VectorDatabase
@@ -115,6 +119,10 @@ class AgentOrchestrator:
         self.user_manager = UserManagerAgent(self)
         self.note_manager = NoteManagerAgent("note_manager", self)
         self.knowledge_manager = KnowledgeManagerAgent("knowledge_manager", self)
+        self.quality_controller = QualityControllerAgent(self)
+        self.learning_agent = UserLearningAgent(self)
+        self.multi_llm_agent = MultiLLMAgent(self)
+        self.question_queue = QuestionQueueAgent(self)
 
     def _load_knowledge_base(self) -> None:
         """Load default knowledge base from config file if not already loaded"""
@@ -220,7 +228,7 @@ class AgentOrchestrator:
             True if successful, False otherwise
         """
         try:
-            self.config.update_model(model_name)
+            self.config.claude_model = model_name
             self.claude_client.model = model_name
             self.logger.info(f"Model updated to {model_name}")
             return True
@@ -257,6 +265,10 @@ class AgentOrchestrator:
             "user_manager": self.user_manager,
             "note_manager": self.note_manager,
             "knowledge_manager": self.knowledge_manager,
+            "quality_controller": self.quality_controller,
+            "learning": self.learning_agent,
+            "multi_llm": self.multi_llm_agent,
+            "question_queue": self.question_queue,
         }
 
         agent = agents.get(agent_name)
@@ -327,6 +339,10 @@ class AgentOrchestrator:
             "user_manager": self.user_manager,
             "note_manager": self.note_manager,
             "knowledge_manager": self.knowledge_manager,
+            "quality_controller": self.quality_controller,
+            "learning": self.learning_agent,
+            "multi_llm": self.multi_llm_agent,
+            "question_queue": self.question_queue,
         }
 
         agent = agents.get(agent_name)

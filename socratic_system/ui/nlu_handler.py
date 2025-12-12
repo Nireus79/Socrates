@@ -293,7 +293,9 @@ class NLUHandler:
             return "No commands available"
 
         # Organize by category
-        categories = {}
+        from typing import Any
+
+        categories: dict[str, list[dict[str, Any]]] = {}
         for name, cmd in commands.items():
             parts = name.split()
             category = parts[0] if parts else "system"
@@ -312,7 +314,7 @@ class NLUHandler:
         # Format as text
         metadata_parts = []
         for category in sorted(categories.keys()):
-            cmds = categories[category]
+            cmds: list[dict[str, Any]] = categories[category]
             metadata_parts.append(f"\n{category.upper()} COMMANDS:")
             for cmd in cmds:
                 metadata_parts.append(f"  /{cmd['usage']} - {cmd['description']}")

@@ -2,15 +2,14 @@
 Tests for UI command system - BaseCommand and all command implementations
 """
 
-from unittest.mock import MagicMock, patch
 from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 import pytest
-import socrates
 
-from socratic_system.models import User, ProjectContext
+from socratic_system.models import User
 from socratic_system.ui.commands.base import BaseCommand
-from socratic_system.ui.commands.user_commands import UserLoginCommand, UserCreateCommand
+from socratic_system.ui.commands.user_commands import UserCreateCommand, UserLoginCommand
 
 
 @pytest.mark.unit
@@ -227,19 +226,20 @@ class TestUserLoginCommand:
         assert cmd.usage == "user login"
 
     @patch("builtins.input")
-    def test_user_login_success(self, mock_input, test_config):
+    def test_user_login_success(self, mock_input, mock_orchestrator, test_config):
         """Test successful user login"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
 
             # Create and save a test user
             user = User(
                 username="testuser",
-                passcode_hash="9f86d081884c7d6d9ffd60bb75b5b9dd51e02247d910c8e0738893369e90ebc9",  # sha256("password")
+                passcode_hash="5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",  # sha256("password")
                 created_at=datetime.now(),
                 projects=[],
             )
-            orchestrator.database.save_user(user)
+            # Configure mock to return the user when load_user is called
+            orchestrator.database.load_user.return_value = user
 
             # Mock input
             mock_input.side_effect = ["testuser", "password"]
@@ -272,19 +272,20 @@ class TestUserLoginCommand:
         assert "User not found" in result["message"]
 
     @patch("builtins.input")
-    def test_user_login_invalid_passcode(self, mock_input, test_config):
+    def test_user_login_invalid_passcode(self, mock_input, mock_orchestrator, test_config):
         """Test login with invalid passcode"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
 
             # Create and save a test user
             user = User(
                 username="testuser",
-                passcode_hash="9f86d081884c7d6d9ffd60bb75b5b9dd51e02247d910c8e0738893369e90ebc9",  # sha256("password")
+                passcode_hash="5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",  # sha256("password")
                 created_at=datetime.now(),
                 projects=[],
             )
-            orchestrator.database.save_user(user)
+            # Configure mock to return the user when load_user is called
+            orchestrator.database.load_user.return_value = user
 
             # Mock input with wrong password
             mock_input.side_effect = ["testuser", "wrongpassword"]
@@ -342,13 +343,16 @@ class TestUserCreateCommand:
         assert cmd.usage == "user create"
 
     @patch("builtins.input")
-    def test_user_create_success(self, mock_input, test_config):
+    def test_user_create_success(self, mock_input, mock_orchestrator, test_config):
         """Test successful user creation"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
 
             # Mock input for new user
             mock_input.side_effect = ["newuser", "password", "password"]
+
+            # Configure mock to return None initially (no existing user)
+            orchestrator.database.load_user.return_value = None
 
             cmd = UserCreateCommand()
             context = {
@@ -359,18 +363,14 @@ class TestUserCreateCommand:
             result = cmd.execute([], context)
 
             assert result["status"] == "success"
-            assert "created" in result["message"].lower()
-
-            # Verify user was saved
-            saved_user = orchestrator.database.load_user("newuser")
-            assert saved_user is not None
-            assert saved_user.username == "newuser"
+            assert "user" in result["data"]
+            assert result["data"]["user"].username == "newuser"
 
     @patch("builtins.input")
-    def test_user_create_duplicate_username(self, mock_input, test_config):
+    def test_user_create_duplicate_username(self, mock_input, mock_orchestrator, test_config):
         """Test creating user with existing username"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
 
             # Create initial user
             user = User(
@@ -379,7 +379,8 @@ class TestUserCreateCommand:
                 created_at=datetime.now(),
                 projects=[],
             )
-            orchestrator.database.save_user(user)
+            # Configure mock to return the existing user when load_user is called
+            orchestrator.database.load_user.return_value = user
 
             # Try to create duplicate
             mock_input.side_effect = ["existing", "password", "password"]

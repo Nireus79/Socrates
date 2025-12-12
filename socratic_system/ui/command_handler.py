@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from colorama import Fore, Style
 
+from socratic_system.subscription.checker import SubscriptionChecker
 from socratic_system.ui.commands.base import BaseCommand
 
 
@@ -141,6 +142,16 @@ class CommandHandler:
 
         command = self.commands[command_name]
 
+        # NEW: Check subscription access before executing
+        user = context.get("user")
+        if user:
+            has_access, error_message = SubscriptionChecker.check_command_access(user, command.name)
+            if not has_access:
+                return {
+                    "status": "error",
+                    "message": error_message,
+                }
+
         # Execute command
         try:
             result = command.execute(args, context)
@@ -243,12 +254,15 @@ class CommandHandler:
         category_order = [
             "user",
             "project",
+            "session",
             "collab",
+            "maturity",
+            "analytics",
+            "finalize",
+            "code",
             "docs",
             "note",
             "conv",
-            "session",
-            "code",
             "help",
             "debug",
         ]

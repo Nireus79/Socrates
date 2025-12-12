@@ -153,7 +153,7 @@ Conversation:
 
 Provide a concise, focused summary."""
 
-            summary = self.orchestrator.claude_client.generate_response(prompt, project)
+            summary = self.orchestrator.claude_client.generate_response(prompt)
 
             self.log(f"Generated summary for project {project.name}")
             return {"status": "success", "summary": summary}

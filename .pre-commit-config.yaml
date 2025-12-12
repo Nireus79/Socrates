@@ -1,0 +1,76 @@
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+      - id: end-of-file-fixer
+        name: Fix end of file
+      - id: check-yaml
+        name: Check YAML files
+      - id: check-added-large-files
+        name: Check for large files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: detect-private-key
+        name: Detect private keys
+
+  # Code formatting with Black
+  - repo: https://github.com/psf/black
+    rev: 24.1.0
+    hooks:
+      - id: black
+        name: Format code with Black
+        language_version: python3.11
+        types: [python]
+
+  # Import sorting with isort
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: Sort imports with isort
+        types: [python]
+        args: ['--profile=black', '--line-length=100']
+
+  # Linting with Ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.11
+    hooks:
+      - id: ruff
+        name: Lint with Ruff
+        types: [python]
+        args: ['check', '--fix', '--show-fixes']
+      - id: ruff-format
+        name: Format with Ruff
+        types: [python]
+
+  # Type checking with MyPy
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        name: Type check with MyPy
+        types: [python]
+        args: ['--ignore-missing-imports', '--no-error-summary']
+        additional_dependencies: [types-all]
+
+  # Security checks with Bandit
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        name: Security check with Bandit
+        types: [python]
+        args: ['-ll', '-r', 'socratic_system', 'socrates_cli', 'socrates_api']
+
+default_language_version:
+  python: python3.11
+
+# Configuration for preventing commits with uncommitted changes
+fail_fast: false
+
+# Allow running on all branches
+default_stages: [commit]

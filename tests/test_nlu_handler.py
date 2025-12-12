@@ -8,18 +8,11 @@ and suggest matching slash commands.
 import json
 import os
 import shutil
-import sys
 import tempfile
 from io import StringIO
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-# Fix Windows console encoding issues
-if sys.platform == "win32":
-    import io
-
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 from socratic_system.orchestration import AgentOrchestrator
 from socratic_system.ui.command_handler import CommandHandler

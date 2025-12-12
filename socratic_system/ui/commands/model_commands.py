@@ -94,10 +94,8 @@ class ModelCommand(BaseCommand):
         if orchestrator.set_model(full_model_name):
             # Update user's preferred model if logged in
             if app.current_user:
-                orchestrator.database.update_user_model_preference(
-                    app.current_user.username, full_model_name
-                )
                 app.current_user.preferred_model = full_model_name
+                orchestrator.database.save_user(app.current_user)
 
             model_short_name = self._get_model_name_from_full(full_model_name)
             self.print_success(f"Model switched to {Fore.GREEN}{model_short_name}{Style.RESET_ALL}")

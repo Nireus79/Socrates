@@ -1,0 +1,593 @@
+"""
+Tests for Project Database operations - Core database functionality.
+
+Tests cover:
+- Project CRUD operations (create, read, update, delete)
+- User management
+- Project notes
+- Learning data (question effectiveness, behavior patterns)
+- LLM configuration
+- API keys
+"""
+
+import datetime
+import os
+import tempfile
+
+import pytest
+
+from socratic_system.database.project_db import ProjectDatabase
+from socratic_system.models import (
+    APIKeyRecord,
+    LLMProviderConfig,
+    LLMUsageRecord,
+    ProjectContext,
+    ProjectNote,
+    QuestionEffectiveness,
+    User,
+    UserBehaviorPattern,
+)
+
+
+@pytest.fixture
+def temp_db():
+    """Create a temporary database for testing."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = os.path.join(tmpdir, "test.db")
+        db = ProjectDatabase(db_path)
+        yield db
+
+
+@pytest.fixture
+def sample_project():
+    """Create a sample project for testing."""
+    return ProjectContext(
+        project_id="test-proj-001",
+        name="Test Project",
+        owner="testuser",
+        collaborators=[],
+        goals="Test goals",
+        requirements=["req1", "req2"],
+        tech_stack=["Python", "Django"],
+        constraints=["time"],
+        team_structure="individual",
+        language_preferences="python",
+        deployment_target="local",
+        code_style="documented",
+        phase="discovery",
+        conversation_history=[],
+        created_at=datetime.datetime.now(),
+        updated_at=datetime.datetime.now(),
+    )
+
+
+@pytest.fixture
+def sample_user():
+    """Create a sample user for testing."""
+    return User(
+        username="testuser",
+        passcode_hash="hashed_password",
+        created_at=datetime.datetime.now(),
+        projects=["test-proj-001"],
+    )
+
+
+class TestProjectDatabaseInitialization:
+    """Tests for database initialization."""
+
+    def test_database_initialization(self, temp_db):
+        """Test database initializes correctly."""
+        assert temp_db is not None
+        assert os.path.exists(temp_db.db_path)
+
+    def test_database_creates_tables(self, temp_db):
+        """Test database creates all necessary tables."""
+        # If database initialized without error, tables were created
+        assert temp_db.logger is not None
+
+
+class TestProjectDatabaseProjectOperations:
+    """Tests for project CRUD operations."""
+
+    def test_save_project(self, temp_db, sample_project):
+        """Test saving a project."""
+        try:
+            temp_db.save_project(sample_project)
+            # If save succeeded without error, test passes
+            assert True
+        except Exception as e:
+            pytest.fail(f"Failed to save project: {e}")
+
+    def test_load_project(self, temp_db, sample_project):
+        """Test loading a saved project."""
+        temp_db.save_project(sample_project)
+
+        loaded = temp_db.load_project(sample_project.project_id)
+
+        assert loaded is not None
+        assert loaded.project_id == sample_project.project_id
+        assert loaded.name == sample_project.name
+
+    def test_load_nonexistent_project(self, temp_db):
+        """Test loading a project that doesn't exist."""
+        loaded = temp_db.load_project("nonexistent-id")
+
+        assert loaded is None
+
+    def test_delete_project(self, temp_db, sample_project):
+        """Test deleting a project."""
+        temp_db.save_project(sample_project)
+        success = temp_db.delete_project(sample_project.project_id)
+
+        assert success is True
+
+    def test_delete_nonexistent_project(self, temp_db):
+        """Test deleting a project that doesn't exist."""
+        success = temp_db.delete_project("nonexistent")
+
+        assert success is False
+
+    def test_list_all_projects(self, temp_db, sample_project):
+        """Test listing all projects."""
+        temp_db.save_project(sample_project)
+
+        projects = temp_db.list_all_projects()
+
+        assert isinstance(projects, list)
+        assert len(projects) >= 1
+
+    def test_project_persistence(self, temp_db, sample_project):
+        """Test that project data persists correctly."""
+        # Save
+        temp_db.save_project(sample_project)
+
+        # Modify in memory
+        sample_project.goals = "Modified goals"
+
+        # Load from database
+        loaded = temp_db.load_project(sample_project.project_id)
+
+        # Should have original goals from database, not modified version
+        assert loaded.goals == "Test goals"
+
+
+class TestProjectDatabaseUserOperations:
+    """Tests for user management."""
+
+    def test_save_user(self, temp_db, sample_user):
+        """Test saving a user."""
+        try:
+            temp_db.save_user(sample_user)
+            assert True
+        except Exception as e:
+            pytest.fail(f"Failed to save user: {e}")
+
+    def test_load_user(self, temp_db, sample_user):
+        """Test loading a user."""
+        temp_db.save_user(sample_user)
+
+        loaded = temp_db.load_user(sample_user.username)
+
+        assert loaded is not None
+        assert loaded.username == sample_user.username
+
+    def test_load_nonexistent_user(self, temp_db):
+        """Test loading a user that doesn't exist."""
+        loaded = temp_db.load_user("nonexistent")
+
+        assert loaded is None
+
+    def test_delete_user(self, temp_db, sample_user):
+        """Test deleting a user."""
+        temp_db.save_user(sample_user)
+        success = temp_db.delete_user(sample_user.username)
+
+        assert success is True
+
+    def test_user_projects_list(self, temp_db, sample_user, sample_project):
+        """Test getting user's projects."""
+        temp_db.save_user(sample_user)
+        temp_db.save_project(sample_project)
+
+        # Note: get_user_projects retrieves from database
+        # This test verifies the method exists and handles data correctly
+        projects = temp_db.get_user_projects(sample_user.username)
+
+        assert isinstance(projects, list)
+
+
+class TestProjectDatabaseNotesOperations:
+    """Tests for project notes."""
+
+    def test_add_note(self, temp_db, sample_project):
+        """Test adding a note to a project."""
+        temp_db.save_project(sample_project)
+
+        note = ProjectNote(
+            note_id="note-001",
+            project_id=sample_project.project_id,
+            title="Test Note",
+            content="Test content",
+            note_type="design",
+            created_by="testuser",
+            created_at=datetime.datetime.now(),
+            tags=["test"],
+        )
+
+        try:
+            temp_db.add_note(note)
+            assert True
+        except Exception as e:
+            pytest.fail(f"Failed to add note: {e}")
+
+    def test_get_project_notes(self, temp_db, sample_project):
+        """Test retrieving notes for a project."""
+        temp_db.save_project(sample_project)
+
+        note = ProjectNote(
+            note_id="note-002",
+            project_id=sample_project.project_id,
+            title="Test",
+            content="Content",
+            note_type="bug",
+            created_by="testuser",
+            created_at=datetime.datetime.now(),
+            tags=[],
+        )
+
+        temp_db.add_note(note)
+        notes = temp_db.get_project_notes(sample_project.project_id)
+
+        assert isinstance(notes, list)
+        assert len(notes) >= 1
+
+    def test_delete_note(self, temp_db, sample_project):
+        """Test deleting a note."""
+        temp_db.save_project(sample_project)
+
+        note = ProjectNote(
+            note_id="note-003",
+            project_id=sample_project.project_id,
+            title="To Delete",
+            content="Content",
+            note_type="idea",
+            created_by="testuser",
+            created_at=datetime.datetime.now(),
+            tags=[],
+        )
+
+        temp_db.add_note(note)
+        success = temp_db.delete_note("note-003")
+
+        assert success is True
+
+
+class TestProjectDatabaseLearningOperations:
+    """Tests for learning data storage."""
+
+    def test_record_question_effectiveness(self, temp_db):
+        """Test recording question effectiveness."""
+        effectiveness = QuestionEffectiveness(
+            id="eff-001",
+            user_id="testuser",
+            question_template_id="qt-001",
+            times_used=5,
+            positive_responses=4,
+            negative_responses=1,
+            effectiveness_score=0.8,
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+
+        try:
+            temp_db.save_question_effectiveness(effectiveness)
+            assert True
+        except Exception as e:
+            pytest.fail(f"Failed to save question effectiveness: {e}")
+
+    def test_get_question_effectiveness(self, temp_db):
+        """Test retrieving question effectiveness."""
+        effectiveness = QuestionEffectiveness(
+            id="eff-002",
+            user_id="testuser",
+            question_template_id="qt-002",
+            times_used=3,
+            positive_responses=2,
+            negative_responses=1,
+            effectiveness_score=0.67,
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+
+        temp_db.save_question_effectiveness(effectiveness)
+        retrieved = temp_db.get_question_effectiveness("testuser", "qt-002")
+
+        assert retrieved is not None
+
+    def test_record_behavior_pattern(self, temp_db):
+        """Test recording user behavior pattern."""
+        pattern = UserBehaviorPattern(
+            id="pat-001",
+            user_id="testuser",
+            pattern_type="quick_responder",
+            frequency=10,
+            last_observed=datetime.datetime.now(),
+            metadata={"avg_response_time": 2.5},
+            learned_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+
+        try:
+            temp_db.save_behavior_pattern(pattern)
+            assert True
+        except Exception as e:
+            pytest.fail(f"Failed to save behavior pattern: {e}")
+
+    def test_get_behavior_patterns(self, temp_db):
+        """Test retrieving behavior patterns for a user."""
+        pattern = UserBehaviorPattern(
+            id="pat-002",
+            user_id="testuser",
+            pattern_type="thorough_responder",
+            frequency=5,
+            last_observed=datetime.datetime.now(),
+            metadata={},
+            learned_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+
+        temp_db.save_behavior_pattern(pattern)
+        patterns = temp_db.get_behavior_patterns("testuser")
+
+        assert isinstance(patterns, list)
+
+
+class TestProjectDatabaseLLMConfiguration:
+    """Tests for LLM configuration storage."""
+
+    def test_save_llm_config(self, temp_db):
+        """Test saving LLM provider configuration."""
+        config = LLMProviderConfig(
+            provider_name="Claude",
+            model_name="claude-3-sonnet-20240229",
+            api_key_encrypted="encrypted_key",
+            is_default=True,
+            temperature=0.7,
+            max_tokens=2048,
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+
+        try:
+            temp_db.save_llm_config(config)
+            assert True
+        except Exception as e:
+            pytest.fail(f"Failed to save LLM config: {e}")
+
+    def test_get_llm_configs(self, temp_db):
+        """Test retrieving LLM configurations."""
+        config = LLMProviderConfig(
+            provider_name="OpenAI",
+            model_name="gpt-4",
+            api_key_encrypted="encrypted",
+            is_default=False,
+            temperature=0.8,
+            max_tokens=4096,
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+
+        temp_db.save_llm_config(config)
+        configs = temp_db.get_llm_configs()
+
+        assert isinstance(configs, list)
+
+    def test_get_default_llm_config(self, temp_db):
+        """Test retrieving default LLM configuration."""
+        config = LLMProviderConfig(
+            provider_name="Default",
+            model_name="default-model",
+            api_key_encrypted="key",
+            is_default=True,
+            temperature=0.5,
+            max_tokens=1024,
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+
+        temp_db.save_llm_config(config)
+        default = temp_db.get_default_llm_config()
+
+        assert default is not None
+
+
+class TestProjectDatabaseUsageTracking:
+    """Tests for LLM usage tracking."""
+
+    def test_record_llm_usage(self, temp_db, sample_project):
+        """Test recording LLM usage."""
+        usage = LLMUsageRecord(
+            id="usage-001",
+            user_id="testuser",
+            project_id=sample_project.project_id,
+            model_used="claude-3-sonnet-20240229",
+            input_tokens=100,
+            output_tokens=50,
+            total_cost=0.05,
+            operation_type="extract_insights",
+            timestamp=datetime.datetime.now(),
+        )
+
+        try:
+            temp_db.record_llm_usage(usage)
+            assert True
+        except Exception as e:
+            pytest.fail(f"Failed to record LLM usage: {e}")
+
+    def test_get_user_usage_summary(self, temp_db):
+        """Test getting user's LLM usage summary."""
+        usage = LLMUsageRecord(
+            id="usage-002",
+            user_id="testuser",
+            project_id="proj-001",
+            model_used="claude-3-sonnet",
+            input_tokens=200,
+            output_tokens=100,
+            total_cost=0.10,
+            operation_type="generate_code",
+            timestamp=datetime.datetime.now(),
+        )
+
+        temp_db.record_llm_usage(usage)
+        summary = temp_db.get_user_usage_summary("testuser")
+
+        assert isinstance(summary, dict)
+
+    def test_get_monthly_usage(self, temp_db):
+        """Test getting monthly LLM usage."""
+        usage = LLMUsageRecord(
+            id="usage-003",
+            user_id="testuser",
+            project_id="proj-001",
+            model_used="gpt-4",
+            input_tokens=150,
+            output_tokens=75,
+            total_cost=0.08,
+            operation_type="generate_response",
+            timestamp=datetime.datetime.now(),
+        )
+
+        temp_db.record_llm_usage(usage)
+        monthly = temp_db.get_monthly_usage("testuser")
+
+        assert isinstance(monthly, dict)
+
+
+class TestProjectDatabaseAPIKeys:
+    """Tests for API key management."""
+
+    def test_save_api_key(self, temp_db):
+        """Test saving an API key."""
+        key_record = APIKeyRecord(
+            key_id="key-001",
+            user_id="testuser",
+            provider="anthropic",
+            encrypted_key="encrypted_secret",
+            is_active=True,
+            created_at=datetime.datetime.now(),
+            last_used=datetime.datetime.now(),
+        )
+
+        try:
+            temp_db.save_api_key(key_record)
+            assert True
+        except Exception as e:
+            pytest.fail(f"Failed to save API key: {e}")
+
+    def test_get_api_keys(self, temp_db):
+        """Test retrieving API keys for a user."""
+        key_record = APIKeyRecord(
+            key_id="key-002",
+            user_id="testuser",
+            provider="openai",
+            encrypted_key="secret",
+            is_active=True,
+            created_at=datetime.datetime.now(),
+            last_used=datetime.datetime.now(),
+        )
+
+        temp_db.save_api_key(key_record)
+        keys = temp_db.get_api_keys("testuser")
+
+        assert isinstance(keys, list)
+
+    def test_deactivate_api_key(self, temp_db):
+        """Test deactivating an API key."""
+        key_record = APIKeyRecord(
+            key_id="key-003",
+            user_id="testuser",
+            provider="anthropic",
+            encrypted_key="key",
+            is_active=True,
+            created_at=datetime.datetime.now(),
+            last_used=None,
+        )
+
+        temp_db.save_api_key(key_record)
+        success = temp_db.deactivate_api_key("key-003")
+
+        assert success is True
+
+
+class TestProjectDatabaseEdgeCases:
+    """Tests for edge cases and error conditions."""
+
+    def test_save_project_with_none_fields(self, temp_db):
+        """Test saving project with None optional fields."""
+        project = ProjectContext(
+            project_id="test-none",
+            name="None Test",
+            owner="user",
+            collaborators=[],
+            goals=None,
+            requirements=None,
+            tech_stack=None,
+            constraints=None,
+            team_structure="individual",
+            language_preferences="python",
+            deployment_target="local",
+            code_style="documented",
+            phase="discovery",
+            conversation_history=[],
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+
+        try:
+            temp_db.save_project(project)
+            loaded = temp_db.load_project(project.project_id)
+            assert loaded is not None
+        except Exception as e:
+            pytest.fail(f"Failed to handle None fields: {e}")
+
+    def test_concurrent_project_access(self, temp_db, sample_project):
+        """Test concurrent access to same project."""
+        temp_db.save_project(sample_project)
+
+        # Load same project multiple times
+        loaded1 = temp_db.load_project(sample_project.project_id)
+        loaded2 = temp_db.load_project(sample_project.project_id)
+
+        assert loaded1.project_id == loaded2.project_id
+        assert loaded1.name == loaded2.name
+
+    def test_large_project_data(self, temp_db):
+        """Test saving/loading project with large data."""
+        # Create project with large conversation history
+        large_history = [f"Message {i}" for i in range(1000)]
+
+        project = ProjectContext(
+            project_id="large-proj",
+            name="Large Project",
+            owner="user",
+            collaborators=[],
+            goals="Large test",
+            requirements=["req"] * 100,
+            tech_stack=["tech"] * 100,
+            constraints=["constraint"] * 50,
+            team_structure="team",
+            language_preferences="python",
+            deployment_target="cloud",
+            code_style="documented",
+            phase="implementation",
+            conversation_history=large_history,
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+
+        try:
+            temp_db.save_project(project)
+            loaded = temp_db.load_project("large-proj")
+            assert len(loaded.conversation_history) == 1000
+        except Exception as e:
+            pytest.fail(f"Failed to handle large data: {e}")

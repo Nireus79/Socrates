@@ -17,6 +17,118 @@ class ChatCommand(BaseCommand):
             usage="chat",
         )
 
+    def _confirm_insights_interactive(self, insights: Dict, orchestrator) -> Dict:
+        """Interactive confirmation dialog for insights with detailed options
+
+        Returns:
+            Dict: Confirmed/modified insights, or None if all rejected
+        """
+        confirmed_insights = {}
+        insight_categories = [
+            ("goals", "Goals", insights.get("goals")),
+            ("requirements", "Requirements", insights.get("requirements")),
+            ("tech_stack", "Tech Stack", insights.get("tech_stack")),
+            ("constraints", "Constraints", insights.get("constraints")),
+        ]
+
+        print(f"\n{Fore.CYAN}{'='*60}")
+        print(f"Review Extracted Insights{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'='*60}{Style.RESET_ALL}\n")
+
+        for category_key, category_name, category_values in insight_categories:
+            if not category_values:
+                continue
+
+            # Format values for display
+            if isinstance(category_values, list):
+                values_str = "\n    ".join([f"• {v}" for v in category_values if v])
+            else:
+                values_str = str(category_values)
+
+            print(f"{Fore.GREEN}{category_name}:{Style.RESET_ALL}")
+            print(f"    {values_str}\n")
+
+            while True:
+                print(f"{Fore.YELLOW}Options:{Style.RESET_ALL}")
+                print("  (y)es - Keep this insight")
+                print("  (n)o - Skip this insight")
+                print("  (e)xplain - Get explanation for this insight")
+                print(f"  (c)ustom - Write custom {category_name.lower()}")
+                print(f"  {Fore.YELLOW}Choice: {Style.RESET_ALL}", end="")
+
+                choice = input(f"{Fore.WHITE}").strip().lower()
+
+                if choice in ["y", "yes"]:
+                    confirmed_insights[category_key] = category_values
+                    print(f"{Fore.GREEN}✓ {category_name} confirmed{Style.RESET_ALL}\n")
+                    break
+
+                elif choice in ["n", "no"]:
+                    print(f"{Fore.MAGENTA}✗ {category_name} skipped{Style.RESET_ALL}\n")
+                    break
+
+                elif choice in ["e", "explain"]:
+                    explanation = self._get_insight_explanation(
+                        category_name, category_values, orchestrator
+                    )
+                    print(f"\n{Fore.CYAN}Explanation:{Style.RESET_ALL}")
+                    print(f"{Fore.WHITE}{explanation}{Style.RESET_ALL}\n")
+                    # Continue loop to ask again
+
+                elif choice in ["c", "custom"]:
+                    print(
+                        f"{Fore.CYAN}Enter custom {category_name.lower()} (comma-separated):{Style.RESET_ALL}"
+                    )
+                    custom_input = input(f"{Fore.WHITE}> ").strip()
+                    if custom_input:
+                        # Parse comma-separated input
+                        custom_values = [
+                            item.strip() for item in custom_input.split(",") if item.strip()
+                        ]
+                        confirmed_insights[category_key] = custom_values
+                        print(
+                            f"{Fore.GREEN}✓ Custom {category_name.lower()} added{Style.RESET_ALL}\n"
+                        )
+                    else:
+                        print(f"{Fore.MAGENTA}✗ No input provided, skipping{Style.RESET_ALL}\n")
+                    break
+
+                else:
+                    print(
+                        f"{Fore.RED}Invalid choice. Please enter y, n, e, or c{Style.RESET_ALL}\n"
+                    )
+
+        # Return None if no insights were confirmed
+        if not confirmed_insights:
+            return None
+
+        print(f"{Fore.GREEN}{'='*60}")
+        print(
+            f"Summary: {len(confirmed_insights)} insight category/categories confirmed{Style.RESET_ALL}"
+        )
+        print(f"{Fore.GREEN}{'='*60}{Style.RESET_ALL}\n")
+
+        return confirmed_insights
+
+    def _get_insight_explanation(self, category_name: str, values, orchestrator) -> str:
+        """Get explanation for why an insight was extracted"""
+        try:
+            if isinstance(values, list):
+                values_str = ", ".join([str(v) for v in values if v])
+            else:
+                values_str = str(values)
+
+            prompt = f"""Briefly explain in 1-2 sentences why the following {category_name.lower()} were extracted from the user's question:
+
+{category_name}: {values_str}
+
+Focus on the connection between the user's statement and these insights."""
+
+            explanation = orchestrator.claude_client.generate_response(prompt)
+            return explanation
+        except Exception as e:
+            return f"Could not generate explanation: {str(e)}"
+
     def _handle_command(self, response: str, context: Dict[str, Any]) -> tuple:
         """Handle / commands. Returns (should_continue, continue_session)"""
         app = context.get("app")
@@ -82,17 +194,71 @@ class ChatCommand(BaseCommand):
             return True, True  # empty response, continue
         return False, True  # not handled
 
-    def _process_user_answer(self, response: str, orchestrator, project, user) -> None:
-        """Process the user's answer/input and extract insights + detect conflicts"""
-        result = orchestrator.process_request(
-            "socratic_counselor",
-            {
-                "action": "process_response",
-                "project": project,
-                "response": response,
-                "current_user": user.username,
-            },
-        )
+    def _process_user_answer(
+        self,
+        response: str,
+        orchestrator,
+        project,
+        user,
+        mode: str = "socratic",
+        session_context: str = "in_session",
+        pre_extracted_insights=None,
+    ) -> None:
+        """Process the user's answer/input and extract insights + detect conflicts
+
+        Args:
+            response: User's response/input
+            orchestrator: Orchestrator instance
+            project: Project context
+            user: Current user
+            mode: 'socratic' or 'direct'
+            session_context: 'in_session' or 'out_of_session'
+            pre_extracted_insights: If provided, use these insights instead of extracting
+        """
+        # Don't process if out-of-session (only process in-session)
+        if session_context == "out_of_session":
+            return
+
+        # In direct mode, extract insights first and ask for confirmation
+        if mode == "direct" and pre_extracted_insights is None:
+            # First, extract insights only
+            extraction_result = orchestrator.process_request(
+                "socratic_counselor",
+                {
+                    "action": "extract_insights_only",
+                    "project": project,
+                    "response": response,
+                },
+            )
+
+            if extraction_result["status"] == "success" and extraction_result.get("insights"):
+                insights = extraction_result["insights"]
+
+                # Show and confirm insights with detailed options
+                pre_extracted_insights = self._confirm_insights_interactive(insights, orchestrator)
+
+                if pre_extracted_insights is None:
+                    # User rejected all insights
+                    print(f"{Fore.MAGENTA}All insights discarded.{Style.RESET_ALL}")
+                    return
+            else:
+                # No insights extracted, skip further processing
+                if not extraction_result.get("insights"):
+                    return
+
+        # Now process the response
+        request_data = {
+            "action": "process_response",
+            "project": project,
+            "response": response,
+            "current_user": user.username,
+        }
+
+        # If insights were pre-extracted in direct mode, pass them to avoid re-extraction
+        if pre_extracted_insights is not None:
+            request_data["pre_extracted_insights"] = pre_extracted_insights
+
+        result = orchestrator.process_request("socratic_counselor", request_data)
 
         if result["status"] == "success":
             if result.get("conflicts_pending"):
@@ -180,7 +346,12 @@ If you don't have enough information, say so."""
             if project.chat_mode == "socratic":
                 # Socratic mode: Generate and ask a question
                 question_result = orchestrator.process_request(
-                    "socratic_counselor", {"action": "generate_question", "project": project}
+                    "socratic_counselor",
+                    {
+                        "action": "generate_question",
+                        "project": project,
+                        "current_user": user.username,
+                    },
                 )
 
                 if question_result["status"] != "success":
@@ -226,7 +397,14 @@ If you don't have enough information, say so."""
                     print(f"{Fore.WHITE}{answer}{Style.RESET_ALL}\n")
 
                 # Process the user question for insights/conflicts
-                self._process_user_answer(response, orchestrator, project, user)
+                self._process_user_answer(
+                    response,
+                    orchestrator,
+                    project,
+                    user,
+                    mode="direct",
+                    session_context="in_session",
+                )
                 continue
 
             # Handle / commands (Socratic mode)
@@ -253,7 +431,14 @@ If you don't have enough information, say so."""
                 continue
 
             # Process normal answer (Socratic mode)
-            self._process_user_answer(response, orchestrator, project, user)
+            self._process_user_answer(
+                response,
+                orchestrator,
+                project,
+                user,
+                mode="socratic",
+                session_context="in_session",
+            )
 
         return self.success()
 
@@ -370,13 +555,19 @@ class HintCommand(BaseCommand):
 
         orchestrator = context.get("orchestrator")
         project = context.get("project")
+        user = context.get("user")
 
         if not orchestrator or not project:
             return self.error("Required context not available")
 
         # Get the last question
         question_result = orchestrator.process_request(
-            "socratic_counselor", {"action": "generate_question", "project": project}
+            "socratic_counselor",
+            {
+                "action": "generate_question",
+                "project": project,
+                "current_user": user.username if user else None,
+            },
         )
 
         if question_result["status"] != "success":

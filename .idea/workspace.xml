@@ -5,8 +5,49 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.6.6">
-      <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/workflows/lint.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/lint.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates_ai.egg-info/PKG-INFO" beforeDir="false" afterPath="$PROJECT_DIR$/socrates_ai.egg-info/PKG-INFO" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates_ai.egg-info/SOURCES.txt" beforeDir="false" afterPath="$PROJECT_DIR$/socrates_ai.egg-info/SOURCES.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates_ai.egg-info/requires.txt" beforeDir="false" afterPath="$PROJECT_DIR$/socrates_ai.egg-info/requires.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/code_generator.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/code_generator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/context_analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/context_analyzer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/document_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/document_processor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/project_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/project_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/clients/claude_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/clients/claude_client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/database/project_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/project_db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/events/event_types.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/events/event_types.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/models/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/models/project.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/project.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/models/user.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/user.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/command_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/command_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/collab_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/collab_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/model_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/model_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/project_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/project_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/session_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/session_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/main_app.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/main_app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/ui/nlu_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/nlu_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/agents/test_code_generator_agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/agents/test_code_generator_agent.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/agents/test_project_manager_agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/agents/test_project_manager_agent.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/agents/test_remaining_agents.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/agents/test_remaining_agents.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/clients/test_claude_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/clients/test_claude_client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/conftest.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/conftest.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/pytest.log" beforeDir="false" afterPath="$PROJECT_DIR$/tests/pytest.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_e2e_interconnection.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_e2e_interconnection.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_nlu_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_nlu_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_orchestration_expansion.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_orchestration_expansion.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_orchestrator_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_orchestrator_integration.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_performance.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_performance.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/ui/test_command_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/ui/test_command_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/ui/test_commands.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/ui/test_commands.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/utils/test_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/utils/test_utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,9 +88,10 @@
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\themi\PycharmProjects\Socrates\docs" />
+      <recent name="C:\Users\themi\PycharmProjects\Socrates\tests" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\examples" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\socratic_data" />
-      <recent name="C:\Users\themi\PycharmProjects\Socrates\tests" />
     </key>
   </component>
   <component name="RunManager">

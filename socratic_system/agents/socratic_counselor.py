@@ -3,19 +3,23 @@ Socratic counselor agent for guided questioning and response processing
 """
 
 import datetime
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List
 
 from colorama import Fore
 
-from socratic_system.models import ConflictInfo, ProjectContext
+from socratic_system.events import EventType
+from socratic_system.models import ROLE_FOCUS_AREAS, ConflictInfo, ProjectContext
 
 from .base import Agent
+
+if TYPE_CHECKING:
+    from socratic_system.orchestration import AgentOrchestrator
 
 
 class SocraticCounselorAgent(Agent):
     """Core agent that guides users through Socratic questioning about their project"""
 
-    def __init__(self, orchestrator):
+    def __init__(self, orchestrator: "AgentOrchestrator") -> None:
         super().__init__("SocraticCounselor", orchestrator)
         self.use_dynamic_questions = True  # Toggle for dynamic vs static questions
         self.max_questions_per_phase = 5
@@ -60,6 +64,8 @@ class SocraticCounselorAgent(Agent):
             return self._generate_question(request)
         elif action == "process_response":
             return self._process_response(request)
+        elif action == "extract_insights_only":
+            return self._extract_insights_only(request)
         elif action == "advance_phase":
             return self._advance_phase(request)
         elif action == "toggle_dynamic_questions":
@@ -69,9 +75,22 @@ class SocraticCounselorAgent(Agent):
         return {"status": "error", "message": "Unknown action"}
 
     def _generate_question(self, request: Dict) -> Dict:
-        """Generate the next Socratic question"""
+        """Generate the next Socratic question with usage tracking"""
         project = request.get("project")
+        current_user = request.get("current_user")  # NEW: Accept current user for role context
         context = self.orchestrator.context_analyzer.get_context_summary(project)
+
+        # NEW: Check question limit
+        from socratic_system.subscription.checker import SubscriptionChecker
+
+        user = self.orchestrator.database.load_user(current_user)
+
+        can_ask, error_message = SubscriptionChecker.check_question_limit(user)
+        if not can_ask:
+            return {
+                "status": "error",
+                "message": error_message,
+            }
 
         # Count questions already asked in this phase
         phase_questions = [
@@ -81,7 +100,9 @@ class SocraticCounselorAgent(Agent):
         ]
 
         if self.use_dynamic_questions:
-            question = self._generate_dynamic_question(project, context, len(phase_questions))
+            question = self._generate_dynamic_question(
+                project, context, len(phase_questions), current_user
+            )
         else:
             question = self._generate_static_question(project, len(phase_questions))
 
@@ -96,12 +117,16 @@ class SocraticCounselorAgent(Agent):
             }
         )
 
+        # NEW: Increment usage counter
+        user.increment_question_usage()
+        self.orchestrator.database.save_user(user)
+
         return {"status": "success", "question": question}
 
     def _generate_dynamic_question(
-        self, project: ProjectContext, context: str, question_count: int
+        self, project: ProjectContext, context: str, question_count: int, current_user: str = None
     ) -> str:
-        """Generate contextual questions using Claude"""
+        """Generate contextual questions using Claude with role-aware context"""
         from socratic_system.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
@@ -130,7 +155,7 @@ class SocraticCounselorAgent(Agent):
             f"Building question prompt for {project.phase} phase (question #{question_count + 1})"
         )
         prompt = self._build_question_prompt(
-            project, context, recent_conversation, relevant_knowledge, question_count
+            project, context, recent_conversation, relevant_knowledge, question_count, current_user
         )
 
         try:
@@ -151,8 +176,9 @@ class SocraticCounselorAgent(Agent):
         recent_conversation: str,
         relevant_knowledge: str,
         question_count: int,
+        current_user: str = None,
     ) -> str:
-        """Build prompt for dynamic question generation"""
+        """Build prompt for dynamic question generation with role-aware context"""
 
         phase_descriptions = {
             "discovery": "exploring the problem space, understanding user needs, and defining project goals",
@@ -168,17 +194,41 @@ class SocraticCounselorAgent(Agent):
             "implementation": "development milestones, deployment pipeline, monitoring, documentation",
         }
 
-        return f"""You are a Socratic tutor helping a developer think through their software project.
+        # NEW: Get role-aware context if user is provided
+        role_context = ""
+        if current_user:
+            user_role = project.get_member_role(current_user) or "lead"
+            role_focus = ROLE_FOCUS_AREAS.get(user_role, "general project aspects")
+            is_solo = project.is_solo_project()
+
+            if not is_solo:
+                role_context = f"""
+
+User Role Context:
+- Current User: {current_user}
+- Role: {user_role.upper()}
+- Role Focus Areas: {role_focus}
+
+As a {user_role}, this person should focus on: {role_focus}
+Tailor your question to their role and expertise. For example:
+- For 'lead': Ask about vision, strategy, goals, and resource allocation
+- For 'creator': Ask about implementation details, execution, and deliverables
+- For 'specialist': Ask about technical/domain depth, best practices, quality standards
+- For 'analyst': Ask about research, requirements, validation, and critical assessment
+- For 'coordinator': Ask about timelines, dependencies, process management, and coordination"""
+
+        return f"""You are a Socratic tutor helping guide someone through their {project.project_type} project.
 
 Project Details:
 - Name: {project.name}
+- Type: {project.project_type.upper() if project.project_type else 'software'}
 - Current Phase: {project.phase} ({phase_descriptions.get(project.phase, '')})
 - Goals: {project.goals}
 - Tech Stack: {', '.join(project.tech_stack) if project.tech_stack else 'Not specified'}
 - Requirements: {', '.join(project.requirements) if project.requirements else 'Not specified'}
 
 Project Context:
-{context}
+{context}{role_context}
 
 Recent Conversation:
 {recent_conversation}
@@ -190,10 +240,11 @@ This is question #{question_count + 1} in the {project.phase} phase. Focus on: {
 
 Generate ONE insightful Socratic question that:
 1. Builds on what we've discussed so far
-2. Helps the user think deeper about their project
+2. Helps the user think deeper about their {project.project_type} project
 3. Is specific to the {project.phase} phase
 4. Encourages critical thinking rather than just information gathering
-5. Is relevant to their stated goals and tech stack
+5. Is relevant to their stated goals and expertise
+6. Is appropriate for a {project.project_type} project (not just software-specific)
 
 The question should be thought-provoking but not overwhelming. Make it conversational and engaging.
 
@@ -215,6 +266,24 @@ Return only the question, no additional text or explanation."""
             }
             return fallbacks.get(project.phase, "What would you like to explore further?")
 
+    def _extract_insights_only(self, request: Dict) -> Dict:
+        """Extract insights from response without processing (for direct mode confirmation)"""
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+
+        project = request.get("project")
+        user_response = request.get("response")
+
+        logger.debug(f"Extracting insights only ({len(user_response)} chars)")
+
+        # Extract insights using Claude
+        logger.info("Extracting insights from user response (confirmation mode)...")
+        insights = self.orchestrator.claude_client.extract_insights(user_response, project)
+        self._log_extracted_insights(logger, insights)
+
+        return {"status": "success", "insights": insights}
+
     def _process_response(self, request: Dict) -> Dict:
         """Process user response and extract insights"""
         from socratic_system.utils.logger import get_logger
@@ -224,6 +293,7 @@ Return only the question, no additional text or explanation."""
         project = request.get("project")
         user_response = request.get("response")
         current_user = request.get("current_user")
+        pre_extracted_insights = request.get("pre_extracted_insights")
 
         logger.debug(f"Processing user response ({len(user_response)} chars) from {current_user}")
 
@@ -241,10 +311,14 @@ Return only the question, no additional text or explanation."""
             f"Added response to conversation history (total: {len(project.conversation_history)} messages)"
         )
 
-        # Extract insights using Claude
-        logger.info("Extracting insights from user response...")
-        insights = self.orchestrator.claude_client.extract_insights(user_response, project)
-        self._log_extracted_insights(logger, insights)
+        # Extract insights using Claude (or use pre-extracted if provided)
+        if pre_extracted_insights is not None:
+            logger.info("Using pre-extracted insights from direct mode confirmation")
+            insights = pre_extracted_insights
+        else:
+            logger.info("Extracting insights from user response...")
+            insights = self.orchestrator.claude_client.extract_insights(user_response, project)
+            self._log_extracted_insights(logger, insights)
 
         # REAL-TIME CONFLICT DETECTION
         if insights:
@@ -276,6 +350,89 @@ Return only the question, no additional text or explanation."""
         logger.info("Updating project context with insights...")
         self._update_project_context(project, insights)
         logger.debug("Project context updated successfully")
+
+        # NEW: Update phase maturity after processing response
+        if insights:
+            logger.info("Calculating phase maturity...")
+            maturity_result = self.orchestrator.process_request(
+                "quality_controller",
+                {
+                    "action": "update_after_response",
+                    "project": project,
+                    "insights": insights,
+                },
+            )
+
+            if maturity_result["status"] == "success":
+                maturity = maturity_result.get("maturity", {})
+                score = maturity.get("overall_score", 0.0)
+                logger.info(f"Phase maturity updated: {score:.1f}%")
+
+        # NEW: Track question effectiveness for learning
+        if insights and project.conversation_history:
+            # Find the most recent question (assistant message in this phase)
+            phase_messages = [
+                msg for msg in project.conversation_history if msg.get("phase") == project.phase
+            ]
+            if len(phase_messages) >= 2:  # At least question + response
+                # Get the last question
+                question_msg = None
+                for msg in reversed(phase_messages[:-1]):  # Skip the response we just added
+                    if msg.get("type") == "assistant":
+                        question_msg = msg
+                        break
+
+                if question_msg:
+                    question_id = question_msg.get("id", phase_messages[-2].get("content", "")[:50])
+
+                    # Calculate answer quality (0-1)
+                    answer_quality = (
+                        float(maturity_result.get("maturity", {}).get("overall_score", 0.5)) / 100.0
+                        if "maturity_result" in locals()
+                        else 0.5
+                    )
+
+                    # Count extracted specs
+                    specs_extracted = sum(
+                        [
+                            len(insights.get("goals", [])) if insights.get("goals") else 0,
+                            (
+                                len(insights.get("requirements", []))
+                                if insights.get("requirements")
+                                else 0
+                            ),
+                            (
+                                len(insights.get("tech_stack", []))
+                                if insights.get("tech_stack")
+                                else 0
+                            ),
+                            (
+                                len(insights.get("constraints", []))
+                                if insights.get("constraints")
+                                else 0
+                            ),
+                        ]
+                    )
+
+                    logger.debug(
+                        f"Tracking question effectiveness: {question_id}, quality={answer_quality:.2f}"
+                    )
+
+                    # Call learning agent to track this question's effectiveness
+                    # FIXED: Use current_user (actual user who answered), not project.owner
+                    user_role = project.get_member_role(current_user) if current_user else "general"
+                    self.orchestrator.process_request(
+                        "learning",
+                        {
+                            "action": "track_question_effectiveness",
+                            "user_id": current_user,
+                            "question_template_id": question_id,
+                            "role": user_role,
+                            "answer_length": len(user_response),
+                            "specs_extracted": specs_extracted,
+                            "answer_quality": answer_quality,
+                        },
+                    )
 
         return {"status": "success", "insights": insights}
 
@@ -388,16 +545,77 @@ Return only the question, no additional text or explanation."""
         return True
 
     def _advance_phase(self, request: Dict) -> Dict:
-        """Advance project to the next phase"""
+        """Advance project to the next phase with maturity verification"""
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+
         project = request.get("project")
         phases = ["discovery", "analysis", "design", "implementation"]
 
         current_index = phases.index(project.phase)
-        if current_index < len(phases) - 1:
-            project.phase = phases[current_index + 1]
-            self.log(f"Advanced project to {project.phase} phase")
+        if current_index >= len(phases) - 1:
+            return {
+                "status": "error",
+                "message": "Already at final phase (implementation)",
+            }
 
-        return {"status": "success", "new_phase": project.phase}
+        # NEW: Check maturity before advancing
+        logger.info(f"Verifying readiness to advance from {project.phase}...")
+        readiness_result = self.orchestrator.process_request(
+            "quality_controller",
+            {
+                "action": "verify_advancement",
+                "project": project,
+                "from_phase": project.phase,
+            },
+        )
+
+        if readiness_result["status"] == "success":
+            verification = readiness_result["verification"]
+            maturity_score = verification.get("maturity_score", 0.0)
+            warnings = verification.get("warnings", [])
+
+            # Display warnings to user if present
+            if warnings:
+                print(f"\n{Fore.YELLOW}⚠ MATURITY WARNINGS:{Fore.RESET}")
+                for warning in warnings[:3]:  # Show top 3 warnings
+                    print(f"  • {warning}")
+
+                # Ask for confirmation if maturity is low
+                if maturity_score < 60.0:
+                    print(f"\n{Fore.RED}Current phase maturity: {maturity_score:.1f}%")
+                    print(f"Recommended minimum: 60%{Fore.RESET}")
+
+                    confirm = input(f"\n{Fore.CYAN}Advance anyway? (yes/no): {Fore.RESET}").lower()
+                    if confirm not in ["yes", "y"]:
+                        return {
+                            "status": "cancelled",
+                            "message": "Phase advancement cancelled",
+                        }
+
+        # Advance to next phase
+        new_phase = phases[current_index + 1]
+        project.phase = new_phase
+        logger.info(f"Advanced project from {phases[current_index]} to {new_phase}")
+
+        # NEW: Emit PHASE_ADVANCED event
+        self.emit_event(
+            EventType.PHASE_ADVANCED,
+            {
+                "from_phase": phases[current_index],
+                "to_phase": new_phase,
+                "maturity_at_advancement": (
+                    verification.get("maturity_score", 0.0)
+                    if readiness_result["status"] == "success"
+                    else None
+                ),
+            },
+        )
+
+        self.log(f"Advanced project to {new_phase} phase")
+
+        return {"status": "success", "new_phase": new_phase}
 
     def _normalize_to_list(self, value: Any) -> List[str]:
         """Convert any value to a list of non-empty strings"""

@@ -6,17 +6,16 @@ ConflictDetector, SystemMonitor, UserManager, NoteManager
 from unittest.mock import MagicMock, patch
 
 import pytest
-import socrates
 
 
 @pytest.mark.unit
 class TestSocraticCounselorAgent:
     """Tests for SocraticCounselorAgent - Socratic dialogue"""
 
-    def test_agent_initialization(self, test_config):
+    def test_agent_initialization(self, mock_orchestrator):
         """Test SocraticCounselorAgent initializes correctly"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
 
             agent = SocraticCounselorAgent(orchestrator)
@@ -24,10 +23,10 @@ class TestSocraticCounselorAgent:
             assert agent is not None
             assert agent.name == "SocraticCounselor"
 
-    def test_start_dialogue_with_topic(self, test_config, sample_project):
+    def test_start_dialogue_with_topic(self, mock_orchestrator, sample_project):
         """Test starting Socratic dialogue on a topic"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
 
             agent = SocraticCounselorAgent(orchestrator)
@@ -53,10 +52,10 @@ class TestSocraticCounselorAgent:
 class TestContextAnalyzerAgent:
     """Tests for ContextAnalyzerAgent - Context analysis and relevance scoring"""
 
-    def test_agent_initialization(self, test_config):
+    def test_agent_initialization(self, mock_orchestrator):
         """Test ContextAnalyzerAgent initializes correctly"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.context_analyzer import ContextAnalyzerAgent
 
             agent = ContextAnalyzerAgent(orchestrator)
@@ -64,10 +63,10 @@ class TestContextAnalyzerAgent:
             assert agent is not None
             assert agent.name == "ContextAnalyzer"
 
-    def test_extract_context_from_conversation(self, test_config):
+    def test_extract_context_from_conversation(self, mock_orchestrator):
         """Test extracting context from conversation history"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.context_analyzer import ContextAnalyzerAgent
 
             agent = ContextAnalyzerAgent(orchestrator)
@@ -92,10 +91,10 @@ class TestContextAnalyzerAgent:
 class TestDocumentProcessorAgent:
     """Tests for DocumentProcessorAgent - Document processing"""
 
-    def test_agent_initialization(self, test_config):
+    def test_agent_initialization(self, mock_orchestrator):
         """Test DocumentProcessorAgent initializes correctly"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.document_processor import DocumentProcessorAgent
 
             agent = DocumentProcessorAgent(orchestrator)
@@ -103,10 +102,10 @@ class TestDocumentProcessorAgent:
             assert agent is not None
             assert agent.name == "DocumentProcessor"
 
-    def test_extract_text_from_document(self, test_config, temp_data_dir):
+    def test_extract_text_from_document(self, mock_orchestrator, temp_data_dir):
         """Test extracting text from documents"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.document_processor import DocumentProcessorAgent
 
             agent = DocumentProcessorAgent(orchestrator)
@@ -124,10 +123,10 @@ class TestDocumentProcessorAgent:
 class TestConflictDetectorAgent:
     """Tests for ConflictDetectorAgent - Conflict detection"""
 
-    def test_agent_initialization(self, test_config):
+    def test_agent_initialization(self, mock_orchestrator):
         """Test ConflictDetectorAgent initializes correctly"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.conflict_detector import ConflictDetectorAgent
 
             agent = ConflictDetectorAgent(orchestrator)
@@ -135,10 +134,10 @@ class TestConflictDetectorAgent:
             assert agent is not None
             assert agent.name == "ConflictDetector"
 
-    def test_detect_note_conflict(self, test_config):
+    def test_detect_note_conflict(self, mock_orchestrator):
         """Test detecting conflicts in notes"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.conflict_detector import ConflictDetectorAgent
 
             agent = ConflictDetectorAgent(orchestrator)
@@ -161,10 +160,10 @@ class TestConflictDetectorAgent:
 class TestSystemMonitorAgent:
     """Tests for SystemMonitorAgent - System monitoring"""
 
-    def test_agent_initialization(self, test_config):
+    def test_agent_initialization(self, mock_orchestrator):
         """Test SystemMonitorAgent initializes correctly"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.system_monitor import SystemMonitorAgent
 
             agent = SystemMonitorAgent(orchestrator)
@@ -172,10 +171,10 @@ class TestSystemMonitorAgent:
             assert agent is not None
             assert agent.name == "SystemMonitor"
 
-    def test_perform_health_check(self, test_config):
+    def test_perform_health_check(self, mock_orchestrator):
         """Test system health check"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.system_monitor import SystemMonitorAgent
 
             agent = SystemMonitorAgent(orchestrator)
@@ -193,10 +192,10 @@ class TestSystemMonitorAgent:
 class TestUserManagerAgent:
     """Tests for UserManagerAgent - User management"""
 
-    def test_agent_initialization(self, test_config):
+    def test_agent_initialization(self, mock_orchestrator):
         """Test UserManagerAgent initializes correctly"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.user_manager import UserManagerAgent
 
             agent = UserManagerAgent(orchestrator)
@@ -204,10 +203,10 @@ class TestUserManagerAgent:
             assert agent is not None
             assert agent.name == "UserManager"
 
-    def test_create_user(self, test_config):
+    def test_create_user(self, mock_orchestrator):
         """Test creating a new user"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.user_manager import UserManagerAgent
 
             agent = UserManagerAgent(orchestrator)
@@ -223,10 +222,10 @@ class TestUserManagerAgent:
             assert "status" in result
             # Should create user or indicate if already exists
 
-    def test_authenticate_user(self, test_config):
+    def test_authenticate_user(self, mock_orchestrator):
         """Test user authentication"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.user_manager import UserManagerAgent
 
             agent = UserManagerAgent(orchestrator)
@@ -243,10 +242,10 @@ class TestUserManagerAgent:
 class TestNoteManagerAgent:
     """Tests for NoteManagerAgent - Note management"""
 
-    def test_agent_initialization(self, test_config):
+    def test_agent_initialization(self, mock_orchestrator):
         """Test NoteManagerAgent initializes correctly"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.note_manager import NoteManagerAgent
 
             agent = NoteManagerAgent(orchestrator)
@@ -254,10 +253,10 @@ class TestNoteManagerAgent:
             assert agent is not None
             assert agent.name == "NoteManager"
 
-    def test_create_note(self, test_config, sample_project):
+    def test_create_note(self, mock_orchestrator, sample_project):
         """Test creating a note"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.note_manager import NoteManagerAgent
 
             agent = NoteManagerAgent(orchestrator)
@@ -274,10 +273,10 @@ class TestNoteManagerAgent:
             assert "status" in result
             # Should create note with provided content
 
-    def test_get_note(self, test_config, sample_project):
+    def test_get_note(self, mock_orchestrator, sample_project):
         """Test retrieving a note"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.note_manager import NoteManagerAgent
 
             agent = NoteManagerAgent(orchestrator)
@@ -293,10 +292,10 @@ class TestNoteManagerAgent:
             assert "status" in result
             # Should retrieve note or indicate not found
 
-    def test_list_project_notes(self, test_config, sample_project):
+    def test_list_project_notes(self, mock_orchestrator, sample_project):
         """Test listing notes in a project"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.note_manager import NoteManagerAgent
 
             agent = NoteManagerAgent(orchestrator)
@@ -315,10 +314,10 @@ class TestNoteManagerAgent:
 class TestAgentCrossCollaboration:
     """Integration tests for multiple agents working together"""
 
-    def test_counselor_analyzer_collaboration(self, test_config, sample_project):
+    def test_counselor_analyzer_collaboration(self, mock_orchestrator, sample_project):
         """Test SocraticCounselor and ContextAnalyzer working together"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.context_analyzer import ContextAnalyzerAgent
             from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
 
@@ -347,10 +346,10 @@ class TestAgentCrossCollaboration:
             assert "status" in counsel_result
             assert "status" in analyze_result
 
-    def test_project_manager_note_manager_collaboration(self, test_config, sample_project):
+    def test_project_manager_note_manager_collaboration(self, mock_orchestrator, sample_project):
         """Test ProjectManager and NoteManager collaboration"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.note_manager import NoteManagerAgent
             from socratic_system.agents.project_manager import ProjectManagerAgent
 
@@ -376,10 +375,10 @@ class TestAgentCrossCollaboration:
             load_result = proj_mgr.process(load_request)
             assert load_result["status"] == "success"
 
-    def test_conflict_detector_with_project_manager(self, test_config, sample_project):
+    def test_conflict_detector_with_project_manager(self, mock_orchestrator, sample_project):
         """Test ConflictDetector working with ProjectManager"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             from socratic_system.agents.conflict_detector import ConflictDetectorAgent
             from socratic_system.agents.project_manager import ProjectManagerAgent
 
@@ -409,10 +408,10 @@ class TestAgentCrossCollaboration:
 class TestAgentErrorHandling:
     """Test error handling across all remaining agents"""
 
-    def test_missing_action_field_all_agents(self, test_config):
+    def test_missing_action_field_all_agents(self, mock_orchestrator):
         """Test that all agents handle missing action field"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
 
             from socratic_system.agents.conflict_detector import ConflictDetectorAgent
             from socratic_system.agents.context_analyzer import ContextAnalyzerAgent
@@ -449,10 +448,10 @@ class TestAgentErrorHandling:
             ("NoteManagerAgent", "NoteManager"),
         ],
     )
-    def test_agent_initialization_all(self, test_config, agent_class, agent_name):
+    def test_agent_initialization_all(self, mock_orchestrator, agent_class, agent_name):
         """Test all agents initialize with correct names"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
 
             # Dynamic import
             module = __import__(

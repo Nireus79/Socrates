@@ -5,7 +5,6 @@ Tests for CodeGeneratorAgent - Code generation and documentation
 from unittest.mock import MagicMock, patch
 
 import pytest
-import socrates
 
 from socratic_system.agents.code_generator import CodeGeneratorAgent
 
@@ -14,10 +13,10 @@ from socratic_system.agents.code_generator import CodeGeneratorAgent
 class TestCodeGeneratorAgentInitialization:
     """Tests for CodeGeneratorAgent initialization"""
 
-    def test_agent_initialization(self, test_config):
+    def test_agent_initialization(self, mock_orchestrator):
         """Test CodeGeneratorAgent initializes correctly"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             assert agent is not None
@@ -29,10 +28,10 @@ class TestCodeGeneratorAgentInitialization:
 class TestCodeGeneratorAgentContextBuilding:
     """Tests for code generation context building"""
 
-    def test_build_generation_context_basic(self, test_config, sample_project):
+    def test_build_generation_context_basic(self, mock_orchestrator, sample_project):
         """Test building code generation context from project"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             sample_project.goals = "Build a REST API"
@@ -51,10 +50,10 @@ class TestCodeGeneratorAgentContextBuilding:
             assert "RESTful design" in context
             assert "AWS" in context
 
-    def test_build_generation_context_with_conversation(self, test_config, sample_project):
+    def test_build_generation_context_with_conversation(self, mock_orchestrator, sample_project):
         """Test that conversation history is included in context"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             sample_project.conversation_history = [
@@ -70,10 +69,10 @@ class TestCodeGeneratorAgentContextBuilding:
             assert "Should I use async or sync?" in context or "async" in context.lower()
             assert "error handling" in context.lower() or "handling" in context.lower()
 
-    def test_build_generation_context_empty_fields(self, test_config, sample_project):
+    def test_build_generation_context_empty_fields(self, mock_orchestrator, sample_project):
         """Test context building handles empty project fields gracefully"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             # Leave most fields empty
@@ -94,10 +93,10 @@ class TestCodeGeneratorAgentContextBuilding:
 class TestCodeGeneratorAgentScriptGeneration:
     """Tests for script/code generation"""
 
-    def test_generate_script_success(self, test_config, sample_project):
+    def test_generate_script_success(self, mock_orchestrator, sample_project):
         """Test successful script generation"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             # Mock the generate_code method
@@ -116,10 +115,10 @@ class TestCodeGeneratorAgentScriptGeneration:
             assert "context_used" in result
             orchestrator.claude_client.generate_code.assert_called_once()
 
-    def test_generate_script_api_error(self, test_config, sample_project):
+    def test_generate_script_api_error(self, mock_orchestrator, sample_project):
         """Test handling of API errors during code generation"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             # Mock API error
@@ -138,10 +137,10 @@ class TestCodeGeneratorAgentScriptGeneration:
                 # This is also acceptable - error is raised
                 pass
 
-    def test_generate_script_preserves_context(self, test_config, sample_project):
+    def test_generate_script_preserves_context(self, mock_orchestrator, sample_project):
         """Test that generated context is returned with script"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             sample_project.goals = "Build API endpoints"
@@ -162,10 +161,10 @@ class TestCodeGeneratorAgentScriptGeneration:
 class TestCodeGeneratorAgentDocumentation:
     """Tests for documentation generation"""
 
-    def test_generate_documentation_success(self, test_config, sample_project):
+    def test_generate_documentation_success(self, mock_orchestrator, sample_project):
         """Test successful documentation generation"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             sample_code = "def calculate_sum(a, b):\n    return a + b"
@@ -185,10 +184,10 @@ class TestCodeGeneratorAgentDocumentation:
             assert result["documentation"] == mock_docs
             orchestrator.claude_client.generate_documentation.assert_called_once()
 
-    def test_generate_documentation_missing_script(self, test_config, sample_project):
+    def test_generate_documentation_missing_script(self, mock_orchestrator, sample_project):
         """Test documentation generation handles missing script"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             request = {
@@ -203,10 +202,10 @@ class TestCodeGeneratorAgentDocumentation:
             # Should handle gracefully or raise appropriate error
             orchestrator.claude_client.generate_documentation.assert_called_once()
 
-    def test_generate_documentation_with_complex_code(self, test_config, sample_project):
+    def test_generate_documentation_with_complex_code(self, mock_orchestrator, sample_project):
         """Test documentation generation for complex code"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             complex_code = """
@@ -249,10 +248,10 @@ class DataProcessor:
 class TestCodeGeneratorAgentErrorHandling:
     """Tests for error scenarios"""
 
-    def test_unknown_action(self, test_config):
+    def test_unknown_action(self, mock_orchestrator):
         """Test handling of unknown action"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             request = {"action": "unknown_generation_action"}
@@ -262,10 +261,10 @@ class TestCodeGeneratorAgentErrorHandling:
             assert result["status"] == "error"
             assert "unknown" in result["message"].lower()
 
-    def test_missing_action_field(self, test_config):
+    def test_missing_action_field(self, mock_orchestrator):
         """Test handling of missing action field"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             request = {}
@@ -274,10 +273,10 @@ class TestCodeGeneratorAgentErrorHandling:
 
             assert result["status"] == "error"
 
-    def test_missing_project_field(self, test_config):
+    def test_missing_project_field(self, mock_orchestrator):
         """Test handling of missing project in request"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             orchestrator.claude_client.generate_code = MagicMock(
@@ -313,11 +312,11 @@ class TestCodeGeneratorAgentLanguageSupport:
         ],
     )
     def test_generate_script_multiple_languages(
-        self, test_config, sample_project, language, tech_stack
+        self, test_config, sample_project, mock_orchestrator, language, tech_stack
     ):
         """Test code generation for different programming languages"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             sample_project.tech_stack = tech_stack
@@ -338,10 +337,10 @@ class TestCodeGeneratorAgentLanguageSupport:
 class TestCodeGeneratorAgentLogging:
     """Tests for logging and event emission"""
 
-    def test_generates_log_message(self, test_config, sample_project):
+    def test_generates_log_message(self, mock_orchestrator, sample_project):
         """Test that code generation emits log messages"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             # Track log calls
@@ -360,10 +359,10 @@ class TestCodeGeneratorAgentLogging:
 class TestCodeGeneratorAgentIntegration:
     """Integration tests for code generation workflows"""
 
-    def test_full_generation_workflow(self, test_config, sample_project):
+    def test_full_generation_workflow(self, mock_orchestrator, sample_project):
         """Test complete workflow: script generation -> documentation"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             mock_code = """
@@ -398,10 +397,10 @@ def process_data(data):
             assert gen_result["script"] == mock_code
             assert doc_result["documentation"] == mock_docs
 
-    def test_context_rich_generation(self, test_config, sample_project):
+    def test_context_rich_generation(self, mock_orchestrator, sample_project):
         """Test that rich project context improves generation quality"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             # Set up rich context
@@ -440,10 +439,10 @@ def process_data(data):
             assert "microservices" in context.lower() or "Build" in context
             assert "kubernetes" in context.lower() or "Deployment" in context.lower()
 
-    def test_generation_with_error_recovery(self, test_config, sample_project):
+    def test_generation_with_error_recovery(self, mock_orchestrator, sample_project):
         """Test recovery from temporary API failures"""
         with patch("anthropic.Anthropic"):
-            orchestrator = socrates.AgentOrchestrator(test_config)
+            orchestrator = mock_orchestrator
             agent = CodeGeneratorAgent(orchestrator)
 
             # First call fails, second succeeds (simulating retry)

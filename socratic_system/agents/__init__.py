@@ -6,6 +6,7 @@ from .conflict_detector import ConflictDetectorAgent
 from .context_analyzer import ContextAnalyzerAgent
 from .document_processor import DocumentAgent
 from .project_manager import ProjectManagerAgent
+from .quality_controller import QualityControllerAgent
 from .socratic_counselor import SocraticCounselorAgent
 from .system_monitor import SystemMonitorAgent
 from .user_manager import UserManagerAgent
@@ -20,4 +21,5 @@ __all__ = [
     "SystemMonitorAgent",
     "ConflictDetectorAgent",
     "DocumentAgent",
+    "QualityControllerAgent",
 ]

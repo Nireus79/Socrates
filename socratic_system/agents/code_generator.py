@@ -16,38 +16,79 @@ class CodeGeneratorAgent(Agent):
         super().__init__("CodeGenerator", orchestrator)
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Process code generation requests"""
+        """Process artifact generation requests"""
         action = request.get("action")
 
-        if action == "generate_script":
-            return self._generate_script(request)
+        if action == "generate_artifact":
+            return self._generate_artifact(request)
         elif action == "generate_documentation":
             return self._generate_documentation(request)
+        # Legacy support
+        elif action == "generate_script":
+            return self._generate_artifact(request)
 
         return {"status": "error", "message": "Unknown action"}
 
-    def _generate_script(self, request: Dict) -> Dict:
-        """Generate code for the project"""
+    def _generate_artifact(self, request: Dict) -> Dict:
+        """Generate project-type-appropriate artifact"""
         project = request.get("project")
 
         # Build comprehensive context
         context = self._build_generation_context(project)
 
-        # Generate using Claude
-        script = self.orchestrator.claude_client.generate_code(context)
+        # Generate artifact based on project type
+        artifact = self.orchestrator.claude_client.generate_artifact(context, project.project_type)
 
-        self.log(f"Generated script for project '{project.name}'")
+        # Determine artifact type for documentation
+        artifact_type_map = {
+            "software": "code",
+            "business": "business_plan",
+            "research": "research_protocol",
+            "creative": "creative_brief",
+            "marketing": "marketing_plan",
+            "educational": "curriculum",
+        }
+        artifact_type = artifact_type_map.get(project.project_type, "code")
 
-        return {"status": "success", "script": script, "context_used": context}
+        self.log(f"Generated {artifact_type} for {project.project_type} project '{project.name}'")
+
+        return {
+            "status": "success",
+            "artifact": artifact,
+            "artifact_type": artifact_type,
+            "script": artifact,  # Legacy compatibility
+            "context_used": context,
+        }
 
     def _generate_documentation(self, request: Dict) -> Dict:
-        """Generate documentation for code"""
+        """Generate documentation for project artifact"""
         project = request.get("project")
-        script = request.get("script")
+        artifact = request.get("artifact") or request.get("script")  # Support both
 
-        documentation = self.orchestrator.claude_client.generate_documentation(project, script)
+        if not project or not artifact:
+            return {"status": "error", "message": "Project and artifact are required"}
 
-        return {"status": "success", "documentation": documentation}
+        # Determine artifact type
+        artifact_type_map = {
+            "software": "code",
+            "business": "business_plan",
+            "research": "research_protocol",
+            "creative": "creative_brief",
+            "marketing": "marketing_plan",
+            "educational": "curriculum",
+        }
+        artifact_type = artifact_type_map.get(project.project_type, "code")
+
+        documentation = self.orchestrator.claude_client.generate_documentation(
+            project, artifact, artifact_type
+        )
+
+        self.log(f"Generated documentation for {artifact_type}")
+
+        return {
+            "status": "success",
+            "documentation": documentation,
+        }
 
     def _build_generation_context(self, project: ProjectContext) -> str:
         """Build comprehensive context for code generation"""

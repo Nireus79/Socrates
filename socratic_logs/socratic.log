@@ -336,3 +336,403 @@
 [2025-12-05 12:55:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
 [2025-12-05 12:55:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
 [2025-12-05 12:55:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 07:51:20] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-09 07:51:20] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-09 07:51:20] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-09 07:51:20] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #2)
+[2025-12-09 07:51:20] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2025-12-09 07:51:26] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: If Moly is running locally as a RAG system that needs to analyze User B's profile (pictures, posts, ...
+[2025-12-09 07:53:48] [DEBUG] socratic_rag.socratic_counselor: Processing user response (150 chars) from Themis
+[2025-12-09 07:53:48] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 33 messages)
+[2025-12-09 07:53:48] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2025-12-09 07:53:52] [INFO] socratic_rag.socratic_counselor: Extracted 3 requirement(s), 3 constraint(s)
+[2025-12-09 07:53:52] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'requirements': ['Manual navigation required from User A to User B profile', 'System must only access publicly visible information', 'Must respect social media platform privacy settings'], 'constraints': ['Cannot bypass or override user privacy settings', 'Limited to data that User B allows other users to see', 'No automated profile access - requires manual user navigation']}
+[2025-12-09 07:53:52] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2025-12-09 07:54:31] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2025-12-09 07:54:31] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2025-12-09 07:54:31] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2025-12-09 07:54:31] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-09 07:54:31] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-09 07:54:31] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-09 07:54:31] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #3)
+[2025-12-09 07:54:31] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2025-12-09 07:54:36] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: When User A manually navigates to User B's profile to let Moly analyze it, the RAG system will need ...
+[2025-12-09 08:05:55] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-09 08:05:55] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-09 08:05:55] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-09 08:05:55] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #4)
+[2025-12-09 08:05:55] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2025-12-09 08:06:02] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: Given that your RAG system needs fresh profile data to detect changes but relies on manual navigatio...
+[2025-12-09 08:25:31] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 08:25:31] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 08:25:31] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 08:25:31] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 08:25:31] [DEBUG] socratic_rag.test: Test debug message
+[2025-12-09 08:25:31] [INFO] socratic_rag.test: Test info message
+[2025-12-09 08:25:31] [WARNING] socratic_rag.test: Test warning message
+[2025-12-09 08:25:31] [ERROR] socratic_rag.test: Test error message
+[2025-12-09 08:25:31] [ERROR] socratic_rag.test: An error occurred
+Traceback (most recent call last):
+  File "C:\Users\themi\PycharmProjects\Socrates\tests\utils\test_utils.py", line 77, in test_error_logging_with_exception
+    raise ValueError("Test exception")
+ValueError: Test exception
+[2025-12-09 08:25:31] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 08:25:31] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 08:25:31] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 08:25:31] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 08:25:31] [INFO] socratic_rag.integration_test: Test message
+[2025-12-09 08:25:31] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 08:25:31] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 08:25:31] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:38:52] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:38:52] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 11:38:52] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:38:52] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 11:38:52] [DEBUG] socratic_rag.test: Test debug message
+[2025-12-09 11:38:52] [INFO] socratic_rag.test: Test info message
+[2025-12-09 11:38:52] [WARNING] socratic_rag.test: Test warning message
+[2025-12-09 11:38:52] [ERROR] socratic_rag.test: Test error message
+[2025-12-09 11:38:52] [ERROR] socratic_rag.test: An error occurred
+Traceback (most recent call last):
+  File "C:\Users\themi\PycharmProjects\Socrates\tests\utils\test_utils.py", line 77, in test_error_logging_with_exception
+    raise ValueError("Test exception")
+ValueError: Test exception
+[2025-12-09 11:38:52] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 11:38:52] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:38:52] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:38:52] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 11:38:52] [INFO] socratic_rag.integration_test: Test message
+[2025-12-09 11:38:52] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:38:52] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 11:38:52] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:47:13] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:47:13] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 11:47:13] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:47:13] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 11:47:13] [DEBUG] socratic_rag.test: Test debug message
+[2025-12-09 11:47:13] [INFO] socratic_rag.test: Test info message
+[2025-12-09 11:47:13] [WARNING] socratic_rag.test: Test warning message
+[2025-12-09 11:47:13] [ERROR] socratic_rag.test: Test error message
+[2025-12-09 11:47:13] [ERROR] socratic_rag.test: An error occurred
+Traceback (most recent call last):
+  File "C:\Users\themi\PycharmProjects\Socrates\tests\utils\test_utils.py", line 77, in test_error_logging_with_exception
+    raise ValueError("Test exception")
+ValueError: Test exception
+[2025-12-09 11:47:13] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 11:47:13] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:47:13] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:47:13] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 11:47:13] [INFO] socratic_rag.integration_test: Test message
+[2025-12-09 11:47:13] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:47:13] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 11:47:13] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:54:18] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:54:18] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 11:54:18] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:54:18] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 11:54:18] [DEBUG] socratic_rag.test: Test debug message
+[2025-12-09 11:54:18] [INFO] socratic_rag.test: Test info message
+[2025-12-09 11:54:18] [WARNING] socratic_rag.test: Test warning message
+[2025-12-09 11:54:18] [ERROR] socratic_rag.test: Test error message
+[2025-12-09 11:54:18] [ERROR] socratic_rag.test: An error occurred
+Traceback (most recent call last):
+  File "C:\Users\themi\PycharmProjects\Socrates\tests\utils\test_utils.py", line 77, in test_error_logging_with_exception
+    raise ValueError("Test exception")
+ValueError: Test exception
+[2025-12-09 11:54:18] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 11:54:18] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:54:18] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:54:18] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 11:54:18] [INFO] socratic_rag.integration_test: Test message
+[2025-12-09 11:54:18] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 11:54:18] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-09 11:54:18] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-09 12:42:15] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-09 12:42:15] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-09 12:42:15] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-09 12:42:15] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #3)
+[2025-12-09 12:42:15] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2025-12-09 12:42:21] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: Since Moly needs to continuously monitor and re-evaluate User B's profile over time to detect change...
+[2025-12-09 12:44:38] [DEBUG] socratic_rag.socratic_counselor: Processing user response (79 chars) from Themis
+[2025-12-09 12:44:38] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 35 messages)
+[2025-12-09 12:44:38] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2025-12-09 12:44:42] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 3 requirement(s)
+[2025-12-09 12:44:42] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'goals': "Implement automatic profile checking functionality where Moly analyzes user B's profile whenever user A initiates a chat", 'requirements': ['Automatic trigger mechanism when user A wants to chat', 'Profile checking capability for user B', 'Real-time or near real-time profile analysis before chat initiation'], 'tech_stack': [], 'constraints': [], 'team_structure': ''}
+[2025-12-09 12:44:42] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2025-12-09 12:45:13] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2025-12-09 12:45:13] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2025-12-09 12:45:13] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2025-12-09 12:45:13] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-09 12:45:13] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-09 12:45:13] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-09 12:45:13] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #4)
+[2025-12-09 12:45:13] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2025-12-09 12:45:19] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: You've established that Moly should "automatically check User B's profile every time User A wants to...
+[2025-12-09 12:45:23] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-09 12:45:23] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-09 12:45:23] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-09 12:45:23] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #5)
+[2025-12-09 12:45:23] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2025-12-09 12:45:29] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: If we resolve the automatic profile checking through something like a browser extension that capture...
+[2025-12-09 12:46:40] [DEBUG] socratic_rag.socratic_counselor: Processing user response (124 chars) from Themis
+[2025-12-09 12:46:40] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 38 messages)
+[2025-12-09 12:46:40] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2025-12-09 12:46:46] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 5 requirement(s), 2 constraint(s)
+[2025-12-09 12:46:46] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'goals': 'Enable users to save profile scan results and evaluations for other users, with Moly performing incremental updates instead of full re-scans', 'requirements': ['Implement functionality to save profile scan results and evaluations', 'Store previous scan results for each user profile', 'Implement update detection mechanism to identify profile changes', 'Perform incremental scans that only check for updates when profile was previously analyzed', 'Differentiate between first-time profile scans and update checks'], 'constraints': ['System must avoid redundant full profile scans when previous results exist', 'Need to maintain historical scan data for comparison']}
+[2025-12-09 12:46:46] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2025-12-09 12:47:42] [WARNING] socratic_rag.socratic_counselor: Detected 1 conflict(s)
+[2025-12-09 12:49:00] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2025-12-09 12:49:00] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2025-12-09 12:49:58] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-09 12:49:58] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-09 12:49:58] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-09 12:49:58] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #6)
+[2025-12-09 12:49:58] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2025-12-09 12:50:04] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: If Moly saves User B's profile scan results locally on User A's device and only checks for updates -...
+[2025-12-09 12:51:14] [DEBUG] socratic_rag.socratic_counselor: Processing user response (59 chars) from Themis
+[2025-12-09 12:51:14] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 40 messages)
+[2025-12-09 12:51:14] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2025-12-09 12:51:18] [INFO] socratic_rag.socratic_counselor: Extracted 2 requirement(s), 1 constraint
+[2025-12-09 12:51:18] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'requirements': ['Moly must check for updates before initiating a new chat session', 'Update check should be performed at chat initialization'], 'constraints': ['Update verification is mandatory before each new chat starts']}
+[2025-12-09 12:51:18] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2025-12-09 12:51:38] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2025-12-09 12:51:38] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2025-12-09 12:51:38] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2025-12-09 12:51:38] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-09 12:51:38] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-09 12:51:39] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-09 12:51:39] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #7)
+[2025-12-09 12:51:39] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2025-12-09 12:51:45] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: If Moly checks for updates before each chat by comparing the current profile against the saved snaps...
+[2025-12-10 06:41:30] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-10 06:41:49] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-10 06:41:49] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 06:41:49] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 06:41:49] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #7)
+[2025-12-10 06:41:49] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2025-12-10 06:41:58] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: If Moly checks for updates at every chat initialization by comparing the current profile state again...
+[2025-12-10 06:42:04] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-10 06:42:04] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 06:42:04] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 06:42:04] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #8)
+[2025-12-10 06:42:04] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2025-12-10 06:42:11] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: Given that your incremental update system will be making real-time API calls to Anthropic's LLM at c...
+[2025-12-10 06:42:21] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-10 06:42:21] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 06:42:21] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 06:42:21] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for analysis phase (question #9)
+[2025-12-10 06:42:21] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for analysis phase
+[2025-12-10 06:42:29] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: You've acknowledged the latency concern exists but haven't addressed it - so let me ask: if User A i...
+[2025-12-10 06:47:05] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2025-12-10 06:47:05] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 06:47:08] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What specific problem or frustration in people's daily lives are you hoping Moly will solve, and how...
+[2025-12-10 06:48:04] [DEBUG] socratic_rag.socratic_counselor: Processing user response (95 chars) from Themis
+[2025-12-10 06:48:04] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 2 messages)
+[2025-12-10 06:48:04] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2025-12-10 06:48:08] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 5 requirement(s), 1 tech
+[2025-12-10 06:48:08] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'goals': 'Create a real-time agentic RAG chat assistant for social media platforms named Moly', 'requirements': ['Real-time functionality', 'Agentic capabilities', 'RAG (Retrieval-Augmented Generation) implementation', 'Chat interface', 'Social media platform integration'], 'tech_stack': ['RAG (Retrieval-Augmented Generation)'], 'constraints': [], 'team_structure': ''}
+[2025-12-10 06:48:08] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2025-12-10 06:48:33] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2025-12-10 06:48:33] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2025-12-10 06:48:33] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2025-12-10 06:48:33] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2025-12-10 06:48:33] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 1.0%
+[2025-12-10 06:48:33] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2025-12-10 06:48:33] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 06:48:33] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 06:48:33] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #2)
+[2025-12-10 06:48:33] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 06:48:38] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: I notice you've described *what* you want to build, but I'm curious: when someone opens a social med...
+[2025-12-10 06:48:45] [DEBUG] socratic_rag.socratic_counselor: Using 3 recent messages for context
+[2025-12-10 06:48:45] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 06:48:45] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 06:48:45] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #3)
+[2025-12-10 06:48:45] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 06:48:49] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: If you imagine a social media user's typical day—scrolling through posts, commenting, messaging frie...
+[2025-12-10 07:11:27] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2025-12-10 07:11:27] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 07:11:31] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What specific problem or frustration in people's daily lives are you hoping Moly will solve, and how...
+[2025-12-10 07:12:18] [DEBUG] socratic_rag.socratic_counselor: Processing user response (83 chars) from Themis
+[2025-12-10 07:12:18] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 2 messages)
+[2025-12-10 07:12:18] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2025-12-10 07:12:25] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 5 requirement(s), 1 tech
+[2025-12-10 07:12:25] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'goals': 'Create a real-time agentic RAG chat assistant for social media platforms', 'requirements': ['Real-time processing capability', 'Agentic behavior/autonomous agent functionality', 'RAG (Retrieval-Augmented Generation) implementation', 'Chat interface', 'Social media platform integration'], 'tech_stack': ['RAG (Retrieval-Augmented Generation)'], 'constraints': [], 'team_structure': ''}
+[2025-12-10 07:12:25] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2025-12-10 07:12:51] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2025-12-10 07:12:51] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2025-12-10 07:12:51] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2025-12-10 07:12:51] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2025-12-10 07:12:51] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 1.0%
+[2025-12-10 07:12:51] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2025-12-10 07:12:51] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 07:12:51] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 07:12:51] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #2)
+[2025-12-10 07:12:51] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 07:12:55] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: I notice you've described *what* you want to build (a real-time agentic RAG chat assistant), but I'm...
+[2025-12-10 07:16:56] [DEBUG] socratic_rag.socratic_counselor: Processing user response (327 chars) from Themis
+[2025-12-10 07:16:56] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 4 messages)
+[2025-12-10 07:16:56] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2025-12-10 07:17:00] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 6 requirement(s)
+[2025-12-10 07:17:00] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'goals': 'Create an AI assistant (Moly) that facilitates social media conversations by analyzing user profiles, providing character evaluations, suggesting conversation starters, and recommending reply options in real-time', 'requirements': ['Profile scanning and content analysis capability', 'Character evaluation based on profile data', 'Conversation starter generation', 'Real-time message reading and analysis', 'Suggested response generation based on incoming messages', 'User decision flow (inform user M, wait for decision, then provide suggestions)'], 'tech_stack': [], 'constraints': [], 'team_structure': ''}
+[2025-12-10 07:17:00] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2025-12-10 07:17:53] [WARNING] socratic_rag.socratic_counselor: Detected 1 conflict(s)
+[2025-12-10 07:18:16] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2025-12-10 07:18:16] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2025-12-10 07:18:16] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2025-12-10 07:18:16] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 2.0%
+[2025-12-10 07:18:16] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-10 07:18:16] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 07:18:17] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 07:18:17] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #3)
+[2025-12-10 07:18:17] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 07:18:21] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: I'm intrigued by this flow - but let me ask you something: when you picture user M reading Moly's ch...
+[2025-12-10 07:18:28] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-10 07:18:28] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 07:18:28] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 07:18:28] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #4)
+[2025-12-10 07:18:28] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 07:18:33] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: Given that Moly needs to analyze user B's profile content to create this character evaluation, what ...
+[2025-12-10 12:48:10] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-10 12:48:10] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 12:48:10] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 12:48:10] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #3)
+[2025-12-10 12:48:10] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 12:48:14] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: You've described a helpful flow where Moly analyzes User B's profile and suggests conversation start...
+[2025-12-10 12:54:32] [DEBUG] socratic_rag.socratic_counselor: Processing user response (418 chars) from Themis
+[2025-12-10 12:54:32] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 6 messages)
+[2025-12-10 12:54:32] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2025-12-10 12:54:43] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 7 requirement(s), 3 constraint(s)
+[2025-12-10 12:54:43] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'goals': 'Create an AI assistant (Moly) that provides character analysis of social media users, suggests conversation starters with different tones (passive, neutral, aggressive), and offers real-time reply recommendations that adapt based on ongoing conversation dynamics', 'requirements': ["Analyze user B's profile to generate character evaluation/estimation summary", 'Present character analysis to user M for decision-making', 'Save character evaluation when user M decides to initiate chat', 'Generate three conversation starter options with different tones: passive, neutral, and aggressive', "Update user B's character evaluation dynamically as conversation progresses", 'Provide three reply options to user M after each response from user B', 'Maintain context awareness throughout the conversation flow'], 'tech_stack': [], 'constraints': ['User M must manually decide whether to initiate conversation after seeing analysis', 'System must provide exactly three options at each decision point', 'Reply suggestions must align with the character evaluation of user B'], 'team_structure': ''}
+[2025-12-10 12:54:43] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2025-12-10 12:55:52] [WARNING] socratic_rag.socratic_counselor: Detected 1 conflict(s)
+[2025-12-10 12:56:31] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2025-12-10 12:56:31] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2025-12-10 12:56:31] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2025-12-10 12:56:31] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 5.1%
+[2025-12-10 12:56:31] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-10 12:56:31] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 12:56:31] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 12:56:31] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #4)
+[2025-12-10 12:56:31] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 12:56:36] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: I'm intrigued by this "character evaluation" that gets updated as the conversation progresses - but ...
+[2025-12-10 12:56:49] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-10 12:56:49] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 12:56:49] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 12:56:49] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #5)
+[2025-12-10 12:56:49] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 12:56:54] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: You're building a system where Moly continuously updates its character evaluation of User B with eac...
+[2025-12-10 12:57:03] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-10 12:57:03] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 12:57:03] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 12:57:03] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #6)
+[2025-12-10 12:57:03] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 12:57:09] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: You've described Moly analyzing User B's character from their profile and then updating that evaluat...
+[2025-12-10 12:57:59] [DEBUG] socratic_rag.socratic_counselor: Processing user response (66 chars) from Themis
+[2025-12-10 12:57:59] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 10 messages)
+[2025-12-10 12:57:59] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2025-12-10 12:58:03] [INFO] socratic_rag.socratic_counselor: Extracted 4 requirement(s), 1 tech
+[2025-12-10 12:58:03] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'tech_stack': ['optimal programming language (to be determined)'], 'requirements': ['Need to determine optimal programming language for RAG-based AI assistant', 'Language should support character analysis capabilities', 'Language should support conversation starter generation', 'Language should support real-time reply recommendations']}
+[2025-12-10 12:58:03] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2025-12-10 12:58:34] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2025-12-10 12:58:34] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2025-12-10 12:58:34] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2025-12-10 12:58:34] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2025-12-10 12:58:34] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 5.1%
+[2025-12-10 13:05:08] [DEBUG] socratic_rag.socratic_counselor: Processing user response (26 chars) from Themis
+[2025-12-10 13:05:08] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 11 messages)
+[2025-12-10 13:05:08] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2025-12-10 13:05:14] [INFO] socratic_rag.socratic_counselor: Extracted 2 requirement(s), 2 constraint(s)
+[2025-12-10 13:05:14] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'requirements': ['Need guidance on LLM model selection criteria', 'Requires understanding of model evaluation factors for character analysis and conversation generation tasks'], 'constraints': ['Uncertainty about LLM model selection process', 'Need to determine optimal model for RAG implementation']}
+[2025-12-10 13:05:14] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2025-12-10 13:05:42] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2025-12-10 13:05:42] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2025-12-10 13:05:42] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2025-12-10 13:05:42] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2025-12-10 13:05:42] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 6.7%
+[2025-12-10 13:07:40] [DEBUG] socratic_rag.socratic_counselor: Processing user response (26 chars) from Themis
+[2025-12-10 13:07:40] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 12 messages)
+[2025-12-10 13:07:40] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2025-12-10 13:07:45] [INFO] socratic_rag.socratic_counselor: Extracted 2 requirement(s), 1 constraint
+[2025-12-10 13:07:45] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'requirements': ['Need guidance on LLM model selection criteria', 'Requires LLM integration for character analysis and conversation recommendations'], 'constraints': ['Uncertainty about which LLM model to choose for the project']}
+[2025-12-10 13:07:45] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2025-12-10 13:07:57] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2025-12-10 13:07:57] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2025-12-10 13:07:57] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2025-12-10 13:07:57] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2025-12-10 13:07:57] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 7.4%
+[2025-12-10 18:17:56] [DEBUG] socratic_rag.socratic_counselor: Extracting insights only (48 chars)
+[2025-12-10 18:17:56] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response (confirmation mode)...
+[2025-12-10 18:17:58] [INFO] socratic_rag.socratic_counselor: Extracted 1 goal, 4 requirement(s), 2 tech(s), 1 constraint
+[2025-12-10 18:17:58] [DEBUG] socratic_rag.socratic_counselor: Full insights: {'goals': 'Create an AI assistant (Moly) that provides character analysis of social media users, suggests conversation starters with different tones (passive, neutral, aggressive), and offers real-time reply recommendations that adapt based on ongoing conversation dynamics', 'requirements': ['Character analysis of social media users', 'Conversation starter suggestions with multiple tone options', 'Real-time reply recommendations', 'Adaptation based on ongoing conversation dynamics'], 'tech_stack': ['RAG (Retrieval-Augmented Generation)', 'Python (under evaluation)'], 'constraints': ['Optimal programming language selection needed']}
+[2025-12-10 18:18:50] [DEBUG] socratic_rag.socratic_counselor: Processing user response (48 chars) from Themis
+[2025-12-10 18:18:50] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 13 messages)
+[2025-12-10 18:18:50] [INFO] socratic_rag.socratic_counselor: Using pre-extracted insights from direct mode confirmation
+[2025-12-10 18:18:50] [INFO] socratic_rag.socratic_counselor: Running conflict detection on new insights...
+[2025-12-10 18:19:04] [DEBUG] socratic_rag.socratic_counselor: No conflicts detected
+[2025-12-10 18:19:04] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2025-12-10 18:19:04] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2025-12-10 18:19:04] [INFO] socratic_rag.socratic_counselor: Calculating phase maturity...
+[2025-12-10 18:19:04] [INFO] socratic_rag.socratic_counselor: Phase maturity updated: 9.0%
+[2025-12-10 18:19:33] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-10 18:19:33] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 18:19:33] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 18:19:33] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #7)
+[2025-12-10 18:19:33] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 18:19:34] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: Before you settle on a programming language or LLM model, have you clarified who your actual user is...
+[2025-12-10 18:19:57] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-10 18:19:57] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 18:19:57] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 18:19:57] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #8)
+[2025-12-10 18:19:57] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 18:19:59] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: Given that you're building a system to analyze someone else's character and suggest how to approach ...
+[2025-12-10 18:20:07] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-10 18:20:07] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 18:20:07] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 18:20:07] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #9)
+[2025-12-10 18:20:07] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 18:20:09] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: Before you invest in RAG systems and LLM models, can you describe a specific scenario where your cha...
+[2025-12-10 18:20:17] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-10 18:20:17] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 18:20:17] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 18:20:17] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #10)
+[2025-12-10 18:20:17] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 18:20:19] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: Given that you're in discovery and still evaluating Python and LLM models, have you actually talked ...
+[2025-12-10 18:20:32] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-10 18:20:32] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-10 18:20:32] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-10 18:20:32] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #11)
+[2025-12-10 18:20:32] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-10 18:20:34] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What would change about how you design Moly if you discovered that most people already know *why* th...
+[2025-12-11 07:31:37] [DEBUG] socratic_rag.socratic_counselor: Extracting insights only (37 chars)
+[2025-12-11 07:31:37] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response (confirmation mode)...
+[2025-12-11 07:31:39] [DEBUG] socratic_rag.socratic_counselor: No insights extracted from response
+[2025-12-11 07:32:01] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-11 07:32:01] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-11 07:32:01] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-11 07:32:01] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #7)
+[2025-12-11 07:32:01] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-11 07:32:03] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: Before you settle on a programming language or LLM model, have you clarified *who* exactly will be u...
+[2025-12-11 07:32:29] [DEBUG] socratic_rag.socratic_counselor: Processing user response (10 chars) from Themis
+[2025-12-11 07:32:29] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 15 messages)
+[2025-12-11 07:32:29] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2025-12-11 07:32:31] [DEBUG] socratic_rag.socratic_counselor: No insights extracted from response
+[2025-12-11 07:32:31] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2025-12-11 07:32:31] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2025-12-11 07:32:31] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-11 07:32:31] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-11 07:32:31] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-11 07:32:31] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #8)
+[2025-12-11 07:32:31] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-11 07:32:32] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What would actually change in how Moly works differently if User M is trying to break the ice with s...
+[2025-12-11 07:33:21] [DEBUG] socratic_rag.socratic_counselor: Processing user response (14 chars) from Themis
+[2025-12-11 07:33:21] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 17 messages)
+[2025-12-11 07:33:21] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2025-12-11 07:33:22] [DEBUG] socratic_rag.socratic_counselor: No insights extracted from response
+[2025-12-11 07:33:22] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2025-12-11 07:33:22] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2025-12-11 07:33:22] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2025-12-11 07:33:22] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-11 07:33:22] [DEBUG] socratic_rag.socratic_counselor: Found 3 relevant knowledge items
+[2025-12-11 07:33:22] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #9)
+[2025-12-11 07:33:22] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-11 07:33:24] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: If the character analysis and conversation suggestions work the same way regardless of User M's inte...

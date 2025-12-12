@@ -10,7 +10,10 @@ from datetime import datetime
 from unittest.mock import Mock, patch
 
 import pytest
-import socrates
+
+from socratic_system.config import SocratesConfig
+from socratic_system.events.event_emitter import EventEmitter
+from socratic_system.events.event_types import EventType
 
 
 @pytest.fixture
@@ -28,7 +31,7 @@ class TestConfigPerformance:
         """Benchmark SocratesConfig creation"""
 
         def create_config():
-            return socrates.SocratesConfig(api_key=mock_api_key)
+            return SocratesConfig(api_key=mock_api_key)
 
         result = benchmark(create_config)
         assert result is not None
@@ -40,7 +43,7 @@ class TestConfigPerformance:
 
         def load_config():
             with patch.dict(os.environ, {"ANTHROPIC_API_KEY": mock_api_key}):
-                return socrates.SocratesConfig.from_env()
+                return SocratesConfig.from_env()
 
         result = benchmark(load_config)
         assert result is not None
@@ -68,11 +71,11 @@ class TestEventPerformance:
     def test_event_emission_benchmark(self, benchmark, mock_event_emitter):
         """Benchmark event emission"""
         callback = Mock()
-        mock_event_emitter.on(socrates.EventType.LOG_INFO, callback)
+        mock_event_emitter.on(EventType.LOG_INFO, callback)
 
         def emit_events():
             for i in range(100):
-                mock_event_emitter.emit(socrates.EventType.LOG_INFO, {"index": i})
+                mock_event_emitter.emit(EventType.LOG_INFO, {"index": i})
 
         benchmark(emit_events)
         assert callback.call_count == 100
@@ -83,24 +86,24 @@ class TestEventPerformance:
 
         def register_listeners():
             for callback in callbacks:
-                mock_event_emitter.on(socrates.EventType.LOG_INFO, callback)
+                mock_event_emitter.on(EventType.LOG_INFO, callback)
 
         benchmark(register_listeners)
-        assert mock_event_emitter.listener_count(socrates.EventType.LOG_INFO) == 50
+        assert mock_event_emitter.listener_count(EventType.LOG_INFO) == 50
 
     def test_listener_removal_benchmark(self, benchmark, mock_event_emitter):
         """Benchmark listener removal"""
         callbacks = [Mock() for _ in range(50)]
 
         for callback in callbacks:
-            mock_event_emitter.on(socrates.EventType.LOG_INFO, callback)
+            mock_event_emitter.on(EventType.LOG_INFO, callback)
 
         def remove_listeners():
             for callback in callbacks:
-                mock_event_emitter.remove_listener(socrates.EventType.LOG_INFO, callback)
+                mock_event_emitter.remove_listener(EventType.LOG_INFO, callback)
 
         benchmark(remove_listeners)
-        assert mock_event_emitter.listener_count(socrates.EventType.LOG_INFO) == 0
+        assert mock_event_emitter.listener_count(EventType.LOG_INFO) == 0
 
 
 @pytest.mark.slow
@@ -242,25 +245,25 @@ class TestMemoryUsage:
 
     def test_large_event_emission(self, benchmark):
         """Benchmark memory usage with many events"""
-        emitter = socrates.EventEmitter()
+        emitter = EventEmitter()
 
         def emit_many_events():
             for i in range(1000):
-                emitter.emit(socrates.EventType.LOG_INFO, {"index": i, "data": "test" * 10})
+                emitter.emit(EventType.LOG_INFO, {"index": i, "data": "test" * 10})
 
         benchmark(emit_many_events)
 
     def test_many_listeners(self, benchmark):
         """Benchmark memory with many listeners"""
-        emitter = socrates.EventEmitter()
+        emitter = EventEmitter()
 
         def register_many_listeners():
             for _i in range(100):
                 callback = Mock()
-                emitter.on(socrates.EventType.LOG_INFO, callback)
+                emitter.on(EventType.LOG_INFO, callback)
 
         benchmark(register_many_listeners)
-        assert emitter.listener_count(socrates.EventType.LOG_INFO) == 100
+        assert emitter.listener_count(EventType.LOG_INFO) == 100
 
 
 # Benchmark comparison matrix

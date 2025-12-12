@@ -3,12 +3,11 @@ Tests for utility modules - logging and datetime helpers
 """
 
 import datetime
-import logging
-from unittest.mock import MagicMock, patch
+
 import pytest
 
-from socratic_system.utils.logger import DebugLogger, get_logger, set_debug_mode, is_debug_mode
-from socratic_system.utils.datetime_helpers import serialize_datetime, deserialize_datetime
+from socratic_system.utils.datetime_helpers import deserialize_datetime, serialize_datetime
+from socratic_system.utils.logger import DebugLogger, get_logger, is_debug_mode, set_debug_mode
 
 
 @pytest.mark.unit
