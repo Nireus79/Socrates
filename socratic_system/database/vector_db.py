@@ -32,6 +32,32 @@ class VectorDatabase:
 
         self.knowledge_loaded = False  # Track if knowledge is already loaded
 
+    def _format_metadata_for_chromadb(self, metadata: Optional[Dict]) -> Dict:
+        """
+        Convert metadata to ChromaDB-compatible format.
+        ChromaDB only supports primitive types (str, int, float, bool, None).
+        Lists and dicts are converted to strings.
+        """
+        if not metadata:
+            return {}
+
+        formatted = {}
+        for key, value in metadata.items():
+            if isinstance(value, (str, int, float, bool, type(None))):
+                formatted[key] = value
+            elif isinstance(value, list):
+                # Convert lists to comma-separated strings
+                formatted[key] = ", ".join(str(v) for v in value)
+            elif isinstance(value, dict):
+                # Convert dicts to JSON string representation
+                import json
+                formatted[key] = json.dumps(value)
+            else:
+                # Convert other types to string
+                formatted[key] = str(value)
+
+        return formatted
+
     def add_knowledge(self, entry: KnowledgeEntry):
         """Add knowledge entry to vector database"""
         # FIX: Check if entry already exists before adding
@@ -53,9 +79,10 @@ class VectorDatabase:
             )
 
         try:
+            formatted_metadata = self._format_metadata_for_chromadb(entry.metadata)
             self.collection.add(
                 documents=[entry.content],
-                metadatas=[entry.metadata],
+                metadatas=[formatted_metadata],
                 ids=[entry.id],
                 embeddings=[entry.embedding],
             )
