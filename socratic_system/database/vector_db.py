@@ -84,7 +84,9 @@ class VectorDatabase:
                 # Handle file handle issues with embedding model
                 # This can happen when the model has stale file handles from test isolation issues
                 if "closed file" in str(e) or "I/O operation" in str(e):
-                    self.logger.warning(f"Embedding model has stale file handles, attempting recovery: {e}")
+                    self.logger.warning(
+                        f"Embedding model has stale file handles, attempting recovery: {e}"
+                    )
                     try:
                         # Force garbage collection to release any held file handles
                         gc.collect()
@@ -104,7 +106,9 @@ class VectorDatabase:
                             if hasattr(embedding_result, "tolist")
                             else embedding_result
                         )
-                        self.logger.info("Successfully recovered embedding model and encoded content")
+                        self.logger.info(
+                            "Successfully recovered embedding model and encoded content"
+                        )
                     except Exception as retry_error:
                         self.logger.error(f"Failed to recover embedding model: {retry_error}")
                         raise
