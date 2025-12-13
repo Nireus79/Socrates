@@ -131,9 +131,8 @@ def test_4_maturity_calculation():
     print("TEST 4: Maturity Calculation - Empty Specs")
     print("=" * 70)
 
-    import datetime
-    from socratic_system.models import ProjectContext
     from socratic_system.agents import QualityControllerAgent
+    from socratic_system.models import ProjectContext
 
     # Create a mock orchestrator with minimal setup
     class MockClaudeClient:
@@ -199,9 +198,8 @@ def test_5_maturity_with_specs():
     print("TEST 5: Maturity Calculation - With Specs")
     print("=" * 70)
 
-    import datetime
-    from socratic_system.models import ProjectContext
     from socratic_system.agents import QualityControllerAgent
+    from socratic_system.models import ProjectContext
 
     # Create a mock orchestrator with minimal setup
     class MockClaudeClient:
@@ -349,9 +347,8 @@ def test_7_advancement_verification():
     print("TEST 7: Advancement Verification")
     print("=" * 70)
 
-    import datetime
-    from socratic_system.models import ProjectContext
     from socratic_system.agents import QualityControllerAgent
+    from socratic_system.models import ProjectContext
 
     # Create a mock orchestrator with minimal setup
     class MockClaudeClient:

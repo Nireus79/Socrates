@@ -163,7 +163,7 @@ class TestAnalyticsCategoryAnalysis:
         assert isinstance(missing, dict)
         # Check if any phase has missing categories
         # (depends on what categories are defined for the weak project)
-        for phase, categories in missing.items():
+        for _phase, categories in missing.items():
             assert isinstance(categories, list)
 
     def test_category_analysis_with_zero_target(self, calculator_software):

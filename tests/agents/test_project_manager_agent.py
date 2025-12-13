@@ -151,8 +151,9 @@ class TestProjectManagerAgentCollaborators:
 
             # Configure mocks for pro tier user with existing collaborator
             orchestrator.database.load_user.return_value = pro_user
-            from socratic_system.models.role import TeamMemberRole
             from datetime import datetime
+
+            from socratic_system.models.role import TeamMemberRole
             pro_project.team_members.append(
                 TeamMemberRole(username="existing_user", role="creator", skills=[], joined_at=datetime.now())
             )
@@ -176,8 +177,9 @@ class TestProjectManagerAgentCollaborators:
 
             # Configure mocks for pro tier user with team members
             orchestrator.database.load_user.return_value = pro_user
-            from socratic_system.models.role import TeamMemberRole
             from datetime import datetime
+
+            from socratic_system.models.role import TeamMemberRole
             pro_project.team_members = [
                 TeamMemberRole(username="prouser", role="owner", skills=[], joined_at=datetime.now()),
                 TeamMemberRole(username="user1", role="creator", skills=[], joined_at=datetime.now()),
