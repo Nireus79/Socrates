@@ -37,10 +37,17 @@ class KnowledgeAddCommand(BaseCommand):
             orchestrator = context.get("orchestrator")
             project = context.get("project")
 
-            # Generate entry ID from content
+            # Generate entry ID from content (non-security use)
             import hashlib
 
-            entry_id = hashlib.md5(params["content"].encode()).hexdigest()[:12]
+            # Use MD5 for non-security purposes (content hashing for ID generation)
+            try:
+                entry_id = hashlib.md5(
+                    params["content"].encode(), usedforsecurity=False
+                ).hexdigest()[:12]
+            except TypeError:
+                # Python 3.8 doesn't support usedforsecurity parameter
+                entry_id = hashlib.md5(params["content"].encode()).hexdigest()[:12]  # nosec
 
             # Create knowledge entry
             entry = KnowledgeEntry(
@@ -364,10 +371,15 @@ class RememberCommand(BaseCommand):
             project = context.get("project")
             content = " ".join(args)
 
-            # Generate ID
+            # Generate ID (non-security use)
             import hashlib
 
-            entry_id = hashlib.md5(content.encode()).hexdigest()[:12]
+            # Use MD5 for non-security purposes (content hashing for ID generation)
+            try:
+                entry_id = hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()[:12]
+            except TypeError:
+                # Python 3.8 doesn't support usedforsecurity parameter
+                entry_id = hashlib.md5(content.encode()).hexdigest()[:12]  # nosec
 
             # Create entry
             entry = KnowledgeEntry(

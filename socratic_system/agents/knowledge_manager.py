@@ -241,4 +241,10 @@ class KnowledgeManagerAgent(Agent):
         import time
 
         timestamp = str(time.time())
-        return hashlib.md5(timestamp.encode()).hexdigest()[:12]
+        # Using MD5 for non-security purposes (just timestamp hashing)
+        # Safe for Python 3.8+ compatibility
+        try:
+            return hashlib.md5(timestamp.encode(), usedforsecurity=False).hexdigest()[:12]
+        except TypeError:
+            # Python 3.8 doesn't support usedforsecurity parameter
+            return hashlib.md5(timestamp.encode()).hexdigest()[:12]  # nosec

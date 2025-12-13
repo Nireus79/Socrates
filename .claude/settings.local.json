@@ -71,7 +71,8 @@
       "Bash(pydocstyle:*)",
       "Bash(bandit:*)",
       "Bash(git tag:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

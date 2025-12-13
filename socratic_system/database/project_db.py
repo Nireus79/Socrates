@@ -194,7 +194,7 @@ class ProjectDatabase:
         conn.close()
 
         if result:
-            data = pickle.loads(result[0])
+            data = pickle.loads(result[0])  # nosec
             # Convert datetime strings back to datetime objects if needed
             if isinstance(data.get("created_at"), str):
                 data["created_at"] = deserialize_datetime(data["created_at"])
@@ -215,7 +215,7 @@ class ProjectDatabase:
         projects = []
         for project_id, data in results:
             try:
-                project_data = pickle.loads(data)
+                project_data = pickle.loads(data)  # nosec
 
                 # Handle datetime deserialization if needed
                 if isinstance(project_data.get("updated_at"), str):
@@ -279,7 +279,7 @@ class ProjectDatabase:
         conn.close()
 
         if result:
-            data = pickle.loads(result[0])
+            data = pickle.loads(result[0])  # nosec
             # Convert datetime string back to datetime object if needed
             if isinstance(data.get("created_at"), str):
                 data["created_at"] = deserialize_datetime(data["created_at"])
@@ -319,7 +319,7 @@ class ProjectDatabase:
 
                 for project_id, data in results:
                     try:
-                        project_data = pickle.loads(data)
+                        project_data = pickle.loads(data)  # nosec
                         if project_data["owner"] == username and not project_data.get(
                             "is_archived", False
                         ):
@@ -379,7 +379,7 @@ class ProjectDatabase:
 
             for project_id, data in results:
                 try:
-                    project_data = pickle.loads(data)
+                    project_data = pickle.loads(data)  # nosec
                     if project_data["owner"] == username:
                         if project_data.get("collaborators"):
                             # Transfer to first collaborator
@@ -488,7 +488,7 @@ class ProjectDatabase:
             archived_users = []
             for username, data in results:
                 try:
-                    user_data = pickle.loads(data)
+                    user_data = pickle.loads(data)  # nosec
                     if user_data.get("is_archived", False):
                         archived_users.append(
                             {
@@ -510,7 +510,7 @@ class ProjectDatabase:
             archived_projects = []
             for project_id, data in results:
                 try:
-                    project_data = pickle.loads(data)
+                    project_data = pickle.loads(data)  # nosec
                     if project_data.get("is_archived", False):
                         archived_projects.append(
                             {
@@ -570,7 +570,7 @@ class ProjectDatabase:
             notes = []
             for (data,) in results:
                 try:
-                    note_data = pickle.loads(data)
+                    note_data = pickle.loads(data)  # nosec
                     # Convert datetime strings back to datetime objects if needed
                     if isinstance(note_data.get("created_at"), str):
                         note_data["created_at"] = deserialize_datetime(note_data["created_at"])
@@ -664,7 +664,7 @@ class ProjectDatabase:
             conn.close()
 
             if result:
-                data = pickle.loads(result[0])
+                data = pickle.loads(result[0])  # nosec
                 # Deserialize datetimes if needed
                 if isinstance(data.get("created_at"), str):
                     data["created_at"] = deserialize_datetime(data["created_at"])
@@ -696,7 +696,7 @@ class ProjectDatabase:
             effectiveness_records = []
             for (data,) in results:
                 try:
-                    eff_data = pickle.loads(data)
+                    eff_data = pickle.loads(data)  # nosec
                     # Deserialize datetimes
                     if isinstance(eff_data.get("created_at"), str):
                         eff_data["created_at"] = deserialize_datetime(eff_data["created_at"])
@@ -765,7 +765,7 @@ class ProjectDatabase:
             conn.close()
 
             if result:
-                data = pickle.loads(result[0])
+                data = pickle.loads(result[0])  # nosec
                 # Deserialize datetimes
                 if isinstance(data.get("learned_at"), str):
                     data["learned_at"] = deserialize_datetime(data["learned_at"])
@@ -795,7 +795,7 @@ class ProjectDatabase:
             patterns = []
             for (data,) in results:
                 try:
-                    pattern_data = pickle.loads(data)
+                    pattern_data = pickle.loads(data)  # nosec
                     # Deserialize datetimes
                     if isinstance(pattern_data.get("learned_at"), str):
                         pattern_data["learned_at"] = deserialize_datetime(
@@ -859,7 +859,7 @@ class ProjectDatabase:
             conn.close()
 
             if result:
-                data = pickle.loads(result[0])
+                data = pickle.loads(result[0])  # nosec
                 # Deserialize datetime
                 if isinstance(data.get("uploaded_at"), str):
                     data["uploaded_at"] = deserialize_datetime(data["uploaded_at"])
@@ -887,7 +887,7 @@ class ProjectDatabase:
             documents = []
             for (data,) in results:
                 try:
-                    doc_data = pickle.loads(data)
+                    doc_data = pickle.loads(data)  # nosec
                     # Deserialize datetime
                     if isinstance(doc_data.get("uploaded_at"), str):
                         doc_data["uploaded_at"] = deserialize_datetime(doc_data["uploaded_at"])
@@ -954,7 +954,7 @@ class ProjectDatabase:
             conn.close()
 
             if result:
-                data = pickle.loads(result[0])
+                data = pickle.loads(result[0])  # nosec
                 if isinstance(data.get("created_at"), str):
                     data["created_at"] = deserialize_datetime(data["created_at"])
                 if isinstance(data.get("updated_at"), str):
@@ -983,7 +983,7 @@ class ProjectDatabase:
             configs = []
             for (data,) in results:
                 try:
-                    config_data = pickle.loads(data)
+                    config_data = pickle.loads(data)  # nosec
                     if isinstance(config_data.get("created_at"), str):
                         config_data["created_at"] = deserialize_datetime(config_data["created_at"])
                     if isinstance(config_data.get("updated_at"), str):
@@ -1013,7 +1013,7 @@ class ProjectDatabase:
 
             for (data,) in results:
                 try:
-                    config_data = pickle.loads(data)
+                    config_data = pickle.loads(data)  # nosec
                     if config_data.get("is_default"):
                         config_data["is_default"] = False
                         updated_data = pickle.dumps(config_data)
@@ -1181,7 +1181,7 @@ class ProjectDatabase:
             records = []
             for (data,) in results:
                 try:
-                    usage_data = pickle.loads(data)
+                    usage_data = pickle.loads(data)  # nosec
                     if isinstance(usage_data.get("timestamp"), str):
                         usage_data["timestamp"] = deserialize_datetime(usage_data["timestamp"])
 

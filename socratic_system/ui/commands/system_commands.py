@@ -134,7 +134,7 @@ class ClearCommand(BaseCommand):
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute clear command"""
-        os.system("cls" if os.name == "nt" else "clear")
+        os.system("cls" if os.name == "nt" else "clear")  # nosec - command is hardcoded
         return self.success()
 
 

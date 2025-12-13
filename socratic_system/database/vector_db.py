@@ -170,10 +170,15 @@ class VectorDatabase:
         if metadata is None:
             metadata = {}
 
-        # Generate unique ID based on content hash
+        # Generate unique ID based on content hash (non-security use)
         import hashlib
 
-        content_id = hashlib.md5(content.encode()).hexdigest()[:8]
+        # Use MD5 for non-security purposes (content hashing for ID generation)
+        try:
+            content_id = hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()[:8]
+        except TypeError:
+            # Python 3.8 doesn't support usedforsecurity parameter
+            content_id = hashlib.md5(content.encode()).hexdigest()[:8]  # nosec
 
         # Create knowledge entry
         entry = KnowledgeEntry(
