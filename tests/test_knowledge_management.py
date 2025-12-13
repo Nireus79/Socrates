@@ -19,13 +19,26 @@ def temp_vector_db():
     temp_dir = tempfile.mkdtemp()
     db = VectorDatabase(temp_dir)
     yield db
-    # Cleanup - ensure client is closed before removing directory
+    # Cleanup - ensure all resources are properly released
     try:
+        # Close the embedding model to release file handles
+        if hasattr(db, "embedding_model") and db.embedding_model is not None:
+            try:
+                # SentenceTransformer doesn't have a standard close method,
+                # but we can help garbage collection by dereferencing
+                db.embedding_model = None
+            except Exception:
+                pass
+    except Exception:
+        pass
+    try:
+        # Close the ChromaDB client
         if hasattr(db, "client") and db.client is not None:
             db.client.close()
     except Exception:
         pass
     finally:
+        # Remove the temporary directory
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 

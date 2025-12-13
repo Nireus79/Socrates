@@ -2,6 +2,7 @@
 Vector database for knowledge management in Socratic RAG System
 """
 
+import gc
 import logging
 from typing import Dict, List, Optional
 
@@ -72,12 +73,43 @@ class VectorDatabase:
             self.logger.debug(f"Entry '{entry.id}' not found or invalid query, will proceed: {e}")
 
         if not entry.embedding:
-            embedding_result = self.embedding_model.encode(entry.content)
-            entry.embedding = (
-                embedding_result.tolist()
-                if hasattr(embedding_result, "tolist")
-                else embedding_result
-            )
+            try:
+                embedding_result = self.embedding_model.encode(entry.content)
+                entry.embedding = (
+                    embedding_result.tolist()
+                    if hasattr(embedding_result, "tolist")
+                    else embedding_result
+                )
+            except (ValueError, RuntimeError, OSError) as e:
+                # Handle file handle issues with embedding model
+                # This can happen when the model has stale file handles from test isolation issues
+                if "closed file" in str(e) or "I/O operation" in str(e):
+                    self.logger.warning(f"Embedding model has stale file handles, attempting recovery: {e}")
+                    try:
+                        # Force garbage collection to release any held file handles
+                        gc.collect()
+
+                        # Clear the old model reference
+                        if hasattr(self, "embedding_model"):
+                            del self.embedding_model
+
+                        # Reload the embedding model fresh
+                        self.logger.debug("Reloading embedding model after garbage collection")
+                        self.embedding_model = SentenceTransformer(self.embedding_model_name)
+
+                        # Retry the encoding
+                        embedding_result = self.embedding_model.encode(entry.content)
+                        entry.embedding = (
+                            embedding_result.tolist()
+                            if hasattr(embedding_result, "tolist")
+                            else embedding_result
+                        )
+                        self.logger.info("Successfully recovered embedding model and encoded content")
+                    except Exception as retry_error:
+                        self.logger.error(f"Failed to recover embedding model: {retry_error}")
+                        raise
+                else:
+                    raise
 
         try:
             formatted_metadata = self._format_metadata_for_chromadb(entry.metadata)

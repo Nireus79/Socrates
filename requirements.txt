@@ -1,20 +1,9 @@
 # Socratic RAG System Requirements
+# This file matches dependencies in pyproject.toml
 
 # Core dependencies
-anthropic>=0.7.0
-chromadb>=0.3.0
-sentence-transformers>=2.2.0
-PyPDF2>=3.0.0
-
-# UI and formatting
-colorama>=0.4.6
-
-# Python standard library (included, listed for reference)
-# sqlite3
-# uuid
-# datetime
-# json
-# pickle
-# threading
-# hashlib
-# getpass
+anthropic>=0.40.0
+chromadb>=0.5.0
+sentence-transformers>=3.0.0
+pypdf>=4.0.0
+python-dateutil>=2.8.0

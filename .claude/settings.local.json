@@ -69,7 +69,9 @@
       "Bash(timeout 180 python -m pytest:*)",
       "Bash(mypy:*)",
       "Bash(pydocstyle:*)",
-      "Bash(bandit:*)"
+      "Bash(bandit:*)",
+      "Bash(git tag:*)",
+      "Bash(git fetch:*)"
     ],
     "deny": [],
     "ask": []
