@@ -21,6 +21,7 @@ if sys.platform == "win32" and not _is_pycharm_ide:
 
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
+from socratic_system.config import SocratesConfig
 from socratic_system.models import ProjectContext, ProjectNote, User
 from socratic_system.orchestration import AgentOrchestrator
 from socratic_system.ui.command_handler import CommandHandler
@@ -71,7 +72,6 @@ def orchestrator(temp_data_dir):
     with patch.dict(os.environ, {"API_KEY_CLAUDE": "test-key", "SOCRATES_DATA_DIR": temp_data_dir}):
         with patch("socratic_system.orchestration.orchestrator.ClaudeClient"):
             with patch("socratic_system.orchestration.orchestrator.VectorDatabase"):
-                from socratic_system.config import SocratesConfig
                 config = SocratesConfig.from_env()
                 orch = AgentOrchestrator(config)
                 orch.claude_client = MagicMock()
