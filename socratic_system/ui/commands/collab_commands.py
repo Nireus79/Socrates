@@ -283,19 +283,12 @@ class CollabRoleCommand(BaseCommand):
         if not self.require_project(context):
             return self.error("No project loaded")
 
-        if not self.validate_args(args, min_count=2):
-            print(f"{Fore.YELLOW}Available roles: {', '.join(VALID_ROLES)}")
-            username = input(f"{Fore.WHITE}Username: ").strip()
-            new_role = input(f"{Fore.WHITE}New role: ").strip()
-        else:
-            username = args[0]
-            new_role = args[1]
+        username, new_role = self._get_username_and_role(args)
 
         if not username or not new_role:
             return self.error("Username and role cannot be empty")
 
-        # Validate role
-        if new_role not in VALID_ROLES:
+        if not self._validate_role(new_role):
             return self.error(f"Invalid role '{new_role}'. Valid roles: {', '.join(VALID_ROLES)}")
 
         orchestrator = context.get("orchestrator")
@@ -305,21 +298,13 @@ class CollabRoleCommand(BaseCommand):
         if not orchestrator or not project or not user:
             return self.error("Required context not available")
 
-        # Only owner can change roles
         if user.username != project.owner:
             return self.error("Only the project owner can change roles")
 
-        # Find team member to verify exists
-        member_found = False
-        for member in project.team_members or []:
-            if member.username == username:
-                member_found = True
-                break
+        member_error = self._verify_member_exists(username, project)
+        if member_error:
+            return self.error(member_error)
 
-        if not member_found:
-            return self.error(f"User '{username}' is not a team member in this project")
-
-        # Update role
         result = orchestrator.process_request(
             "project_manager",
             {
@@ -332,12 +317,31 @@ class CollabRoleCommand(BaseCommand):
 
         if result["status"] == "success":
             self.print_success(f"Updated '{username}' role to {new_role}!")
-
-            # Save project
             orchestrator.process_request(
                 "project_manager", {"action": "save_project", "project": project}
             )
-
             return self.success(data={"username": username, "new_role": new_role})
         else:
             return self.error(result.get("message", "Failed to update role"))
+
+    def _get_username_and_role(self, args: List[str]) -> tuple:
+        """Get username and role from args or interactive input"""
+        if self.validate_args(args, min_count=2):
+            username = args[0]
+            new_role = args[1]
+        else:
+            print(f"{Fore.YELLOW}Available roles: {', '.join(VALID_ROLES)}")
+            username = input(f"{Fore.WHITE}Username: ").strip()
+            new_role = input(f"{Fore.WHITE}New role: ").strip()
+        return username, new_role
+
+    def _validate_role(self, role: str) -> bool:
+        """Validate role against VALID_ROLES"""
+        return role in VALID_ROLES
+
+    def _verify_member_exists(self, username: str, project) -> str:
+        """Verify member exists in project. Returns error message or empty string if valid"""
+        for member in project.team_members or []:
+            if member.username == username:
+                return ""
+        return f"User '{username}' is not a team member in this project"

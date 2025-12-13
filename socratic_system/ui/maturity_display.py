@@ -81,12 +81,25 @@ class MaturityDisplay:
         weakest = maturity.get("weakest_categories", [])
         missing = maturity.get("missing_categories", [])
 
-        # Header
+        MaturityDisplay._print_header(phase)
+        MaturityDisplay._print_overall_summary(score, total_specs, is_ready)
+        MaturityDisplay._format_category_breakdown(category_scores)
+        MaturityDisplay._display_strengths(strongest, category_scores)
+        MaturityDisplay._display_weaknesses(weakest, category_scores)
+        MaturityDisplay._display_missing_coverage(missing)
+        MaturityDisplay._display_recommendations(score, missing, weakest)
+        MaturityDisplay._print_footer()
+
+    @staticmethod
+    def _print_header(phase: str) -> None:
+        """Print report header."""
         print(f"\n{Fore.CYAN}{'=' * 65}")
         print(f"{phase.upper()} PHASE MATURITY REPORT")
         print(f"{'=' * 65}{Style.RESET_ALL}\n")
 
-        # Overall summary
+    @staticmethod
+    def _print_overall_summary(score: float, total_specs: int, is_ready: bool) -> None:
+        """Print overall maturity summary."""
         status = "Ready to Advance" if is_ready else "Needs More Work"
         ready_color = Fore.GREEN if is_ready else Fore.RED
         print(f"Overall Maturity: {Fore.CYAN}{score:.1f}%{Style.RESET_ALL}")
@@ -94,7 +107,9 @@ class MaturityDisplay:
         print(f"Status: {ready_color}{status}{Style.RESET_ALL}")
         print("Threshold for Advancement: 60%\n")
 
-        # Category breakdown with bars
+    @staticmethod
+    def _format_category_breakdown(category_scores: Dict) -> None:
+        """Display category breakdown with progress bars."""
         print(f"{Fore.CYAN}Category Breakdown:{Style.RESET_ALL}")
         print(f"{'Category':<25} {'Progress':<35} {'Score':<15} {'Specs':<6}")
         print(f"{'-' * 80}")
@@ -106,15 +121,7 @@ class MaturityDisplay:
             target = cat_data.get("target_score", 0.0)
             spec_count = cat_data.get("spec_count", 0)
 
-            # Color based on percentage
-            if percentage >= 80:
-                color = Fore.GREEN
-            elif percentage >= 50:
-                color = Fore.YELLOW
-            else:
-                color = Fore.RED
-
-            # Progress bar (20 chars wide)
+            color = MaturityDisplay._get_percentage_color(percentage)
             bar_width = 20
             filled = int((percentage / 100) * bar_width)
             bar = "█" * filled + "░" * (bar_width - filled)
@@ -125,7 +132,18 @@ class MaturityDisplay:
                 f"{spec_count:3} specs"
             )
 
-        # Strengths
+    @staticmethod
+    def _get_percentage_color(percentage: float) -> str:
+        """Get color for percentage value."""
+        if percentage >= 80:
+            return Fore.GREEN
+        if percentage >= 50:
+            return Fore.YELLOW
+        return Fore.RED
+
+    @staticmethod
+    def _display_strengths(strongest: List[str], category_scores: Dict) -> None:
+        """Display strongest areas."""
         if strongest:
             print(f"\n{Fore.GREEN}Strongest Areas (>80% complete):{Style.RESET_ALL}")
             for category in strongest:
@@ -133,7 +151,9 @@ class MaturityDisplay:
                     pct = category_scores[category].get("percentage", 0.0)
                     print(f"  {Fore.GREEN}✓{Style.RESET_ALL} {category} ({pct:.1f}%)")
 
-        # Weaknesses
+    @staticmethod
+    def _display_weaknesses(weakest: List[str], category_scores: Dict) -> None:
+        """Display weakest areas."""
         if weakest:
             print(f"\n{Fore.YELLOW}Areas Needing Attention (<50% complete):{Style.RESET_ALL}")
             for category in weakest:
@@ -141,16 +161,31 @@ class MaturityDisplay:
                     pct = category_scores[category].get("percentage", 0.0)
                     print(f"  {Fore.YELLOW}•{Style.RESET_ALL} {category} ({pct:.1f}%)")
 
-        # Missing coverage
+    @staticmethod
+    def _display_missing_coverage(missing: List[str]) -> None:
+        """Display missing coverage."""
         if missing:
             print(f"\n{Fore.RED}Missing Coverage (no specifications):{Style.RESET_ALL}")
-            # Group by 3 per line for readability
             for i in range(0, len(missing), 3):
                 categories = missing[i : i + 3]
                 print(f"  {Fore.RED}✗{Style.RESET_ALL} " + ", ".join(categories))
 
-        # Recommendations
+    @staticmethod
+    def _display_recommendations(score: float, missing: List[str], weakest: List[str]) -> None:
+        """Display recommendations based on maturity scores."""
         print(f"\n{Fore.CYAN}Recommendations:{Style.RESET_ALL}")
+        MaturityDisplay._print_score_recommendation(score)
+
+        if missing:
+            print(f"  • Focus on these missing categories: " f"{', '.join(missing[:3])}")
+
+        if weakest:
+            weak_categories = ", ".join(weakest[:3])
+            print(f"  • Strengthen these weak areas: {weak_categories}")
+
+    @staticmethod
+    def _print_score_recommendation(score: float) -> None:
+        """Print recommendation based on score."""
         if score < 40:
             print(
                 "  • Phase maturity is low. Consider answering more questions "
@@ -164,13 +199,9 @@ class MaturityDisplay:
         else:
             print("  • Phase maturity is good. Ready to advance to next phase.")
 
-        if missing:
-            print(f"  • Focus on these missing categories: " f"{', '.join(missing[:3])}")
-
-        if weakest:
-            weak_categories = ", ".join(weakest[:3])
-            print(f"  • Strengthen these weak areas: {weak_categories}")
-
+    @staticmethod
+    def _print_footer() -> None:
+        """Print report footer."""
         print(f"\n{Fore.CYAN}{'=' * 65}{Style.RESET_ALL}\n")
 
     @staticmethod

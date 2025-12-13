@@ -39,66 +39,75 @@ class ChatCommand(BaseCommand):
             if not category_values:
                 continue
 
-            # Format values for display
-            if isinstance(category_values, list):
-                values_str = "\n    ".join([f"• {v}" for v in category_values if v])
-            else:
-                values_str = str(category_values)
-
+            values_str = self._format_category_values(category_values)
             print(f"{Fore.GREEN}{category_name}:{Style.RESET_ALL}")
             print(f"    {values_str}\n")
 
-            while True:
-                print(f"{Fore.YELLOW}Options:{Style.RESET_ALL}")
-                print("  (y)es - Keep this insight")
-                print("  (n)o - Skip this insight")
-                print("  (e)xplain - Get explanation for this insight")
-                print(f"  (c)ustom - Write custom {category_name.lower()}")
-                print(f"  {Fore.YELLOW}Choice: {Style.RESET_ALL}", end="")
+            confirmed_value = self._process_insight_choice(
+                category_name, category_values, orchestrator
+            )
+            if confirmed_value is not None:
+                confirmed_insights[category_key] = confirmed_value
 
-                choice = input(f"{Fore.WHITE}").strip().lower()
+        return self._return_confirmed_insights(confirmed_insights)
 
-                if choice in ["y", "yes"]:
-                    confirmed_insights[category_key] = category_values
-                    print(f"{Fore.GREEN}✓ {category_name} confirmed{Style.RESET_ALL}\n")
-                    break
+    def _format_category_values(self, category_values) -> str:
+        """Format category values for display"""
+        if isinstance(category_values, list):
+            return "\n    ".join([f"• {v}" for v in category_values if v])
+        return str(category_values)
 
-                elif choice in ["n", "no"]:
-                    print(f"{Fore.MAGENTA}✗ {category_name} skipped{Style.RESET_ALL}\n")
-                    break
+    def _process_insight_choice(self, category_name: str, category_values, orchestrator):
+        """Process user's choice for a single insight. Returns confirmed value or None."""
+        while True:
+            choice = self._get_user_choice(category_name)
 
-                elif choice in ["e", "explain"]:
-                    explanation = self._get_insight_explanation(
-                        category_name, category_values, orchestrator
-                    )
-                    print(f"\n{Fore.CYAN}Explanation:{Style.RESET_ALL}")
-                    print(f"{Fore.WHITE}{explanation}{Style.RESET_ALL}\n")
-                    # Continue loop to ask again
+            if choice in ["y", "yes"]:
+                print(f"{Fore.GREEN}✓ {category_name} confirmed{Style.RESET_ALL}\n")
+                return category_values
 
-                elif choice in ["c", "custom"]:
-                    print(
-                        f"{Fore.CYAN}Enter custom {category_name.lower()} (comma-separated):{Style.RESET_ALL}"
-                    )
-                    custom_input = input(f"{Fore.WHITE}> ").strip()
-                    if custom_input:
-                        # Parse comma-separated input
-                        custom_values = [
-                            item.strip() for item in custom_input.split(",") if item.strip()
-                        ]
-                        confirmed_insights[category_key] = custom_values
-                        print(
-                            f"{Fore.GREEN}✓ Custom {category_name.lower()} added{Style.RESET_ALL}\n"
-                        )
-                    else:
-                        print(f"{Fore.MAGENTA}✗ No input provided, skipping{Style.RESET_ALL}\n")
-                    break
+            if choice in ["n", "no"]:
+                print(f"{Fore.MAGENTA}✗ {category_name} skipped{Style.RESET_ALL}\n")
+                return None
 
-                else:
-                    print(
-                        f"{Fore.RED}Invalid choice. Please enter y, n, e, or c{Style.RESET_ALL}\n"
-                    )
+            if choice in ["e", "explain"]:
+                explanation = self._get_insight_explanation(
+                    category_name, category_values, orchestrator
+                )
+                print(f"\n{Fore.CYAN}Explanation:{Style.RESET_ALL}")
+                print(f"{Fore.WHITE}{explanation}{Style.RESET_ALL}\n")
+                continue
 
-        # Return None if no insights were confirmed
+            if choice in ["c", "custom"]:
+                custom_value = self._get_custom_values(category_name)
+                if custom_value is not None:
+                    print(f"{Fore.GREEN}✓ Custom {category_name.lower()} added{Style.RESET_ALL}\n")
+                    return custom_value
+                print(f"{Fore.MAGENTA}✗ No input provided, skipping{Style.RESET_ALL}\n")
+                return None
+
+            print(f"{Fore.RED}Invalid choice. Please enter y, n, e, or c{Style.RESET_ALL}\n")
+
+    def _get_user_choice(self, category_name: str) -> str:
+        """Get user's choice for insight confirmation"""
+        print(f"{Fore.YELLOW}Options:{Style.RESET_ALL}")
+        print("  (y)es - Keep this insight")
+        print("  (n)o - Skip this insight")
+        print("  (e)xplain - Get explanation for this insight")
+        print(f"  (c)ustom - Write custom {category_name.lower()}")
+        print(f"  {Fore.YELLOW}Choice: {Style.RESET_ALL}", end="")
+        return input(f"{Fore.WHITE}").strip().lower()
+
+    def _get_custom_values(self, category_name: str):
+        """Get custom values from user. Returns list or None."""
+        print(f"{Fore.CYAN}Enter custom {category_name.lower()} (comma-separated):{Style.RESET_ALL}")
+        custom_input = input(f"{Fore.WHITE}> ").strip()
+        if custom_input:
+            return [item.strip() for item in custom_input.split(",") if item.strip()]
+        return None
+
+    def _return_confirmed_insights(self, confirmed_insights: Dict):
+        """Return confirmed insights or None if empty"""
         if not confirmed_insights:
             return None
 
@@ -107,7 +116,6 @@ class ChatCommand(BaseCommand):
             f"Summary: {len(confirmed_insights)} insight category/categories confirmed{Style.RESET_ALL}"
         )
         print(f"{Fore.GREEN}{'='*60}{Style.RESET_ALL}\n")
-
         return confirmed_insights
 
     def _get_insight_explanation(self, category_name: str, values, orchestrator) -> str:
@@ -215,38 +223,40 @@ Focus on the connection between the user's statement and these insights."""
             session_context: 'in_session' or 'out_of_session'
             pre_extracted_insights: If provided, use these insights instead of extracting
         """
-        # Don't process if out-of-session (only process in-session)
         if session_context == "out_of_session":
             return
 
-        # In direct mode, extract insights first and ask for confirmation
         if mode == "direct" and pre_extracted_insights is None:
-            # First, extract insights only
-            extraction_result = orchestrator.process_request(
-                "socratic_counselor",
-                {
-                    "action": "extract_insights_only",
-                    "project": project,
-                    "response": response,
-                },
-            )
+            pre_extracted_insights = self._handle_direct_mode_insights(response, orchestrator, project)
+            if pre_extracted_insights is None:
+                return
 
-            if extraction_result["status"] == "success" and extraction_result.get("insights"):
-                insights = extraction_result["insights"]
+        self._process_and_save_response(response, orchestrator, project, user, pre_extracted_insights)
 
-                # Show and confirm insights with detailed options
-                pre_extracted_insights = self._confirm_insights_interactive(insights, orchestrator)
+    def _handle_direct_mode_insights(self, response: str, orchestrator, project):
+        """Extract and confirm insights in direct mode. Returns confirmed insights or None."""
+        extraction_result = orchestrator.process_request(
+            "socratic_counselor",
+            {
+                "action": "extract_insights_only",
+                "project": project,
+                "response": response,
+            },
+        )
 
-                if pre_extracted_insights is None:
-                    # User rejected all insights
-                    print(f"{Fore.MAGENTA}All insights discarded.{Style.RESET_ALL}")
-                    return
-            else:
-                # No insights extracted, skip further processing
-                if not extraction_result.get("insights"):
-                    return
+        if extraction_result["status"] != "success" or not extraction_result.get("insights"):
+            return None
 
-        # Now process the response
+        insights = extraction_result["insights"]
+        pre_extracted_insights = self._confirm_insights_interactive(insights, orchestrator)
+
+        if pre_extracted_insights is None:
+            print(f"{Fore.MAGENTA}All insights discarded.{Style.RESET_ALL}")
+
+        return pre_extracted_insights
+
+    def _process_and_save_response(self, response: str, orchestrator, project, user, pre_extracted_insights) -> None:
+        """Process response and save project. Handles result status and feedback."""
         request_data = {
             "action": "process_response",
             "project": project,
@@ -254,25 +264,25 @@ Focus on the connection between the user's statement and these insights."""
             "current_user": user.username,
         }
 
-        # If insights were pre-extracted in direct mode, pass them to avoid re-extraction
         if pre_extracted_insights is not None:
             request_data["pre_extracted_insights"] = pre_extracted_insights
 
         result = orchestrator.process_request("socratic_counselor", request_data)
 
-        if result["status"] == "success":
-            if result.get("conflicts_pending"):
-                self.print_warning("Some specifications were not added due to conflicts")
-            elif result.get("insights"):
-                self.print_success("Insights captured and integrated!")
-
-            save_result = orchestrator.process_request(
-                "project_manager", {"action": "save_project", "project": project}
-            )
-            if save_result["status"] != "success":
-                self.print_error("Failed to save project")
-        else:
+        if result["status"] != "success":
             self.print_error(result.get("message", "Error processing response"))
+            return
+
+        if result.get("conflicts_pending"):
+            self.print_warning("Some specifications were not added due to conflicts")
+        elif result.get("insights"):
+            self.print_success("Insights captured and integrated!")
+
+        save_result = orchestrator.process_request(
+            "project_manager", {"action": "save_project", "project": project}
+        )
+        if save_result["status"] != "success":
+            self.print_error("Failed to save project")
 
     def _generate_direct_answer(self, question: str, orchestrator, project) -> str:
         """Generate a direct answer to user's question with vector DB search"""

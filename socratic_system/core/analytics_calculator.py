@@ -555,7 +555,15 @@ class AnalyticsCalculator:
         if velocity > 0:
             insights.append(f"Steady growth with velocity of {velocity:.1f} points per session")
 
-        # Check for plateaus
+        self._detect_plateaus(qa_events, insights)
+        self._detect_acceleration(qa_events, velocity, insights)
+
+        result = insights if insights else ["No significant patterns detected yet"]
+        logger.debug(f"Generated {len(result)} insights")
+        return result
+
+    def _detect_plateaus(self, qa_events: List[Dict], insights: List[str]) -> None:
+        """Detect plateau patterns in Q&A events and add to insights."""
         plateaus = []
         consecutive_low = 0
         plateau_start = None
@@ -572,16 +580,14 @@ class AnalyticsCalculator:
                 consecutive_low = 0
 
         if plateaus:
-            for start, duration in plateaus[:1]:  # Show first plateau
-                insights.append(f"Plateau detected at Q{start} for {duration} sessions")
-                logger.debug(f"Detected plateau: Q{start} for {duration} sessions")
+            start, duration = plateaus[0]  # Show first plateau
+            insights.append(f"Plateau detected at Q{start} for {duration} sessions")
+            logger.debug(f"Detected plateau: Q{start} for {duration} sessions")
 
+    def _detect_acceleration(self, qa_events: List[Dict], velocity: float, insights: List[str]) -> None:
+        """Detect acceleration patterns in recent Q&A events and add to insights."""
         if len(qa_events) >= 5:
             recent_deltas = [e.get("delta", 0) for e in qa_events[-3:]]
             if all(d > velocity for d in recent_deltas):
                 insights.append("Recent acceleration in progress")
                 logger.debug("Detected recent acceleration in progress")
-
-        result = insights if insights else ["No significant patterns detected yet"]
-        logger.debug(f"Generated {len(result)} insights")
-        return result
