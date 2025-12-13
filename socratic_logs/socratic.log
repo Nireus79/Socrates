@@ -2137,3 +2137,303 @@ ValueError: Test exception
 [2025-12-12 18:41:40] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
 [2025-12-12 18:41:40] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
 [2025-12-12 18:41:40] [WARNING] socratic_rag.socratic_counselor: Failed to generate dynamic question: API Error, falling back to static
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:48:55] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 18:49:34] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2025-12-12 18:49:34] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 18:49:34] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 18:49:34] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for design phase (question #2)
+[2025-12-12 18:49:34] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for design phase
+[2025-12-12 18:49:34] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What are your primary goals for this project?...
+[2025-12-12 18:49:34] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 18:49:34] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 18:49:34] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2025-12-12 18:49:34] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-12 18:49:34] [WARNING] socratic_rag.socratic_counselor: Failed to generate dynamic question: API Error, falling back to static
+[2025-12-12 18:58:26] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2025-12-12 18:58:26] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 18:58:26] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 18:58:26] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for design phase (question #2)
+[2025-12-12 18:58:26] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for design phase
+[2025-12-12 18:58:26] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What are your primary goals for this project?...
+[2025-12-12 18:58:26] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 18:58:26] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 18:58:26] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2025-12-12 18:58:26] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-12 18:58:26] [WARNING] socratic_rag.socratic_counselor: Failed to generate dynamic question: API Error, falling back to static
+[2025-12-12 19:08:49] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:49] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:49] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:49] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:49] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:49] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:49] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:49] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:49] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:49] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:49] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:49] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:49] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:49] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:08:50] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 19:27:33] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2025-12-12 19:27:33] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 19:27:33] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 19:27:33] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for design phase (question #2)
+[2025-12-12 19:27:33] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for design phase
+[2025-12-12 19:27:33] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What are your primary goals for this project?...
+[2025-12-12 19:27:33] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 19:27:33] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 19:27:33] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2025-12-12 19:27:33] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-12 19:27:33] [WARNING] socratic_rag.socratic_counselor: Failed to generate dynamic question: API Error, falling back to static
+[2025-12-12 19:27:53] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2025-12-12 19:27:53] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 19:27:53] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 19:27:53] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for design phase (question #2)
+[2025-12-12 19:27:53] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for design phase
+[2025-12-12 19:27:53] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What are your primary goals for this project?...
+[2025-12-12 19:27:53] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 19:27:53] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 19:27:53] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2025-12-12 19:27:53] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-12 19:27:53] [WARNING] socratic_rag.socratic_counselor: Failed to generate dynamic question: API Error, falling back to static
+[2025-12-12 19:32:05] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2025-12-12 19:32:05] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 19:32:05] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 19:32:05] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for design phase (question #2)
+[2025-12-12 19:32:05] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for design phase
+[2025-12-12 19:32:05] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What are your primary goals for this project?...
+[2025-12-12 19:32:05] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 19:32:05] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 19:32:05] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2025-12-12 19:32:05] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-12 19:32:05] [WARNING] socratic_rag.socratic_counselor: Failed to generate dynamic question: API Error, falling back to static
+[2025-12-12 21:35:40] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2025-12-12 21:35:40] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 21:35:40] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 21:35:40] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for design phase (question #2)
+[2025-12-12 21:35:40] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for design phase
+[2025-12-12 21:35:40] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What are your primary goals for this project?...
+[2025-12-12 21:35:40] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 21:35:40] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 21:35:40] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2025-12-12 21:35:40] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-12 21:35:40] [WARNING] socratic_rag.socratic_counselor: Failed to generate dynamic question: API Error, falling back to static
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:41:35] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 21:56:26] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2025-12-12 21:56:26] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 21:56:26] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 21:56:26] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for design phase (question #2)
+[2025-12-12 21:56:26] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for design phase
+[2025-12-12 21:56:26] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What are your primary goals for this project?...
+[2025-12-12 21:56:26] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 21:56:26] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 21:56:26] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2025-12-12 21:56:26] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-12 21:56:26] [WARNING] socratic_rag.socratic_counselor: Failed to generate dynamic question: API Error, falling back to static
+[2025-12-12 21:58:31] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2025-12-12 21:58:31] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 21:58:31] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 21:58:31] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for design phase (question #2)
+[2025-12-12 21:58:31] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for design phase
+[2025-12-12 21:58:31] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What are your primary goals for this project?...
+[2025-12-12 21:58:31] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 21:58:31] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 21:58:31] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2025-12-12 21:58:31] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-12 21:58:31] [WARNING] socratic_rag.socratic_counselor: Failed to generate dynamic question: API Error, falling back to static
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:02:03] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode ENABLED - all operations will be logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:04:04] [INFO] socratic_rag.system: Debug mode DISABLED - only important operations logged
+[2025-12-12 22:09:22] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2025-12-12 22:09:22] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 22:09:22] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 22:09:22] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for design phase (question #2)
+[2025-12-12 22:09:22] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for design phase
+[2025-12-12 22:09:22] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What are your primary goals for this project?...
+[2025-12-12 22:09:22] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-12 22:09:22] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-12 22:09:22] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2025-12-12 22:09:22] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-12 22:09:22] [WARNING] socratic_rag.socratic_counselor: Failed to generate dynamic question: API Error, falling back to static
+[2025-12-13 07:35:42] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2025-12-13 07:35:42] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-13 07:35:42] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-13 07:35:42] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for design phase (question #2)
+[2025-12-13 07:35:42] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for design phase
+[2025-12-13 07:35:42] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What are your primary goals for this project?...
+[2025-12-13 07:35:42] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-13 07:35:42] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-13 07:35:42] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2025-12-13 07:35:42] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-13 07:35:42] [WARNING] socratic_rag.socratic_counselor: Failed to generate dynamic question: API Error, falling back to static
+[2025-12-13 08:35:49] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2025-12-13 08:35:49] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-13 08:35:49] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-13 08:35:49] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for design phase (question #2)
+[2025-12-13 08:35:49] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for design phase
+[2025-12-13 08:35:49] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What are your primary goals for this project?...
+[2025-12-13 08:35:49] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-13 08:35:49] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-13 08:35:49] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2025-12-13 08:35:49] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-13 08:35:49] [WARNING] socratic_rag.socratic_counselor: Failed to generate dynamic question: API Error, falling back to static

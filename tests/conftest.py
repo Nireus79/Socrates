@@ -13,68 +13,72 @@ from unittest.mock import MagicMock
 
 import pytest
 
-# Fix for Windows file handle closure issue with pytest 9.x
-# Issue: https://github.com/pytest-dev/pytest/issues/9920
-# When running on Windows, pytest closes the capture file prematurely,
-# causing "ValueError: I/O operation on closed file" during cleanup.
+# Check if running in PyCharm (IDE) or other test runners
+# PyCharm sets PYCHARM_MATPLOTLIB_INTERACTIVE or has specific pytest mode indicators
+_is_pycharm = "PYCHARM_MATPLOTLIB_INTERACTIVE" in sys.modules or "PYCHARM_PYPLOT_INTERACTIVE" in sys.modules
+_is_ide = sys.stdout.__class__.__name__ == "PyCharmOutput" or hasattr(sys.stdout, "_stream")
 
-# Patch builtins.print to handle closed file errors gracefully
-_original_print = builtins.print
+# Only apply patches when NOT running in PyCharm IDE
+if not (_is_pycharm or _is_ide):
+    # Fix for Windows file handle closure issue with pytest 9.x
+    # Issue: https://github.com/pytest-dev/pytest/issues/9920
+    # When running on Windows, pytest closes the capture file prematurely,
+    # causing "ValueError: I/O operation on closed file" during cleanup.
 
+    # Patch builtins.print to handle closed file errors gracefully
+    _original_print = builtins.print
 
-def _patched_print(*args, **kwargs):
-    """Patched print() that handles closed file errors gracefully."""
-    try:
-        return _original_print(*args, **kwargs)
-    except ValueError as e:
-        if "closed file" in str(e) or "I/O operation on closed file" in str(e):
-            # File is closed, skip printing (likely in test cleanup or when stdout was redirected)
-            # Don't raise an error - just skip printing silently
-            return
-        # If it's a different ValueError, re-raise it
-        raise
-    except Exception:
-        # For any other exception, let it propagate
-        raise
-
-
-builtins.print = _patched_print
-
-
-# Patch pytest.capture.FDCapture methods to handle closed files gracefully
-try:
-    from _pytest.capture import FDCapture
-
-    _original_snap = FDCapture.snap
-    _original_resume = FDCapture.resume
-
-    def _patched_snap(self):
-        """Patched snap() that handles already-closed files."""
+    def _patched_print(*args, **kwargs):
+        """Patched print() that handles closed file errors gracefully."""
         try:
-            # Try original snap
-            return _original_snap(self)
+            return _original_print(*args, **kwargs)
         except ValueError as e:
-            if "closed file" in str(e):
-                # File is already closed, return empty string
-                return ""
-            raise
-
-    def _patched_resume(self):
-        """Patched resume() that handles already-closed files."""
-        try:
-            # Try original resume
-            return _original_resume(self)
-        except ValueError as e:
-            if "closed file" in str(e):
-                # File is already closed, nothing to resume
+            if "closed file" in str(e) or "I/O operation on closed file" in str(e):
+                # File is closed, skip printing (likely in test cleanup or when stdout was redirected)
+                # Don't raise an error - just skip printing silently
                 return
+            # If it's a different ValueError, re-raise it
+            raise
+        except Exception:
+            # For any other exception, let it propagate
             raise
 
-    FDCapture.snap = _patched_snap
-    FDCapture.resume = _patched_resume
-except Exception:
-    # If patching fails, continue without it
-    pass
+    builtins.print = _patched_print
+
+    # Patch pytest.capture.FDCapture methods to handle closed files gracefully
+    try:
+        from _pytest.capture import FDCapture
+
+        _original_snap = FDCapture.snap
+        _original_resume = FDCapture.resume
+
+        def _patched_snap(self):
+            """Patched snap() that handles already-closed files."""
+            try:
+                # Try original snap
+                return _original_snap(self)
+            except ValueError as e:
+                if "closed file" in str(e):
+                    # File is already closed, return empty string
+                    return ""
+                raise
+
+        def _patched_resume(self):
+            """Patched resume() that handles already-closed files."""
+            try:
+                # Try original resume
+                return _original_resume(self)
+            except ValueError as e:
+                if "closed file" in str(e):
+                    # File is already closed, nothing to resume
+                    return
+                raise
+
+        FDCapture.snap = _patched_snap
+        FDCapture.resume = _patched_resume
+    except Exception:
+        # If patching fails, continue without it
+        pass
 
 
 @pytest.fixture(scope="session", autouse=True)
