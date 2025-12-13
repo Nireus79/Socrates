@@ -182,6 +182,7 @@ markers = [
     "slow: Tests that take >1 second",
     "requires_api: Tests requiring valid API key",
     "e2e: End-to-end tests",
+    "test_isolation: Tests that may fail due to test ordering/isolation issues (pass in isolation)",
 ]
 
 [tool.coverage.run]

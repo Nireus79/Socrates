@@ -303,6 +303,10 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "slow: mark test as slow (takes >1 second)")
     config.addinivalue_line("markers", "requires_api: mark test as requiring valid API key")
     config.addinivalue_line("markers", "e2e: mark test as end-to-end")
+    config.addinivalue_line(
+        "markers",
+        "test_isolation: mark test as potentially failing due to test ordering/isolation issues",
+    )
 
 
 def pytest_collection_modifyitems(config, items):

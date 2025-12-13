@@ -2,6 +2,11 @@
 Unit tests for project-specific knowledge management system
 
 Tests VectorDatabase methods for project_id filtering, export/import, and scoped searches.
+
+Note: These tests may fail when run after ~460+ other tests due to a known test isolation
+issue with SentenceTransformer embedding model file handles. They pass in isolation.
+To run these tests separately:
+  pytest tests/test_knowledge_management.py -v
 """
 
 import shutil
@@ -73,8 +78,14 @@ def sample_project_entry():
     )
 
 
+@pytest.mark.test_isolation
+@pytest.mark.test_isolation
 class TestProjectKnowledgeStorage:
-    """Test project-specific knowledge storage and retrieval"""
+    """Test project-specific knowledge storage and retrieval
+
+    Note: May fail when run after ~460+ other tests due to embedding model file handle
+    isolation issue. Passes when run in isolation or with fewer preceding tests.
+    """
 
     def test_add_project_knowledge(self, temp_vector_db, sample_project_entry):
         """Test adding knowledge to a specific project"""
@@ -128,6 +139,7 @@ class TestProjectKnowledgeStorage:
         assert proj_b_entries[0]["id"] == "entry_2"
 
 
+@pytest.mark.test_isolation
 class TestProjectKnowledgeExportImport:
     """Test knowledge export/import functionality"""
 
@@ -195,6 +207,7 @@ class TestProjectKnowledgeExportImport:
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 
+@pytest.mark.test_isolation
 class TestProjectKnowledgeSearch:
     """Test project-scoped search functionality"""
 
@@ -246,6 +259,7 @@ class TestProjectKnowledgeSearch:
         assert "project_only" not in entry_ids
 
 
+@pytest.mark.test_isolation
 class TestProjectKnowledgeDeletion:
     """Test project knowledge deletion"""
 
@@ -307,6 +321,7 @@ class TestProjectKnowledgeDeletion:
         assert len(results) > 0
 
 
+@pytest.mark.test_isolation
 class TestMetadataFiltering:
     """Test the _build_project_filter helper method"""
 

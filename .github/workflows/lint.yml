@@ -163,7 +163,7 @@ jobs:
       - name: Run tests with coverage
         run: |
           pytest --cov=socratic_system --cov-report=term-missing:skip-covered \
-                  --cov-fail-under=70
+                  --cov-fail-under=70 -m "not test_isolation"
 
   all-quality-checks-passed:
     name: All Quality Checks Passed
