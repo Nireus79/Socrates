@@ -333,114 +333,114 @@ If you don't have enough information, say so."""
         if not orchestrator or not app or not project or not user:
             return self.error("Required context not available")
 
+        self._print_session_header(project)
+
+        session_active = True
+        while session_active:
+            if project.chat_mode == "socratic":
+                session_active = self._handle_socratic_mode_turn(
+                    orchestrator, project, user, context
+                )
+            else:
+                session_active = self._handle_direct_mode_turn(
+                    orchestrator, project, user, context
+                )
+
+        return self.success()
+
+    def _print_session_header(self, project) -> None:
+        """Print session header with project details"""
         print(f"\n{Fore.CYAN}Interactive Chat Session{Style.RESET_ALL}")
         print(f"{Fore.WHITE}Project: {project.name}")
         print(f"Phase: {project.phase}")
         print(f"Mode: {project.chat_mode}")
         print(f"{Style.RESET_ALL}\n")
 
-        session_active = True
+    def _handle_socratic_mode_turn(
+        self, orchestrator, project, user, context
+    ) -> bool:
+        """Handle one turn of Socratic mode (system asks, user answers)"""
+        question_result = orchestrator.process_request(
+            "socratic_counselor",
+            {
+                "action": "generate_question",
+                "project": project,
+                "current_user": user.username,
+            },
+        )
 
-        while session_active:
-            # Check current mode and generate question or prompt for answer
-            if project.chat_mode == "socratic":
-                # Socratic mode: Generate and ask a question
-                question_result = orchestrator.process_request(
-                    "socratic_counselor",
-                    {
-                        "action": "generate_question",
-                        "project": project,
-                        "current_user": user.username,
-                    },
-                )
+        if question_result["status"] != "success":
+            self.print_error(question_result.get("message", "Unknown error"))
+            return False
 
-                if question_result["status"] != "success":
-                    self.print_error(question_result.get("message", "Unknown error"))
-                    break
+        question = question_result["question"]
+        print(f"\n{Fore.BLUE}🤔 {question}")
 
-                question = question_result["question"]
-                print(f"\n{Fore.BLUE}🤔 {question}")
+        print(
+            f"\n{Fore.YELLOW}Your response (or use /mode, /done, /advance, /help, /back, /exit):{Style.RESET_ALL}"
+        )
+        response = input(f"{Fore.WHITE}> ").strip()
 
-                # Get user response
+        # Handle / commands
+        if response.startswith("/"):
+            should_continue, session_active = self._handle_command(response, context)
+            if not should_continue:
+                return False
+            return session_active
+
+        # Handle special responses
+        handled, should_continue = self._handle_special_response(
+            response, orchestrator, project
+        )
+        if handled:
+            if not should_continue:
+                return False
+            if response.lower() in ["help", "suggestions", "hint"]:
+                suggestions = orchestrator.claude_client.generate_suggestions(question, project)
+                print(f"\n{Fore.MAGENTA}💡 {suggestions}")
                 print(
-                    f"\n{Fore.YELLOW}Your response (or use /mode, /done, /advance, /help, /back, /exit):{Style.RESET_ALL}"
+                    f"{Fore.YELLOW}Now, would you like to try answering the question?{Style.RESET_ALL}"
                 )
-                response = input(f"{Fore.WHITE}> ").strip()
+            return True
 
-            else:
-                # Direct mode: Wait for user's question and answer it
-                print(
-                    f"\n{Fore.YELLOW}Your question (or use /mode, /done, /advance, /help, /back, /exit):{Style.RESET_ALL}"
-                )
-                response = input(f"{Fore.WHITE}> ").strip()
+        # Process normal answer
+        self._process_user_answer(
+            response, orchestrator, project, user, mode="socratic", session_context="in_session"
+        )
+        return True
 
-                # Check if response is a command
-                if response.startswith("/"):
-                    should_continue, session_active = self._handle_command(response, context)
-                    if not should_continue:
-                        break
-                    continue
+    def _handle_direct_mode_turn(self, orchestrator, project, user, context) -> bool:
+        """Handle one turn of Direct mode (user asks, system answers)"""
+        print(
+            f"\n{Fore.YELLOW}Your question (or use /mode, /done, /advance, /help, /back, /exit):{Style.RESET_ALL}"
+        )
+        response = input(f"{Fore.WHITE}> ").strip()
 
-                # Check for special responses
-                handled, should_continue = self._handle_special_response(
-                    response, orchestrator, project
-                )
-                if handled:
-                    if not should_continue:
-                        break
-                    continue
+        # Check if response is a command
+        if response.startswith("/"):
+            should_continue, session_active = self._handle_command(response, context)
+            if not should_continue:
+                return False
+            return session_active
 
-                # Generate answer for user question
-                if response:
-                    print(f"\n{Fore.GREEN}Answer:{Style.RESET_ALL}")
-                    answer = self._generate_direct_answer(response, orchestrator, project)
-                    print(f"{Fore.WHITE}{answer}{Style.RESET_ALL}\n")
+        # Check for special responses
+        handled, should_continue = self._handle_special_response(
+            response, orchestrator, project
+        )
+        if handled:
+            return should_continue
 
-                # Process the user question for insights/conflicts
-                self._process_user_answer(
-                    response,
-                    orchestrator,
-                    project,
-                    user,
-                    mode="direct",
-                    session_context="in_session",
-                )
-                continue
+        # Generate answer for user question
+        if response:
+            print(f"\n{Fore.GREEN}Answer:{Style.RESET_ALL}")
+            answer = self._generate_direct_answer(response, orchestrator, project)
+            print(f"{Fore.WHITE}{answer}{Style.RESET_ALL}\n")
 
-            # Handle / commands (Socratic mode)
-            if response.startswith("/"):
-                should_continue, session_active = self._handle_command(response, context)
-                if not should_continue:
-                    break
-                continue
-
-            # Handle special responses (Socratic mode)
-            handled, should_continue = self._handle_special_response(
-                response, orchestrator, project
-            )
-            if handled:
-                if not should_continue:
-                    break
-                if response.lower() in ["help", "suggestions", "hint"]:
-                    question = question_result["question"]
-                    suggestions = orchestrator.claude_client.generate_suggestions(question, project)
-                    print(f"\n{Fore.MAGENTA}💡 {suggestions}")
-                    print(
-                        f"{Fore.YELLOW}Now, would you like to try answering the question?{Style.RESET_ALL}"
-                    )
-                continue
-
-            # Process normal answer (Socratic mode)
-            self._process_user_answer(
-                response,
-                orchestrator,
-                project,
-                user,
-                mode="socratic",
-                session_context="in_session",
-            )
-
-        return self.success()
+        # Process the user question for insights
+        self._process_user_answer(
+            response, orchestrator, project, user, mode="direct", session_context="in_session"
+        )
+        return True
 
 
 class DoneCommand(BaseCommand):
