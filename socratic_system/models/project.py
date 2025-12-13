@@ -62,7 +62,12 @@ class ProjectContext:
 
     def __post_init__(self):
         """Initialize default values and migrate legacy collaborators to team_members"""
-        # Initialize list fields with defaults
+        self._initialize_list_fields()
+        self._initialize_team_members()
+        self._initialize_maturity_fields()
+
+    def _initialize_list_fields(self) -> None:
+        """Initialize all list fields with empty defaults"""
         if self.collaborators is None:
             self.collaborators = []
         if self.requirements is None:
@@ -75,41 +80,64 @@ class ProjectContext:
             self.conversation_history = []
         if self.notes is None:
             self.notes = []
-
-        # Migrate old collaborators to team_members if needed (backward compatibility)
-        if self.team_members is None and self.collaborators:
-            self.team_members = []
-
-            # Add owner as team member with "lead" role (default for owner/lead)
-            if self.owner:
-                owner_member = TeamMemberRole(
-                    username=self.owner, role="lead", skills=[], joined_at=self.created_at
-                )
-                self.team_members.append(owner_member)
-
-            # Migrate collaborators to team members with default "creator" role
-            for collab_username in self.collaborators:
-                member = TeamMemberRole(
-                    username=collab_username,
-                    role="creator",  # Default role for migrated users
-                    skills=[],
-                    joined_at=datetime.datetime.now(),
-                )
-                self.team_members.append(member)
-
-        # Initialize team_members for new projects (no collaborators)
-        elif self.team_members is None:
-            self.team_members = []
-            if self.owner:
-                owner_member = TeamMemberRole(
-                    username=self.owner, role="lead", skills=[], joined_at=self.created_at
-                )
-                self.team_members.append(owner_member)
-
-        # Initialize pending_questions queue for question assignment
         if self.pending_questions is None:
             self.pending_questions = []
 
+    def _initialize_team_members(self) -> None:
+        """Initialize team members, migrating from legacy collaborators if needed"""
+        if self.team_members is None:
+            self._initialize_team_members_from_collaborators()
+            self._ensure_owner_in_team_members()
+
+    def _initialize_team_members_from_collaborators(self) -> None:
+        """Migrate legacy collaborators to team_members format"""
+        self.team_members = []
+        if self.collaborators:
+            self._add_owner_to_team_members()
+            self._migrate_collaborators_to_team_members()
+
+    def _add_owner_to_team_members(self) -> None:
+        """Add project owner to team_members list"""
+        if self.owner:
+            owner_member = TeamMemberRole(
+                username=self.owner,
+                role="lead",
+                skills=[],
+                joined_at=self.created_at,
+            )
+            self.team_members.append(owner_member)
+
+    def _migrate_collaborators_to_team_members(self) -> None:
+        """Convert legacy collaborators list to team members"""
+        for collab_username in self.collaborators:
+            member = TeamMemberRole(
+                username=collab_username,
+                role="creator",
+                skills=[],
+                joined_at=datetime.datetime.now(),
+            )
+            self.team_members.append(member)
+
+    def _ensure_owner_in_team_members(self) -> None:
+        """Ensure owner is in team_members (for new projects without collaborators)"""
+        if self.team_members is not None and not self._owner_in_team_members():
+            if self.owner:
+                owner_member = TeamMemberRole(
+                    username=self.owner,
+                    role="lead",
+                    skills=[],
+                    joined_at=self.created_at,
+                )
+                self.team_members.append(owner_member)
+
+    def _owner_in_team_members(self) -> bool:
+        """Check if owner is already in team_members"""
+        if not self.team_members:
+            return False
+        return any(member.username == self.owner for member in self.team_members)
+
+    def _initialize_maturity_fields(self) -> None:
+        """Initialize maturity tracking and analytics fields"""
         if self.phase_maturity_scores is None:
             self.phase_maturity_scores = {
                 "discovery": 0.0,
