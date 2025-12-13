@@ -13,8 +13,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-# Fix Windows console encoding issues
-if sys.platform == "win32":
+# Fix Windows console encoding issues (only when NOT in PyCharm IDE)
+# Detecting PyCharm to avoid interfering with its console
+_is_pycharm_ide = sys.stdout.__class__.__name__ == "PyCharmOutput" or hasattr(sys.stdout, "_stream")
+if sys.platform == "win32" and not _is_pycharm_ide:
     import io
 
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
@@ -57,7 +59,7 @@ from socratic_system.ui.navigation import NavigationStack
 def temp_data_dir():
     """Create temporary data directory for testing"""
     temp_dir = tempfile.mkdtemp()
-    os.environ["SOCRATIC_DATA_DIR"] = temp_dir
+    os.environ["SOCRATES_DATA_DIR"] = temp_dir
     yield temp_dir
     shutil.rmtree(temp_dir)
 
@@ -66,10 +68,12 @@ def temp_data_dir():
 def orchestrator(temp_data_dir):
     """Initialize orchestrator with test database (fresh for each test)"""
     # Mock API key for testing
-    with patch.dict(os.environ, {"API_KEY_CLAUDE": "test-key"}):
+    with patch.dict(os.environ, {"API_KEY_CLAUDE": "test-key", "SOCRATES_DATA_DIR": temp_data_dir}):
         with patch("socratic_system.orchestration.orchestrator.ClaudeClient"):
             with patch("socratic_system.orchestration.orchestrator.VectorDatabase"):
-                orch = AgentOrchestrator("test-key")
+                from socratic_system.config import SocratesConfig
+                config = SocratesConfig.from_env()
+                orch = AgentOrchestrator(config)
                 orch.claude_client = MagicMock()
                 orch.claude_client.generate_response = MagicMock(return_value="Test response")
                 orch.claude_client.generate_suggestions = MagicMock(return_value="Test suggestions")
