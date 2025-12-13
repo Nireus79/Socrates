@@ -71,12 +71,13 @@ class ProjectManagerAgent(Agent):
         # Create user if they don't exist (for automation/testing)
         if user is None:
             from socratic_system.models.user import User
+
             user = User(
                 username=owner,
                 passcode_hash="",  # Empty hash - will need password reset to use UI
                 created_at=datetime.datetime.now(),
                 projects=[],
-                subscription_tier="pro"  # Default to pro tier for auto-created users
+                subscription_tier="pro",  # Default to pro tier for auto-created users
             )
             self.orchestrator.database.save_user(user)
 

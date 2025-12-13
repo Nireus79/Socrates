@@ -19,9 +19,9 @@ class ProjectContext:
     phase: str
     created_at: datetime.datetime
     updated_at: datetime.datetime
-    collaborators: List[
-        str
-    ] = None  # DEPRECATED: Kept for backward compatibility. Use team_members instead.
+    collaborators: List[str] = (
+        None  # DEPRECATED: Kept for backward compatibility. Use team_members instead.
+    )
     goals: str = ""
     requirements: List[str] = None
     tech_stack: List[str] = None

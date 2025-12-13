@@ -146,9 +146,7 @@ class EventEmitter:
             try:
                 callback(data)
             except Exception as e:
-                self._logger.error(
-                    f"Error in event listener for {event_name}: {e}", exc_info=e
-                )
+                self._logger.error(f"Error in event listener for {event_name}: {e}", exc_info=e)
 
     def listener_count(self, event_type: Optional[EventType] = None) -> int:
         """

@@ -261,6 +261,7 @@ class TestCollaborationAndConflictDetection:
 
             # User 2 tries to update same project concurrently
             from copy import deepcopy
+
             project2 = deepcopy(project)
             project2.goals = "Bob's goals"
             project2.requirements = ["Bob's requirement 2"]
@@ -368,7 +369,9 @@ class TestErrorRecoveryAcrossLayers:
                 assert "Rate Limited" in str(e)
 
             # Second attempt: Retry with success
-            orchestrator.claude_client.generate_artifact = MagicMock(return_value="# Code after retry")
+            orchestrator.claude_client.generate_artifact = MagicMock(
+                return_value="# Code after retry"
+            )
 
             result = code_gen.process(gen_req)
             assert result["status"] == "success"

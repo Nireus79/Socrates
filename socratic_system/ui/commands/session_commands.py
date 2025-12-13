@@ -100,7 +100,9 @@ class ChatCommand(BaseCommand):
 
     def _get_custom_values(self, category_name: str):
         """Get custom values from user. Returns list or None."""
-        print(f"{Fore.CYAN}Enter custom {category_name.lower()} (comma-separated):{Style.RESET_ALL}")
+        print(
+            f"{Fore.CYAN}Enter custom {category_name.lower()} (comma-separated):{Style.RESET_ALL}"
+        )
         custom_input = input(f"{Fore.WHITE}> ").strip()
         if custom_input:
             return [item.strip() for item in custom_input.split(",") if item.strip()]
@@ -227,11 +229,15 @@ Focus on the connection between the user's statement and these insights."""
             return
 
         if mode == "direct" and pre_extracted_insights is None:
-            pre_extracted_insights = self._handle_direct_mode_insights(response, orchestrator, project)
+            pre_extracted_insights = self._handle_direct_mode_insights(
+                response, orchestrator, project
+            )
             if pre_extracted_insights is None:
                 return
 
-        self._process_and_save_response(response, orchestrator, project, user, pre_extracted_insights)
+        self._process_and_save_response(
+            response, orchestrator, project, user, pre_extracted_insights
+        )
 
     def _handle_direct_mode_insights(self, response: str, orchestrator, project):
         """Extract and confirm insights in direct mode. Returns confirmed insights or None."""
@@ -255,7 +261,9 @@ Focus on the connection between the user's statement and these insights."""
 
         return pre_extracted_insights
 
-    def _process_and_save_response(self, response: str, orchestrator, project, user, pre_extracted_insights) -> None:
+    def _process_and_save_response(
+        self, response: str, orchestrator, project, user, pre_extracted_insights
+    ) -> None:
         """Process response and save project. Handles result status and feedback."""
         request_data = {
             "action": "process_response",
@@ -352,9 +360,7 @@ If you don't have enough information, say so."""
                     orchestrator, project, user, context
                 )
             else:
-                session_active = self._handle_direct_mode_turn(
-                    orchestrator, project, user, context
-                )
+                session_active = self._handle_direct_mode_turn(orchestrator, project, user, context)
 
         return self.success()
 
@@ -366,9 +372,7 @@ If you don't have enough information, say so."""
         print(f"Mode: {project.chat_mode}")
         print(f"{Style.RESET_ALL}\n")
 
-    def _handle_socratic_mode_turn(
-        self, orchestrator, project, user, context
-    ) -> bool:
+    def _handle_socratic_mode_turn(self, orchestrator, project, user, context) -> bool:
         """Handle one turn of Socratic mode (system asks, user answers)"""
         question_result = orchestrator.process_request(
             "socratic_counselor",
@@ -399,9 +403,7 @@ If you don't have enough information, say so."""
             return session_active
 
         # Handle special responses
-        handled, should_continue = self._handle_special_response(
-            response, orchestrator, project
-        )
+        handled, should_continue = self._handle_special_response(response, orchestrator, project)
         if handled:
             if not should_continue:
                 return False
@@ -434,9 +436,7 @@ If you don't have enough information, say so."""
             return session_active
 
         # Check for special responses
-        handled, should_continue = self._handle_special_response(
-            response, orchestrator, project
-        )
+        handled, should_continue = self._handle_special_response(response, orchestrator, project)
         if handled:
             return should_continue
 

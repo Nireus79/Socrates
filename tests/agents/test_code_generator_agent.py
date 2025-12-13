@@ -145,7 +145,9 @@ class TestCodeGeneratorAgentScriptGeneration:
 
             sample_project.goals = "Build API endpoints"
             sample_project.requirements = ["CRUD operations", "Validation"]
-            orchestrator.claude_client.generate_artifact = MagicMock(return_value="# Generated code")
+            orchestrator.claude_client.generate_artifact = MagicMock(
+                return_value="# Generated code"
+            )
 
             request = {"action": "generate_script", "project": sample_project}
 

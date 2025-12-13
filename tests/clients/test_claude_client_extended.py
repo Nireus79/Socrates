@@ -220,6 +220,7 @@ class TestClaudeClientConflictResolution:
     def conflict(self):
         """Create a test conflict."""
         import datetime
+
         return ConflictInfo(
             conflict_id="conf123",
             conflict_type="specification",

@@ -1,23 +1,500 @@
-INFO     socrates.orchestrator:orchestrator.py:76 Initializing database components...
-INFO     socrates.orchestrator:orchestrator.py:81 Database components initialized successfully
-INFO     socrates.agents.knowledge_manager:knowledge_manager.py:50 Knowledge Manager Agent initialized
-DEBUG    root:quality_controller.py:31 Initializing QualityControllerAgent
-DEBUG    root:quality_controller.py:37 Creating MaturityCalculator with Claude client: True
-DEBUG    socratic_system.core.maturity_calculator:maturity_calculator.py:42 Initializing MaturityCalculator with project_type=software, claude_client=True
-INFO     socratic_system.core.maturity_calculator:maturity_calculator.py:52 Loaded 4 phases for project type: software
-DEBUG    socratic_system.core.insight_categorizer:insight_categorizer.py:36 Initializing InsightCategorizer with Claude client: True
-INFO     socratic_system.core.insight_categorizer:insight_categorizer.py:40 InsightCategorizer initialized successfully
-INFO     socratic_system.core.maturity_calculator:maturity_calculator.py:58 InsightCategorizer initialized with Claude client for intelligent categorization
-INFO     root:quality_controller.py:48 QualityControllerAgent initialized with thresholds: READY=60.0%, COMPLETE=100.0%, WARNING=40.0%
-DEBUG    socrates.agents.User Learning:learning_engine.py:35 LearningEngine initialized
-INFO     socrates.agents.User Learning:learning_agent.py:48 UserLearningAgent initialized
-INFO     socrates.agents.Multi-LLM Manager:multi_llm_agent.py:46 MultiLLMAgent initialized
-DEBUG    socrates.orchestrator:orchestrator.py:130 Knowledge base already loaded, skipping initialization
-DEBUG    socrates.events:event_emitter.py:139 Event: system.initialized - {'version': '0.5.0', 'data_dir': 'C:\\Users\\themi\\AppData\\Local\\Temp\\tmpykl2oqr7', 'model': 'claude-haiku-4-5-20251001', 'timestamp': '2025-12-13T08:48:11.126411'}
-INFO     socrates.orchestrator:orchestrator.py:103 ======================================================================
-INFO     socrates.orchestrator:orchestrator.py:104 Socratic RAG System initialized successfully!
-INFO     socrates.orchestrator:orchestrator.py:105   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmpykl2oqr7, log_level=INFO)
-INFO     socrates.orchestrator:orchestrator.py:106   Projects DB: C:\Users\themi\AppData\Local\Temp\tmpykl2oqr7\projects.db
-INFO     socrates.orchestrator:orchestrator.py:107   Vector DB: C:\Users\themi\AppData\Local\Temp\tmpykl2oqr7\vector_db
-INFO     socrates.orchestrator:orchestrator.py:108 ======================================================================
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Created project 'Test API Project' (type: software) with ID ae4e6495-8d0b-4cf0-b173-78508af6ae32
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp4jgha9xw
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:27 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:29 Loading embedding model: all-MiniLM-L6-v2
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:219 Use pytorch device_name: cpu
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:227 Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+DEBUG    urllib3.connectionpool:connectionpool.py:1049 Starting new HTTPS connection (1): huggingface.co:443
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_test_entry
+DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_test_entry' for project 'proj_001'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp0y804gsg
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:27 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:29 Loading embedding model: all-MiniLM-L6-v2
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:219 Use pytorch device_name: cpu
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:227 Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_test_entry
+DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_test_entry' for project 'proj_002'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp8b1d4jlv
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:27 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:29 Loading embedding model: all-MiniLM-L6-v2
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:219 Use pytorch device_name: cpu
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:227 Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp82pbdn9a
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:27 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:29 Loading embedding model: all-MiniLM-L6-v2
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:219 Use pytorch device_name: cpu
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:227 Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: entry_1
+DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'entry_1' for project 'proj_A'
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: entry_2
+DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'entry_2' for project 'proj_B'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmptb_61h1e
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:27 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:29 Loading embedding model: all-MiniLM-L6-v2
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:219 Use pytorch device_name: cpu
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:227 Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_test_entry
+DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_test_entry' for project 'proj_export'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmplqluhu0i
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:27 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:29 Loading embedding model: all-MiniLM-L6-v2
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:219 Use pytorch device_name: cpu
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:227 Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp2efe3xgh
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:27 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:29 Loading embedding model: all-MiniLM-L6-v2
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:219 Use pytorch device_name: cpu
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:227 Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: imported_1
+DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'imported_1' for project 'proj_import'
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: imported_2
+DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'imported_2' for project 'proj_import'
+INFO     socrates.database.vector:vector_db.py:258 Imported 2 knowledge entries for project 'proj_import'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp_tdqfrh_
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:27 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:29 Loading embedding model: all-MiniLM-L6-v2
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:219 Use pytorch device_name: cpu
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:227 Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_test_entry
+DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_test_entry' for project 'proj_roundtrip'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpzmuk9m6p
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:27 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:29 Loading embedding model: all-MiniLM-L6-v2
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:219 Use pytorch device_name: cpu
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:227 Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_test_entry
+DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_test_entry' for project 'proj_roundtrip_new'
+INFO     socrates.database.vector:vector_db.py:258 Imported 1 knowledge entries for project 'proj_roundtrip_new'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmppp5suuz0
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:27 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:29 Loading embedding model: all-MiniLM-L6-v2
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:219 Use pytorch device_name: cpu
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:227 Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: global_search
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_search
+DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_search' for project 'search_proj'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpc8pn251v
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:27 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:29 Loading embedding model: all-MiniLM-L6-v2
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:219 Use pytorch device_name: cpu
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:227 Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_only
+DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_only' for project 'some_project'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpv2uahln4
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:27 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:29 Loading embedding model: all-MiniLM-L6-v2
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:219 Use pytorch device_name: cpu
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:227 Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: del_1
+DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'del_1' for project 'proj_delete'
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: del_2
+DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'del_2' for project 'proj_delete'
+INFO     socrates.database.vector:vector_db.py:306 Deleted 2 knowledge entries for project 'proj_delete'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpf7hlwm7u
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:27 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:29 Loading embedding model: all-MiniLM-L6-v2
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:219 Use pytorch device_name: cpu
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:227 Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: global_safe
+DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_delete
+DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_delete' for project 'proj_delete_safe'
+INFO     socrates.database.vector:vector_db.py:306 Deleted 1 knowledge entries for project 'proj_delete_safe'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp7e09jj4d
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:27 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:29 Loading embedding model: all-MiniLM-L6-v2
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:219 Use pytorch device_name: cpu
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:227 Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpez9kdtu1
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:27 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:29 Loading embedding model: all-MiniLM-L6-v2
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:219 Use pytorch device_name: cpu
+INFO     sentence_transformers.SentenceTransformer:SentenceTransformer.py:227 Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json HTTP/1.1" 404 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=False&expand=False HTTP/1.1" 404 64
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully

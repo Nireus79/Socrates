@@ -154,8 +154,11 @@ class TestProjectManagerAgentCollaborators:
             from datetime import datetime
 
             from socratic_system.models.role import TeamMemberRole
+
             pro_project.team_members.append(
-                TeamMemberRole(username="existing_user", role="creator", skills=[], joined_at=datetime.now())
+                TeamMemberRole(
+                    username="existing_user", role="creator", skills=[], joined_at=datetime.now()
+                )
             )
 
             request = {
@@ -180,11 +183,20 @@ class TestProjectManagerAgentCollaborators:
             from datetime import datetime
 
             from socratic_system.models.role import TeamMemberRole
+
             pro_project.team_members = [
-                TeamMemberRole(username="prouser", role="owner", skills=[], joined_at=datetime.now()),
-                TeamMemberRole(username="user1", role="creator", skills=[], joined_at=datetime.now()),
-                TeamMemberRole(username="user2", role="creator", skills=[], joined_at=datetime.now()),
-                TeamMemberRole(username="user3", role="creator", skills=[], joined_at=datetime.now()),
+                TeamMemberRole(
+                    username="prouser", role="owner", skills=[], joined_at=datetime.now()
+                ),
+                TeamMemberRole(
+                    username="user1", role="creator", skills=[], joined_at=datetime.now()
+                ),
+                TeamMemberRole(
+                    username="user2", role="creator", skills=[], joined_at=datetime.now()
+                ),
+                TeamMemberRole(
+                    username="user3", role="creator", skills=[], joined_at=datetime.now()
+                ),
             ]
 
             request = {"action": "list_collaborators", "project": pro_project}
@@ -198,8 +210,7 @@ class TestProjectManagerAgentCollaborators:
                 for c in result["collaborators"]
             )
             assert any(
-                c["username"] == "user1" and c["role"] == "creator"
-                for c in result["collaborators"]
+                c["username"] == "user1" and c["role"] == "creator" for c in result["collaborators"]
             )
 
     def test_remove_collaborator_success(self, mock_orchestrator, sample_project):
@@ -401,7 +412,9 @@ class TestProjectManagerAgentArchiving:
 class TestProjectManagerAgentDeletion:
     """Tests for permanent project deletion"""
 
-    def test_delete_project_requires_confirmation(self, mock_orchestrator, sample_project, sample_user):
+    def test_delete_project_requires_confirmation(
+        self, mock_orchestrator, sample_project, sample_user
+    ):
         """Test that project deletion requires confirmation"""
         with patch("anthropic.Anthropic"):
             orchestrator = mock_orchestrator
@@ -424,7 +437,9 @@ class TestProjectManagerAgentDeletion:
             assert result["status"] == "error"
             assert "DELETE" in result["message"]
 
-    def test_delete_project_success_with_confirmation(self, mock_orchestrator, sample_project, sample_user):
+    def test_delete_project_success_with_confirmation(
+        self, mock_orchestrator, sample_project, sample_user
+    ):
         """Test successful permanent project deletion with proper confirmation"""
         with patch("anthropic.Anthropic"):
             orchestrator = mock_orchestrator

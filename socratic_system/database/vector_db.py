@@ -51,6 +51,7 @@ class VectorDatabase:
             elif isinstance(value, dict):
                 # Convert dicts to JSON string representation
                 import json
+
                 formatted[key] = json.dumps(value)
             else:
                 # Convert other types to string
@@ -282,7 +283,9 @@ class VectorDatabase:
             return {
                 "$or": [
                     {"scope": {"$ne": "project"}},  # Global knowledge (non-project scope)
-                    {"project_id": {"$eq": project_id}},  # Project-specific knowledge for this project
+                    {
+                        "project_id": {"$eq": project_id}
+                    },  # Project-specific knowledge for this project
                 ]
             }
 

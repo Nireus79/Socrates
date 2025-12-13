@@ -226,6 +226,7 @@ class TestBehaviorPatterns:
         initial_confidence = float(pattern.confidence)
         pattern.pattern_data["observation_count"] = 5
         from decimal import Decimal
+
         pattern.confidence = Decimal("0.9")
 
         assert pattern.pattern_data["observation_count"] == 5

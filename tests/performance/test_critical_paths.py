@@ -129,9 +129,7 @@ class TestProjectContextPerformance:
 
         duration = end - start
         # Migration should be reasonably fast (< 20ms for 10 collaborators)
-        assert (
-            duration < 0.02
-        ), f"Legacy migration init took {duration:.6f}s (expected < 0.02s)"
+        assert duration < 0.02, f"Legacy migration init took {duration:.6f}s (expected < 0.02s)"
 
         # Verify migration happened correctly
         assert len(project.team_members) == len(collaborators) + 1  # +1 for owner

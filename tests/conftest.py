@@ -15,7 +15,9 @@ import pytest
 
 # Check if running in PyCharm (IDE) or other test runners
 # PyCharm sets PYCHARM_MATPLOTLIB_INTERACTIVE or has specific pytest mode indicators
-_is_pycharm = "PYCHARM_MATPLOTLIB_INTERACTIVE" in sys.modules or "PYCHARM_PYPLOT_INTERACTIVE" in sys.modules
+_is_pycharm = (
+    "PYCHARM_MATPLOTLIB_INTERACTIVE" in sys.modules or "PYCHARM_PYPLOT_INTERACTIVE" in sys.modules
+)
 _is_ide = sys.stdout.__class__.__name__ == "PyCharmOutput" or hasattr(sys.stdout, "_stream")
 
 # Only apply patches when NOT running in PyCharm IDE

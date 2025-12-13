@@ -81,7 +81,10 @@ class SocraticCounselorAgent(Agent):
 
         # Validate that project exists
         if not project:
-            return {"status": "error", "message": "Project context is required to generate questions"}
+            return {
+                "status": "error",
+                "message": "Project context is required to generate questions",
+            }
 
         context = self.orchestrator.context_analyzer.get_context_summary(project)
 
@@ -327,18 +330,14 @@ Return only the question, no additional text or explanation."""
 
         # REAL-TIME CONFLICT DETECTION
         if insights:
-            if not self._handle_conflict_detection(
-                insights, project, current_user, logger
-            ):
+            if not self._handle_conflict_detection(insights, project, current_user, logger):
                 return {"status": "success", "insights": insights, "conflicts_pending": True}
 
         # Update context and maturity
         self._update_project_and_maturity(project, insights, logger)
 
         # Track question effectiveness for learning
-        self._track_question_effectiveness(
-            project, insights, user_response, current_user, logger
-        )
+        self._track_question_effectiveness(project, insights, user_response, current_user, logger)
 
         return {"status": "success", "insights": insights}
 
@@ -360,9 +359,7 @@ Return only the question, no additional text or explanation."""
             return True
 
         logger.warning(f"Detected {len(conflict_result['conflicts'])} conflict(s)")
-        conflicts_resolved = self._handle_conflicts_realtime(
-            conflict_result["conflicts"], project
-        )
+        conflicts_resolved = self._handle_conflicts_realtime(conflict_result["conflicts"], project)
         if not conflicts_resolved:
             logger.info("User chose not to resolve conflicts")
             return False

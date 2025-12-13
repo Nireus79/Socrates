@@ -2437,3 +2437,25 @@ ValueError: Test exception
 [2025-12-13 08:35:49] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
 [2025-12-13 08:35:49] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
 [2025-12-13 08:35:49] [WARNING] socratic_rag.socratic_counselor: Failed to generate dynamic question: API Error, falling back to static
+[2025-12-13 08:59:38] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2025-12-13 08:59:38] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-13 08:59:38] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-13 08:59:38] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for design phase (question #2)
+[2025-12-13 08:59:38] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for design phase
+[2025-12-13 08:59:38] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What are your primary goals for this project?...
+[2025-12-13 08:59:38] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-13 08:59:38] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-13 08:59:38] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2025-12-13 08:59:38] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-13 08:59:38] [WARNING] socratic_rag.socratic_counselor: Failed to generate dynamic question: API Error, falling back to static
+[2025-12-13 09:17:54] [DEBUG] socratic_rag.socratic_counselor: Using 2 recent messages for context
+[2025-12-13 09:17:54] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-13 09:17:54] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-13 09:17:54] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for design phase (question #2)
+[2025-12-13 09:17:54] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for design phase
+[2025-12-13 09:17:54] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: What are your primary goals for this project?...
+[2025-12-13 09:17:54] [DEBUG] socratic_rag.socratic_counselor: Searching vector database for relevant knowledge...
+[2025-12-13 09:17:54] [DEBUG] socratic_rag.socratic_counselor: Found 0 relevant knowledge items
+[2025-12-13 09:17:54] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #1)
+[2025-12-13 09:17:54] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2025-12-13 09:17:54] [WARNING] socratic_rag.socratic_counselor: Failed to generate dynamic question: API Error, falling back to static

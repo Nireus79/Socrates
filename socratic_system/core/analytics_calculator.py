@@ -584,7 +584,9 @@ class AnalyticsCalculator:
             insights.append(f"Plateau detected at Q{start} for {duration} sessions")
             logger.debug(f"Detected plateau: Q{start} for {duration} sessions")
 
-    def _detect_acceleration(self, qa_events: List[Dict], velocity: float, insights: List[str]) -> None:
+    def _detect_acceleration(
+        self, qa_events: List[Dict], velocity: float, insights: List[str]
+    ) -> None:
         """Detect acceleration patterns in recent Q&A events and add to insights."""
         if len(qa_events) >= 5:
             recent_deltas = [e.get("delta", 0) for e in qa_events[-3:]]
