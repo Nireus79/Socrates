@@ -23,20 +23,9 @@ class CollabAddCommand(BaseCommand):
         if not self.require_project(context):
             return self.error("No project loaded")
 
-        if not self.validate_args(args, min_count=1):
-            username = input(f"{Fore.WHITE}Username to add: ").strip()
-            print(f"{Fore.YELLOW}Available roles: {', '.join(VALID_ROLES)}")
-            role = input(f"{Fore.WHITE}Role [{VALID_ROLES[0]}]: ").strip() or VALID_ROLES[0]
-        else:
-            username = args[0]
-            role = args[1] if len(args) > 1 else "creator"
-
-        if not username:
-            return self.error("Username cannot be empty")
-
-        # Validate role
-        if role not in VALID_ROLES:
-            return self.error(f"Invalid role '{role}'. Valid roles: {', '.join(VALID_ROLES)}")
+        username, role = self._get_collaborator_inputs(args)
+        if not username or not self._validate_role(role):
+            return self.error(f"Invalid role. Valid roles: {', '.join(VALID_ROLES)}")
 
         orchestrator = context.get("orchestrator")
         project = context.get("project")
@@ -45,24 +34,13 @@ class CollabAddCommand(BaseCommand):
         if not orchestrator or not project or not user:
             return self.error("Required context not available")
 
-        # Only owner can add collaborators
         if user.username != project.owner:
             return self.error("Only the project owner can add collaborators")
 
-        # Check if user exists
-        if not orchestrator.database.user_exists(username):
-            return self.error(f"User '{username}' does not exist in the system")
+        is_valid, error_msg = self._validate_collaborator_addition(username, project, orchestrator)
+        if not is_valid:
+            return self.error(error_msg)
 
-        # Check if already owner
-        if username == project.owner:
-            return self.error("User is already the project owner")
-
-        # Check if already team member
-        for member in project.team_members or []:
-            if member.username == username:
-                return self.error(f"User '{username}' is already a team member")
-
-        # Add collaborator with role
         result = orchestrator.process_request(
             "project_manager",
             {"action": "add_collaborator", "project": project, "username": username, "role": role},
@@ -70,15 +48,40 @@ class CollabAddCommand(BaseCommand):
 
         if result["status"] == "success":
             self.print_success(f"Added '{username}' as {role}!")
-
-            # Save project
             orchestrator.process_request(
                 "project_manager", {"action": "save_project", "project": project}
             )
-
             return self.success(data={"collaborator": username, "role": role})
         else:
             return self.error(result.get("message", "Failed to add collaborator"))
+
+    def _get_collaborator_inputs(self, args: List[str]) -> tuple:
+        """Get username and role from args or interactive input"""
+        if self.validate_args(args, min_count=1):
+            username = args[0]
+            role = args[1] if len(args) > 1 else "creator"
+        else:
+            username = input(f"{Fore.WHITE}Username to add: ").strip()
+            print(f"{Fore.YELLOW}Available roles: {', '.join(VALID_ROLES)}")
+            role = input(f"{Fore.WHITE}Role [{VALID_ROLES[0]}]: ").strip() or VALID_ROLES[0]
+        return username, role
+
+    def _validate_role(self, role: str) -> bool:
+        """Validate role against VALID_ROLES"""
+        return role in VALID_ROLES
+
+    def _validate_collaborator_addition(self, username: str, project, orchestrator) -> tuple:
+        """Validate that collaborator can be added. Returns (is_valid, error_msg)"""
+        if not username:
+            return False, "Username cannot be empty"
+        if not orchestrator.database.user_exists(username):
+            return False, f"User '{username}' does not exist in the system"
+        if username == project.owner:
+            return False, "User is already the project owner"
+        for member in project.team_members or []:
+            if member.username == username:
+                return False, f"User '{username}' is already a team member"
+        return True, ""
 
 
 class CollabRemoveCommand(BaseCommand):

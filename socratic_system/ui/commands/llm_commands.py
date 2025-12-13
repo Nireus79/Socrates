@@ -29,25 +29,26 @@ class LLMCommand(BaseCommand):
             return self._show_help()
 
         subcommand = args[0].lower()
+        return self._dispatch_subcommand(subcommand, args[1:], orchestrator, user)
 
-        if subcommand == "list":
-            return self._list_providers(orchestrator)
-        elif subcommand == "config":
-            return self._show_config(orchestrator, user)
-        elif subcommand == "set":
-            return self._set_default(args[1:], orchestrator, user)
-        elif subcommand == "use":
-            return self._set_model(args[1:], orchestrator, user)
-        elif subcommand == "models":
-            return self._show_models(args[1:], orchestrator)
-        elif subcommand == "key":
-            return self._manage_key(args[1:], orchestrator, user)
-        elif subcommand == "stats":
-            return self._show_stats(args[1:], orchestrator, user)
-        elif subcommand == "help":
-            return self._show_help()
-        else:
-            return self.error(f"Unknown subcommand: {subcommand}\nTry: llm help")
+    def _dispatch_subcommand(
+        self, subcommand: str, args: List[str], orchestrator, user
+    ) -> Dict[str, Any]:
+        """Dispatch subcommand to appropriate handler"""
+        subcommand_map = {
+            "list": lambda: self._list_providers(orchestrator),
+            "config": lambda: self._show_config(orchestrator, user),
+            "set": lambda: self._set_default(args, orchestrator, user),
+            "use": lambda: self._set_model(args, orchestrator, user),
+            "models": lambda: self._show_models(args, orchestrator),
+            "key": lambda: self._manage_key(args, orchestrator, user),
+            "stats": lambda: self._show_stats(args, orchestrator, user),
+            "help": lambda: self._show_help(),
+        }
+
+        if subcommand in subcommand_map:
+            return subcommand_map[subcommand]()
+        return self.error(f"Unknown subcommand: {subcommand}\nTry: llm help")
 
     def _show_help(self) -> Dict[str, Any]:
         """Show help for LLM commands"""
