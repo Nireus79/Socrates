@@ -313,3 +313,20 @@ def pytest_collection_modifyitems(config, items):
             marker in item.nodeid for marker in ["integration", "e2e", "requires_api"]
         ):
             item.add_marker(pytest.mark.unit)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_embedding_models():
+    """
+    Session-level fixture to clean up embedding models.
+
+    This helps prevent file handle issues with SentenceTransformer models
+    when running large test suites that create multiple VectorDatabase instances.
+    """
+    import gc
+
+    yield
+
+    # After all tests complete, force garbage collection to release
+    # any remaining file handles or resources held by embedding models
+    gc.collect()
