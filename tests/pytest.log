@@ -1,4 +1,4 @@
-INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp4jgha9xw
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpvm3rn6_6
 DEBUG    chromadb.config:config.py:363 Starting component System
 DEBUG    chromadb.config:config.py:363 Starting component Posthog
 DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
@@ -30,9 +30,9 @@ DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
 INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_test_entry
-DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_test_entry' for project 'proj_001'
-INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp0y804gsg
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: project_test_entry
+DEBUG    socrates.database.vector:vector_db.py:175 Added project knowledge 'project_test_entry' for project 'proj_001'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp5kb_m3bo
 DEBUG    chromadb.config:config.py:363 Starting component System
 DEBUG    chromadb.config:config.py:363 Starting component Posthog
 DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
@@ -63,9 +63,9 @@ DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
 INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_test_entry
-DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_test_entry' for project 'proj_002'
-INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp8b1d4jlv
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: project_test_entry
+DEBUG    socrates.database.vector:vector_db.py:175 Added project knowledge 'project_test_entry' for project 'proj_002'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpy22uxwxh
 DEBUG    chromadb.config:config.py:363 Starting component System
 DEBUG    chromadb.config:config.py:363 Starting component Posthog
 DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
@@ -96,7 +96,7 @@ DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
 INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
-INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp82pbdn9a
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmphozp3pxw
 DEBUG    chromadb.config:config.py:363 Starting component System
 DEBUG    chromadb.config:config.py:363 Starting component Posthog
 DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
@@ -127,11 +127,11 @@ DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
 INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: entry_1
-DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'entry_1' for project 'proj_A'
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: entry_2
-DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'entry_2' for project 'proj_B'
-INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmptb_61h1e
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: entry_1
+DEBUG    socrates.database.vector:vector_db.py:175 Added project knowledge 'entry_1' for project 'proj_A'
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: entry_2
+DEBUG    socrates.database.vector:vector_db.py:175 Added project knowledge 'entry_2' for project 'proj_B'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpguq56h59
 DEBUG    chromadb.config:config.py:363 Starting component System
 DEBUG    chromadb.config:config.py:363 Starting component Posthog
 DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
@@ -162,9 +162,9 @@ DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
 INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_test_entry
-DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_test_entry' for project 'proj_export'
-INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmplqluhu0i
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: project_test_entry
+DEBUG    socrates.database.vector:vector_db.py:175 Added project knowledge 'project_test_entry' for project 'proj_export'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpcaqmogt4
 DEBUG    chromadb.config:config.py:363 Starting component System
 DEBUG    chromadb.config:config.py:363 Starting component Posthog
 DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
@@ -195,7 +195,7 @@ DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
 INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
-INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp2efe3xgh
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpv_m2k67z
 DEBUG    chromadb.config:config.py:363 Starting component System
 DEBUG    chromadb.config:config.py:363 Starting component Posthog
 DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
@@ -226,12 +226,12 @@ DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
 INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: imported_1
-DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'imported_1' for project 'proj_import'
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: imported_2
-DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'imported_2' for project 'proj_import'
-INFO     socrates.database.vector:vector_db.py:258 Imported 2 knowledge entries for project 'proj_import'
-INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp_tdqfrh_
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: imported_1
+DEBUG    socrates.database.vector:vector_db.py:175 Added project knowledge 'imported_1' for project 'proj_import'
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: imported_2
+DEBUG    socrates.database.vector:vector_db.py:175 Added project knowledge 'imported_2' for project 'proj_import'
+INFO     socrates.database.vector:vector_db.py:259 Imported 2 knowledge entries for project 'proj_import'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpiensvian
 DEBUG    chromadb.config:config.py:363 Starting component System
 DEBUG    chromadb.config:config.py:363 Starting component Posthog
 DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
@@ -262,9 +262,9 @@ DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
 INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_test_entry
-DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_test_entry' for project 'proj_roundtrip'
-INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpzmuk9m6p
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: project_test_entry
+DEBUG    socrates.database.vector:vector_db.py:175 Added project knowledge 'project_test_entry' for project 'proj_roundtrip'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpd_lqi8yy
 DEBUG    chromadb.config:config.py:363 Starting component System
 DEBUG    chromadb.config:config.py:363 Starting component Posthog
 DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
@@ -295,10 +295,10 @@ DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
 INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_test_entry
-DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_test_entry' for project 'proj_roundtrip_new'
-INFO     socrates.database.vector:vector_db.py:258 Imported 1 knowledge entries for project 'proj_roundtrip_new'
-INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmppp5suuz0
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: project_test_entry
+DEBUG    socrates.database.vector:vector_db.py:175 Added project knowledge 'project_test_entry' for project 'proj_roundtrip_new'
+INFO     socrates.database.vector:vector_db.py:259 Imported 1 knowledge entries for project 'proj_roundtrip_new'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp9unnd47m
 DEBUG    chromadb.config:config.py:363 Starting component System
 DEBUG    chromadb.config:config.py:363 Starting component Posthog
 DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
@@ -329,10 +329,10 @@ DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
 INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: global_search
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_search
-DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_search' for project 'search_proj'
-INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpc8pn251v
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: global_search
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: project_search
+DEBUG    socrates.database.vector:vector_db.py:175 Added project knowledge 'project_search' for project 'search_proj'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpf3106q7x
 DEBUG    chromadb.config:config.py:363 Starting component System
 DEBUG    chromadb.config:config.py:363 Starting component Posthog
 DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
@@ -363,9 +363,9 @@ DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
 INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_only
-DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_only' for project 'some_project'
-INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpv2uahln4
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: project_only
+DEBUG    socrates.database.vector:vector_db.py:175 Added project knowledge 'project_only' for project 'some_project'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp89lhh01s
 DEBUG    chromadb.config:config.py:363 Starting component System
 DEBUG    chromadb.config:config.py:363 Starting component Posthog
 DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
@@ -394,14 +394,14 @@ DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
-DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6861
 INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: del_1
-DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'del_1' for project 'proj_delete'
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: del_2
-DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'del_2' for project 'proj_delete'
-INFO     socrates.database.vector:vector_db.py:306 Deleted 2 knowledge entries for project 'proj_delete'
-INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpf7hlwm7u
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: del_1
+DEBUG    socrates.database.vector:vector_db.py:175 Added project knowledge 'del_1' for project 'proj_delete'
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: del_2
+DEBUG    socrates.database.vector:vector_db.py:175 Added project knowledge 'del_2' for project 'proj_delete'
+INFO     socrates.database.vector:vector_db.py:309 Deleted 2 knowledge entries for project 'proj_delete'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp3zjww_g1
 DEBUG    chromadb.config:config.py:363 Starting component System
 DEBUG    chromadb.config:config.py:363 Starting component Posthog
 DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
@@ -430,13 +430,13 @@ DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
-DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6861
 INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: global_safe
-DEBUG    socrates.database.vector:vector_db.py:89 Added knowledge entry: project_delete
-DEBUG    socrates.database.vector:vector_db.py:174 Added project knowledge 'project_delete' for project 'proj_delete_safe'
-INFO     socrates.database.vector:vector_db.py:306 Deleted 1 knowledge entries for project 'proj_delete_safe'
-INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmp7e09jj4d
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: global_safe
+DEBUG    socrates.database.vector:vector_db.py:90 Added knowledge entry: project_delete
+DEBUG    socrates.database.vector:vector_db.py:175 Added project knowledge 'project_delete' for project 'proj_delete_safe'
+INFO     socrates.database.vector:vector_db.py:309 Deleted 1 knowledge entries for project 'proj_delete_safe'
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmphbpn97h5
 DEBUG    chromadb.config:config.py:363 Starting component System
 DEBUG    chromadb.config:config.py:363 Starting component Posthog
 DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
@@ -465,9 +465,9 @@ DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
-DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6861
 INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully
-INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpez9kdtu1
+INFO     socrates.database.vector:vector_db.py:22 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpd523vpil
 DEBUG    chromadb.config:config.py:363 Starting component System
 DEBUG    chromadb.config:config.py:363 Starting component Posthog
 DEBUG    socrates.database.vector:vector_db.py:24 ChromaDB client created
@@ -496,5 +496,5 @@ DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=True&expand=False HTTP/1.1" 200 6465
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json HTTP/1.1" 307 0
 DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "HEAD /api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json HTTP/1.1" 200 0
-DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6891
+DEBUG    urllib3.connectionpool:connectionpool.py:544 https://huggingface.co:443 "GET /api/models/sentence-transformers/all-MiniLM-L6-v2 HTTP/1.1" 200 6861
 INFO     socrates.database.vector:vector_db.py:31 Vector database initialized successfully

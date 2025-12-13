@@ -102,7 +102,6 @@ class QuestionQueueAgent(Agent):
 
     def _determine_roles(self, question: str, project) -> List[str]:
         """Use Claude to determine which roles should answer question."""
-
         available_roles = list({m.role for m in project.team_members or []})
 
         if not available_roles:

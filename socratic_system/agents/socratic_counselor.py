@@ -187,7 +187,6 @@ class SocraticCounselorAgent(Agent):
         current_user: str = None,
     ) -> str:
         """Build prompt for dynamic question generation with role-aware context"""
-
         phase_descriptions = {
             "discovery": "exploring the problem space, understanding user needs, and defining project goals",
             "analysis": "analyzing technical requirements, identifying challenges, and planning solutions",

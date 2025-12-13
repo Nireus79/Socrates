@@ -65,7 +65,11 @@
       "Bash(python -m pytest tests/test_e2e_complete.py::TestProjectManagementWorkflow::test_project_create_command -xvs)",
       "Bash(Limit Reached\" errors when the user''s database had 10+ projects.\n\nChanges:\n- Changed environment variable from SOCRATIC_DATA_DIR to SOCRATES_DATA_DIR\n- Updated orchestrator fixture to use SocratesConfig.from_env() instead of\n  passing just the API key string, ensuring environment variables are read\n  during configuration initialization\n\nThis fixes:\n- test_project_create_command: Now properly uses isolated test database\n- test_project_load_command: Now properly uses isolated test database\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(gh repo view:*)",
-      "Bash(ruff check:*)"
+      "Bash(ruff check:*)",
+      "Bash(timeout 180 python -m pytest:*)",
+      "Bash(mypy:*)",
+      "Bash(pydocstyle:*)",
+      "Bash(bandit:*)"
     ],
     "deny": [],
     "ask": []

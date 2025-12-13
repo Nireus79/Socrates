@@ -19,6 +19,7 @@ class DebugLogger:
     _console_handler: Optional[logging.StreamHandler] = None
 
     def __new__(cls):
+        """Create or return singleton instance of logger."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance._initialize()

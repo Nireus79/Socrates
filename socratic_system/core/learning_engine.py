@@ -439,6 +439,7 @@ class UserProfile:
         self.topic_interactions = topic_interactions
 
     def __repr__(self):
+        """Return string representation of UserProfile."""
         return (
             f"UserProfile(user_id={self.user_id}, "
             f"questions={self.total_questions_asked}, "

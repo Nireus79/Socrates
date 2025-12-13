@@ -14,7 +14,7 @@ class User:
     username: str
     passcode_hash: str
     created_at: datetime.datetime
-    projects: List[str] = None  # User can start with no projects
+    projects: Optional[List[str]] = None  # User can start with no projects
     is_archived: bool = False
     archived_at: Optional[datetime.datetime] = None
 
@@ -64,4 +64,6 @@ class User:
 
     def get_active_projects_count(self) -> int:
         """Get count of active (non-archived) projects."""
+        if self.projects is None:
+            return 0
         return len([p for p in self.projects if p])

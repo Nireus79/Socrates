@@ -162,7 +162,6 @@ class ClaudeClient:
         self, conflict: ConflictInfo, project: ProjectContext
     ) -> str:
         """Generate suggestions for resolving a specific conflict"""
-
         context_summary = self.orchestrator.context_analyzer.get_context_summary(project)
 
         prompt = f"""Help resolve this project specification conflict:

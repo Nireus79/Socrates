@@ -19,8 +19,14 @@ def temp_vector_db():
     temp_dir = tempfile.mkdtemp()
     db = VectorDatabase(temp_dir)
     yield db
-    # Cleanup
-    shutil.rmtree(temp_dir, ignore_errors=True)
+    # Cleanup - ensure client is closed before removing directory
+    try:
+        if hasattr(db, "client") and db.client is not None:
+            db.client.close()
+    except Exception:
+        pass
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 @pytest.fixture
