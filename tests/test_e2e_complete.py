@@ -4,6 +4,7 @@ End-to-End Test Suite for Socratic RAG System
 Tests all commands and workflows in realistic scenarios
 """
 
+import io
 import os
 import shutil
 import sys
@@ -12,14 +13,6 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-# Fix Windows console encoding issues (only when NOT in PyCharm IDE)
-# Detecting PyCharm to avoid interfering with its console
-_is_pycharm_ide = sys.stdout.__class__.__name__ == "PyCharmOutput" or hasattr(sys.stdout, "_stream")
-if sys.platform == "win32" and not _is_pycharm_ide:
-    import io
-
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 from socratic_system.config import SocratesConfig
 from socratic_system.models import ProjectContext, ProjectNote, User
@@ -54,6 +47,12 @@ from socratic_system.ui.commands import (
 from socratic_system.ui.context_display import ContextDisplay
 from socratic_system.ui.main_app import SocraticRAGSystem
 from socratic_system.ui.navigation import NavigationStack
+
+# Fix Windows console encoding issues (only when NOT in PyCharm IDE)
+# Detecting PyCharm to avoid interfering with its console
+_is_pycharm_ide = sys.stdout.__class__.__name__ == "PyCharmOutput" or hasattr(sys.stdout, "_stream")
+if sys.platform == "win32" and not _is_pycharm_ide:
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 
 @pytest.fixture
