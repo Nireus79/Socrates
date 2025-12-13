@@ -327,119 +327,124 @@ Return only the question, no additional text or explanation."""
 
         # REAL-TIME CONFLICT DETECTION
         if insights:
-            logger.info("Running conflict detection on new insights...")
-            conflict_result = self.orchestrator.process_request(
-                "conflict_detector",
-                {
-                    "action": "detect_conflicts",
-                    "project": project,
-                    "new_insights": insights,
-                    "current_user": current_user,
-                },
-            )
+            if not self._handle_conflict_detection(
+                insights, project, current_user, logger
+            ):
+                return {"status": "success", "insights": insights, "conflicts_pending": True}
 
-            if conflict_result["status"] == "success" and conflict_result["conflicts"]:
-                logger.warning(f"Detected {len(conflict_result['conflicts'])} conflict(s)")
-                # Handle conflicts before updating context
-                conflicts_resolved = self._handle_conflicts_realtime(
-                    conflict_result["conflicts"], project
-                )
-                if not conflicts_resolved:
-                    # User chose not to resolve conflicts, don't update context
-                    logger.info("User chose not to resolve conflicts")
-                    return {"status": "success", "insights": insights, "conflicts_pending": True}
-            else:
-                logger.debug("No conflicts detected")
+        # Update context and maturity
+        self._update_project_and_maturity(project, insights, logger)
 
-        # Update context only if no conflicts or conflicts were resolved
+        # Track question effectiveness for learning
+        self._track_question_effectiveness(
+            project, insights, user_response, current_user, logger
+        )
+
+        return {"status": "success", "insights": insights}
+
+    def _handle_conflict_detection(self, insights, project, current_user, logger) -> bool:
+        """Handle conflict detection and return whether to continue"""
+        logger.info("Running conflict detection on new insights...")
+        conflict_result = self.orchestrator.process_request(
+            "conflict_detector",
+            {
+                "action": "detect_conflicts",
+                "project": project,
+                "new_insights": insights,
+                "current_user": current_user,
+            },
+        )
+
+        if not (conflict_result["status"] == "success" and conflict_result["conflicts"]):
+            logger.debug("No conflicts detected")
+            return True
+
+        logger.warning(f"Detected {len(conflict_result['conflicts'])} conflict(s)")
+        conflicts_resolved = self._handle_conflicts_realtime(
+            conflict_result["conflicts"], project
+        )
+        if not conflicts_resolved:
+            logger.info("User chose not to resolve conflicts")
+            return False
+        return True
+
+    def _update_project_and_maturity(self, project, insights, logger) -> None:
+        """Update project context and phase maturity"""
         logger.info("Updating project context with insights...")
         self._update_project_context(project, insights)
         logger.debug("Project context updated successfully")
 
-        # NEW: Update phase maturity after processing response
-        if insights:
-            logger.info("Calculating phase maturity...")
-            maturity_result = self.orchestrator.process_request(
-                "quality_controller",
-                {
-                    "action": "update_after_response",
-                    "project": project,
-                    "insights": insights,
-                },
-            )
+        if not insights:
+            return
 
-            if maturity_result["status"] == "success":
-                maturity = maturity_result.get("maturity", {})
-                score = maturity.get("overall_score", 0.0)
-                logger.info(f"Phase maturity updated: {score:.1f}%")
+        logger.info("Calculating phase maturity...")
+        maturity_result = self.orchestrator.process_request(
+            "quality_controller",
+            {
+                "action": "update_after_response",
+                "project": project,
+                "insights": insights,
+            },
+        )
 
-        # NEW: Track question effectiveness for learning
-        if insights and project.conversation_history:
-            # Find the most recent question (assistant message in this phase)
-            phase_messages = [
-                msg for msg in project.conversation_history if msg.get("phase") == project.phase
+        if maturity_result["status"] == "success":
+            maturity = maturity_result.get("maturity", {})
+            score = maturity.get("overall_score", 0.0)
+            logger.info(f"Phase maturity updated: {score:.1f}%")
+
+    def _track_question_effectiveness(
+        self, project, insights, user_response, current_user, logger
+    ) -> None:
+        """Track question effectiveness in learning system"""
+        if not (insights and project.conversation_history):
+            return
+
+        phase_messages = [
+            msg for msg in project.conversation_history if msg.get("phase") == project.phase
+        ]
+        if len(phase_messages) < 2:  # Need at least question + response
+            return
+
+        question_msg = self._find_last_question(phase_messages)
+        if not question_msg:
+            return
+
+        question_id = question_msg.get("id", phase_messages[-2].get("content", "")[:50])
+        specs_extracted = self._count_extracted_specs(insights)
+
+        logger.debug(f"Tracking question effectiveness: {question_id}")
+
+        user_role = project.get_member_role(current_user) if current_user else "general"
+        self.orchestrator.process_request(
+            "learning",
+            {
+                "action": "track_question_effectiveness",
+                "user_id": current_user,
+                "question_template_id": question_id,
+                "role": user_role,
+                "answer_length": len(user_response),
+                "specs_extracted": specs_extracted,
+                "answer_quality": 0.5,
+            },
+        )
+
+    def _find_last_question(self, phase_messages: list) -> dict:
+        """Find the most recent question (assistant message) in phase"""
+        for msg in reversed(phase_messages[:-1]):
+            if msg.get("type") == "assistant":
+                return msg
+        return None
+
+    def _count_extracted_specs(self, insights: Dict) -> int:
+        """Count total specs extracted from insights"""
+        return sum(
+            [
+                len(insights.get("goals", [])) if insights.get("goals") else 0,
+                len(insights.get("requirements", [])) if insights.get("requirements") else 0,
+                len(insights.get("tech_stack", [])) if insights.get("tech_stack") else 0,
+                len(insights.get("constraints", [])) if insights.get("constraints") else 0,
             ]
-            if len(phase_messages) >= 2:  # At least question + response
-                # Get the last question
-                question_msg = None
-                for msg in reversed(phase_messages[:-1]):  # Skip the response we just added
-                    if msg.get("type") == "assistant":
-                        question_msg = msg
-                        break
-
-                if question_msg:
-                    question_id = question_msg.get("id", phase_messages[-2].get("content", "")[:50])
-
-                    # Calculate answer quality (0-1)
-                    answer_quality = (
-                        float(maturity_result.get("maturity", {}).get("overall_score", 0.5)) / 100.0
-                        if "maturity_result" in locals()
-                        else 0.5
-                    )
-
-                    # Count extracted specs
-                    specs_extracted = sum(
-                        [
-                            len(insights.get("goals", [])) if insights.get("goals") else 0,
-                            (
-                                len(insights.get("requirements", []))
-                                if insights.get("requirements")
-                                else 0
-                            ),
-                            (
-                                len(insights.get("tech_stack", []))
-                                if insights.get("tech_stack")
-                                else 0
-                            ),
-                            (
-                                len(insights.get("constraints", []))
-                                if insights.get("constraints")
-                                else 0
-                            ),
-                        ]
-                    )
-
-                    logger.debug(
-                        f"Tracking question effectiveness: {question_id}, quality={answer_quality:.2f}"
-                    )
-
-                    # Call learning agent to track this question's effectiveness
-                    # FIXED: Use current_user (actual user who answered), not project.owner
-                    user_role = project.get_member_role(current_user) if current_user else "general"
-                    self.orchestrator.process_request(
-                        "learning",
-                        {
-                            "action": "track_question_effectiveness",
-                            "user_id": current_user,
-                            "question_template_id": question_id,
-                            "role": user_role,
-                            "answer_length": len(user_response),
-                            "specs_extracted": specs_extracted,
-                            "answer_quality": answer_quality,
-                        },
-                    )
-
-        return {"status": "success", "insights": insights}
+        )
 
     def _log_extracted_insights(self, logger, insights: Dict) -> None:
         """Log detailed breakdown of extracted insights"""

@@ -13,26 +13,11 @@ DEBUG    socrates.agents.User Learning:learning_engine.py:35 LearningEngine init
 INFO     socrates.agents.User Learning:learning_agent.py:48 UserLearningAgent initialized
 INFO     socrates.agents.Multi-LLM Manager:multi_llm_agent.py:46 MultiLLMAgent initialized
 DEBUG    socrates.orchestrator:orchestrator.py:130 Knowledge base already loaded, skipping initialization
-DEBUG    socrates.events:event_emitter.py:139 Event: system.initialized - {'version': '0.5.0', 'data_dir': 'C:\\Users\\themi\\AppData\\Local\\Temp\\tmp3rq04649', 'model': 'claude-haiku-4-5-20251001', 'timestamp': '2025-12-13T08:44:19.622354'}
+DEBUG    socrates.events:event_emitter.py:139 Event: system.initialized - {'version': '0.5.0', 'data_dir': 'C:\\Users\\themi\\AppData\\Local\\Temp\\tmpykl2oqr7', 'model': 'claude-haiku-4-5-20251001', 'timestamp': '2025-12-13T08:48:11.126411'}
 INFO     socrates.orchestrator:orchestrator.py:103 ======================================================================
 INFO     socrates.orchestrator:orchestrator.py:104 Socratic RAG System initialized successfully!
-INFO     socrates.orchestrator:orchestrator.py:105   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmp3rq04649, log_level=INFO)
-INFO     socrates.orchestrator:orchestrator.py:106   Projects DB: C:\Users\themi\AppData\Local\Temp\tmp3rq04649\projects.db
-INFO     socrates.orchestrator:orchestrator.py:107   Vector DB: C:\Users\themi\AppData\Local\Temp\tmp3rq04649\vector_db
+INFO     socrates.orchestrator:orchestrator.py:105   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\AppData\Local\Temp\tmpykl2oqr7, log_level=INFO)
+INFO     socrates.orchestrator:orchestrator.py:106   Projects DB: C:\Users\themi\AppData\Local\Temp\tmpykl2oqr7\projects.db
+INFO     socrates.orchestrator:orchestrator.py:107   Vector DB: C:\Users\themi\AppData\Local\Temp\tmpykl2oqr7\vector_db
 INFO     socrates.orchestrator:orchestrator.py:108 ======================================================================
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Created project 'Test API Project' (type: software) with ID 6c263808-cb19-4e79-b01a-64de20fa04ed
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Loaded project 'Test Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Saved project 'Test Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Added 'newcollaborator' as creator to project 'Pro Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Removed collaborator 'user_to_remove' from project 'Test Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Archived project 'Test Project' (ID: test_proj_001)
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Restored project 'Test Project' (ID: test_proj_001)
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: PERMANENTLY DELETED project 'Test Project' (ID: test_proj_001)
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Created project 'Lifecycle Test Project' (type: software) with ID 93f25394-74b4-4449-971b-68f329de8f60
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Loaded project 'Lifecycle Test Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Saved project 'Lifecycle Test Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Archived project 'Lifecycle Test Project' (ID: 93f25394-74b4-4449-971b-68f329de8f60)
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Restored project 'Lifecycle Test Project' (ID: 93f25394-74b4-4449-971b-68f329de8f60)
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Added 'collaborator_0' as creator to project 'Pro Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Added 'collaborator_1' as creator to project 'Pro Project'
-INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Added 'collaborator_2' as creator to project 'Pro Project'
+INFO     socrates.agents.ProjectManager:base.py:112 ProjectManager: Created project 'Test API Project' (type: software) with ID ae4e6495-8d0b-4cf0-b173-78508af6ae32
