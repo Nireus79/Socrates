@@ -966,8 +966,10 @@ class ProjectDatabaseV2:
         user_id: str,
         project_id: str,
         doc_id: str,
-        content: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        title: str = "",
+        content: str = "",
+        source: Optional[str] = None,
+        document_type: str = "document",
     ) -> bool:
         """
         Save a knowledge document (entry).
@@ -976,8 +978,10 @@ class ProjectDatabaseV2:
             user_id: Username
             project_id: Project ID
             doc_id: Document ID
+            title: Document title
             content: Document content
-            metadata: Optional metadata dictionary
+            source: Optional source reference
+            document_type: Type of document
 
         Returns:
             True if successful, False otherwise
@@ -987,21 +991,21 @@ class ProjectDatabaseV2:
 
         try:
             now = datetime.now()
-            metadata_json = json.dumps(metadata) if metadata else None
 
             cursor.execute(
                 """
                 INSERT OR REPLACE INTO knowledge_documents_v2
                 (id, project_id, user_id, title, content, source, document_type, uploaded_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     doc_id,
                     project_id,
                     user_id,
+                    title,
                     content,
-                    metadata_json,
-                    serialize_datetime(now),
+                    source,
+                    document_type,
                     serialize_datetime(now),
                 ),
             )
