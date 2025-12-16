@@ -12,6 +12,7 @@ from colorama import Fore, Style
 from socratic_system.models import ProjectContext, User
 from socratic_system.orchestration import AgentOrchestrator
 from socratic_system.ui.command_handler import CommandHandler
+from socratic_system.utils.logger import get_logger as get_debug_logger
 from socratic_system.ui.commands import (  # Analytics commands; Code commands; Finalize commands; Collaboration commands; Skills commands; Session commands; Conversation commands; Debug commands; Document commands; System commands; Note commands; Project commands; Statistics commands; User commands; Subscription commands
     AdvanceCommand,
     AnalyticsAnalyzeCommand,
@@ -106,6 +107,9 @@ class SocraticRAGSystem:
         self.context_display: Optional[ContextDisplay] = None
         self.nlu_handler: Optional[NLUHandler] = None
 
+        # Initialize debug logger
+        self.logger = get_debug_logger("main_app")
+
     def start(self) -> None:
         """Start the Socratic RAG System"""
         self._print_banner()
@@ -131,7 +135,7 @@ class SocraticRAGSystem:
             self.command_handler = CommandHandler()
             self.nav_stack = NavigationStack()
             self.nav_stack.push("main_menu", {})  # Initialize with main menu as root context
-            self.logger.debug(f"Navigation stack initialized: {self.nav_stack.get_breadcrumb()}")
+            self.logger.debug("Navigation stack initialized with main_menu as root")
             self.context_display = ContextDisplay()
 
             # Register all commands
@@ -390,7 +394,7 @@ class SocraticRAGSystem:
                 # Entering a project context - push to navigation stack
                 if self.nav_stack:
                     self.nav_stack.push("project_view", {"project_id": project.project_id})
-                    self.logger.debug(f"Entered project: {project.name}, nav stack: {self.nav_stack.get_breadcrumb()}")
+                    self.logger.debug(f"Entered project context: {project.name} (ID: {project.project_id})")
 
             # Handle navigation context changes (from /back, /menu commands)
             nav_context = data.get("nav_context")
@@ -399,14 +403,14 @@ class SocraticRAGSystem:
                 if nav_context == "main_menu":
                     self.current_project = None
                     self.context_display.set_context(project=None)
-                    self.logger.debug(f"Exited to main_menu, nav stack: {self.nav_stack.get_breadcrumb() if self.nav_stack else 'N/A'}")
+                    self.logger.debug("Returned to main_menu context")
                 # State restoration could be added here if needed
 
             # Check if session ended (done command, menu command, back command)
             if data.get("session_ended"):
                 self.current_project = None
                 self.context_display.set_context(project=None)
-                self.logger.debug(f"Session ended, nav stack: {self.nav_stack.get_breadcrumb() if self.nav_stack else 'N/A'}")
+                self.logger.debug("Session ended - cleared project and context display")
         elif result["status"] == "info":
             if result.get("message"):
                 print(result["message"])
