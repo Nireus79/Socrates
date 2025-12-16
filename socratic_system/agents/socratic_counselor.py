@@ -196,7 +196,8 @@ class SocraticCounselorAgent(Agent):
             f"Building question prompt for {project.phase} phase (question #{question_count + 1})"
         )
         prompt = self._build_question_prompt(
-            project, context, recent_conversation, relevant_knowledge, question_count, current_user
+            project, context, recent_conversation, relevant_knowledge, question_count, current_user,
+            knowledge_results=knowledge_results if knowledge_results else []
         )
 
         try:
@@ -218,8 +219,12 @@ class SocraticCounselorAgent(Agent):
         relevant_knowledge: str,
         question_count: int,
         current_user: str = None,
+        knowledge_results: List[Dict] = None,
     ) -> str:
         """Build prompt for dynamic question generation with role-aware context"""
+        if knowledge_results is None:
+            knowledge_results = []
+
         phase_descriptions = {
             "discovery": "exploring the problem space, understanding user needs, and defining project goals",
             "analysis": "analyzing technical requirements, identifying challenges, and planning solutions",
@@ -257,6 +262,26 @@ Tailor your question to their role and expertise. For example:
 - For 'analyst': Ask about research, requirements, validation, and critical assessment
 - For 'coordinator': Ask about timelines, dependencies, process management, and coordination"""
 
+        # NEW: Check if documents include code files
+        code_context = ""
+        has_code = any(
+            result.get("metadata", {}).get("type") == "code" or
+            "code_structure" in str(result.get("metadata", {})).lower()
+            for result in knowledge_results
+        )
+
+        if has_code:
+            code_context = """
+
+Code Analysis Context:
+Since the knowledge base includes code or code structure, consider these code-specific questions:
+- Ask about design patterns and architectural choices in the code
+- Explore separation of concerns and code organization
+- Discuss error handling and edge cases
+- Question the trade-offs in implementation decisions
+- Ask about testability, maintainability, and extensibility
+- Explore dependencies and external library choices"""
+
         return f"""You are a Socratic tutor helping guide someone through their {project.project_type} project.
 
 Project Details:
@@ -268,7 +293,7 @@ Project Details:
 - Requirements: {', '.join(project.requirements) if project.requirements else 'Not specified'}
 
 Project Context:
-{context}{role_context}
+{context}{role_context}{code_context}
 
 Recent Conversation:
 {recent_conversation}
