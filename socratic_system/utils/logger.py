@@ -5,6 +5,7 @@ Supports debug mode, file logging, and console output
 
 import logging
 import logging.handlers
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -27,8 +28,32 @@ class DebugLogger:
         return cls._instance
 
     @classmethod
+    def _cleanup_old_logs(cls) -> None:
+        """Clean up old log files, keeping only recent ones"""
+        logs_dir = Path("socratic_logs")
+        if not logs_dir.exists():
+            return
+
+        # Find all log files (socratic.log, socratic.log.1, socratic.log.2, etc.)
+        log_files = sorted(
+            logs_dir.glob("socratic.log*"),
+            key=lambda p: p.stat().st_mtime if p.exists() else 0,
+            reverse=True
+        )
+
+        # Keep only the 3 most recent log files, delete older ones
+        for log_file in log_files[3:]:
+            try:
+                log_file.unlink()
+            except Exception:
+                pass
+
+    @classmethod
     def _initialize(cls):
         """Initialize the logging system"""
+        # Clean up old logs first
+        cls._cleanup_old_logs()
+
         # Create logger
         cls._logger = logging.getLogger("socratic_rag")
         cls._logger.setLevel(logging.DEBUG)
@@ -39,14 +64,18 @@ class DebugLogger:
         logs_dir = Path("socratic_logs")
         logs_dir.mkdir(exist_ok=True)
 
-        # File handler with rotation (always logs everything)
-        # Rotates when log file reaches 5MB, keeps up to 5 backup files (~25MB total)
+        # File handler with time-based rotation (daily logs)
+        # Creates new log file each day: socratic.log, socratic.log.2024-12-16, etc.
         log_file = logs_dir / "socratic.log"
-        file_handler = logging.handlers.RotatingFileHandler(
+        file_handler = logging.handlers.TimedRotatingFileHandler(
             log_file,
-            maxBytes=5 * 1024 * 1024,  # 5MB
-            backupCount=5,  # Keep 5 backup files (socratic.log.1, .2, .3, .4, .5)
+            when="midnight",  # Rotate at midnight
+            interval=1,  # Every 1 day
+            backupCount=3,  # Keep 3 days of logs
+            utc=False
         )
+        # Use date format for backup files: socratic.log.2024-12-16
+        file_handler.suffix = "%Y-%m-%d"
         file_handler.setLevel(logging.DEBUG)
         file_formatter = logging.Formatter(
             "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
