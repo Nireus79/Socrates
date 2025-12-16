@@ -203,6 +203,82 @@ class VectorDatabase:
             self.logger.warning(f"Search failed: {e}")
             return []
 
+    def search_similar_adaptive(
+        self,
+        query: str,
+        strategy: str = "snippet",
+        top_k: int = 5,
+        project_id: Optional[str] = None
+    ) -> List[Dict]:
+        """
+        Enhanced search with adaptive content loading.
+
+        Strategies:
+        - "full": Return full chunk content (500+ words)
+        - "medium": Return 500 chars per chunk
+        - "snippet": Return 200 chars per chunk (default, current behavior)
+
+        Args:
+            query: Search query string
+            strategy: Content loading strategy ("full", "medium", or "snippet")
+            top_k: Number of results to return
+            project_id: Optional project ID to filter results
+
+        Returns:
+            List of dicts with:
+            - content: Document text (length based on strategy)
+            - full_content: Always include full chunk (for summarization)
+            - metadata: Source, chunk info, project_id
+            - score: Relevance score (distance metric)
+            - summary: Brief summary of full content
+        """
+        if not query.strip():
+            return []
+
+        if strategy not in ("full", "medium", "snippet"):
+            self.logger.warning(f"Invalid strategy '{strategy}', defaulting to 'snippet'")
+            strategy = "snippet"
+
+        try:
+            # Use base search_similar to get results
+            base_results = self.search_similar(query, top_k=top_k, project_id=project_id)
+
+            if not base_results:
+                return []
+
+            enhanced_results = []
+            for result in base_results:
+                full_content = result["content"]
+
+                # Apply strategy-based truncation
+                if strategy == "full":
+                    content = full_content
+                elif strategy == "medium":
+                    content = full_content[:500] + ("..." if len(full_content) > 500 else "")
+                else:  # snippet
+                    content = full_content[:200] + ("..." if len(full_content) > 200 else "")
+
+                # Generate summary for the full content
+                summary = self._generate_chunk_summary(full_content)
+
+                enhanced_results.append({
+                    "content": content,
+                    "full_content": full_content,
+                    "metadata": result["metadata"],
+                    "score": result["score"],
+                    "summary": summary
+                })
+
+            self.logger.debug(
+                f"Adaptive search completed with strategy '{strategy}': "
+                f"{len(enhanced_results)} results"
+            )
+            return enhanced_results
+
+        except Exception as e:
+            self.logger.warning(f"Adaptive search failed: {e}")
+            return []
+
     def add_text(self, content: str, metadata: Dict = None):
         """Add text content directly (for document imports)"""
         if metadata is None:
@@ -401,3 +477,56 @@ class VectorDatabase:
         except Exception as e:
             self.logger.warning(f"Failed to delete project knowledge: {e}")
             return 0
+
+    def _generate_chunk_summary(self, chunk: str, max_length: int = 150) -> str:
+        """
+        Generate a brief summary of a document chunk.
+
+        Summaries are generated using a heuristic approach (first sentences)
+        with a fallback to simple truncation if the chunk is very short.
+
+        Args:
+            chunk: The document chunk to summarize
+            max_length: Maximum length of the summary in characters
+
+        Returns:
+            A brief summary of the chunk content
+        """
+        if not chunk or not chunk.strip():
+            return "(empty content)"
+
+        # For very short content, just return it as-is
+        if len(chunk) <= max_length:
+            return chunk.strip()
+
+        # Try to extract first few sentences for a natural summary
+        import re
+
+        # Split by sentence boundaries (., !, ?, followed by space and capital letter)
+        sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', chunk)
+
+        summary_parts = []
+        current_length = 0
+
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+
+            # Add sentence if it fits within max_length
+            potential_length = current_length + len(sentence) + 1  # +1 for space
+            if potential_length <= max_length:
+                summary_parts.append(sentence)
+                current_length = potential_length
+            else:
+                break
+
+        if summary_parts:
+            summary = " ".join(summary_parts)
+            # Ensure it ends with punctuation
+            if not summary.endswith(('.', '!', '?')):
+                summary += "..."
+            return summary
+        else:
+            # Fallback: just truncate and add ellipsis
+            return chunk[:max_length].rstrip() + "..."

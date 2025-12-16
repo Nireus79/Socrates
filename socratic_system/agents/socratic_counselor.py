@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List
 
 from colorama import Fore
 
+from socratic_system.agents.document_context_analyzer import DocumentContextAnalyzer
 from socratic_system.events import EventType
 from socratic_system.models import ROLE_FOCUS_AREAS, ConflictInfo, ProjectContext
 
@@ -148,16 +149,48 @@ class SocraticCounselorAgent(Agent):
                 recent_conversation += f"{role}: {msg['content']}\n"
             logger.debug(f"Using {len(recent_messages)} recent messages for context")
 
-        # Get relevant knowledge from vector database
+        # Get relevant knowledge from vector database with adaptive loading strategy
         relevant_knowledge = ""
         if context:
-            logger.debug("Searching vector database for relevant knowledge...")
-            knowledge_results = self.orchestrator.vector_db.search_similar(context, top_k=3)
+            logger.debug("Analyzing question context for adaptive document loading...")
+
+            # Use DocumentContextAnalyzer to determine loading strategy
+            doc_analyzer = DocumentContextAnalyzer()
+
+            # Convert project context to dict format for analyzer
+            project_context_dict = {
+                "current_phase": project.phase,
+                "goals": project.goals or ""
+            }
+
+            # Determine loading strategy based on conversation context
+            strategy = doc_analyzer.analyze_question_context(
+                project_context=project_context_dict,
+                conversation_history=project.conversation_history,
+                question_count=question_count
+            )
+
+            logger.debug(f"Using '{strategy}' document loading strategy")
+
+            # Get top_k based on strategy
+            top_k = 5 if strategy == "full" else 3
+
+            # Use adaptive search
+            knowledge_results = self.orchestrator.vector_db.search_similar_adaptive(
+                query=context,
+                strategy=strategy,
+                top_k=top_k,
+                project_id=project.project_id
+            )
+
             if knowledge_results:
-                relevant_knowledge = "\n".join(
-                    [result["content"][:200] + "..." for result in knowledge_results]
-                )
-                logger.debug(f"Found {len(knowledge_results)} relevant knowledge items")
+                # Build knowledge context based on strategy
+                if strategy == "full":
+                    relevant_knowledge = self._build_full_knowledge_context(knowledge_results)
+                else:
+                    relevant_knowledge = self._build_snippet_knowledge_context(knowledge_results)
+
+                logger.debug(f"Found {len(knowledge_results)} relevant knowledge items with strategy '{strategy}'")
 
         logger.debug(
             f"Building question prompt for {project.phase} phase (question #{question_count + 1})"
@@ -272,6 +305,38 @@ Return only the question, no additional text or explanation."""
                 "implementation": "What implementation details would you like to work through?",
             }
             return fallbacks.get(project.phase, "What would you like to explore further?")
+
+    def _build_full_knowledge_context(self, results: List[Dict]) -> str:
+        """Build rich knowledge context with full document content and summaries"""
+        if not results:
+            return ""
+
+        sections = []
+        for i, result in enumerate(results, 1):
+            source = result["metadata"].get("source", "Unknown") if result.get("metadata") else "Unknown"
+            summary = result.get("summary", "")
+            content = result.get("content", "")
+
+            section = f"Document {i}: {source}\nSummary: {summary}\nContent:\n{content}"
+            sections.append(section)
+
+        return "\n\n---\n\n".join(sections)
+
+    def _build_snippet_knowledge_context(self, results: List[Dict]) -> str:
+        """Build concise knowledge context with snippets and summaries"""
+        if not results:
+            return ""
+
+        sections = []
+        for result in results:
+            source = result["metadata"].get("source", "Unknown") if result.get("metadata") else "Unknown"
+            summary = result.get("summary", "")
+            content = result.get("content", "")
+
+            section = f"[{source}] {summary}: {content}"
+            sections.append(section)
+
+        return "\n".join(sections)
 
     def _extract_insights_only(self, request: Dict) -> Dict:
         """Extract insights from response without processing (for direct mode confirmation)"""
