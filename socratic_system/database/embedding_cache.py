@@ -93,7 +93,7 @@ class EmbeddingCache:
                 if self._access_order:
                     oldest = self._access_order.pop(0)
                     del self._cache[oldest]
-                    self._logger.debug(f"Evicted oldest embedding from cache")
+                    self._logger.debug("Evicted oldest embedding from cache")
 
             # Store or update
             if text_hash in self._cache:

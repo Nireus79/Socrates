@@ -4,8 +4,8 @@ Comprehensive tests for TTL Cache Decorator (Phase 3)
 Tests decorator-based method caching with time-to-live.
 """
 
-import pytest
 import time
+
 from socratic_system.utils.ttl_cache import TTLCache, cached
 
 
@@ -62,13 +62,13 @@ class TestTTLCacheDecorator:
             call_count[0] += 1
             return f"{greeting}, {name}!"
 
-        result1 = greet("Alice", greeting="Hi")
+        _ = greet("Alice", greeting="Hi")
         assert call_count[0] == 1
 
-        result2 = greet("Alice", greeting="Hi")
+        _ = greet("Alice", greeting="Hi")
         assert call_count[0] == 1  # Cached
 
-        result3 = greet("Alice", greeting="Hey")
+        _ = greet("Alice", greeting="Hey")
         assert call_count[0] == 2  # Different kwargs
 
 
@@ -84,15 +84,15 @@ class TestTTLCacheTTL:
             call_count[0] += 1
             return "result"
 
-        result1 = expensive_function()
+        _ = expensive_function()
         assert call_count[0] == 1
 
-        result2 = expensive_function()
+        _ = expensive_function()
         assert call_count[0] == 1  # Cached
 
         time.sleep(1.1)
 
-        result3 = expensive_function()
+        _ = expensive_function()
         assert call_count[0] == 2  # Cache expired
 
     def test_cache_ttl_default(self):
@@ -217,10 +217,10 @@ class TestTTLCacheUnhashableArgs:
             return sum(data)
 
         # Tuple is hashable
-        result1 = func((1, 2, 3))
+        _ = func((1, 2, 3))
         assert call_count[0] == 1
 
-        result2 = func((1, 2, 3))
+        _ = func((1, 2, 3))
         assert call_count[0] == 1  # Cached (hashable)
 
 
@@ -310,10 +310,10 @@ class TestTTLCacheRealWorldScenarios:
 
         # First call
         result1 = fibonacci(10)
-        calls_for_first = call_count[0]
+        _ = call_count[0]
 
         # Reset counter and call again
-        initial_calls = call_count[0]
+        _ = call_count[0]
         call_count[0] = 0
 
         # Second call (cached) - should only call wrapper once for cached check

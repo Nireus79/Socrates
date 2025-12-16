@@ -9,9 +9,9 @@ from typing import Dict, List, Optional
 import chromadb
 from sentence_transformers import SentenceTransformer
 
-from socratic_system.models import KnowledgeEntry
 from socratic_system.database.embedding_cache import EmbeddingCache
 from socratic_system.database.search_cache import SearchResultCache
+from socratic_system.models import KnowledgeEntry
 
 
 class VectorDatabase:
@@ -256,7 +256,9 @@ class VectorDatabase:
             # Since knowledge has changed, cached results are now stale
             count = self.search_cache.invalidate_project(project_id)
             if count > 0:
-                self.logger.info(f"Invalidated {count} search cache entries for project '{project_id}'")
+                self.logger.info(
+                    f"Invalidated {count} search cache entries for project '{project_id}'"
+                )
 
             self.logger.debug(f"Added project knowledge '{entry.id}' for project '{project_id}'")
             return True

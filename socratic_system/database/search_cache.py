@@ -46,9 +46,7 @@ class SearchResultCache:
         self._lock = threading.RLock()
         self._logger = logging.getLogger("search_cache")
 
-    def get(
-        self, query: str, top_k: int, project_id: Optional[str] = None
-    ) -> Optional[List[Dict]]:
+    def get(self, query: str, top_k: int, project_id: Optional[str] = None) -> Optional[List[Dict]]:
         """
         Retrieve cached search results.
 
@@ -75,8 +73,7 @@ class SearchResultCache:
                 if time.time() - timestamp < self._ttl:
                     self._hits += 1
                     self._logger.debug(
-                        f"Search cache hit: {query[:30]}... "
-                        f"(age: {time.time()-timestamp:.1f}s)"
+                        f"Search cache hit: {query[:30]}... " f"(age: {time.time()-timestamp:.1f}s)"
                     )
                     return results
                 else:
@@ -88,9 +85,7 @@ class SearchResultCache:
             self._misses += 1
             return None
 
-    def put(
-        self, query: str, top_k: int, project_id: Optional[str], results: List[Dict]
-    ) -> None:
+    def put(self, query: str, top_k: int, project_id: Optional[str], results: List[Dict]) -> None:
         """
         Store search results in cache.
 
@@ -108,8 +103,7 @@ class SearchResultCache:
         with self._lock:
             self._cache[cache_key] = (results, time.time())
             self._logger.debug(
-                f"Cached search results: {query[:30]}... "
-                f"(cache size: {len(self._cache)})"
+                f"Cached search results: {query[:30]}... " f"(cache size: {len(self._cache)})"
             )
 
     def invalidate_query(self, query: str, top_k: Optional[int] = None) -> int:
@@ -135,9 +129,7 @@ class SearchResultCache:
                         count += 1
             else:
                 # Invalidate all top_k for this query
-                keys_to_remove = [
-                    k for k in self._cache.keys() if k.startswith(f"{query}:")
-                ]
+                keys_to_remove = [k for k in self._cache.keys() if k.startswith(f"{query}:")]
                 for key in keys_to_remove:
                     del self._cache[key]
                     count += 1
@@ -162,9 +154,7 @@ class SearchResultCache:
         count = 0
 
         with self._lock:
-            keys_to_remove = [
-                k for k in self._cache.keys() if f":{project_id}" in k
-            ]
+            keys_to_remove = [k for k in self._cache.keys() if f":{project_id}" in k]
             for key in keys_to_remove:
                 del self._cache[key]
                 count += 1

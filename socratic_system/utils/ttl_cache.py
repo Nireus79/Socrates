@@ -7,9 +7,8 @@ Implements a function decorator for automatic memoization with time-to-live.
 import functools
 import logging
 import threading
-import time
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Tuple
 
 
 class TTLCache:
@@ -61,9 +60,7 @@ class TTLCache:
                 key = (args, tuple(sorted(kwargs.items())))
             except TypeError:
                 # If args/kwargs not hashable, skip caching
-                self._logger.debug(
-                    f"Skipping cache for {func.__name__} - unhashable arguments"
-                )
+                self._logger.debug(f"Skipping cache for {func.__name__} - unhashable arguments")
                 return func(*args, **kwargs)
 
             try:
@@ -92,23 +89,20 @@ class TTLCache:
                 with self._lock:
                     self._cache[key] = (result, datetime.now())
                     self._logger.debug(
-                        f"Cached result for {func.__name__} "
-                        f"(cache size: {len(self._cache)})"
+                        f"Cached result for {func.__name__} " f"(cache size: {len(self._cache)})"
                     )
 
                 return result
             except TypeError:
                 # If key is unhashable (e.g., contains list), skip caching
-                self._logger.debug(
-                    f"Skipping cache for {func.__name__} - unhashable key"
-                )
+                self._logger.debug(f"Skipping cache for {func.__name__} - unhashable key")
                 return func(*args, **kwargs)
 
         # Attach cache management methods
-        wrapper.cache_clear = self.clear
-        wrapper.cache_stats = self.stats
-        wrapper.cache_info = self.info
-        wrapper._cache = self
+        wrapper.cache_clear = self.clear  # type: ignore[attr-defined]
+        wrapper.cache_stats = self.stats  # type: ignore[attr-defined]
+        wrapper.cache_info = self.info  # type: ignore[attr-defined]
+        wrapper._cache = self  # type: ignore[attr-defined]
 
         return wrapper
 
