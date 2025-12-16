@@ -1,5 +1,6 @@
 """Document and knowledge base management commands"""
 
+import os
 from typing import Any, Dict, List
 
 from colorama import Fore, Style
@@ -26,6 +27,9 @@ class DocImportCommand(BaseCommand):
 
         if not file_path:
             return self.error("File path cannot be empty")
+
+        # Normalize path to handle Windows paths correctly
+        file_path = os.path.normpath(file_path)
 
         orchestrator = context.get("orchestrator")
         project = context.get("project")
@@ -91,6 +95,9 @@ class DocImportDirCommand(BaseCommand):
 
         if not directory_path:
             return self.error("Directory path cannot be empty")
+
+        # Normalize path to handle Windows paths correctly
+        directory_path = os.path.normpath(directory_path)
 
         orchestrator = context.get("orchestrator")
         project = context.get("project")
