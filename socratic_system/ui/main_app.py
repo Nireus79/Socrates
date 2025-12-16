@@ -12,7 +12,7 @@ from colorama import Fore, Style
 from socratic_system.models import ProjectContext, User
 from socratic_system.orchestration import AgentOrchestrator
 from socratic_system.ui.command_handler import CommandHandler
-from socratic_system.utils.logger import get_logger as get_debug_logger
+from socratic_system.utils.logger import get_logger as get_debug_logger, set_debug_mode
 from socratic_system.ui.commands import (  # Analytics commands; Code commands; Finalize commands; Collaboration commands; Skills commands; Session commands; Conversation commands; Debug commands; Document commands; System commands; Note commands; Project commands; Statistics commands; User commands; Subscription commands
     AdvanceCommand,
     AnalyticsAnalyzeCommand,
@@ -113,6 +113,10 @@ class SocraticRAGSystem:
     def start(self) -> None:
         """Start the Socratic RAG System"""
         self._print_banner()
+
+        # Enable debug mode for development
+        set_debug_mode(True)
+        self.logger.debug("Debug mode enabled")
 
         # Get API key or choose authentication mode
         api_key = self._get_api_key()
@@ -402,14 +406,14 @@ class SocraticRAGSystem:
                 # Navigation command returned, handle context change
                 if nav_context == "main_menu":
                     self.current_project = None
-                    self.context_display.set_context(project=None)
+                    self.context_display.set_context(clear_project=True)
                     self.logger.debug("Returned to main_menu context")
                 # State restoration could be added here if needed
 
             # Check if session ended (done command, menu command, back command)
             if data.get("session_ended"):
                 self.current_project = None
-                self.context_display.set_context(project=None)
+                self.context_display.set_context(clear_project=True)
                 self.logger.debug("Session ended - cleared project and context display")
         elif result["status"] == "info":
             if result.get("message"):

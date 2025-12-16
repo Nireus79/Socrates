@@ -20,7 +20,7 @@ class ContextDisplay:
         self.current_project: Optional[ProjectContext] = None
 
     def set_context(
-        self, user: Optional[User] = None, project: Optional[ProjectContext] = None
+        self, user: Optional[User] = None, project: Optional[ProjectContext] = None, clear_project: bool = False
     ) -> None:
         """
         Update the current context to display.
@@ -28,11 +28,14 @@ class ContextDisplay:
         Args:
             user: Current logged-in user
             project: Current loaded project
+            clear_project: If True, clear the current project
         """
         if user is not None:
             self.current_user = user
         if project is not None:
             self.current_project = project
+        if clear_project:
+            self.current_project = None
 
     def get_prompt(self) -> str:
         """
