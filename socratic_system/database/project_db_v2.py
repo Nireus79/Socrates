@@ -18,7 +18,7 @@ import os
 import sqlite3
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from socratic_system.models.note import ProjectNote
 from socratic_system.models.project import ProjectContext
@@ -684,6 +684,61 @@ class ProjectDatabaseV2:
         except Exception as e:
             self.logger.error(f"Error loading user {username}: {e}")
             return None
+        finally:
+            conn.close()
+
+    def get_user_llm_configs(self, user_id: str) -> List[Dict[str, Any]]:
+        """
+        Get LLM provider configurations for a user.
+
+        Args:
+            user_id: Username to get configs for
+
+        Returns:
+            List of LLM configuration dictionaries
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT id, user_id, provider, config_data, created_at, updated_at
+                FROM llm_provider_configs_v2
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+            """,
+                (user_id,),
+            )
+
+            configs = []
+            for row in cursor.fetchall():
+                config_dict = {
+                    "id": row["id"],
+                    "user_id": row["user_id"],
+                    "provider": row["provider"],
+                    "created_at": row["created_at"],
+                    "updated_at": row["updated_at"],
+                }
+
+                # Parse JSON config data
+                if row["config_data"]:
+                    try:
+                        config_dict["config"] = json.loads(row["config_data"])
+                    except json.JSONDecodeError:
+                        self.logger.warning(
+                            f"Invalid JSON in config for {user_id}/{row['provider']}"
+                        )
+                        config_dict["config"] = {}
+
+                configs.append(config_dict)
+
+            return configs
+
+        except Exception as e:
+            self.logger.error(f"Error loading LLM configs for {user_id}: {e}")
+            return []
         finally:
             conn.close()
 
