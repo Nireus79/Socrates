@@ -4,6 +4,7 @@ Supports debug mode, file logging, and console output
 """
 
 import logging
+import logging.handlers
 from pathlib import Path
 from typing import Optional
 
@@ -31,14 +32,21 @@ class DebugLogger:
         # Create logger
         cls._logger = logging.getLogger("socratic_rag")
         cls._logger.setLevel(logging.DEBUG)
+        # Prevent propagation to root logger to avoid duplicate logs
+        cls._logger.propagate = False
 
         # Create logs directory
         logs_dir = Path("socratic_logs")
         logs_dir.mkdir(exist_ok=True)
 
-        # File handler (always logs everything)
+        # File handler with rotation (always logs everything)
+        # Rotates when log file reaches 5MB, keeps up to 5 backup files (~25MB total)
         log_file = logs_dir / "socratic.log"
-        file_handler = logging.FileHandler(log_file)
+        file_handler = logging.handlers.RotatingFileHandler(
+            log_file,
+            maxBytes=5 * 1024 * 1024,  # 5MB
+            backupCount=5,  # Keep 5 backup files (socratic.log.1, .2, .3, .4, .5)
+        )
         file_handler.setLevel(logging.DEBUG)
         file_formatter = logging.Formatter(
             "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
@@ -46,9 +54,9 @@ class DebugLogger:
         file_handler.setFormatter(file_formatter)
         cls._logger.addHandler(file_handler)
 
-        # Console handler (shows INFO by default, DEBUG when enabled)
+        # Console handler (shows WARNING by default, DEBUG when enabled)
         cls._console_handler = logging.StreamHandler()
-        cls._console_handler.setLevel(logging.INFO)  # Show INFO by default
+        cls._console_handler.setLevel(logging.WARNING)  # Show WARNING by default
 
         # Enhanced formatter with better readability
         def format_console_message(record):
@@ -85,18 +93,18 @@ class DebugLogger:
         cls._debug_mode = enabled
         if cls._console_handler:
             # In debug mode, show DEBUG and above
-            # In normal mode, show INFO and above
+            # In normal mode, show WARNING and above
             if enabled:
                 cls._console_handler.setLevel(logging.DEBUG)
             else:
-                cls._console_handler.setLevel(logging.INFO)
+                cls._console_handler.setLevel(logging.WARNING)
 
-        # Log the mode change
+        # Log the mode change (use WARNING level so it shows even when debug is off)
         logger = cls.get_logger("system")
         if enabled:
-            logger.info("Debug mode ENABLED - all operations will be logged")
+            logger.warning("Debug mode ENABLED - all operations will be logged")
         else:
-            logger.info("Debug mode DISABLED - only important operations logged")
+            logger.warning("Debug mode DISABLED - only warnings and errors shown")
 
     @classmethod
     def is_debug_mode(cls) -> bool:
