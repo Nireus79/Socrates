@@ -16,7 +16,8 @@ import json
 import logging
 import os
 import sqlite3
-from datetime import datetime
+from dataclasses import asdict
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -1012,6 +1013,732 @@ class ProjectDatabaseV2:
         except Exception as e:
             conn.rollback()
             self.logger.error(f"Error saving knowledge document {doc_id}: {e}")
+            return False
+        finally:
+            conn.close()
+
+    # ========================================================================
+    # USER MANAGEMENT METHODS
+    # ========================================================================
+
+    def user_exists(self, username: str) -> bool:
+        """Check if a user exists"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT 1 FROM users_v2 WHERE username = ?", (username,))
+            result = cursor.fetchone()
+            return result is not None
+        finally:
+            conn.close()
+
+    def archive_user(self, username: str, archive_projects: bool = True) -> bool:
+        """Archive a user (soft delete)"""
+        try:
+            user = self.load_user(username)
+            if not user:
+                return False
+
+            user.is_archived = True
+            user.archived_at = datetime.now()
+            self.save_user(user)
+
+            if archive_projects:
+                # Archive all projects owned by this user
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+
+                cursor.execute(
+                    "UPDATE projects_v2 SET is_archived = 1, updated_at = ? WHERE owner = ? AND is_archived = 0",
+                    (serialize_datetime(datetime.now()), username),
+                )
+                conn.commit()
+                conn.close()
+
+            self.logger.debug(f"Archived user {username}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error archiving user {username}: {e}")
+            return False
+
+    def restore_user(self, username: str) -> bool:
+        """Restore an archived user"""
+        try:
+            user = self.load_user(username)
+            if not user or not user.is_archived:
+                return False
+
+            user.is_archived = False
+            user.archived_at = None
+            self.save_user(user)
+            self.logger.debug(f"Restored user {username}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Error restoring user {username}: {e}")
+            return False
+
+    def permanently_delete_user(self, username: str) -> bool:
+        """Permanently delete a user"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            # Delete user and all associated data
+            cursor.execute("DELETE FROM users_v2 WHERE username = ?", (username,))
+            cursor.execute("DELETE FROM question_effectiveness_v2 WHERE user_id = ?", (username,))
+            cursor.execute("DELETE FROM behavior_patterns_v2 WHERE user_id = ?", (username,))
+            cursor.execute("DELETE FROM llm_usage_v2 WHERE user_id = ?", (username,))
+            cursor.execute("DELETE FROM knowledge_documents_v2 WHERE user_id = ?", (username,))
+
+            conn.commit()
+            self.logger.debug(f"Permanently deleted user {username}")
+            return True
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error deleting user {username}: {e}")
+            return False
+        finally:
+            conn.close()
+
+    # ========================================================================
+    # LEARNING METHODS - QUESTION EFFECTIVENESS
+    # ========================================================================
+
+    def save_question_effectiveness(self, effectiveness: "QuestionEffectiveness") -> bool:
+        """Save question effectiveness record"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            effectiveness_dict = (
+                effectiveness.to_dict()
+                if hasattr(effectiveness, "to_dict")
+                else asdict(effectiveness)
+            )
+            effectiveness_json = json.dumps(effectiveness_dict)
+            created_at_str = serialize_datetime(effectiveness.created_at)
+            updated_at_str = serialize_datetime(effectiveness.updated_at)
+
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO question_effectiveness_v2
+                (id, user_id, question_template_id, effectiveness_json, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    effectiveness.id,
+                    effectiveness.user_id,
+                    effectiveness.question_template_id,
+                    effectiveness_json,
+                    created_at_str,
+                    updated_at_str,
+                ),
+            )
+
+            conn.commit()
+            self.logger.debug(
+                f"Saved question effectiveness for {effectiveness.user_id}/{effectiveness.question_template_id}"
+            )
+            return True
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error saving question effectiveness: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def get_question_effectiveness(
+        self, user_id: str, question_template_id: str
+    ) -> Optional[Dict[str, any]]:
+        """Get question effectiveness record for a user-question pair"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT effectiveness_json FROM question_effectiveness_v2
+                WHERE user_id = ? AND question_template_id = ?
+            """,
+                (user_id, question_template_id),
+            )
+            result = cursor.fetchone()
+
+            if result:
+                effectiveness_dict = json.loads(result[0])
+                # Deserialize datetimes
+                if isinstance(effectiveness_dict.get("created_at"), str):
+                    effectiveness_dict["created_at"] = deserialize_datetime(
+                        effectiveness_dict["created_at"]
+                    )
+                if isinstance(effectiveness_dict.get("updated_at"), str):
+                    effectiveness_dict["updated_at"] = deserialize_datetime(
+                        effectiveness_dict["updated_at"]
+                    )
+                if effectiveness_dict.get("last_asked_at") and isinstance(
+                    effectiveness_dict["last_asked_at"], str
+                ):
+                    effectiveness_dict["last_asked_at"] = deserialize_datetime(
+                        effectiveness_dict["last_asked_at"]
+                    )
+                return effectiveness_dict
+
+            return None
+
+        except Exception as e:
+            self.logger.error(
+                f"Error getting question effectiveness for {user_id}/{question_template_id}: {e}"
+            )
+            return None
+        finally:
+            conn.close()
+
+    def get_user_effectiveness_all(self, user_id: str) -> List[Dict[str, any]]:
+        """Get all question effectiveness records for a user"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                "SELECT effectiveness_json FROM question_effectiveness_v2 WHERE user_id = ?",
+                (user_id,),
+            )
+            results = cursor.fetchall()
+
+            effectiveness_records = []
+            for (effectiveness_json,) in results:
+                try:
+                    eff_data = json.loads(effectiveness_json)
+                    # Deserialize datetimes
+                    if isinstance(eff_data.get("created_at"), str):
+                        eff_data["created_at"] = deserialize_datetime(eff_data["created_at"])
+                    if isinstance(eff_data.get("updated_at"), str):
+                        eff_data["updated_at"] = deserialize_datetime(eff_data["updated_at"])
+                    if eff_data.get("last_asked_at") and isinstance(eff_data["last_asked_at"], str):
+                        eff_data["last_asked_at"] = deserialize_datetime(eff_data["last_asked_at"])
+
+                    effectiveness_records.append(eff_data)
+                except Exception as e:
+                    self.logger.warning(f"Could not load effectiveness record: {e}")
+
+            return effectiveness_records
+
+        except Exception as e:
+            self.logger.error(f"Error getting user effectiveness records: {e}")
+            return []
+        finally:
+            conn.close()
+
+    # ========================================================================
+    # LEARNING METHODS - BEHAVIOR PATTERNS
+    # ========================================================================
+
+    def save_behavior_pattern(self, pattern: "UserBehaviorPattern") -> bool:
+        """Save behavior pattern record"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            pattern_dict = pattern.to_dict() if hasattr(pattern, "to_dict") else asdict(pattern)
+            pattern_json = json.dumps(pattern_dict)
+            learned_at_str = serialize_datetime(pattern.learned_at)
+            updated_at_str = serialize_datetime(pattern.updated_at)
+
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO behavior_patterns_v2
+                (id, user_id, pattern_type, pattern_json, learned_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    pattern.id,
+                    pattern.user_id,
+                    pattern.pattern_type,
+                    pattern_json,
+                    learned_at_str,
+                    updated_at_str,
+                ),
+            )
+
+            conn.commit()
+            self.logger.debug(
+                f"Saved behavior pattern for {pattern.user_id}/{pattern.pattern_type}"
+            )
+            return True
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error saving behavior pattern: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def get_behavior_pattern(self, user_id: str, pattern_type: str) -> Optional[Dict[str, any]]:
+        """Get behavior pattern for a user-pattern_type pair"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT pattern_json FROM behavior_patterns_v2
+                WHERE user_id = ? AND pattern_type = ?
+            """,
+                (user_id, pattern_type),
+            )
+            result = cursor.fetchone()
+
+            if result:
+                pattern_dict = json.loads(result[0])
+                # Deserialize datetimes
+                if isinstance(pattern_dict.get("learned_at"), str):
+                    pattern_dict["learned_at"] = deserialize_datetime(pattern_dict["learned_at"])
+                if isinstance(pattern_dict.get("updated_at"), str):
+                    pattern_dict["updated_at"] = deserialize_datetime(pattern_dict["updated_at"])
+
+                return pattern_dict
+
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Error getting behavior pattern for {user_id}/{pattern_type}: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def get_user_behavior_patterns(self, user_id: str) -> List[Dict[str, any]]:
+        """Get all behavior patterns for a user"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                "SELECT pattern_json FROM behavior_patterns_v2 WHERE user_id = ?",
+                (user_id,),
+            )
+            results = cursor.fetchall()
+
+            patterns = []
+            for (pattern_json,) in results:
+                try:
+                    pattern_dict = json.loads(pattern_json)
+                    # Deserialize datetimes
+                    if isinstance(pattern_dict.get("learned_at"), str):
+                        pattern_dict["learned_at"] = deserialize_datetime(
+                            pattern_dict["learned_at"]
+                        )
+                    if isinstance(pattern_dict.get("updated_at"), str):
+                        pattern_dict["updated_at"] = deserialize_datetime(
+                            pattern_dict["updated_at"]
+                        )
+
+                    patterns.append(pattern_dict)
+                except Exception as e:
+                    self.logger.warning(f"Could not load behavior pattern: {e}")
+
+            return patterns
+
+        except Exception as e:
+            self.logger.error(f"Error getting user behavior patterns: {e}")
+            return []
+        finally:
+            conn.close()
+
+    # ========================================================================
+    # NOTE MANAGEMENT METHODS
+    # ========================================================================
+
+    def delete_note(self, note_id: str) -> bool:
+        """Delete a note by ID"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("DELETE FROM project_notes_v2 WHERE id = ?", (note_id,))
+            conn.commit()
+            self.logger.debug(f"Deleted note {note_id}")
+            return True
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error deleting note {note_id}: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def search_notes(self, project_id: str, query: str) -> List[Dict[str, any]]:
+        """Search notes for a project by content"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            # Search in title and content
+            search_pattern = f"%{query}%"
+            cursor.execute(
+                """
+                SELECT id, project_id, title, content, note_type, created_at, updated_at
+                FROM project_notes_v2
+                WHERE project_id = ? AND (title LIKE ? OR content LIKE ?)
+                ORDER BY updated_at DESC
+            """,
+                (project_id, search_pattern, search_pattern),
+            )
+
+            notes = []
+            for row in cursor.fetchall():
+                notes.append(
+                    {
+                        "id": row[0],
+                        "project_id": row[1],
+                        "title": row[2],
+                        "content": row[3],
+                        "note_type": row[4],
+                        "created_at": row[5],
+                        "updated_at": row[6],
+                    }
+                )
+
+            return notes
+
+        except Exception as e:
+            self.logger.error(f"Error searching notes for project {project_id}: {e}")
+            return []
+        finally:
+            conn.close()
+
+    # ========================================================================
+    # KNOWLEDGE DOCUMENT METHODS
+    # ========================================================================
+
+    def get_knowledge_document(self, doc_id: str) -> Optional[Dict[str, any]]:
+        """Get a single knowledge document"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT id, project_id, user_id, content, metadata, created_at, updated_at
+                FROM knowledge_documents_v2
+                WHERE id = ?
+            """,
+                (doc_id,),
+            )
+            row = cursor.fetchone()
+
+            if row:
+                metadata = json.loads(row[4]) if row[4] and isinstance(row[4], str) else row[4]
+                return {
+                    "id": row[0],
+                    "project_id": row[1],
+                    "user_id": row[2],
+                    "content": row[3],
+                    "metadata": metadata,
+                    "created_at": row[5],
+                    "updated_at": row[6],
+                }
+
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Error getting knowledge document {doc_id}: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def get_project_knowledge_documents(self, project_id: str) -> List[Dict[str, any]]:
+        """Get all knowledge documents for a project"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT id, project_id, user_id, content, metadata, created_at, updated_at
+                FROM knowledge_documents_v2
+                WHERE project_id = ?
+                ORDER BY created_at DESC
+            """,
+                (project_id,),
+            )
+
+            documents = []
+            for row in cursor.fetchall():
+                metadata = json.loads(row[4]) if row[4] and isinstance(row[4], str) else row[4]
+                documents.append(
+                    {
+                        "id": row[0],
+                        "project_id": row[1],
+                        "user_id": row[2],
+                        "content": row[3],
+                        "metadata": metadata,
+                        "created_at": row[5],
+                        "updated_at": row[6],
+                    }
+                )
+
+            return documents
+
+        except Exception as e:
+            self.logger.error(f"Error getting knowledge documents for project {project_id}: {e}")
+            return []
+        finally:
+            conn.close()
+
+    # ========================================================================
+    # USAGE TRACKING METHODS
+    # ========================================================================
+
+    def save_usage_record(self, usage: "LLMUsageRecord") -> bool:
+        """Save LLM usage record"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            usage_dict = usage.to_dict() if hasattr(usage, "to_dict") else asdict(usage)
+            usage_json = json.dumps(usage_dict)
+            timestamp_str = serialize_datetime(usage.timestamp)
+            cost = getattr(usage, "cost", 0.0)
+
+            cursor.execute(
+                """
+                INSERT INTO llm_usage_v2
+                (id, user_id, provider, model, usage_json, timestamp, cost)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    usage.id,
+                    usage.user_id,
+                    usage.provider,
+                    usage.model,
+                    usage_json,
+                    timestamp_str,
+                    cost,
+                ),
+            )
+
+            conn.commit()
+            self.logger.debug(f"Saved usage record for {usage.user_id}/{usage.provider}")
+            return True
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error saving usage record: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def get_usage_records(self, user_id: str, days: int, provider: str) -> List[Dict[str, any]]:
+        """Get usage records for a user within specified days"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cutoff_date = datetime.now() - timedelta(days=days)
+            cutoff_str = serialize_datetime(cutoff_date)
+
+            cursor.execute(
+                """
+                SELECT id, user_id, provider, model, usage_json, timestamp, cost
+                FROM llm_usage_v2
+                WHERE user_id = ? AND provider = ? AND timestamp >= ?
+                ORDER BY timestamp DESC
+            """,
+                (user_id, provider, cutoff_str),
+            )
+
+            records = []
+            for row in cursor.fetchall():
+                usage_dict = json.loads(row[4])
+                records.append(
+                    {
+                        "id": row[0],
+                        "user_id": row[1],
+                        "provider": row[2],
+                        "model": row[3],
+                        "usage": usage_dict,
+                        "timestamp": row[5],
+                        "cost": row[6],
+                    }
+                )
+
+            return records
+
+        except Exception as e:
+            self.logger.error(f"Error getting usage records for {user_id}/{provider}: {e}")
+            return []
+        finally:
+            conn.close()
+
+    # ========================================================================
+    # ARCHIVED ITEMS & UTILITY METHODS
+    # ========================================================================
+
+    def get_archived_items(self, item_type: str) -> List[Dict[str, any]]:
+        """Get archived items (projects or users)"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            items = []
+
+            if item_type == "projects":
+                cursor.execute(
+                    """
+                    SELECT project_id, name, owner, phase, updated_at
+                    FROM projects_v2
+                    WHERE is_archived = 1
+                    ORDER BY updated_at DESC
+                """
+                )
+
+                for row in cursor.fetchall():
+                    items.append(
+                        {
+                            "id": row[0],
+                            "name": row[1],
+                            "owner": row[2],
+                            "phase": row[3],
+                            "updated_at": row[4],
+                            "type": "project",
+                        }
+                    )
+
+            elif item_type == "users":
+                cursor.execute(
+                    """
+                    SELECT username, created_at
+                    FROM users_v2
+                    WHERE is_archived = 1
+                    ORDER BY created_at DESC
+                """
+                )
+
+                for row in cursor.fetchall():
+                    items.append(
+                        {
+                            "username": row[0],
+                            "created_at": row[1],
+                            "type": "user",
+                        }
+                    )
+
+            return items
+
+        except Exception as e:
+            self.logger.error(f"Error getting archived {item_type}: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def permanently_delete_project(self, project_id: str) -> bool:
+        """Permanently delete a project (alias for delete_project)"""
+        return self.delete_project(project_id)
+
+    def unset_other_default_providers(self, user_id: str, current_provider: str) -> None:
+        """Unset all other default LLM providers when setting a new default"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                UPDATE llm_provider_configs_v2
+                SET is_default = 0
+                WHERE user_id = ? AND provider != ?
+            """,
+                (user_id, current_provider),
+            )
+            conn.commit()
+            self.logger.debug(f"Unset other default providers for {user_id}")
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error unsetting other default providers: {e}")
+        finally:
+            conn.close()
+
+    # ========================================================================
+    # UPDATED SIGNATURE METHODS - HANDLE BOTH OBJECT AND PARAMETER SIGNATURES
+    # ========================================================================
+
+    def _save_llm_config_impl(
+        self, user_id: str, provider: str, config_data: Dict[str, any]
+    ) -> bool:
+        """Internal implementation for saving LLM config"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            config_json = json.dumps(config_data)
+            now = datetime.now()
+
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO llm_provider_configs_v2
+                (id, user_id, provider, config_json, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    f"{user_id}_{provider}",
+                    user_id,
+                    provider,
+                    config_json,
+                    serialize_datetime(now),
+                    serialize_datetime(now),
+                ),
+            )
+
+            conn.commit()
+            self.logger.debug(f"Saved LLM config for {user_id}/{provider}")
+            return True
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error saving LLM config: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def _save_api_key_impl(
+        self, user_id: str, provider: str, encrypted_key: str, key_hash: str
+    ) -> bool:
+        """Internal implementation for saving API key"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            now = datetime.now()
+
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO api_keys_v2
+                (id, user_id, provider, encrypted_key, key_hash, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    f"{user_id}_{provider}",
+                    user_id,
+                    provider,
+                    encrypted_key,
+                    key_hash,
+                    serialize_datetime(now),
+                    serialize_datetime(now),
+                ),
+            )
+
+            conn.commit()
+            self.logger.debug(f"Saved API key for {user_id}/{provider}")
+            return True
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error saving API key: {e}")
             return False
         finally:
             conn.close()

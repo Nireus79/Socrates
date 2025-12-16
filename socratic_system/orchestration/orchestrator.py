@@ -33,6 +33,7 @@ from socratic_system.agents.question_queue_agent import QuestionQueueAgent
 from socratic_system.clients import ClaudeClient
 from socratic_system.config import SocratesConfig
 from socratic_system.database import ProjectDatabase, VectorDatabase
+from socratic_system.database.project_db_v2 import ProjectDatabaseV2
 from socratic_system.events import EventEmitter, EventType
 from socratic_system.models import KnowledgeEntry
 
@@ -62,19 +63,17 @@ class AgentOrchestrator:
 
         self.api_key = self.config.api_key
 
-        # Initialize logging
-        logging.basicConfig(
-            level=self.config.log_level,
-            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        )
-        self.logger = logging.getLogger("socrates.orchestrator")
+        # Initialize logging using the DebugLogger system
+        from socratic_system.utils.logger import get_logger as get_debug_logger
+
+        self.logger = get_debug_logger("orchestrator")
 
         # Initialize event emitter
         self.event_emitter = EventEmitter()
 
         # Initialize database components with configured paths
         self.logger.info("Initializing database components...")
-        self.database = ProjectDatabase(str(self.config.projects_db_path))
+        self.database = ProjectDatabaseV2(str(self.config.projects_db_path))
         self.vector_db = VectorDatabase(
             str(self.config.vector_db_path), embedding_model=self.config.embedding_model
         )
@@ -154,6 +153,20 @@ class AgentOrchestrator:
             try:
                 entry = KnowledgeEntry(**entry_data)
                 self.vector_db.add_knowledge(entry)
+
+                # Also store in SQL database for persistence and querying
+                self.database.save_knowledge_document(
+                    user_id="system",
+                    project_id="default",
+                    doc_id=entry.id,
+                    content=entry.content,
+                    metadata=(
+                        {"category": entry.category, "source": "hardcoded_knowledge_base"}
+                        if hasattr(entry, "category")
+                        else {"source": "hardcoded_knowledge_base"}
+                    ),
+                )
+
                 loaded_count += 1
             except Exception as e:
                 self.logger.error(
