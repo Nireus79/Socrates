@@ -1,5 +1,6 @@
 """Command handler for parsing and routing user input"""
 
+import platform
 import shlex
 from typing import Any, Dict, List, Optional
 
@@ -114,8 +115,11 @@ class CommandHandler:
             Command result dictionary
         """
         # Parse the command and arguments
+        # Use posix=False on Windows to prevent backslashes in paths from being
+        # interpreted as escape characters (e.g., C:\Users\file.pdf)
         try:
-            parts = shlex.split(command_input)
+            posix_mode = platform.system() != "Windows"
+            parts = shlex.split(command_input, posix=posix_mode)
         except ValueError as e:
             return {
                 "status": "error",
