@@ -130,6 +130,8 @@ class SocraticRAGSystem:
             # Initialize command system components
             self.command_handler = CommandHandler()
             self.nav_stack = NavigationStack()
+            self.nav_stack.push("main_menu", {})  # Initialize with main menu as root context
+            self.logger.debug(f"Navigation stack initialized: {self.nav_stack.get_breadcrumb()}")
             self.context_display = ContextDisplay()
 
             # Register all commands
@@ -388,6 +390,7 @@ class SocraticRAGSystem:
                 # Entering a project context - push to navigation stack
                 if self.nav_stack:
                     self.nav_stack.push("project_view", {"project_id": project.project_id})
+                    self.logger.debug(f"Entered project: {project.name}, nav stack: {self.nav_stack.get_breadcrumb()}")
 
             # Handle navigation context changes (from /back, /menu commands)
             nav_context = data.get("nav_context")
@@ -396,12 +399,14 @@ class SocraticRAGSystem:
                 if nav_context == "main_menu":
                     self.current_project = None
                     self.context_display.set_context(project=None)
+                    self.logger.debug(f"Exited to main_menu, nav stack: {self.nav_stack.get_breadcrumb() if self.nav_stack else 'N/A'}")
                 # State restoration could be added here if needed
 
             # Check if session ended (done command, menu command, back command)
             if data.get("session_ended"):
                 self.current_project = None
                 self.context_display.set_context(project=None)
+                self.logger.debug(f"Session ended, nav stack: {self.nav_stack.get_breadcrumb() if self.nav_stack else 'N/A'}")
         elif result["status"] == "info":
             if result.get("message"):
                 print(result["message"])
