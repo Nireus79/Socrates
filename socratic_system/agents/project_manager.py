@@ -234,7 +234,20 @@ class ProjectManagerAgent(Agent):
         """List projects for a user"""
         username = request.get("username")
         projects = self.orchestrator.database.get_user_projects(username)
-        return {"status": "success", "projects": projects}
+
+        # Convert ProjectContext objects to dictionaries for JSON serialization
+        projects_dict = []
+        for project in projects:
+            projects_dict.append({
+                "project_id": project.project_id,
+                "name": project.name,
+                "owner": project.owner,
+                "phase": project.phase,
+                "status": project.status,
+                "updated_at": project.updated_at.isoformat() if hasattr(project.updated_at, 'isoformat') else str(project.updated_at),
+            })
+
+        return {"status": "success", "projects": projects_dict}
 
     def _list_collaborators(self, request: Dict) -> Dict:
         """List all team members for a project with their roles"""
