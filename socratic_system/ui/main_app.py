@@ -378,8 +378,27 @@ class SocraticRAGSystem:
         elif result["status"] == "success":
             if result.get("message"):
                 print(result["message"])
+
+            data = result.get("data", {})
+
+            # Handle project entry (push to navigation stack)
+            # Note: project_commands.py already sets app.current_project
+            project = data.get("project")
+            if project:
+                # Entering a project context - push to navigation stack
+                if self.nav_stack:
+                    self.nav_stack.push("project_view", {"project_id": project.project_id})
+
+            # Handle navigation context changes (from /back, /menu commands)
+            nav_context = data.get("nav_context")
+            if nav_context:
+                # Navigation command returned, handle context change
+                if nav_context == "main_menu":
+                    self.current_project = None
+                # State restoration could be added here if needed
+
             # Check if session ended (done command, menu command, back command)
-            if result.get("data", {}).get("session_ended"):
+            if data.get("session_ended"):
                 self.current_project = None
         elif result["status"] == "info":
             if result.get("message"):
