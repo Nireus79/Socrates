@@ -689,7 +689,7 @@ class ProjectDatabaseV2:
 
     def get_user_llm_configs(self, user_id: str) -> List[Dict[str, Any]]:
         """
-        Get LLM provider configurations for a user.
+        Get all LLM provider configurations for a user.
 
         Args:
             user_id: Username to get configs for
@@ -739,6 +739,280 @@ class ProjectDatabaseV2:
         except Exception as e:
             self.logger.error(f"Error loading LLM configs for {user_id}: {e}")
             return []
+        finally:
+            conn.close()
+
+    def get_user_llm_config(self, user_id: str, provider: str) -> Optional[Dict[str, Any]]:
+        """
+        Get single LLM provider configuration for a user.
+
+        Args:
+            user_id: Username
+            provider: Provider name (e.g., 'claude', 'openai')
+
+        Returns:
+            Configuration dictionary or None if not found
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT id, user_id, provider, config_data, created_at, updated_at
+                FROM llm_provider_configs_v2
+                WHERE user_id = ? AND provider = ?
+            """,
+                (user_id, provider),
+            )
+
+            row = cursor.fetchone()
+            if not row:
+                return None
+
+            config_dict = {
+                "id": row["id"],
+                "user_id": row["user_id"],
+                "provider": row["provider"],
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
+            }
+
+            # Parse JSON config data
+            if row["config_data"]:
+                try:
+                    config_dict["config"] = json.loads(row["config_data"])
+                except json.JSONDecodeError:
+                    self.logger.warning(f"Invalid JSON in config for {user_id}/{provider}")
+                    config_dict["config"] = {}
+
+            return config_dict
+
+        except Exception as e:
+            self.logger.error(f"Error loading LLM config for {user_id}/{provider}: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def save_llm_config(self, user_id: str, provider: str, config_data: Dict[str, Any]) -> bool:
+        """
+        Save or update an LLM provider configuration.
+
+        Args:
+            user_id: Username
+            provider: Provider name (e.g., 'claude', 'openai')
+            config_data: Configuration dictionary
+
+        Returns:
+            True if successful, False otherwise
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            config_id = f"{user_id}:{provider}:{int(datetime.now().timestamp())}"
+            now = datetime.now()
+
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO llm_provider_configs_v2
+                (id, user_id, provider, config_data, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    config_id,
+                    user_id,
+                    provider,
+                    json.dumps(config_data),
+                    serialize_datetime(now),
+                    serialize_datetime(now),
+                ),
+            )
+
+            conn.commit()
+            self.logger.debug(f"Saved LLM config for {user_id}/{provider}")
+            return True
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error saving LLM config for {user_id}/{provider}: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def save_api_key(self, user_id: str, provider: str, encrypted_key: str, key_hash: str) -> bool:
+        """
+        Save or update an API key for a provider.
+
+        Args:
+            user_id: Username
+            provider: Provider name (e.g., 'claude', 'openai')
+            encrypted_key: Encrypted API key
+            key_hash: Hash of the API key for verification
+
+        Returns:
+            True if successful, False otherwise
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            api_key_id = f"{user_id}:{provider}:{int(datetime.now().timestamp())}"
+            now = datetime.now()
+
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO api_keys_v2
+                (id, user_id, provider, encrypted_key, key_hash, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    api_key_id,
+                    user_id,
+                    provider,
+                    encrypted_key,
+                    key_hash,
+                    serialize_datetime(now),
+                    serialize_datetime(now),
+                ),
+            )
+
+            conn.commit()
+            self.logger.debug(f"Saved API key for {user_id}/{provider}")
+            return True
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error saving API key for {user_id}/{provider}: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def get_api_key(self, user_id: str, provider: str) -> Optional[str]:
+        """
+        Get encrypted API key for a provider.
+
+        Args:
+            user_id: Username
+            provider: Provider name (e.g., 'claude', 'openai')
+
+        Returns:
+            Encrypted API key or None if not found
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT encrypted_key FROM api_keys_v2
+                WHERE user_id = ? AND provider = ?
+                ORDER BY updated_at DESC
+                LIMIT 1
+            """,
+                (user_id, provider),
+            )
+
+            row = cursor.fetchone()
+            if row:
+                return row["encrypted_key"]
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Error loading API key for {user_id}/{provider}: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def delete_api_key(self, user_id: str, provider: str) -> bool:
+        """
+        Delete an API key for a provider.
+
+        Args:
+            user_id: Username
+            provider: Provider name (e.g., 'claude', 'openai')
+
+        Returns:
+            True if successful, False otherwise
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                DELETE FROM api_keys_v2
+                WHERE user_id = ? AND provider = ?
+            """,
+                (user_id, provider),
+            )
+
+            conn.commit()
+            self.logger.debug(f"Deleted API key for {user_id}/{provider}")
+            return True
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error deleting API key for {user_id}/{provider}: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def save_knowledge_document(
+        self,
+        user_id: str,
+        project_id: str,
+        doc_id: str,
+        content: str,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """
+        Save a knowledge document (entry).
+
+        Args:
+            user_id: Username
+            project_id: Project ID
+            doc_id: Document ID
+            content: Document content
+            metadata: Optional metadata dictionary
+
+        Returns:
+            True if successful, False otherwise
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            now = datetime.now()
+            metadata_json = json.dumps(metadata) if metadata else None
+
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO knowledge_documents_v2
+                (id, project_id, user_id, content, metadata, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    doc_id,
+                    project_id,
+                    user_id,
+                    content,
+                    metadata_json,
+                    serialize_datetime(now),
+                    serialize_datetime(now),
+                ),
+            )
+
+            conn.commit()
+            self.logger.debug(f"Saved knowledge document {doc_id} for project {project_id}")
+            return True
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error saving knowledge document {doc_id}: {e}")
+            return False
         finally:
             conn.close()
 
