@@ -110,7 +110,7 @@ class SocraticRAGSystem:
         """Start the Socratic RAG System"""
         self._print_banner()
 
-        # Get API key
+        # Get API key or choose authentication mode
         api_key = self._get_api_key()
         if not api_key:
             print(f"{Fore.RED}No API key provided. Exiting...")
@@ -119,7 +119,13 @@ class SocraticRAGSystem:
         try:
             # Initialize orchestrator
             print(f"\n{Fore.YELLOW}Initializing system...{Style.RESET_ALL}")
-            self.orchestrator = AgentOrchestrator(api_key)
+            # In subscription mode, use a placeholder API key - actual auth happens during user login
+            if api_key == "subscription_mode":
+                # For subscription mode, we'll use a dummy key initially
+                # It will be validated during user authentication
+                self.orchestrator = AgentOrchestrator("subscription_placeholder_key")
+            else:
+                self.orchestrator = AgentOrchestrator(api_key)
 
             # Initialize command system components
             self.command_handler = CommandHandler()
@@ -156,8 +162,30 @@ class SocraticRAGSystem:
         """Get Claude API key from environment or user input"""
         api_key = os.getenv("API_KEY_CLAUDE")
         if not api_key:
-            print(f"{Fore.YELLOW}Claude API key not found in environment.")
-            api_key = getpass.getpass("Please enter your Claude API key: ")
+            print(f"\n{Fore.CYAN}API Configuration{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}Choose how to authenticate with Claude:{Style.RESET_ALL}")
+            print("1. Use API Key directly")
+            print("2. Use Subscription (requires valid account)")
+
+            choice = input(f"\n{Fore.WHITE}Select option (1 or 2): ").strip()
+
+            if choice == "2":
+                # Subscription mode - will be handled by authenticating user first
+                print(
+                    f"{Fore.CYAN}Using subscription mode - authenticate with your account{Style.RESET_ALL}"
+                )
+                # Store a marker that we're in subscription mode
+                os.environ["SOCRATES_SUBSCRIPTION_MODE"] = "1"
+                # Return a placeholder - actual API key will be obtained from orchestrator
+                return "subscription_mode"
+            else:
+                # API Key mode
+                print(
+                    f"{Fore.CYAN}Paste your Claude API key (or set API_KEY_CLAUDE env var):{Style.RESET_ALL}"
+                )
+                api_key = getpass.getpass("Claude API Key: ")
+                if api_key:
+                    os.environ["SOCRATES_SUBSCRIPTION_MODE"] = "0"
         return api_key
 
     def _authenticate_user(self) -> bool:
