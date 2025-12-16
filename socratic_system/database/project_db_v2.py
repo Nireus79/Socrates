@@ -285,27 +285,20 @@ class ProjectDatabaseV2:
             category_scores = self._load_category_scores(cursor, project_id)
             analytics = self._load_analytics_metrics(cursor, project_id)
 
-            # Deserialize JSON fields
-            goals = (
-                json.loads(row["goals"])
-                if row["goals"] and isinstance(row["goals"], str)
-                else row["goals"]
-            )
-            team_structure = (
-                json.loads(row["team_structure"])
-                if row["team_structure"] and isinstance(row["team_structure"], str)
-                else row["team_structure"]
-            )
-            language_preferences = (
-                json.loads(row["language_preferences"])
-                if row["language_preferences"] and isinstance(row["language_preferences"], str)
-                else row["language_preferences"]
-            )
-            code_style = (
-                json.loads(row["code_style"])
-                if row["code_style"] and isinstance(row["code_style"], str)
-                else row["code_style"]
-            )
+            # Deserialize JSON fields (only if they're actually JSON)
+            def try_json_load(value):
+                """Try to parse as JSON, return original value if not JSON"""
+                if not value or not isinstance(value, str):
+                    return value
+                try:
+                    return json.loads(value)
+                except (json.JSONDecodeError, TypeError):
+                    return value
+
+            goals = try_json_load(row["goals"])
+            team_structure = try_json_load(row["team_structure"])
+            language_preferences = try_json_load(row["language_preferences"])
+            code_style = try_json_load(row["code_style"])
 
             # Construct ProjectContext
             project = ProjectContext(
@@ -1768,27 +1761,20 @@ class ProjectDatabaseV2:
             category_scores = self._load_category_scores(cursor, row["project_id"])
             analytics = self._load_analytics_metrics(cursor, row["project_id"])
 
-            # Deserialize JSON fields
-            goals = (
-                json.loads(row["goals"])
-                if row["goals"] and isinstance(row["goals"], str)
-                else row["goals"]
-            )
-            team_structure = (
-                json.loads(row["team_structure"])
-                if row["team_structure"] and isinstance(row["team_structure"], str)
-                else row["team_structure"]
-            )
-            language_preferences = (
-                json.loads(row["language_preferences"])
-                if row["language_preferences"] and isinstance(row["language_preferences"], str)
-                else row["language_preferences"]
-            )
-            code_style = (
-                json.loads(row["code_style"])
-                if row["code_style"] and isinstance(row["code_style"], str)
-                else row["code_style"]
-            )
+            # Deserialize JSON fields (only if they're actually JSON)
+            def try_json_load(value):
+                """Try to parse as JSON, return original value if not JSON"""
+                if not value or not isinstance(value, str):
+                    return value
+                try:
+                    return json.loads(value)
+                except (json.JSONDecodeError, TypeError):
+                    return value
+
+            goals = try_json_load(row["goals"])
+            team_structure = try_json_load(row["team_structure"])
+            language_preferences = try_json_load(row["language_preferences"])
+            code_style = try_json_load(row["code_style"])
 
             return ProjectContext(
                 project_id=row["project_id"],
