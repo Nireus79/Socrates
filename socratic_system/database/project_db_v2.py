@@ -992,7 +992,7 @@ class ProjectDatabaseV2:
             cursor.execute(
                 """
                 INSERT OR REPLACE INTO knowledge_documents_v2
-                (id, project_id, user_id, content, metadata, created_at, updated_at)
+                (id, project_id, user_id, title, content, source, document_type, uploaded_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
                 (
@@ -1114,26 +1114,31 @@ class ProjectDatabaseV2:
         cursor = conn.cursor()
 
         try:
-            effectiveness_dict = (
-                effectiveness.to_dict()
-                if hasattr(effectiveness, "to_dict")
-                else asdict(effectiveness)
-            )
-            effectiveness_json = json.dumps(effectiveness_dict)
+            effectiveness_score = getattr(effectiveness, "effectiveness_score", 0.5)
+            times_asked = getattr(effectiveness, "times_asked", 0)
+            times_answered_well = getattr(effectiveness, "times_answered_well", 0)
+            last_asked_at = getattr(effectiveness, "last_asked_at", None)
+            if last_asked_at:
+                last_asked_at = serialize_datetime(last_asked_at)
+
             created_at_str = serialize_datetime(effectiveness.created_at)
             updated_at_str = serialize_datetime(effectiveness.updated_at)
 
             cursor.execute(
                 """
                 INSERT OR REPLACE INTO question_effectiveness_v2
-                (id, user_id, question_template_id, effectiveness_json, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (id, user_id, question_template_id, effectiveness_score, times_asked,
+                 times_answered_well, last_asked_at, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     effectiveness.id,
                     effectiveness.user_id,
                     effectiveness.question_template_id,
-                    effectiveness_json,
+                    effectiveness_score,
+                    times_asked,
+                    times_answered_well,
+                    last_asked_at,
                     created_at_str,
                     updated_at_str,
                 ),
@@ -1162,7 +1167,9 @@ class ProjectDatabaseV2:
         try:
             cursor.execute(
                 """
-                SELECT effectiveness_json FROM question_effectiveness_v2
+                SELECT id, user_id, question_template_id, effectiveness_score, times_asked,
+                       times_answered_well, last_asked_at, created_at, updated_at
+                FROM question_effectiveness_v2
                 WHERE user_id = ? AND question_template_id = ?
             """,
                 (user_id, question_template_id),
@@ -1245,21 +1252,23 @@ class ProjectDatabaseV2:
 
         try:
             pattern_dict = pattern.to_dict() if hasattr(pattern, "to_dict") else asdict(pattern)
-            pattern_json = json.dumps(pattern_dict)
+            pattern_data = json.dumps(pattern_dict)
             learned_at_str = serialize_datetime(pattern.learned_at)
             updated_at_str = serialize_datetime(pattern.updated_at)
+            frequency = getattr(pattern, "frequency", 1)
 
             cursor.execute(
                 """
                 INSERT OR REPLACE INTO behavior_patterns_v2
-                (id, user_id, pattern_type, pattern_json, learned_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (id, user_id, pattern_type, pattern_data, frequency, learned_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     pattern.id,
                     pattern.user_id,
                     pattern.pattern_type,
-                    pattern_json,
+                    pattern_data,
+                    frequency,
                     learned_at_str,
                     updated_at_str,
                 ),
@@ -1423,7 +1432,7 @@ class ProjectDatabaseV2:
         try:
             cursor.execute(
                 """
-                SELECT id, project_id, user_id, content, metadata, created_at, updated_at
+                SELECT id, project_id, user_id, title, content, source, document_type, uploaded_at
                 FROM knowledge_documents_v2
                 WHERE id = ?
             """,
@@ -1459,7 +1468,7 @@ class ProjectDatabaseV2:
         try:
             cursor.execute(
                 """
-                SELECT id, project_id, user_id, content, metadata, created_at, updated_at
+                SELECT id, project_id, user_id, title, content, source, document_type, uploaded_at
                 FROM knowledge_documents_v2
                 WHERE project_id = ?
                 ORDER BY created_at DESC
@@ -1681,7 +1690,7 @@ class ProjectDatabaseV2:
             cursor.execute(
                 """
                 INSERT OR REPLACE INTO llm_provider_configs_v2
-                (id, user_id, provider, config_json, created_at, updated_at)
+                (id, user_id, provider, config_data, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?)
             """,
                 (

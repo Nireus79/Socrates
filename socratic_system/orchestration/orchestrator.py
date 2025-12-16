@@ -159,12 +159,10 @@ class AgentOrchestrator:
                     user_id="system",
                     project_id="default",
                     doc_id=entry.id,
+                    title=getattr(entry, "category", "Knowledge Entry"),
                     content=entry.content,
-                    metadata=(
-                        {"category": entry.category, "source": "hardcoded_knowledge_base"}
-                        if hasattr(entry, "category")
-                        else {"source": "hardcoded_knowledge_base"}
-                    ),
+                    source="hardcoded_knowledge_base",
+                    document_type="knowledge_entry",
                 )
 
                 loaded_count += 1
