@@ -57,14 +57,20 @@ class BackCommand(BaseCommand):
         if not nav_stack:
             return self.error("Navigation stack not available")
 
+        # Check if we're leaving a project context
+        project = context.get("project")
+        session_ended = project is not None
+
         prev_context, state = nav_stack.go_back()
 
         if prev_context is None:
             self.print_info("Already at the beginning")
-            return self.success()
+            return self.success(data={"session_ended": session_ended} if session_ended else {})
 
         self.print_info(f"Going back to {prev_context}")
-        return self.success(data={"nav_context": prev_context, "state": state})
+        return self.success(
+            data={"nav_context": prev_context, "state": state, "session_ended": session_ended}
+        )
 
 
 class MenuCommand(BaseCommand):
@@ -79,10 +85,16 @@ class MenuCommand(BaseCommand):
         if not nav_stack:
             return self.error("Navigation stack not available")
 
+        # Check if we're leaving a project context
+        project = context.get("project")
+        session_ended = project is not None
+
         context_name, state = nav_stack.go_home()
         self.print_info("Returning to main menu")
 
-        return self.success(data={"nav_context": context_name, "state": state})
+        return self.success(
+            data={"nav_context": context_name, "state": state, "session_ended": session_ended}
+        )
 
 
 class StatusCommand(BaseCommand):

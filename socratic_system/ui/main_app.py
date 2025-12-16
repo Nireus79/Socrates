@@ -76,6 +76,7 @@ from socratic_system.ui.commands import (  # Analytics commands; Code commands; 
     SubscriptionCompareCommand,
     SubscriptionDowngradeCommand,
     SubscriptionStatusCommand,
+    SubscriptionTestingModeCommand,
     SubscriptionUpgradeCommand,
     UserArchiveCommand,
     UserCreateCommand,
@@ -176,6 +177,7 @@ class SocraticRAGSystem:
                 if result["status"] == "success":
                     self.current_user = result["data"]["user"]
                     self.context_display.set_context(user=self.current_user)
+                    self._apply_testing_mode_if_enabled()
                     return True
                 else:
                     if result.get("message"):
@@ -186,6 +188,7 @@ class SocraticRAGSystem:
                 if result["status"] == "success":
                     self.current_user = result["data"]["user"]
                     self.context_display.set_context(user=self.current_user)
+                    self._apply_testing_mode_if_enabled()
                     return True
                 else:
                     if result.get("message"):
@@ -198,6 +201,15 @@ class SocraticRAGSystem:
 
             else:
                 print(f"{Fore.RED}Invalid choice. Please try again.{Style.RESET_ALL}")
+
+    def _apply_testing_mode_if_enabled(self) -> None:
+        """Enable testing mode for current user if --testing flag was provided."""
+        if os.getenv("SOCRATES_TESTING_MODE") == "1" and self.current_user:
+            if not self.current_user.testing_mode:
+                self.current_user.testing_mode = True
+                self.orchestrator.database.save_user(self.current_user)
+                print(f"\n{Fore.GREEN}[OK] Testing mode ENABLED{Style.RESET_ALL}")
+                print(f"{Fore.YELLOW}All monetization restrictions bypassed!{Style.RESET_ALL}\n")
 
     def _register_commands(self) -> None:
         """Register all available commands"""
@@ -231,6 +243,7 @@ class SocraticRAGSystem:
         self.command_handler.register_command(SubscriptionUpgradeCommand())
         self.command_handler.register_command(SubscriptionDowngradeCommand())
         self.command_handler.register_command(SubscriptionCompareCommand())
+        self.command_handler.register_command(SubscriptionTestingModeCommand())
 
         # Project commands
         self.command_handler.register_command(ProjectCreateCommand())
@@ -337,6 +350,9 @@ class SocraticRAGSystem:
         elif result["status"] == "success":
             if result.get("message"):
                 print(result["message"])
+            # Check if session ended (done command, menu command, back command)
+            if result.get("data", {}).get("session_ended"):
+                self.current_project = None
         elif result["status"] == "info":
             if result.get("message"):
                 print(result["message"])
