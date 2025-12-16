@@ -114,14 +114,11 @@ class ProjectDatabaseV2:
                     project.owner,
                     project.phase,
                     project.project_type,
-                    json.dumps(project.team_structure) if project.team_structure else None,
-                    (
-                        json.dumps(project.language_preferences)
-                        if project.language_preferences
-                        else None
-                    ),
+                    # These are already strings in the model, but handle dict case for compatibility
+                    (json.dumps(project.team_structure) if isinstance(project.team_structure, dict) else project.team_structure) if project.team_structure else None,
+                    (json.dumps(project.language_preferences) if isinstance(project.language_preferences, dict) else project.language_preferences) if project.language_preferences else None,
                     project.deployment_target,
-                    json.dumps(project.code_style) if project.code_style else None,
+                    (json.dumps(project.code_style) if isinstance(project.code_style, dict) else project.code_style) if project.code_style else None,
                     project.chat_mode,
                     (
                         json.dumps(project.goals)
