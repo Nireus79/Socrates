@@ -395,11 +395,13 @@ class SocraticRAGSystem:
                 # Navigation command returned, handle context change
                 if nav_context == "main_menu":
                     self.current_project = None
+                    self.context_display.set_context(project=None)
                 # State restoration could be added here if needed
 
             # Check if session ended (done command, menu command, back command)
             if data.get("session_ended"):
                 self.current_project = None
+                self.context_display.set_context(project=None)
         elif result["status"] == "info":
             if result.get("message"):
                 print(result["message"])
