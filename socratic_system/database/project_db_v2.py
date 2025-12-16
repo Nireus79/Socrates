@@ -203,25 +203,30 @@ class ProjectDatabaseV2:
             # Save phase maturity scores
             if project.phase_maturity_scores:
                 for phase, score in project.phase_maturity_scores.items():
+                    # Ensure score is a number, not a dict
+                    score_val = score if isinstance(score, (int, float)) else 0.0
                     cursor.execute(
                         """
                         INSERT OR REPLACE INTO phase_maturity_scores (project_id, phase, score)
                         VALUES (?, ?, ?)
                     """,
-                        (project.project_id, phase, score),
+                        (project.project_id, phase, score_val),
                     )
 
             # Save category scores
             if project.category_scores:
                 for phase, categories in project.category_scores.items():
-                    for category, score in categories.items():
-                        cursor.execute(
-                            """
-                            INSERT OR REPLACE INTO category_scores (project_id, phase, category, score)
-                            VALUES (?, ?, ?, ?)
-                        """,
-                            (project.project_id, phase, category, score),
-                        )
+                    if isinstance(categories, dict):
+                        for category, score in categories.items():
+                            # Ensure score is a number, not a dict
+                            score_val = score if isinstance(score, (int, float)) else 0.0
+                            cursor.execute(
+                                """
+                                INSERT OR REPLACE INTO category_scores (project_id, phase, category, score)
+                                VALUES (?, ?, ?, ?)
+                            """,
+                                (project.project_id, phase, category, score_val),
+                            )
 
             # Save analytics metrics
             if project.analytics_metrics:
@@ -234,9 +239,9 @@ class ProjectDatabaseV2:
                 """,
                     (
                         project.project_id,
-                        project.analytics_metrics.get("velocity", 0.0),
-                        project.analytics_metrics.get("total_qa_sessions", 0),
-                        project.analytics_metrics.get("avg_confidence", 0.0),
+                        float(project.analytics_metrics.get("velocity", 0.0)) if not isinstance(project.analytics_metrics.get("velocity"), dict) else 0.0,
+                        int(project.analytics_metrics.get("total_qa_sessions", 0)) if not isinstance(project.analytics_metrics.get("total_qa_sessions"), dict) else 0,
+                        float(project.analytics_metrics.get("avg_confidence", 0.0)) if not isinstance(project.analytics_metrics.get("avg_confidence"), dict) else 0.0,
                         json.dumps(project.analytics_metrics.get("weak_categories", [])),
                         json.dumps(project.analytics_metrics.get("strong_categories", [])),
                     ),
