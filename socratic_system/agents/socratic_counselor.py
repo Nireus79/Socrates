@@ -3,13 +3,14 @@ Socratic counselor agent for guided questioning and response processing
 """
 
 import datetime
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from colorama import Fore
 
 from socratic_system.agents.document_context_analyzer import DocumentContextAnalyzer
 from socratic_system.events import EventType
 from socratic_system.models import ROLE_FOCUS_AREAS, ConflictInfo, ProjectContext
+from socratic_system.services import DocumentUnderstandingService
 
 from .base import Agent
 
@@ -69,6 +70,8 @@ class SocraticCounselorAgent(Agent):
             return self._extract_insights_only(request)
         elif action == "advance_phase":
             return self._advance_phase(request)
+        elif action == "explain_document":
+            return self._explain_document(request)
         elif action == "toggle_dynamic_questions":
             self.use_dynamic_questions = not self.use_dynamic_questions
             return {"status": "success", "dynamic_mode": self.use_dynamic_questions}
@@ -190,6 +193,11 @@ class SocraticCounselorAgent(Agent):
                 else:
                     relevant_knowledge = self._build_snippet_knowledge_context(knowledge_results)
 
+                # Generate document understanding if we have document results
+                doc_understanding = self._generate_document_understanding(
+                    knowledge_results, project
+                )
+
                 logger.debug(f"Found {len(knowledge_results)} relevant knowledge items with strategy '{strategy}'")
 
         logger.debug(
@@ -197,7 +205,8 @@ class SocraticCounselorAgent(Agent):
         )
         prompt = self._build_question_prompt(
             project, context, recent_conversation, relevant_knowledge, question_count, current_user,
-            knowledge_results=knowledge_results if knowledge_results else []
+            knowledge_results=knowledge_results if knowledge_results else [],
+            doc_understanding=doc_understanding if 'doc_understanding' in locals() else None
         )
 
         try:
@@ -220,10 +229,13 @@ class SocraticCounselorAgent(Agent):
         question_count: int,
         current_user: str = None,
         knowledge_results: List[Dict] = None,
+        doc_understanding: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Build prompt for dynamic question generation with role-aware context"""
         if knowledge_results is None:
             knowledge_results = []
+        if doc_understanding is None:
+            doc_understanding = {}
 
         phase_descriptions = {
             "discovery": "exploring the problem space, understanding user needs, and defining project goals",
@@ -282,6 +294,22 @@ Since the knowledge base includes code or code structure, consider these code-sp
 - Ask about testability, maintainability, and extensibility
 - Explore dependencies and external library choices"""
 
+        # Document understanding context
+        doc_context = ""
+        if doc_understanding and doc_understanding.get("alignment"):
+            alignment = doc_understanding.get("alignment", "")
+            gaps = doc_understanding.get("gaps", [])
+            opportunities = doc_understanding.get("opportunities", [])
+            match_score = doc_understanding.get("match_score", 0.0)
+
+            doc_context = f"""
+
+Document Understanding:
+Goal Alignment: {alignment}
+Match Score: {int(match_score * 100)}%
+Identified Gaps: {', '.join(gaps[:2]) if gaps else 'None identified'}
+Opportunities: {', '.join(opportunities[:2]) if opportunities else 'Explore documents further'}"""
+
         return f"""You are a Socratic tutor helping guide someone through their {project.project_type} project.
 
 Project Details:
@@ -293,7 +321,7 @@ Project Details:
 - Requirements: {', '.join(project.requirements) if project.requirements else 'Not specified'}
 
 Project Context:
-{context}{role_context}{code_context}
+{context}{role_context}{code_context}{doc_context}
 
 Recent Conversation:
 {recent_conversation}
@@ -362,6 +390,72 @@ Return only the question, no additional text or explanation."""
             sections.append(section)
 
         return "\n".join(sections)
+
+    def _generate_document_understanding(
+        self,
+        knowledge_results: List[Dict],
+        project: ProjectContext
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Generate document understanding analysis from knowledge results.
+
+        Groups documents and generates summaries and goal comparisons.
+        """
+        if not knowledge_results:
+            return None
+
+        try:
+            # Group results by source document
+            docs_by_source = self._group_knowledge_by_source(knowledge_results)
+
+            if not docs_by_source:
+                return None
+
+            # Create document understanding service
+            doc_service = DocumentUnderstandingService()
+
+            # Generate summaries for each document
+            document_summaries = []
+            for source, chunks in docs_by_source.items():
+                chunk_contents = [c.get("full_content", c.get("content", "")) for c in chunks]
+
+                # Determine document type from metadata
+                doc_type = "text"
+                if chunks and chunks[0].get("metadata", {}).get("type") == "code":
+                    doc_type = "code"
+
+                summary = doc_service.generate_document_summary(
+                    chunk_contents,
+                    file_name=source,
+                    file_type=doc_type
+                )
+                document_summaries.append(summary)
+
+            # Compare goals with documents if goals exist
+            if project.goals and document_summaries:
+                goal_comparison = doc_service.compare_goals_with_documents(
+                    project.goals,
+                    document_summaries
+                )
+                return goal_comparison
+
+            return None
+
+        except Exception as e:
+            self.logger.warning(f"Error generating document understanding: {e}")
+            return None
+
+    def _group_knowledge_by_source(self, results: List[Dict]) -> Dict[str, List[Dict]]:
+        """Group knowledge results by source document."""
+        grouped = {}
+
+        for result in results:
+            source = result.get("metadata", {}).get("source", "Unknown")
+            if source not in grouped:
+                grouped[source] = []
+            grouped[source].append(result)
+
+        return grouped
 
     def _extract_insights_only(self, request: Dict) -> Dict:
         """Extract insights from response without processing (for direct mode confirmation)"""
@@ -639,6 +733,128 @@ Return only the question, no additional text or explanation."""
                     print(f"{Fore.RED}Invalid choice. Please try again.")
 
         return True
+
+    def _explain_document(self, request: Dict) -> Dict:
+        """
+        Provide explanation/summary of imported documents.
+
+        Generates comprehensive summaries and analysis of documents in the knowledge base.
+        """
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+
+        project = request.get("project")
+        document_name = request.get("document_name")  # Optional: specific document
+
+        if not project:
+            return {"status": "error", "message": "Project context required"}
+
+        try:
+            # Search for document chunks
+            if document_name:
+                # Search for specific document
+                logger.debug(f"Searching for specific document: {document_name}")
+                query = document_name
+            else:
+                # Use project context to find documents
+                logger.debug("Searching for all documents in project")
+                query = project.goals or project.name or "document"
+
+            # Search knowledge base
+            results = self.orchestrator.vector_db.search_similar_adaptive(
+                query=query,
+                strategy="full",
+                top_k=10,
+                project_id=project.project_id
+            )
+
+            if not results:
+                return {
+                    "status": "error",
+                    "message": "No documents found for this project"
+                }
+
+            logger.debug(f"Found {len(results)} results for document explanation")
+
+            # Group by source and generate understanding
+            doc_service = DocumentUnderstandingService()
+            docs_by_source = self._group_knowledge_by_source(results)
+
+            explanations = []
+            for source, chunks in docs_by_source.items():
+                chunk_contents = [c.get("full_content", c.get("content", "")) for c in chunks]
+
+                # Determine document type
+                doc_type = "text"
+                if chunks and chunks[0].get("metadata", {}).get("type") == "code":
+                    doc_type = "code"
+
+                summary = doc_service.generate_document_summary(
+                    chunk_contents,
+                    file_name=source,
+                    file_type=doc_type
+                )
+
+                explanation = self._format_document_explanation(summary)
+                explanations.append(explanation)
+
+                logger.debug(f"Generated explanation for {source}")
+
+            return {
+                "status": "success",
+                "documents_found": len(explanations),
+                "explanations": explanations,
+                "message": f"Generated explanations for {len(explanations)} document(s)"
+            }
+
+        except Exception as e:
+            logger.error(f"Error explaining documents: {e}")
+            return {"status": "error", "message": f"Failed to explain documents: {str(e)}"}
+
+    def _format_document_explanation(self, summary: Dict[str, Any]) -> str:
+        """Format document summary into human-readable explanation."""
+        parts = []
+
+        # Document header
+        file_name = summary.get("file_name", "Unknown")
+        doc_type = summary.get("type", "text")
+        complexity = summary.get("complexity", "intermediate")
+
+        parts.append(f"Document: {file_name} ({doc_type}, {complexity} complexity)")
+        parts.append("-" * 60)
+        parts.append("")
+
+        # Summary
+        if summary.get("summary"):
+            parts.append("Summary:")
+            parts.append(summary["summary"])
+            parts.append("")
+
+        # Key points
+        key_points = summary.get("key_points", [])
+        if key_points:
+            parts.append("Key Points:")
+            for i, point in enumerate(key_points, 1):
+                parts.append(f"  {i}. {point}")
+            parts.append("")
+
+        # Topics
+        topics = summary.get("topics", [])
+        if topics:
+            parts.append("Main Topics:")
+            parts.append(", ".join(topics))
+            parts.append("")
+
+        # Metrics
+        length = summary.get("length", 0)
+        if length > 0:
+            parts.append("Document Metrics:")
+            parts.append(f"  - Length: {length} words")
+            parts.append(f"  - Complexity: {complexity}")
+            parts.append("")
+
+        return "\n".join(parts)
 
     def _advance_phase(self, request: Dict) -> Dict:
         """Advance project to the next phase with maturity verification"""
