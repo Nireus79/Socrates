@@ -10,6 +10,8 @@ import chromadb
 from sentence_transformers import SentenceTransformer
 
 from socratic_system.models import KnowledgeEntry
+from socratic_system.database.embedding_cache import EmbeddingCache
+from socratic_system.database.search_cache import SearchResultCache
 
 
 class VectorDatabase:
@@ -30,6 +32,11 @@ class VectorDatabase:
         self.logger.info(f"Loading embedding model: {self.embedding_model_name}")
         self.embedding_model = SentenceTransformer(self.embedding_model_name)
         self.logger.info("Vector database initialized successfully")
+
+        # Initialize caches for Phase 3 optimization
+        self.embedding_cache = EmbeddingCache(max_size=10000)
+        self.search_cache = SearchResultCache(ttl_seconds=300)
+        self.logger.info("Embedding and search caches initialized (Phase 3)")
 
         self.knowledge_loaded = False  # Track if knowledge is already loaded
 
@@ -74,12 +81,21 @@ class VectorDatabase:
 
         if not entry.embedding:
             try:
-                embedding_result = self.embedding_model.encode(entry.content)
-                entry.embedding = (
-                    embedding_result.tolist()
-                    if hasattr(embedding_result, "tolist")
-                    else embedding_result
-                )
+                # Phase 3: Check embedding cache first
+                cached_embedding = self.embedding_cache.get(entry.content)
+                if cached_embedding:
+                    entry.embedding = cached_embedding
+                    self.logger.debug(f"Using cached embedding for knowledge entry: {entry.id}")
+                else:
+                    # Not in cache, encode and cache
+                    embedding_result = self.embedding_model.encode(entry.content)
+                    entry.embedding = (
+                        embedding_result.tolist()
+                        if hasattr(embedding_result, "tolist")
+                        else embedding_result
+                    )
+                    self.embedding_cache.put(entry.content, entry.embedding)
+                    self.logger.debug(f"Cached new embedding for knowledge entry: {entry.id}")
             except (ValueError, RuntimeError, OSError) as e:
                 # Handle file handle issues with embedding model
                 # This can happen when the model has stale file handles from test isolation issues
@@ -106,6 +122,7 @@ class VectorDatabase:
                             if hasattr(embedding_result, "tolist")
                             else embedding_result
                         )
+                        self.embedding_cache.put(entry.content, entry.embedding)
                         self.logger.info(
                             "Successfully recovered embedding model and encoded content"
                         )
@@ -141,7 +158,22 @@ class VectorDatabase:
             return []
 
         try:
-            query_embedding = self.embedding_model.encode(query).tolist()
+            # Phase 3: Check search result cache first
+            cached_results = self.search_cache.get(query, top_k, project_id)
+            if cached_results:
+                self.logger.debug(f"Using cached search results for query: {query[:30]}...")
+                return cached_results
+
+            # Phase 3: Check embedding cache for query
+            cached_embedding = self.embedding_cache.get(query)
+            if cached_embedding:
+                query_embedding = cached_embedding
+                self.logger.debug(f"Using cached query embedding for: {query[:30]}...")
+            else:
+                # Not in cache, encode and cache
+                query_embedding = self.embedding_model.encode(query).tolist()
+                self.embedding_cache.put(query, query_embedding)
+                self.logger.debug(f"Cached query embedding for: {query[:30]}...")
 
             # Build where filter for project_id if specified
             where_filter = self._build_project_filter(project_id)
@@ -155,12 +187,18 @@ class VectorDatabase:
             if not results["documents"] or not results["documents"][0]:
                 return []
 
-            return [
+            search_results = [
                 {"content": doc, "metadata": meta, "score": dist}
                 for doc, meta, dist in zip(
                     results["documents"][0], results["metadatas"][0], results["distances"][0]
                 )
             ]
+
+            # Phase 3: Cache the search results
+            self.search_cache.put(query, top_k, project_id, search_results)
+            self.logger.debug(f"Cached search results for query: {query[:30]}...")
+
+            return search_results
         except Exception as e:
             self.logger.warning(f"Search failed: {e}")
             return []
@@ -213,6 +251,13 @@ class VectorDatabase:
 
             # Use add_knowledge to handle embedding and storage
             self.add_knowledge(entry)
+
+            # Phase 3: Invalidate search cache for this project
+            # Since knowledge has changed, cached results are now stale
+            count = self.search_cache.invalidate_project(project_id)
+            if count > 0:
+                self.logger.info(f"Invalidated {count} search cache entries for project '{project_id}'")
+
             self.logger.debug(f"Added project knowledge '{entry.id}' for project '{project_id}'")
             return True
         except Exception as e:
