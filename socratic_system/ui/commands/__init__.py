@@ -21,7 +21,9 @@ from socratic_system.ui.commands.debug_commands import DebugCommand, LogsCommand
 from socratic_system.ui.commands.doc_commands import (
     DocImportCommand,
     DocImportDirCommand,
+    DocImportUrlCommand,
     DocListCommand,
+    DocPasteCommand,
 )
 from socratic_system.ui.commands.finalize_commands import (
     FinalizeDocsCommand,
@@ -79,6 +81,7 @@ from socratic_system.ui.commands.subscription_commands import (
     SubscriptionCompareCommand,
     SubscriptionDowngradeCommand,
     SubscriptionStatusCommand,
+    SubscriptionTestingModeCommand,
     SubscriptionUpgradeCommand,
 )
 from socratic_system.ui.commands.system_commands import (
@@ -147,7 +150,9 @@ __all__ = [
     "SkillsListCommand",
     "DocImportCommand",
     "DocImportDirCommand",
+    "DocImportUrlCommand",
     "DocListCommand",
+    "DocPasteCommand",
     "NoteAddCommand",
     "NoteListCommand",
     "NoteSearchCommand",
@@ -182,4 +187,5 @@ __all__ = [
     "SubscriptionUpgradeCommand",
     "SubscriptionDowngradeCommand",
     "SubscriptionCompareCommand",
+    "SubscriptionTestingModeCommand",
 ]

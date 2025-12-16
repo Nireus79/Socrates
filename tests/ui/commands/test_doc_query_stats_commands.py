@@ -21,7 +21,9 @@ from socratic_system.models.project import ProjectContext
 from socratic_system.ui.commands.doc_commands import (
     DocImportCommand,
     DocImportDirCommand,
+    DocImportUrlCommand,
     DocListCommand,
+    DocPasteCommand,
 )
 from socratic_system.ui.commands.query_commands import (
     ExplainCommand,
@@ -375,6 +377,387 @@ class TestDocListCommand:
 
         with patch("builtins.print"):
             result = command.execute([], context)
+
+        assert result["status"] == "success"
+
+
+class TestDocPasteCommand:
+    """Tests for DocPasteCommand."""
+
+    @pytest.fixture
+    def command(self):
+        """Create command instance."""
+        return DocPasteCommand()
+
+    @pytest.fixture
+    def project(self):
+        """Create a test project."""
+        return ProjectContext(
+            project_id="proj123",
+            name="Test Project",
+            owner="testuser",
+            collaborators=[],
+            goals="Test goals",
+            requirements=[],
+            tech_stack=[],
+            constraints=[],
+            team_structure="individual",
+            language_preferences="python",
+            deployment_target="local",
+            code_style="documented",
+            phase="discovery",
+            conversation_history=[],
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+
+    def test_paste_no_orchestrator(self, command):
+        """Test paste without orchestrator returns error."""
+        context = {"orchestrator": None}
+
+        # Input sequence: title, content line, EOF marker, (no project link needed)
+        with patch("builtins.input", side_effect=["test", "Some content", "EOF"]):
+            with patch("builtins.print"):
+                result = command.execute([], context)
+
+        assert result["status"] == "error"
+        assert "Orchestrator not available" in result["message"]
+
+    def test_paste_with_title(self, command):
+        """Test pasting text with explicit title."""
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.process_request.return_value = {
+            "status": "success",
+            "title": "my_content",
+            "words_extracted": 100,
+            "chunks_created": 2,
+            "entries_added": 2,
+        }
+
+        context = {
+            "orchestrator": mock_orchestrator,
+            "project": None,
+        }
+
+        # Mock multi-line input with title
+        with patch("builtins.input", side_effect=["Line 1", "Line 2", "EOF", "n"]):
+            with patch("builtins.print"):
+                result = command.execute(["my_content"], context)
+
+        assert result["status"] == "success"
+        assert result["data"]["title"] == "my_content"
+        assert result["data"]["words_extracted"] == 100
+
+    def test_paste_no_content(self, command):
+        """Test paste with empty content."""
+        mock_orchestrator = MagicMock()
+        context = {"orchestrator": mock_orchestrator}
+
+        # Input sequence: empty title (uses default), immediately EOF with no content
+        with patch("builtins.input", side_effect=["", "EOF"]):
+            with patch("builtins.print"):
+                result = command.execute([], context)
+
+        assert result["status"] == "error"
+        assert "No content provided" in result["message"]
+
+    def test_paste_multiline_content(self, command):
+        """Test pasting multiline text."""
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.process_request.return_value = {
+            "status": "success",
+            "title": "pasted_text",
+            "words_extracted": 250,
+            "chunks_created": 3,
+            "entries_added": 3,
+        }
+
+        context = {
+            "orchestrator": mock_orchestrator,
+            "project": None,
+        }
+
+        # Multi-line content with title input
+        with patch("builtins.input", side_effect=[
+            "test_title",  # Title input
+            "First line of content",
+            "Second line of content",
+            "Third line of content",
+            "EOF",
+            "n"  # Don't link to project
+        ]):
+            with patch("builtins.print"):
+                result = command.execute([], context)
+
+        assert result["status"] == "success"
+        assert result["data"]["entries_added"] == 3
+
+    def test_paste_with_project_link(self, command, project):
+        """Test pasting text and linking to project."""
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.process_request.return_value = {
+            "status": "success",
+            "title": "pasted_text",
+            "words_extracted": 150,
+            "chunks_created": 2,
+            "entries_added": 2,
+        }
+
+        context = {
+            "orchestrator": mock_orchestrator,
+            "project": project,
+        }
+
+        with patch("builtins.input", side_effect=[
+            "",  # Use default title
+            "Some content here",
+            "EOF",
+            "y"  # Link to project
+        ]):
+            with patch("builtins.print"):
+                result = command.execute([], context)
+
+        assert result["status"] == "success"
+        call_args = mock_orchestrator.process_request.call_args
+        assert call_args[0][1]["project_id"] == "proj123"
+
+    def test_paste_failure(self, command):
+        """Test paste failure handling."""
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.process_request.return_value = {
+            "status": "error",
+            "message": "Failed to process text",
+        }
+
+        context = {
+            "orchestrator": mock_orchestrator,
+            "project": None,
+        }
+
+        with patch("builtins.input", side_effect=["default_title", "Content", "EOF", "n"]):
+            with patch("builtins.print"):
+                result = command.execute([], context)
+
+        assert result["status"] == "error"
+        assert "Failed to process text" in result["message"]
+
+
+class TestDocImportUrlCommand:
+    """Tests for DocImportUrlCommand."""
+
+    @pytest.fixture
+    def command(self):
+        """Create command instance."""
+        return DocImportUrlCommand()
+
+    @pytest.fixture
+    def project(self):
+        """Create a test project."""
+        return ProjectContext(
+            project_id="proj123",
+            name="Test Project",
+            owner="testuser",
+            collaborators=[],
+            goals="Test goals",
+            requirements=[],
+            tech_stack=[],
+            constraints=[],
+            team_structure="individual",
+            language_preferences="python",
+            deployment_target="local",
+            code_style="documented",
+            phase="discovery",
+            conversation_history=[],
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+
+    def test_import_url_no_orchestrator(self, command):
+        """Test import-url without orchestrator returns error."""
+        context = {"orchestrator": None}
+
+        with patch("builtins.input", return_value="https://example.com"):
+            with patch("builtins.print"):
+                result = command.execute([], context)
+
+        assert result["status"] == "error"
+        assert "Orchestrator not available" in result["message"]
+
+    def test_import_url_with_args(self, command):
+        """Test importing URL with command-line URL."""
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.process_request.return_value = {
+            "status": "success",
+            "file_name": "example_com",
+            "url": "https://example.com",
+            "words_extracted": 2000,
+            "chunks_created": 100,
+            "entries_added": 100,
+        }
+
+        context = {
+            "orchestrator": mock_orchestrator,
+            "project": None,
+        }
+
+        with patch("builtins.input"), patch("builtins.print"):
+            result = command.execute(["https://example.com"], context)
+
+        assert result["status"] == "success"
+        assert result["data"]["file_name"] == "example_com"
+        assert result["data"]["url"] == "https://example.com"
+
+    def test_import_url_no_url(self, command):
+        """Test import with empty URL."""
+        mock_orchestrator = MagicMock()
+        context = {"orchestrator": mock_orchestrator}
+
+        with patch("builtins.input", return_value=""):
+            result = command.execute([], context)
+
+        assert result["status"] == "error"
+        assert "URL cannot be empty" in result["message"]
+
+    def test_import_url_invalid_format(self, command):
+        """Test import with invalid URL format."""
+        mock_orchestrator = MagicMock()
+        context = {"orchestrator": mock_orchestrator}
+
+        with patch("builtins.input"), patch("builtins.print"):
+            result = command.execute(["example.com"], context)
+
+        assert result["status"] == "error"
+        assert "http://" in result["message"] or "https://" in result["message"]
+
+    def test_import_url_https(self, command):
+        """Test importing HTTPS URL."""
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.process_request.return_value = {
+            "status": "success",
+            "file_name": "github_com",
+            "url": "https://github.com/example/repo",
+            "words_extracted": 3000,
+            "chunks_created": 150,
+            "entries_added": 150,
+        }
+
+        context = {
+            "orchestrator": mock_orchestrator,
+            "project": None,
+        }
+
+        with patch("builtins.input"), patch("builtins.print"):
+            result = command.execute(["https://github.com/example/repo"], context)
+
+        assert result["status"] == "success"
+        assert "github_com" in result["data"]["file_name"]
+
+    def test_import_url_with_project_link(self, command, project):
+        """Test importing URL and linking to project."""
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.process_request.return_value = {
+            "status": "success",
+            "file_name": "doc_example",
+            "url": "https://docs.example.com",
+            "words_extracted": 1500,
+            "chunks_created": 75,
+            "entries_added": 75,
+        }
+
+        context = {
+            "orchestrator": mock_orchestrator,
+            "project": project,
+        }
+
+        with patch("builtins.input", return_value="y"), patch("builtins.print"):
+            result = command.execute(["https://docs.example.com"], context)
+
+        assert result["status"] == "success"
+        call_args = mock_orchestrator.process_request.call_args
+        assert call_args[0][1]["project_id"] == "proj123"
+
+    def test_import_url_without_project_link(self, command, project):
+        """Test importing URL without linking to project."""
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.process_request.return_value = {
+            "status": "success",
+            "file_name": "doc_example",
+            "url": "https://docs.example.com",
+            "words_extracted": 1500,
+            "chunks_created": 75,
+            "entries_added": 75,
+        }
+
+        context = {
+            "orchestrator": mock_orchestrator,
+            "project": project,
+        }
+
+        with patch("builtins.input", return_value="n"), patch("builtins.print"):
+            result = command.execute(["https://docs.example.com"], context)
+
+        assert result["status"] == "success"
+        call_args = mock_orchestrator.process_request.call_args
+        assert call_args[0][1]["project_id"] is None
+
+    def test_import_url_with_spaces(self, command):
+        """Test importing URL with spaces handled correctly."""
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.process_request.return_value = {
+            "status": "success",
+            "file_name": "example_com",
+            "url": "https://example.com/page",
+            "words_extracted": 1000,
+            "chunks_created": 50,
+            "entries_added": 50,
+        }
+
+        context = {
+            "orchestrator": mock_orchestrator,
+            "project": None,
+        }
+
+        # URL split across multiple args gets joined
+        with patch("builtins.input"), patch("builtins.print"):
+            result = command.execute(["https://example.com/page"], context)
+
+        assert result["status"] == "success"
+
+    def test_import_url_failure(self, command):
+        """Test import URL failure handling."""
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.process_request.return_value = {
+            "status": "error",
+            "message": "Failed to fetch URL: Connection timeout",
+        }
+
+        context = {"orchestrator": mock_orchestrator}
+
+        with patch("builtins.input"), patch("builtins.print"):
+            result = command.execute(["https://nonexistent-domain-12345.com"], context)
+
+        assert result["status"] == "error"
+        assert "Failed to fetch" in result["message"] or "Connection" in result["message"]
+
+    def test_import_url_http(self, command):
+        """Test importing HTTP (non-HTTPS) URL."""
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.process_request.return_value = {
+            "status": "success",
+            "file_name": "oldsite_com",
+            "url": "http://oldsite.com",
+            "words_extracted": 800,
+            "chunks_created": 40,
+            "entries_added": 40,
+        }
+
+        context = {
+            "orchestrator": mock_orchestrator,
+            "project": None,
+        }
+
+        with patch("builtins.input"), patch("builtins.print"):
+            result = command.execute(["http://oldsite.com"], context)
 
         assert result["status"] == "success"
 

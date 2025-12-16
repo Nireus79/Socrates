@@ -35,7 +35,9 @@ from socratic_system.ui.commands import (  # Analytics commands; Code commands; 
     DebugCommand,
     DocImportCommand,
     DocImportDirCommand,
+    DocImportUrlCommand,
     DocListCommand,
+    DocPasteCommand,
     DoneCommand,
     ExitCommand,
     ExplainCommand,
@@ -324,7 +326,9 @@ class SocraticRAGSystem:
         # Document commands
         self.command_handler.register_command(DocImportCommand())
         self.command_handler.register_command(DocImportDirCommand())
+        self.command_handler.register_command(DocImportUrlCommand())
         self.command_handler.register_command(DocListCommand())
+        self.command_handler.register_command(DocPasteCommand())
 
         # Note commands
         self.command_handler.register_command(NoteAddCommand())
