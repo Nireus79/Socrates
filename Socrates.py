@@ -1,39 +1,57 @@
 #!/usr/bin/env python3
 """
-Entry point for Socratic RAG System
-
-Launches the main application with proper initialization and error handling.
+Socrates AI - Command-line entry point with optional flags
+Supports running with --testing flag to enable testing mode for the current user
 """
 
-import sys
-
-from colorama import Fore
+import argparse
+import logging
+import os
 
 
 def main():
-    """Main entry point for Socratic RAG System"""
-    try:
-        from socratic_system.ui import SocraticRAGSystem
+    """Main entry point with command-line argument support."""
+    parser = argparse.ArgumentParser(
+        prog="socrates",
+        description="Socrates AI - A Socratic method tutoring system powered by Claude AI",
+    )
 
-        system = SocraticRAGSystem()
-        system.start()
-    except KeyboardInterrupt:
-        print(f"\n{Fore.YELLOW}Application interrupted by user.")
-        sys.exit(0)
-    except ImportError as e:
-        print(f"{Fore.RED}Import error: {e}")
-        print(f"{Fore.YELLOW}Please ensure all dependencies are installed:")
-        print("  pip install chromadb anthropic sentence-transformers PyPDF2 colorama")
-        sys.exit(1)
-    except Exception as e:
-        print(f"{Fore.RED}Fatal error: {e}")
-        import traceback
+    parser.add_argument(
+        "--testing",
+        action="store_true",
+        help="Enable testing mode (bypasses monetization restrictions)",
+    )
 
-        traceback.print_exc()
-        sys.exit(1)
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode (verbose logging and debugging output)",
+    )
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s 8.0.0",
+    )
+
+    args = parser.parse_args()
+
+    # Set environment variable for testing mode if flag is provided
+    if args.testing:
+        os.environ["SOCRATES_TESTING_MODE"] = "1"
+
+    # Set environment variable for debug mode if flag is provided
+    if args.debug:
+        os.environ["SOCRATES_DEBUG_MODE"] = "1"
+        # Enable debug logging
+        logging.basicConfig(level=logging.DEBUG)
+
+    # Import and run the main app
+    from socratic_system.ui.main_app import SocraticRAGSystem
+
+    app = SocraticRAGSystem()
+    app.start()
 
 
 if __name__ == "__main__":
     main()
-
-# Get-ChildItem -Directory -Filter __pycache__ -Recurse | Remove-Item -Recurse -Force
