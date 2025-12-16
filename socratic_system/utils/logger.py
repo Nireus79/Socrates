@@ -49,6 +49,19 @@ class DebugLogger:
                 pass
 
     @classmethod
+    def reset(cls) -> None:
+        """Reset the logger singleton (clear handlers and reinitialize)"""
+        if cls._logger:
+            # Remove all handlers
+            for handler in cls._logger.handlers[:]:
+                handler.close()
+                cls._logger.removeHandler(handler)
+
+        cls._instance = None
+        cls._logger = None
+        cls._console_handler = None
+
+    @classmethod
     def _initialize(cls):
         """Initialize the logging system"""
         # Clean up old logs first
@@ -190,3 +203,8 @@ def set_debug_mode(enabled: bool) -> None:
 def is_debug_mode() -> bool:
     """Check if debug mode is enabled"""
     return DebugLogger().is_debug_mode()
+
+
+def reset_logger() -> None:
+    """Reset the logger singleton (clear old handlers and reinitialize)"""
+    DebugLogger.reset()

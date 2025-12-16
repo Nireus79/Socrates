@@ -12,7 +12,7 @@ from colorama import Fore, Style
 from socratic_system.models import ProjectContext, User
 from socratic_system.orchestration import AgentOrchestrator
 from socratic_system.ui.command_handler import CommandHandler
-from socratic_system.utils.logger import get_logger as get_debug_logger, set_debug_mode
+from socratic_system.utils.logger import get_logger as get_debug_logger, set_debug_mode, reset_logger
 from socratic_system.ui.commands import (  # Analytics commands; Code commands; Finalize commands; Collaboration commands; Skills commands; Session commands; Conversation commands; Debug commands; Document commands; System commands; Note commands; Project commands; Statistics commands; User commands; Subscription commands
     AdvanceCommand,
     AnalyticsAnalyzeCommand,
@@ -113,6 +113,11 @@ class SocraticRAGSystem:
     def start(self) -> None:
         """Start the Socratic RAG System"""
         self._print_banner()
+
+        # Reset logger singleton to clear old handlers and use new rotation handler
+        reset_logger()
+        # Reinitialize logger after reset
+        self.logger = get_debug_logger("main_app")
 
         # Enable debug mode for development
         set_debug_mode(True)
