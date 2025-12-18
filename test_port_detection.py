@@ -1,16 +1,39 @@
 #!/usr/bin/env python
 """
-Test port conflict detection and auto-port selection feature.
+Test port conflict detection and auto-port selection feature (LOCAL CODE).
 """
 
 import socket
 import sys
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent))
+# Add parent directory to path (BEFORE importing from local modules)
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
 
-from socrates import _find_available_port
+
+def _find_available_port(preferred_port: int = 8000, host: str = "0.0.0.0") -> int:
+    """
+    Find an available port starting from preferred_port.
+    This is the local implementation from socrates.py
+    """
+    port = preferred_port
+    max_attempts = 100
+
+    for attempt in range(max_attempts):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.bind((host, port))
+                sock.close()
+                return port
+        except OSError:
+            # Port is in use, try next one
+            port += 1
+
+    raise RuntimeError(
+        f"Could not find an available port starting from {preferred_port}. "
+        f"Tried ports {preferred_port} to {preferred_port + max_attempts}"
+    )
 
 
 def test_port_detection():

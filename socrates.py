@@ -19,6 +19,19 @@ As a CLI Application:
 """
 
 # ============================================================================
+# Ensure LOCAL code is used, not installed package
+# ============================================================================
+
+import sys
+from pathlib import Path
+
+# Add current directory to path FIRST (before any socratic_system imports)
+# This ensures we use the local code, not the installed package
+_current_dir = Path(__file__).parent
+if str(_current_dir) not in sys.path:
+    sys.path.insert(0, str(_current_dir))
+
+# ============================================================================
 # Library Exports (for programmatic use)
 # ============================================================================
 
@@ -70,10 +83,8 @@ __all__ = [
 # ============================================================================
 
 import argparse
-import sys
 import os
 import socket
-from pathlib import Path
 
 
 def _find_available_port(preferred_port: int = 8000, host: str = "0.0.0.0") -> int:

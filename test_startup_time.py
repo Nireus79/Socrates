@@ -3,7 +3,7 @@
 Test startup time improvements from lazy loading.
 
 Measures:
-1. Time to import socrates module
+1. Time to import from local code
 2. Time to initialize orchestrator (without accessing agents/models)
 3. Time to access first agent (lazy loading trigger)
 4. Time to access embedding model (lazy loading trigger)
@@ -13,10 +13,15 @@ import os
 import sys
 import time
 import logging
+from pathlib import Path
 
 # Fix Unicode encoding for Windows
 if sys.platform == "win32":
     os.environ["PYTHONIOENCODING"] = "utf-8"
+
+# Add local project to path (BEFORE importing anything from socratic_system)
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
 
 # Suppress logging during test
 logging.basicConfig(level=logging.CRITICAL)
@@ -25,23 +30,24 @@ logging.basicConfig(level=logging.CRITICAL)
 os.environ.setdefault("ANTHROPIC_API_KEY", "sk-test-key-for-startup-test")
 
 print("=" * 70)
-print("SOCRATES SYSTEM - STARTUP TIME IMPROVEMENT TESTS")
+print("SOCRATES SYSTEM - STARTUP TIME IMPROVEMENT TESTS (LOCAL CODE)")
 print("=" * 70)
 
-# Test 1: Import time
-print("\n1. Testing module import time...")
+# Test 1: Import time (local code)
+print("\n1. Testing local module import time...")
 start_import = time.time()
-import socrates
+from socratic_system.config import SocratesConfig
+from socratic_system.orchestration import AgentOrchestrator
 end_import = time.time()
 import_time = (end_import - start_import) * 1000
-print(f"   [OK] Module import time: {import_time:.1f}ms")
+print(f"   [OK] Local module import time: {import_time:.1f}ms")
 
 # Test 2: Configuration creation time
 print("\n2. Testing configuration creation time...")
 start_config = time.time()
-config = socrates.SocratesConfig.from_dict({
+config = SocratesConfig.from_dict({
     "api_key": os.getenv("ANTHROPIC_API_KEY"),
-    "data_dir": "/tmp/test_socrates"
+    "data_dir": str(Path("/tmp/test_socrates"))
 })
 end_config = time.time()
 config_time = (end_config - start_config) * 1000
@@ -52,7 +58,7 @@ print("\n3. Testing orchestrator initialization (lazy loading mode)...")
 print("   Note: Agents and embedding model are NOT loaded at this stage")
 start_init = time.time()
 try:
-    orchestrator = socrates.AgentOrchestrator(config)
+    orchestrator = AgentOrchestrator(config)
     end_init = time.time()
     init_time = (end_init - start_init) * 1000
     print(f"   [OK] Orchestrator init time: {init_time:.1f}ms")
