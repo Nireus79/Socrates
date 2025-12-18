@@ -23,6 +23,9 @@ class SubscriptionChecker:
         Returns:
             (has_access: bool, error_message: Optional[str])
         """
+        if user and user.testing_mode:
+            return True, None
+
         if user is None:
             return False, "User not found. Please log in to access commands."
 
@@ -64,6 +67,9 @@ class SubscriptionChecker:
         Returns:
             (can_create: bool, error_message: Optional[str])
         """
+        if user and user.testing_mode:
+            return True, None
+
         if user is None:
             return False, "User not found. Please log in to create projects."
 
@@ -96,6 +102,9 @@ class SubscriptionChecker:
         Returns:
             (can_add: bool, error_message: Optional[str])
         """
+        if user and user.testing_mode:
+            return True, None
+
         user_tier = user.subscription_tier.lower()
         limits = get_tier_limits(user_tier)
 
@@ -137,6 +146,9 @@ class SubscriptionChecker:
         Returns:
             (can_ask: bool, error_message: Optional[str])
         """
+        if user and user.testing_mode:
+            return True, None
+
         if user is None:
             return False, "User not found. Please log in to ask questions."
 

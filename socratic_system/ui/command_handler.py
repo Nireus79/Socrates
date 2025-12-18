@@ -272,6 +272,11 @@ class CommandHandler:
         ]
 
         for name in sorted(self.commands.keys()):
+            cmd = self.commands[name]
+            # Skip hidden commands from help display
+            if hasattr(cmd, 'hidden') and cmd.hidden:
+                continue
+
             parts = name.split()
             category = parts[0] if parts else "system"
 

@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Union
 
 from socratic_system.agents import (
     CodeGeneratorAgent,
+    CodeValidationAgent,
     ConflictDetectorAgent,
     ContextAnalyzerAgent,
     DocumentProcessorAgent,
@@ -80,13 +81,21 @@ class AgentOrchestrator:
         self.logger.info("Database components initialized successfully")
 
         # Initialize Claude client
-        self.claude_client = ClaudeClient(self.config.api_key, self)
+        self.claude_client = ClaudeClient(
+            self.config.api_key, self, subscription_token=self.config.subscription_token
+        )
 
-        # Initialize agents
-        self._initialize_agents()
+        # Cache for lazy-loaded agents
+        self._agents_cache = {}
 
-        # Load default knowledge base
-        self._load_knowledge_base()
+        # Start background knowledge base loading (non-blocking)
+        import threading
+        self.knowledge_loaded = False
+        self._knowledge_thread = threading.Thread(
+            target=self._load_knowledge_base_safe,
+            daemon=True
+        )
+        self._knowledge_thread.start()
 
         # Emit system initialized event
         self.event_emitter.emit(
@@ -106,22 +115,149 @@ class AgentOrchestrator:
         self.logger.info(f"  Vector DB: {self.config.vector_db_path}")
         self.logger.info("=" * 70)
 
-    def _initialize_agents(self) -> None:
-        """Initialize agents after orchestrator is fully set up"""
-        self.project_manager = ProjectManagerAgent(self)
-        self.socratic_counselor = SocraticCounselorAgent(self)
-        self.context_analyzer = ContextAnalyzerAgent(self)
-        self.code_generator = CodeGeneratorAgent(self)
-        self.system_monitor = SystemMonitorAgent(self)
-        self.conflict_detector = ConflictDetectorAgent(self)
-        self.document_processor = DocumentProcessorAgent(self)
-        self.user_manager = UserManagerAgent(self)
-        self.note_manager = NoteManagerAgent(self)
-        self.knowledge_manager = KnowledgeManagerAgent("knowledge_manager", self)
-        self.quality_controller = QualityControllerAgent(self)
-        self.learning_agent = UserLearningAgent(self)
-        self.multi_llm_agent = MultiLLMAgent(self)
-        self.question_queue = QuestionQueueAgent(self)
+    def _load_knowledge_base_safe(self) -> None:
+        """Wrapper for knowledge base loading in background thread with error handling"""
+        try:
+            self._load_knowledge_base()
+        except Exception as e:
+            self.logger.error(f"Background knowledge loading failed: {e}")
+
+    def wait_for_knowledge(self, timeout: int = 10) -> bool:
+        """
+        Wait for knowledge base to finish loading (optional blocking method)
+
+        Args:
+            timeout: Maximum seconds to wait before returning
+
+        Returns:
+            True if knowledge loaded successfully, False if timeout
+        """
+        if self.knowledge_loaded:
+            return True
+
+        self._knowledge_thread.join(timeout=timeout)
+        return self.knowledge_loaded
+
+    # Lazy-loaded agent properties
+    @property
+    def project_manager(self) -> "ProjectManagerAgent":
+        """Lazy-load project manager agent"""
+        if "project_manager" not in self._agents_cache:
+            from socratic_system.agents.project_manager import ProjectManagerAgent
+            self._agents_cache["project_manager"] = ProjectManagerAgent(self)
+        return self._agents_cache["project_manager"]
+
+    @property
+    def socratic_counselor(self) -> "SocraticCounselorAgent":
+        """Lazy-load socratic counselor agent"""
+        if "socratic_counselor" not in self._agents_cache:
+            from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
+            self._agents_cache["socratic_counselor"] = SocraticCounselorAgent(self)
+        return self._agents_cache["socratic_counselor"]
+
+    @property
+    def context_analyzer(self) -> "ContextAnalyzerAgent":
+        """Lazy-load context analyzer agent"""
+        if "context_analyzer" not in self._agents_cache:
+            from socratic_system.agents.document_processor import ContextAnalyzerAgent
+            self._agents_cache["context_analyzer"] = ContextAnalyzerAgent(self)
+        return self._agents_cache["context_analyzer"]
+
+    @property
+    def code_generator(self) -> "CodeGeneratorAgent":
+        """Lazy-load code generator agent"""
+        if "code_generator" not in self._agents_cache:
+            from socratic_system.agents.code_generator import CodeGeneratorAgent
+            self._agents_cache["code_generator"] = CodeGeneratorAgent(self)
+        return self._agents_cache["code_generator"]
+
+    @property
+    def system_monitor(self) -> "SystemMonitorAgent":
+        """Lazy-load system monitor agent"""
+        if "system_monitor" not in self._agents_cache:
+            from socratic_system.agents import SystemMonitorAgent
+            self._agents_cache["system_monitor"] = SystemMonitorAgent(self)
+        return self._agents_cache["system_monitor"]
+
+    @property
+    def conflict_detector(self) -> "ConflictDetectorAgent":
+        """Lazy-load conflict detector agent"""
+        if "conflict_detector" not in self._agents_cache:
+            from socratic_system.agents import ConflictDetectorAgent
+            self._agents_cache["conflict_detector"] = ConflictDetectorAgent(self)
+        return self._agents_cache["conflict_detector"]
+
+    @property
+    def document_processor(self) -> "DocumentProcessorAgent":
+        """Lazy-load document processor agent"""
+        if "document_processor" not in self._agents_cache:
+            from socratic_system.agents.document_processor import DocumentProcessorAgent
+            self._agents_cache["document_processor"] = DocumentProcessorAgent(self)
+        return self._agents_cache["document_processor"]
+
+    @property
+    def user_manager(self) -> "UserManagerAgent":
+        """Lazy-load user manager agent"""
+        if "user_manager" not in self._agents_cache:
+            from socratic_system.agents import UserManagerAgent
+            self._agents_cache["user_manager"] = UserManagerAgent(self)
+        return self._agents_cache["user_manager"]
+
+    @property
+    def note_manager(self) -> "NoteManagerAgent":
+        """Lazy-load note manager agent"""
+        if "note_manager" not in self._agents_cache:
+            from socratic_system.agents import NoteManagerAgent
+            self._agents_cache["note_manager"] = NoteManagerAgent(self)
+        return self._agents_cache["note_manager"]
+
+    @property
+    def knowledge_manager(self) -> "KnowledgeManagerAgent":
+        """Lazy-load knowledge manager agent"""
+        if "knowledge_manager" not in self._agents_cache:
+            from socratic_system.agents.document_processor import KnowledgeManagerAgent
+            self._agents_cache["knowledge_manager"] = KnowledgeManagerAgent("knowledge_manager", self)
+        return self._agents_cache["knowledge_manager"]
+
+    @property
+    def quality_controller(self) -> "QualityControllerAgent":
+        """Lazy-load quality controller agent"""
+        if "quality_controller" not in self._agents_cache:
+            from socratic_system.agents import QualityControllerAgent
+            self._agents_cache["quality_controller"] = QualityControllerAgent(self)
+        return self._agents_cache["quality_controller"]
+
+    @property
+    def learning_agent(self) -> "UserLearningAgent":
+        """Lazy-load user learning agent"""
+        if "learning_agent" not in self._agents_cache:
+            from socratic_system.agents import UserLearningAgent
+            self._agents_cache["learning_agent"] = UserLearningAgent(self)
+        return self._agents_cache["learning_agent"]
+
+    @property
+    def multi_llm_agent(self) -> "MultiLLMAgent":
+        """Lazy-load multi-LLM agent"""
+        if "multi_llm_agent" not in self._agents_cache:
+            from socratic_system.agents import MultiLLMAgent
+            self._agents_cache["multi_llm_agent"] = MultiLLMAgent(self)
+        return self._agents_cache["multi_llm_agent"]
+
+    @property
+    def question_queue(self) -> "QuestionQueueAgent":
+        """Lazy-load question queue agent"""
+        if "question_queue" not in self._agents_cache:
+            from socratic_system.agents import QuestionQueueAgent
+            self._agents_cache["question_queue"] = QuestionQueueAgent(self)
+        return self._agents_cache["question_queue"]
+
+    @property
+    def code_validation_agent(self) -> "CodeValidationAgent":
+        """Lazy-load code validation agent"""
+        if "code_validation_agent" not in self._agents_cache:
+            from socratic_system.agents.code_validation_agent import CodeValidationAgent
+            self._agents_cache["code_validation_agent"] = CodeValidationAgent(self)
+        return self._agents_cache["code_validation_agent"]
 
     def _load_knowledge_base(self) -> None:
         """Load default knowledge base from config file if not already loaded"""
@@ -132,8 +268,38 @@ class AgentOrchestrator:
         self.logger.info("Loading knowledge base...")
         self.event_emitter.emit(EventType.LOG_INFO, {"message": "Loading knowledge base..."})
 
-        # Load knowledge from JSON config file
-        knowledge_data = self._load_knowledge_config()
+        # Load knowledge from JSON config file (inline _load_knowledge_config logic)
+        if self.config.knowledge_base_path:
+            config_path = Path(self.config.knowledge_base_path)
+            source = "configured path"
+        else:
+            # Fall back to default location
+            config_path = Path(__file__).parent.parent / "config" / "knowledge_base.json"
+            source = "default location"
+
+        self.logger.debug(f"Attempting to load knowledge base from {source}: {config_path}")
+
+        knowledge_data = []
+        try:
+            if config_path.exists():
+                self.logger.debug(f"Knowledge base file found at: {config_path}")
+                with open(config_path, encoding="utf-8") as f:
+                    config = json.load(f)
+
+                knowledge_entries = config.get("default_knowledge", [])
+                if knowledge_entries:
+                    self.logger.info(
+                        f"Successfully loaded {len(knowledge_entries)} knowledge entries from {source}"
+                    )
+                    knowledge_data = knowledge_entries
+                else:
+                    self.logger.warning(f"No 'default_knowledge' entries found in config at {source}")
+            else:
+                self.logger.debug(f"Knowledge config not found at {source}: {config_path}")
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Invalid JSON in knowledge config at {config_path}: {e}")
+        except Exception as e:
+            self.logger.error(f"Failed to load knowledge config from {config_path}: {e}")
 
         if not knowledge_data:
             self.logger.warning(
@@ -173,6 +339,7 @@ class AgentOrchestrator:
                 error_count += 1
 
         self.vector_db.knowledge_loaded = True
+        self.knowledge_loaded = True  # Also mark orchestrator's flag as loaded
 
         # Log summary
         summary = f"Knowledge base loaded: {loaded_count} entries added"
@@ -188,45 +355,6 @@ class AgentOrchestrator:
                 "status": "success" if error_count == 0 else "partial",
             },
         )
-
-    def _load_knowledge_config(self) -> List[Dict[str, Any]]:
-        """Load knowledge base from JSON configuration file"""
-        # Try the configured knowledge base path first
-        if self.config.knowledge_base_path:
-            config_path = Path(self.config.knowledge_base_path)
-            source = "configured path"
-        else:
-            # Fall back to default location
-            config_path = Path(__file__).parent.parent / "config" / "knowledge_base.json"
-            source = "default location"
-
-        self.logger.debug(f"Attempting to load knowledge base from {source}: {config_path}")
-
-        try:
-            if not config_path.exists():
-                self.logger.debug(f"Knowledge config not found at {source}: {config_path}")
-                return []
-
-            self.logger.debug(f"Knowledge base file found at: {config_path}")
-            with open(config_path, encoding="utf-8") as f:
-                config = json.load(f)
-
-            knowledge_entries = config.get("default_knowledge", [])
-            if knowledge_entries:
-                self.logger.info(
-                    f"Successfully loaded {len(knowledge_entries)} knowledge entries from {source}"
-                )
-                return knowledge_entries
-            else:
-                self.logger.warning(f"No 'default_knowledge' entries found in config at {source}")
-                return []
-
-        except json.JSONDecodeError as e:
-            self.logger.error(f"Invalid JSON in knowledge config at {config_path}: {e}")
-            return []
-        except Exception as e:
-            self.logger.error(f"Failed to load knowledge config from {config_path}: {e}")
-            return []
 
     def set_model(self, model_name: str) -> bool:
         """
@@ -280,6 +408,7 @@ class AgentOrchestrator:
             "learning": self.learning_agent,
             "multi_llm": self.multi_llm_agent,
             "question_queue": self.question_queue,
+            "code_validation": self.code_validation_agent,
         }
 
         agent = agents.get(agent_name)
@@ -354,6 +483,7 @@ class AgentOrchestrator:
             "learning": self.learning_agent,
             "multi_llm": self.multi_llm_agent,
             "question_queue": self.question_queue,
+            "code_validation": self.code_validation_agent,
         }
 
         agent = agents.get(agent_name)

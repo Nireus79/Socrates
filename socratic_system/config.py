@@ -43,6 +43,7 @@ class SocratesConfig:
 
     # API Configuration
     api_key: str
+    subscription_token: Optional[str] = None  # Alternative: use Claude subscription instead of API key
 
     # Model Configuration
     claude_model: str = "claude-haiku-4-5-20251001"
@@ -68,17 +69,44 @@ class SocratesConfig:
     # Custom Knowledge
     custom_knowledge: List[str] = field(default_factory=list)
 
-    def _ensure_path(self, path_value: Union[str, Path, None], default_path: Path) -> Path:
-        """Convert path value to Path object"""
-        if path_value is None:
-            return default_path
-        elif isinstance(path_value, str):
-            return Path(path_value)
-        else:
-            return path_value
+    def __post_init__(self) -> None:
+        """Initialize derived paths and create directories"""
+        # Validate required API key
+        if not self.api_key or not self.api_key.strip():
+            raise ValueError("api_key is required and cannot be empty")
 
-    def _setup_knowledge_base_path(self) -> None:
-        """Set knowledge_base_path if not explicitly set"""
+        # Ensure data_dir is a Path object
+        if isinstance(self.data_dir, str):
+            self.data_dir = Path(self.data_dir)
+        elif not isinstance(self.data_dir, Path):
+            raise TypeError(f"data_dir must be str or Path, got {type(self.data_dir)}")
+
+        # Initialize derived paths if not explicitly set
+        # Convert path value to Path object (inline _ensure_path logic)
+        if self.projects_db_path is None:
+            self.projects_db_path = self.data_dir / "projects.db"
+        elif isinstance(self.projects_db_path, str):
+            self.projects_db_path = Path(self.projects_db_path)
+
+        if self.vector_db_path is None:
+            self.vector_db_path = self.data_dir / "vector_db"
+        elif isinstance(self.vector_db_path, str):
+            self.vector_db_path = Path(self.vector_db_path)
+
+        if self.log_file is None:
+            self.log_file = self.data_dir / "logs" / "socrates.log"
+        elif isinstance(self.log_file, str):
+            self.log_file = Path(self.log_file)
+
+        # Validate all paths are now Path objects
+        if not isinstance(self.projects_db_path, Path):
+            raise TypeError(f"projects_db_path must be Path, got {type(self.projects_db_path)}")
+        if not isinstance(self.vector_db_path, Path):
+            raise TypeError(f"vector_db_path must be Path, got {type(self.vector_db_path)}")
+        if not isinstance(self.log_file, Path):
+            raise TypeError(f"log_file must be Path, got {type(self.log_file)}")
+
+        # Set knowledge_base_path if not explicitly set (inline _setup_knowledge_base_path logic)
         if self.knowledge_base_path is None:
             current_dir = Path(__file__).parent
             config_dir = current_dir.parent / "config"
@@ -87,34 +115,17 @@ class SocratesConfig:
                 if kb_path.exists():
                     self.knowledge_base_path = kb_path
 
-    def _create_directories(self) -> None:
-        """Create required directories"""
+        # Create required directories (inline _create_directories logic)
+        if not isinstance(self.data_dir, Path):
+            raise TypeError(f"data_dir must be a Path object, got {type(self.data_dir)}")
+
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        self.vector_db_path.mkdir(parents=True, exist_ok=True)
-        self.log_file.parent.mkdir(parents=True, exist_ok=True)
 
-    def __post_init__(self) -> None:
-        """Initialize derived paths and create directories"""
-        # Validate required API key
-        if not self.api_key:
-            raise ValueError("api_key is required and cannot be empty")
+        if self.vector_db_path and isinstance(self.vector_db_path, Path):
+            self.vector_db_path.mkdir(parents=True, exist_ok=True)
 
-        # Ensure data_dir is a Path object
-        if isinstance(self.data_dir, str):
-            self.data_dir = Path(self.data_dir)
-
-        # Initialize derived paths if not explicitly set
-        self.projects_db_path = self._ensure_path(
-            self.projects_db_path, self.data_dir / "projects.db"
-        )
-        self.vector_db_path = self._ensure_path(self.vector_db_path, self.data_dir / "vector_db")
-        self.log_file = self._ensure_path(self.log_file, self.data_dir / "logs" / "socrates.log")
-
-        # Set knowledge_base_path if not explicitly set
-        self._setup_knowledge_base_path()
-
-        # Create directories
-        self._create_directories()
+        if self.log_file and isinstance(self.log_file, Path):
+            self.log_file.parent.mkdir(parents=True, exist_ok=True)
 
     @classmethod
     def from_env(cls, **overrides) -> "SocratesConfig":
@@ -123,6 +134,7 @@ class SocratesConfig:
 
         Environment variables:
             ANTHROPIC_API_KEY or API_KEY_CLAUDE: Claude API key (required)
+            ANTHROPIC_SUBSCRIPTION_TOKEN: Optional - Claude subscription token for subscription-based auth
             CLAUDE_MODEL: Model name
             SOCRATES_DATA_DIR: Data directory
             SOCRATES_LOG_LEVEL: Logging level
@@ -149,6 +161,11 @@ class SocratesConfig:
             "data_dir": Path(os.getenv("SOCRATES_DATA_DIR", Path.home() / ".socrates")),
             "log_level": os.getenv("SOCRATES_LOG_LEVEL", "INFO"),
         }
+
+        # Optional subscription token (alternative auth method)
+        subscription_token = os.getenv("ANTHROPIC_SUBSCRIPTION_TOKEN")
+        if subscription_token:
+            config_dict["subscription_token"] = subscription_token
 
         log_file = os.getenv("SOCRATES_LOG_FILE")
         if log_file:
@@ -205,67 +222,6 @@ class SocratesConfig:
             f"data_dir={self.data_dir}, "
             f"log_level={self.log_level})"
         )
-
-
-class ConfigBuilder:
-    """
-    Fluent builder for SocratesConfig.
-
-    Example:
-        >>> config = ConfigBuilder("sk-ant-...") \\
-        ...     .with_data_dir("/path/to/data") \\
-        ...     .with_model("claude-opus-4-1-20250805") \\
-        ...     .with_log_level("DEBUG") \\
-        ...     .build()
-    """
-
-    def __init__(self, api_key: str):
-        """Initialize builder with required API key"""
-        self._config_dict: Dict[str, Any] = {"api_key": api_key}
-
-    def with_data_dir(self, path: Path) -> "ConfigBuilder":
-        """Set data directory"""
-        self._config_dict["data_dir"] = path
-        return self
-
-    def with_model(self, model_name: str) -> "ConfigBuilder":
-        """Set Claude model"""
-        self._config_dict["claude_model"] = model_name
-        return self
-
-    def with_embedding_model(self, model_name: str) -> "ConfigBuilder":
-        """Set embedding model"""
-        self._config_dict["embedding_model"] = model_name
-        return self
-
-    def with_knowledge_base(self, path: Path) -> "ConfigBuilder":
-        """Set knowledge base path"""
-        self._config_dict["knowledge_base_path"] = path
-        return self
-
-    def with_custom_knowledge(self, knowledge_list: List[str]) -> "ConfigBuilder":
-        """Set custom knowledge entries"""
-        self._config_dict["custom_knowledge"] = knowledge_list
-        return self
-
-    def with_log_level(self, level: str) -> "ConfigBuilder":
-        """Set logging level (DEBUG, INFO, WARNING, ERROR)"""
-        self._config_dict["log_level"] = level
-        return self
-
-    def with_log_file(self, path: Path) -> "ConfigBuilder":
-        """Set log file path"""
-        self._config_dict["log_file"] = path
-        return self
-
-    def with_max_retries(self, retries: int) -> "ConfigBuilder":
-        """Set maximum number of retries"""
-        self._config_dict["max_retries"] = retries
-        return self
-
-    def build(self) -> SocratesConfig:
-        """Build the SocratesConfig instance"""
-        return SocratesConfig.from_dict(self._config_dict)
 
 
 # Legacy CONFIG dictionary for backward compatibility with existing code

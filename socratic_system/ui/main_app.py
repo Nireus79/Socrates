@@ -5,6 +5,12 @@ Main application class for Socratic RAG System - Command-Based CLI Interface
 import datetime
 import getpass
 import os
+import sys
+import subprocess
+import signal
+import time
+import webbrowser
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 from colorama import Fore, Style
@@ -13,7 +19,7 @@ from socratic_system.models import ProjectContext, User
 from socratic_system.orchestration import AgentOrchestrator
 from socratic_system.ui.command_handler import CommandHandler
 from socratic_system.utils.logger import get_logger as get_debug_logger, set_debug_mode, reset_logger
-from socratic_system.ui.commands import (  # Analytics commands; Code commands; Finalize commands; Collaboration commands; Skills commands; Session commands; Conversation commands; Debug commands; Document commands; System commands; Note commands; Project commands; Statistics commands; User commands; Subscription commands
+from socratic_system.ui.commands import (  # Analytics commands; Code commands; Finalize commands; Collaboration commands; Skills commands; Session commands; Conversation commands; Debug commands; Document commands; System commands; Note commands; Project commands; Statistics commands; User commands; Subscription commands; GitHub commands
     AdvanceCommand,
     AnalyticsAnalyzeCommand,
     AnalyticsBreakdownCommand,
@@ -43,6 +49,10 @@ from socratic_system.ui.commands import (  # Analytics commands; Code commands; 
     ExplainCommand,
     FinalizeDocsCommand,
     FinalizeGenerateCommand,
+    GithubImportCommand,
+    GithubPullCommand,
+    GithubPushCommand,
+    GithubSyncCommand,
     HelpCommand,
     HintCommand,
     InfoCommand,
@@ -62,15 +72,21 @@ from socratic_system.ui.commands import (  # Analytics commands; Code commands; 
     NoteDeleteCommand,
     NoteListCommand,
     NoteSearchCommand,
+    ProjectAnalyzeCommand,
     ProjectArchiveCommand,
     ProjectCreateCommand,
     ProjectDeleteCommand,
+    ProjectDiffCommand,
+    ProjectFixCommand,
     ProjectListCommand,
     ProjectLoadCommand,
     ProjectProgressCommand,
     ProjectRestoreCommand,
+    ProjectReviewCommand,
     ProjectStatsCommand,
     ProjectStatusCommand,
+    ProjectTestCommand,
+    ProjectValidateCommand,
     PromptCommand,
     SearchCommand,
     SkillsListCommand,
@@ -93,11 +109,148 @@ from socratic_system.ui.navigation import NavigationStack
 from socratic_system.ui.nlu_handler import NLUHandler, SuggestionDisplay
 
 
+# ============================================================================
+# Command Registry Pattern - Consolidated command registration
+# ============================================================================
+# Registry of (CommandClass, aliases) tuples
+# This eliminates ~136 lines of repetitive register_command calls
+COMMAND_REGISTRY = [
+    # System commands
+    (HelpCommand, ["h", "?"]),
+    (ExitCommand, ["quit", "q"]),
+    (BackCommand, []),
+    (MenuCommand, []),
+    (StatusCommand, []),
+    (ClearCommand, ["cls"]),
+    (PromptCommand, []),
+    (InfoCommand, []),
+    (ModelCommand, []),
+    (LLMCommand, ["llm"]),
+
+    # NLU control commands
+    (NLUEnableCommand, []),
+    (NLUDisableCommand, []),
+    (NLUStatusCommand, []),
+
+    # User commands
+    (UserLoginCommand, []),
+    (UserCreateCommand, []),
+    (UserLogoutCommand, []),
+    (UserArchiveCommand, []),
+    (UserDeleteCommand, []),
+    (UserRestoreCommand, []),
+
+    # Subscription commands
+    (SubscriptionStatusCommand, []),
+    (SubscriptionUpgradeCommand, []),
+    (SubscriptionDowngradeCommand, []),
+    (SubscriptionCompareCommand, []),
+    (SubscriptionTestingModeCommand, []),
+
+    # Project commands
+    (ProjectCreateCommand, []),
+    (ProjectLoadCommand, []),
+    (ProjectListCommand, []),
+    (ProjectArchiveCommand, []),
+    (ProjectRestoreCommand, []),
+    (ProjectDeleteCommand, []),
+
+    # Project analysis/validation commands
+    (ProjectAnalyzeCommand, []),
+    (ProjectTestCommand, []),
+    (ProjectValidateCommand, []),
+    (ProjectFixCommand, []),
+    (ProjectReviewCommand, []),
+    (ProjectDiffCommand, []),
+
+    # GitHub commands
+    (GithubImportCommand, []),
+    (GithubPullCommand, []),
+    (GithubPushCommand, []),
+    (GithubSyncCommand, []),
+
+    # Session commands
+    (ChatCommand, []),
+    (ModeCommand, []),
+    (DoneCommand, []),
+    (AdvanceCommand, []),
+    (HintCommand, []),
+
+    # Code commands
+    (CodeGenerateCommand, []),
+    (CodeDocsCommand, []),
+
+    # Finalize commands (project type-agnostic artifact generation)
+    (FinalizeGenerateCommand, []),
+    (FinalizeDocsCommand, []),
+
+    # Collaboration commands
+    (CollabAddCommand, []),
+    (CollabRemoveCommand, []),
+    (CollabListCommand, []),
+    (CollabRoleCommand, []),
+
+    # Skills commands
+    (SkillsSetCommand, []),
+    (SkillsListCommand, []),
+
+    # Document commands
+    (DocImportCommand, []),
+    (DocImportDirCommand, []),
+    (DocImportUrlCommand, []),
+    (DocListCommand, []),
+    (DocPasteCommand, []),
+
+    # Note commands
+    (NoteAddCommand, []),
+    (NoteListCommand, []),
+    (NoteSearchCommand, []),
+    (NoteDeleteCommand, []),
+
+    # Conversation commands
+    (ConvSearchCommand, []),
+    (ConvSummaryCommand, []),
+
+    # Statistics commands
+    (ProjectStatsCommand, []),
+    (ProjectProgressCommand, []),
+    (ProjectStatusCommand, []),
+
+    # Maturity tracking commands
+    (MaturityCommand, []),
+    (MaturitySummaryCommand, []),
+    (MaturityHistoryCommand, []),
+    (MaturityStatusCommand, []),
+
+    # Debug commands
+    (DebugCommand, []),
+    (LogsCommand, []),
+
+    # Query/Answer commands
+    (ExplainCommand, []),
+    (SearchCommand, []),
+]
+
+# Analytics commands (require orchestrator injection)
+ANALYTICS_COMMANDS = [
+    (AnalyticsAnalyzeCommand, ["aa"]),
+    (AnalyticsRecommendCommand, ["ar"]),
+    (AnalyticsTrendsCommand, ["at"]),
+    (AnalyticsSummaryCommand, ["as"]),
+    (AnalyticsBreakdownCommand, ["abd"]),
+    (AnalyticsStatusCommand, ["ast"]),
+]
+
+
 class SocraticRAGSystem:
     """Main application class for Socratic RAG System with command-based interface"""
 
-    def __init__(self):
-        """Initialize the application"""
+    def __init__(self, start_frontend: bool = False):
+        """Initialize the application
+
+        Args:
+            start_frontend: If True, also start the React frontend dev server
+        """
         self.orchestrator: Optional[AgentOrchestrator] = None
         self.current_user: Optional[User] = None
         self.current_project: Optional[ProjectContext] = None
@@ -109,12 +262,111 @@ class SocraticRAGSystem:
         self.context_display: Optional[ContextDisplay] = None
         self.nlu_handler: Optional[NLUHandler] = None
 
+        # Frontend process management
+        self.start_frontend = start_frontend
+        self.frontend_process: Optional[subprocess.Popen] = None
+        self.api_process: Optional[subprocess.Popen] = None
+
         # Initialize debug logger
         self.logger = get_debug_logger("main_app")
+
+        # Setup signal handlers for graceful shutdown
+        signal.signal(signal.SIGINT, self._handle_shutdown)
+        signal.signal(signal.SIGTERM, self._handle_shutdown)
+
+    def _handle_shutdown(self, signum, frame):
+        """Handle graceful shutdown on Ctrl+C"""
+        print(f"\n\n{Fore.YELLOW}Shutting down...{Style.RESET_ALL}")
+        self._stop_frontend()
+        sys.exit(0)
+
+    def _start_frontend(self) -> bool:
+        """Start the React frontend dev server
+
+        Returns:
+            True if frontend started successfully, False otherwise
+        """
+        if not self.start_frontend:
+            return True
+
+        print(f"{Fore.CYAN}[Frontend] Starting React dev server...{Style.RESET_ALL}")
+
+        try:
+            frontend_dir = Path.cwd() / "socrates-frontend"
+
+            # Check if frontend directory exists
+            if not frontend_dir.exists():
+                print(f"{Fore.RED}[Frontend] Error: socrates-frontend directory not found{Style.RESET_ALL}")
+                return False
+
+            # Check if node_modules exists
+            if not (frontend_dir / "node_modules").exists():
+                print(f"{Fore.YELLOW}[Frontend] Installing dependencies...{Style.RESET_ALL}")
+                result = subprocess.run(
+                    ["npm", "install", "--legacy-peer-deps"],
+                    cwd=frontend_dir,
+                    capture_output=True,
+                    text=True
+                )
+                if result.returncode != 0:
+                    print(f"{Fore.RED}[Frontend] Failed to install dependencies{Style.RESET_ALL}")
+                    return False
+
+            # Start frontend development server
+            self.frontend_process = subprocess.Popen(
+                ["npm", "run", "dev"],
+                cwd=frontend_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                env={**os.environ, "VITE_API_URL": "http://localhost:8000"}
+            )
+
+            time.sleep(3)  # Give it a moment to start
+
+            if self.frontend_process.poll() is None:
+                print(f"{Fore.GREEN}[Frontend] Dev server started (PID: {self.frontend_process.pid}){Style.RESET_ALL}")
+                print(f"{Fore.CYAN}[Frontend] Access at: http://localhost:5173{Style.RESET_ALL}")
+
+                # Open browser automatically
+                try:
+                    time.sleep(1)  # Extra moment to ensure server is fully ready
+                    print(f"{Fore.CYAN}[Frontend] Opening browser...{Style.RESET_ALL}")
+                    webbrowser.open("http://localhost:5173")
+                except Exception as e:
+                    print(f"{Fore.YELLOW}[Frontend] Could not open browser automatically: {e}{Style.RESET_ALL}")
+                    print(f"{Fore.YELLOW}[Frontend] Please open manually: http://localhost:5173{Style.RESET_ALL}")
+
+                return True
+            else:
+                print(f"{Fore.RED}[Frontend] Failed to start development server{Style.RESET_ALL}")
+                return False
+
+        except Exception as e:
+            print(f"{Fore.RED}[Frontend] Error starting frontend: {e}{Style.RESET_ALL}")
+            return False
+
+    def _stop_frontend(self) -> None:
+        """Stop the frontend development server"""
+        if self.frontend_process and self.frontend_process.poll() is None:
+            print(f"{Fore.YELLOW}[Frontend] Stopping dev server...{Style.RESET_ALL}")
+            try:
+                self.frontend_process.terminate()
+                self.frontend_process.wait(timeout=5)
+                print(f"{Fore.GREEN}[Frontend] Dev server stopped{Style.RESET_ALL}")
+            except subprocess.TimeoutExpired:
+                self.frontend_process.kill()
+            except Exception as e:
+                print(f"{Fore.RED}[Frontend] Error stopping frontend: {e}{Style.RESET_ALL}")
 
     def start(self) -> None:
         """Start the Socratic RAG System"""
         self._print_banner()
+
+        # Start frontend if requested
+        if self.start_frontend:
+            if not self._start_frontend():
+                print(f"{Fore.YELLOW}Continuing without frontend...{Style.RESET_ALL}")
 
         # Reset logger singleton to clear old handlers and use new rotation handler
         reset_logger()
@@ -129,6 +381,7 @@ class SocraticRAGSystem:
         api_key = self._get_api_key()
         if not api_key:
             print(f"{Fore.RED}No API key provided. Exiting...")
+            self._stop_frontend()
             return
 
         try:
@@ -257,127 +510,22 @@ class SocraticRAGSystem:
                 print(f"{Fore.YELLOW}All monetization restrictions bypassed!{Style.RESET_ALL}\n")
 
     def _register_commands(self) -> None:
-        """Register all available commands"""
-        # System commands
-        self.command_handler.register_command(HelpCommand(), aliases=["h", "?"])
-        self.command_handler.register_command(ExitCommand(), aliases=["quit", "q"])
-        self.command_handler.register_command(BackCommand())
-        self.command_handler.register_command(MenuCommand())
-        self.command_handler.register_command(StatusCommand())
-        self.command_handler.register_command(ClearCommand(), aliases=["cls"])
-        self.command_handler.register_command(PromptCommand())
-        self.command_handler.register_command(InfoCommand())
-        self.command_handler.register_command(ModelCommand())
-        self.command_handler.register_command(LLMCommand(), aliases=["llm"])
+        """Register all available commands using registry pattern"""
+        # Register standard commands from registry
+        for command_class, aliases in COMMAND_REGISTRY:
+            command_instance = command_class()
+            if aliases:
+                self.command_handler.register_command(command_instance, aliases=aliases)
+            else:
+                self.command_handler.register_command(command_instance)
 
-        # NLU control commands
-        self.command_handler.register_command(NLUEnableCommand())
-        self.command_handler.register_command(NLUDisableCommand())
-        self.command_handler.register_command(NLUStatusCommand())
-
-        # User commands
-        self.command_handler.register_command(UserLoginCommand())
-        self.command_handler.register_command(UserCreateCommand())
-        self.command_handler.register_command(UserLogoutCommand())
-        self.command_handler.register_command(UserArchiveCommand())
-        self.command_handler.register_command(UserDeleteCommand())
-        self.command_handler.register_command(UserRestoreCommand())
-
-        # Subscription commands
-        self.command_handler.register_command(SubscriptionStatusCommand())
-        self.command_handler.register_command(SubscriptionUpgradeCommand())
-        self.command_handler.register_command(SubscriptionDowngradeCommand())
-        self.command_handler.register_command(SubscriptionCompareCommand())
-        self.command_handler.register_command(SubscriptionTestingModeCommand())
-
-        # Project commands
-        self.command_handler.register_command(ProjectCreateCommand())
-        self.command_handler.register_command(ProjectLoadCommand())
-        self.command_handler.register_command(ProjectListCommand())
-        self.command_handler.register_command(ProjectArchiveCommand())
-        self.command_handler.register_command(ProjectRestoreCommand())
-        self.command_handler.register_command(ProjectDeleteCommand())
-
-        # Session commands
-        self.command_handler.register_command(ChatCommand())
-        self.command_handler.register_command(ModeCommand())
-        self.command_handler.register_command(DoneCommand())
-        self.command_handler.register_command(AdvanceCommand())
-        self.command_handler.register_command(HintCommand())
-
-        # Code commands
-        self.command_handler.register_command(CodeGenerateCommand())
-        self.command_handler.register_command(CodeDocsCommand())
-
-        # Finalize commands (project type-agnostic artifact generation)
-        self.command_handler.register_command(FinalizeGenerateCommand())
-        self.command_handler.register_command(FinalizeDocsCommand())
-
-        # Collaboration commands
-        self.command_handler.register_command(CollabAddCommand())
-        self.command_handler.register_command(CollabRemoveCommand())
-        self.command_handler.register_command(CollabListCommand())
-        self.command_handler.register_command(CollabRoleCommand())
-
-        # Skills commands
-        self.command_handler.register_command(SkillsSetCommand())
-        self.command_handler.register_command(SkillsListCommand())
-
-        # Document commands
-        self.command_handler.register_command(DocImportCommand())
-        self.command_handler.register_command(DocImportDirCommand())
-        self.command_handler.register_command(DocImportUrlCommand())
-        self.command_handler.register_command(DocListCommand())
-        self.command_handler.register_command(DocPasteCommand())
-
-        # Note commands
-        self.command_handler.register_command(NoteAddCommand())
-        self.command_handler.register_command(NoteListCommand())
-        self.command_handler.register_command(NoteSearchCommand())
-        self.command_handler.register_command(NoteDeleteCommand())
-
-        # Conversation commands
-        self.command_handler.register_command(ConvSearchCommand())
-        self.command_handler.register_command(ConvSummaryCommand())
-
-        # Statistics commands
-        self.command_handler.register_command(ProjectStatsCommand())
-        self.command_handler.register_command(ProjectProgressCommand())
-        self.command_handler.register_command(ProjectStatusCommand())
-
-        # Maturity tracking commands
-        self.command_handler.register_command(MaturityCommand())
-        self.command_handler.register_command(MaturitySummaryCommand())
-        self.command_handler.register_command(MaturityHistoryCommand())
-        self.command_handler.register_command(MaturityStatusCommand())
-
-        # Analytics commands
-        self.command_handler.register_command(
-            AnalyticsAnalyzeCommand(self.orchestrator), aliases=["aa"]
-        )
-        self.command_handler.register_command(
-            AnalyticsRecommendCommand(self.orchestrator), aliases=["ar"]
-        )
-        self.command_handler.register_command(
-            AnalyticsTrendsCommand(self.orchestrator), aliases=["at"]
-        )
-        self.command_handler.register_command(
-            AnalyticsSummaryCommand(self.orchestrator), aliases=["as"]
-        )
-        self.command_handler.register_command(
-            AnalyticsBreakdownCommand(self.orchestrator), aliases=["abd"]
-        )
-        self.command_handler.register_command(
-            AnalyticsStatusCommand(self.orchestrator), aliases=["ast"]
-        )
-
-        # Debug commands
-        self.command_handler.register_command(DebugCommand())
-        self.command_handler.register_command(LogsCommand())
-
-        # Query/Answer commands
-        self.command_handler.register_command(ExplainCommand())
-        self.command_handler.register_command(SearchCommand())
+        # Register analytics commands (require orchestrator injection)
+        for command_class, aliases in ANALYTICS_COMMANDS:
+            command_instance = command_class(self.orchestrator)
+            if aliases:
+                self.command_handler.register_command(command_instance, aliases=aliases)
+            else:
+                self.command_handler.register_command(command_instance)
 
     def _handle_command_result(self, result: Dict[str, Any]) -> bool:
         """
@@ -503,8 +651,27 @@ class SocraticRAGSystem:
 
 
 def main():
-    """Main entry point for the application"""
-    app = SocraticRAGSystem()
+    """Main entry point for the application
+
+    Command line arguments:
+        --frontend or -f: Start the React frontend dev server along with the CLI
+        --help or -h: Show this help message
+
+    Examples:
+        python -m socratic_system.ui.main_app                 # CLI only
+        python -m socratic_system.ui.main_app --frontend      # CLI + Frontend
+        python -m socratic_system.ui.main_app -f              # CLI + Frontend (short form)
+    """
+    # Check for command line arguments
+    start_frontend = "--frontend" in sys.argv or "-f" in sys.argv
+    show_help = "--help" in sys.argv or "-h" in sys.argv
+
+    if show_help:
+        print(main.__doc__)
+        sys.exit(0)
+
+    # Create and start application
+    app = SocraticRAGSystem(start_frontend=start_frontend)
     app.start()
 
 

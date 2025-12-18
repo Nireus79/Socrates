@@ -232,3 +232,64 @@ class SubscriptionCompareCommand(BaseCommand):
         print(f"\n{Fore.YELLOW}Run /subscription upgrade <tier> to upgrade{Style.RESET_ALL}\n")
 
         return self.success()
+
+
+class SubscriptionTestingModeCommand(BaseCommand):
+    """Enable or disable testing mode for full feature access (HIDDEN from help)."""
+
+    def __init__(self):
+        super().__init__(
+            name="subscription testing-mode",
+            description="Enable/disable testing mode to bypass monetization",
+            usage="subscription testing-mode <on|off>",
+        )
+        # Mark this command as hidden from help/regular users
+        self.hidden = True
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute testing mode command."""
+        user = context.get("user")
+        orchestrator = context.get("orchestrator")
+
+        if not user:
+            return self.error("User not found")
+
+        if len(args) < 1:
+            return self.error("Usage: /subscription testing-mode <on|off>")
+
+        mode = args[0].lower()
+
+        if mode not in ["on", "off"]:
+            return self.error("Invalid mode. Use 'on' or 'off'")
+
+        if mode == "on":
+            if user.testing_mode:
+                return self.error("Testing mode is already enabled")
+
+            user.testing_mode = True
+            orchestrator.database.save_user(user)
+
+            print(f"\n{Fore.GREEN}✓ Testing mode ENABLED{Style.RESET_ALL}\n")
+            print(f"{Fore.YELLOW}All monetization restrictions bypassed!{Style.RESET_ALL}\n")
+            print("Available for testing:")
+            print("  • All premium features unlocked")
+            print("  • Unlimited projects")
+            print("  • Unlimited team members")
+            print("  • Unlimited questions/month")
+            print("  • All LLM models available")
+            print(f"\n{Fore.CYAN}Run /subscription testing-mode off to disable{Style.RESET_ALL}\n")
+
+            return self.success("Testing mode enabled")
+
+        else:  # mode == "off"
+            if not user.testing_mode:
+                return self.error("Testing mode is already disabled")
+
+            user.testing_mode = False
+            orchestrator.database.save_user(user)
+
+            print(f"\n{Fore.GREEN}✓ Testing mode DISABLED{Style.RESET_ALL}\n")
+            print(f"{Fore.YELLOW}Monetization restrictions are now active{Style.RESET_ALL}\n")
+            print(f"Your subscription tier: {Fore.CYAN}{user.subscription_tier.upper()}{Style.RESET_ALL}\n")
+
+            return self.success("Testing mode disabled")

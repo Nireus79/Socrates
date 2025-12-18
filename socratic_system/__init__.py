@@ -36,10 +36,11 @@ Quick Start:
 
 Full Example (with events):
     >>> import socrates
-    >>> config = socrates.ConfigBuilder("sk-ant-...") \\
-    ...     .with_data_dir("/path/to/data") \\
-    ...     .with_log_level("DEBUG") \\
-    ...     .build()
+    >>> config = socrates.SocratesConfig.from_dict({
+    ...     "api_key": "sk-ant-...",
+    ...     "data_dir": "/path/to/data",
+    ...     "log_level": "DEBUG"
+    ... })
     >>> orchestrator = socrates.create_orchestrator(config)
     >>>
     >>> # Listen to events
@@ -61,7 +62,7 @@ __license__ = "MIT"
 
 # Core Configuration API
 from .clients import ClaudeClient
-from .config import ConfigBuilder, SocratesConfig
+from .config import SocratesConfig
 
 # Event System
 from .events import EventEmitter, EventType
@@ -152,15 +153,15 @@ def quick_start(api_key: str, data_dir: str = None, log_level: str = "INFO") -> 
     """
     from pathlib import Path
 
-    builder = ConfigBuilder(api_key)
+    config_dict = {"api_key": api_key}
 
     if data_dir:
-        builder = builder.with_data_dir(Path(data_dir))
+        config_dict["data_dir"] = Path(data_dir)
 
     if log_level:
-        builder = builder.with_log_level(log_level)
+        config_dict["log_level"] = log_level
 
-    config = builder.build()
+    config = SocratesConfig.from_dict(config_dict)
     return create_orchestrator(config)
 
 
@@ -175,7 +176,6 @@ __all__ = [
     "__license__",
     # Configuration
     "SocratesConfig",
-    "ConfigBuilder",
     # Core Components
     "AgentOrchestrator",
     "ClaudeClient",

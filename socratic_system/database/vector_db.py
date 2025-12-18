@@ -4,6 +4,7 @@ Vector database for knowledge management in Socratic RAG System
 
 import gc
 import logging
+import os
 from typing import Dict, List, Optional
 
 import chromadb
@@ -18,20 +19,45 @@ class VectorDatabase:
     """Vector database for storing and searching knowledge entries"""
 
     def __init__(self, db_path: str, embedding_model: str = "all-MiniLM-L6-v2"):
+        """
+        Initialize vector database.
+
+        Args:
+            db_path: Path to ChromaDB persistent storage
+            embedding_model: Name of the embedding model to use
+
+        Raises:
+            ValueError: If db_path is invalid
+            RuntimeError: If ChromaDB or embedding model initialization fails
+        """
+        if not db_path or not isinstance(db_path, str) or db_path.strip() == "":
+            raise ValueError(f"Invalid db_path: {db_path!r}. Must be a non-empty string.")
+
         self.db_path = db_path
         self.embedding_model_name = embedding_model
         self.logger = logging.getLogger("socrates.database.vector")
 
+        # Create parent directory if needed
+        db_dir = os.path.dirname(db_path)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
+
         self.logger.info(f"Initializing vector database: {self.db_path}")
-        self.client = chromadb.PersistentClient(path=db_path)
-        self.logger.debug("ChromaDB client created")
+        try:
+            self.client = chromadb.PersistentClient(path=db_path)
+            self.logger.debug("ChromaDB client created")
+        except Exception as e:
+            raise RuntimeError(f"Failed to initialize ChromaDB client at {db_path}: {e}") from e
 
-        self.collection = self.client.get_or_create_collection("socratic_knowledge")
-        self.logger.debug("Vector collection 'socratic_knowledge' initialized")
+        try:
+            self.collection = self.client.get_or_create_collection("socratic_knowledge")
+            self.logger.debug("Vector collection 'socratic_knowledge' initialized")
+        except Exception as e:
+            raise RuntimeError(f"Failed to create ChromaDB collection: {e}") from e
 
-        self.logger.info(f"Loading embedding model: {self.embedding_model_name}")
-        self.embedding_model = SentenceTransformer(self.embedding_model_name)
-        self.logger.info("Vector database initialized successfully")
+        # Lazy-load embedding model on first use (saves 1-3 seconds at startup)
+        self._embedding_model_instance = None
+        self.logger.info("Vector database initialized successfully (embedding model will load on first use)")
 
         # Initialize caches for Phase 3 optimization
         self.embedding_cache = EmbeddingCache(max_size=10000)
@@ -39,6 +65,22 @@ class VectorDatabase:
         self.logger.info("Embedding and search caches initialized (Phase 3)")
 
         self.knowledge_loaded = False  # Track if knowledge is already loaded
+
+    @property
+    def embedding_model(self):
+        """Lazy-load embedding model on first access (saves 1-3 seconds at startup)"""
+        if self._embedding_model_instance is None:
+            self.logger.info(f"Loading embedding model on first use: {self.embedding_model_name}")
+            try:
+                self._embedding_model_instance = SentenceTransformer(self.embedding_model_name)
+                self.logger.info("Embedding model loaded successfully")
+            except Exception as e:
+                self.logger.error(f"Failed to load embedding model {self.embedding_model_name}: {e}")
+                raise RuntimeError(
+                    f"Failed to load embedding model '{self.embedding_model_name}'. "
+                    f"This may be due to network issues or missing model. Error: {e}"
+                ) from e
+        return self._embedding_model_instance
 
     def _format_metadata_for_chromadb(self, metadata: Optional[Dict]) -> Dict:
         """
@@ -107,15 +149,11 @@ class VectorDatabase:
                         # Force garbage collection to release any held file handles
                         gc.collect()
 
-                        # Clear the old model reference
-                        if hasattr(self, "embedding_model"):
-                            del self.embedding_model
-
-                        # Reload the embedding model fresh
+                        # Clear the old model reference and force reload
+                        self._embedding_model_instance = None
                         self.logger.debug("Reloading embedding model after garbage collection")
-                        self.embedding_model = SentenceTransformer(self.embedding_model_name)
 
-                        # Retry the encoding
+                        # Accessing the property will trigger lazy reload
                         embedding_result = self.embedding_model.encode(entry.content)
                         entry.embedding = (
                             embedding_result.tolist()
@@ -133,6 +171,13 @@ class VectorDatabase:
                     raise
 
         try:
+            # Ensure metadata has scope field for proper filtering
+            if entry.metadata is None:
+                entry.metadata = {}
+            # If no scope is set and no project_id, mark as global knowledge
+            if "scope" not in entry.metadata and "project_id" not in entry.metadata:
+                entry.metadata["scope"] = "global"
+
             formatted_metadata = self._format_metadata_for_chromadb(entry.metadata)
             self.collection.add(
                 documents=[entry.content],
@@ -141,6 +186,14 @@ class VectorDatabase:
                 embeddings=[entry.embedding],
             )
             self.logger.debug(f"Added knowledge entry: {entry.id}")
+
+            # Invalidate search caches since new knowledge was added
+            # Invalidate global searches (project_id=None)
+            count = self.search_cache.invalidate_global_searches()
+            if count > 0:
+                self.logger.debug(
+                    f"Invalidated {count} global search cache entries after adding knowledge"
+                )
         except Exception as e:
             self.logger.warning(f"Could not add knowledge entry {entry.id}: {e}")
 
@@ -287,12 +340,12 @@ class VectorDatabase:
         # Generate unique ID based on content hash (non-security use)
         import hashlib
 
-        # Use MD5 for non-security purposes (content hashing for ID generation)
+        # Use full MD5 hash (32 chars) instead of truncated (8 chars) to avoid collisions
         try:
-            content_id = hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()[:8]
+            content_id = hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()
         except TypeError:
             # Python 3.8 doesn't support usedforsecurity parameter
-            content_id = hashlib.md5(content.encode()).hexdigest()[:8]  # nosec
+            content_id = hashlib.md5(content.encode()).hexdigest()  # nosec
 
         # Create knowledge entry
         entry = KnowledgeEntry(
@@ -442,14 +495,14 @@ class VectorDatabase:
             return None
         else:
             # Project-specific search: Get both global AND project-specific knowledge
-            # Global knowledge is identified by scope != "project"
+            # Global knowledge is identified by scope="global" (explicitly marked)
             # Project knowledge is identified by matching project_id
+            # Note: ChromaDB only supports: $gt, $gte, $lt, $lte, $ne, $eq, $in, $nin
+            # So we can't check for missing fields; we only match what we know is there
             return {
                 "$or": [
-                    {"scope": {"$ne": "project"}},  # Global knowledge (non-project scope)
-                    {
-                        "project_id": {"$eq": project_id}
-                    },  # Project-specific knowledge for this project
+                    {"scope": {"$eq": "global"}},  # Explicitly marked global knowledge
+                    {"project_id": {"$eq": project_id}},  # Project-specific knowledge
                 ]
             }
 
