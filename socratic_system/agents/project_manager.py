@@ -4,6 +4,7 @@ Project management agent for Socratic RAG System
 
 import datetime
 import uuid
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict
 
 from socratic_system.models import VALID_ROLES, ProjectContext, TeamMemberRole
@@ -26,6 +27,7 @@ class ProjectManagerAgent(Agent):
 
         action_handlers = {
             "create_project": self._create_project,
+            "create_from_github": self._create_from_github,
             "load_project": self._load_project,
             "save_project": self._save_project,
             "add_collaborator": self._add_collaborator,
@@ -50,6 +52,7 @@ class ProjectManagerAgent(Agent):
         project_name = request.get("project_name")
         owner = request.get("owner")
         project_type = request.get("project_type", "software")  # Default to software
+        description = request.get("description", "")  # Optional description
 
         # Validate required fields
         if not project_name:
@@ -96,6 +99,7 @@ class ProjectManagerAgent(Agent):
             project_id=project_id,
             name=project_name,
             owner=owner,
+            description=description,
             collaborators=[],
             goals="",
             requirements=[],
@@ -116,6 +120,201 @@ class ProjectManagerAgent(Agent):
         self.log(f"Created project '{project_name}' (type: {project_type}) with ID {project_id}")
 
         return {"status": "success", "project": project}
+
+    def _create_from_github(self, request: Dict) -> Dict:
+        """Create a new project from a GitHub repository"""
+        github_url = request.get("github_url")
+        project_name = request.get("project_name")
+        owner = request.get("owner")
+
+        # Validate required fields
+        if not github_url:
+            return {
+                "status": "error",
+                "message": "github_url is required",
+            }
+        if not owner:
+            return {
+                "status": "error",
+                "message": "owner is required",
+            }
+
+        try:
+            # Import GitRepositoryManager
+            from socratic_system.utils.git_repository_manager import GitRepositoryManager
+
+            # Validate GitHub URL
+            git_manager = GitRepositoryManager()
+            is_valid, error_msg = git_manager.validate_github_url(github_url)
+            if not is_valid:
+                return {
+                    "status": "error",
+                    "message": f"Invalid GitHub URL: {error_msg}",
+                }
+
+            self.log(f"Starting GitHub import for {github_url}")
+
+            # Clone repository to temp directory
+            clone_result = git_manager.clone_repository(github_url)
+            if not clone_result.get("success"):
+                return {
+                    "status": "error",
+                    "message": f"Failed to clone repository: {clone_result.get('error', 'Unknown error')}",
+                }
+
+            temp_path = clone_result["path"]
+
+            try:
+                # Extract metadata
+                self.log("Extracting repository metadata...")
+                metadata = git_manager.extract_repository_metadata(temp_path)
+
+                # Extract owner/repo from URL
+                url_parts = git_manager.validate_github_url(github_url)
+                repo_owner, repo_name = github_url.strip("/").split("/")[-2:]
+
+                # Use provided project name or repo name
+                final_project_name = project_name or repo_name
+
+                # Check project limit
+                from socratic_system.subscription.checker import SubscriptionChecker
+
+                user = self.orchestrator.database.load_user(owner)
+
+                # Create user if they don't exist
+                if user is None:
+                    from socratic_system.models.user import User
+
+                    user = User(
+                        username=owner,
+                        passcode_hash="",
+                        created_at=datetime.datetime.now(),
+                        projects=[],
+                        subscription_tier="pro",
+                    )
+                    self.orchestrator.database.save_user(user)
+
+                active_projects = self.orchestrator.database.get_user_projects(owner)
+                active_count = len([p for p in active_projects if p.status != "archived"])
+
+                can_create, error_message = SubscriptionChecker.check_project_limit(user, active_count)
+                if not can_create:
+                    return {
+                        "status": "error",
+                        "message": error_message,
+                    }
+
+                # Run code validation
+                self.log("Running code validation...")
+                validation_result = self.orchestrator.process_request(
+                    "code_validation",
+                    {
+                        "action": "validate_project",
+                        "project_path": temp_path,
+                        "timeout": 300,
+                    },
+                )
+
+                # Create project with repository metadata
+                project_id = str(uuid.uuid4())
+                project = ProjectContext(
+                    project_id=project_id,
+                    name=final_project_name,
+                    owner=owner,
+                    collaborators=[],
+                    goals=metadata.get("description", ""),
+                    requirements=[],
+                    tech_stack=metadata.get("languages", []),
+                    constraints=[],
+                    team_structure="individual",
+                    language_preferences="python",
+                    deployment_target="local",
+                    code_style="documented",
+                    phase="imported",
+                    conversation_history=[],
+                    created_at=datetime.datetime.now(),
+                    updated_at=datetime.datetime.now(),
+                    project_type="github_import",
+                    # Repository fields
+                    repository_url=github_url,
+                    repository_owner=repo_owner,
+                    repository_name=repo_name,
+                    repository_description=metadata.get("description", ""),
+                    repository_language=metadata.get("language", "unknown"),
+                    repository_imported_at=datetime.datetime.now(),
+                    repository_file_count=metadata.get("file_count", 0),
+                    repository_has_tests=metadata.get("has_tests", False),
+                )
+
+                # Save project to database
+                self.orchestrator.database.save_project(project)
+
+                self.log(f"Created project '{final_project_name}' from GitHub repository")
+
+                # NEW: Save project files to database before cleanup
+                self.log("Saving project files to database...")
+                try:
+                    from socratic_system.database.project_file_manager import ProjectFileManager
+
+                    file_manager = ProjectFileManager(self.orchestrator.database.db_path)
+
+                    # Collect files to save
+                    files_to_save = []
+                    for file_path in Path(temp_path).rglob("*"):
+                        if file_path.is_file() and self._should_save_file(file_path, temp_path):
+                            try:
+                                content = file_path.read_text(encoding="utf-8", errors="ignore")
+                                language = self._detect_language(str(file_path))
+
+                                rel_path = file_path.relative_to(temp_path).as_posix()
+                                files_to_save.append(
+                                    {
+                                        "path": rel_path,
+                                        "content": content,
+                                        "language": language,
+                                        "size": len(content.encode("utf-8")),
+                                    }
+                                )
+                            except Exception as e:
+                                self.log(
+                                    f"Warning: Could not read file {file_path}: {str(e)}",
+                                    level="WARNING",
+                                )
+                                continue
+
+                    # Save files in batch
+                    if files_to_save:
+                        files_saved, save_msg = file_manager.save_files_batch(
+                            project_id, files_to_save
+                        )
+                        self.log(save_msg)
+                    else:
+                        self.log("No files to save (all filtered out)")
+
+                except Exception as e:
+                    self.log(
+                        f"Warning: Failed to save project files: {str(e)}", level="WARNING"
+                    )
+                    # Don't fail the import if file saving fails
+
+                return {
+                    "status": "success",
+                    "project": project,
+                    "validation_results": validation_result.get("validation_summary", {}),
+                    "metadata": metadata,
+                    "files_saved": len(files_to_save) if "files_to_save" in locals() else 0,
+                }
+
+            finally:
+                # Clean up temp directory
+                git_manager.cleanup(temp_path)
+
+        except Exception as e:
+            self.log(f"ERROR: Failed to import GitHub repository: {str(e)}", level="ERROR")
+            return {
+                "status": "error",
+                "message": f"Failed to import GitHub repository: {str(e)}",
+            }
 
     def _load_project(self, request: Dict) -> Dict:
         """Load a project by ID"""
@@ -378,3 +577,123 @@ class ProjectManagerAgent(Agent):
         """Get archived projects"""
         archived = self.orchestrator.database.get_archived_items("projects")
         return {"status": "success", "archived_projects": archived}
+
+    def _should_save_file(self, file_path: Path, repo_root: str) -> bool:
+        """
+        Filter out binaries, large files, and generated code that shouldn't be stored.
+
+        Args:
+            file_path: Path object to the file
+            repo_root: Root directory of repository
+
+        Returns:
+            True if file should be saved, False if it should be skipped
+        """
+        # Skip certain extensions (binaries, media, archives)
+        SKIP_EXTENSIONS = {
+            ".pyc",
+            ".pyo",
+            ".so",
+            ".exe",
+            ".dll",
+            ".bin",
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
+            ".svg",
+            ".ico",
+            ".mp3",
+            ".mp4",
+            ".avi",
+            ".mov",
+            ".zip",
+            ".tar",
+            ".gz",
+            ".7z",
+            ".rar",
+        }
+
+        # Skip certain directories
+        SKIP_DIRS = {
+            "node_modules",
+            ".git",
+            "__pycache__",
+            ".venv",
+            ".env",
+            "dist",
+            "build",
+            ".egg-info",
+            ".pytest_cache",
+            ".tox",
+            ".coverage",
+            "htmlcov",
+        }
+
+        # Check if file is in a skipped directory
+        for part in file_path.parts:
+            if part in SKIP_DIRS:
+                return False
+
+        # Check file extension
+        if file_path.suffix.lower() in SKIP_EXTENSIONS:
+            return False
+
+        # Check file size (skip files > 5MB)
+        try:
+            size = file_path.stat().st_size
+            if size > 5 * 1024 * 1024:  # 5MB limit
+                return False
+        except Exception:
+            return False
+
+        return True
+
+    def _detect_language(self, file_path: str) -> str:
+        """
+        Detect programming language from file extension.
+
+        Args:
+            file_path: Path to the file as string
+
+        Returns:
+            Language name or 'Unknown' if not recognized
+        """
+        ext_to_lang = {
+            ".py": "Python",
+            ".js": "JavaScript",
+            ".ts": "TypeScript",
+            ".jsx": "JSX",
+            ".tsx": "TSX",
+            ".java": "Java",
+            ".cpp": "C++",
+            ".c": "C",
+            ".cs": "C#",
+            ".rb": "Ruby",
+            ".go": "Go",
+            ".rs": "Rust",
+            ".php": "PHP",
+            ".swift": "Swift",
+            ".kt": "Kotlin",
+            ".scala": "Scala",
+            ".sh": "Shell",
+            ".bash": "Bash",
+            ".sql": "SQL",
+            ".html": "HTML",
+            ".css": "CSS",
+            ".scss": "SCSS",
+            ".less": "Less",
+            ".json": "JSON",
+            ".yaml": "YAML",
+            ".yml": "YAML",
+            ".xml": "XML",
+            ".md": "Markdown",
+            ".rst": "ReStructuredText",
+            ".txt": "Text",
+            ".toml": "TOML",
+            ".ini": "INI",
+            ".cfg": "Config",
+        }
+
+        file_ext = Path(file_path).suffix.lower()
+        return ext_to_lang.get(file_ext, "Unknown")

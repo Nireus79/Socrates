@@ -22,6 +22,7 @@ class ProjectContext:
     collaborators: List[str] = (
         None  # DEPRECATED: Kept for backward compatibility. Use team_members instead.
     )
+    description: str = ""
     goals: str = ""
     requirements: List[str] = None
     tech_stack: List[str] = None
@@ -59,6 +60,16 @@ class ProjectContext:
 
     # Analytics tracking fields (real-time metrics updated after each Q&A)
     analytics_metrics: Dict[str, any] = None  # Real-time analytics metrics
+
+    # GitHub repository tracking (for imported projects)
+    repository_url: Optional[str] = None  # GitHub repository URL
+    repository_owner: Optional[str] = None  # Repository owner username
+    repository_name: Optional[str] = None  # Repository name
+    repository_description: Optional[str] = None  # Repository description
+    repository_language: Optional[str] = None  # Primary programming language
+    repository_imported_at: Optional[datetime.datetime] = None  # When repo was imported
+    repository_file_count: int = 0  # Number of files in repository
+    repository_has_tests: bool = False  # Whether repository has tests
 
     def __post_init__(self):
         """Initialize default values and migrate legacy collaborators to team_members"""
