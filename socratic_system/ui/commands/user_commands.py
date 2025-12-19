@@ -1,13 +1,16 @@
 """User authentication and account management commands"""
 
 import datetime
-import hashlib
 from typing import Any, Dict, List
 
 from colorama import Fore, Style
+from passlib.context import CryptContext
 
 from socratic_system.models import User
 from socratic_system.ui.commands.base import BaseCommand
+
+# Use same password hashing as API for consistency
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class UserLoginCommand(BaseCommand):
@@ -41,9 +44,8 @@ class UserLoginCommand(BaseCommand):
         if not user:
             return self.error("User not found")
 
-        # Verify passcode
-        passcode_hash = hashlib.sha256(passcode.encode()).hexdigest()
-        if user.passcode_hash != passcode_hash:
+        # Verify passcode using bcrypt (same as API)
+        if not pwd_context.verify(passcode, user.passcode_hash):
             return self.error("Invalid passcode")
 
         # Update app context
@@ -90,8 +92,8 @@ class UserCreateCommand(BaseCommand):
         if passcode != confirm_passcode:
             return self.error("Passcodes do not match")
 
-        # Create user
-        passcode_hash = hashlib.sha256(passcode.encode()).hexdigest()
+        # Create user with bcrypt hashing (same as API)
+        passcode_hash = pwd_context.hash(passcode)
         user = User(
             username=username,
             passcode_hash=passcode_hash,
