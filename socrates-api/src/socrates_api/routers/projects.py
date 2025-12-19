@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Query
 
 from socratic_system.database import ProjectDatabaseV2
 from socratic_system.models import ProjectContext
@@ -19,6 +19,7 @@ from socrates_api.middleware import SubscriptionChecker, require_subscription_fe
 from socrates_api.models import (
     ProjectResponse,
     ListProjectsResponse,
+    UpdateProjectRequest,
     ErrorResponse,
     SuccessResponse,
 )
@@ -166,8 +167,7 @@ async def get_project(
 )
 async def update_project(
     project_id: str,
-    name: Optional[str] = None,
-    phase: Optional[str] = None,
+    request: UpdateProjectRequest,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
@@ -176,8 +176,7 @@ async def update_project(
 
     Args:
         project_id: Project identifier
-        name: New project name (optional)
-        phase: New project phase (optional)
+        request: UpdateProjectRequest with fields to update
         current_user: Current authenticated user
         db: Database connection
 
@@ -200,10 +199,10 @@ async def update_project(
             )
 
         # Update fields
-        if name:
-            project.name = name
-        if phase:
-            project.phase = phase
+        if request.name:
+            project.name = request.name
+        if request.phase:
+            project.phase = request.phase
 
         project.updated_at = datetime.now(timezone.utc)
 
@@ -488,7 +487,7 @@ async def get_project_maturity(
 )
 async def advance_phase(
     project_id: str,
-    new_phase: str,
+    new_phase: str = Query(..., description="New phase (discovery, analysis, design, implementation)"),
     current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):

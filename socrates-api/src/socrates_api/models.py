@@ -28,6 +28,21 @@ class CreateProjectRequest(BaseModel):
         }
 
 
+class UpdateProjectRequest(BaseModel):
+    """Request body for updating a project"""
+
+    name: Optional[str] = Field(None, min_length=1, max_length=200, description="Project name")
+    phase: Optional[str] = Field(None, description="Project phase")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "name": "Updated Project Name",
+                "phase": "implementation",
+            }
+        }
+
+
 class ProjectResponse(BaseModel):
     """Response model for project data"""
 
@@ -236,5 +251,139 @@ class SystemInfoResponse(BaseModel):
                 "library_version": "8.0.0",
                 "status": "operational",
                 "uptime": 3600.5,
+            }
+        }
+
+
+# ============================================================================
+# Authentication Models
+# ============================================================================
+
+
+class RegisterRequest(BaseModel):
+    """Request body for user registration"""
+
+    username: str = Field(
+        ..., min_length=3, max_length=100, description="Username (3-100 characters)"
+    )
+    password: str = Field(
+        ..., min_length=8, max_length=200, description="Password (min 8 characters)"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "username": "alice_smith",
+                "password": "SecurePassword123!",
+            }
+        }
+
+
+class LoginRequest(BaseModel):
+    """Request body for user login"""
+
+    username: str = Field(..., description="Username")
+    password: str = Field(..., description="Password")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "username": "alice_smith",
+                "password": "SecurePassword123!",
+            }
+        }
+
+
+class UserResponse(BaseModel):
+    """Response model for user information"""
+
+    username: str = Field(..., description="Username")
+    subscription_tier: str = Field(..., description="Subscription tier (free/pro/enterprise)")
+    subscription_status: str = Field(..., description="Subscription status")
+    testing_mode: bool = Field(..., description="Whether testing mode is enabled")
+    created_at: datetime = Field(..., description="Account creation timestamp")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "username": "alice_smith",
+                "subscription_tier": "pro",
+                "subscription_status": "active",
+                "testing_mode": False,
+                "created_at": "2025-12-01T12:00:00Z",
+            }
+        }
+
+
+class TokenResponse(BaseModel):
+    """Response model for authentication tokens"""
+
+    access_token: str = Field(..., description="Short-lived access token (15 min)")
+    refresh_token: str = Field(..., description="Long-lived refresh token (7 days)")
+    token_type: str = Field(default="bearer", description="Token type")
+    expires_in: int = Field(default=900, description="Access token expiry in seconds")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "token_type": "bearer",
+                "expires_in": 900,
+            }
+        }
+
+
+class AuthResponse(BaseModel):
+    """Combined response for auth operations with user info and tokens"""
+
+    user: UserResponse = Field(..., description="User information")
+    access_token: str = Field(..., description="Short-lived access token")
+    refresh_token: str = Field(..., description="Long-lived refresh token")
+    token_type: str = Field(default="bearer", description="Token type")
+    expires_in: int = Field(default=900, description="Access token expiry in seconds")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "user": {
+                    "username": "alice_smith",
+                    "subscription_tier": "pro",
+                    "subscription_status": "active",
+                    "testing_mode": False,
+                    "created_at": "2025-12-01T12:00:00Z",
+                },
+                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "token_type": "bearer",
+                "expires_in": 900,
+            }
+        }
+
+
+class RefreshTokenRequest(BaseModel):
+    """Request body for refreshing access token"""
+
+    refresh_token: str = Field(..., description="The refresh token")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            }
+        }
+
+
+class SuccessResponse(BaseModel):
+    """Generic success response"""
+
+    success: bool = Field(default=True, description="Whether operation succeeded")
+    message: str = Field(..., description="Success message")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "message": "Logout successful",
             }
         }
