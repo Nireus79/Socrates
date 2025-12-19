@@ -35,17 +35,31 @@ export ANTHROPIC_API_KEY="sk-ant-your-key-here"  # Or your API key
 
 ### Run the System
 
+**Option 1: Full Stack (API + React Frontend)**
 ```bash
-# Start the CLI application
-python Socrates.py
+# Start both API server and web frontend together
+python socrates.py --full
+
+# This starts:
+# - API Server: http://localhost:8000
+# - Web Frontend: http://localhost:5173
 ```
 
-This opens an interactive CLI where you can:
-1. Create a new account or login
-2. Start a new project
-3. Engage in guided Socratic dialogue
-4. Generate code from specifications
-5. Manage projects and knowledge
+**Option 2: API Server Only**
+```bash
+python socrates.py --api
+# API Server: http://localhost:8000
+```
+
+**Option 3: Interactive CLI (Default)**
+```bash
+python socrates.py
+```
+
+Choose the interface that works best for you:
+- **Web Frontend** (`--full`): Visual project management, collaborative features
+- **API Server** (`--api`): Programmatic access, integration with other tools
+- **CLI** (default): Terminal-based interface, quick testing
 
 ---
 

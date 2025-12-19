@@ -27,7 +27,7 @@ Command 'python' not found
 
 1. Use `python3` explicitly:
 ```bash
-python3 Socrates.py
+python3 socrates.py
 ```
 
 2. Create alias:
@@ -195,7 +195,7 @@ pip install -e .
 3. Run from project root:
 ```bash
 cd /path/to/socrates
-python Socrates.py
+python socrates.py
 ```
 
 ### Out of Memory
@@ -318,6 +318,59 @@ export HTTPS_PROXY=https://proxy:port
 pip config set global.proxy "[user:passwd@]proxy:port"
 ```
 
+### 401 Unauthorized Error (Web Frontend)
+
+**Error**:
+```
+Failed to load resource: the server responded with a status of 401 (Unauthorized)
+```
+
+**When it happens**:
+- After login, API calls return 401
+- Resources fail to load in web frontend
+- Authentication token not being sent with requests
+
+**Solutions**:
+
+1. **Clear browser storage**:
+   ```javascript
+   // In browser console:
+   localStorage.clear()
+   sessionStorage.clear()
+   ```
+   Then refresh the page and login again.
+
+2. **Check token storage**:
+   ```javascript
+   // In browser console:
+   console.log(localStorage.getItem('access_token'))
+   ```
+   Should show a token starting with `eyJ` (JWT format).
+
+3. **Verify API is running**:
+   ```bash
+   curl http://localhost:8000/health
+   ```
+   Should return 200 OK.
+
+4. **Check network requests**:
+   - Open Browser DevTools (F12)
+   - Go to "Network" tab
+   - Make a request
+   - Click the request and check Headers
+   - Should see: `Authorization: Bearer <token>`
+
+5. **Restart full stack**:
+   ```bash
+   # Stop running process (Ctrl+C)
+   python socrates.py --full
+   ```
+
+6. **Check API logs**:
+   ```bash
+   tail -f ~/.socrates/logs/socratic.log | grep -i auth
+   ```
+
 ---
 
 ## Database Problems
@@ -334,7 +387,7 @@ sqlite3.OperationalError: database is locked
 1. Close all running instances:
 ```bash
 # Kill any running Socrates processes
-pkill -f Socrates.py  # Linux/macOS
+pkill -f socrates.py  # Linux/macOS
 taskkill /IM python.exe /F  # Windows
 ```
 
@@ -379,7 +432,7 @@ Expected where operator to be one of $gt, $gte, $lt, $lte, $ne, $eq, $in, $nin
 1. Reset vector database:
 ```bash
 rm -rf ~/.socrates/vector_db
-python Socrates.py  # Will reinitialize
+python socrates.py  # Will reinitialize
 ```
 
 2. Reimport knowledge:

@@ -80,7 +80,33 @@ Required for using Claude AI.
 5. Copy the key (starts with `sk-ant-`)
 6. **Keep this secret!** Never commit to version control
 
-### 3. Git Installation (Optional but Recommended)
+### 3. Node.js & npm (Required for Web Frontend)
+
+Required if you plan to use the web frontend with `python socrates.py --full`.
+
+**Check if installed**:
+```bash
+node --version
+npm --version
+```
+
+**Ubuntu/Debian**:
+```bash
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+```
+
+**macOS**:
+```bash
+brew install node
+```
+
+**Windows**:
+- Download from [nodejs.org](https://nodejs.org/) (LTS version)
+- Run installer with defaults
+- Verify: `node --version` and `npm --version`
+
+### 4. Git Installation (Optional but Recommended)
 
 **Ubuntu/Debian**:
 ```bash
@@ -193,7 +219,7 @@ SOCRATES_DATA_DIR=~/.socrates
 Then load it before running:
 ```bash
 export $(cat .env | xargs)
-python Socrates.py
+python socrates.py
 ```
 
 **Option C: Interactive Prompt** (fallback)
@@ -263,7 +289,7 @@ To enable debug logging:
 
 ```bash
 export SOCRATES_LOG_LEVEL=DEBUG
-python Socrates.py
+python socrates.py
 ```
 
 Or configure in code:
@@ -284,6 +310,76 @@ tail -f ~/.socrates/logs/socratic.log
 
 ---
 
+## Running Socrates
+
+After installation, you can run Socrates in different modes:
+
+### Mode 1: Full Stack (API + Web Frontend)
+
+**Recommended for**: Visual users, collaboration, web-based development
+
+```bash
+python socrates.py --full
+```
+
+**What starts**:
+- API Server: http://localhost:8000
+- React Web UI: http://localhost:5173
+
+**Next steps**:
+1. Open browser to http://localhost:5173
+2. Login or create account
+3. Create new project
+4. Collaborate with team members
+
+**Requirements**:
+- Node.js and npm installed
+- Ports 8000 and 5173 available
+
+### Mode 2: API Server Only
+
+**Recommended for**: Developers, integrations, programmatic access
+
+```bash
+python socrates.py --api
+```
+
+**What starts**:
+- API Server: http://localhost:8000
+- Swagger API docs: http://localhost:8000/docs
+
+**Next steps**:
+1. Use API endpoints directly
+2. Build custom frontends
+3. Integrate with other tools
+
+**Example API call**:
+```bash
+curl http://localhost:8000/api/health
+```
+
+### Mode 3: Interactive CLI (Default)
+
+**Recommended for**: Quick testing, terminal users, headless systems
+
+```bash
+python socrates.py
+```
+
+**What starts**:
+- Interactive CLI interface
+- Terminal-based project management
+- Commands like `/project create`, `/code generate`
+
+**Features**:
+- No browser required
+- Works over SSH
+- Lightweight
+
+**Type `/help` for available commands**
+
+---
+
 ## Verification
 
 ### Test Installation
@@ -295,7 +391,7 @@ source .venv/bin/activate  # Linux/macOS
 .venv\Scripts\activate     # Windows
 
 # Start Socratic
-python Socrates.py
+python socrates.py
 ```
 
 **Expected output**:
@@ -366,7 +462,7 @@ tail ~/.socrates/logs/socratic.log
 **Solution**:
 ```bash
 # Use python3 explicitly
-python3 Socrates.py
+python3 socrates.py
 
 # Or create alias
 alias python=python3
@@ -385,7 +481,7 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 echo $ANTHROPIC_API_KEY
 
 # Then run
-python Socrates.py
+python socrates.py
 ```
 
 #### 3. Virtual Environment Not Activated
@@ -449,7 +545,7 @@ pip install -r requirements.txt
 rm ~/.socrates/.db.lock
 
 # Restart Socrates
-python Socrates.py
+python socrates.py
 ```
 
 #### 7. Port Already in Use
@@ -652,7 +748,7 @@ export PYTHONUNBUFFERED=1
 export PYTHONOPTIMIZE=2
 
 # Run with more memory
-python -O Socrates.py
+python -O socrates.py
 ```
 
 ### For High Concurrency
