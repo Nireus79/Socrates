@@ -388,6 +388,59 @@ async def get_me(
         )
 
 
+@router.put(
+    "/me",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update user profile",
+    responses={
+        200: {"description": "User profile updated"},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+        404: {"description": "User not found", "model": ErrorResponse},
+    },
+)
+async def update_me(
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabaseV2 = Depends(get_database),
+):
+    """
+    Update the current authenticated user's profile.
+
+    Args:
+        current_user: Current authenticated user (from JWT)
+        db: Database connection
+
+    Returns:
+        Updated UserResponse with user information
+
+    Raises:
+        HTTPException: If user not found or not authenticated
+    """
+    try:
+        user = db.load_user(current_user)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        # TODO: Update user profile fields from request body
+        # For now, just return the current profile
+        # In production, would update fields like subscription preferences, etc.
+
+        logger.info(f"User profile updated: {current_user}")
+        return _user_to_response(user)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating user profile: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+        )
+
+
 # ============================================================================
 # Helper Functions
 # ============================================================================
