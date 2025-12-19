@@ -13,7 +13,7 @@ class MockClaudeClient:
     def __init__(self, response: str = None):
         self.response = response
 
-    def send_message(self, prompt: str) -> str:
+    def generate_response(self, prompt: str) -> str:
         """Return mock categorization response"""
         if self.response:
             return self.response

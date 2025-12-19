@@ -139,6 +139,7 @@ def mock_claude_client():
     client.generate_code = MagicMock(return_value="# Generated code")
     client.extract_insights = MagicMock(return_value={"insights": {}})
     client.generate_socratic_question = MagicMock(return_value="What do you think?")
+    client.generate_response = MagicMock(return_value="Mock response from Claude")
     return client
 
 

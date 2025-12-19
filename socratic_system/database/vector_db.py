@@ -583,3 +583,62 @@ class VectorDatabase:
         else:
             # Fallback: just truncate and add ellipsis
             return chunk[:max_length].rstrip() + "..."
+
+    def close(self):
+        """Close database connections and release file handles.
+
+        This method should be called before deleting temporary directories
+        to ensure all ChromaDB file handles are released on Windows.
+        """
+        import sys
+        import time
+
+        try:
+            # Clear the embedding model to release memory and file handles
+            if self._embedding_model_instance is not None:
+                self._embedding_model_instance = None
+                self.logger.debug("Cleared embedding model instance")
+        except Exception as e:
+            self.logger.warning(f"Error clearing embedding model: {e}")
+
+        try:
+            # Close ChromaDB client if it exists
+            if hasattr(self, 'client') and self.client is not None:
+                # ChromaDB PersistentClient doesn't have a close() method,
+                # but we can remove the reference to help with garbage collection
+                self.client = None
+                self.logger.debug("Closed ChromaDB client reference")
+        except Exception as e:
+            self.logger.warning(f"Error closing ChromaDB client: {e}")
+
+        try:
+            # Clear caches
+            if hasattr(self, 'embedding_cache'):
+                self.embedding_cache.clear()
+            if hasattr(self, 'search_cache'):
+                self.search_cache.clear()
+            self.logger.debug("Cleared embedding and search caches")
+        except Exception as e:
+            self.logger.warning(f"Error clearing caches: {e}")
+
+        try:
+            # Force garbage collection to release file handles
+            gc.collect()
+            self.logger.debug("Garbage collection triggered")
+        except Exception as e:
+            self.logger.warning(f"Error during garbage collection: {e}")
+
+        # On Windows, add small delay to allow SQLite to fully release locks
+        if sys.platform == 'win32':
+            try:
+                time.sleep(0.1)  # 100ms delay for Windows file handle release
+            except Exception:
+                pass
+
+    def __del__(self):
+        """Destructor to ensure cleanup when object is garbage collected."""
+        try:
+            self.close()
+        except Exception as e:
+            # Silently ignore errors in destructor
+            pass

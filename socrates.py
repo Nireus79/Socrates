@@ -5,9 +5,9 @@ Socrates AI - Unified Entry Point
 Serves as both a Python library and CLI application.
 
 As a Library:
-    >>> import socrates
-    >>> config = socrates.SocratesConfig.from_env()
-    >>> orchestrator = socrates.AgentOrchestrator(config)
+    # >>> import socrates
+    # >>> config = socrates.SocratesConfig.from_env()
+    # >>> orchestrator = socrates.AgentOrchestrator(config)
 
 As a CLI Application:
     python socrates.py                 # Start CLI (default)
@@ -51,6 +51,7 @@ except ImportError:
         """Base Socrates exception"""
         pass
 
+
     class ProjectNotFoundError(SocratesError):
         """Project not found exception"""
         pass
@@ -67,7 +68,6 @@ except ImportError:
             CODE_GENERATED = "code_generated"
             AGENT_ERROR = "agent_error"
 
-
 __all__ = [
     "__version__",
     "AgentOrchestrator",
@@ -76,7 +76,6 @@ __all__ = [
     "ProjectNotFoundError",
     "EventType",
 ]
-
 
 # ============================================================================
 # CLI Application (for direct execution)
@@ -172,11 +171,12 @@ def start_api(host: str = "0.0.0.0", port: int = 8000, reload: bool = False, aut
     )
 
 
-def start_dev() -> None:
-    """Start development environment (API + Frontend)"""
+def start_full_stack() -> None:
+    """Start complete Socrates stack (API + Frontend)"""
     import subprocess
     import threading
     import time
+    import signal
 
     project_root = Path(__file__).parent
 
@@ -184,10 +184,15 @@ def start_dev() -> None:
     api_port = _find_available_port(8000, "localhost")
     frontend_port = _find_available_port(5173, "localhost")
 
+    # Store process references for cleanup
+    processes = []
+
     def start_api_server():
         """Start API in background thread"""
         try:
             start_api(host="localhost", port=api_port, reload=True, auto_port=False)
+        except KeyboardInterrupt:
+            pass
         except Exception as e:
             print(f"[ERROR] API server failed: {e}")
 
@@ -199,30 +204,68 @@ def start_dev() -> None:
             return
 
         try:
-            # Install dependencies
-            subprocess.run(["npm", "install"], cwd=frontend_dir, check=False)
+            # Ensure dependencies are installed
+            print("[INFO] Installing frontend dependencies...")
+            subprocess.run(
+                ["npm", "install"],
+                cwd=frontend_dir,
+                check=False,
+                capture_output=False,
+                shell=True
+            )
 
             # Set frontend port via environment variable
             env = os.environ.copy()
             env["VITE_PORT"] = str(frontend_port)
+            env["VITE_API_URL"] = f"http://localhost:{api_port}"
 
-            # Start dev server
-            subprocess.run(["npm", "run", "dev"], cwd=frontend_dir, env=env)
+            print(f"[INFO] Starting frontend on port {frontend_port}...")
+            # Start dev server - use shell=True on Windows for better process handling
+            proc = subprocess.Popen(
+                ["npm", "run", "dev"],
+                cwd=frontend_dir,
+                env=env,
+                shell=True,
+                stdout=None,
+                stderr=None
+            )
+            processes.append(proc)
+            proc.wait()  # Wait for process to finish
         except Exception as e:
             print(f"[ERROR] Frontend server failed: {e}")
 
-    # Display startup information
-    print("[INFO] Development environment starting...")
-    print(f"[INFO] API server will start on http://localhost:{api_port}")
-    print(f"[INFO] Frontend will start on http://localhost:{frontend_port}")
+    def signal_handler(sig, frame):
+        """Handle Ctrl+C gracefully"""
+        print("\n[INFO] Shutting down Socrates...")
+        for proc in processes:
+            try:
+                proc.terminate()
+                proc.wait(timeout=5)
+            except Exception:
+                proc.kill()
+        import sys
+        sys.exit(0)
 
-    # Start API in background thread
-    api_thread = threading.Thread(target=start_api_server, daemon=True)
+    # Register signal handler for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # Display startup information
+    print("=" * 70)
+    print("SOCRATES FULL STACK")
+    print("=" * 70)
+    print(f"[INFO] API server starting on http://localhost:{api_port}")
+    print(f"[INFO] Frontend starting on http://localhost:{frontend_port}")
+    print(f"[INFO] Press Ctrl+C to shutdown")
+    print("=" * 70)
+
+    # Start API in non-daemon background thread
+    # Use daemon=False so it properly handles signals
+    api_thread = threading.Thread(target=start_api_server, daemon=False)
     api_thread.start()
 
     time.sleep(2)  # Wait for API to start
 
-    # Start frontend (blocks)
+    # Start frontend (blocks until user interrupts)
     start_frontend_server()
 
 
@@ -235,17 +278,17 @@ def main():
         epilog="""
 Examples:
   python socrates.py                         Start CLI (default)
-  python socrates.py --api                   Start API server (auto-detects port)
+  python socrates.py --api                   Start API server only (auto-detects port)
   python socrates.py --api --port 9000       Start API on port 9000 (auto-detects if busy)
   python socrates.py --api --no-auto-port    Start API on exact port (fails if busy)
-  python socrates.py --dev                   Start development environment
+  python socrates.py --full                  Start full stack (API + Frontend)
   python socrates.py --frontend              Start CLI with React frontend
   python socrates.py --version               Show version
 
 Port Detection:
   - By default, if a port is in use, the next available port is automatically selected
   - Use --no-auto-port to force the exact port (fails if in use)
-  - Both API and dev modes support automatic port detection
+  - Full stack and API modes support automatic port detection
         """
     )
 
@@ -263,9 +306,9 @@ Port Detection:
         help="Start API server only (default: localhost:8000)"
     )
     mode_group.add_argument(
-        "--dev",
+        "--full",
         action="store_true",
-        help="Start development environment (API + Frontend)"
+        help="Start full stack (API + Frontend together)"
     )
     mode_group.add_argument(
         "--frontend",
@@ -307,9 +350,8 @@ Port Detection:
                 reload=args.reload,
                 auto_port=auto_port
             )
-        elif args.dev:
-            print("[INFO] Starting development environment (API + Frontend)")
-            start_dev()
+        elif args.full:
+            start_full_stack()
         elif args.frontend:
             print("[INFO] Starting CLI with React frontend")
             start_cli(with_frontend=True)

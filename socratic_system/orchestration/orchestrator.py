@@ -159,7 +159,7 @@ class AgentOrchestrator:
     def context_analyzer(self) -> "ContextAnalyzerAgent":
         """Lazy-load context analyzer agent"""
         if "context_analyzer" not in self._agents_cache:
-            from socratic_system.agents.document_processor import ContextAnalyzerAgent
+            from socratic_system.agents.context_analyzer import ContextAnalyzerAgent
             self._agents_cache["context_analyzer"] = ContextAnalyzerAgent(self)
         return self._agents_cache["context_analyzer"]
 
@@ -215,7 +215,7 @@ class AgentOrchestrator:
     def knowledge_manager(self) -> "KnowledgeManagerAgent":
         """Lazy-load knowledge manager agent"""
         if "knowledge_manager" not in self._agents_cache:
-            from socratic_system.agents.document_processor import KnowledgeManagerAgent
+            from socratic_system.agents.knowledge_manager import KnowledgeManagerAgent
             self._agents_cache["knowledge_manager"] = KnowledgeManagerAgent("knowledge_manager", self)
         return self._agents_cache["knowledge_manager"]
 
@@ -511,3 +511,42 @@ class AgentOrchestrator:
                 EventType.AGENT_ERROR, {"agent": agent_name, "error": str(e), "async": True}
             )
             raise
+
+    def close(self):
+        """Close all database connections and release resources.
+
+        This method should be called before shutting down the orchestrator
+        or before deleting temporary directories to ensure all file handles
+        are properly released, especially important on Windows systems.
+        """
+        try:
+            # Close vector database to release ChromaDB file handles
+            if hasattr(self, 'vector_db') and self.vector_db is not None:
+                self.vector_db.close()
+                self.logger.info("Vector database closed")
+        except Exception as e:
+            self.logger.warning(f"Error closing vector database: {e}")
+
+        try:
+            # Close project database
+            if hasattr(self, 'database') and self.database is not None:
+                if hasattr(self.database, 'close'):
+                    self.database.close()
+                self.logger.info("Project database closed")
+        except Exception as e:
+            self.logger.warning(f"Error closing project database: {e}")
+
+        try:
+            # Clear agents cache
+            self._agents_cache.clear()
+            self.logger.debug("Agents cache cleared")
+        except Exception as e:
+            self.logger.warning(f"Error clearing agents cache: {e}")
+
+    def __del__(self):
+        """Destructor to ensure cleanup when orchestrator is destroyed."""
+        try:
+            self.close()
+        except Exception:
+            # Silently ignore errors in destructor
+            pass
