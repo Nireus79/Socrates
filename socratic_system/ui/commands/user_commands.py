@@ -4,13 +4,23 @@ import datetime
 from typing import Any, Dict, List
 
 from colorama import Fore, Style
-from passlib.context import CryptContext
 
 from socratic_system.models import User
 from socratic_system.ui.commands.base import BaseCommand
 
-# Use same password hashing as API for consistency
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Import password verification from the same module as API
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../socrates-api/src'))
+
+try:
+    from socrates_api.auth.password import hash_password, verify_password
+except ImportError:
+    # Fallback: use passlib with simpler config
+    from passlib.context import CryptContext
+    pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+    hash_password = pwd_context.hash
+    verify_password = pwd_context.verify
 
 
 class UserLoginCommand(BaseCommand):
@@ -44,8 +54,8 @@ class UserLoginCommand(BaseCommand):
         if not user:
             return self.error("User not found")
 
-        # Verify passcode using bcrypt (same as API)
-        if not pwd_context.verify(passcode, user.passcode_hash):
+        # Verify passcode using same method as API
+        if not verify_password(passcode, user.passcode_hash):
             return self.error("Invalid passcode")
 
         # Update app context
@@ -92,8 +102,8 @@ class UserCreateCommand(BaseCommand):
         if passcode != confirm_passcode:
             return self.error("Passcodes do not match")
 
-        # Create user with bcrypt hashing (same as API)
-        passcode_hash = pwd_context.hash(passcode)
+        # Create user with same hashing as API
+        passcode_hash = hash_password(passcode)
         user = User(
             username=username,
             passcode_hash=passcode_hash,
