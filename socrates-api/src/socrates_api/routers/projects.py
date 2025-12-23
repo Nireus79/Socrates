@@ -102,6 +102,7 @@ async def list_projects(
         401: {"description": "Not authenticated", "model": ErrorResponse},
     },
 )
+@require_subscription_feature("project_creation")
 async def create_project(
     request: CreateProjectRequest,
     current_user: Optional[str] = Depends(get_current_user_optional),

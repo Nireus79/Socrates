@@ -564,6 +564,28 @@ async def update_me(
         )
 
 
+async def _delete_user_helper(
+    current_user: str,
+    db: ProjectDatabaseV2,
+):
+    """
+    Helper function to delete a user and all their data.
+
+    Args:
+        current_user: Username to delete
+        db: Database connection
+    """
+    # Delete all projects owned by the user
+    all_projects = db.get_user_projects(current_user)
+    for project in all_projects:
+        db.delete_project(project.project_id)
+
+    # Delete the user account using the correct method name
+    db.permanently_delete_user(current_user)
+
+    logger.info(f"User account deleted: {current_user}")
+
+
 @router.delete(
     "/me",
     response_model=SuccessResponse,
@@ -603,15 +625,9 @@ async def delete_account(
                 detail="User not found",
             )
 
-        # Delete all projects owned by the user
-        all_projects = db.get_user_projects(current_user)
-        for project in all_projects:
-            db.delete_project(project.project_id)
+        # Call helper function to perform deletion
+        await _delete_user_helper(current_user, db)
 
-        # Delete the user account
-        db.permanently_delete_user(current_user)
-
-        logger.info(f"User account deleted: {current_user}")
         return SuccessResponse(
             success=True,
             message="Account deleted successfully"
@@ -647,7 +663,7 @@ async def set_testing_mode(
     Enable or disable testing mode for the current user.
 
     When enabled, all subscription checks are bypassed. This is for development
-    and testing purposes only.
+    and testing purposes only. Only admins can enable testing mode.
 
     Args:
         enabled: Whether to enable or disable testing mode
@@ -658,7 +674,7 @@ async def set_testing_mode(
         SuccessResponse confirming testing mode update
 
     Raises:
-        HTTPException: If user not found or not authenticated
+        HTTPException: If user not found, not authenticated, or not admin
     """
     try:
         user = db.load_user(current_user)
@@ -668,10 +684,18 @@ async def set_testing_mode(
                 detail="User not found",
             )
 
+        # Only allow admin users to enable testing mode (security check)
+        if enabled and not getattr(user, 'is_admin', False):
+            logger.warning(f"Non-admin user {current_user} attempted to enable testing mode")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only administrators can enable testing mode",
+            )
+
         user.testing_mode = enabled
         db.save_user(user)
 
-        logger.info(f"Testing mode {'enabled' if enabled else 'disabled'} for user: {current_user}")
+        logger.info(f"Testing mode {'enabled' if enabled else 'disabled'} for user: {current_user} by {current_user}")
         return SuccessResponse(
             success=True,
             message=f"Testing mode {'enabled' if enabled else 'disabled'}"

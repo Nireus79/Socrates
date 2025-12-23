@@ -4,7 +4,7 @@ WebSocket Router - Real-time chat and event streaming endpoints.
 Provides:
 - WebSocket endpoint for chat and event streaming
 - HTTP fallback endpoints for WebSocket-incompatible clients
-- Message routing and orchestrator integration
+- Message routing and event broadcasting
 """
 
 import logging
@@ -16,7 +16,7 @@ from pathlib import Path
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException, status
 
 from socratic_system.database import ProjectDatabaseV2
-
+from socrates_api.database import get_database
 from socrates_api.auth import get_current_user
 from socrates_api.websocket import (
     get_connection_manager,
@@ -28,19 +28,6 @@ from socrates_api.websocket import (
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="", tags=["websocket"])
-
-
-def get_database() -> ProjectDatabaseV2:
-    """Get database instance."""
-    global _database
-    if _database is None:
-        data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
-        db_path = os.path.join(data_dir, "projects.db")
-        _database = ProjectDatabaseV2(db_path)
-    return _database
-
-
-_database = None
 
 
 @router.websocket("/ws/chat/{project_id}")
@@ -131,7 +118,7 @@ async def websocket_chat_endpoint(
 
                 # Route message based on type
                 if message.type == MessageType.CHAT_MESSAGE:
-                    # Process chat message with orchestrator
+                    # Process chat message
                     response = await _handle_chat_message(
                         message,
                         user_id or "anonymous",
@@ -227,7 +214,7 @@ async def _handle_chat_message(
             f"{message.content[:50]}... (mode={mode})"
         )
 
-        # TODO: Integrate with orchestrator to process message
+        # TODO: Integrate AI processing to handle chat message
         # For now, just echo back the message
 
         response = {
@@ -265,7 +252,7 @@ async def _handle_command(
     try:
         logger.info(f"Command from {user_id}: {message.content}")
 
-        # TODO: Route to appropriate command handler
+        # TODO: Implement command routing and execution
 
         response = {
             "type": ResponseType.ACKNOWLEDGMENT.value,
@@ -320,7 +307,7 @@ async def send_chat_message(
                 detail="Access denied",
             )
 
-        # TODO: Process message with orchestrator
+        # TODO: Process message with AI model
         # For now, return echo response
 
         return {
@@ -485,7 +472,7 @@ async def request_hint(
                 detail="Access denied",
             )
 
-        # TODO: Generate hint using orchestrator
+        # TODO: Generate hint using AI model
 
         return {
             "status": "success",
@@ -581,7 +568,7 @@ async def get_chat_summary(
                 detail="Access denied",
             )
 
-        # TODO: Generate summary using orchestrator
+        # TODO: Generate summary using AI model
 
         return {
             "status": "success",

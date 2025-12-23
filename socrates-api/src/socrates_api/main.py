@@ -6,6 +6,7 @@ Provides REST endpoints for project management, Socratic questioning, and code g
 
 import os
 import logging
+import socket
 import time
 from pathlib import Path
 from typing import Optional
@@ -465,6 +466,16 @@ def run():
     host = os.getenv("SOCRATES_API_HOST", "127.0.0.1")
     port = int(os.getenv("SOCRATES_API_PORT", "8000"))
     reload = os.getenv("SOCRATES_API_RELOAD", "False").lower() == "true"
+
+    # Check if port is available
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex((host, port))
+    sock.close()
+
+    if result == 0:
+        logger.warning(f"Port {port} is already in use. Attempting to use it anyway.")
+    else:
+        logger.info(f"Port {port} is available")
 
     logger.info(f"Starting Socrates API on {host}:{port}")
 

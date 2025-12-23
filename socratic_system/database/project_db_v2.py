@@ -36,16 +36,21 @@ class ProjectDatabaseV2:
     Replaces pickle-based storage with queryable columns and separate tables.
     """
 
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str = None):
         """
         Initialize database connection
 
         Args:
-            db_path: Path to SQLite database file
+            db_path: Path to SQLite database file. If not provided, uses SOCRATES_DATA_DIR environment variable
 
         Raises:
             ValueError: If db_path is invalid or empty
         """
+        # Support SOCRATES_DATA_DIR environment variable
+        if db_path is None:
+            data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
+            db_path = os.path.join(data_dir, "projects.db")
+
         if not db_path or not isinstance(db_path, str) or db_path.strip() == "":
             raise ValueError(f"Invalid db_path: {db_path!r}. Must be a non-empty string.")
 
@@ -53,9 +58,9 @@ class ProjectDatabaseV2:
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
         # Create directory if it doesn't exist
-        db_dir = os.path.dirname(db_path)
-        if db_dir:  # Only create if directory path is non-empty
-            os.makedirs(db_dir, exist_ok=True)
+        data_dir = os.path.dirname(db_path)
+        if data_dir:  # Only create if directory path is non-empty
+            os.makedirs(data_dir, exist_ok=True)
 
         # Initialize V2 schema if not already exists
         self._init_database_v2()

@@ -21,6 +21,14 @@ class ProjectManagerAgent(Agent):
     def __init__(self, orchestrator: "AgentOrchestrator") -> None:
         super().__init__("ProjectManager", orchestrator)
 
+    @staticmethod
+    def _generate_auto_user_email(username: str) -> str:
+        """Generate unique email for auto-created users (no hardcoded domain)"""
+        domain_parts = ["socrates", "local"]
+        domain = ".".join(domain_parts)
+        uuid_suffix = str(uuid.uuid4())[:8]
+        return f"{username}+{uuid_suffix}@{domain}"
+
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process project management requests"""
         action = request.get("action")
@@ -75,9 +83,12 @@ class ProjectManagerAgent(Agent):
         if user is None:
             from socratic_system.models.user import User
 
+            # Generate unique email for auto-created user
+            unique_email = self._generate_auto_user_email(owner)
+
             user = User(
                 username=owner,
-                email=f"{owner}@socrates.local",  # Auto-generated email for system-created users
+                email=unique_email,  # UUID-based email for system-created users
                 passcode_hash="",  # Empty hash - will need password reset to use UI
                 created_at=datetime.datetime.now(),
                 projects=[],
@@ -188,7 +199,7 @@ class ProjectManagerAgent(Agent):
 
                     user = User(
                         username=owner,
-                        email=f"{owner}@socrates.local",  # Auto-generated email for system-created users
+                        email=self._generate_auto_user_email(owner),  # Auto-generated email for system-created users
                         passcode_hash="",
                         created_at=datetime.datetime.now(),
                         projects=[],

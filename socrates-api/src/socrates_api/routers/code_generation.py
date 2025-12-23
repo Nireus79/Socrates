@@ -17,22 +17,11 @@ from fastapi import APIRouter, HTTPException, status, Depends
 
 from socratic_system.database import ProjectDatabaseV2
 
+from socrates_api.database import get_database
 from socrates_api.auth import get_current_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["code-generation"])
-
-_database = None
-
-
-def get_database() -> ProjectDatabaseV2:
-    """Get database instance."""
-    global _database
-    if _database is None:
-        data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
-        db_path = os.path.join(data_dir, "projects.db")
-        _database = ProjectDatabaseV2(db_path)
-    return _database
 
 
 # ============================================================================
@@ -110,14 +99,14 @@ async def generate_code(
             )
 
         # TODO: Check subscription tier (requires pro)
-        # TODO: Call code generation orchestrator
+        # TODO: Implement code generation with AI model
 
         logger.info(f"Code generation requested for {language} in project {project_id}")
 
         return {
             "status": "success",
             "code": "# Generated code will appear here\nprint('Hello, World!')",
-            "explanation": "This is a placeholder code generation. In production, this would use the orchestrator to generate code.",
+            "explanation": "This is a placeholder code generation. In production, this would use an AI model to generate code.",
             "language": language,
             "token_usage": 150,
             "generation_id": f"gen_{int(__import__('time').time() * 1000)}",
