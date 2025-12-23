@@ -35,6 +35,7 @@ from .routers import (
     projects_router,
     websocket_router,
     collaboration_router,
+    collab_router,
     code_generation_router,
     knowledge_router,
     llm_router,
@@ -112,6 +113,7 @@ app.include_router(auth_router)
 app.include_router(projects_router)
 app.include_router(websocket_router)
 app.include_router(collaboration_router)
+app.include_router(collab_router)
 app.include_router(code_generation_router)
 app.include_router(knowledge_router)
 app.include_router(llm_router)
@@ -119,6 +121,12 @@ app.include_router(analysis_router)
 app.include_router(security_router)
 app.include_router(analytics_router)
 app.include_router(github_router)
+
+
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {"message": "Socrates API", "version": "8.0.0"}
 
 
 @app.on_event("startup")

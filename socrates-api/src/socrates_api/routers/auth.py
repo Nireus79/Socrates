@@ -220,7 +220,7 @@ async def login(request: LoginRequest, db: ProjectDatabaseV2 = Depends(get_datab
             logger.warning(f"Login attempt for non-existent user: {request.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid username or password",
+                detail="Invalid credentials",
             )
 
         # Verify password
@@ -228,7 +228,7 @@ async def login(request: LoginRequest, db: ProjectDatabaseV2 = Depends(get_datab
             logger.warning(f"Failed login attempt for user: {request.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid username or password",
+                detail="Invalid credentials",
             )
 
         logger.info(f"User logged in successfully: {request.username}")
