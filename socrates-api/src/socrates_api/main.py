@@ -10,13 +10,14 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 import socrates
 
+from .auth import get_current_user
 from .models import (
     CreateProjectRequest,
     ProjectResponse,
@@ -43,6 +44,7 @@ from .routers import (
     security_router,
     analytics_router,
     github_router,
+    events_router,
 )
 
 # Configure logging
@@ -121,6 +123,7 @@ app.include_router(analysis_router)
 app.include_router(security_router)
 app.include_router(analytics_router)
 app.include_router(github_router)
+app.include_router(events_router)
 
 
 @app.get("/")
@@ -205,7 +208,10 @@ async def get_info():
 
 
 @app.post("/projects", response_model=ProjectResponse)
-async def create_project(request: CreateProjectRequest):
+async def create_project(
+    request: CreateProjectRequest,
+    current_user: Optional[str] = None,
+):
     """
     Create a new project
 
@@ -250,7 +256,10 @@ async def create_project(request: CreateProjectRequest):
 
 
 @app.get("/projects", response_model=ListProjectsResponse)
-async def list_projects(owner: Optional[str] = None):
+async def list_projects(
+    owner: Optional[str] = None,
+    current_user: Optional[str] = None,
+):
     """
     List projects
 
