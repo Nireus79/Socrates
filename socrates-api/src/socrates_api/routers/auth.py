@@ -100,15 +100,11 @@ async def register(request: RegisterRequest, db: ProjectDatabaseV2 = Depends(get
                 detail="Username and password are required",
             )
 
-        # Check if email is provided and validate format
-        if not request.email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email is required",
-            )
+        # Generate email if not provided
+        email = request.email or f"{request.username}@localhost"
 
-        # Basic email format validation
-        if '@' not in request.email or '.' not in request.email:
+        # Basic email format validation if email was provided
+        if request.email and ('@' not in request.email or '.' not in request.email):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid email format",
@@ -123,14 +119,15 @@ async def register(request: RegisterRequest, db: ProjectDatabaseV2 = Depends(get
                 detail="Username already exists",
             )
 
-        # Check if email already exists
-        existing_email_user = db.load_user_by_email(request.email)
-        if existing_email_user is not None:
-            logger.warning(f"Registration attempt with existing email: {request.email}")
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Email already registered",
-            )
+        # Check if email already exists (only if email was explicitly provided)
+        if request.email:
+            existing_email_user = db.load_user_by_email(email)
+            if existing_email_user is not None:
+                logger.warning(f"Registration attempt with existing email: {email}")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Email already registered",
+                )
 
         # Hash password
         password_hash = hash_password(request.password)
@@ -138,7 +135,7 @@ async def register(request: RegisterRequest, db: ProjectDatabaseV2 = Depends(get
         # Create user
         user = User(
             username=request.username,
-            email=request.email,
+            email=email,
             passcode_hash=password_hash,
             subscription_tier="free",  # Default to free tier
             subscription_status="active",
@@ -223,7 +220,7 @@ async def login(request: LoginRequest, db: ProjectDatabaseV2 = Depends(get_datab
             logger.warning(f"Login attempt for non-existent user: {request.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid credentials",
+                detail="Invalid username or password",
             )
 
         # Verify password
@@ -231,7 +228,7 @@ async def login(request: LoginRequest, db: ProjectDatabaseV2 = Depends(get_datab
             logger.warning(f"Failed login attempt for user: {request.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid credentials",
+                detail="Invalid username or password",
             )
 
         logger.info(f"User logged in successfully: {request.username}")

@@ -266,7 +266,7 @@ class RegisterRequest(BaseModel):
     username: str = Field(
         ..., min_length=3, max_length=100, description="Username (3-100 characters)"
     )
-    email: str = Field(..., description="User email address")
+    email: Optional[str] = Field(None, description="User email address (optional)")
     password: str = Field(
         ..., min_length=8, max_length=200, description="Password (min 8 characters)"
     )
