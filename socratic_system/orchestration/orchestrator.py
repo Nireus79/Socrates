@@ -74,7 +74,12 @@ class AgentOrchestrator:
 
         # Initialize database components with configured paths
         self.logger.info("Initializing database components...")
-        self.database = ProjectDatabaseV2(str(self.config.projects_db_path))
+
+        # Use unified DatabaseSingleton for both CLI and API
+        from socrates_api.database import DatabaseSingleton
+        DatabaseSingleton.initialize(str(self.config.projects_db_path))
+        self.database = DatabaseSingleton.get_instance()
+
         self.vector_db = VectorDatabase(
             str(self.config.vector_db_path), embedding_model=self.config.embedding_model
         )

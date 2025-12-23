@@ -1,6 +1,7 @@
 README.md
 pyproject.toml
 src/socrates_api/__init__.py
+src/socrates_api/database.py
 src/socrates_api/main.py
 src/socrates_api/models.py
 src/socrates_api.egg-info/PKG-INFO
@@ -10,3 +11,5 @@ src/socrates_api.egg-info/entry_points.txt
 src/socrates_api.egg-info/requires.txt
 src/socrates_api.egg-info/top_level.txt
 tests/test_api.py
+tests/test_integration_issues.py
+tests/test_phase1_smoke.py

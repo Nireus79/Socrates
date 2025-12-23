@@ -125,7 +125,11 @@
       "Bash(git rm --cached \"socrates-api/src/socrates_api/auth.py\")",
       "Bash(. .venv/Scripts/activate)",
       "Bash(npm test:*)",
-      "Bash(pytest:*)"
+      "Bash(pytest:*)",
+      "Bash(timeout 10 bash -c 'for i in {1..10}; do curl -s http://127.0.0.1:8000/health 2>&1 && break; sleep 1; done')",
+      "Bash(PYTHONPATH=.:socrates-api/src python:*)",
+      "Bash(lsof:*)",
+      "Bash(git prune:*)"
     ],
     "deny": [],
     "ask": []

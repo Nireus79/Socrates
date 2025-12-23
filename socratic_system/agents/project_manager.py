@@ -3,11 +3,11 @@ Project management agent for Socratic RAG System
 """
 
 import datetime
-import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict
 
 from socratic_system.models import VALID_ROLES, ProjectContext, TeamMemberRole
+from socratic_system.utils.id_generator import ProjectIDGenerator
 
 from .base import Agent
 
@@ -106,7 +106,8 @@ class ProjectManagerAgent(Agent):
                 "message": error_message,
             }
 
-        project_id = str(uuid.uuid4())
+        # Use unified ProjectIDGenerator for consistent IDs across CLI and API
+        project_id = ProjectIDGenerator.generate(owner)
         project = ProjectContext(
             project_id=project_id,
             name=project_name,

@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Query
 
 from socratic_system.database import ProjectDatabaseV2
 from socratic_system.models import ProjectContext
+from socratic_system.utils.id_generator import ProjectIDGenerator
 from socrates_api.database import get_database
 from socrates_api.auth import get_current_user, get_current_user_optional
 from socrates_api.middleware import SubscriptionChecker, require_subscription_feature
@@ -104,7 +105,7 @@ async def list_projects(
 )
 @require_subscription_feature("project_creation")
 async def create_project(
-    request: CreateProjectRequest,
+    request: CreateProjectRequest = None,
     current_user: Optional[str] = Depends(get_current_user_optional),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
@@ -134,9 +135,9 @@ async def create_project(
         # Use current_user as owner (don't allow specifying different owner)
         owner = current_user
 
-        # Create new project
+        # Create new project with unified ID generator
         project = ProjectContext(
-            project_id=f"proj_{owner}_{int(datetime.now(timezone.utc).timestamp() * 1000)}",
+            project_id=ProjectIDGenerator.generate(owner),
             name=request.name,
             owner=owner,
             description=request.description,

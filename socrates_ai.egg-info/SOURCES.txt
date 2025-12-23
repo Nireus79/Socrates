@@ -106,10 +106,12 @@ socratic_system/utils/multi_file_splitter.py
 socratic_system/utils/ttl_cache.py
 tests/test_analytics_calculator.py
 tests/test_analytics_integration.py
+tests/test_api_endpoints.py
 tests/test_claude_categorization.py
 tests/test_config.py
 tests/test_conflict_resolution.py
 tests/test_e2e_complete.py
+tests/test_e2e_comprehensive.py
 tests/test_e2e_interconnection.py
 tests/test_events.py
 tests/test_exceptions.py
@@ -128,5 +130,6 @@ tests/test_performance.py
 tests/test_phase4_verification.py
 tests/test_project_types.py
 tests/test_recent_fixes.py
+tests/test_routing_fixes.py
 tests/test_runner_subprocess.py
 tests/test_team_management_system.py

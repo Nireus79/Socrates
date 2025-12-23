@@ -8,19 +8,9 @@ from colorama import Fore, Style
 from socratic_system.models import User
 from socratic_system.ui.commands.base import BaseCommand
 
-# Import password verification from the same module as API
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../socrates-api/src'))
-
-try:
-    from socrates_api.auth.password import hash_password, verify_password
-except ImportError:
-    # Fallback: use passlib with simpler config
-    from passlib.context import CryptContext
-    pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
-    hash_password = pwd_context.hash
-    verify_password = pwd_context.verify
+# Import password verification from API module
+# This ensures CLI and API use identical password hashing (bcrypt)
+from socrates_api.auth.password import hash_password, verify_password
 
 
 class UserLoginCommand(BaseCommand):
