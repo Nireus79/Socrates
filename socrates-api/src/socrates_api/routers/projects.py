@@ -8,15 +8,18 @@ import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from fastapi import APIRouter, HTTPException, status, Depends, Query
+
+if TYPE_CHECKING:
+    import socrates
 
 from socratic_system.database import ProjectDatabaseV2
 from socratic_system.models import ProjectContext
 from socratic_system.utils.id_generator import ProjectIDGenerator
 from socrates_api.database import get_database
-from socrates_api.auth import get_current_user, get_current_user_optional
+from socrates_api.auth import get_current_user, get_current_user_optional, get_current_user_object
 from socrates_api.middleware import SubscriptionChecker, require_subscription_feature
 from socrates_api.models import (
     ProjectResponse,
@@ -29,6 +32,19 @@ from socrates_api.models import (
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["projects"])
+
+
+def _get_orchestrator() -> "socrates.AgentOrchestrator":
+    """Get the global orchestrator instance for agent-based processing."""
+    # Import here to avoid circular imports
+    from socrates_api.main import app_state
+
+    if app_state.get("orchestrator") is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Orchestrator not initialized. Please call /initialize first."
+        )
+    return app_state["orchestrator"]
 
 
 def _project_to_response(project: ProjectContext) -> ProjectResponse:
@@ -101,56 +117,61 @@ async def list_projects(
         200: {"description": "Project created successfully"},
         400: {"description": "Invalid request", "model": ErrorResponse},
         401: {"description": "Not authenticated", "model": ErrorResponse},
+        403: {"description": "Subscription limit exceeded", "model": ErrorResponse},
     },
 )
-@require_subscription_feature("project_creation")
 async def create_project(
-    request: CreateProjectRequest = None,
-    current_user: Optional[str] = Depends(get_current_user_optional),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    request: CreateProjectRequest,
+    current_user: str = Depends(get_current_user),
+    orchestrator = Depends(_get_orchestrator),
 ):
     """
     Create a new project for the current user.
 
+    Uses the orchestrator-agent pattern to ensure proper validation,
+    subscription checking, and business logic consistency with CLI.
+
     Args:
         request: CreateProjectRequest with project details
-        current_user: Current authenticated user (required for creating projects)
-        db: Database connection
+        current_user: Authenticated username from JWT token
+        orchestrator: AgentOrchestrator instance for agent-based processing
 
     Returns:
         ProjectResponse with newly created project
 
     Raises:
-        HTTPException: If validation fails or creation fails
+        HTTPException: If validation fails, subscription check fails, or creation fails
     """
     try:
-        # Require authentication to create projects
-        if current_user is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Authentication required to create projects",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
-        # Use current_user as owner (don't allow specifying different owner)
-        owner = current_user
-
-        # Create new project with unified ID generator
-        project = ProjectContext(
-            project_id=ProjectIDGenerator.generate(owner),
-            name=request.name,
-            owner=owner,
-            description=request.description,
-            phase="discovery",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
-            is_archived=False,
+        # Use orchestrator pattern (same as CLI)
+        # This ensures consistent validation and subscription checking
+        result = orchestrator.process_request(
+            "project_manager",
+            {
+                "action": "create_project",
+                "project_name": request.name,
+                "owner": current_user,
+                "project_type": request.knowledge_base_content or "general",
+            },
         )
 
-        # Save project
-        db.save_project(project)
-        logger.info(f"Project {project.project_id} created by {current_user}")
+        # Check result status
+        if result.get("status") != "success":
+            error_message = result.get("message", "Failed to create project")
+            # Return 403 for subscription errors
+            if "subscription" in error_message.lower():
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=error_message
+                )
+            # Return 400 for other errors
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_message
+            )
 
+        project = result.get("project")
+        logger.info(f"Project {project.project_id} created by {current_user}")
         return _project_to_response(project)
 
     except HTTPException:

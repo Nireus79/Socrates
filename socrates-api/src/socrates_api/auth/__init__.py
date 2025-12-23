@@ -8,6 +8,8 @@ for API authentication.
 from socrates_api.auth.dependencies import (
     get_current_user,
     get_current_user_optional,
+    get_current_user_object,
+    get_current_user_object_optional,
     security,
 )
 from socrates_api.auth.jwt_handler import (
@@ -24,6 +26,8 @@ from socrates_api.auth.password import (
 __all__ = [
     "get_current_user",
     "get_current_user_optional",
+    "get_current_user_object",
+    "get_current_user_object_optional",
     "security",
     "create_access_token",
     "create_refresh_token",
