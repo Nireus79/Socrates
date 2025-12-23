@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Query
 
 from socratic_system.database import ProjectDatabaseV2
 from socratic_system.models import ProjectContext
-from socrates_api.auth import get_current_user
+from socrates_api.auth import get_current_user, get_current_user_optional
 from socrates_api.middleware import SubscriptionChecker, require_subscription_feature
 from socrates_api.models import (
     ProjectResponse,
@@ -67,20 +67,25 @@ def _project_to_response(project: ProjectContext) -> ProjectResponse:
     },
 )
 async def list_projects(
-    current_user: str = Depends(get_current_user),
+    current_user: Optional[str] = Depends(get_current_user_optional),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
     List all projects for the current user.
 
     Args:
-        current_user: Current authenticated user
+        current_user: Current authenticated user (required for accessing projects)
         db: Database connection
 
     Returns:
         ListProjectsResponse with user's projects
     """
     try:
+        # Load all projects for authenticated user, or return empty list if not authenticated
+        if current_user is None:
+            # Unauthenticated requests return empty list
+            return ListProjectsResponse(projects=[], total=0)
+
         # Load all projects for user
         projects = db.get_user_projects(current_user)
 
@@ -88,6 +93,8 @@ async def list_projects(
 
         return ListProjectsResponse(projects=project_responses, total=len(project_responses))
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error listing projects for {current_user}: {str(e)}")
         raise HTTPException(
@@ -109,7 +116,7 @@ async def list_projects(
 )
 async def create_project(
     request: CreateProjectRequest,
-    current_user: str = Depends(get_current_user),
+    current_user: Optional[str] = Depends(get_current_user_optional),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -117,7 +124,7 @@ async def create_project(
 
     Args:
         request: CreateProjectRequest with project details
-        current_user: Current authenticated user
+        current_user: Current authenticated user (required for creating projects)
         db: Database connection
 
     Returns:
@@ -127,6 +134,14 @@ async def create_project(
         HTTPException: If validation fails or creation fails
     """
     try:
+        # Require authentication to create projects
+        if current_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required to create projects",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
         # Create new project
         project = ProjectContext(
             project_id=f"proj_{current_user}_{int(datetime.now(timezone.utc).timestamp() * 1000)}",

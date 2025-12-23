@@ -94,6 +94,10 @@ class UserCreateCommand(BaseCommand):
         if existing_user:
             return self.error("Username already exists")
 
+        email = input(f"{Fore.WHITE}Email: ").strip()
+        if not email:
+            return self.error("Email cannot be empty")
+
         passcode = input(f"{Fore.WHITE}Passcode: ").strip()
         if not passcode:
             return self.error("Passcode cannot be empty")
@@ -106,6 +110,7 @@ class UserCreateCommand(BaseCommand):
         passcode_hash = hash_password(passcode)
         user = User(
             username=username,
+            email=email,
             passcode_hash=passcode_hash,
             created_at=datetime.datetime.now(),
             projects=[],

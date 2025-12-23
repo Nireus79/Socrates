@@ -1,0 +1,44 @@
+# Testing and Coverage Requirements
+# Install with: pip install -r requirements-test.txt
+
+# Core Testing Frameworks
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.10.0
+pytest-timeout>=2.1.0
+pytest-xdist>=3.0.0
+
+# Coverage Tools
+coverage>=7.0.0
+coverage-badge>=1.1.0
+
+# API Testing
+httpx>=0.24.0
+requests>=2.31.0
+requests-mock>=1.11.0
+
+# Mocking and Fixtures
+faker>=15.0.0
+factory-boy>=3.2.0
+
+# Security Testing
+bandit>=1.7.0
+safety>=2.3.0
+
+# Code Quality
+flake8>=5.0.0
+black>=23.0.0
+isort>=5.12.0
+mypy>=1.0.0
+pylint>=2.17.0
+
+# Performance Testing
+locust>=2.15.0
+
+# Documentation
+pytest-html>=3.2.0
+
+# Database Testing
+sqlalchemy>=2.0.0
+alembic>=1.11.0

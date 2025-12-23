@@ -67,6 +67,7 @@ def sample_user():
     """Create a sample user for testing."""
     return User(
         username="testuser",
+        email="testuser@example.com",
         passcode_hash="hashed_password",
         created_at=datetime.datetime.now(),
         projects=["test-proj-001"],

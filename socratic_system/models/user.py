@@ -12,6 +12,7 @@ class User:
     """Represents a user of the Socratic RAG System"""
 
     username: str
+    email: str
     passcode_hash: str
     created_at: datetime.datetime
     projects: Optional[List[str]] = None  # User can start with no projects
@@ -27,6 +28,12 @@ class User:
     # NEW: Usage tracking (resets monthly)
     questions_used_this_month: int = 0
     usage_reset_date: Optional[datetime.datetime] = None
+
+    # Testing mode - bypasses all monetization restrictions
+    testing_mode: bool = False
+
+    # Claude authentication method: "api_key" or "subscription"
+    claude_auth_method: str = "api_key"  # How to authenticate with Claude API
 
     def __post_init__(self):
         """Initialize projects list and subscription fields for new users."""

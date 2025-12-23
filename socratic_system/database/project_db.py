@@ -185,6 +185,8 @@ class ProjectDatabase:
 
     def load_project(self, project_id: str) -> Optional[ProjectContext]:
         """Load project from database"""
+        from socratic_system.models.role import TeamMemberRole
+
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
@@ -196,10 +198,26 @@ class ProjectDatabase:
         if result:
             data = pickle.loads(result[0])  # nosec
             # Convert datetime strings back to datetime objects if needed
-            if isinstance(data.get("created_at"), str):
-                data["created_at"] = deserialize_datetime(data["created_at"])
-            if isinstance(data.get("updated_at"), str):
-                data["updated_at"] = deserialize_datetime(data["updated_at"])
+            datetime_fields = ["created_at", "updated_at", "archived_at"]
+            for field in datetime_fields:
+                if field in data and isinstance(data.get(field), str):
+                    data[field] = deserialize_datetime(data[field])
+
+            # Reconstruct TeamMemberRole objects from dicts if needed
+            if "team_members" in data and data["team_members"]:
+                team_members = []
+                for member in data["team_members"]:
+                    if isinstance(member, dict):
+                        # Reconstruct TeamMemberRole from dict
+                        joined_at = member.get("joined_at")
+                        if isinstance(joined_at, str):
+                            member["joined_at"] = deserialize_datetime(joined_at)
+                        team_members.append(TeamMemberRole(**member))
+                    else:
+                        # Already a TeamMemberRole object
+                        team_members.append(member)
+                data["team_members"] = team_members
+
             return ProjectContext(**data)
         return None
 
@@ -280,9 +298,11 @@ class ProjectDatabase:
 
         if result:
             data = pickle.loads(result[0])  # nosec
-            # Convert datetime string back to datetime object if needed
-            if isinstance(data.get("created_at"), str):
-                data["created_at"] = deserialize_datetime(data["created_at"])
+            # Convert all datetime fields from strings back to datetime objects if needed
+            datetime_fields = ["created_at", "archived_at", "subscription_start", "subscription_end", "usage_reset_date"]
+            for field in datetime_fields:
+                if field in data and isinstance(data.get(field), str):
+                    data[field] = deserialize_datetime(data[field])
             return User(**data)
         return None
 

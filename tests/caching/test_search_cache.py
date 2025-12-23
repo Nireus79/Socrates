@@ -4,8 +4,8 @@ Comprehensive tests for Search Result Cache (Phase 3)
 Tests TTL-based cache for vector search results with invalidation.
 """
 
-import pytest
 import time
+
 from socratic_system.database.search_cache import SearchResultCache
 
 

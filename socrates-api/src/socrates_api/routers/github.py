@@ -10,6 +10,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, status, Depends
 
 from socratic_system.database import ProjectDatabaseV2
+from socrates_api.auth import get_current_user
 from socrates_api.models import (
     SuccessResponse,
     ErrorResponse,
@@ -43,7 +44,7 @@ def get_database() -> ProjectDatabaseV2:
 )
 async def import_repository(
     request: GitHubImportRequest,
-    current_user: str = Depends(lambda: "test_user"),  # TODO: Get from JWT
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """

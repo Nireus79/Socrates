@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from socratic_system.database.migration_runner import MigrationRunner
 from socratic_system.models.note import ProjectNote
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.user import User
@@ -41,29 +42,43 @@ class ProjectDatabaseV2:
 
         Args:
             db_path: Path to SQLite database file
+
+        Raises:
+            ValueError: If db_path is invalid or empty
         """
+        if not db_path or not isinstance(db_path, str) or db_path.strip() == "":
+            raise ValueError(f"Invalid db_path: {db_path!r}. Must be a non-empty string.")
+
         self.db_path = db_path
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
         # Create directory if it doesn't exist
-        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        db_dir = os.path.dirname(db_path)
+        if db_dir:  # Only create if directory path is non-empty
+            os.makedirs(db_dir, exist_ok=True)
 
         # Initialize V2 schema if not already exists
         self._init_database_v2()
 
     def _init_database_v2(self):
-        """Initialize V2 database schema"""
+        """Initialize V2 database schema and apply migrations"""
         # Check if V2 schema exists
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
         try:
+            # Enable foreign keys globally for proper cascading deletes
+            self._enable_foreign_keys(cursor)
+
             # Test if V2 tables exist
             cursor.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='projects_v2'"
             )
             if cursor.fetchone():
-                self.logger.info("V2 schema already exists")
+                self.logger.info("V2 schema already exists (foreign keys enabled)")
+                # Still need to ensure migrations are applied
+                conn.close()
+                self._ensure_migrations()
                 return
 
             # V2 schema doesn't exist, create it
@@ -76,10 +91,121 @@ class ProjectDatabaseV2:
 
             cursor.executescript(schema_sql)
             conn.commit()
-            self.logger.info("V2 schema initialized")
+            self.logger.info("V2 schema initialized with foreign keys enabled")
 
         finally:
             conn.close()
+
+        # Apply any pending migrations after schema initialization
+        self._ensure_migrations()
+
+    def _ensure_migrations(self) -> None:
+        """Ensure all required migrations are applied"""
+        try:
+            migration_runner = MigrationRunner(self.db_path)
+            success, message = migration_runner.ensure_migrations_applied()
+            if success:
+                self.logger.info(f"Migrations check passed: {message}")
+            else:
+                self.logger.error(f"Migration issue: {message}")
+        except Exception as e:
+            self.logger.error(f"Error ensuring migrations applied: {e}")
+
+    def _enable_foreign_keys(self, cursor: sqlite3.Cursor) -> None:
+        """
+        Enable foreign key constraints globally for this database connection
+
+        SQLite has foreign key support disabled by default for backward compatibility.
+        This enables it to ensure cascade deletes work properly when projects are deleted.
+
+        Must be called on every connection, as the setting is per-connection.
+        """
+        try:
+            cursor.execute("PRAGMA foreign_keys = ON")
+            cursor.execute("PRAGMA foreign_keys")
+            result = cursor.fetchone()
+            if result and result[0]:
+                self.logger.debug("Foreign keys enabled for this connection")
+            else:
+                self.logger.warning("Failed to enable foreign keys - cascade deletes may not work")
+        except Exception as e:
+            self.logger.error(f"Error enabling foreign keys: {e}")
+
+    def _get_cascade_delete_counts(self, cursor: sqlite3.Cursor, project_id: str) -> Dict[str, int]:
+        """
+        Get counts of records that will be cascade deleted when project is deleted
+
+        Args:
+            cursor: Database cursor
+            project_id: Project ID to check
+
+        Returns:
+            Dictionary with counts for each related table
+        """
+        counts = {
+            "conversation": 0,
+            "requirements": 0,
+            "tech_stack": 0,
+            "constraints": 0,
+            "team_members": 0,
+            "notes": 0,
+            "maturity": 0,
+            "category": 0,
+            "analytics": 0,
+        }
+
+        try:
+            # Count records in each child table
+            cursor.execute(
+                "SELECT COUNT(*) FROM conversation_history WHERE project_id = ?",
+                (project_id,),
+            )
+            counts["conversation"] = cursor.fetchone()[0]
+
+            cursor.execute(
+                "SELECT COUNT(*) FROM project_requirements WHERE project_id = ?", (project_id,)
+            )
+            counts["requirements"] = cursor.fetchone()[0]
+
+            cursor.execute(
+                "SELECT COUNT(*) FROM project_tech_stack WHERE project_id = ?", (project_id,)
+            )
+            counts["tech_stack"] = cursor.fetchone()[0]
+
+            cursor.execute(
+                "SELECT COUNT(*) FROM project_constraints WHERE project_id = ?", (project_id,)
+            )
+            counts["constraints"] = cursor.fetchone()[0]
+
+            cursor.execute(
+                "SELECT COUNT(*) FROM team_members WHERE project_id = ?", (project_id,)
+            )
+            counts["team_members"] = cursor.fetchone()[0]
+
+            cursor.execute(
+                "SELECT COUNT(*) FROM project_notes_v2 WHERE project_id = ?", (project_id,)
+            )
+            counts["notes"] = cursor.fetchone()[0]
+
+            cursor.execute(
+                "SELECT COUNT(*) FROM phase_maturity_scores WHERE project_id = ?", (project_id,)
+            )
+            counts["maturity"] = cursor.fetchone()[0]
+
+            cursor.execute(
+                "SELECT COUNT(*) FROM category_scores WHERE project_id = ?", (project_id,)
+            )
+            counts["category"] = cursor.fetchone()[0]
+
+            cursor.execute(
+                "SELECT COUNT(*) FROM analytics_metrics WHERE project_id = ?", (project_id,)
+            )
+            counts["analytics"] = cursor.fetchone()[0]
+
+        except Exception as e:
+            self.logger.warning(f"Error counting cascade deletes for {project_id}: {e}")
+
+        return counts
 
     # ========================================================================
     # PROJECT OPERATIONS (Core optimization: 10-20x faster)
@@ -417,7 +543,11 @@ class ProjectDatabaseV2:
 
     def delete_project(self, project_id: str) -> bool:
         """
-        Delete a project
+        Delete a project with cascading deletes to all related tables
+
+        When foreign_keys are enabled, SQLite automatically deletes all related records
+        from child tables (conversation history, requirements, tech stack, constraints,
+        team members, notes, maturity scores, category scores, analytics, etc.)
 
         Args:
             project_id: ID of project to delete
@@ -429,12 +559,30 @@ class ProjectDatabaseV2:
         cursor = conn.cursor()
 
         try:
+            # Explicitly enable foreign keys to ensure cascade deletes work
+            self._enable_foreign_keys(cursor)
+
+            # Get cascading delete counts before deletion for logging
+            cascade_counts = self._get_cascade_delete_counts(cursor, project_id)
+
+            # Delete the project (cascade deletes will occur automatically)
             cursor.execute("DELETE FROM projects_v2 WHERE project_id = ?", (project_id,))
             conn.commit()
 
             deleted = cursor.rowcount > 0
             if deleted:
-                self.logger.info(f"Deleted project {project_id}")
+                self.logger.info(
+                    f"Deleted project {project_id} "
+                    f"(cascade: {cascade_counts['conversation']} conversation msgs, "
+                    f"{cascade_counts['requirements']} requirements, "
+                    f"{cascade_counts['tech_stack']} tech stack items, "
+                    f"{cascade_counts['constraints']} constraints, "
+                    f"{cascade_counts['team_members']} team members, "
+                    f"{cascade_counts['notes']} notes, "
+                    f"{cascade_counts['maturity']} maturity scores, "
+                    f"{cascade_counts['category']} category scores, "
+                    f"{cascade_counts['analytics']} analytics records)"
+                )
             return deleted
 
         except Exception as e:
@@ -544,7 +692,7 @@ class ProjectDatabaseV2:
                 """
                 SELECT * FROM conversation_history
                 WHERE project_id = ?
-                ORDER BY timestamp ASC
+                ORDER BY timestamp ASC, rowid ASC
             """,
                 (project_id,),
             )
@@ -626,12 +774,14 @@ class ProjectDatabaseV2:
             cursor.execute(
                 """
                 INSERT OR REPLACE INTO users_v2 (
-                    username, passcode_hash, subscription_tier, subscription_status,
-                    subscription_start, subscription_end, testing_mode, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    username, email, passcode_hash, subscription_tier, subscription_status,
+                    subscription_start, subscription_end, testing_mode, created_at,
+                    claude_auth_method
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     user.username,
+                    user.email,
                     user.passcode_hash,
                     getattr(user, "subscription_tier", "free"),
                     getattr(user, "subscription_status", "active"),
@@ -639,6 +789,7 @@ class ProjectDatabaseV2:
                     serialize_datetime(sub_end) if sub_end else None,
                     getattr(user, "testing_mode", False),
                     serialize_datetime(user.created_at),
+                    getattr(user, "claude_auth_method", "api_key"),
                 ),
             )
 
@@ -666,6 +817,7 @@ class ProjectDatabaseV2:
 
             user = User(
                 username=row["username"],
+                email=row["email"],
                 passcode_hash=row["passcode_hash"],
                 created_at=deserialize_datetime(row["created_at"]),
             )
@@ -674,11 +826,52 @@ class ProjectDatabaseV2:
             user.subscription_tier = row["subscription_tier"]
             user.subscription_status = row["subscription_status"]
             user.testing_mode = bool(row["testing_mode"])
+            try:
+                user.claude_auth_method = row["claude_auth_method"] or "api_key"
+            except (IndexError, KeyError):
+                user.claude_auth_method = "api_key"
 
             return user
 
         except Exception as e:
             self.logger.error(f"Error loading user {username}: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def load_user_by_email(self, email: str) -> Optional[User]:
+        """Load a user by email address"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT * FROM users_v2 WHERE email = ?", (email,))
+            row = cursor.fetchone()
+
+            if not row:
+                return None
+
+            user = User(
+                username=row["username"],
+                email=row["email"],
+                passcode_hash=row["passcode_hash"],
+                created_at=deserialize_datetime(row["created_at"]),
+            )
+
+            # Set optional fields
+            user.subscription_tier = row["subscription_tier"]
+            user.subscription_status = row["subscription_status"]
+            user.testing_mode = bool(row["testing_mode"])
+            try:
+                user.claude_auth_method = row["claude_auth_method"] or "api_key"
+            except (IndexError, KeyError):
+                user.claude_auth_method = "api_key"
+
+            return user
+
+        except Exception as e:
+            self.logger.error(f"Error loading user by email {email}: {e}")
             return None
         finally:
             conn.close()
@@ -1367,7 +1560,7 @@ class ProjectDatabaseV2:
         cursor = conn.cursor()
 
         try:
-            cursor.execute("DELETE FROM project_notes_v2 WHERE id = ?", (note_id,))
+            cursor.execute("DELETE FROM project_notes_v2 WHERE note_id = ?", (note_id,))
             conn.commit()
             self.logger.debug(f"Deleted note {note_id}")
             return True
@@ -1379,9 +1572,10 @@ class ProjectDatabaseV2:
         finally:
             conn.close()
 
-    def search_notes(self, project_id: str, query: str) -> List[Dict[str, any]]:
+    def search_notes(self, project_id: str, query: str) -> List[ProjectNote]:
         """Search notes for a project by content"""
         conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
         try:
@@ -1389,27 +1583,27 @@ class ProjectDatabaseV2:
             search_pattern = f"%{query}%"
             cursor.execute(
                 """
-                SELECT id, project_id, title, content, note_type, created_at, updated_at
+                SELECT note_id, project_id, title, content, created_at
                 FROM project_notes_v2
                 WHERE project_id = ? AND (title LIKE ? OR content LIKE ?)
-                ORDER BY updated_at DESC
+                ORDER BY created_at DESC
             """,
                 (project_id, search_pattern, search_pattern),
             )
 
             notes = []
             for row in cursor.fetchall():
-                notes.append(
-                    {
-                        "id": row[0],
-                        "project_id": row[1],
-                        "title": row[2],
-                        "content": row[3],
-                        "note_type": row[4],
-                        "created_at": row[5],
-                        "updated_at": row[6],
-                    }
+                note = ProjectNote(
+                    note_id=row["note_id"],
+                    project_id=row["project_id"],
+                    title=row["title"],
+                    content=row["content"],
+                    note_type="general",  # Not stored in DB
+                    created_at=deserialize_datetime(row["created_at"]),
+                    created_by="unknown",  # Not stored in DB
+                    tags=[],  # Not stored in DB
                 )
+                notes.append(note)
 
             return notes
 
@@ -1608,7 +1802,7 @@ class ProjectDatabaseV2:
                 for row in cursor.fetchall():
                     items.append(
                         {
-                            "id": row[0],
+                            "project_id": row[0],
                             "name": row[1],
                             "owner": row[2],
                             "phase": row[3],
@@ -1935,7 +2129,7 @@ class ProjectDatabaseV2:
     # BACKWARD COMPATIBILITY - Stub methods pointing to V2 implementations
     # ========================================================================
 
-    def save_note(self, note: ProjectNote) -> None:
+    def save_note(self, note: ProjectNote) -> bool:
         """Save a project note"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -1958,11 +2152,12 @@ class ProjectDatabaseV2:
             )
 
             conn.commit()
+            return True
 
         except Exception as e:
             conn.rollback()
             self.logger.error(f"Error saving note {note.note_id}: {e}")
-            raise
+            return False
         finally:
             conn.close()
 
@@ -1989,8 +2184,12 @@ class ProjectDatabaseV2:
                 note = ProjectNote(
                     note_id=row["note_id"],
                     project_id=row["project_id"],
+                    title=row["title"],
                     content=row["content"],
+                    note_type="general",  # Not stored in DB
                     created_at=deserialize_datetime(row["created_at"]),
+                    created_by="unknown",  # Not stored in DB
+                    tags=[],  # Not stored in DB
                 )
                 notes.append(note)
 

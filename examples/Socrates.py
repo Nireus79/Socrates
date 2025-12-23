@@ -18,7 +18,7 @@ Setup:
     export ANTHROPIC_API_KEY="your-api-key"
 
 Run:
-    python Socrates.py
+    python socrates.py
 """
 
 import os

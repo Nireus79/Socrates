@@ -29,6 +29,12 @@ from socratic_system.ui.commands.finalize_commands import (
     FinalizeDocsCommand,
     FinalizeGenerateCommand,
 )
+from socratic_system.ui.commands.github_commands import (
+    GithubImportCommand,
+    GithubPullCommand,
+    GithubPushCommand,
+    GithubSyncCommand,
+)
 from socratic_system.ui.commands.knowledge_commands import (
     KnowledgeAddCommand,
     KnowledgeExportCommand,
@@ -53,12 +59,18 @@ from socratic_system.ui.commands.note_commands import (
     NoteSearchCommand,
 )
 from socratic_system.ui.commands.project_commands import (
+    ProjectAnalyzeCommand,
     ProjectArchiveCommand,
     ProjectCreateCommand,
     ProjectDeleteCommand,
+    ProjectDiffCommand,
+    ProjectFixCommand,
     ProjectListCommand,
     ProjectLoadCommand,
     ProjectRestoreCommand,
+    ProjectReviewCommand,
+    ProjectTestCommand,
+    ProjectValidateCommand,
 )
 from socratic_system.ui.commands.query_commands import ExplainCommand, SearchCommand
 from socratic_system.ui.commands.session_commands import (
@@ -133,6 +145,16 @@ __all__ = [
     "ProjectArchiveCommand",
     "ProjectRestoreCommand",
     "ProjectDeleteCommand",
+    "ProjectAnalyzeCommand",
+    "ProjectTestCommand",
+    "ProjectFixCommand",
+    "ProjectValidateCommand",
+    "ProjectReviewCommand",
+    "ProjectDiffCommand",
+    "GithubImportCommand",
+    "GithubPullCommand",
+    "GithubPushCommand",
+    "GithubSyncCommand",
     "ChatCommand",
     "DoneCommand",
     "AdvanceCommand",

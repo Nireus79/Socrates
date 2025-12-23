@@ -41,6 +41,10 @@ class ProjectContext:
         "software"  # Type of project (software, business, creative, research, marketing, educational)
     )
 
+    # System project tracking (for onboarding and special projects)
+    is_system_project: bool = False  # Not counted in subscription quotas
+    system_project_type: Optional[str] = None  # "onboarding", "sandbox", etc.
+
     # Team management (NEW)
     team_members: Optional[List[TeamMemberRole]] = (
         None  # Team members with roles (supersedes collaborators)

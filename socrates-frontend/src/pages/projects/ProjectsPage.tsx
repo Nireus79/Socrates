@@ -13,7 +13,7 @@ import {
   EmptyState,
   Dialog,
 } from '../../components/common';
-import { ProjectCard, CreateProjectModal } from '../../components/project';
+import { ProjectCard, CreateProjectModal, FilterModal } from '../../components/project';
 import { GitHubImportModal } from '../../components/github';
 
 export const ProjectsPage: React.FC = () => {
@@ -23,6 +23,7 @@ export const ProjectsPage: React.FC = () => {
   const [filterType, setFilterType] = React.useState('all');
   const [showCreateModal, setShowCreateModal] = React.useState(false);
   const [showGitHubImport, setShowGitHubImport] = React.useState(false);
+  const [showFilterModal, setShowFilterModal] = React.useState(false);
   const [projectToDelete, setProjectToDelete] = React.useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -164,6 +165,7 @@ export const ProjectsPage: React.FC = () => {
             <Button
               variant="secondary"
               icon={<Filter className="h-4 w-4" />}
+              onClick={() => setShowFilterModal(true)}
             >
               Filter
             </Button>
@@ -254,6 +256,21 @@ export const ProjectsPage: React.FC = () => {
           onConfirm={handleConfirmDelete}
           variant="warning"
           isLoading={isDeleting}
+        />
+
+        {/* Filter Modal */}
+        <FilterModal
+          isOpen={showFilterModal}
+          onClose={() => setShowFilterModal(false)}
+          onApply={(filters) => {
+            // Apply filter logic - for now just close
+            // In a full implementation, you could apply more complex filtering
+            setShowFilterModal(false);
+          }}
+          onReset={() => {
+            setFilterType('all');
+            setSearchTerm('');
+          }}
         />
       </div>
     </MainLayout>

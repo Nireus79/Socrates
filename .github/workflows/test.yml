@@ -55,11 +55,14 @@ jobs:
         run: |
           pytest -v --tb=short --strict-markers
 
-      - name: Generate coverage report
+      - name: Generate coverage report (with 80% threshold)
         run: |
-          pip install pytest-cov
+          pip install pytest-cov coverage
           pytest --cov=socratic_system --cov=socrates_cli --cov=socrates_api \
-                  --cov-report=xml --cov-report=term-missing
+                  --cov-report=xml --cov-report=term-missing --cov-fail-under=80 || {
+            echo "Coverage threshold not met! Minimum 80% coverage required."
+            exit 1
+          }
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3

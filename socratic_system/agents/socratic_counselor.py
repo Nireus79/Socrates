@@ -154,6 +154,8 @@ class SocraticCounselorAgent(Agent):
 
         # Get relevant knowledge from vector database with adaptive loading strategy
         relevant_knowledge = ""
+        knowledge_results = []
+        doc_understanding = None
         if context:
             logger.debug("Analyzing question context for adaptive document loading...")
 

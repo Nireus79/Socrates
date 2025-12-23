@@ -512,6 +512,26 @@ class AgentOrchestrator:
             )
             raise
 
+    def _safe_log(self, level: str, message: str):
+        """Safely log messages, suppressing errors during Python shutdown.
+
+        During Python interpreter shutdown, the logging module may be partially
+        deinitialized, causing 'sys.meta_path is None' errors. This method
+        safely handles those cases.
+        """
+        try:
+            if level == "debug":
+                self.logger.debug(message)
+            elif level == "info":
+                self.logger.info(message)
+            elif level == "warning":
+                self.logger.warning(message)
+            elif level == "error":
+                self.logger.error(message)
+        except Exception:
+            # Silently ignore logging errors during shutdown
+            pass
+
     def close(self):
         """Close all database connections and release resources.
 
@@ -523,25 +543,25 @@ class AgentOrchestrator:
             # Close vector database to release ChromaDB file handles
             if hasattr(self, 'vector_db') and self.vector_db is not None:
                 self.vector_db.close()
-                self.logger.info("Vector database closed")
+                self._safe_log("info", "Vector database closed")
         except Exception as e:
-            self.logger.warning(f"Error closing vector database: {e}")
+            self._safe_log("warning", f"Error closing vector database: {e}")
 
         try:
             # Close project database
             if hasattr(self, 'database') and self.database is not None:
                 if hasattr(self.database, 'close'):
                     self.database.close()
-                self.logger.info("Project database closed")
+                self._safe_log("info", "Project database closed")
         except Exception as e:
-            self.logger.warning(f"Error closing project database: {e}")
+            self._safe_log("warning", f"Error closing project database: {e}")
 
         try:
             # Clear agents cache
             self._agents_cache.clear()
-            self.logger.debug("Agents cache cleared")
+            self._safe_log("debug", "Agents cache cleared")
         except Exception as e:
-            self.logger.warning(f"Error clearing agents cache: {e}")
+            self._safe_log("warning", f"Error clearing agents cache: {e}")
 
     def __del__(self):
         """Destructor to ensure cleanup when orchestrator is destroyed."""

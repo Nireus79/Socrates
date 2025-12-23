@@ -12,7 +12,13 @@ from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, HTTPException, status, Depends
 
 from socratic_system.database import ProjectDatabaseV2
-from socrates_api.models import SuccessResponse, ErrorResponse
+from socrates_api.models import (
+    SuccessResponse,
+    ErrorResponse,
+    SetDefaultProviderRequest,
+    SetLLMModelRequest,
+    AddAPIKeyRequest,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/llm", tags=["llm"])
@@ -187,21 +193,22 @@ async def get_llm_config(
     },
 )
 async def set_default_provider(
-    provider: str,
+    request: SetDefaultProviderRequest,
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
     Set the default LLM provider.
 
     Args:
-        provider: Provider name (claude, openai, gemini, local)
+        request: Request body with provider name
         db: Database connection
 
     Returns:
         SuccessResponse confirming provider change
     """
     try:
-        if provider not in ["claude", "openai", "gemini", "local"]:
+        provider = request.provider
+        if provider not in ["claude", "openai", "gemini", "local", "anthropic"]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Unknown provider: {provider}",
@@ -238,22 +245,22 @@ async def set_default_provider(
     },
 )
 async def set_provider_model(
-    provider: str,
-    model: str,
+    request: SetLLMModelRequest,
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
     Set the LLM model for a specific provider.
 
     Args:
-        provider: Provider name
-        model: Model identifier
+        request: Request body with provider and model
         db: Database connection
 
     Returns:
         SuccessResponse confirming model change
     """
     try:
+        provider = request.provider
+        model = request.model
         logger.info(f"Setting {provider} model to {model}")
 
         # TODO: Validate provider and model combination
@@ -275,30 +282,31 @@ async def set_provider_model(
 @router.post(
     "/api-key",
     response_model=SuccessResponse,
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     summary="Add or update API key for provider",
     responses={
-        201: {"description": "API key added"},
+        200: {"description": "API key added"},
         400: {"description": "Invalid provider", "model": ErrorResponse},
     },
 )
 async def add_api_key(
-    provider: str,
-    api_key: str,
+    request: AddAPIKeyRequest,
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
     Add or update API key for an LLM provider.
 
     Args:
-        provider: Provider name
-        api_key: API key (should be encrypted)
+        request: Request body with provider and api_key
         db: Database connection
 
     Returns:
         SuccessResponse confirming API key addition
     """
     try:
+        provider = request.provider
+        api_key = request.api_key
+
         if not api_key or len(api_key.strip()) < 10:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

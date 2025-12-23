@@ -154,13 +154,55 @@ class SearchResultCache:
         count = 0
 
         with self._lock:
-            keys_to_remove = [k for k in self._cache.keys() if f":{project_id}" in k]
+            # Parse cache keys properly: format is "{query}:{top_k}:{project_id}"
+            # A key matches if its project_id component equals the given project_id
+            keys_to_remove = []
+            for key in self._cache.keys():
+                parts = key.rsplit(":", 2)  # Split from right to get last 2 components
+                if len(parts) == 3:
+                    _, _, key_project_id = parts
+                    # Handle None being stored as string "None"
+                    key_project_id_str = str(key_project_id)
+                    if key_project_id_str == str(project_id):
+                        keys_to_remove.append(key)
+
             for key in keys_to_remove:
                 del self._cache[key]
                 count += 1
 
             if count > 0:
                 self._logger.info(f"Invalidated {count} cache entries for project: {project_id}")
+
+        return count
+
+    def invalidate_global_searches(self) -> int:
+        """
+        Invalidate all cache entries for global searches (project_id=None).
+
+        Called when any knowledge is added to ensure global searches see new content.
+
+        Returns:
+            Number of entries invalidated
+        """
+        count = 0
+
+        with self._lock:
+            # Find all cache keys with project_id=None
+            keys_to_remove = []
+            for key in self._cache.keys():
+                parts = key.rsplit(":", 2)  # Split from right to get last 2 components
+                if len(parts) == 3:
+                    _, _, key_project_id = parts
+                    # Check for None - it gets stringified in the key
+                    if key_project_id == "None":
+                        keys_to_remove.append(key)
+
+            for key in keys_to_remove:
+                del self._cache[key]
+                count += 1
+
+            if count > 0:
+                self._logger.debug(f"Invalidated {count} cache entries for global searches")
 
         return count
 

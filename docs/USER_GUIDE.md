@@ -26,7 +26,7 @@ source .venv/bin/activate  # Linux/macOS
 .venv\Scripts\activate     # Windows
 
 # Start the system
-python Socrates.py
+python socrates.py
 ```
 
 You'll see the banner and authentication prompt:

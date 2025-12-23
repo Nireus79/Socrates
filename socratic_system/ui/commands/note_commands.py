@@ -134,7 +134,7 @@ class NoteListCommand(BaseCommand):
 
             if count == 0:
                 self.print_info("No notes found")
-                return self.success()
+                return self.success(data={"notes": [], "count": 0})
 
             title = f"Notes for '{project.name}'"
             if note_type:
@@ -206,7 +206,7 @@ class NoteSearchCommand(BaseCommand):
 
             if count == 0:
                 self.print_info(f"No notes found matching '{query}'")
-                return self.success()
+                return self.success(data={"results": [], "count": 0})
 
             self.print_header(f"Search Results for '{query}'")
 

@@ -1,0 +1,27 @@
+
+
+/subscription testing-mode on/off
+
+  As Library
+
+  import socrates
+  orchestrator = socrates.AgentOrchestrator(socrates.SocratesConfig.from_env())
+
+  As CLI
+
+  python socrates.py                  # Start CLI
+  python socrates.py --api --port 8080  # Start API on port 8080
+              # Development mode (API + Frontend)
+  python socrates.py --help           # Show available options
+
+  - Single socrates.py with full CLI support
+  - Modes:
+    - python socrates.py → CLI (default)
+    - python socrates.py --api → API server only
+    - python socrates.py --full → (API + Frontend)
+    - python socrates.py --frontend → CLI with React frontend
+  - Options: --host, --port, --reload, --version, --help
+  - Result: ✅ Clean, unified interface
+
+
+

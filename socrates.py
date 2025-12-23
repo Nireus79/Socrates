@@ -177,6 +177,7 @@ def start_full_stack() -> None:
     import threading
     import time
     import signal
+    import requests
 
     project_root = Path(__file__).parent
 
@@ -186,21 +187,74 @@ def start_full_stack() -> None:
 
     # Store process references for cleanup
     processes = []
+    api_ready = threading.Event()
+    api_process = None
 
-    def start_api_server():
-        """Start API in background thread"""
+    def start_api_server_process():
+        """Start API in separate subprocess (not thread)"""
+        nonlocal api_process
         try:
-            start_api(host="localhost", port=api_port, reload=True, auto_port=False)
+            # Create subprocess for API server
+            api_process = subprocess.Popen(
+                [sys.executable, "-c", f"""
+import sys
+sys.path.insert(0, r'{project_root}')
+sys.path.insert(0, r'{project_root / "socrates-api" / "src"}')
+import uvicorn
+uvicorn.run(
+    'socrates_api.main:app',
+    host='localhost',
+    port={api_port},
+    reload=False,
+    access_log=True
+)
+"""],
+                cwd=project_root,
+                env=os.environ.copy(),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1
+            )
+
+            # Stream output
+            if api_process.stdout:
+                for line in api_process.stdout:
+                    print(f"[API] {line.rstrip()}")
+
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            print(f"[ERROR] API server failed: {e}")
+            print(f"[ERROR] API server process failed: {e}")
+
+    def wait_for_api(max_retries: int = 30, retry_delay: float = 1.0) -> bool:
+        """Wait for API server to be ready"""
+        print("[INFO] Waiting for API server to be ready...")
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(f"http://localhost:{api_port}/health", timeout=2)
+                if response.status_code == 200:
+                    print("[INFO] API server is ready!")
+                    api_ready.set()
+                    return True
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+                if attempt < max_retries - 1:
+                    print(f"[INFO] API not ready yet, waiting... ({attempt + 1}/{max_retries})")
+                    time.sleep(retry_delay)
+
+        print("[ERROR] API server did not start in time")
+        return False
 
     def start_frontend_server():
         """Start frontend in separate process"""
         frontend_dir = project_root / "socrates-frontend"
         if not frontend_dir.exists():
             print("[ERROR] Frontend directory not found at", frontend_dir)
+            return
+
+        # Wait for API to be ready before starting frontend
+        if not api_ready.wait(timeout=60):
+            print("[ERROR] Frontend startup cancelled: API server failed to start")
             return
 
         try:
@@ -210,7 +264,7 @@ def start_full_stack() -> None:
                 ["npm", "install"],
                 cwd=frontend_dir,
                 check=False,
-                capture_output=False,
+                capture_output=True,
                 shell=True
             )
 
@@ -237,13 +291,28 @@ def start_full_stack() -> None:
     def signal_handler(sig, frame):
         """Handle Ctrl+C gracefully"""
         print("\n[INFO] Shutting down Socrates...")
+
+        # Kill API process
+        if api_process and api_process.poll() is None:
+            try:
+                api_process.terminate()
+                api_process.wait(timeout=5)
+            except Exception:
+                try:
+                    api_process.kill()
+                except Exception:
+                    pass
+
+        # Kill frontend and other processes
         for proc in processes:
             try:
                 proc.terminate()
                 proc.wait(timeout=5)
             except Exception:
-                proc.kill()
-        import sys
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
         sys.exit(0)
 
     # Register signal handler for graceful shutdown
@@ -258,12 +327,13 @@ def start_full_stack() -> None:
     print(f"[INFO] Press Ctrl+C to shutdown")
     print("=" * 70)
 
-    # Start API in non-daemon background thread
-    # Use daemon=False so it properly handles signals
-    api_thread = threading.Thread(target=start_api_server, daemon=False)
+    # Start API in separate subprocess (not thread)
+    api_thread = threading.Thread(target=start_api_server_process, daemon=True)
     api_thread.start()
 
-    time.sleep(2)  # Wait for API to start
+    # Start health check in separate thread
+    health_check_thread = threading.Thread(target=wait_for_api, daemon=True)
+    health_check_thread.start()
 
     # Start frontend (blocks until user interrupts)
     start_frontend_server()

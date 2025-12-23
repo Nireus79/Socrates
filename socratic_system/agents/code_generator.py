@@ -3,8 +3,15 @@ Code generation agent for Socratic RAG System
 """
 
 from typing import Any, Dict
+from pathlib import Path
 
 from socratic_system.models import ProjectContext
+from socratic_system.utils.artifact_saver import ArtifactSaver
+from socratic_system.utils.code_structure_analyzer import CodeStructureAnalyzer
+from socratic_system.utils.multi_file_splitter import (
+    MultiFileCodeSplitter,
+    ProjectStructureGenerator,
+)
 
 from .base import Agent
 
@@ -52,12 +59,113 @@ class CodeGeneratorAgent(Agent):
 
         self.log(f"Generated {artifact_type} for {project.project_type} project '{project.name}'")
 
+        # Auto-save artifact to disk with multi-file organization
+        save_path = None
+        project_root = None
+        try:
+            data_dir = Path(self.orchestrator.config.data_dir)
+
+            # For code artifacts, split into multiple files
+            if artifact_type == "code" and project.project_type == "software":
+                self.log("Organizing code into multi-file structure...")
+
+                # Analyze code structure
+                analyzer = CodeStructureAnalyzer(artifact, language="python")
+                analysis = analyzer.analyze()
+                self.log(
+                    f"Analyzed code: {analysis['class_count']} classes, "
+                    f"{analysis['function_count']} functions"
+                )
+
+                # Split code into organized files
+                splitter = MultiFileCodeSplitter(artifact, language="python", project_type=project.project_type)
+                file_structure = splitter.split()
+
+                # Create complete project structure
+                complete_structure = ProjectStructureGenerator.create_structure(
+                    project.name, file_structure, project.project_type
+                )
+
+                # Save multi-file project
+                success, project_root = ArtifactSaver.save_multi_file_project(
+                    file_structure=complete_structure,
+                    project_id=project.project_id,
+                    project_name=project.name,
+                    data_dir=data_dir,
+                )
+
+                if success:
+                    save_path = project_root
+                    file_count = len(complete_structure)
+                    self.log(
+                        f"Auto-saved {artifact_type} as multi-file project "
+                        f"({file_count} files) to {save_path}"
+                    )
+
+                    # NEW: Also save files to database for knowledge base integration
+                    self.log("Saving generated files to database...")
+                    try:
+                        from socratic_system.database.project_file_manager import ProjectFileManager
+
+                        file_manager = ProjectFileManager(self.orchestrator.database.db_path)
+
+                        # Prepare files for batch insert
+                        files_to_save = []
+                        for file_path, content in complete_structure.items():
+                            language = self._detect_language(file_path)
+                            files_to_save.append(
+                                {
+                                    "path": file_path,
+                                    "content": content,
+                                    "language": language,
+                                    "size": len(content.encode("utf-8")),
+                                }
+                            )
+
+                        # Save all files to database
+                        if files_to_save:
+                            files_saved, save_msg = file_manager.save_files_batch(
+                                project.project_id, files_to_save
+                            )
+                            self.log(save_msg)
+                        else:
+                            self.log("No files to save to database")
+
+                    except Exception as e:
+                        self.log(
+                            f"WARNING: Failed to save generated files to database: {str(e)}"
+                        )
+                        # Don't fail artifact generation if database save fails
+
+                else:
+                    self.log(f"WARNING: Failed to auto-save {artifact_type}")
+
+            else:
+                # For non-code artifacts, save as single file
+                success, save_path = ArtifactSaver.save_artifact(
+                    artifact=artifact,
+                    artifact_type=artifact_type,
+                    project_id=project.project_id,
+                    project_name=project.name,
+                    data_dir=data_dir,
+                    timestamp=True,
+                )
+                if success:
+                    self.log(f"Auto-saved {artifact_type} to {save_path}")
+                else:
+                    self.log(f"WARNING: Failed to auto-save {artifact_type}")
+
+        except Exception as e:
+            self.log(f"WARNING: Error auto-saving artifact: {e}")
+
         return {
             "status": "success",
             "artifact": artifact,
             "artifact_type": artifact_type,
             "script": artifact,  # Legacy compatibility
             "context_used": context,
+            "save_path": save_path,  # Include save path in response
+            "is_multi_file": project_root is not None,  # Indicate if multi-file project
         }
 
     def _generate_documentation(self, request: Dict) -> Dict:
@@ -90,9 +198,29 @@ class CodeGeneratorAgent(Agent):
 
             self.log(f"Generated documentation for {artifact_type}")
 
+            # Auto-save documentation to disk
+            save_path = None
+            try:
+                data_dir = Path(self.orchestrator.config.data_dir)
+                success, save_path = ArtifactSaver.save_artifact(
+                    artifact=documentation,
+                    artifact_type="documentation",
+                    project_id=project.project_id,
+                    project_name=project.name,
+                    data_dir=data_dir,
+                    timestamp=True,
+                )
+                if success:
+                    self.log(f"Auto-saved documentation to {save_path}")
+                else:
+                    self.log(f"WARNING: Failed to auto-save documentation")
+            except Exception as save_err:
+                self.log(f"WARNING: Error auto-saving documentation: {save_err}")
+
             return {
                 "status": "success",
                 "documentation": documentation,
+                "save_path": save_path,  # Include save path in response
             }
         except Exception as e:
             self.log(f"ERROR: Failed to generate documentation: {e}")
@@ -123,3 +251,52 @@ class CodeGeneratorAgent(Agent):
                     context_parts.append(f"- {msg['content']}")
 
         return "\n".join(context_parts)
+
+    def _detect_language(self, file_path: str) -> str:
+        """
+        Detect programming language from file extension.
+
+        Args:
+            file_path: Path to the file as string
+
+        Returns:
+            Language name or 'Unknown' if not recognized
+        """
+        ext_to_lang = {
+            ".py": "Python",
+            ".js": "JavaScript",
+            ".ts": "TypeScript",
+            ".jsx": "JSX",
+            ".tsx": "TSX",
+            ".java": "Java",
+            ".cpp": "C++",
+            ".c": "C",
+            ".cs": "C#",
+            ".rb": "Ruby",
+            ".go": "Go",
+            ".rs": "Rust",
+            ".php": "PHP",
+            ".swift": "Swift",
+            ".kt": "Kotlin",
+            ".scala": "Scala",
+            ".sh": "Shell",
+            ".bash": "Bash",
+            ".sql": "SQL",
+            ".html": "HTML",
+            ".css": "CSS",
+            ".scss": "SCSS",
+            ".less": "Less",
+            ".json": "JSON",
+            ".yaml": "YAML",
+            ".yml": "YAML",
+            ".xml": "XML",
+            ".md": "Markdown",
+            ".rst": "ReStructuredText",
+            ".txt": "Text",
+            ".toml": "TOML",
+            ".ini": "INI",
+            ".cfg": "Config",
+        }
+
+        file_ext = Path(file_path).suffix.lower()
+        return ext_to_lang.get(file_ext, "Unknown")

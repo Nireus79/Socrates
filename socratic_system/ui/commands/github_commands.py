@@ -165,8 +165,88 @@ class GithubPullCommand(BaseCommand):
                         print(f"\n{Fore.CYAN}Pull Output:{Style.RESET_ALL}")
                         print(pull_result["message"][:500])  # Show first 500 chars
 
+                    # NEW: Detect and sync file changes
+                    print(f"\n{Fore.CYAN}Detecting file changes...{Style.RESET_ALL}")
+                    try:
+                        from pathlib import Path
+                        from socratic_system.utils.file_change_tracker import FileChangeTracker
+                        from socratic_system.database.project_file_manager import ProjectFileManager
+
+                        # Read current files from cloned repository
+                        current_files = []
+                        for file_path in Path(temp_path).rglob("*"):
+                            if file_path.is_file() and self._should_save_file(
+                                file_path, temp_path
+                            ):
+                                try:
+                                    content = file_path.read_text(
+                                        encoding="utf-8", errors="ignore"
+                                    )
+                                    language = self._detect_language(str(file_path))
+                                    rel_path = file_path.relative_to(temp_path).as_posix()
+
+                                    current_files.append(
+                                        {
+                                            "file_path": rel_path,
+                                            "content": content,
+                                            "language": language,
+                                        }
+                                    )
+                                except Exception as e:
+                                    self.logger.warning(
+                                        f"Could not read file {file_path}: {str(e)}"
+                                    )
+
+                        # Get stored files from database
+                        file_manager = ProjectFileManager(orchestrator.database.db_path)
+                        stored_files = file_manager.get_project_files(
+                            project.project_id, limit=1000
+                        )
+
+                        # Detect changes
+                        tracker = FileChangeTracker()
+                        sync_result = tracker.sync_changes(
+                            project.project_id,
+                            current_files,
+                            stored_files,
+                            orchestrator=orchestrator,
+                            database=orchestrator.database,
+                        )
+
+                        # Show change summary
+                        if sync_result["status"] == "success":
+                            summary = sync_result["summary"]
+                            added_count = len(summary.get("added", []))
+                            modified_count = len(summary.get("modified", []))
+                            deleted_count = len(summary.get("deleted", []))
+
+                            if added_count + modified_count + deleted_count > 0:
+                                print(f"\n{Fore.CYAN}Files Updated:{Style.RESET_ALL}")
+                                if added_count > 0:
+                                    print(
+                                        f"  {Fore.GREEN}+{added_count} added{Style.RESET_ALL}"
+                                    )
+                                if modified_count > 0:
+                                    print(
+                                        f"  {Fore.YELLOW}~{modified_count} modified{Style.RESET_ALL}"
+                                    )
+                                if deleted_count > 0:
+                                    print(
+                                        f"  {Fore.RED}-{deleted_count} deleted{Style.RESET_ALL}"
+                                    )
+                            else:
+                                print(
+                                    f"\n{Fore.YELLOW}No file changes detected{Style.RESET_ALL}"
+                                )
+
+                    except Exception as e:
+                        self.logger.warning(
+                            f"Error syncing file changes: {str(e)}"
+                        )
+                        print(f"{Fore.YELLOW}Warning: Could not sync file changes: {str(e)}{Style.RESET_ALL}")
+
                     # Get diff to show what changed
-                    print(f"\n{Fore.CYAN}Changes Summary:{Style.RESET_ALL}")
+                    print(f"\n{Fore.CYAN}Git Diff Summary:{Style.RESET_ALL}")
                     diff = git_manager.get_git_diff(temp_path)
                     if diff and diff != "No differences":
                         lines = diff.split("\n")[:20]  # Show first 20 lines
@@ -175,7 +255,7 @@ class GithubPullCommand(BaseCommand):
                         if len(diff.split("\n")) > 20:
                             print(f"{Fore.YELLOW}... (use 'git diff' for full details){Style.RESET_ALL}")
                     else:
-                        print(f"{Fore.YELLOW}No changes in working directory{Style.RESET_ALL}")
+                        print(f"{Fore.YELLOW}No git diff changes{Style.RESET_ALL}")
 
                     print(f"\n{Fore.GREEN}[OK] Pull completed successfully{Style.RESET_ALL}")
                     return self.success(data={"pull_result": pull_result})
@@ -188,6 +268,108 @@ class GithubPullCommand(BaseCommand):
         except Exception as e:
             self.print_error(f"Pull error: {str(e)}")
             return self.error(f"Pull error: {str(e)}")
+
+    def _should_save_file(self, file_path, repo_root: str) -> bool:
+        """Filter out binaries, large files, and generated code"""
+        from pathlib import Path
+
+        SKIP_EXTENSIONS = {
+            ".pyc",
+            ".pyo",
+            ".so",
+            ".exe",
+            ".dll",
+            ".bin",
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
+            ".svg",
+            ".ico",
+            ".mp3",
+            ".mp4",
+            ".avi",
+            ".mov",
+            ".zip",
+            ".tar",
+            ".gz",
+            ".7z",
+            ".rar",
+        }
+
+        SKIP_DIRS = {
+            "node_modules",
+            ".git",
+            "__pycache__",
+            ".venv",
+            ".env",
+            "dist",
+            "build",
+            ".egg-info",
+            ".pytest_cache",
+            ".tox",
+            ".coverage",
+            "htmlcov",
+        }
+
+        for part in file_path.parts:
+            if part in SKIP_DIRS:
+                return False
+
+        if file_path.suffix.lower() in SKIP_EXTENSIONS:
+            return False
+
+        try:
+            size = file_path.stat().st_size
+            if size > 5 * 1024 * 1024:  # 5MB limit
+                return False
+        except Exception:
+            return False
+
+        return True
+
+    def _detect_language(self, file_path: str) -> str:
+        """Detect programming language from file extension"""
+        from pathlib import Path
+
+        ext_to_lang = {
+            ".py": "Python",
+            ".js": "JavaScript",
+            ".ts": "TypeScript",
+            ".jsx": "JSX",
+            ".tsx": "TSX",
+            ".java": "Java",
+            ".cpp": "C++",
+            ".c": "C",
+            ".cs": "C#",
+            ".rb": "Ruby",
+            ".go": "Go",
+            ".rs": "Rust",
+            ".php": "PHP",
+            ".swift": "Swift",
+            ".kt": "Kotlin",
+            ".scala": "Scala",
+            ".sh": "Shell",
+            ".bash": "Bash",
+            ".sql": "SQL",
+            ".html": "HTML",
+            ".css": "CSS",
+            ".scss": "SCSS",
+            ".less": "Less",
+            ".json": "JSON",
+            ".yaml": "YAML",
+            ".yml": "YAML",
+            ".xml": "XML",
+            ".md": "Markdown",
+            ".rst": "ReStructuredText",
+            ".txt": "Text",
+            ".toml": "TOML",
+            ".ini": "INI",
+            ".cfg": "Config",
+        }
+
+        file_ext = Path(file_path).suffix.lower()
+        return ext_to_lang.get(file_ext, "Unknown")
 
 
 class GithubPushCommand(BaseCommand):

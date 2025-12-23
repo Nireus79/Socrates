@@ -353,6 +353,9 @@ If you don't have enough information, say so."""
 
         self._print_session_header(project)
 
+        # NEW: Auto-load project files into knowledge base
+        self._auto_load_project_files(project, orchestrator)
+
         session_active = True
         while session_active:
             if project.chat_mode == "socratic":
@@ -451,6 +454,48 @@ If you don't have enough information, say so."""
             response, orchestrator, project, user, mode="direct", session_context="in_session"
         )
         return True
+
+    def _auto_load_project_files(self, project, orchestrator) -> None:
+        """
+        Auto-load project files into knowledge base when entering chat
+
+        Args:
+            project: Project context
+            orchestrator: Orchestrator instance
+        """
+        try:
+            from socratic_system.agents.project_file_loader import ProjectFileLoader
+
+            loader = ProjectFileLoader(orchestrator)
+
+            # Check if project has files to load
+            if not loader.should_load_files(project):
+                return  # No files to load, silently skip
+
+            # Load files into knowledge base
+            self.print_info("Loading project code files into knowledge base...")
+
+            result = loader.load_project_files(
+                project=project, strategy="priority", max_files=50, show_progress=True
+            )
+
+            if result.get("status") == "success":
+                files_loaded = result.get("files_loaded", 0)
+                chunks = result.get("total_chunks", 0)
+                if files_loaded > 0:
+                    self.print_success(
+                        f"✓ Loaded {files_loaded} files ({chunks} chunks) into knowledge base"
+                    )
+                else:
+                    self.print_info("Files were already loaded in knowledge base")
+            else:
+                self.print_warning(
+                    f"Could not load project files: {result.get('message', 'Unknown error')}"
+                )
+
+        except Exception as e:
+            self.print_warning(f"Error auto-loading project files: {str(e)}")
+            # Don't fail chat session if file loading fails
 
 
 class DoneCommand(BaseCommand):

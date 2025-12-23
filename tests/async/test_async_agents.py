@@ -22,7 +22,9 @@ from socratic_system.models.user import User
 async def orchestrator():
     """Create orchestrator with temp database."""
     import gc
-    with tempfile.TemporaryDirectory() as tmpdir:
+    import time
+    tmpdir = tempfile.mkdtemp()
+    try:
         config = SocratesConfig(
             api_key="test-key",
             projects_db_path=os.path.join(tmpdir, "projects.db"),
@@ -30,14 +32,33 @@ async def orchestrator():
         )
         orch = AgentOrchestrator(config)
         yield orch
-        # Properly close orchestrator before temp directory is deleted
-        # This is critical on Windows to release ChromaDB file handles
+
+        # Properly close orchestrator and release resources
         try:
-            orch.close()
+            # Close the vector database client if it exists
+            if hasattr(orch, 'vector_db') and orch.vector_db:
+                try:
+                    if hasattr(orch.vector_db, '_client'):
+                        orch.vector_db._client = None
+                except Exception:
+                    pass
+
+            # Close orchestrator
+            if hasattr(orch, 'close'):
+                orch.close()
         except Exception:
             pass
-        # Force garbage collection to release remaining file handles
+
+        # Force garbage collection to release file handles
         gc.collect()
+        time.sleep(0.1)  # Brief delay to ensure files are released on Windows
+    finally:
+        # Clean up temp directory manually with error handling for Windows file locking
+        import shutil
+        try:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+        except Exception:
+            pass
 
 
 @pytest.fixture
@@ -155,13 +176,13 @@ class TestAsyncDatabase:
 
     @pytest.mark.asyncio
     async def test_async_project_load_and_save(self, orchestrator, sample_project):
-        """Test async project persistence."""
-        # Save
-        result = await orchestrator.database.save_project(sample_project)
+        """Test project persistence in async context."""
+        # Save (orchestrator database is synchronous)
+        result = orchestrator.database.save_project(sample_project)
         assert result is True
 
         # Load
-        loaded = await orchestrator.database.load_project(sample_project.project_id)
+        loaded = orchestrator.database.load_project(sample_project.project_id)
         assert loaded is not None
         assert loaded.name == sample_project.name
 
@@ -178,10 +199,10 @@ class TestAsyncDatabase:
                 created_at=datetime.now(),
                 updated_at=datetime.now(),
             )
-            await orchestrator.database.save_project(project)
+            orchestrator.database.save_project(project)
 
         # Retrieve
-        projects = await orchestrator.database.get_user_projects("testuser")
+        projects = orchestrator.database.get_user_projects("testuser")
         assert len(projects) == 5
         assert all(p.owner == "testuser" for p in projects)
 
@@ -192,7 +213,7 @@ class TestAsyncOrchestrator:
     @pytest.mark.asyncio
     async def test_orchestrator_async_request_processing(self, orchestrator, sample_project):
         """Test async request routing through orchestrator."""
-        await orchestrator.database.save_project(sample_project)
+        orchestrator.database.save_project(sample_project)
 
         request = {
             "action": "generate_question",
@@ -214,10 +235,10 @@ class TestAsyncOrchestrator:
     @pytest.mark.asyncio
     async def test_concurrent_async_requests(self, orchestrator, sample_project):
         """Test multiple concurrent async requests."""
-        await orchestrator.database.save_project(sample_project)
+        orchestrator.database.save_project(sample_project)
 
         async def make_request(project_id):
-            return await orchestrator.database.load_project(project_id)
+            return orchestrator.database.load_project(project_id)
 
         # Make 5 concurrent requests
         tasks = [make_request(sample_project.project_id) for _ in range(5)]
@@ -306,7 +327,7 @@ class TestAsyncConnectionPooling:
                 created_at=datetime.now(),
                 updated_at=datetime.now(),
             )
-            success = await orchestrator.database.save_project(project)
+            success = orchestrator.database.save_project(project)
             return success
 
         # Concurrent saves
@@ -316,7 +337,7 @@ class TestAsyncConnectionPooling:
         assert all(results)
 
         # Verify all saved
-        saved_projects = await orchestrator.database.get_user_projects("pooluser")
+        saved_projects = orchestrator.database.get_user_projects("pooluser")
         assert len(saved_projects) == 10
 
     @pytest.mark.asyncio
@@ -331,8 +352,8 @@ class TestAsyncConnectionPooling:
                 created_at=datetime.now(),
                 updated_at=datetime.now(),
             )
-            await orchestrator.database.save_project(project)
-            loaded = await orchestrator.database.load_project(f"stress_{idx}")
+            orchestrator.database.save_project(project)
+            loaded = orchestrator.database.load_project(f"stress_{idx}")
             return loaded is not None
 
         tasks = [operation(i) for i in range(20)]
@@ -350,7 +371,7 @@ class TestAsyncErrorHandling:
     async def test_async_database_error_handling(self, orchestrator):
         """Test database error handling in async context."""
         # Try to load non-existent project
-        result = await orchestrator.database.load_project("nonexistent")
+        result = orchestrator.database.load_project("nonexistent")
         assert result is None
 
     @pytest.mark.asyncio

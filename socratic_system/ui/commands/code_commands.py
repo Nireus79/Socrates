@@ -1,10 +1,12 @@
 """Code generation and documentation commands"""
 
 from typing import Any, Dict, List
+from pathlib import Path
 
 from colorama import Fore, Style
 
 from socratic_system.ui.commands.base import BaseCommand
+from socratic_system.utils.artifact_saver import ArtifactSaver
 
 
 class CodeGenerateCommand(BaseCommand):
@@ -36,10 +38,32 @@ class CodeGenerateCommand(BaseCommand):
 
         if result["status"] == "success":
             script = result["script"]
+            save_path = result.get("save_path")
+            is_multi_file = result.get("is_multi_file", False)
+
             self.print_success("Code Generated Successfully!")
-            print(f"\n{Fore.YELLOW}{'=' * 60}")
-            print(f"{Fore.WHITE}{script}")
-            print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}\n")
+
+            if is_multi_file:
+                # For multi-file projects, show structure instead of raw code
+                print(ArtifactSaver.get_save_location_message(save_path))
+                print(f"\n{Fore.CYAN}Project Structure:{Style.RESET_ALL}")
+                tree = ArtifactSaver.get_project_structure_tree(save_path)
+                print(tree)
+
+                # Show file summary
+                files = ArtifactSaver.list_project_files(save_path)
+                print(
+                    f"\n{Fore.GREEN}Total files:{Style.RESET_ALL} {len(files)} files created"
+                )
+            else:
+                # For single-file, show the code
+                print(f"\n{Fore.YELLOW}{'=' * 60}")
+                print(f"{Fore.WHITE}{script}")
+                print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}")
+
+                # Show save location
+                if save_path:
+                    print(ArtifactSaver.get_save_location_message(save_path))
 
             # Ask if user wants documentation
             doc_choice = input(f"{Fore.CYAN}Generate documentation? (y/n): ").lower()
@@ -50,12 +74,18 @@ class CodeGenerateCommand(BaseCommand):
                 )
 
                 if doc_result["status"] == "success":
+                    doc_save_path = doc_result.get("save_path")
+
                     self.print_success("Documentation Generated!")
                     print(f"\n{Fore.YELLOW}{'=' * 60}")
                     print(f"{Fore.WHITE}{doc_result['documentation']}")
-                    print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}\n")
+                    print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}")
 
-            return self.success(data={"script": script})
+                    # Show save location
+                    if doc_save_path:
+                        print(ArtifactSaver.get_save_location_message(doc_save_path))
+
+            return self.success(data={"script": script, "save_path": save_path})
         else:
             return self.error(result.get("message", "Failed to generate code"))
 
@@ -98,12 +128,20 @@ class CodeDocsCommand(BaseCommand):
             )
 
             if doc_result["status"] == "success":
+                doc_save_path = doc_result.get("save_path")
+
                 self.print_success("Documentation Generated Successfully!")
                 print(f"\n{Fore.YELLOW}{'=' * 60}")
                 print(f"{Fore.WHITE}{doc_result['documentation']}")
-                print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}\n")
+                print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}")
 
-                return self.success(data={"documentation": doc_result["documentation"]})
+                # Show save location
+                if doc_save_path:
+                    print(ArtifactSaver.get_save_location_message(doc_save_path))
+
+                return self.success(
+                    data={"documentation": doc_result["documentation"], "save_path": doc_save_path}
+                )
             else:
                 return self.error(doc_result.get("message", "Failed to generate documentation"))
         else:

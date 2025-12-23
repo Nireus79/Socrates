@@ -42,6 +42,7 @@ class LLMCommand(BaseCommand):
             "use": lambda: self._set_model(args, orchestrator, user),
             "models": lambda: self._show_models(args, orchestrator),
             "key": lambda: self._manage_key(args, orchestrator, user),
+            "auth-method": lambda: self._set_auth_method(args, orchestrator, user),
             "stats": lambda: self._show_stats(args, orchestrator, user),
             "help": lambda: self._show_help(),
         }
@@ -56,14 +57,15 @@ class LLMCommand(BaseCommand):
 {Fore.CYAN}LLM Provider Management{Style.RESET_ALL}
 
 {Fore.WHITE}Subcommands:{Style.RESET_ALL}
-  {Fore.GREEN}list{Style.RESET_ALL}            List all available LLM providers
-  {Fore.GREEN}config{Style.RESET_ALL}          Show your current provider configuration
-  {Fore.GREEN}set{Style.RESET_ALL} <provider>  Set default provider (claude, openai, gemini, ollama)
+  {Fore.GREEN}list{Style.RESET_ALL}                 List all available LLM providers
+  {Fore.GREEN}config{Style.RESET_ALL}               Show your current provider configuration
+  {Fore.GREEN}set{Style.RESET_ALL} <provider>       Set default provider (claude, openai, gemini, ollama)
   {Fore.GREEN}use{Style.RESET_ALL} <provider> <model> Set model to use for a provider
-  {Fore.GREEN}models{Style.RESET_ALL} <provider> Show available models for a provider
-  {Fore.GREEN}key{Style.RESET_ALL}             Manage API keys (add, remove, list)
-  {Fore.GREEN}stats{Style.RESET_ALL}           Show usage statistics and costs
-  {Fore.GREEN}help{Style.RESET_ALL}            Show this help message
+  {Fore.GREEN}models{Style.RESET_ALL} <provider>    Show available models for a provider
+  {Fore.GREEN}key{Style.RESET_ALL}                  Manage API keys (add, remove, list)
+  {Fore.GREEN}auth-method{Style.RESET_ALL} <type>  Set Claude auth method (api_key or subscription)
+  {Fore.GREEN}stats{Style.RESET_ALL}                Show usage statistics and costs
+  {Fore.GREEN}help{Style.RESET_ALL}                 Show this help message
 
 {Fore.WHITE}Examples:{Style.RESET_ALL}
   /llm list                                - List all providers
@@ -73,6 +75,8 @@ class LLMCommand(BaseCommand):
   /llm models openai                       - Show OpenAI models
   /llm use openai gpt-4o                   - Use GPT-4o for OpenAI
   /llm key add openai <key>                - Add OpenAI API key
+  /llm auth-method subscription            - Use Claude subscription tokens
+  /llm auth-method api_key                 - Use Claude API key
   /llm stats                               - Show usage stats (last 30 days)
   /llm stats openai 7                      - Show OpenAI stats (last 7 days)
 """
@@ -322,6 +326,62 @@ class LLMCommand(BaseCommand):
                 "total_cost": total_cost,
                 "by_provider": by_provider,
             }
+        )
+
+    def _set_auth_method(
+        self, args: List[str], orchestrator, user
+    ) -> Dict[str, Any]:
+        """Set Claude authentication method (api_key or subscription)"""
+        if not args:
+            print(f"\n{Fore.CYAN}Claude Authentication Methods{Style.RESET_ALL}\n")
+            print(f"Current method: {Fore.WHITE}{user.claude_auth_method}{Style.RESET_ALL}\n")
+            print(f"{Fore.WHITE}Available methods:{Style.RESET_ALL}")
+            print(f"  {Fore.GREEN}api_key{Style.RESET_ALL}       - Use Anthropic API key (default)")
+            print(f"                    Set: {Fore.YELLOW}export ANTHROPIC_API_KEY=sk-...{Style.RESET_ALL}")
+            print(f"  {Fore.GREEN}subscription{Style.RESET_ALL}   - Use Claude subscription tokens")
+            print(f"                    Set: {Fore.YELLOW}export ANTHROPIC_SUBSCRIPTION_TOKEN=...{Style.RESET_ALL}\n")
+            print(f"{Fore.WHITE}Usage:{Style.RESET_ALL}")
+            print(f"  /llm auth-method api_key")
+            print(f"  /llm auth-method subscription\n")
+            return self.success(message="Auth method information displayed")
+
+        auth_method = args[0].lower()
+
+        # Validate auth method
+        valid_methods = ["api_key", "subscription"]
+        if auth_method not in valid_methods:
+            return self.error(
+                f"Invalid auth method: {auth_method}\n"
+                f"Valid options: {', '.join(valid_methods)}"
+            )
+
+        # Check if required env var is set
+        if auth_method == "subscription":
+            import os
+            if not os.getenv("ANTHROPIC_SUBSCRIPTION_TOKEN"):
+                return self.error(
+                    "Subscription token not configured.\n"
+                    f"{Fore.YELLOW}Please set: export ANTHROPIC_SUBSCRIPTION_TOKEN=<your-token>{Style.RESET_ALL}"
+                )
+        else:  # api_key
+            import os
+            api_key = os.getenv("ANTHROPIC_API_KEY", os.getenv("API_KEY_CLAUDE"))
+            if not api_key:
+                return self.error(
+                    "API key not configured.\n"
+                    f"{Fore.YELLOW}Please set: export ANTHROPIC_API_KEY=sk-...{Style.RESET_ALL}"
+                )
+
+        # Update user preference
+        user.claude_auth_method = auth_method
+        orchestrator.database.save_user(user)
+
+        print(f"\n{Fore.GREEN}Success!{Style.RESET_ALL}")
+        print(f"Claude authentication method set to: {Fore.WHITE}{auth_method}{Style.RESET_ALL}\n")
+
+        return self.success(
+            message=f"Auth method changed to {auth_method}",
+            data={"auth_method": auth_method}
         )
 
     # Utility methods from base

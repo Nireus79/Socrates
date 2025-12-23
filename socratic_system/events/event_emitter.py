@@ -1,7 +1,10 @@
 """
 Event emitter system for Socrates - Thread-safe event publishing and subscription
+
+Supports both synchronous and asynchronous event listeners for concurrent event handling.
 """
 
+import asyncio
 import logging
 import threading
 from datetime import datetime
@@ -178,3 +181,126 @@ class EventEmitter:
         total = self.listener_count()
         event_names = len(self.get_event_names())
         return f"<EventEmitter with {total} listener(s) on {event_names} event type(s)>"
+
+    # =====================================================================
+    # PHASE 2: ASYNC EVENT EMITTER SUPPORT
+    # =====================================================================
+
+    async def emit_async(
+        self,
+        event_type: EventType,
+        data: Optional[Dict[str, Any]] = None,
+        skip_logging: bool = False,
+    ) -> None:
+        """
+        Emit an event to all registered listeners asynchronously.
+
+        Enables concurrent execution of async event listeners without blocking.
+        Sync listeners are executed in a thread pool to prevent blocking.
+
+        Args:
+            event_type: The type of event to emit
+            data: Optional dictionary of data to pass to listeners
+            skip_logging: If True, skip logging this event
+
+        Example:
+            >>> await emitter.emit_async(
+            ...     EventType.PROJECT_CREATED,
+            ...     {"project_id": "123", "name": "My Project"}
+            ... )
+        """
+        if data is None:
+            data = {}
+
+        # Handle both EventType enum and string event types
+        event_name = event_type.value if isinstance(event_type, EventType) else str(event_type)
+
+        # Add timestamp if not already present
+        if "timestamp" not in data:
+            data["timestamp"] = datetime.now().isoformat()
+
+        # Log to Python logger (unless skipped)
+        if not skip_logging:
+            self._logger.debug(f"Event (async): {event_name} - {data}")
+
+        # Get listeners copy (thread-safe)
+        with self._lock:
+            listeners = self._listeners.get(event_type, []).copy()
+
+        # Execute all listeners concurrently
+        tasks = []
+        for callback in listeners:
+            if asyncio.iscoroutinefunction(callback):
+                # Async callback - add to tasks
+                tasks.append(self._execute_async_callback(callback, event_name, data))
+            else:
+                # Sync callback - run in thread pool to avoid blocking
+                tasks.append(self._execute_sync_callback_async(callback, event_name, data))
+
+        # Wait for all callbacks (with exception handling)
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    async def _execute_async_callback(
+        self, callback: Callable, event_name: str, data: Dict[str, Any]
+    ) -> None:
+        """Execute an async callback safely."""
+        try:
+            await callback(data)
+        except Exception as e:
+            self._logger.error(f"Error in async event listener for {event_name}: {e}", exc_info=e)
+
+    async def _execute_sync_callback_async(
+        self, callback: Callable, event_name: str, data: Dict[str, Any]
+    ) -> None:
+        """Execute a sync callback in an async context via thread pool."""
+        try:
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(None, callback, data)
+        except Exception as e:
+            self._logger.error(f"Error in sync event listener (async) for {event_name}: {e}", exc_info=e)
+
+    def on_async(self, event_type: EventType, callback: Callable) -> None:
+        """
+        Register an async event listener for a specific event type.
+
+        Works the same as `on()` but allows the callback to be an async function.
+
+        Args:
+            event_type: The type of event to listen for
+            callback: An async callable that will be invoked with the event data
+
+        Example:
+            >>> async def handle_code_generated(data):
+            ...     await process_code(data['code'])
+            >>>
+            >>> emitter.on_async(EventType.CODE_GENERATED, handle_code_generated)
+        """
+        # Async listeners are stored the same way, just wrapped appropriately
+        self.on(event_type, callback)
+
+    async def once_async(self, event_type: EventType, callback: Callable) -> None:
+        """
+        Register a one-time async event listener that will be removed after first invocation.
+
+        Args:
+            event_type: The type of event to listen for
+            callback: An async callable that will be invoked once
+
+        Example:
+            >>> async def handle_startup(data):
+            ...     await initialize()
+            >>>
+            >>> await emitter.once_async(EventType.SYSTEM_INITIALIZED, handle_startup)
+        """
+
+        async def wrapper(data):
+            try:
+                if asyncio.iscoroutinefunction(callback):
+                    await callback(data)
+                else:
+                    callback(data)
+            finally:
+                self.remove_listener(event_type, wrapper)
+
+        self.on(event_type, wrapper)

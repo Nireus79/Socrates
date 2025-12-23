@@ -1,11 +1,13 @@
 """
 Document processing for importing files into projects
-Extracts content from PDFs, text files, and code files, then stores in vector database
+Extracts content from PDFs, text files, code files, pasted text, and web pages
 """
 
 import os
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
+from datetime import datetime
 
 from socratic_system.parsers import CodeParser
 from socratic_system.utils.logger import get_logger
@@ -28,6 +30,10 @@ class DocumentProcessorAgent(Agent):
             return self._import_file(request)
         elif action == "import_directory":
             return self._import_directory(request)
+        elif action == "import_text":
+            return self._import_text(request)
+        elif action == "import_url":
+            return self._import_url(request)
         elif action == "list_documents":
             return self._list_documents(request)
 
@@ -183,6 +189,203 @@ class DocumentProcessorAgent(Agent):
             "total_entries_stored": total_entries,
             "imported": True,
         }
+
+    def _import_text(self, request: Dict) -> Dict:
+        """Import pasted or inline text into the knowledge base"""
+        text_content = request.get("text_content")
+        project_id = request.get("project_id")
+        title = request.get("title", "pasted_text")
+
+        if not text_content:
+            return {"status": "error", "message": "Text content required"}
+
+        try:
+            file_name = f"{title}.txt"
+            self.logger.info(f"Processing pasted text: {file_name}")
+
+            # Count words
+            word_count = len(text_content.split())
+            self.logger.debug(f"Extracted {word_count} words from pasted text")
+
+            # Chunk content
+            chunks = self._chunk_content(text_content, chunk_size=500, overlap=50)
+            self.logger.info(f"Created {len(chunks)} chunks from pasted text")
+
+            # Store in vector database
+            entries_added = 0
+            if self.orchestrator and self.orchestrator.vector_db:
+                for i, chunk in enumerate(chunks):
+                    try:
+                        self.orchestrator.vector_db.add_text(
+                            chunk,
+                            metadata={
+                                "source": file_name,
+                                "source_type": "pasted_text",
+                                "chunk": i + 1,
+                                "total_chunks": len(chunks),
+                                "project_id": project_id,
+                                "imported_at": datetime.now().isoformat(),
+                            },
+                        )
+                        entries_added += 1
+                    except Exception as e:
+                        self.logger.warning(f"Failed to add chunk {i+1}: {e}")
+
+            self.logger.info(f"Stored {entries_added} chunks to vector database from pasted text")
+
+            return {
+                "status": "success",
+                "file_name": file_name,
+                "source_type": "pasted_text",
+                "project_id": project_id,
+                "words_extracted": word_count,
+                "chunks_created": len(chunks),
+                "entries_added": entries_added,
+                "imported": True,
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error importing pasted text: {e}", e)
+            return {"status": "error", "message": f"Failed to import text: {str(e)}"}
+
+    def _import_url(self, request: Dict) -> Dict:
+        """Import content from a web page URL"""
+        url = request.get("url")
+        project_id = request.get("project_id")
+
+        if not url:
+            return {"status": "error", "message": "URL required"}
+
+        try:
+            self.logger.info(f"Processing URL: {url}")
+
+            # Fetch URL content
+            content = self._fetch_url_content(url)
+            if not content:
+                return {"status": "error", "message": f"Could not extract content from {url}"}
+
+            # Extract domain name for file name
+            parsed_url = urlparse(url)
+            domain = parsed_url.netloc.replace("www.", "")
+            file_name = f"web_{domain}.txt"
+
+            # Count words
+            word_count = len(content.split())
+            self.logger.debug(f"Extracted {word_count} words from {url}")
+
+            # Chunk content
+            chunks = self._chunk_content(content, chunk_size=500, overlap=50)
+            self.logger.info(f"Created {len(chunks)} chunks from {url}")
+
+            # Store in vector database
+            entries_added = 0
+            if self.orchestrator and self.orchestrator.vector_db:
+                for i, chunk in enumerate(chunks):
+                    try:
+                        self.orchestrator.vector_db.add_text(
+                            chunk,
+                            metadata={
+                                "source": file_name,
+                                "source_type": "web_page",
+                                "url": url,
+                                "domain": domain,
+                                "chunk": i + 1,
+                                "total_chunks": len(chunks),
+                                "project_id": project_id,
+                                "imported_at": datetime.now().isoformat(),
+                            },
+                        )
+                        entries_added += 1
+                    except Exception as e:
+                        self.logger.warning(f"Failed to add chunk {i+1}: {e}")
+
+            self.logger.info(f"Stored {entries_added} chunks to vector database from {url}")
+
+            return {
+                "status": "success",
+                "file_name": file_name,
+                "source_type": "web_page",
+                "url": url,
+                "domain": domain,
+                "project_id": project_id,
+                "words_extracted": word_count,
+                "chunks_created": len(chunks),
+                "entries_added": entries_added,
+                "imported": True,
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error importing URL {url}: {e}", e)
+            return {"status": "error", "message": f"Failed to import URL: {str(e)}"}
+
+    def _fetch_url_content(self, url: str) -> Optional[str]:
+        """Fetch and extract text content from a URL"""
+        try:
+            import urllib.request
+            import urllib.error
+            from html.parser import HTMLParser
+
+            # Set a user agent to avoid being blocked
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            req = urllib.request.Request(url, headers=headers)
+
+            # Fetch the URL with timeout
+            with urllib.request.urlopen(req, timeout=10) as response:
+                html_content = response.read().decode('utf-8', errors='ignore')
+
+            # Extract text from HTML
+            text_content = self._extract_text_from_html(html_content)
+
+            return text_content.strip() if text_content else None
+
+        except urllib.error.URLError as e:
+            self.logger.error(f"URL fetch error: {e}")
+            return None
+        except Exception as e:
+            self.logger.error(f"Error fetching URL: {e}")
+            return None
+
+    def _extract_text_from_html(self, html_content: str) -> str:
+        """Extract plain text from HTML content"""
+        try:
+            from html.parser import HTMLParser
+
+            class TextExtractor(HTMLParser):
+                def __init__(self):
+                    super().__init__()
+                    self.text_parts = []
+                    self.skip_tags = {'script', 'style', 'nav', 'footer', 'header'}
+                    self.current_tag = None
+
+                def handle_starttag(self, tag, attrs):
+                    self.current_tag = tag
+
+                def handle_endtag(self, tag):
+                    if tag in {'p', 'div', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'}:
+                        self.text_parts.append('\n')
+                    self.current_tag = None
+
+                def handle_data(self, data):
+                    if self.current_tag not in self.skip_tags:
+                        text = data.strip()
+                        if text:
+                            self.text_parts.append(text)
+
+            extractor = TextExtractor()
+            extractor.feed(html_content)
+
+            # Clean up the extracted text
+            text = ' '.join(extractor.text_parts)
+            # Remove extra whitespace
+            text = re.sub(r'\s+', ' ', text)
+            return text
+
+        except Exception as e:
+            self.logger.warning(f"Error extracting text from HTML: {e}")
+            # Fallback: just remove HTML tags
+            return re.sub(r'<[^>]+>', '', html_content)
 
     def _list_documents(self, request: Dict) -> Dict:
         """List imported documents (from metadata)"""

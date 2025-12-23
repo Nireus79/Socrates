@@ -4,7 +4,6 @@ Comprehensive tests for Embedding Cache (Phase 3)
 Tests LRU cache for text embeddings with memory tracking.
 """
 
-import pytest
 from socratic_system.database.embedding_cache import EmbeddingCache
 
 

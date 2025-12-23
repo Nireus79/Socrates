@@ -8,11 +8,11 @@ python-dateutil>=2.8.0
 asyncio>=3.4.3
 
 [dev]
-pytest>=10.0.0
+pytest>=9.0.0
 pytest-asyncio>=0.24.0
 pytest-cov>=5.0.0
 black>=24.0
-ruff>=0.5.0
+ruff>=0.4.0
 mypy>=1.8.0
 isort>=5.13.0
 

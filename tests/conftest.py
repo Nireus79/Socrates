@@ -218,6 +218,7 @@ def sample_user():
 
     user = User(
         username="testuser",
+        email="testuser@example.com",
         passcode_hash="hash123",
         created_at=datetime.datetime.now(),
         projects=["test-proj-123"],
@@ -236,6 +237,7 @@ def pro_user():
 
     user = User(
         username="prouser",
+        email="prouser@example.com",
         passcode_hash="hash123",
         created_at=datetime.datetime.now(),
         projects=["pro-proj-001"],

@@ -1,0 +1,196 @@
+STDOUT:
+============================= test session starts =============================
+platform win32 -- Python 3.12.3, pytest-9.0.1, pluggy-1.6.0 -- C:\Users\themi\PycharmProjects\Seagull_2\.venv\Scripts\python.exe
+rootdir: C:\Users\themi\PycharmProjects\Socrates\tests
+configfile: pytest.ini
+plugins: anyio-4.12.0, asyncio-1.3.0, cov-7.0.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 1153 items
+
+tests\agents\test_agent_process_methods.py::TestSocraticCounselorAgent::test_agent_initialization PASSED [  0%]
+tests\agents\test_agent_process_methods.py::TestSocraticCounselorAgent::test_process_generate_question PASSED [  0%]
+tests\agents\test_agent_process_methods.py::TestSocraticCounselorAgent::test_process_analyze_response PASSED [  0%]
+tests\agents\test_agent_process_methods.py::TestSocraticCounselorAgent::test_process_unknown_action PASSED [  0%]
+tests\agents\test_agent_process_methods.py::TestSocraticCounselorAgent::test_process_missing_project PASSED [  0%]
+tests\agents\test_agent_process_methods.py::TestCodeGeneratorAgent::test_agent_initialization PASSED [  0%]
+tests\agents\test_agent_process_methods.py::TestCodeGeneratorAgent::test_process_generate_code PASSED [  0%]
+tests\agents\test_agent_process_methods.py::TestCodeGeneratorAgent::test_process_generate_documentation PASSED [  0%]
+tests\agents\test_agent_process_methods.py::TestCodeGeneratorAgent::test_process_missing_project PASSED [  0%]
+tests\agents\test_agent_process_methods.py::TestProjectManagerAgent::test_agent_initialization PASSED [  0%]
+tests\agents\test_agent_process_methods.py::TestProjectManagerAgent::test_process_create_project PASSED [  0%]
+tests\agents\test_agent_process_methods.py::TestProjectManagerAgent::test_process_load_project PASSED [  1%]
+tests\agents\test_agent_process_methods.py::TestProjectManagerAgent::test_process_save_project PASSED [  1%]
+tests\agents\test_agent_process_methods.py::TestProjectManagerAgent::test_process_list_projects PASSED [  1%]
+tests\agents\test_agent_process_methods.py::TestProjectManagerAgent::test_process_unknown_action PASSED [  1%]
+tests\agents\test_agent_process_methods.py::TestContextAnalyzerAgent::test_agent_initialization PASSED [  1%]
+tests\agents\test_agent_process_methods.py::TestContextAnalyzerAgent::test_process_analyze_context PASSED [  1%]
+tests\agents\test_agent_process_methods.py::TestContextAnalyzerAgent::test_process_get_statistics PASSED [  1%]
+tests\agents\test_agent_process_methods.py::TestContextAnalyzerAgent::test_process_unknown_action PASSED [  1%]
+tests\agents\test_agent_process_methods.py::TestAgentLogging::test_agent_has_logger PASSED [  1%]
+tests\agents\test_agent_process_methods.py::TestAgentLogging::test_agent_logging_works PASSED [  1%]
+tests\agents\test_agent_process_methods.py::TestAgentErrorHandling::test_process_with_exception PASSED [  1%]
+tests\agents\test_agent_process_methods.py::TestAgentErrorHandling::test_invalid_request_data PASSED [  1%]
+tests\agents\test_agent_process_methods.py::TestAgentIntegration::test_project_creation_workflow PASSED [  2%]
+tests\agents\test_agent_process_methods.py::TestAgentIntegration::test_project_analysis_workflow PASSED [  2%]
+tests\agents\test_agent_process_methods.py::TestAgentIntegration::test_code_generation_workflow PASSED [  2%]
+tests\agents\test_agent_process_methods.py::TestAgentRequestValidation::test_socratic_counselor_requires_project PASSED [  2%]
+tests\agents\test_agent_process_methods.py::TestAgentRequestValidation::test_code_generator_requires_project PASSED [  2%]
+tests\agents\test_agent_process_methods.py::TestAgentRequestValidation::test_project_manager_handles_missing_user PASSED [  2%]
+tests\agents\test_agent_process_methods.py::TestAgentDataTransformation::test_project_manager_transforms_response PASSED [  2%]
+tests\agents\test_agent_process_methods.py::TestAgentDataTransformation::test_context_analyzer_provides_context PASSED [  2%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentInitialization::test_agent_initialization PASSED [  2%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentContextBuilding::test_build_generation_context_basic PASSED [  2%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentContextBuilding::test_build_generation_context_with_conversation PASSED [  2%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentContextBuilding::test_build_generation_context_empty_fields PASSED [  3%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentScriptGeneration::test_generate_script_success PASSED [  3%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentScriptGeneration::test_generate_script_api_error PASSED [  3%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentScriptGeneration::test_generate_script_preserves_context PASSED [  3%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentDocumentation::test_generate_documentation_success PASSED [  3%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentDocumentation::test_generate_documentation_missing_script PASSED [  3%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentDocumentation::test_generate_documentation_with_complex_code PASSED [  3%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentErrorHandling::test_unknown_action PASSED [  3%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentErrorHandling::test_missing_action_field PASSED [  3%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentErrorHandling::test_missing_project_field PASSED [  3%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentLanguageSupport::test_generate_script_multiple_languages[Python-tech_stack0] PASSED [  3%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentLanguageSupport::test_generate_script_multiple_languages[JavaScript-tech_stack1] PASSED [  3%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentLanguageSupport::test_generate_script_multiple_languages[TypeScript-tech_stack2] PASSED [  4%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentLanguageSupport::test_generate_script_multiple_languages[Go-tech_stack3] PASSED [  4%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentLanguageSupport::test_generate_script_multiple_languages[Rust-tech_stack4] PASSED [  4%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentLogging::test_generates_log_message PASSED [  4%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentIntegration::test_full_generation_workflow PASSED [  4%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentIntegration::test_context_rich_generation PASSED [  4%]
+tests\agents\test_code_generator_agent.py::TestCodeGeneratorAgentIntegration::test_generation_with_error_recovery PASSED [  4%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentCreation::test_agent_initialization PASSED [  4%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentCreation::test_create_project_success PASSED [  4%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentCreation::test_create_project_with_invalid_data PASSED [  4%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentProjectOperations::test_load_project_success PASSED [  4%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentProjectOperations::test_load_project_not_found PASSED [  5%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentProjectOperations::test_save_project_updates_timestamp PASSED [  5%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentCollaborators::test_add_collaborator_success PASSED [  5%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentCollaborators::test_add_duplicate_collaborator PASSED [  5%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentCollaborators::test_list_collaborators PASSED [  5%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentCollaborators::test_remove_collaborator_success PASSED [  5%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentCollaborators::test_remove_collaborator_not_owner PASSED [  5%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentCollaborators::test_remove_owner_fails PASSED [  5%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentProjectListing::test_list_projects_for_user PASSED [  5%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentArchiving::test_archive_project_success PASSED [  5%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentArchiving::test_archive_project_not_owner PASSED [  5%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentArchiving::test_archive_nonexistent_project PASSED [  5%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentArchiving::test_restore_project_success PASSED [  6%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentDeletion::test_delete_project_requires_confirmation PASSED [  6%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentDeletion::test_delete_project_success_with_confirmation PASSED [  6%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentDeletion::test_delete_project_not_owner PASSED [  6%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentErrorHandling::test_unknown_action PASSED [  6%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentErrorHandling::test_missing_action PASSED [  6%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentErrorHandling::test_get_archived_projects PASSED [  6%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentIntegration::test_full_project_lifecycle PASSED [  6%]
+tests\agents\test_project_manager_agent.py::TestProjectManagerAgentIntegration::test_collaboration_workflow PASSED [  6%]
+tests\agents\test_remaining_agents.py::TestSocraticCounselorAgent::test_agent_initialization PASSED [  6%]
+tests\agents\test_remaining_agents.py::TestSocraticCounselorAgent::test_start_dialogue_with_topic PASSED [  6%]
+tests\agents\test_remaining_agents.py::TestContextAnalyzerAgent::test_agent_initialization PASSED [  7%]
+tests\agents\test_remaining_agents.py::TestContextAnalyzerAgent::test_extract_context_from_conversation PASSED [  7%]
+tests\agents\test_remaining_agents.py::TestDocumentProcessorAgent::test_agent_initialization PASSED [  7%]
+tests\agents\test_remaining_agents.py::TestDocumentProcessorAgent::test_extract_text_from_document PASSED [  7%]
+tests\agents\test_remaining_agents.py::TestConflictDetectorAgent::test_agent_initialization PASSED [  7%]
+tests\agents\test_remaining_agents.py::TestConflictDetectorAgent::test_detect_note_conflict PASSED [  7%]
+tests\agents\test_remaining_agents.py::TestSystemMonitorAgent::test_agent_initialization PASSED [  7%]
+tests\agents\test_remaining_agents.py::TestSystemMonitorAgent::test_perform_health_check PASSED [  7%]
+tests\agents\test_remaining_agents.py::TestUserManagerAgent::test_agent_initialization PASSED [  7%]
+tests\agents\test_remaining_agents.py::TestUserManagerAgent::test_create_user PASSED [  7%]
+tests\agents\test_remaining_agents.py::TestUserManagerAgent::test_authenticate_user PASSED [  7%]
+tests\agents\test_remaining_agents.py::TestNoteManagerAgent::test_agent_initialization PASSED [  7%]
+tests\agents\test_remaining_agents.py::TestNoteManagerAgent::test_create_note PASSED [  8%]
+tests\agents\test_remaining_agents.py::TestNoteManagerAgent::test_get_note PASSED [  8%]
+tests\agents\test_remaining_agents.py::TestNoteManagerAgent::test_list_project_notes PASSED [  8%]
+tests\agents\test_remaining_agents.py::TestAgentCrossCollaboration::test_counselor_analyzer_collaboration PASSED [  8%]
+tests\agents\test_remaining_agents.py::TestAgentCrossCollaboration::test_project_manager_note_manager_collaboration PASSED [  8%]
+tests\agents\test_remaining_agents.py::TestAgentCrossCollaboration::test_conflict_detector_with_project_manager PASSED [  8%]
+tests\agents\test_remaining_agents.py::TestAgentErrorHandling::test_missing_action_field_all_agents PASSED [  8%]
+tests\agents\test_remaining_agents.py::TestAgentErrorHandling::test_agent_initialization_all[SocraticCounselorAgent-SocraticCounselor-socratic_counselor] PASSED [  8%]
+tests\agents\test_remaining_agents.py::TestAgentErrorHandling::test_agent_initialization_all[ContextAnalyzerAgent-ContextAnalyzer-context_analyzer] PASSED [  8%]
+tests\agents\test_remaining_agents.py::TestAgentErrorHandling::test_agent_initialization_all[DocumentProcessorAgent-DocumentProcessor-document_processor] PASSED [  8%]
+tests\agents\test_remaining_agents.py::TestAgentErrorHandling::test_agent_initialization_all[ConflictDetectorAgent-ConflictDetector-conflict_detector] PASSED [  8%]
+tests\agents\test_remaining_agents.py::TestAgentErrorHandling::test_agent_initialization_all[SystemMonitorAgent-SystemMonitor-system_monitor] PASSED [  9%]
+tests\agents\test_remaining_agents.py::TestAgentErrorHandling::test_agent_initialization_all[UserManagerAgent-UserManager-user_manager] PASSED [  9%]
+tests\agents\test_remaining_agents.py::TestAgentErrorHandling::test_agent_initialization_all[NoteManagerAgent-NoteManager-note_manager] PASSED [  9%]
+tests\async\test_async_agents.py::TestAsyncClaude::test_generate_socratic_question_async PASSED [  9%]
+tests\async\test_async_agents.py::TestAsyncClaude::test_generate_socratic_question_async ERROR [  9%]
+
+=================================== ERRORS ====================================
+_ ERROR at teardown of TestAsyncClaude.test_generate_socratic_question_async __
+..\..\anaconda3\Lib\shutil.py:646: in _rmtree_unsafe
+    os.unlink(fullname)
+E   PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\themi\\AppData\\Local\\Temp\\tmpdar7_jvn\\vectors.db\\chroma.sqlite3'
+
+During handling of the above exception, another exception occurred:
+tests\async\test_async_agents.py:24: in orchestrator
+    with tempfile.TemporaryDirectory() as tmpdir:
+..\..\anaconda3\Lib\tempfile.py:946: in __exit__
+    self.cleanup()
+..\..\anaconda3\Lib\tempfile.py:950: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+..\..\anaconda3\Lib\tempfile.py:930: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+..\..\anaconda3\Lib\shutil.py:820: in rmtree
+    return _rmtree_unsafe(path, onexc)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\anaconda3\Lib\shutil.py:643: in _rmtree_unsafe
+    _rmtree_unsafe(fullname, onexc)
+..\..\anaconda3\Lib\shutil.py:648: in _rmtree_unsafe
+    onexc(os.unlink, fullname, err)
+..\..\anaconda3\Lib\tempfile.py:905: in onexc
+    _os.unlink(path)
+E   PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\themi\\AppData\\Local\\Temp\\tmpdar7_jvn\\vectors.db\\chroma.sqlite3'
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:634 Using proactor: IocpProactor
+DEBUG    asyncio:proactor_events.py:634 Using proactor: IocpProactor
+DEBUG    socratic_system.database.project_db_v2.ProjectDatabaseV2:project_db_v2.py:128 Foreign keys enabled for this connection
+INFO     socratic_system.database.project_db_v2.ProjectDatabaseV2:project_db_v2.py:94 V2 schema initialized with foreign keys enabled
+INFO     socrates.database.migrations:migration_runner.py:233 Applying GitHub import tables migration (add_github_import_tables.sql)...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: -- Migration: Add GitHub Import and Code Validatio...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: CREATE INDEX IF NOT EXISTS idx_project_files_proje...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: CREATE INDEX IF NOT EXISTS idx_project_files_langu...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: CREATE INDEX IF NOT EXISTS idx_project_files_path
+...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: -- ===============================================...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: CREATE INDEX IF NOT EXISTS idx_repo_metadata_url
+ ...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: CREATE INDEX IF NOT EXISTS idx_repo_metadata_owner...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: CREATE INDEX IF NOT EXISTS idx_repo_metadata_langu...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: -- ===============================================...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: CREATE INDEX IF NOT EXISTS idx_validation_project
+...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: CREATE INDEX IF NOT EXISTS idx_validation_date
+   ...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: CREATE INDEX IF NOT EXISTS idx_validation_status
+ ...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: -- ===============================================...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: ALTER TABLE projects_v2 ADD COLUMN repository_impo...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: -- ===============================================...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: CREATE INDEX IF NOT EXISTS idx_projects_repository...
+DEBUG    socrates.database.migrations:migration_runner.py:62 Executing: -- ===============================================...
+INFO     socrates.database.migrations:migration_runner.py:69 Successfully applied migration: add_github_import_tables.sql
+INFO     socrates.database.migrations:migration_runner.py:228 Claude auth method column already applied, skipping
+INFO     socrates.database.migrations:migration_runner.py:246 All migrations applied successfully. Status: {'github_import_tables': True, 'users_claude_auth_method': True}
+INFO     socratic_system.database.project_db_v2.ProjectDatabaseV2:project_db_v2.py:108 Migrations check passed: All migrations applied successfully. Status: {'github_import_tables': True, 'users_claude_auth_method': True}
+INFO     socrates.database.vector:vector_db.py:45 Initializing vector database: C:\Users\themi\AppData\Local\Temp\tmpdar7_jvn\vectors.db
+DEBUG    chromadb.config:config.py:363 Starting component System
+DEBUG    chromadb.config:config.py:363 Starting component Posthog
+DEBUG    socrates.database.vector:vector_db.py:48 ChromaDB client created
+DEBUG    socrates.database.vector:vector_db.py:54 Vector collection 'socratic_knowledge' initialized
+INFO     socrates.database.vector:vector_db.py:60 Vector database initialized successfully (embedding model will load on first use)
+INFO     socrates.database.vector:vector_db.py:65 Embedding and search caches initialized (Phase 3)
+DEBUG    socrates.events:event_emitter.py:142 Event: system.initialized - {'version': '0.5.0', 'data_dir': 'C:\\Users\\themi\\.socrates', 'model': 'claude-haiku-4-5-20251001', 'timestamp': '2025-12-18T19:29:36.001480'}
+DEBUG    socrates.events:event_emitter.py:142 Event: log.info - {'message': 'Loading knowledge base...', 'timestamp': '2025-12-18T19:29:36.001480'}
+------------------------------ Captured log call ------------------------------
+DEBUG    socrates.events:event_emitter.py:142 Event: token.usage - {'operation': 'generate_socratic_question_async', 'input_tokens': 10, 'output_tokens': 20, 'total_tokens': 30, 'cost_estimate': 0.00033, 'timestamp': '2025-12-18T19:29:36.007479'}
+=========================== short test summary info ===========================
+ERROR tests\async\test_async_agents.py::TestAsyncClaude::test_generate_socratic_question_async - PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\themi\\AppData\\Local\\Temp\\tmpdar7_jvn\\vectors.db\\chroma.sqlite3'
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+================== 107 passed, 1 warning, 1 error in 15.40s ===================
+
+
+STDERR:
+
+
+Return code: 1

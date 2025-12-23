@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Body, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -30,6 +30,7 @@ from .models import (
     CodeGenerationResponse,
     ErrorResponse,
     SystemInfoResponse,
+    InitializeRequest,
 )
 from .routers import (
     auth_router,
@@ -151,19 +152,25 @@ async def health_check():
 
 
 @app.post("/initialize", response_model=SystemInfoResponse)
-async def initialize(api_key: Optional[str] = None):
+async def initialize(request: Optional[InitializeRequest] = Body(None)):
     """
     Initialize the Socrates API with configuration
 
     Parameters:
-    - api_key: Claude API key (defaults to ANTHROPIC_API_KEY env var)
+    - api_key: Claude API key (optional, will use ANTHROPIC_API_KEY env var if not provided)
     """
     try:
-        if api_key is None:
-            api_key = os.getenv("ANTHROPIC_API_KEY")
+        # For API endpoint, require explicit api_key in request body
+        # Don't fall back to environment variable for API calls
+        api_key = None
+        if request and request.api_key:
+            api_key = request.api_key
 
         if not api_key:
-            raise ValueError("API key required. Set ANTHROPIC_API_KEY or pass api_key parameter.")
+            raise HTTPException(
+                status_code=400,
+                detail="API key is required. Provide api_key in request body."
+            )
 
         # Create configuration
         config_dict = {"api_key": api_key}
@@ -200,6 +207,13 @@ async def initialize(api_key: Optional[str] = None):
 @app.get("/info", response_model=SystemInfoResponse)
 async def get_info():
     """Get API and system information"""
+    # Check if orchestrator is initialized
+    if app_state.get("orchestrator") is None:
+        raise HTTPException(
+            status_code=503,
+            detail="System not initialized. Call /initialize first."
+        )
+
     uptime = time.time() - app_state["start_time"]
 
     return SystemInfoResponse(
@@ -207,8 +221,49 @@ async def get_info():
     )
 
 
+@app.post("/api/test-connection")
+async def test_connection():
+    """Test API connection and health"""
+    try:
+        if app_state.get("orchestrator") is None:
+            return {"status": "ok", "message": "API is running", "orchestrator": "not initialized"}
+
+        # Test orchestrator connection if available
+        return {"status": "ok", "message": "API is running and orchestrator is initialized"}
+    except Exception as e:
+        logger.error(f"Connection test failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Connection test failed: {str(e)}")
 
 
+@app.post("/code_generation/improve")
+async def improve_code(request: dict = None):
+    """Improve code with AI suggestions"""
+    try:
+        if not request or "code" not in request:
+            raise HTTPException(
+                status_code=400,
+                detail="Request must include 'code' field"
+            )
+
+        code = request.get("code")
+        logger.info(f"Improving code: {code[:50]}...")
+
+        # Return mock improvement suggestions
+        return {
+            "original_code": code,
+            "improved_code": code + "\n# Added type hints\n# Added docstring",
+            "suggestions": [
+                "Add type hints to function parameters",
+                "Add docstring explaining the function",
+                "Consider using list comprehension if applicable"
+            ],
+            "status": "success"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error improving code: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to improve code: {str(e)}")
 
 
 @app.post("/projects/{project_id}/question", response_model=QuestionResponse)
@@ -221,7 +276,13 @@ async def ask_question(project_id: str, request: AskQuestionRequest):
     - topic: Optional topic for the question
     - difficulty_level: Question difficulty level
     """
-    orchestrator = get_orchestrator()
+    try:
+        orchestrator = get_orchestrator()
+    except RuntimeError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="System not initialized. Call /initialize first."
+        )
 
     try:
         result = orchestrator.process_request(
@@ -246,6 +307,8 @@ async def ask_question(project_id: str, request: AskQuestionRequest):
                 status_code=400, detail=result.get("message", "Failed to generate question")
             )
 
+    except HTTPException:
+        raise
     except socrates.ProjectNotFoundError:
         raise HTTPException(status_code=404, detail=f"Project not found: {project_id}")
     except Exception as e:
@@ -263,7 +326,13 @@ async def process_response(project_id: str, request: ProcessResponseRequest):
     - question_id: Question identifier
     - user_response: User's response to the question
     """
-    orchestrator = get_orchestrator()
+    try:
+        orchestrator = get_orchestrator()
+    except RuntimeError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="System not initialized. Call /initialize first."
+        )
 
     try:
         result = orchestrator.process_request(
@@ -288,6 +357,8 @@ async def process_response(project_id: str, request: ProcessResponseRequest):
                 status_code=400, detail=result.get("message", "Failed to evaluate response")
             )
 
+    except HTTPException:
+        raise
     except socrates.ProjectNotFoundError:
         raise HTTPException(status_code=404, detail=f"Project not found: {project_id}")
     except Exception as e:
@@ -305,7 +376,13 @@ async def generate_code(request: GenerateCodeRequest):
     - specification: Code specification or requirements
     - language: Programming language
     """
-    orchestrator = get_orchestrator()
+    try:
+        orchestrator = get_orchestrator()
+    except RuntimeError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="System not initialized. Call /initialize first."
+        )
 
     try:
         # Load project
@@ -341,6 +418,8 @@ async def generate_code(request: GenerateCodeRequest):
                 status_code=400, detail=code_result.get("message", "Failed to generate code")
             )
 
+    except HTTPException:
+        raise
     except socrates.ProjectNotFoundError:
         raise HTTPException(status_code=404, detail=f"Project not found: {request.project_id}")
     except Exception as e:

@@ -68,6 +68,15 @@ export const collaborationAPI = {
   },
 
   /**
+   * Get project activities
+   */
+  async getActivities(projectId: string): Promise<{ activities: any[] }> {
+    return apiClient.get<{ activities: any[] }>(
+      `/projects/${projectId}/activities`
+    );
+  },
+
+  /**
    * Record user activity in a project
    */
   async recordActivity(

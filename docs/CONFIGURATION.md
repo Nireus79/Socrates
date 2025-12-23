@@ -8,7 +8,7 @@ Comprehensive guide to configuring the Socratic RAG System for different use cas
 
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-..."
-python Socrates.py
+python socrates.py
 ```
 
 Uses all defaults. Everything works locally.
@@ -19,7 +19,7 @@ Uses all defaults. Everything works locally.
 export ANTHROPIC_API_KEY="sk-ant-..."
 export SOCRATES_LOG_LEVEL="INFO"
 export SOCRATES_DATA_DIR="~/.socrates"
-python Socrates.py
+python socrates.py
 ```
 
 ---

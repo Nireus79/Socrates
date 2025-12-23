@@ -21,6 +21,7 @@ from socrates_api.auth import get_current_user
 from socrates_api.models import (
     SuccessResponse,
     ErrorResponse,
+    CollaborationInviteRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -469,29 +470,30 @@ async def record_activity(
 @collab_router.post(
     "/invite",
     response_model=SuccessResponse,
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     summary="Invite team member",
     responses={
-        201: {"description": "Invitation sent"},
+        200: {"description": "Invitation sent"},
         400: {"description": "Invalid email", "model": ErrorResponse},
         422: {"description": "Missing email", "model": ErrorResponse},
     },
 )
 async def invite_team_member(
-    email: str,
-    role: str = "developer",
+    request: CollaborationInviteRequest,
 ):
     """
     Invite a team member via email.
 
     Args:
-        email: Email address to invite
-        role: Role for invited member (developer, reviewer, admin)
+        request: Request body with email and optional role
 
     Returns:
         SuccessResponse with invitation details
     """
     try:
+        email = request.email
+        role = request.role
+
         if not email:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

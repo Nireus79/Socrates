@@ -99,7 +99,6 @@ class ListProjectsResponse(BaseModel):
 class AskQuestionRequest(BaseModel):
     """Request body for asking a Socratic question"""
 
-    project_id: str = Field(..., description="Project identifier")
     topic: Optional[str] = Field(None, description="Topic to ask about")
     difficulty_level: str = Field(default="intermediate", description="Question difficulty level")
 
@@ -140,7 +139,6 @@ class ProcessResponseRequest(BaseModel):
 
     question_id: str = Field(..., description="Question identifier")
     user_response: str = Field(..., min_length=1, description="User's response to the question")
-    project_id: str = Field(..., description="Project identifier")
 
     class Config:
         json_schema_extra = {
@@ -424,4 +422,82 @@ class GitHubImportRequest(BaseModel):
                 "project_name": "My Project",
                 "branch": "main",
             }
+        }
+
+
+class SetDefaultProviderRequest(BaseModel):
+    """Request body for setting default LLM provider"""
+
+    provider: str = Field(..., description="Provider name (claude, openai, gemini, local)")
+
+    class Config:
+        json_schema_extra = {
+            "example": {"provider": "anthropic"}
+        }
+
+
+class SetLLMModelRequest(BaseModel):
+    """Request body for setting LLM model"""
+
+    provider: str = Field(..., description="Provider name")
+    model: str = Field(..., description="Model identifier")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "provider": "anthropic",
+                "model": "claude-3-sonnet"
+            }
+        }
+
+
+class AddAPIKeyRequest(BaseModel):
+    """Request body for adding API key"""
+
+    provider: str = Field(..., description="Provider name")
+    api_key: str = Field(..., description="API key for the provider")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "provider": "anthropic",
+                "api_key": "sk-ant-..."
+            }
+        }
+
+
+class CollaborationInviteRequest(BaseModel):
+    """Request body for inviting collaborator"""
+
+    email: str = Field(..., description="Email of the collaborator")
+    role: str = Field(default="viewer", description="Role (editor, viewer, admin)")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "user@example.com",
+                "role": "editor"
+            }
+        }
+
+
+class DeleteDocumentRequest(BaseModel):
+    """Request body for deleting knowledge document"""
+
+    document_id: str = Field(..., description="Document ID to delete")
+
+    class Config:
+        json_schema_extra = {
+            "example": {"document_id": "doc_123"}
+        }
+
+
+class InitializeRequest(BaseModel):
+    """Request body for API initialization"""
+
+    api_key: Optional[str] = Field(None, description="Claude API key")
+
+    class Config:
+        json_schema_extra = {
+            "example": {"api_key": "sk-ant-..."}
         }

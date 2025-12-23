@@ -77,6 +77,7 @@ class ProjectManagerAgent(Agent):
 
             user = User(
                 username=owner,
+                email=f"{owner}@socrates.local",  # Auto-generated email for system-created users
                 passcode_hash="",  # Empty hash - will need password reset to use UI
                 created_at=datetime.datetime.now(),
                 projects=[],
@@ -187,6 +188,7 @@ class ProjectManagerAgent(Agent):
 
                     user = User(
                         username=owner,
+                        email=f"{owner}@socrates.local",  # Auto-generated email for system-created users
                         passcode_hash="",
                         created_at=datetime.datetime.now(),
                         projects=[],

@@ -71,8 +71,16 @@ def orchestrator(temp_data_dir):
     with patch.dict(os.environ, {"API_KEY_CLAUDE": "test-key", "SOCRATES_DATA_DIR": temp_data_dir}):
         with patch("socratic_system.orchestration.orchestrator.ClaudeClient"):
             with patch("socratic_system.orchestration.orchestrator.VectorDatabase"):
-                config = SocratesConfig.from_env()
-                orch = AgentOrchestrator(config)
+                try:
+                    config = SocratesConfig.from_env()
+                except Exception as e:
+                    pytest.fail(f"Failed to initialize SocratesConfig: {e}")
+
+                try:
+                    orch = AgentOrchestrator(config)
+                except Exception as e:
+                    pytest.fail(f"Failed to initialize AgentOrchestrator: {e}")
+
                 orch.claude_client = MagicMock()
                 orch.claude_client.generate_response = MagicMock(return_value="Test response")
                 orch.claude_client.generate_suggestions = MagicMock(return_value="Test suggestions")
@@ -105,7 +113,7 @@ class TestUserAuthenticationWorkflow:
         cmd = UserCreateCommand()
 
         username = f"testuser_{id(app)}"  # Unique username per test run
-        with patch("builtins.input", side_effect=[username, "password123", "password123"]):
+        with patch("builtins.input", side_effect=[username, f"{username}@example.com", "password123", "password123"]):
             result = cmd.execute([], {"orchestrator": app.orchestrator, "app": app})
 
         assert result["status"] == "success", f"Error: {result.get('message', 'Unknown error')}"
@@ -116,12 +124,20 @@ class TestUserAuthenticationWorkflow:
     def test_user_login_command(self, app):
         """Test user login"""
         # First create a user with unique username
-        import hashlib
+        import sys
+        import os
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../socrates-api/src'))
+        try:
+            from socrates_api.auth.password import hash_password
+        except ImportError:
+            from passlib.context import CryptContext
+            pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+            hash_password = pwd_context.hash
 
         username = f"logintest_{id(app)}"
-        passcode_hash = hashlib.sha256(b"password123").hexdigest()
+        passcode_hash = hash_password("password123")
         user = User(
-            username=username, passcode_hash=passcode_hash, created_at=datetime.now(), projects=[]
+            username=username, email=f"{username}@example.com", passcode_hash=passcode_hash, created_at=datetime.now(), projects=[]
         )
         app.orchestrator.database.save_user(user)
 
@@ -138,7 +154,7 @@ class TestUserAuthenticationWorkflow:
     def test_user_logout_command(self, app):
         """Test user logout"""
         app.current_user = User(
-            username="testuser", passcode_hash="test", created_at=datetime.now(), projects=[]
+            username="testuser", email="testuser@example.com", passcode_hash="test", created_at=datetime.now(), projects=[]
         )
         app.current_project = None
 
@@ -157,6 +173,7 @@ class TestProjectManagementWorkflow:
         """Helper to set up authenticated user"""
         user = User(
             username="projecttest",
+            email="projecttest@example.com",
             passcode_hash="hash",
             created_at=datetime.now(),
             projects=[],
@@ -255,6 +272,7 @@ class TestNotesSystemWorkflow:
         username = f"notestest_{test_id}"
         user = User(
             username=username,
+            email=f"{username}@example.com",
             passcode_hash="hash",
             created_at=datetime.now(),
             projects=[],
@@ -396,7 +414,7 @@ class TestConversationFeaturesWorkflow:
     def setup_project_with_conversation(self, app):
         """Helper to set up project with conversation history"""
         user = User(
-            username="convtest", passcode_hash="hash", created_at=datetime.now(), projects=[]
+            username="convtest", email="convtest@example.com", passcode_hash="hash", created_at=datetime.now(), projects=[]
         )
         app.orchestrator.database.save_user(user)
         app.current_user = user
@@ -485,7 +503,7 @@ class TestProjectStatisticsWorkflow:
     def setup_project_with_stats(self, app):
         """Helper to set up project with content for statistics"""
         user = User(
-            username="statstest", passcode_hash="hash", created_at=datetime.now(), projects=[]
+            username="statstest", email="statstest@example.com", passcode_hash="hash", created_at=datetime.now(), projects=[]
         )
         app.orchestrator.database.save_user(user)
         app.current_user = user
@@ -572,13 +590,14 @@ class TestCollaborationWorkflow:
         """Helper to set up project and multiple users"""
         owner = User(
             username="owner",
+            email="owner@example.com",
             passcode_hash="hash",
             created_at=datetime.now(),
             projects=[],
             subscription_tier="pro",  # Pro tier allows team collaboration
         )
         collab = User(
-            username="collaborator", passcode_hash="hash", created_at=datetime.now(), projects=[]
+            username="collaborator", email="collaborator@example.com", passcode_hash="hash", created_at=datetime.now(), projects=[]
         )
         app.orchestrator.database.save_user(owner)
         app.orchestrator.database.save_user(collab)
@@ -665,7 +684,7 @@ class TestProjectArchiveWorkflow:
     def setup_project_for_archive(self, app):
         """Helper to set up project for archival"""
         user = User(
-            username="archivetest", passcode_hash="hash", created_at=datetime.now(), projects=[]
+            username="archivetest", email="archivetest@example.com", passcode_hash="hash", created_at=datetime.now(), projects=[]
         )
         app.orchestrator.database.save_user(user)
         app.current_user = user
@@ -775,7 +794,7 @@ class TestCompleteE2EWorkflow:
         print("\n1. Creating user account...")
         cmd_user = UserCreateCommand()
         e2e_username = f"e2euser_{id(app)}"
-        with patch("builtins.input", side_effect=[e2e_username, "secure123", "secure123"]):
+        with patch("builtins.input", side_effect=[e2e_username, f"{e2e_username}@example.com", "secure123", "secure123"]):
             result = cmd_user.execute([], {"orchestrator": app.orchestrator, "app": app})
         assert result["status"] == "success", f"Error: {result.get('message', 'Unknown error')}"
         print(f"   ✓ User created: {e2e_username}")
@@ -885,7 +904,7 @@ class TestCompleteE2EWorkflow:
         print("\n9. Adding collaborator...")
         # Create another user first
         collab_user = User(
-            username="collaborator", passcode_hash="hash", created_at=datetime.now(), projects=[]
+            username="collaborator", email="collaborator@example.com", passcode_hash="hash", created_at=datetime.now(), projects=[]
         )
         app.orchestrator.database.save_user(collab_user)
 

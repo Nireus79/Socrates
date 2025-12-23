@@ -89,7 +89,7 @@ class InsightCategorizer:
 
             # Call Claude
             logger.debug("Sending request to Claude API")
-            response = self.claude_client.send_message(prompt)
+            response = self.claude_client.generate_response(prompt)
             logger.debug(f"Received response from Claude: {len(response)} characters")
 
             # Parse Claude's response

@@ -244,5 +244,80 @@ def _get_legacy_config() -> Dict[str, Any]:
         }
 
 
+class ConfigBuilder:
+    """
+    Fluent API for building SocratesConfig instances.
+
+    Example:
+        config = (ConfigBuilder("sk-...")
+                  .with_data_dir("/path")
+                  .with_model("claude-opus-4-5-20251101")
+                  .build())
+    """
+
+    def __init__(self, api_key: str) -> None:
+        """Initialize builder with API key"""
+        self._config_dict: Dict[str, Any] = {"api_key": api_key}
+
+    def with_data_dir(self, data_dir: Union[str, Path]) -> "ConfigBuilder":
+        """Set data directory"""
+        self._config_dict["data_dir"] = data_dir
+        return self
+
+    def with_model(self, model: str) -> "ConfigBuilder":
+        """Set Claude model"""
+        self._config_dict["claude_model"] = model
+        return self
+
+    def with_embedding_model(self, model: str) -> "ConfigBuilder":
+        """Set embedding model"""
+        self._config_dict["embedding_model"] = model
+        return self
+
+    def with_log_level(self, level: str) -> "ConfigBuilder":
+        """Set log level"""
+        self._config_dict["log_level"] = level
+        return self
+
+    def with_log_file(self, log_file: Union[str, Path]) -> "ConfigBuilder":
+        """Set log file path"""
+        self._config_dict["log_file"] = log_file
+        return self
+
+    def with_knowledge_base(self, kb_path: Union[str, Path]) -> "ConfigBuilder":
+        """Set knowledge base path"""
+        self._config_dict["knowledge_base_path"] = kb_path
+        return self
+
+    def with_custom_knowledge(self, knowledge: List[str]) -> "ConfigBuilder":
+        """Set custom knowledge entries"""
+        self._config_dict["custom_knowledge"] = knowledge
+        return self
+
+    def with_max_context_length(self, length: int) -> "ConfigBuilder":
+        """Set max context length"""
+        self._config_dict["max_context_length"] = length
+        return self
+
+    def with_max_retries(self, retries: int) -> "ConfigBuilder":
+        """Set max retries"""
+        self._config_dict["max_retries"] = retries
+        return self
+
+    def with_retry_delay(self, delay: float) -> "ConfigBuilder":
+        """Set retry delay"""
+        self._config_dict["retry_delay"] = delay
+        return self
+
+    def with_subscription_token(self, token: str) -> "ConfigBuilder":
+        """Set subscription token"""
+        self._config_dict["subscription_token"] = token
+        return self
+
+    def build(self) -> SocratesConfig:
+        """Build and return the SocratesConfig instance"""
+        return SocratesConfig(**self._config_dict)
+
+
 # Backward compatibility - CONFIG will be populated when needed
 CONFIG = _get_legacy_config()
