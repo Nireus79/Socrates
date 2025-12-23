@@ -127,15 +127,18 @@ def cleanup_test_database():
     test_data_dir = Path.home() / ".socrates"
     if test_data_dir.exists():
         try:
-            # Backup and remove old database
             db_file = test_data_dir / "projects.db"
             if db_file.exists():
                 db_file.unlink()
         except Exception:
-            pass  # Ignore cleanup errors
+            pass
 
     yield
 
-    # Optional: Clean up after tests (commented out to preserve data for debugging)
-    # if test_data_dir.exists():
-    #     shutil.rmtree(test_data_dir, ignore_errors=True)
+    # Clean up after tests
+    try:
+        db_file = test_data_dir / "projects.db"
+        if db_file.exists():
+            db_file.unlink()
+    except Exception:
+        pass

@@ -19,6 +19,7 @@ from socrates_api.middleware import SubscriptionChecker, require_subscription_fe
 from socrates_api.models import (
     ProjectResponse,
     ListProjectsResponse,
+    CreateProjectRequest,
     UpdateProjectRequest,
     ErrorResponse,
     SuccessResponse,
@@ -92,6 +93,72 @@ async def list_projects(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error retrieving projects",
+        )
+
+
+@router.post(
+    "",
+    response_model=ProjectResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Create new project",
+    responses={
+        200: {"description": "Project created successfully"},
+        400: {"description": "Invalid request", "model": ErrorResponse},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+    },
+)
+async def create_project(
+    request: CreateProjectRequest,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabaseV2 = Depends(get_database),
+):
+    """
+    Create a new project for the current user.
+
+    Args:
+        request: CreateProjectRequest with project details
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        ProjectResponse with newly created project
+
+    Raises:
+        HTTPException: If validation fails or creation fails
+    """
+    try:
+        # Create new project
+        project = ProjectContext(
+            project_id=f"proj_{current_user}_{int(datetime.now(timezone.utc).timestamp() * 1000)}",
+            name=request.name,
+            owner=request.owner if request.owner else current_user,
+            description=request.description,
+            phase="discovery",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            is_archived=False,
+        )
+
+        # Verify owner matches current user
+        if project.owner != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Can only create projects for yourself",
+            )
+
+        # Save project
+        db.save_project(project)
+        logger.info(f"Project {project.project_id} created by {current_user}")
+
+        return _project_to_response(project)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating project: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error creating project",
         )
 
 

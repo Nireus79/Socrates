@@ -124,7 +124,7 @@ class TestAuthenticationEndpoints:
     def test_get_current_user_unauthorized(self):
         """Test getting current user without token."""
         response = client.get("/auth/me")
-        assert response.status_code == 403  # No credentials
+        assert response.status_code == 401  # No credentials
 
     def test_get_current_user_invalid_token(self):
         """Test getting current user with invalid token."""
@@ -151,7 +151,7 @@ class TestAuthenticationEndpoints:
     def test_logout_unauthorized(self):
         """Test logout without token."""
         response = client.post("/auth/logout")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
 
 class TestProjectEndpoints:
@@ -196,7 +196,7 @@ class TestProjectEndpoints:
     def test_list_projects_unauthorized(self):
         """Test listing projects without authentication."""
         response = client.get("/projects")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     def test_create_project(self):
         """Test creating a project."""
@@ -250,7 +250,7 @@ class TestProjectEndpoints:
     def test_get_project_unauthorized(self):
         """Test getting project without authentication."""
         response = client.get("/projects/some_id")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     def test_update_project(self):
         """Test updating project."""

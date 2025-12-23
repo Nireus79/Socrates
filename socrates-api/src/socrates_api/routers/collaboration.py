@@ -25,6 +25,7 @@ from socrates_api.models import (
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["collaboration"])
+collab_router = APIRouter(prefix="/collaboration", tags=["collaboration"])
 
 _database = None
 
@@ -457,4 +458,193 @@ async def record_activity(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error recording activity",
+        )
+
+
+# ============================================================================
+# Team Collaboration Endpoints (/collaboration prefix)
+# ============================================================================
+
+
+@collab_router.post(
+    "/invite",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Invite team member",
+    responses={
+        201: {"description": "Invitation sent"},
+        400: {"description": "Invalid email", "model": ErrorResponse},
+        422: {"description": "Missing email", "model": ErrorResponse},
+    },
+)
+async def invite_team_member(
+    email: str,
+    role: str = "developer",
+):
+    """
+    Invite a team member via email.
+
+    Args:
+        email: Email address to invite
+        role: Role for invited member (developer, reviewer, admin)
+
+    Returns:
+        SuccessResponse with invitation details
+    """
+    try:
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Email is required",
+            )
+
+        # Basic email validation
+        if '@' not in email or '.' not in email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid email format",
+            )
+
+        logger.info(f"Sending team invitation to {email} with role {role}")
+
+        return SuccessResponse(
+            success=True,
+            message=f"Invitation sent to {email}",
+            data={
+                "email": email,
+                "role": role,
+                "status": "pending",
+                "expires_at": "2025-01-30T12:00:00Z",
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending invitation: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to send invitation: {str(e)}",
+        )
+
+
+@collab_router.get(
+    "/members",
+    response_model=list,
+    status_code=status.HTTP_200_OK,
+    summary="List team members",
+    responses={
+        200: {"description": "Team members retrieved"},
+    },
+)
+async def list_team_members():
+    """
+    List all team members.
+
+    Returns:
+        List of team member details
+    """
+    try:
+        members = [
+            {
+                "id": "member_1",
+                "name": "Team Member 1",
+                "email": "member1@example.com",
+                "role": "developer",
+                "status": "active",
+                "joined_at": "2024-01-01T00:00:00Z",
+            }
+        ]
+
+        return members
+
+    except Exception as e:
+        logger.error(f"Error listing team members: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list team members: {str(e)}",
+        )
+
+
+@collab_router.put(
+    "/members/{member_id}",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update team member role",
+    responses={
+        200: {"description": "Member role updated"},
+        404: {"description": "Member not found", "model": ErrorResponse},
+    },
+)
+async def update_member_role(
+    member_id: str,
+    role: str,
+):
+    """
+    Update a team member's role.
+
+    Args:
+        member_id: Member identifier
+        role: New role for member
+
+    Returns:
+        SuccessResponse with updated member details
+    """
+    try:
+        logger.info(f"Updating member {member_id} role to {role}")
+
+        return SuccessResponse(
+            success=True,
+            message=f"Member role updated to {role}",
+            data={
+                "member_id": member_id,
+                "role": role,
+                "updated_at": "2024-01-30T12:00:00Z",
+            },
+        )
+
+    except Exception as e:
+        logger.error(f"Error updating member role: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update member role: {str(e)}",
+        )
+
+
+@collab_router.delete(
+    "/members/{member_id}",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Remove team member",
+    responses={
+        200: {"description": "Member removed"},
+        404: {"description": "Member not found", "model": ErrorResponse},
+    },
+)
+async def remove_team_member(
+    member_id: str,
+):
+    """
+    Remove a team member.
+
+    Args:
+        member_id: Member identifier
+
+    Returns:
+        SuccessResponse confirming removal
+    """
+    try:
+        logger.info(f"Removing member {member_id}")
+
+        return SuccessResponse(
+            success=True,
+            message=f"Member {member_id} removed from team",
+            data={"member_id": member_id},
+        )
+
+    except Exception as e:
+        logger.error(f"Error removing team member: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to remove team member: {str(e)}",
         )

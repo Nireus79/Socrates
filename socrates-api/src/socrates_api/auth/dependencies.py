@@ -31,12 +31,12 @@ async def get_current_user(
         User ID (subject) from valid JWT token
 
     Raises:
-        HTTPException: 403 if credentials missing, 401 if token invalid
+        HTTPException: 401 if credentials missing or token invalid
     """
-    # 403 when auth header is missing
+    # 401 when auth header is missing or token is invalid
     if credentials is None:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication credentials are required",
             headers={"WWW-Authenticate": "Bearer"},
         )
