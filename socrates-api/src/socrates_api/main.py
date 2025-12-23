@@ -160,16 +160,18 @@ async def initialize(request: Optional[InitializeRequest] = Body(None)):
     - api_key: Claude API key (optional, will use ANTHROPIC_API_KEY env var if not provided)
     """
     try:
-        # For API endpoint, require explicit api_key in request body
-        # Don't fall back to environment variable for API calls
+        # Get API key from request body or environment variable
         api_key = None
         if request and request.api_key:
             api_key = request.api_key
+        else:
+            # Fall back to environment variable
+            api_key = os.getenv("ANTHROPIC_API_KEY")
 
         if not api_key:
             raise HTTPException(
                 status_code=400,
-                detail="API key is required. Provide api_key in request body."
+                detail="API key is required. Provide api_key in request body or set ANTHROPIC_API_KEY environment variable."
             )
 
         # Create configuration

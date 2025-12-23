@@ -142,24 +142,20 @@ async def create_project(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
+        # Use current_user as owner (don't allow specifying different owner)
+        owner = current_user
+
         # Create new project
         project = ProjectContext(
-            project_id=f"proj_{current_user}_{int(datetime.now(timezone.utc).timestamp() * 1000)}",
+            project_id=f"proj_{owner}_{int(datetime.now(timezone.utc).timestamp() * 1000)}",
             name=request.name,
-            owner=request.owner if request.owner else current_user,
+            owner=owner,
             description=request.description,
             phase="discovery",
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
             is_archived=False,
         )
-
-        # Verify owner matches current user
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Can only create projects for yourself",
-            )
 
         # Save project
         db.save_project(project)

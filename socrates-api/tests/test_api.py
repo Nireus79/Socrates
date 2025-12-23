@@ -5,6 +5,7 @@ Tests for Socrates REST API endpoints
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, Mock
+import os
 
 # Import FastAPI app
 import sys
@@ -61,11 +62,23 @@ class TestAPIInitializeEndpoint:
         assert response.status_code in [200, 400, 500]
 
     def test_initialize_requires_api_key(self, client):
-        """Test that initialize requires API key"""
-        response = client.post("/initialize", json={})
+        """Test that initialize requires API key when not in environment"""
+        # Save original env var
+        original_api_key = os.environ.get("ANTHROPIC_API_KEY")
 
-        # Should fail without API key
-        assert response.status_code in [400, 422, 500]
+        try:
+            # Unset the API key to test the failure case
+            if "ANTHROPIC_API_KEY" in os.environ:
+                del os.environ["ANTHROPIC_API_KEY"]
+
+            response = client.post("/initialize", json={})
+
+            # Should fail without API key when env var is not set
+            assert response.status_code in [400, 422, 500]
+        finally:
+            # Restore original env var
+            if original_api_key is not None:
+                os.environ["ANTHROPIC_API_KEY"] = original_api_key
 
     def test_initialize_response_structure(self, client):
         """Test initialize response structure"""
@@ -80,10 +93,22 @@ class TestAPIInfoEndpoint:
 
     def test_info_not_initialized(self, client):
         """Test info endpoint when not initialized"""
-        response = client.get("/info")
+        # Import and reset the app state to ensure it's not initialized
+        from socrates_api import main
+        original_orchestrator = main.app_state.get("orchestrator")
 
-        # Should fail or return not-initialized state
-        assert response.status_code in [503, 500]
+        try:
+            # Reset orchestrator to None to test uninitialized state
+            main.app_state["orchestrator"] = None
+
+            response = client.get("/info")
+
+            # Should fail or return not-initialized state
+            assert response.status_code in [503, 500]
+        finally:
+            # Restore original state
+            if original_orchestrator is not None:
+                main.app_state["orchestrator"] = original_orchestrator
 
 
 @pytest.mark.unit
