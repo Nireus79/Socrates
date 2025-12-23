@@ -266,6 +266,7 @@ class RegisterRequest(BaseModel):
     username: str = Field(
         ..., min_length=3, max_length=100, description="Username (3-100 characters)"
     )
+    email: str = Field(..., description="User email address")
     password: str = Field(
         ..., min_length=8, max_length=200, description="Password (min 8 characters)"
     )
@@ -274,6 +275,7 @@ class RegisterRequest(BaseModel):
         json_schema_extra = {
             "example": {
                 "username": "alice_smith",
+                "email": "alice@example.com",
                 "password": "SecurePassword123!",
             }
         }
@@ -298,6 +300,7 @@ class UserResponse(BaseModel):
     """Response model for user information"""
 
     username: str = Field(..., description="Username")
+    email: str = Field(..., description="User email address")
     subscription_tier: str = Field(..., description="Subscription tier (free/pro/enterprise)")
     subscription_status: str = Field(..., description="Subscription status")
     testing_mode: bool = Field(..., description="Whether testing mode is enabled")
@@ -307,6 +310,7 @@ class UserResponse(BaseModel):
         json_schema_extra = {
             "example": {
                 "username": "alice_smith",
+                "email": "alice@example.com",
                 "subscription_tier": "pro",
                 "subscription_status": "active",
                 "testing_mode": False,
@@ -348,6 +352,7 @@ class AuthResponse(BaseModel):
             "example": {
                 "user": {
                     "username": "alice_smith",
+                    "email": "alice@example.com",
                     "subscription_tier": "pro",
                     "subscription_status": "active",
                     "testing_mode": False,
@@ -374,16 +379,49 @@ class RefreshTokenRequest(BaseModel):
         }
 
 
+class ChangePasswordRequest(BaseModel):
+    """Request body for changing password"""
+
+    old_password: str = Field(..., description="Current password")
+    new_password: str = Field(..., description="New password")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "old_password": "current_password",
+                "new_password": "new_secure_password",
+            }
+        }
+
+
 class SuccessResponse(BaseModel):
     """Generic success response"""
 
     success: bool = Field(default=True, description="Whether operation succeeded")
     message: str = Field(..., description="Success message")
+    data: Optional[Dict[str, Any]] = Field(None, description="Additional response data")
 
     class Config:
         json_schema_extra = {
             "example": {
                 "success": True,
                 "message": "Logout successful",
+            }
+        }
+
+
+class GitHubImportRequest(BaseModel):
+    """Request body for GitHub import"""
+
+    url: str = Field(..., description="GitHub repository URL")
+    project_name: Optional[str] = Field(None, description="Custom project name")
+    branch: Optional[str] = Field(None, description="Branch to import")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "url": "https://github.com/user/repo",
+                "project_name": "My Project",
+                "branch": "main",
             }
         }

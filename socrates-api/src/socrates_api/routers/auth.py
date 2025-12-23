@@ -30,6 +30,7 @@ from socrates_api.models import (
     UserResponse,
     TokenResponse,
     RefreshTokenRequest,
+    ChangePasswordRequest,
     SuccessResponse,
     ErrorResponse,
 )
@@ -55,6 +56,7 @@ def _user_to_response(user: User) -> UserResponse:
     """Convert User model to UserResponse."""
     return UserResponse(
         username=user.username,
+        email=user.email,
         subscription_tier=user.subscription_tier,
         subscription_status=user.subscription_status,
         testing_mode=user.testing_mode,
@@ -98,6 +100,20 @@ async def register(request: RegisterRequest, db: ProjectDatabaseV2 = Depends(get
                 detail="Username and password are required",
             )
 
+        # Check if email is provided and validate format
+        if not request.email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is required",
+            )
+
+        # Basic email format validation
+        if '@' not in request.email or '.' not in request.email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid email format",
+            )
+
         # Check if user already exists
         existing_user = db.load_user(request.username)
         if existing_user is not None:
@@ -107,12 +123,22 @@ async def register(request: RegisterRequest, db: ProjectDatabaseV2 = Depends(get
                 detail="Username already exists",
             )
 
+        # Check if email already exists
+        existing_email_user = db.load_user_by_email(request.email)
+        if existing_email_user is not None:
+            logger.warning(f"Registration attempt with existing email: {request.email}")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already registered",
+            )
+
         # Hash password
         password_hash = hash_password(request.password)
 
         # Create user
         user = User(
             username=request.username,
+            email=request.email,
             passcode_hash=password_hash,
             subscription_tier="free",  # Default to free tier
             subscription_status="active",
@@ -177,13 +203,27 @@ async def login(request: LoginRequest, db: ProjectDatabaseV2 = Depends(get_datab
         HTTPException: If credentials are invalid
     """
     try:
+        # Validate input
+        if not request.username or not request.password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username and password are required",
+            )
+
+        # Strip whitespace and check if still empty
+        if not request.username.strip() or not request.password.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username and password cannot be empty",
+            )
+
         # Load user from database
         user = db.load_user(request.username)
         if user is None:
             logger.warning(f"Login attempt for non-existent user: {request.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid username or password",
+                detail="Invalid credentials",
             )
 
         # Verify password
@@ -191,7 +231,7 @@ async def login(request: LoginRequest, db: ProjectDatabaseV2 = Depends(get_datab
             logger.warning(f"Failed login attempt for user: {request.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid username or password",
+                detail="Invalid credentials",
             )
 
         logger.info(f"User logged in successfully: {request.username}")
@@ -293,6 +333,101 @@ async def refresh(request: RefreshTokenRequest, db: ProjectDatabaseV2 = Depends(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error refreshing token",
+        )
+
+
+@router.put(
+    "/change-password",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Change user password",
+    responses={
+        200: {"description": "Password changed successfully"},
+        400: {"description": "Invalid request or password doesn't meet requirements", "model": ErrorResponse},
+        401: {"description": "Old password incorrect or not authenticated", "model": ErrorResponse},
+        500: {"description": "Server error during password change", "model": ErrorResponse},
+    },
+)
+async def change_password(
+    request: ChangePasswordRequest,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabaseV2 = Depends(get_database),
+):
+    """
+    Change user password.
+
+    Requires valid old password and new password meeting security requirements.
+
+    Args:
+        request: Change password request with old and new passwords
+        current_user: Current authenticated user (from token)
+        db: Database connection
+
+    Returns:
+        SuccessResponse indicating password was changed
+
+    Raises:
+        HTTPException: If old password is wrong or new password invalid
+    """
+    try:
+        # Validate input
+        if not request.old_password or not request.new_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Old password and new password are required",
+            )
+
+        # Load user
+        user = db.load_user(current_user)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+            )
+
+        # Verify old password
+        if not verify_password(request.old_password, user.passcode_hash):
+            logger.warning(f"Failed password change attempt for user: {current_user}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Old password is incorrect",
+            )
+
+        # Validate new password strength
+        if len(request.new_password) < 8:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="New password must be at least 8 characters long",
+            )
+
+        # Check if new password is different from old
+        if request.old_password == request.new_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="New password must be different from old password",
+            )
+
+        # Hash new password
+        new_password_hash = hash_password(request.new_password)
+
+        # Update password in database
+        user.passcode_hash = new_password_hash
+        db.save_user(user)
+
+        logger.info(f"Password changed successfully for user: {current_user}")
+
+        return SuccessResponse(
+            success=True,
+            message="Password changed successfully",
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error during password change for user {current_user}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error changing password",
         )
 
 
@@ -438,6 +573,129 @@ async def update_me(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required",
+        )
+
+
+@router.delete(
+    "/me",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Delete user account",
+    responses={
+        200: {"description": "Account deleted successfully"},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+        404: {"description": "User not found", "model": ErrorResponse},
+    },
+)
+async def delete_account(
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabaseV2 = Depends(get_database),
+):
+    """
+    Permanently delete the current user's account.
+
+    This will delete all projects owned by the user and remove all user data.
+    This action cannot be undone.
+
+    Args:
+        current_user: Current authenticated user (from JWT)
+        db: Database connection
+
+    Returns:
+        SuccessResponse confirming account deletion
+
+    Raises:
+        HTTPException: If user not found or not authenticated
+    """
+    try:
+        user = db.load_user(current_user)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        # Delete all projects owned by the user
+        all_projects = db.list_projects_for_user(current_user)
+        for project in all_projects:
+            db.delete_project(project.project_id)
+
+        # Delete the user account
+        db.delete_user(current_user)
+
+        logger.info(f"User account deleted: {current_user}")
+        return SuccessResponse(
+            success=True,
+            message="Account deleted successfully"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting account: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete account: {str(e)}"
+        )
+
+
+@router.put(
+    "/me/testing-mode",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Toggle testing mode (bypasses subscription checks)",
+    responses={
+        200: {"description": "Testing mode updated"},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+        404: {"description": "User not found", "model": ErrorResponse},
+    },
+)
+async def set_testing_mode(
+    enabled: bool,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabaseV2 = Depends(get_database),
+):
+    """
+    Enable or disable testing mode for the current user.
+
+    When enabled, all subscription checks are bypassed. This is for development
+    and testing purposes only.
+
+    Args:
+        enabled: Whether to enable or disable testing mode
+        current_user: Current authenticated user (from JWT)
+        db: Database connection
+
+    Returns:
+        SuccessResponse confirming testing mode update
+
+    Raises:
+        HTTPException: If user not found or not authenticated
+    """
+    try:
+        user = db.load_user(current_user)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        user.testing_mode = enabled
+        db.save_user(user)
+
+        logger.info(f"Testing mode {'enabled' if enabled else 'disabled'} for user: {current_user}")
+        return SuccessResponse(
+            success=True,
+            message=f"Testing mode {'enabled' if enabled else 'disabled'}"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating testing mode: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update testing mode: {str(e)}"
         )
 
 

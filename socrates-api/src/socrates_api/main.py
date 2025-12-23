@@ -30,6 +30,19 @@ from .models import (
     ErrorResponse,
     SystemInfoResponse,
 )
+from .routers import (
+    auth_router,
+    projects_router,
+    websocket_router,
+    collaboration_router,
+    code_generation_router,
+    knowledge_router,
+    llm_router,
+    analysis_router,
+    security_router,
+    analytics_router,
+    github_router,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -94,6 +107,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include API routers
+app.include_router(auth_router)
+app.include_router(projects_router)
+app.include_router(websocket_router)
+app.include_router(collaboration_router)
+app.include_router(code_generation_router)
+app.include_router(knowledge_router)
+app.include_router(llm_router)
+app.include_router(analysis_router)
+app.include_router(security_router)
+app.include_router(analytics_router)
+app.include_router(github_router)
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -129,16 +155,15 @@ async def initialize(api_key: Optional[str] = None):
             raise ValueError("API key required. Set ANTHROPIC_API_KEY or pass api_key parameter.")
 
         # Create configuration
+        config_dict = {"api_key": api_key}
         data_dir = os.getenv("SOCRATES_DATA_DIR", None)
-        config_builder = socrates.ConfigBuilder(api_key)
-
         if data_dir:
-            config_builder = config_builder.with_data_dir(Path(data_dir))
+            config_dict["data_dir"] = Path(data_dir)
 
-        config = config_builder.build()
+        config = socrates.SocratesConfig.from_dict(config_dict)
 
         # Create orchestrator
-        orchestrator = socrates.create_orchestrator(config)
+        orchestrator = socrates.AgentOrchestrator(config)
 
         # Test connection
         orchestrator.claude_client.test_connection()
