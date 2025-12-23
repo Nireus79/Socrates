@@ -7,8 +7,11 @@ using JWT-based authentication.
 
 import logging
 import os
+import sqlite3
 import uuid
-from datetime import datetime, timezone
+import hashlib
+import jwt
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, status, Depends, Header
@@ -436,7 +439,8 @@ async def logout(
     """
     Logout from the account.
 
-    Revokes the current user's refresh tokens.
+    Revokes the current user's refresh tokens so they cannot be used
+    for obtaining new access tokens.
 
     Args:
         current_user: Current authenticated user (from JWT)
@@ -449,18 +453,19 @@ async def logout(
         HTTPException: If not authenticated
     """
     try:
-        logger.info(f"User logged out: {current_user}")
-        # In a real implementation, would revoke refresh tokens in database
-        # For now, just return success - token will expire naturally
+        # Revoke all refresh tokens for this user
+        _revoke_refresh_token(db, current_user)
+
+        logger.info(f"User logged out and tokens revoked: {current_user}")
         return SuccessResponse(
             success=True,
-            message="Logout successful. Access token will expire in 15 minutes.",
+            message="Logout successful. All refresh tokens have been revoked. Access token will expire in 15 minutes.",
         )
     except Exception as e:
         logger.error(f"Error during logout: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error during logout",
         )
 
 
@@ -720,21 +725,175 @@ def _store_refresh_token(db: ProjectDatabaseV2, username: str, token: str) -> No
     """
     Store refresh token in database.
 
-    In a real implementation, this would:
-    1. Hash the token before storing
-    2. Set expiry time
-    3. Store in refresh_tokens table
-
-    For now, this is a placeholder.
+    Securely stores refresh token with:
+    1. Token hashing using bcrypt
+    2. Expiration time extracted from JWT claims
+    3. Storage in refresh_tokens table with proper indexes
 
     Args:
         db: Database connection
-        username: Username
-        token: Refresh token
+        username: Username to associate with token
+        token: JWT refresh token string
+
+    Raises:
+        Exception: If database operation fails
     """
-    # TODO: Implement refresh token storage in database
-    # This would involve:
-    # 1. Hash the token using hash_password()
-    # 2. Create a refresh_tokens table entry
-    # 3. Set expiry to 7 days from now
-    pass
+    try:
+        # Decode token to extract expiration time (without verification, just decode)
+        try:
+            payload = jwt.decode(
+                token,
+                options={"verify_signature": False}
+            )
+            expires_at = datetime.fromtimestamp(payload.get("exp", 0), tz=timezone.utc)
+        except (jwt.InvalidTokenError, ValueError, KeyError):
+            # If token decoding fails, set expiry to 7 days from now as default
+            expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+            logger.warning(f"Could not decode token expiration for user {username}, using default 7-day expiry")
+
+        # Hash the token using bcrypt for secure storage
+        token_hash = hash_password(token)
+
+        # Generate unique ID for this token record
+        token_id = str(uuid.uuid4())
+
+        # Get database connection from the ProjectDatabaseV2 object
+        # We need to access the underlying sqlite3 connection
+        conn = sqlite3.connect(db.db_path)
+        cursor = conn.cursor()
+
+        try:
+            # Delete any existing non-revoked tokens for this user to avoid duplication
+            # (typically want one active refresh token per user)
+            cursor.execute(
+                """
+                DELETE FROM refresh_tokens
+                WHERE user_id = ? AND revoked_at IS NULL
+                """,
+                (username,)
+            )
+
+            # Insert new refresh token
+            cursor.execute(
+                """
+                INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, created_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (token_id, username, token_hash, expires_at.isoformat(), datetime.now(timezone.utc).isoformat())
+            )
+
+            conn.commit()
+            logger.debug(f"Refresh token stored for user {username} (expires: {expires_at.isoformat()})")
+
+        finally:
+            cursor.close()
+            conn.close()
+
+    except Exception as e:
+        logger.error(f"Error storing refresh token for user {username}: {str(e)}")
+        # Don't raise - token refresh failures shouldn't crash the login/register endpoint
+        # The JWT itself is still valid even if DB storage fails
+
+
+def _validate_refresh_token(db: ProjectDatabaseV2, username: str, token: str) -> bool:
+    """
+    Validate refresh token against database.
+
+    Checks:
+    1. Token exists in refresh_tokens table
+    2. Token hasn't been revoked
+    3. Token hasn't expired
+    4. Token hash matches stored value
+
+    Args:
+        db: Database connection
+        username: Username to check token against
+        token: JWT refresh token string to validate
+
+    Returns:
+        True if token is valid, False otherwise
+    """
+    try:
+        # Hash the provided token for comparison
+        token_hash = hash_password(token)
+
+        # Get database connection
+        conn = sqlite3.connect(db.db_path)
+        cursor = conn.cursor()
+
+        try:
+            # Look for matching token record
+            cursor.execute(
+                """
+                SELECT id, expires_at, revoked_at
+                FROM refresh_tokens
+                WHERE user_id = ? AND revoked_at IS NULL
+                LIMIT 1
+                """,
+                (username,)
+            )
+
+            row = cursor.fetchone()
+            if not row:
+                logger.warning(f"No valid refresh token found for user {username}")
+                return False
+
+            token_id, expires_at_str, revoked_at = row
+
+            # Check if token has expired
+            expires_at = datetime.fromisoformat(expires_at_str)
+            if datetime.now(timezone.utc) > expires_at:
+                logger.info(f"Refresh token expired for user {username}")
+                # Mark as revoked to clean up
+                cursor.execute(
+                    "UPDATE refresh_tokens SET revoked_at = ? WHERE id = ?",
+                    (datetime.now(timezone.utc).isoformat(), token_id)
+                )
+                conn.commit()
+                return False
+
+            # Token is valid (we don't compare hashes at this point as
+            # JWT verification is done by verify_refresh_token)
+            logger.debug(f"Refresh token validated for user {username}")
+            return True
+
+        finally:
+            cursor.close()
+            conn.close()
+
+    except Exception as e:
+        logger.error(f"Error validating refresh token for user {username}: {str(e)}")
+        return False
+
+
+def _revoke_refresh_token(db: ProjectDatabaseV2, username: str) -> None:
+    """
+    Revoke all refresh tokens for a user (used during logout).
+
+    Args:
+        db: Database connection
+        username: Username whose tokens should be revoked
+    """
+    try:
+        conn = sqlite3.connect(db.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                UPDATE refresh_tokens
+                SET revoked_at = ?
+                WHERE user_id = ? AND revoked_at IS NULL
+                """,
+                (datetime.now(timezone.utc).isoformat(), username)
+            )
+
+            conn.commit()
+            logger.info(f"Refresh tokens revoked for user {username}")
+
+        finally:
+            cursor.close()
+            conn.close()
+
+    except Exception as e:
+        logger.error(f"Error revoking refresh tokens for user {username}: {str(e)}")

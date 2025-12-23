@@ -11,7 +11,7 @@ class CreateProjectRequest(BaseModel):
     """Request body for creating a new project"""
 
     name: str = Field(..., min_length=1, max_length=200, description="Project name")
-    owner: str = Field(..., min_length=1, max_length=100, description="Project owner username")
+    owner: Optional[str] = Field(None, min_length=1, max_length=100, description="Project owner username (ignored - uses authenticated user)")
     description: Optional[str] = Field(None, max_length=1000, description="Project description")
     knowledge_base_content: Optional[str] = Field(
         None, description="Initial knowledge base content"
@@ -21,7 +21,6 @@ class CreateProjectRequest(BaseModel):
         json_schema_extra = {
             "example": {
                 "name": "Python API Development",
-                "owner": "alice",
                 "description": "Building a REST API with FastAPI",
                 "knowledge_base_content": "FastAPI is a modern web framework...",
             }
