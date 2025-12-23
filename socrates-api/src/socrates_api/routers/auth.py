@@ -15,6 +15,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Header
 
 from socratic_system.database import ProjectDatabaseV2
 from socratic_system.models import User
+from socrates_api.database import get_database
 from socrates_api.auth import (
     create_access_token,
     create_refresh_token,
@@ -37,19 +38,6 @@ from socrates_api.models import (
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["authentication"])
-
-# Global database instance (should be passed via dependency injection in production)
-_database = None
-
-
-def get_database() -> ProjectDatabaseV2:
-    """Get database instance."""
-    global _database
-    if _database is None:
-        data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
-        db_path = os.path.join(data_dir, "projects.db")
-        _database = ProjectDatabaseV2(db_path)
-    return _database
 
 
 def _user_to_response(user: User) -> UserResponse:
@@ -100,15 +88,18 @@ async def register(request: RegisterRequest, db: ProjectDatabaseV2 = Depends(get
                 detail="Username and password are required",
             )
 
-        # Generate email if not provided
-        email = request.email or f"{request.username}@localhost"
-
-        # Basic email format validation if email was provided
-        if request.email and ('@' not in request.email or '.' not in request.email):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid email format",
-            )
+        # Generate email if not provided (use UUID to ensure uniqueness)
+        if request.email:
+            # Basic email format validation if email was provided
+            if '@' not in request.email or '.' not in request.email:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid email format",
+                )
+            email = request.email
+        else:
+            # Generate unique email using UUID (not hardcoded localhost)
+            email = f"{request.username}+{str(uuid.uuid4())[:8]}@socrates.local"
 
         # Check if user already exists
         existing_user = db.load_user(request.username)
@@ -613,12 +604,12 @@ async def delete_account(
             )
 
         # Delete all projects owned by the user
-        all_projects = db.list_projects_for_user(current_user)
+        all_projects = db.get_user_projects(current_user)
         for project in all_projects:
             db.delete_project(project.project_id)
 
         # Delete the user account
-        db.delete_user(current_user)
+        db.permanently_delete_user(current_user)
 
         logger.info(f"User account deleted: {current_user}")
         return SuccessResponse(

@@ -143,6 +143,9 @@ async def startup_event():
 async def shutdown_event():
     """Cleanup on shutdown"""
     logger.info("Shutting down Socrates API server...")
+    # Close database connection
+    from socrates_api.database import close_database
+    close_database()
 
 
 @app.get("/health", response_model=dict)
