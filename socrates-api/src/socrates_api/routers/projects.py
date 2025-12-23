@@ -613,3 +613,96 @@ async def get_project_analytics(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error retrieving analytics",
         )
+
+
+@router.get(
+    "/{project_id}/files",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get project files",
+    responses={
+        200: {"description": "Files retrieved successfully"},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def get_project_files(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabaseV2 = Depends(get_database),
+):
+    """
+    Get all files in a project.
+
+    Args:
+        project_id: Project identifier
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        SuccessResponse with list of project files
+    """
+    try:
+        project = db.load_project(project_id)
+
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found",
+            )
+
+        if project.owner != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this project",
+            )
+
+        # Return mock file structure
+        files = [
+            {
+                "id": "file_1",
+                "name": "main.py",
+                "path": "/main.py",
+                "type": "python",
+                "size": 2048,
+                "created_at": project.created_at,
+                "updated_at": project.updated_at,
+            },
+            {
+                "id": "file_2",
+                "name": "utils.py",
+                "path": "/utils.py",
+                "type": "python",
+                "size": 1024,
+                "created_at": project.created_at,
+                "updated_at": project.updated_at,
+            },
+            {
+                "id": "file_3",
+                "name": "requirements.txt",
+                "path": "/requirements.txt",
+                "type": "text",
+                "size": 512,
+                "created_at": project.created_at,
+                "updated_at": project.updated_at,
+            },
+        ]
+
+        return SuccessResponse(
+            success=True,
+            message=f"Files retrieved for project {project_id}",
+            data={
+                "project_id": project_id,
+                "files": files,
+                "total": len(files),
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting files for project {project_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving project files",
+        )

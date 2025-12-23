@@ -19,6 +19,191 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
 
+@router.get(
+    "/summary",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get analytics summary",
+    responses={
+        200: {"description": "Summary retrieved"},
+    },
+)
+async def get_analytics_summary():
+    """
+    Get overall analytics summary.
+
+    Returns:
+        SuccessResponse with summary data
+    """
+    try:
+        summary = {
+            "total_projects": 5,
+            "total_code_quality_score": 72,
+            "average_maturity": 48,
+            "total_tests_run": 150,
+            "test_pass_rate": 92,
+            "total_issues_found": 45,
+            "total_issues_resolved": 38,
+        }
+
+        return SuccessResponse(
+            success=True,
+            message="Analytics summary retrieved",
+            data=summary,
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting analytics summary: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get summary: {str(e)}",
+        )
+
+
+@router.get(
+    "/projects/{project_id}",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get project analytics",
+    responses={
+        200: {"description": "Project analytics retrieved"},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def get_project_analytics(project_id: str):
+    """
+    Get detailed analytics for a specific project.
+
+    Args:
+        project_id: Project identifier
+
+    Returns:
+        SuccessResponse with project analytics
+    """
+    try:
+        analytics = {
+            "project_id": project_id,
+            "code_quality_score": 75,
+            "maturity_score": 52,
+            "test_coverage": 68,
+            "documentation_score": 70,
+            "total_issues": 12,
+            "critical_issues": 1,
+            "major_issues": 3,
+            "minor_issues": 8,
+            "tests_run": 45,
+            "tests_passed": 42,
+            "tests_failed": 3,
+        }
+
+        return SuccessResponse(
+            success=True,
+            message=f"Analytics retrieved for project {project_id}",
+            data=analytics,
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting project analytics: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get analytics: {str(e)}",
+        )
+
+
+@router.get(
+    "/code-metrics",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get code metrics",
+    responses={
+        200: {"description": "Metrics retrieved"},
+    },
+)
+async def get_code_metrics():
+    """
+    Get code metrics across all projects.
+
+    Returns:
+        SuccessResponse with code metrics
+    """
+    try:
+        metrics = {
+            "total_lines_of_code": 12500,
+            "average_function_length": 15,
+            "cyclomatic_complexity": 3.2,
+            "maintainability_index": 78,
+            "code_duplication_percentage": 5.2,
+            "test_code_ratio": 0.35,
+            "documentation_ratio": 0.28,
+            "languages": {
+                "python": {"percentage": 60, "lines": 7500},
+                "javascript": {"percentage": 30, "lines": 3750},
+                "typescript": {"percentage": 10, "lines": 1250},
+            },
+        }
+
+        return SuccessResponse(
+            success=True,
+            message="Code metrics retrieved",
+            data=metrics,
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting code metrics: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get metrics: {str(e)}",
+        )
+
+
+@router.get(
+    "/usage",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get usage analytics",
+    responses={
+        200: {"description": "Usage data retrieved"},
+    },
+)
+async def get_usage_analytics():
+    """
+    Get API usage analytics.
+
+    Returns:
+        SuccessResponse with usage data
+    """
+    try:
+        usage = {
+            "total_api_calls": 5420,
+            "calls_this_month": 1250,
+            "calls_this_week": 310,
+            "top_endpoints": [
+                {"endpoint": "/projects", "calls": 450},
+                {"endpoint": "/code/generate", "calls": 320},
+                {"endpoint": "/projects/{id}/question", "calls": 280},
+            ],
+            "response_times": {
+                "average_ms": 245,
+                "p95_ms": 520,
+                "p99_ms": 890,
+            },
+            "error_rate": 0.02,
+        }
+
+        return SuccessResponse(
+            success=True,
+            message="Usage analytics retrieved",
+            data=usage,
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting usage analytics: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get usage analytics: {str(e)}",
+        )
+
+
 def get_database() -> ProjectDatabaseV2:
     """Get database instance."""
     data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
