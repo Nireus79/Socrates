@@ -11,6 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 import sys
 from pathlib import Path
+from datetime import datetime
 
 # Add the source directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -20,20 +21,41 @@ from socrates_api.main import app
 # Test client
 client = TestClient(app)
 
+# Generate unique test usernames to avoid database pollution
+_test_timestamp = int(datetime.now().timestamp() * 1000)
+
 # Test data
 TEST_USER = {
-    "username": "testuser_smoke",
+    "username": f"testuser_smoke_{_test_timestamp}",
     "password": "TestPassword123!",
 }
 
 TEST_USER_2 = {
-    "username": "testuser_other",
+    "username": f"testuser_other_{_test_timestamp}",
     "password": "OtherPassword123!",
 }
 
 
 class TestAuthenticationEndpoints:
     """Test authentication endpoints."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Setup test user for auth tests."""
+        # Create a unique user for this test instance
+        self.test_user = {
+            "username": f"authtest_{id(self)}",
+            "password": "TestPassword123!",
+        }
+        # Register the user
+        response = client.post("/auth/register", json=self.test_user)
+        if response.status_code in [200, 201]:
+            self.access_token = response.json().get("access_token")
+        else:
+            # User might already exist, try to login
+            login_response = client.post("/auth/login", json=self.test_user)
+            if login_response.status_code == 200:
+                self.access_token = login_response.json().get("access_token")
 
     def test_health_check(self):
         """Test health check endpoint."""
@@ -43,10 +65,14 @@ class TestAuthenticationEndpoints:
 
     def test_register_new_user(self):
         """Test user registration."""
-        response = client.post("/auth/register", json=TEST_USER)
+        new_user = {
+            "username": f"newreg_{id(self)}",
+            "password": "TestPassword123!",
+        }
+        response = client.post("/auth/register", json=new_user)
         assert response.status_code == 201
         data = response.json()
-        assert data["user"]["username"] == TEST_USER["username"]
+        assert data["user"]["username"] == new_user["username"]
         assert data["user"]["subscription_tier"] == "free"
         assert "access_token" in data
         assert "refresh_token" in data
@@ -106,19 +132,14 @@ class TestAuthenticationEndpoints:
 
     def test_get_current_user(self):
         """Test getting current user profile."""
-        # Register and get tokens
-        register_response = client.post("/auth/register", json=TEST_USER)
-        tokens = register_response.json()
-        access_token = tokens["access_token"]
-
-        # Get current user
+        # Use the access token from setup fixture
         response = client.get(
             "/auth/me",
-            headers={"Authorization": f"Bearer {access_token}"},
+            headers={"Authorization": f"Bearer {self.access_token}"},
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["username"] == TEST_USER["username"]
+        assert data["username"] == self.test_user["username"]
         assert data["subscription_tier"] == "free"
 
     def test_get_current_user_unauthorized(self):
@@ -136,14 +157,10 @@ class TestAuthenticationEndpoints:
 
     def test_logout_success(self):
         """Test successful logout."""
-        # Register and get token
-        register_response = client.post("/auth/register", json=TEST_USER)
-        access_token = register_response.json()["access_token"]
-
-        # Logout
+        # Use the access token from setup fixture
         response = client.post(
             "/auth/logout",
-            headers={"Authorization": f"Bearer {access_token}"},
+            headers={"Authorization": f"Bearer {self.access_token}"},
         )
         assert response.status_code == 200
         assert response.json()["success"] is True
@@ -258,10 +275,10 @@ class TestProjectEndpoints:
         create_response = self._create_project()
         project_id = create_response.json()["project_id"]
 
-        # Update project
+        # Update project - send as JSON body, not query params
         response = client.put(
             f"/projects/{project_id}",
-            params={"name": "Updated Name", "phase": "analysis"},
+            json={"name": "Updated Name", "phase": "analysis"},
             headers=self.headers,
         )
         assert response.status_code == 200
@@ -428,7 +445,7 @@ class TestAccessControl:
         # User 2 tries to update User 1's project
         response = client.put(
             f"/projects/{project_id}",
-            params={"name": "Hacked Name"},
+            json={"name": "Hacked Name"},
             headers=self.user2_headers,
         )
         assert response.status_code == 403
