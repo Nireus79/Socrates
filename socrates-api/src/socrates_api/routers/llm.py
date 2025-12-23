@@ -27,7 +27,7 @@ def get_database() -> ProjectDatabaseV2:
 
 @router.get(
     "/providers",
-    response_model=SuccessResponse,
+    response_model=list,
     status_code=status.HTTP_200_OK,
     summary="List LLM providers",
     responses={
@@ -42,7 +42,7 @@ async def list_providers(
     List available LLM providers and their configuration.
 
     Returns:
-        SuccessResponse with list of providers and their details
+        List of providers and their details
     """
     try:
         # TODO: Get providers from configuration
@@ -74,17 +74,64 @@ async def list_providers(
             },
         ]
 
-        return SuccessResponse(
-            success=True,
-            message="Providers retrieved",
-            data={"providers": providers, "total": len(providers)},
-        )
+        return providers
 
     except Exception as e:
         logger.error(f"Error listing providers: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to list providers: {str(e)}",
+        )
+
+
+@router.get(
+    "/models/{provider}",
+    response_model=list,
+    status_code=status.HTTP_200_OK,
+    summary="List models for LLM provider",
+    responses={
+        200: {"description": "Models retrieved"},
+        400: {"description": "Invalid provider", "model": ErrorResponse},
+    },
+)
+async def list_provider_models(
+    provider: str,
+):
+    """
+    List available models for a specific LLM provider.
+
+    Args:
+        provider: Provider name (claude, openai, gemini, local)
+
+    Returns:
+        List of available models for the provider
+    """
+    try:
+        # Map of providers to their models
+        models_map = {
+            "anthropic": ["claude-opus-4.5", "claude-sonnet-4", "claude-haiku-4.5"],
+            "claude": ["claude-opus-4.5", "claude-sonnet-4", "claude-haiku-4.5"],
+            "openai": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
+            "gemini": ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
+            "local": ["llama2", "mistral", "neural-chat"],
+        }
+
+        if provider.lower() not in models_map:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unknown provider: {provider}",
+            )
+
+        models = models_map[provider.lower()]
+        return [{"name": m, "label": m} for m in models]
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error listing models: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list models: {str(e)}",
         )
 
 
