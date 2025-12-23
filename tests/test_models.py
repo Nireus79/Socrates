@@ -29,7 +29,7 @@ class TestUser:
     def test_user_timestamps(self):
         """Test user timestamp handling"""
         now = datetime.now()
-        user = User(username="testuser", passcode_hash="hashed", created_at=now)
+        user = User(username="testuser", email="test@example.com", passcode_hash="hashed", created_at=now)
 
         assert user.created_at == now
         assert isinstance(user.created_at, datetime)
@@ -38,6 +38,7 @@ class TestUser:
         """Test user archive status"""
         user = User(
             username="testuser",
+            email="test@example.com",
             passcode_hash="hashed",
             created_at=datetime.now(),
             is_archived=True,
@@ -295,7 +296,7 @@ class TestModelDataTypes:
 
     def test_user_string_fields(self):
         """Test that user string fields are strings"""
-        user = User(username="testuser", passcode_hash="hashed_value", created_at=datetime.now())
+        user = User(username="testuser", email="test@example.com", passcode_hash="hashed_value", created_at=datetime.now())
 
         assert isinstance(user.username, str)
         assert isinstance(user.passcode_hash, str)
@@ -344,7 +345,7 @@ class TestModelDefaults:
 
     def test_user_defaults(self):
         """Test User default values"""
-        user = User(username="test", passcode_hash="hashed", created_at=datetime.now())
+        user = User(username="test", email="test@example.com", passcode_hash="hashed", created_at=datetime.now())
 
         assert user.is_archived is False
 
