@@ -47,9 +47,7 @@ class TestProjectMaturityAnalytics:
             f"{BASE_URL}/projects",
             json={
                 "name": "Analytics Test Project",
-                "description": "Test project for analytics",
-                "owner": username
-            },
+                "description": "Test project for analytics"},
             headers=auth_headers
         )
         project_id = proj_resp.json()["project_id"]
@@ -155,9 +153,7 @@ class TestQuestionResponseAnalytics:
             f"{BASE_URL}/projects",
             json={
                 "name": "Question Analytics Project",
-                "description": "Test project",
-                "owner": username
-            },
+                "description": "Test project"},
             headers=auth_headers
         )
         project_id = proj_resp.json()["project_id"]

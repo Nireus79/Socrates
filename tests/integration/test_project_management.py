@@ -58,8 +58,7 @@ class TestProjectManagement:
             json={
                 "name": "My First Project",
                 "description": "Free tier test project",
-                "knowledge_base_content": "Test knowledge base",
-                "owner": test_user["username"]
+                "knowledge_base_content": "Test knowledge base"
             },
             headers=auth_headers
         )
@@ -98,7 +97,7 @@ class TestProjectManagement:
         # Create a project first
         create_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={"name": "List Test Project", "description": "For listing", "owner": test_user["username"]},
+            json={"name": "List Test Project", "description": "For listing"},
             headers=auth_headers
         )
         project_id = create_resp.json()["project_id"]
@@ -127,9 +126,7 @@ class TestProjectManagement:
             f"{BASE_URL}/projects",
             json={
                 "name": "Detail Test Project",
-                "description": "Testing detail retrieval",
-                "owner": test_user["username"]
-            },
+                "description": "Testing detail retrieval"},
             headers=auth_headers
         )
         project_id = create_resp.json()["project_id"]
@@ -153,9 +150,7 @@ class TestProjectManagement:
             f"{BASE_URL}/projects",
             json={
                 "name": "Original Name",
-                "description": "Original description",
-                "owner": test_user["username"]
-            },
+                "description": "Original description"},
             headers=auth_headers
         )
         project_id = create_resp.json()["project_id"]
@@ -180,7 +175,7 @@ class TestProjectManagement:
         # Create a project
         create_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={"name": "Project to Delete", "description": "Delete test", "owner": test_user["username"]},
+            json={"name": "Project to Delete", "description": "Delete test"},
             headers=auth_headers
         )
         project_id = create_resp.json()["project_id"]
@@ -200,7 +195,7 @@ class TestProjectManagement:
         # Create a project with first user
         create_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={"name": "Private Project", "description": "Private test", "owner": test_user["username"]},
+            json={"name": "Private Project", "description": "Private test"},
             headers=auth_headers
         )
         project_id = create_resp.json()["project_id"]
@@ -232,7 +227,7 @@ class TestProjectManagement:
         # Create project
         create_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={"name": "Phase Test Project", "description": "Phase test", "owner": test_user["username"]},
+            json={"name": "Phase Test Project", "description": "Phase test"},
             headers=auth_headers
         )
         project_id = create_resp.json()["project_id"]
@@ -268,9 +263,7 @@ class TestProjectManagement:
             json={
                 "name": "Knowledge Base Project",
                 "description": "Project with knowledge base",
-                "knowledge_base_content": knowledge_content,
-                "owner": test_user["username"]
-            },
+                "knowledge_base_content": knowledge_content},
             headers=auth_headers
         )
 
@@ -284,9 +277,7 @@ class TestProjectManagement:
             f"{BASE_URL}/projects",
             json={
                 "name": "Metadata Test",
-                "description": "Test metadata",
-                "owner": test_user["username"]
-            },
+                "description": "Test metadata"},
             headers=auth_headers
         )
 

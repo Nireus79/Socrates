@@ -46,9 +46,7 @@ class TestCodeGeneration:
             f"{BASE_URL}/projects",
             json={
                 "name": "Code Generation Test Project",
-                "description": "Test project for code generation",
-                "owner": username
-            },
+                "description": "Test project for code generation"},
             headers=auth_headers
         )
         project_id = proj_resp.json()["project_id"]
@@ -265,7 +263,7 @@ if x is not None:
         # Create project
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={"name": "Free Project", "description": "Test", "owner": username},
+            json={"name": "Free Project", "description": "Test"},
             headers=auth_headers
         )
         project_id = proj_resp.json()["project_id"]

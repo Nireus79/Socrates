@@ -185,9 +185,9 @@ async def initialize(request: Optional[InitializeRequest] = Body(None)):
         if data_dir:
             config_dict["data_dir"] = Path(data_dir)
 
-        # config = socrates.SocratesConfig.from_dict(config_dict)
-        # Create orchestrator directly
-        orchestrator = AgentOrchestrator()
+        # Create orchestrator with API key
+        # AgentOrchestrator requires api_key_or_config parameter
+        orchestrator = AgentOrchestrator(api_key_or_config=api_key)
 
         # Test connection
         orchestrator.claude_client.test_connection()

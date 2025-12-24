@@ -5,16 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.6.6">
-      <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_all_workflows.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_all_workflows_comprehensive.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_api_comprehensive.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_e2e_workflows_strict.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_fixes_verification.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_integration_complete.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_workflows.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/database.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -136,7 +136,9 @@
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImV4cCI6OTk5OTk5OTk5OSwiaWF0IjoxNzY2MTU5OTk1LCJ0eXBlIjoiYWNjZXNzIn0.test\":*)",
       "Bash(timeout 120 python:*)",
       "Bash(python3:*)",
-      "Bash(timeout 10 bash:*)"
+      "Bash(timeout 10 bash:*)",
+      "Bash(timeout 90 python -m pytest:*)",
+      "Bash(timeout 20 bash -c:*)"
     ],
     "deny": [],
     "ask": []

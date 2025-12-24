@@ -164,9 +164,7 @@ class TestCLIAndAPIProjectCreation:
             f"{BASE_URL}/projects",
             json={
                 "name": "Metadata Test",
-                "description": "Testing metadata",
-                "owner": username
-            },
+                "description": "Testing metadata"},
             headers=auth_headers
         )
 
@@ -201,7 +199,7 @@ class TestCLIAndAPIProjectCreation:
 
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={"name": "Phase Project", "description": "Test", "owner": username},
+            json={"name": "Phase Project", "description": "Test"},
             headers=auth_headers
         )
 
@@ -242,7 +240,7 @@ class TestCLIAndAPIQuestionGeneration:
 
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={"name": "Question Test", "description": "Test", "owner": username},
+            json={"name": "Question Test", "description": "Test"},
             headers=auth_headers
         )
 
@@ -282,7 +280,7 @@ class TestCLIAndAPIQuestionGeneration:
 
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={"name": "Difficulty Test", "description": "Test", "owner": username},
+            json={"name": "Difficulty Test", "description": "Test"},
             headers=auth_headers
         )
 
@@ -378,7 +376,7 @@ class TestCLIAndAPIDataConsistency:
         # Create project
         create_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={"name": "Consistency Test", "description": "Test", "owner": username, "owner": username},
+            json={"name": "Consistency Test", "description": "Test"},
             headers=auth_headers
         )
 

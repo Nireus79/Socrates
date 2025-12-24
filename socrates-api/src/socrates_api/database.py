@@ -99,17 +99,12 @@ def close_database() -> None:
     This should be called during application shutdown to properly clean up
     database connections.
     """
-    global _database
-
-    if _database is not None:
-        try:
-            # If database has a close method, call it
-            if hasattr(_database, 'close'):
-                _database.close()
-            _database = None
-            logger.info("Database connection closed")
-        except Exception as e:
-            logger.error(f"Error closing database: {e}")
+    # DatabaseSingleton.reset() clears the cached instance
+    try:
+        DatabaseSingleton.reset()
+        logger.info("Database connection closed")
+    except Exception as e:
+        logger.error(f"Error closing database: {e}")
 
 
 def reset_database() -> None:

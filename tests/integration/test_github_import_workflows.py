@@ -46,9 +46,7 @@ class TestGitHubImport:
             f"{BASE_URL}/projects",
             json={
                 "name": "GitHub Import Test Project",
-                "description": "Test project for GitHub import",
-                "owner": username
-            },
+                "description": "Test project for GitHub import"},
             headers=auth_headers
         )
         project_id = proj_resp.json()["project_id"]
@@ -300,7 +298,7 @@ class TestGitHubImport:
         # Create project
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={"name": "Free Project", "description": "Test", "owner": username},
+            json={"name": "Free Project", "description": "Test"},
             headers=auth_headers
         )
         project_id = proj_resp.json()["project_id"]

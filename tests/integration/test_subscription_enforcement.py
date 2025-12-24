@@ -63,14 +63,14 @@ class TestFreeTierQuotas:
         # Create first project
         requests.post(
             f"{BASE_URL}/projects",
-            json={"name": "Project 1", "description": "First", "owner": free_tier_user["username"]},
+            json={"name": "Project 1", "description": "First"},
             headers=auth_headers
         )
 
         # Try second - should fail
         response = requests.post(
             f"{BASE_URL}/projects",
-            json={"name": "Project 2", "description": "Second", "owner": free_tier_user["username"]},
+            json={"name": "Project 2", "description": "Second"},
             headers=auth_headers
         )
 
@@ -186,14 +186,14 @@ class TestQuotaMessages:
         # Create first project
         requests.post(
             f"{BASE_URL}/projects",
-            json={"name": "Project 1", "description": "First", "owner": free_tier_user["username"]},
+            json={"name": "Project 1", "description": "First"},
             headers=auth_headers
         )
 
         # Try second
         response = requests.post(
             f"{BASE_URL}/projects",
-            json={"name": "Project 2", "description": "Second", "owner": free_tier_user["username"]},
+            json={"name": "Project 2", "description": "Second"},
             headers=auth_headers
         )
 

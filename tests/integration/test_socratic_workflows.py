@@ -44,9 +44,7 @@ class TestSocraticQuestions:
             f"{BASE_URL}/projects",
             json={
                 "name": "Socratic Test Project",
-                "description": "Test project for Socratic questions",
-                "owner": username
-            },
+                "description": "Test project for Socratic questions"},
             headers=auth_headers
         )
         project_id = proj_resp.json()["project_id"]

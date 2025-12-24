@@ -47,9 +47,7 @@ class TestProTierCollaboration:
             f"{BASE_URL}/projects",
             json={
                 "name": "Collaboration Test Project",
-                "description": "Test project for collaboration",
-                "owner": username
-            },
+                "description": "Test project for collaboration"},
             headers=auth_headers
         )
         project_id = proj_resp.json()["project_id"]
@@ -278,7 +276,7 @@ class TestProTierCollaboration:
         # Create project
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={"name": "Free Project", "description": "Test", "owner": username},
+            json={"name": "Free Project", "description": "Test"},
             headers=auth_headers
         )
         project_id = proj_resp.json()["project_id"]
