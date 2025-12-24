@@ -8,9 +8,13 @@
       <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/middleware/subscription.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/middleware/subscription.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_fixes_verification.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_fixes_verification.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_all_workflows.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_all_workflows_comprehensive.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_api_comprehensive.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_e2e_workflows_strict.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_fixes_verification.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_integration_complete.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_workflows.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
