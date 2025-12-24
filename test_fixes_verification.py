@@ -286,18 +286,18 @@ def main():
     print(f"\nResult: {passed_count}/{total_count} tests passed")
 
     if passed_count == total_count:
-        print("\n✓ ALL ARCHITECTURAL FIXES VERIFIED!")
+        print("\n[SUCCESS] ALL ARCHITECTURAL FIXES VERIFIED!")
         print("\nThe following have been successfully implemented:")
-        print("  • Fix #7: Removed owner field from CreateProjectRequest")
-        print("  • Fix #5: Unified password hashing (no fallback)")
-        print("  • Fix #4: ProjectIDGenerator for consistency")
-        print("  • Fix #3: DatabaseSingleton for shared database")
-        print("  • Fix #2: get_current_user_object() dependency")
-        print("  • Fix #1: create_project uses orchestrator pattern")
-        print("  • Orchestrator integration with DatabaseSingleton")
+        print("  [OK] Fix #7: Removed owner field from CreateProjectRequest")
+        print("  [OK] Fix #5: Unified password hashing (no fallback)")
+        print("  [OK] Fix #4: ProjectIDGenerator for consistency")
+        print("  [OK] Fix #3: DatabaseSingleton for shared database")
+        print("  [OK] Fix #2: get_current_user_object() dependency")
+        print("  [OK] Fix #1: create_project uses orchestrator pattern")
+        print("  [OK] Orchestrator integration with DatabaseSingleton")
         return True
     else:
-        print(f"\n✗ {total_count - passed_count} test(s) failed - review above for details")
+        print(f"\n[FAIL] {total_count - passed_count} test(s) failed - review above for details")
         return False
 
 

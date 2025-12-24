@@ -18,7 +18,7 @@ TIER_FEATURES = {
     "free": {
         "projects": 1,
         "team_members": 1,
-        "questions_per_month": 50,
+        "questions_per_month": 100,
         "features": {
             "basic_chat": True,
             "socratic_mode": True,
@@ -29,12 +29,13 @@ TIER_FEATURES = {
             "advanced_analytics": False,
             "multi_llm": False,
             "api_access": False,
+            "project_creation": True,  # Allow free tier to create projects (limited by quota)
         },
     },
     "pro": {
         "projects": 10,
         "team_members": 5,
-        "questions_per_month": 500,
+        "questions_per_month": 1000,
         "features": {
             "basic_chat": True,
             "socratic_mode": True,
@@ -43,8 +44,9 @@ TIER_FEATURES = {
             "collaboration": True,
             "github_import": True,
             "advanced_analytics": True,
-            "multi_llm": False,
+            "multi_llm": True,
             "api_access": False,
+            "project_creation": True,
         },
     },
     "enterprise": {
@@ -61,6 +63,7 @@ TIER_FEATURES = {
             "advanced_analytics": True,
             "multi_llm": True,
             "api_access": True,
+            "project_creation": True,
         },
     },
 }

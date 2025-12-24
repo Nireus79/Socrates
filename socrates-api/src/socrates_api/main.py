@@ -16,7 +16,8 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-import socrates
+from socratic_system.orchestration.orchestrator import AgentOrchestrator
+from socratic_system.events import EventType
 
 from .auth import get_current_user
 from .models import (
@@ -59,14 +60,14 @@ logger = logging.getLogger(__name__)
 app_state = {"orchestrator": None, "start_time": time.time(), "event_listeners_registered": False}
 
 
-def get_orchestrator() -> socrates.AgentOrchestrator:
+def get_orchestrator() -> AgentOrchestrator:
     """Dependency injection for orchestrator"""
     if app_state["orchestrator"] is None:
         raise RuntimeError("Orchestrator not initialized. Call /initialize first.")
     return app_state["orchestrator"]
 
 
-def _setup_event_listeners(orchestrator: socrates.AgentOrchestrator):
+def _setup_event_listeners(orchestrator: AgentOrchestrator):
     """Setup listeners for orchestrator events"""
     if app_state["event_listeners_registered"]:
         return
@@ -86,9 +87,9 @@ def _setup_event_listeners(orchestrator: socrates.AgentOrchestrator):
         logger.error(f"Agent error in {data.get('agent_name')}: {data.get('error')}")
 
     # Register listeners
-    orchestrator.event_emitter.on(socrates.EventType.PROJECT_CREATED, on_project_created)
-    orchestrator.event_emitter.on(socrates.EventType.CODE_GENERATED, on_code_generated)
-    orchestrator.event_emitter.on(socrates.EventType.AGENT_ERROR, on_agent_error)
+    orchestrator.event_emitter.on(EventType.PROJECT_CREATED, on_project_created)
+    orchestrator.event_emitter.on(EventType.CODE_GENERATED, on_code_generated)
+    orchestrator.event_emitter.on(EventType.AGENT_ERROR, on_agent_error)
 
     app_state["event_listeners_registered"] = True
     logger.info("Event listeners registered")
@@ -202,7 +203,7 @@ async def initialize(request: Optional[InitializeRequest] = Body(None)):
         logger.info("Socrates API initialized successfully")
 
         return SystemInfoResponse(
-            version="8.0.0", library_version=socrates.__version__, status="operational", uptime=0.0
+            version="8.0.0", library_version="8.0.0", status="operational", uptime=0.0
         )
 
     except Exception as e:
@@ -223,7 +224,7 @@ async def get_info():
     uptime = time.time() - app_state["start_time"]
 
     return SystemInfoResponse(
-        version="8.0.0", library_version=socrates.__version__, status="operational", uptime=uptime
+        version="8.0.0", library_version="8.0.0", status="operational", uptime=uptime
     )
 
 
