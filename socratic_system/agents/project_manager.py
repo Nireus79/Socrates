@@ -3,6 +3,7 @@ Project management agent for Socratic RAG System
 """
 
 import datetime
+import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict
 
