@@ -17,6 +17,7 @@ class CreateProjectRequest(BaseModel):
     )
 
     class Config:
+        extra = "forbid"  # Reject any extra fields (like 'owner')
         json_schema_extra = {
             "example": {
                 "name": "Python API Development",

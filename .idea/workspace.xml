@@ -8,6 +8,7 @@
       <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/Socrates.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Socrates.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/notes.txt" beforeDir="false" afterPath="$PROJECT_DIR$/notes.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api.egg-info/SOURCES.txt" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api.egg-info/SOURCES.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socrates_ai.egg-info/SOURCES.txt" beforeDir="false" afterPath="$PROJECT_DIR$/socrates_ai.egg-info/SOURCES.txt" afterDir="false" />
