@@ -16,9 +16,8 @@ import { CodePage } from './pages/code/CodePage';
 import { AnalyticsPage } from './pages/analytics/AnalyticsPage';
 import { CollaborationPage } from './pages/collaboration/CollaborationPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
-import { KnowledgeBasePage } from './components/knowledge';
-import { ProjectAnalysisPage } from './components/analysis';
-import { MainLayout, Header } from './components/layout';
+import { KnowledgeBasePage } from './pages/knowledge/KnowledgeBasePage';
+import { MainLayout } from './components/layout';
 import { ErrorBoundary } from './components/common';
 import { NotificationProvider } from './components/providers/NotificationProvider';
 import './App.css';
@@ -158,6 +157,14 @@ function App() {
             }
           />
           <Route
+            path="/projects/:projectId/analytics"
+            element={
+              <ProtectedRoute>
+                <AnalyticsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/collaboration"
             element={
               <ProtectedRoute>
@@ -177,19 +184,15 @@ function App() {
             path="/knowledge"
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <KnowledgeBasePage />
-                </MainLayout>
+                <KnowledgeBasePage />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/projects/:projectId/analysis"
+            path="/projects/:projectId/knowledge"
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <ProjectAnalysisPage />
-                </MainLayout>
+                <KnowledgeBasePage />
               </ProtectedRoute>
             }
           />

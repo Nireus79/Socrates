@@ -34,6 +34,7 @@ class UpdateProjectRequest(BaseModel):
     phase: Optional[str] = Field(None, description="Project phase")
 
     class Config:
+        extra = "forbid"  # Reject any extra fields
         json_schema_extra = {
             "example": {
                 "name": "Updated Project Name",
@@ -102,6 +103,7 @@ class AskQuestionRequest(BaseModel):
     difficulty_level: str = Field(default="intermediate", description="Question difficulty level")
 
     class Config:
+        extra = "forbid"
         json_schema_extra = {
             "example": {
                 "project_id": "proj_abc123",
@@ -140,6 +142,7 @@ class ProcessResponseRequest(BaseModel):
     user_response: str = Field(..., min_length=1, description="User's response to the question")
 
     class Config:
+        extra = "forbid"
         json_schema_extra = {
             "example": {
                 "question_id": "q_xyz789",
@@ -186,6 +189,7 @@ class GenerateCodeRequest(BaseModel):
     language: str = Field(default="python", description="Programming language")
 
     class Config:
+        extra = "forbid"
         json_schema_extra = {
             "example": {
                 "project_id": "proj_abc123",
@@ -269,6 +273,7 @@ class RegisterRequest(BaseModel):
     )
 
     class Config:
+        extra = "forbid"
         json_schema_extra = {
             "example": {
                 "username": "alice_smith",
@@ -285,6 +290,7 @@ class LoginRequest(BaseModel):
     password: str = Field(..., description="Password")
 
     class Config:
+        extra = "forbid"
         json_schema_extra = {
             "example": {
                 "username": "alice_smith",
@@ -369,6 +375,7 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str = Field(..., description="The refresh token")
 
     class Config:
+        extra = "forbid"
         json_schema_extra = {
             "example": {
                 "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -383,6 +390,7 @@ class ChangePasswordRequest(BaseModel):
     new_password: str = Field(..., description="New password")
 
     class Config:
+        extra = "forbid"
         json_schema_extra = {
             "example": {
                 "old_password": "current_password",
@@ -415,6 +423,7 @@ class GitHubImportRequest(BaseModel):
     branch: Optional[str] = Field(None, description="Branch to import")
 
     class Config:
+        extra = "forbid"
         json_schema_extra = {
             "example": {
                 "url": "https://github.com/user/repo",
@@ -430,6 +439,7 @@ class SetDefaultProviderRequest(BaseModel):
     provider: str = Field(..., description="Provider name (claude, openai, gemini, local)")
 
     class Config:
+        extra = "forbid"
         json_schema_extra = {
             "example": {"provider": "anthropic"}
         }
@@ -442,6 +452,7 @@ class SetLLMModelRequest(BaseModel):
     model: str = Field(..., description="Model identifier")
 
     class Config:
+        extra = "forbid"
         json_schema_extra = {
             "example": {
                 "provider": "anthropic",
@@ -457,6 +468,7 @@ class AddAPIKeyRequest(BaseModel):
     api_key: str = Field(..., description="API key for the provider")
 
     class Config:
+        extra = "forbid"
         json_schema_extra = {
             "example": {
                 "provider": "anthropic",
@@ -472,6 +484,7 @@ class CollaborationInviteRequest(BaseModel):
     role: str = Field(default="viewer", description="Role (editor, viewer, admin)")
 
     class Config:
+        extra = "forbid"
         json_schema_extra = {
             "example": {
                 "email": "user@example.com",
@@ -486,6 +499,7 @@ class DeleteDocumentRequest(BaseModel):
     document_id: str = Field(..., description="Document ID to delete")
 
     class Config:
+        extra = "forbid"
         json_schema_extra = {
             "example": {"document_id": "doc_123"}
         }
@@ -497,6 +511,7 @@ class InitializeRequest(BaseModel):
     api_key: Optional[str] = Field(None, description="Claude API key")
 
     class Config:
+        extra = "forbid"
         json_schema_extra = {
             "example": {"api_key": "sk-ant-..."}
         }

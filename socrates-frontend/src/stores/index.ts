@@ -10,3 +10,4 @@ export { useGitHubStore } from './githubStore';
 export { useKnowledgeStore } from './knowledgeStore';
 export { useLLMStore } from './llmStore';
 export { useAnalysisStore } from './analysisStore';
+export { useAnalyticsStore } from './analyticsStore';

@@ -17,26 +17,27 @@ BASE_URL = "http://localhost:8000"
 HEADERS = {"Content-Type": "application/json"}
 
 
+@pytest.fixture
+def free_tier_user():
+    """Create a free tier test user"""
+    username = f"free_user_{int(datetime.now().timestamp() * 1000)}"
+    reg_resp = requests.post(
+        f"{BASE_URL}/auth/register",
+        json={
+            "username": username,
+            "email": f"{username}@test.local",
+            "password": "Password123!"
+        },
+        headers=HEADERS
+    )
+    return {
+        "username": username,
+        "access_token": reg_resp.json()["access_token"]
+    }
+
+
 class TestFreeTierQuotas:
     """Test free tier subscription limits"""
-
-    @pytest.fixture
-    def free_tier_user(self):
-        """Create a free tier test user"""
-        username = f"free_user_{int(datetime.now().timestamp() * 1000)}"
-        reg_resp = requests.post(
-            f"{BASE_URL}/auth/register",
-            json={
-                "username": username,
-                "email": f"{username}@test.local",
-                "password": "Password123!"
-            },
-            headers=HEADERS
-        )
-        return {
-            "username": username,
-            "access_token": reg_resp.json()["access_token"]
-        }
 
     def test_01_free_tier_allows_one_project(self, free_tier_user):
         """Test: Free tier can create exactly 1 project"""

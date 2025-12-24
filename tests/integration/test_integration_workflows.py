@@ -169,9 +169,7 @@ def test_orchestrator_integration():
             {
                 "action": "create_project",
                 "project_name": "Orchestrator Test Project",
-                "owner": test_user,
-                "project_type": "general",
-            }
+                "project_type": "general"}
         )
 
         if result.get("status") == "success":

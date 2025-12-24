@@ -138,7 +138,17 @@
       "Bash(python3:*)",
       "Bash(timeout 10 bash:*)",
       "Bash(timeout 90 python -m pytest:*)",
-      "Bash(timeout 20 bash -c:*)"
+      "Bash(timeout 20 bash -c:*)",
+      "Bash(ANTHROPIC_API_KEY=\"sk-ant-test-key-for-integration-tests\" timeout 120 python -m pytest:*)",
+      "Bash(ANTHROPIC_API_KEY=\"sk-ant-test-key-for-integration-tests\" python -m pytest:*)",
+      "Bash(ANTHROPIC_API_KEY=\"sk-ant-test-key-for-integration-tests\" timeout 150 python -m pytest:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run:*)",
+      "Bash(timeout 3 curl:*)",
+      "Bash(timeout 1 curl:*)",
+      "Bash(\"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\\\\.venv\\\\Scripts\\\\python.exe\" /tmp/test_orchestrator.py)",
+      "Bash(timeout 5 bash:*)",
+      "Bash(\"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\\\\.venv\\\\Scripts\\\\python.exe\" /tmp/test_orch_v2.py)"
     ],
     "deny": [],
     "ask": []

@@ -72,7 +72,7 @@ def _project_to_response(project: ProjectContext) -> ProjectResponse:
     },
 )
 async def list_projects(
-    current_user: Optional[str] = Depends(get_current_user_optional),
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -87,9 +87,6 @@ async def list_projects(
     """
     try:
         # Load all projects for authenticated user, or return empty list if not authenticated
-        if current_user is None:
-            # Unauthenticated requests return empty list
-            return ListProjectsResponse(projects=[], total=0)
 
         # Load all projects for user
         projects = db.get_user_projects(current_user)

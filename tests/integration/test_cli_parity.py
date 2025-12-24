@@ -45,9 +45,9 @@ class TestCLIAndAPIAuthentication:
         assert api_resp.status_code == 201, f"API registration failed: {api_resp.text}"
         api_token = api_resp.json()["access_token"]
 
-        # Verify token works with API
+        # Verify token works with API (check user profile endpoint)
         verify_resp = requests.get(
-            f"{BASE_URL}/auth/verify",
+            f"{BASE_URL}/auth/me",
             headers={**HEADERS, "Authorization": f"Bearer {api_token}"}
         )
         assert verify_resp.status_code == 200, "API token verification failed"

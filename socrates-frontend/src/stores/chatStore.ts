@@ -9,8 +9,10 @@ import { chatAPI } from '../api';
 interface ChatState {
   // State
   messages: ChatMessage[];
+  searchResults: ChatMessage[];
   isConnected: boolean;
   isLoading: boolean;
+  isSearching: boolean;
   error: string | null;
   mode: ChatMode;
   currentProjectId: string | null;
@@ -27,6 +29,8 @@ interface ChatState {
   clearHistory: (projectId: string) => Promise<void>;
   loadHistory: (projectId: string) => Promise<void>;
   getSummary: (projectId: string) => Promise<{ summary: string; key_points: string[] }>;
+  searchConversations: (projectId: string, query: string) => Promise<void>;
+  clearSearch: () => void;
   clearError: () => void;
   reset: () => void;
 }
@@ -34,8 +38,10 @@ interface ChatState {
 export const useChatStore = create<ChatState>((set, get) => ({
   // Initial state
   messages: [],
+  searchResults: [],
   isConnected: false,
   isLoading: false,
+  isSearching: false,
   error: null,
   mode: 'socratic',
   currentProjectId: null,
@@ -233,6 +239,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
+  // Search conversations
+  searchConversations: async (projectId: string, query: string) => {
+    set({ isSearching: true, error: null });
+    try {
+      const response = await chatAPI.searchConversations(projectId, query);
+      set({ searchResults: response.results, isSearching: false });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to search conversations',
+        isSearching: false,
+      });
+      throw error;
+    }
+  },
+
+  // Clear search results
+  clearSearch: () => set({ searchResults: [] }),
+
   // Clear error
   clearError: () => set({ error: null }),
 
@@ -240,8 +264,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   reset: () => {
     set({
       messages: [],
+      searchResults: [],
       isConnected: false,
       isLoading: false,
+      isSearching: false,
       error: null,
       mode: 'socratic',
       currentProjectId: null,

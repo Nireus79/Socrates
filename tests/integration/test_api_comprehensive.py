@@ -14,7 +14,7 @@ HEADERS = {"Content-Type": "application/json"}
 # Test results tracking
 test_results = []
 
-def test_result(name, passed, details=""):
+def log_result(name, passed, details=""):
     """Track test result"""
     status = "[PASS]" if passed else "[FAIL]"
     print(f"{status} {name}")
@@ -39,10 +39,10 @@ def test_health_check():
     try:
         response = requests.get(f"{BASE_URL}/health")
         passed = response.status_code == 200
-        test_result("Health endpoint", passed, f"Status: {response.status_code}")
+        log_result("Health endpoint", passed, f"Status: {response.status_code}")
         return passed
     except Exception as e:
-        test_result("Health endpoint", False, f"Error: {str(e)}")
+        log_result("Health endpoint", False, f"Error: {str(e)}")
         return False
 
 # ============================================================================
@@ -74,7 +74,7 @@ def test_user_registration():
             data = response.json()
             has_tokens = "access_token" in data and "refresh_token" in data
             has_user = "user" in data
-            test_result("User registration", has_tokens and has_user,
+            log_result("User registration", has_tokens and has_user,
                        f"Status: {response.status_code}, Tokens: {has_tokens}, User: {has_user}")
 
             # Store for next tests
@@ -85,19 +85,19 @@ def test_user_registration():
                 "refresh_token": data.get("refresh_token")
             }
         else:
-            test_result("User registration", False,
+            log_result("User registration", False,
                        f"Status: {response.status_code}, Response: {response.text[:100]}")
             return None
 
     except Exception as e:
-        test_result("User registration", False, f"Error: {str(e)}")
+        log_result("User registration", False, f"Error: {str(e)}")
         return None
 
 # ============================================================================
 # Test 3: User Login
 # ============================================================================
 
-def test_user_login(username, password):
+def perform_login(username, password):
     """Test user login"""
     print_section("TEST 3: User Login")
     try:
@@ -116,25 +116,25 @@ def test_user_login(username, password):
             data = response.json()
             has_tokens = "access_token" in data and "refresh_token" in data
             has_user = "user" in data
-            test_result("User login", has_tokens and has_user,
+            log_result("User login", has_tokens and has_user,
                        f"Status: {response.status_code}")
             return {
                 "access_token": data.get("access_token"),
                 "refresh_token": data.get("refresh_token")
             }
         else:
-            test_result("User login", False, f"Status: {response.status_code}")
+            log_result("User login", False, f"Status: {response.status_code}")
             return None
 
     except Exception as e:
-        test_result("User login", False, f"Error: {str(e)}")
+        log_result("User login", False, f"Error: {str(e)}")
         return None
 
 # ============================================================================
 # Test 4: Get User Profile
 # ============================================================================
 
-def test_get_profile(access_token):
+def get_profile(access_token):
     """Test getting user profile"""
     print_section("TEST 4: Get User Profile")
     try:
@@ -148,7 +148,7 @@ def test_get_profile(access_token):
             data = response.json()
             has_username = "username" in data
             has_subscription = "subscription_tier" in data
-            test_result("Get profile", has_username and has_subscription,
+            log_result("Get profile", has_username and has_subscription,
                        f"Status: {response.status_code}, Username: {data.get('username')}")
 
             # Enable testing mode to bypass subscription checks
@@ -162,18 +162,18 @@ def test_get_profile(access_token):
 
             return True
         else:
-            test_result("Get profile", False, f"Status: {response.status_code}")
+            log_result("Get profile", False, f"Status: {response.status_code}")
             return False
 
     except Exception as e:
-        test_result("Get profile", False, f"Error: {str(e)}")
+        log_result("Get profile", False, f"Error: {str(e)}")
         return False
 
 # ============================================================================
 # Test 5: Create Project
 # ============================================================================
 
-def test_create_project(access_token):
+def create_project(access_token):
     """Test project creation"""
     print_section("TEST 5: Create Project")
     try:
@@ -197,23 +197,23 @@ def test_create_project(access_token):
             has_id = "project_id" in data
             has_name = "name" in data
             has_owner = "owner" in data
-            test_result("Create project", has_id and has_name and has_owner,
+            log_result("Create project", has_id and has_name and has_owner,
                        f"Status: {response.status_code}, Project ID: {data.get('project_id')}")
             return data.get("project_id")
         else:
-            test_result("Create project", False,
+            log_result("Create project", False,
                        f"Status: {response.status_code}, Response: {response.text[:200]}")
             return None
 
     except Exception as e:
-        test_result("Create project", False, f"Error: {str(e)}")
+        log_result("Create project", False, f"Error: {str(e)}")
         return None
 
 # ============================================================================
 # Test 6: Get Projects
 # ============================================================================
 
-def test_get_projects(access_token):
+def get_projects(access_token):
     """Test getting projects list"""
     print_section("TEST 6: Get Projects")
     try:
@@ -228,22 +228,22 @@ def test_get_projects(access_token):
             has_projects = "projects" in data
             has_total = "total" in data
             is_list = isinstance(data.get("projects"), list)
-            test_result("Get projects", has_projects and has_total and is_list,
+            log_result("Get projects", has_projects and has_total and is_list,
                        f"Status: {response.status_code}, Count: {data.get('total')}")
             return True
         else:
-            test_result("Get projects", False, f"Status: {response.status_code}")
+            log_result("Get projects", False, f"Status: {response.status_code}")
             return False
 
     except Exception as e:
-        test_result("Get projects", False, f"Error: {str(e)}")
+        log_result("Get projects", False, f"Error: {str(e)}")
         return False
 
 # ============================================================================
 # Test 7: Get Project Details
 # ============================================================================
 
-def test_get_project_details(access_token, project_id):
+def get_project_details(access_token, project_id):
     """Test getting project details"""
     print_section("TEST 7: Get Project Details")
     try:
@@ -257,22 +257,22 @@ def test_get_project_details(access_token, project_id):
             data = response.json()
             matches_id = data.get("project_id") == project_id
             has_details = "name" in data and "owner" in data
-            test_result("Get project details", matches_id and has_details,
+            log_result("Get project details", matches_id and has_details,
                        f"Status: {response.status_code}, Project: {data.get('name')}")
             return True
         else:
-            test_result("Get project details", False, f"Status: {response.status_code}")
+            log_result("Get project details", False, f"Status: {response.status_code}")
             return False
 
     except Exception as e:
-        test_result("Get project details", False, f"Error: {str(e)}")
+        log_result("Get project details", False, f"Error: {str(e)}")
         return False
 
 # ============================================================================
 # Test 8: Update Project
 # ============================================================================
 
-def test_update_project(access_token, project_id):
+def update_project(access_token, project_id):
     """Test updating project"""
     print_section("TEST 8: Update Project")
     try:
@@ -293,22 +293,22 @@ def test_update_project(access_token, project_id):
             data = response.json()
             updated = data.get("name") == payload["name"]
             phase_updated = data.get("phase") == payload["phase"]
-            test_result("Update project", updated and phase_updated,
+            log_result("Update project", updated and phase_updated,
                        f"Status: {response.status_code}, Name: {data.get('name')}")
             return True
         else:
-            test_result("Update project", False, f"Status: {response.status_code}")
+            log_result("Update project", False, f"Status: {response.status_code}")
             return False
 
     except Exception as e:
-        test_result("Update project", False, f"Error: {str(e)}")
+        log_result("Update project", False, f"Error: {str(e)}")
         return False
 
 # ============================================================================
 # Test 9: Refresh Token
 # ============================================================================
 
-def test_refresh_token(refresh_token):
+def refresh_token(refresh_token):
     """Test token refresh"""
     print_section("TEST 9: Refresh Token")
     try:
@@ -322,22 +322,22 @@ def test_refresh_token(refresh_token):
         if response.status_code == 200:
             data = response.json()
             has_new_token = "access_token" in data
-            test_result("Refresh token", has_new_token,
+            log_result("Refresh token", has_new_token,
                        f"Status: {response.status_code}")
             return data.get("access_token")
         else:
-            test_result("Refresh token", False, f"Status: {response.status_code}")
+            log_result("Refresh token", False, f"Status: {response.status_code}")
             return None
 
     except Exception as e:
-        test_result("Refresh token", False, f"Error: {str(e)}")
+        log_result("Refresh token", False, f"Error: {str(e)}")
         return None
 
 # ============================================================================
 # Test 10: Logout
 # ============================================================================
 
-def test_logout(access_token):
+def perform_logout(access_token):
     """Test logout"""
     print_section("TEST 10: Logout")
     try:
@@ -348,11 +348,11 @@ def test_logout(access_token):
         )
 
         passed = response.status_code == 200
-        test_result("Logout", passed, f"Status: {response.status_code}")
+        log_result("Logout", passed, f"Status: {response.status_code}")
         return passed
 
     except Exception as e:
-        test_result("Logout", False, f"Error: {str(e)}")
+        log_result("Logout", False, f"Error: {str(e)}")
         return False
 
 # ============================================================================
@@ -382,7 +382,7 @@ def main():
     time.sleep(1)
 
     # Test 3: User Login
-    login_tokens = test_user_login(user_data["username"], "TestPassword123!")
+    login_tokens = perform_login(user_data["username"], "TestPassword123!")
     if not login_tokens:
         print("\n[ERROR] User login failed. Cannot continue.")
         return False
@@ -393,40 +393,40 @@ def main():
     time.sleep(1)
 
     # Test 4: Get Profile
-    test_get_profile(access_token)
+    get_profile(access_token)
 
     time.sleep(1)
 
     # Test 5: Create Project
-    project_id = test_create_project(access_token)
+    project_id = create_project(access_token)
     if not project_id:
         print("\n[WARNING] Project creation failed, skipping project tests.")
     else:
         time.sleep(1)
 
         # Test 6: Get Projects
-        test_get_projects(access_token)
+        get_projects(access_token)
 
         time.sleep(1)
 
         # Test 7: Get Project Details
-        test_get_project_details(access_token, project_id)
+        get_project_details(access_token, project_id)
 
         time.sleep(1)
 
         # Test 8: Update Project
-        test_update_project(access_token, project_id)
+        update_project(access_token, project_id)
 
         time.sleep(1)
 
     # Test 9: Refresh Token
-    new_token = test_refresh_token(refresh_token)
+    new_token = refresh_token(refresh_token)
 
     time.sleep(1)
 
     # Test 10: Logout (use new token if refresh worked, otherwise use original)
     logout_token = new_token if new_token else access_token
-    test_logout(logout_token)
+    perform_logout(logout_token)
 
     # Print Summary
     print("\n" + "="*70)

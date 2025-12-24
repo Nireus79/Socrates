@@ -5,6 +5,7 @@ Provides FastAPI Depends() callables for extracting and validating
 authenticated user information from requests.
 """
 
+import logging
 from typing import Optional
 
 from fastapi import Depends, HTTPException, status
@@ -15,8 +16,13 @@ from socratic_system.models import User
 from socrates_api.database import get_database
 from socratic_system.database import ProjectDatabaseV2
 
+logger = logging.getLogger(__name__)
+
 # Security scheme for Swagger/OpenAPI documentation
 security = HTTPBearer(auto_error=False)
+
+# Security scheme for optional authentication (returns None on missing/invalid)
+security_optional = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
@@ -36,11 +42,13 @@ async def get_current_user(
     Raises:
         HTTPException: 401 if credentials missing or token invalid
     """
-    # 401 when auth header is missing or token is invalid
-    if credentials is None:
+    logger.debug(f"get_current_user called with credentials: {credentials}")
+    # 401 when auth header is missing
+    if not credentials:
+        logger.warning("Missing authentication credentials")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication credentials are required",
+            detail="Missing authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -68,7 +76,7 @@ async def get_current_user(
 
 
 async def get_current_user_optional(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional),
 ) -> Optional[str]:
     """
     Extract user ID from token if present, otherwise return None.

@@ -4,7 +4,8 @@
 
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { useProjectStore } from '../../stores';
+import { Download, TrendingUp } from 'lucide-react';
+import { useProjectStore, useAnalyticsStore } from '../../stores';
 import { MainLayout, PageHeader } from '../../components/layout';
 import {
   MaturityOverview,
@@ -12,7 +13,7 @@ import {
   CategoryBreakdown,
   TrendsChart,
 } from '../../components/analytics';
-import { Card, Tab, Alert, LoadingSpinner } from '../../components/common';
+import { Card, Tab, Alert, LoadingSpinner, Button } from '../../components/common';
 
 export const AnalyticsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId?: string }>();
@@ -24,6 +25,20 @@ export const AnalyticsPage: React.FC = () => {
     fetchStats,
     fetchMaturity,
   } = useProjectStore();
+
+  const {
+    summary,
+    trends,
+    recommendations,
+    isLoadingTrends,
+    isLoadingRecommendations,
+    isExporting,
+    error,
+    getTrends,
+    getRecommendations,
+    exportAnalytics,
+    clearError,
+  } = useAnalyticsStore();
 
   const [activeTab, setActiveTab] = React.useState('summary');
 
@@ -42,8 +57,39 @@ export const AnalyticsPage: React.FC = () => {
     if (projectId) {
       fetchStats(projectId);
       fetchMaturity(projectId);
+      getTrends(projectId);
+      getRecommendations(projectId);
     }
-  }, [projectId, fetchStats, fetchMaturity]);
+  }, [projectId, fetchStats, fetchMaturity, getTrends, getRecommendations]);
+
+  // Clear errors when user navigates
+  React.useEffect(() => {
+    return () => {
+      clearError();
+    };
+  }, [clearError]);
+
+  // Handle export analytics
+  const handleExportAnalytics = async (format: 'csv' | 'json' | 'pdf' = 'json') => {
+    if (!projectId) return;
+    try {
+      const result = await exportAnalytics(projectId, format);
+      if (result) {
+        // Create a blob and download
+        const blob = new Blob([result.data], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = result.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error('Export failed:', err);
+    }
+  };
 
   const tabs = [
     { label: 'Summary', value: 'summary' },
@@ -119,20 +165,36 @@ export const AnalyticsPage: React.FC = () => {
 
   const categories = projectMaturity?.categories ?? [];
 
-  const recommendations = projectMaturity?.recommendations ?? [];
-
   return (
     <MainLayout>
       <div className="space-y-8">
+        {/* Error Alert */}
+        {error && (
+          <Alert type="error" title="Error">
+            {error}
+          </Alert>
+        )}
+
         {/* Header */}
-        <PageHeader
-          title="Analytics & Maturity"
-          description="Track your project's progress across phases and categories"
-          breadcrumbs={[
-            { label: 'Dashboard', onClick: () => window.location.href = '/dashboard' },
-            { label: 'Analytics' },
-          ]}
-        />
+        <div className="flex justify-between items-start">
+          <PageHeader
+            title="Analytics & Maturity"
+            description="Track your project's progress across phases and categories"
+            breadcrumbs={[
+              { label: 'Dashboard', onClick: () => window.location.href = '/dashboard' },
+              { label: 'Analytics' },
+            ]}
+          />
+          <Button
+            onClick={() => handleExportAnalytics('json')}
+            disabled={isExporting}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Download size={18} />
+            {isExporting ? 'Exporting...' : 'Export'}
+          </Button>
+        </div>
 
         {/* Stats Grid */}
         <AnalyticsStats stats={stats} />
@@ -176,8 +238,12 @@ export const AnalyticsPage: React.FC = () => {
         {/* Recommendations Tab */}
         {activeTab === 'recommendations' && (
           <div className="space-y-4">
-            {recommendations.length > 0 ? (
-              recommendations.map((rec: any, index: number) => {
+            {isLoadingRecommendations ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner size="lg" />
+              </div>
+            ) : recommendations?.recommendations && recommendations.recommendations.length > 0 ? (
+              recommendations.recommendations.map((rec: any, index: number) => {
                 const priority = rec.priority || 'info';
                 const priorityColor =
                   priority === 'high'
@@ -223,10 +289,22 @@ export const AnalyticsPage: React.FC = () => {
 
         {/* Trends Tab */}
         {activeTab === 'trends' && (
-          <TrendsChart
-            projectId={projectId || ''}
-            isLoading={isLoading}
-          />
+          <>
+            {isLoadingTrends ? (
+              <div className="flex justify-center py-12">
+                <LoadingSpinner size="lg" />
+              </div>
+            ) : trends?.trends && trends.trends.length > 0 ? (
+              <TrendsChart
+                projectId={projectId || ''}
+                isLoading={isLoadingTrends}
+              />
+            ) : (
+              <Alert type="info" title="No Trends Data">
+                Not enough data to display trends. Continue your work on the project to generate trend analysis.
+              </Alert>
+            )}
+          </>
         )}
       </div>
     </MainLayout>

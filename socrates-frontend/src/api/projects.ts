@@ -19,11 +19,8 @@ export const projectsAPI = {
    * Create a new project
    */
   async createProject(request: CreateProjectRequest): Promise<Project> {
-    const data = {
-      ...request,
-      owner: request.owner || localStorage.getItem('username') || 'anonymous',
-    };
-    return apiClient.post<Project>('/projects', data);
+    // Don't send owner - it's derived from JWT token by the API
+    return apiClient.post<Project>('/projects', request);
   },
 
   /**
@@ -51,17 +48,10 @@ export const projectsAPI = {
   },
 
   /**
-   * Delete (archive) project
+   * Delete project
    */
-  async deleteProject(projectId: string): Promise<{ success: boolean }> {
-    return apiClient.delete<{ success: boolean }>(`/projects/${projectId}`);
-  },
-
-  /**
-   * Restore archived project
-   */
-  async restoreProject(projectId: string): Promise<Project> {
-    return apiClient.post<Project>(`/projects/${projectId}/restore`, {});
+  async deleteProject(projectId: string): Promise<void> {
+    return apiClient.delete(`/projects/${projectId}`);
   },
 
   /**
@@ -72,25 +62,23 @@ export const projectsAPI = {
   },
 
   /**
-   * Get project maturity scores
+   * Get project maturity analysis
    */
   async getProjectMaturity(projectId: string): Promise<ProjectMaturity> {
     return apiClient.get<ProjectMaturity>(`/projects/${projectId}/maturity`);
   },
 
   /**
-   * Advance project to next phase
+   * Restore archived project
    */
-  async advancePhase(projectId: string, newPhase: ProjectPhase): Promise<Project> {
-    return apiClient.put<Project>(`/projects/${projectId}/phase`, {}, {
-      params: { new_phase: newPhase },
-    });
+  async restoreProject(projectId: string): Promise<Project> {
+    return apiClient.post<Project>(`/projects/${projectId}/restore`, {});
   },
 
   /**
-   * Get project analytics
+   * Advance project phase
    */
-  async getAnalytics(projectId: string): Promise<any> {
-    return apiClient.get<any>(`/projects/${projectId}/analytics`);
+  async advancePhase(projectId: string, newPhase: ProjectPhase): Promise<Project> {
+    return apiClient.put<Project>(`/projects/${projectId}/phase`, { phase: newPhase });
   },
 };

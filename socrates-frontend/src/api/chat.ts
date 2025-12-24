@@ -76,6 +76,19 @@ export const chatAPI = {
   },
 
   /**
+   * Search conversations
+   */
+  async searchConversations(
+    projectId: string,
+    query: string
+  ): Promise<{ results: ChatMessage[] }> {
+    return apiClient.post<{ results: ChatMessage[] }>(
+      `/projects/${projectId}/chat/search`,
+      { query }
+    );
+  },
+
+  /**
    * Get WebSocket connection URL
    */
   getWebSocketURL(projectId: string, token: string): string {

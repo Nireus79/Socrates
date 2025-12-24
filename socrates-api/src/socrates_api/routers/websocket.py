@@ -16,6 +16,7 @@ from pathlib import Path
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException, status
 
 from socratic_system.database import ProjectDatabaseV2
+from socratic_system.orchestration.orchestrator import AgentOrchestrator
 from socrates_api.database import get_database
 from socrates_api.auth import get_current_user
 from socrates_api.websocket import (
@@ -280,8 +281,7 @@ async def _handle_command(
 )
 async def send_chat_message(
     project_id: str,
-    message: str,
-    mode: str = "socratic",
+    request_body: dict,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
@@ -290,8 +290,7 @@ async def send_chat_message(
 
     Args:
         project_id: Project identifier
-        message: Message content
-        mode: Chat mode ('socratic' or 'direct')
+        request_body: JSON body with 'message' and 'mode'
         current_user: Current authenticated user
         db: Database connection
 
@@ -299,6 +298,25 @@ async def send_chat_message(
         Response with assistant reply and metadata
     """
     try:
+        # Import here to avoid circular dependency
+        from socrates_api.main import get_orchestrator
+        orchestrator = get_orchestrator()
+        # Extract message and mode from request body
+        message = request_body.get("message", "").strip()
+        mode = request_body.get("mode", "socratic").lower()
+
+        if not message:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Message content is required",
+            )
+
+        if mode not in ["socratic", "direct"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid mode. Must be 'socratic' or 'direct'",
+            )
+
         # Verify project ownership
         project = db.load_project(project_id)
         if project is None or project.owner != current_user:
@@ -307,12 +325,55 @@ async def send_chat_message(
                 detail="Access denied",
             )
 
-        # TODO: Process message with AI model
-        # For now, return echo response
+        # Store user message in conversation history
+        project.conversation_history.append({
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "type": "user",
+            "content": message,
+            "mode": mode,
+        })
+
+        # Check if this is the first message - if so, generate initial question first
+        assistant_messages = [msg for msg in project.conversation_history
+                            if msg.get("type") == "assistant"]
+
+        question_response = None
+        if not assistant_messages:
+            # Generate initial question
+            try:
+                question_result = orchestrator.socratic_counselor.process({
+                    "action": "generate_question",
+                    "project": project,
+                    "current_user": current_user,
+                })
+                if question_result.get("status") == "success":
+                    question_response = question_result.get("question")
+                    logger.info(f"Generated initial question for {project_id}")
+            except Exception as e:
+                logger.error(f"Error generating initial question: {e}")
+
+        # Process user response with orchestrator
+        try:
+            response_result = orchestrator.socratic_counselor.process({
+                "action": "process_response",
+                "project": project,
+                "current_user": current_user,
+                "mode": mode,
+            })
+            assistant_response = response_result.get("insights", {}).get("thoughts",
+                                                    "Thank you for your response.")
+        except Exception as e:
+            logger.error(f"Error processing response: {e}")
+            assistant_response = "Thank you for your response. I'm processing your input."
+
+        # Save updated project
+        db.save_project(project)
 
         return {
             "status": "success",
-            "message": f"Echo: {message}",
+            "initial_question": question_response,
+            "response_feedback": assistant_response,
+            "message": message,
             "mode": mode,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
@@ -391,7 +452,7 @@ async def get_chat_history(
 )
 async def switch_chat_mode(
     project_id: str,
-    mode: str,
+    request_body: dict,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
@@ -400,7 +461,7 @@ async def switch_chat_mode(
 
     Args:
         project_id: Project identifier
-        mode: Chat mode ('socratic' or 'direct')
+        request_body: JSON body with 'mode'
         current_user: Current authenticated user
         db: Database connection
 
@@ -408,6 +469,9 @@ async def switch_chat_mode(
         Confirmation with new mode
     """
     try:
+        # Extract mode from request body
+        mode = request_body.get("mode", "").strip().lower()
+
         # Validate mode
         if mode not in ["socratic", "direct"]:
             raise HTTPException(
@@ -585,4 +649,76 @@ async def get_chat_summary(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error generating summary",
+        )
+
+
+@router.post(
+    "/projects/{project_id}/chat/search",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    summary="Search conversation history",
+)
+async def search_conversations(
+    project_id: str,
+    request_body: dict,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabaseV2 = Depends(get_database),
+):
+    """
+    Search through conversation history.
+
+    Args:
+        project_id: Project identifier
+        request_body: JSON body with 'query' search term
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        List of matching messages
+    """
+    try:
+        # Extract search query
+        query = request_body.get("query", "").strip().lower()
+
+        if not query:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Search query is required",
+            )
+
+        # Verify project ownership
+        project = db.load_project(project_id)
+        if project is None or project.owner != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied",
+            )
+
+        # Search conversation history
+        results = []
+        for msg in project.conversation_history:
+            content = msg.get("content", "").lower()
+            if query in content:
+                results.append({
+                    "id": len(results),
+                    "role": msg.get("type"),
+                    "content": msg.get("content"),
+                    "timestamp": msg.get("timestamp"),
+                })
+
+        return {
+            "status": "success",
+            "project_id": project_id,
+            "query": query,
+            "results": results,
+            "count": len(results),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error searching conversations: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error searching conversations",
         )

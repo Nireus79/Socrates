@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { Plus, Play, TrendingUp, MessageSquare } from 'lucide-react';
+import { Plus, Play, TrendingUp, MessageSquare, BookOpen } from 'lucide-react';
 import { useAuthStore } from '../../stores';
 import { useProjectStore } from '../../stores';
 import { projectsAPI } from '../../api';
@@ -68,7 +68,7 @@ export const DashboardPage: React.FC = () => {
       if (!user) {
         throw new Error('User not authenticated');
       }
-      await createProject(formData.name, user.username, formData.description);
+      await createProject(formData.name, formData.description);
       setShowCreateModal(false);
     } catch (error) {
       console.error('Failed to create project:', error);
@@ -153,7 +153,7 @@ export const DashboardPage: React.FC = () => {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Quick Actions
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
             <Button
               variant="primary"
               fullWidth
@@ -183,9 +183,28 @@ export const DashboardPage: React.FC = () => {
             <Button
               variant="outline"
               fullWidth
-              onClick={() => window.location.href = '/analytics'}
+              icon={<TrendingUp className="h-4 w-4" />}
+              onClick={() => {
+                if (recentProjects.length > 0) {
+                  window.location.href = `/projects/${recentProjects[0].project_id}/analytics`;
+                }
+              }}
+              disabled={activeProjects.length === 0}
             >
               View Analytics
+            </Button>
+            <Button
+              variant="outline"
+              fullWidth
+              icon={<BookOpen className="h-4 w-4" />}
+              onClick={() => {
+                if (recentProjects.length > 0) {
+                  window.location.href = `/projects/${recentProjects[0].project_id}/knowledge`;
+                }
+              }}
+              disabled={activeProjects.length === 0}
+            >
+              Knowledge Base
             </Button>
           </div>
         </Card>
