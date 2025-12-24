@@ -426,7 +426,7 @@ export const ChatPage: React.FC = () => {
                   <ul className="space-y-2">
                     {summaryData.key_points.map((point, index) => (
                       <li
-                        key={index}
+                        key={`point-${index}`}
                         className="flex gap-2 text-gray-700 dark:text-gray-300"
                       >
                         <span className="text-blue-600 dark:text-blue-400 font-bold">

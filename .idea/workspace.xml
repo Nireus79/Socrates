@@ -5,38 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.6.6">
-      <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ARCHITECTURAL_FIXES_REQUIRED.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/ARCHITECTURAL_FIXES_REQUIRED.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CURRENT_STATUS_REPORT.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/CURRENT_STATUS_REPORT.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DISCOVERY_REPORT.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/DISCOVERY_REPORT.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FREE_TIER_FIX_SUMMARY.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/FREE_TIER_FIX_SUMMARY.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FRONTEND_INTEGRATION_GUIDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/FRONTEND_INTEGRATION_GUIDE.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/IMPLEMENTATION_COMPLETE.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/IMPLEMENTATION_COMPLETE.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE1_COMPLETION_REPORT.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/PHASE1_COMPLETION_REPORT.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/QUICK_REFERENCE.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/QUICK_REFERENCE.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TEST_RESULTS_PHASE3.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/TEST_RESULTS_PHASE3.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WORKFLOW_ASSESSMENT.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/WORKFLOW_ASSESSMENT.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/auth/dependencies.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/auth/dependencies.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/websocket.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/websocket.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/App.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/notes.txt" beforeDir="false" afterPath="$PROJECT_DIR$/notes.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socrates-frontend/src/api/chat.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/api/chat.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/api/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/api/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/api/projects.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/api/projects.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/analytics/AnalyticsPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/analytics/AnalyticsPage.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/chat/ChatPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/chat/ChatPage.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/dashboard/DashboardPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/dashboard/DashboardPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/chatStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/chatStore.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/projectStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/projectStore.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/integration/test_api_comprehensive.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/integration/test_api_comprehensive.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/integration/test_api_database_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/integration/test_api_database_integration.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/integration/test_cli_parity.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/integration/test_cli_parity.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/integration/test_integration_workflows.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/integration/test_integration_workflows.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/integration/test_subscription_enforcement.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/integration/test_subscription_enforcement.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

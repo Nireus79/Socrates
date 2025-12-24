@@ -45,8 +45,8 @@ export const chatAPI = {
     projectId: string,
     mode: 'socratic' | 'direct'
   ): Promise<{ mode: string }> {
-    return apiClient.put<{ mode: string }>(`/projects/${projectId}/chat/mode`, {}, {
-      params: { mode },
+    return apiClient.put<{ mode: string }>(`/projects/${projectId}/chat/mode`, {
+      mode,
     });
   },
 

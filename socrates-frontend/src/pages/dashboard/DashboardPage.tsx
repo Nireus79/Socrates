@@ -94,6 +94,31 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
+  const handleArchiveProject = async (projectId: string) => {
+    try {
+      await projectsAPI.deleteProject(projectId);
+      await listProjects();
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to archive project:', error);
+      alert('Failed to archive project');
+    }
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    if (!window.confirm('Are you sure you want to delete this project?')) {
+      return;
+    }
+    try {
+      await projectsAPI.deleteProject(projectId);
+      await listProjects();
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      alert('Failed to delete project');
+    }
+  };
+
   return (
     <MainLayout>
       <div className="space-y-8">
@@ -261,6 +286,8 @@ export const DashboardPage: React.FC = () => {
                   maturity={0}
                   teamCount={1}
                   onOpen={(id) => window.location.href = `/projects/${id}`}
+                  onArchive={handleArchiveProject}
+                  onDelete={handleDeleteProject}
                 />
               ))}
             </div>

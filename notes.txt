@@ -21,4 +21,3 @@
     - python socrates.py --full → (API + Frontend)
     - python socrates.py --frontend → CLI with React frontend
   - Options: --host, --port, --reload, --version, --help
-  - Result: ✅ Clean, unified interface
