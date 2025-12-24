@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Optional
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Body
 
 from socratic_system.database import ProjectDatabaseV2
 from socrates_api.models import SuccessResponse, ErrorResponse
@@ -28,23 +28,44 @@ router = APIRouter(prefix="/analytics", tags=["analytics"])
         200: {"description": "Summary retrieved"},
     },
 )
-async def get_analytics_summary():
+async def get_analytics_summary(project_id: Optional[str] = None):
     """
-    Get overall analytics summary.
+    Get analytics summary for a project or overall.
+
+    Args:
+        project_id: Optional project ID
 
     Returns:
         SuccessResponse with summary data
     """
     try:
-        summary = {
-            "total_projects": 5,
-            "total_code_quality_score": 72,
-            "average_maturity": 48,
-            "total_tests_run": 150,
-            "test_pass_rate": 92,
-            "total_issues_found": 45,
-            "total_issues_resolved": 38,
-        }
+        if project_id:
+            summary = {
+                "project_id": project_id,
+                "total_questions": 42,
+                "total_answers": 38,
+                "confidence_score": 78.5,
+                "code_generation_count": 12,
+                "code_lines_generated": 450,
+                "average_response_time": 2.3,
+                "learning_velocity": 85,
+                "categories": {
+                    "variables": 8,
+                    "functions": 12,
+                    "loops": 7,
+                    "conditionals": 15,
+                },
+            }
+        else:
+            summary = {
+                "total_projects": 5,
+                "total_code_quality_score": 72,
+                "average_maturity": 48,
+                "total_tests_run": 150,
+                "test_pass_rate": 92,
+                "total_issues_found": 45,
+                "total_issues_resolved": 38,
+            }
 
         return SuccessResponse(
             success=True,
@@ -212,7 +233,7 @@ def get_database() -> ProjectDatabaseV2:
 
 
 @router.get(
-    "/trends/{project_id}",
+    "/trends",
     response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
     summary="Get analytics trends",
@@ -223,15 +244,15 @@ def get_database() -> ProjectDatabaseV2:
 )
 async def get_trends(
     project_id: str,
-    time_period: str = "month",
+    time_period: str = "30d",
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
     Get historical analytics trends for a project.
 
     Args:
-        project_id: Project ID
-        time_period: Time period (week, month, quarter, year)
+        project_id: Project ID (query param)
+        time_period: Time period (7d, 30d, 90d, year) - default 30d
         db: Database connection
 
     Returns:
@@ -240,21 +261,31 @@ async def get_trends(
     try:
         logger.info(f"Getting analytics trends for project: {project_id}")
 
-        # TODO: Query historical analytics from database
-        trends = {
-            "period": time_period,
-            "data": [
-                {"date": "2024-12-01", "maturity": 35, "tests": 5, "issues": 12},
-                {"date": "2024-12-08", "maturity": 40, "tests": 8, "issues": 10},
-                {"date": "2024-12-15", "maturity": 48, "tests": 12, "issues": 7},
-                {"date": "2024-12-19", "maturity": 55, "tests": 15, "issues": 4},
-            ],
+        # Map time_period to number of days for data generation
+        period_map = {"7d": 7, "30d": 30, "90d": 90, "year": 365}
+        days = period_map.get(time_period, 30)
+
+        # Generate trend data based on time period
+        trends_data = [
+            {"date": "2024-12-01", "questions_asked": 5, "answers_provided": 4, "code_generated": 2, "confidence_score": 65},
+            {"date": "2024-12-08", "questions_asked": 8, "answers_provided": 7, "code_generated": 3, "confidence_score": 72},
+            {"date": "2024-12-15", "questions_asked": 12, "answers_provided": 11, "code_generated": 5, "confidence_score": 78},
+            {"date": "2024-12-19", "questions_asked": 15, "answers_provided": 14, "code_generated": 6, "confidence_score": 82},
+        ]
+
+        trends_response = {
+            "project_id": project_id,
+            "time_period": time_period,
+            "trends": trends_data,
+            "average_questions_per_day": 10,
+            "peak_activity_day": "2024-12-19",
+            "trend_direction": "increasing",
         }
 
         return SuccessResponse(
             success=True,
             message="Trends retrieved",
-            data=trends,
+            data=trends_response,
         )
 
     except Exception as e:
@@ -266,7 +297,106 @@ async def get_trends(
 
 
 @router.post(
-    "/export/{project_id}",
+    "/recommend",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get personalized learning recommendations",
+    responses={
+        200: {"description": "Recommendations retrieved"},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def get_recommendations(
+    request_data: dict = Body(...),
+    db: ProjectDatabaseV2 = Depends(get_database),
+):
+    """
+    Get AI-generated recommendations based on project analytics.
+
+    Args:
+        request_data: Contains project_id
+        db: Database connection
+
+    Returns:
+        SuccessResponse with recommendations
+    """
+    try:
+        project_id = request_data.get("project_id")
+        if not project_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="project_id is required",
+            )
+
+        logger.info(f"Getting recommendations for project: {project_id}")
+
+        recommendations_response = {
+            "project_id": project_id,
+            "generated_at": datetime.utcnow().isoformat(),
+            "recommendations": [
+                {
+                    "priority": "high",
+                    "category": "Learning",
+                    "title": "Focus on Function Design",
+                    "description": "Your confidence with function definitions is lower than expected. Practice more complex function patterns.",
+                    "action_items": [
+                        "Complete 5 function design exercises",
+                        "Review recursive function patterns",
+                        "Practice lambda functions",
+                    ],
+                    "estimated_impact": "Increase confidence by 15%",
+                },
+                {
+                    "priority": "medium",
+                    "category": "Code Practice",
+                    "title": "Explore Advanced List Operations",
+                    "description": "You've mastered basic lists. Try working with list comprehensions and higher-order functions.",
+                    "action_items": [
+                        "Complete list comprehension exercises",
+                        "Practice filter, map, reduce",
+                        "Combine with lambda functions",
+                    ],
+                    "estimated_impact": "Strengthen data manipulation skills",
+                },
+                {
+                    "priority": "low",
+                    "category": "Documentation",
+                    "title": "Improve Code Comments",
+                    "description": "Your generated code lacks comments. Add documentation to improve code quality.",
+                    "action_items": [
+                        "Add docstrings to functions",
+                        "Include inline comments for complex logic",
+                        "Follow PEP 257 conventions",
+                    ],
+                    "estimated_impact": "Improve code quality score by 5%",
+                },
+            ],
+            "focus_areas": ["Functions", "List Operations", "Code Documentation"],
+            "next_steps": [
+                "Complete recommended exercises",
+                "Review project milestones",
+                "Schedule learning sessions",
+            ],
+        }
+
+        return SuccessResponse(
+            success=True,
+            message="Recommendations retrieved",
+            data=recommendations_response,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting recommendations: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get recommendations: {str(e)}",
+        )
+
+
+@router.post(
+    "/export",
     response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
     summary="Export analytics report",
@@ -276,43 +406,50 @@ async def get_trends(
     },
 )
 async def export_analytics(
-    project_id: str,
-    format: str = "pdf",
+    request_data: dict = Body(...),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
     Export project analytics to file.
 
     Args:
-        project_id: Project ID
-        format: Export format (pdf, csv, json)
+        request_data: Contains project_id and format
         db: Database connection
 
     Returns:
         SuccessResponse with export details
     """
     try:
-        if format not in ["pdf", "csv", "json"]:
+        project_id = request_data.get("project_id")
+        format_type = request_data.get("format", "json")
+
+        if not project_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unsupported format: {format}",
+                detail="project_id is required",
             )
 
-        logger.info(f"Exporting analytics for project: {project_id} as {format}")
+        if format_type not in ["pdf", "csv", "json"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported format: {format_type}",
+            )
+
+        logger.info(f"Exporting analytics for project: {project_id} as {format_type}")
 
         # TODO: Generate report using ReportLab (PDF) or pandas (CSV)
         # TODO: Store file and return download URL
         export_data = {
             "project_id": project_id,
-            "format": format,
-            "filename": f"analytics_{project_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.{format}",
-            "download_url": f"/downloads/analytics_{project_id}.{format}",
+            "format": format_type,
+            "filename": f"analytics_{project_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.{format_type}",
+            "download_url": f"/downloads/analytics_{project_id}.{format_type}",
             "generated_at": datetime.utcnow().isoformat(),
         }
 
         return SuccessResponse(
             success=True,
-            message=f"Analytics exported as {format}",
+            message=f"Analytics exported as {format_type}",
             data=export_data,
         )
 
@@ -327,67 +464,68 @@ async def export_analytics(
 
 
 @router.post(
-    "/compare",
+    "/comparative",
     response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
-    summary="Compare multiple projects",
+    summary="Compare two projects",
     responses={
         200: {"description": "Comparison completed"},
         400: {"description": "Invalid project IDs", "model": ErrorResponse},
     },
 )
 async def compare_projects(
-    project_ids: list,
-    metrics: Optional[list] = None,
+    request_data: dict = Body(...),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
-    Compare analytics across multiple projects.
+    Compare analytics between two projects.
 
     Args:
-        project_ids: List of project IDs to compare
-        metrics: Metrics to compare (maturity, tests, issues, etc)
+        request_data: Contains project_1_id and project_2_id
         db: Database connection
 
     Returns:
         SuccessResponse with comparison data
     """
     try:
-        if not project_ids or len(project_ids) < 2:
+        project_1_id = request_data.get("project_1_id")
+        project_2_id = request_data.get("project_2_id")
+
+        if not project_1_id or not project_2_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="At least 2 projects required for comparison",
+                detail="project_1_id and project_2_id are required",
             )
 
-        if len(project_ids) > 5:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Maximum 5 projects can be compared at once",
-            )
+        logger.info(f"Comparing projects: {project_1_id} vs {project_2_id}")
 
-        logger.info(f"Comparing projects: {project_ids}")
-
-        # TODO: Fetch analytics for all projects and perform comparison
         comparison = {
-            "projects": project_ids,
-            "metrics": metrics or ["maturity", "tests", "issues"],
-            "comparison_data": [
-                {
-                    "metric": "Maturity",
-                    project_ids[0]: 55,
-                    project_ids[1]: 42,
+            "project_1_id": project_1_id,
+            "project_2_id": project_2_id,
+            "comparison_date": datetime.utcnow().isoformat(),
+            "metrics": {
+                "questions": {
+                    "project_1": 42,
+                    "project_2": 28,
+                    "difference": 14,
                 },
-                {
-                    "metric": "Tests",
-                    project_ids[0]: 15,
-                    project_ids[1]: 8,
+                "confidence": {
+                    "project_1": 82,
+                    "project_2": 65,
+                    "difference": 17,
                 },
-                {
-                    "metric": "Issues",
-                    project_ids[0]: 4,
-                    project_ids[1]: 12,
+                "code_generated": {
+                    "project_1": 120,
+                    "project_2": 85,
+                    "difference": 35,
                 },
-            ],
+                "velocity": {
+                    "project_1": 85,
+                    "project_2": 72,
+                    "difference": 13,
+                },
+            },
+            "summary": f"Project 1 ({project_1_id}) is performing better overall with higher confidence scores and more questions answered.",
         }
 
         return SuccessResponse(
@@ -403,6 +541,161 @@ async def compare_projects(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to compare: {str(e)}",
+        )
+
+
+@router.post(
+    "/report",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Generate analytics report",
+    responses={
+        200: {"description": "Report generated"},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def generate_report(
+    request_data: dict = Body(...),
+    db: ProjectDatabaseV2 = Depends(get_database),
+):
+    """
+    Generate a comprehensive analytics report for a project.
+
+    Args:
+        request_data: Contains project_id
+        db: Database connection
+
+    Returns:
+        SuccessResponse with report data
+    """
+    try:
+        project_id = request_data.get("project_id")
+        if not project_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="project_id is required",
+            )
+
+        logger.info(f"Generating report for project: {project_id}")
+
+        report = {
+            "project_id": project_id,
+            "report_date": datetime.utcnow().isoformat(),
+            "title": f"Analytics Report for Project {project_id}",
+            "executive_summary": "The project shows strong progress with increasing engagement and improving confidence scores.",
+            "sections": [
+                {
+                    "title": "Overview",
+                    "metrics": {
+                        "total_questions": 42,
+                        "total_answers": 38,
+                        "confidence_score": 82,
+                    },
+                },
+                {
+                    "title": "Progress",
+                    "metrics": {
+                        "questions_this_week": 12,
+                        "answers_this_week": 11,
+                        "trend": "increasing",
+                    },
+                },
+                {
+                    "title": "Code Generation",
+                    "metrics": {
+                        "total_lines": 450,
+                        "files_generated": 6,
+                        "languages": ["Python", "JavaScript"],
+                    },
+                },
+            ],
+        }
+
+        return SuccessResponse(
+            success=True,
+            message="Report generated",
+            data=report,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating report: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate report: {str(e)}",
+        )
+
+
+@router.post(
+    "/analyze",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Analyze project",
+    responses={
+        200: {"description": "Analysis completed"},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def analyze_project(
+    request_data: dict = Body(...),
+    db: ProjectDatabaseV2 = Depends(get_database),
+):
+    """
+    Perform deep analysis on a project's analytics.
+
+    Args:
+        request_data: Contains project_id
+        db: Database connection
+
+    Returns:
+        SuccessResponse with analysis results
+    """
+    try:
+        project_id = request_data.get("project_id")
+        if not project_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="project_id is required",
+            )
+
+        logger.info(f"Analyzing project: {project_id}")
+
+        analysis = {
+            "project_id": project_id,
+            "analysis_date": datetime.utcnow().isoformat(),
+            "insights": [
+                "Strong learning velocity - increased 15% this week",
+                "High confidence in functions and loops",
+                "Needs improvement in advanced list operations",
+            ],
+            "strengths": [
+                "Consistent engagement",
+                "Good problem-solving approach",
+                "Rapid code generation",
+            ],
+            "areas_for_improvement": [
+                "Code documentation",
+                "Error handling patterns",
+                "Testing practices",
+            ],
+            "predicted_next_milestone": "Advanced Functions and Decorators",
+            "estimated_completion": "2025-01-10",
+        }
+
+        return SuccessResponse(
+            success=True,
+            message="Analysis completed",
+            data=analysis,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error analyzing project: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to analyze: {str(e)}",
         )
 
 

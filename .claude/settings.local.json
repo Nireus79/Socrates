@@ -148,7 +148,8 @@
       "Bash(timeout 1 curl:*)",
       "Bash(\"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\\\\.venv\\\\Scripts\\\\python.exe\" /tmp/test_orchestrator.py)",
       "Bash(timeout 5 bash:*)",
-      "Bash(\"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\\\\.venv\\\\Scripts\\\\python.exe\" /tmp/test_orch_v2.py)"
+      "Bash(\"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\\\\.venv\\\\Scripts\\\\python.exe\" /tmp/test_orch_v2.py)",
+      "Bash(timeout 10 python:*)"
     ],
     "deny": [],
     "ask": []
