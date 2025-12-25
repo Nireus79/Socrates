@@ -63,7 +63,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
             </p>
             <div className="space-y-2">
               {hints.map((hint, index) => (
-                <details key={index} className="cursor-pointer">
+                <details key={`hint-${index}-${hint.substring(0, 10)}`} className="cursor-pointer">
                   <summary className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
                     Hint {index + 1}
                   </summary>
