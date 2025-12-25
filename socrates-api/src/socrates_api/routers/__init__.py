@@ -11,13 +11,12 @@ from socrates_api.routers.collaboration import router as collaboration_router, c
 from socrates_api.routers.code_generation import router as code_generation_router
 from socrates_api.routers.knowledge import router as knowledge_router
 from socrates_api.routers.llm import router as llm_router
-from socrates_api.routers.llm_config import router as llm_config_router
+from socrates_api.routers.projects_chat import router as projects_chat_router
 from socrates_api.routers.analysis import router as analysis_router
 from socrates_api.routers.security import router as security_router
 from socrates_api.routers.analytics import router as analytics_router
 from socrates_api.routers.github import router as github_router
 from socrates_api.routers.events import router as events_router
-from socrates_api.routers.chat import router as chat_router
 
 __all__ = [
     "auth_router",
@@ -28,11 +27,10 @@ __all__ = [
     "code_generation_router",
     "knowledge_router",
     "llm_router",
-    "llm_config_router",
+    "projects_chat_router",
     "analysis_router",
     "security_router",
     "analytics_router",
     "github_router",
     "events_router",
-    "chat_router",
 ]

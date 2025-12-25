@@ -43,13 +43,12 @@ from .routers import (
     code_generation_router,
     knowledge_router,
     llm_router,
-    llm_config_router,
+    projects_chat_router,
     analysis_router,
     security_router,
     analytics_router,
     github_router,
     events_router,
-    chat_router,
 )
 
 # Configure logging
@@ -124,13 +123,12 @@ app.include_router(collab_router)
 app.include_router(code_generation_router)
 app.include_router(knowledge_router)
 app.include_router(llm_router)
-app.include_router(llm_config_router)
+app.include_router(projects_chat_router)
 app.include_router(analysis_router)
 app.include_router(security_router)
 app.include_router(analytics_router)
 app.include_router(github_router)
 app.include_router(events_router)
-app.include_router(chat_router)
 
 
 @app.get("/")
