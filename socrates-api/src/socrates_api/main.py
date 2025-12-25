@@ -142,6 +142,36 @@ async def startup_event():
     """Initialize application on startup"""
     logger.info("Starting Socrates API server...")
 
+    # Auto-initialize orchestrator on startup
+    try:
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            logger.warning("ANTHROPIC_API_KEY not set. Orchestrator will be unavailable until /initialize is called with valid key.")
+            return
+
+        # Create and initialize orchestrator
+        orchestrator = AgentOrchestrator(api_key_or_config=api_key)
+
+        # Test connection to ensure API key is valid
+        try:
+            orchestrator.claude_client.test_connection()
+            logger.info("Orchestrator initialized successfully on startup")
+        except Exception as e:
+            logger.error(f"Failed to test API key connection: {e}. Orchestrator will be unavailable.")
+            return
+
+        # Setup event listeners
+        _setup_event_listeners(orchestrator)
+
+        # Store in global state
+        app_state["orchestrator"] = orchestrator
+        app_state["start_time"] = time.time()
+
+        logger.info("Socrates API orchestrator fully initialized and ready")
+
+    except Exception as e:
+        logger.error(f"Failed to auto-initialize orchestrator on startup: {e}. You can call /initialize manually later.")
+
 
 @app.on_event("shutdown")
 async def shutdown_event():

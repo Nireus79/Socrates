@@ -239,13 +239,33 @@ async def get_hint(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # For now, return a static hint
-        # In a real implementation, this would generate context-aware hints
+        # Call orchestrator to generate context-aware hint
+        orchestrator = get_orchestrator()
+        result = orchestrator.process_request(
+            "socratic_counselor",
+            {
+                "action": "generate_hint",
+                "project": project,
+            }
+        )
+
+        if result.get("status") != "success":
+            # Fallback to a generic hint if hint generation fails
+            logger.warning(f"Failed to generate hint: {result.get('message', 'Unknown error')}")
+            return SuccessResponse(
+                success=True,
+                message="Hint retrieved",
+                data={
+                    "hint": "Review the project requirements and consider what step comes next in your learning journey."
+                },
+            )
+
         return SuccessResponse(
             success=True,
             message="Hint retrieved",
             data={
-                "hint": "Think about the project requirements and how they relate to the current phase."
+                "hint": result.get("hint", "Continue working on your project."),
+                "context": result.get("context", ""),
             },
         )
 

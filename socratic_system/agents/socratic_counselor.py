@@ -72,6 +72,8 @@ class SocraticCounselorAgent(Agent):
             return self._advance_phase(request)
         elif action == "explain_document":
             return self._explain_document(request)
+        elif action == "generate_hint":
+            return self._generate_hint(request)
         elif action == "toggle_dynamic_questions":
             self.use_dynamic_questions = not self.use_dynamic_questions
             return {"status": "success", "dynamic_mode": self.use_dynamic_questions}
@@ -1012,3 +1014,71 @@ Return only the question, no additional text or explanation."""
             f"Conflict resolution: Manual resolution for {insight_type} - "
             f"'{old_value}' → '{new_value}'"
         )
+
+    def _generate_hint(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate a context-aware hint for the user based on project state"""
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+        project = request.get("project")
+
+        if not project:
+            return {
+                "status": "error",
+                "message": "Project context is required to generate hints"
+            }
+
+        try:
+            context = self.orchestrator.context_analyzer.get_context_summary(project)
+
+            # Get recent conversation for context
+            recent_conversation = ""
+            if project.conversation_history:
+                recent_messages = project.conversation_history[-3:]
+                for msg in recent_messages:
+                    role = "Assistant" if msg.get("type") == "assistant" else "User"
+                    recent_conversation += f"{role}: {msg.get('content', '')}\n"
+
+            # Build hint prompt
+            hint_prompt = f"""Based on the following project context and conversation, provide a helpful, concise hint to guide the user forward.
+
+Project Phase: {project.phase}
+Project Goals: {project.goals or 'Not specified'}
+Requirements: {', '.join(project.requirements) if project.requirements else 'Not specified'}
+Tech Stack: {', '.join(project.tech_stack) if project.tech_stack else 'Not specified'}
+
+Recent Conversation:
+{recent_conversation if recent_conversation else 'No conversation history yet'}
+
+Provide ONE concise, actionable hint that helps the user move forward in the {project.phase} phase. The hint should be specific to their project context and no more than 2 sentences."""
+
+            logger.info(f"Generating hint for project {project.project_id} in {project.phase} phase")
+
+            # Generate hint using Claude
+            hint = self.orchestrator.claude_client.generate_text(hint_prompt)
+
+            self.log(f"Generated hint for {project.phase} phase")
+
+            return {
+                "status": "success",
+                "hint": hint,
+                "context": context
+            }
+
+        except Exception as e:
+            logger.warning(f"Failed to generate dynamic hint: {e}, returning generic hint")
+            self.log(f"Failed to generate dynamic hint: {e}", "WARN")
+
+            # Provide context-appropriate generic hints as fallback
+            phase_hints = {
+                "discovery": "Focus on understanding the problem space. What specific needs does your project address?",
+                "analysis": "Break down technical requirements into smaller, manageable challenges. What's your biggest concern?",
+                "design": "Sketch out the architecture before implementation. What design patterns might help?",
+                "implementation": "Start with the core features and iterate. What's your minimum viable product?",
+            }
+
+            return {
+                "status": "success",
+                "hint": phase_hints.get(project.phase, "Keep making progress on your project!"),
+                "context": ""
+            }
