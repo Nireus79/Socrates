@@ -227,20 +227,36 @@ async def _handle_chat_message(
 
             orchestrator = get_orchestrator()
 
-            # Process message through orchestrator
-            result = orchestrator.socratic_counselor.process({
-                "action": "process_response",
-                "project": project,
-                "response": message.content,
-                "current_user": user_id,
-                "mode": mode,
-            })
+            # Process message through orchestrator using process_request (standard pattern)
+            result = orchestrator.process_request(
+                "socratic_counselor",
+                {
+                    "action": "process_response",
+                    "project": project,
+                    "response": message.content,
+                    "current_user": user_id,
+                }
+            )
 
-            # Extract AI response
+            # Extract insights from response
             if result.get("status") == "success":
-                ai_response = result.get("insights", {}).get("thoughts", "")
-                if not ai_response:
-                    ai_response = result.get("response", "Thank you for your input.")
+                insights = result.get("insights", {})
+                # Format insights as a readable response
+                response_parts = []
+                if insights.get("goals"):
+                    response_parts.append(f"Goals identified: {', '.join(insights['goals'])}")
+                if insights.get("requirements"):
+                    response_parts.append(f"Requirements: {', '.join(insights['requirements'])}")
+                if insights.get("tech_stack"):
+                    response_parts.append(f"Tech stack: {', '.join(insights['tech_stack'])}")
+                if insights.get("constraints"):
+                    response_parts.append(f"Constraints: {', '.join(insights['constraints'])}")
+
+                ai_response = " | ".join(response_parts) if response_parts else "Thank you for sharing that information."
+
+                # Handle conflicts if any
+                if result.get("conflicts_pending"):
+                    ai_response += "\n\nNote: There are some conflicting specifications to resolve."
             else:
                 ai_response = result.get("message", "I'm processing your response.")
 

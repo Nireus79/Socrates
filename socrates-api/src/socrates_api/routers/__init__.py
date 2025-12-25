@@ -16,6 +16,7 @@ from socrates_api.routers.security import router as security_router
 from socrates_api.routers.analytics import router as analytics_router
 from socrates_api.routers.github import router as github_router
 from socrates_api.routers.events import router as events_router
+from socrates_api.routers.chat import router as chat_router
 
 __all__ = [
     "auth_router",
@@ -31,4 +32,5 @@ __all__ = [
     "analytics_router",
     "github_router",
     "events_router",
+    "chat_router",
 ]
