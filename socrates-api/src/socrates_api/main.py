@@ -43,6 +43,7 @@ from .routers import (
     code_generation_router,
     knowledge_router,
     llm_router,
+    llm_config_router,
     analysis_router,
     security_router,
     analytics_router,
@@ -123,6 +124,7 @@ app.include_router(collab_router)
 app.include_router(code_generation_router)
 app.include_router(knowledge_router)
 app.include_router(llm_router)
+app.include_router(llm_config_router)
 app.include_router(analysis_router)
 app.include_router(security_router)
 app.include_router(analytics_router)
