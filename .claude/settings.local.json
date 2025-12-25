@@ -151,7 +151,11 @@
       "Bash(\"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\\\\.venv\\\\Scripts\\\\python.exe\" /tmp/test_orch_v2.py)",
       "Bash(timeout 10 python:*)",
       "Bash(\".venv\\\\Scripts\\\\python.exe\" -m py_compile socrates-api/src/socrates_api/routers/knowledge.py socratic_system/database/project_db_v2.py socratic_system/models/project.py)",
-      "Bash(timeout 15 python:*)"
+      "Bash(timeout 15 python:*)",
+      "Bash(if [ -z \"$ANTHROPIC_API_KEY\" ])",
+      "Bash(then echo \"Not set\")",
+      "Bash(else echo \"Is set\")",
+      "Bash(fi)"
     ],
     "deny": [],
     "ask": []
