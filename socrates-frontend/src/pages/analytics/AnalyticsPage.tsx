@@ -253,7 +253,7 @@ export const AnalyticsPage: React.FC = () => {
                     : { bg: 'bg-blue-100 dark:bg-blue-900', text: 'text-blue-700 dark:text-blue-200', dot: 'bg-blue-500' };
 
                 return (
-                  <Card key={index}>
+                  <Card key={`rec-${index}-${rec.title}`}>
                     <div className="flex gap-4">
                       <div className="flex-shrink-0 mt-1">
                         <div className={`w-3 h-3 rounded-full ${priorityColor.dot}`} />

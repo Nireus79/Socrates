@@ -47,7 +47,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
             <div
-              key={i}
+              key={`skeleton-line-${i}`}
               className={baseClass}
               style={{ height: '12px', width: i === 3 ? '80%' : '100%' }}
             />
@@ -60,7 +60,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   return (
     <div className="space-y-3">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className={baseClass} style={style} />
+        <div key={`skeleton-${type}-${i}`} className={baseClass} style={style} />
       ))}
     </div>
   );

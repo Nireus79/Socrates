@@ -165,7 +165,7 @@ export function CodeGenerationPage() {
                     <p className="text-sm font-semibold text-red-600 mb-1">Errors:</p>
                     <ul className="text-xs text-red-700 space-y-1">
                       {validationResult.errors.map((err, i) => (
-                        <li key={i}>• {err}</li>
+                        <li key={`error-${i}-${err.substring(0, 20)}`}>• {err}</li>
                       ))}
                     </ul>
                   </div>
@@ -176,7 +176,7 @@ export function CodeGenerationPage() {
                     <p className="text-sm font-semibold text-yellow-600 mb-1">Warnings:</p>
                     <ul className="text-xs text-yellow-700 space-y-1">
                       {validationResult.warnings.map((warn, i) => (
-                        <li key={i}>• {warn}</li>
+                        <li key={`warning-${i}-${warn.substring(0, 20)}`}>• {warn}</li>
                       ))}
                     </ul>
                   </div>

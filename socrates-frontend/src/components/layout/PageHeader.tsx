@@ -31,7 +31,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
           {breadcrumbs.map((breadcrumb, index) => (
-            <React.Fragment key={index}>
+            <React.Fragment key={`breadcrumb-${index}-${breadcrumb.label}`}>
               {index > 0 && <ChevronRight className="h-4 w-4" />}
               {breadcrumb.href ? (
                 <a

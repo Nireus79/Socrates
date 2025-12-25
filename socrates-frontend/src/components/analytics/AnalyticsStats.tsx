@@ -31,8 +31,8 @@ export const AnalyticsStats: React.FC<AnalyticsStatsProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {stats.map((stat, index) => (
-        <Card key={index}>
+      {stats.map((stat) => (
+        <Card key={stat.label}>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">

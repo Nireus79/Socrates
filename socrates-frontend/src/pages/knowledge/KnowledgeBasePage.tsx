@@ -339,7 +339,7 @@ export const KnowledgeBasePage: React.FC = () => {
             ) : searchResults.length > 0 ? (
               <div className="grid gap-4">
                 {searchResults.map((result, index) => (
-                  <Card key={index}>
+                  <Card key={`search-${index}-${result.title}`}>
                     <div className="space-y-2">
                       <h4 className="font-semibold text-gray-900 dark:text-white">
                         {result.title}

@@ -36,8 +36,8 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({
         </div>
 
         <div className="space-y-3">
-          {categories.map((category, index) => (
-            <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+          {categories.map((category) => (
+            <div key={category.name} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex-1 min-w-0">
                   <h4 className="text-sm font-medium text-gray-900 dark:text-white">
