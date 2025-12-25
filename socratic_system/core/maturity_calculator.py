@@ -168,12 +168,12 @@ class MaturityCalculator:
         # Identify missing categories (0 specs)
         missing = [c for c, score in category_scores.items() if score.spec_count == 0]
         if missing:
-            logger.warning(f"Phase {phase} has {len(missing)} missing categories: {missing[:5]}")
+            logger.info(f"Phase {phase} has {len(missing)} missing categories: {missing[:5]}")
 
         # Generate warnings
         warnings = self.generate_warnings(overall_percentage, category_scores, missing)
         if warnings:
-            logger.warning(f"Generated {len(warnings)} warnings for phase {phase}")
+            logger.info(f"Generated {len(warnings)} warnings for phase {phase}")
 
         # Create PhaseMaturity result
         maturity = PhaseMaturity(

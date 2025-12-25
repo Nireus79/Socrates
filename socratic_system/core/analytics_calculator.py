@@ -189,7 +189,7 @@ class AnalyticsCalculator:
             status = "IMBALANCED"
             max_cat = [p[0] for p in percentages if p[1] == max_pct][0]
             min_cat = [p[0] for p in percentages if p[1] == min_pct][0]
-            logger.warning(
+            logger.info(
                 f"Category balance imbalanced: {max_cat}={max_pct:.0f}% vs {min_cat}={min_pct:.0f}%"
             )
             messages.append(
@@ -225,7 +225,7 @@ class AnalyticsCalculator:
 
             if missing_in_phase:
                 missing[phase] = missing_in_phase
-                logger.warning(f"Phase {phase} has {len(missing_in_phase)} missing categories")
+                logger.info(f"Phase {phase} has {len(missing_in_phase)} missing categories")
 
         logger.info(
             f"Total missing categories across phases: {sum(len(v) for v in missing.values())}"
@@ -330,7 +330,7 @@ class AnalyticsCalculator:
                         / consecutive_low_delta,
                     }
                     plateaus.append(plateau_info)
-                    logger.warning(
+                    logger.info(
                         f"Plateau detected: Q{plateau_info['start_session']} for {plateau_info['duration']} sessions, avg_delta={plateau_info['avg_delta']:.2f}"
                     )
                 consecutive_low_delta = 0

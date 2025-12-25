@@ -21,3 +21,70 @@
     - python socrates.py --full → (API + Frontend)
     - python socrates.py --frontend → CLI with React frontend
   - Options: --host, --port, --reload, --version, --help
+
+
+- Issue: Chat handler just echoes messages back - no AI integration
+  - Impact: Users get echoed responses instead of AI answers
+  - Needs: Call orchestrator.socratic_counselor for AI responses
+
+  2. WebSocket Commands Not Routed
+
+  - File: websocket.py:256
+  - Issue: # TODO: Implement command routing and execution
+  - Impact: Commands sent via WebSocket fail silently
+
+  3. Event Streaming Returns Only "Connected"
+
+  - File: events.py:112
+  - Issue: Real-time events not streamed from queue
+  - Impact: Event stream is non-functional
+
+  4. Event History All Hardcoded Mock Data
+
+  - File: events.py:57
+  - Issue: # TODO: Query events from database
+  - Impact: No actual activity history
+
+  ---
+  🟠 HIGH (12 items - Block Major Features)
+
+  | Issue                           | File               | Line                    | Impact                                       |
+  |---------------------------------|--------------------|-------------------------|----------------------------------------------|
+  | Code Analysis (all 5 endpoints) | analysis.py        | 188, 241, 294, 351, 401 | Returns dummy analysis data                  |
+  | Code Generation AI Missing      | code_generation.py | 101-102                 | Returns hardcoded "Hello World"              |
+  | Collaboration Not Saved to DB   | collaboration.py   | 107-170, 246-434        | Changes not persisted/visible                |
+  | GitHub Integration Fake         | github.py          | 121-567                 | Uses hardcoded responses, wrong auth         |
+  | 2FA All Stubs                   | security.py        | 80-376                  | Password/TOTP/backup codes not implemented   |
+  | Analytics Mock Data             | analytics.py       | 465-754                 | Returns hardcoded values like "42" questions |
+  | LLM Config Not Persisted        | llm.py             | 54-484                  | Settings lost on restart                     |
+  | Code Validation Missing         | code_generation.py | 174                     | Generated code not linted                    |
+
+  ---
+  🟡 MEDIUM (5 items - Incomplete Features)
+
+  1. User Profile Updates (auth.py:555) - Changes not saved
+  2. Code History (code_generation.py:243, 345) - No history tracking/refactoring
+  3. Learning Embeddings (learning_agent.py:438) - Missing semantic embeddings
+  4. Project Analytics (projects.py:678) - Not calculated
+  5. Subscription Integration (subscription_commands.py:119, 126) - Payment not integrated
+
+  ---
+  🟢 LOW (2 items - Minor)
+
+  1. Team Membership Check (projects.py:225) - May be skipped in some endpoints
+  2. Code Structure Agent Integration - Internal architecture issue
+
+  ---
+  📋 Quick Implementation Priority
+
+  Start with CRITICAL to restore core chat:
+  1. ✅ Chat message AI processing (websocket.py:218)
+  2. ✅ Command routing (websocket.py:256)
+  3. ✅ Event database queries (events.py:57, 112)
+
+  Then HIGH to unlock features:
+  1. Code analysis endpoints
+  2. Code generation with Claude API
+  3. GitHub integration with real Git operations
+  4. Collaboration database persistence
+  5. 2FA with pyotp + bcrypt

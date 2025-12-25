@@ -40,7 +40,7 @@ async def validate_code(
     code: Optional[str] = None,
     language: Optional[str] = None,
     project_id: Optional[str] = None,
-    db: ProjectDatabaseV2 = Depends(get_database),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Validate code for syntax and style issues.
@@ -53,34 +53,59 @@ async def validate_code(
         code: Code to validate
         language: Programming language
         project_id: Project ID
-        db: Database connection
+        current_user: Authenticated user
 
     Returns:
         SuccessResponse with validation results
     """
     try:
+        from socrates_api.main import get_orchestrator
+        from socrates_api.routers.events import record_event
+
+        orchestrator = get_orchestrator()
+
         if code and language:
             logger.info(f"Validating inline code ({language})")
-            validation_results = {
-                "valid": True,
-                "language": language,
-                "issues": [],
-                "code_quality_score": 0,
-            }
+            # Call code validation agent via orchestrator
+            result = await orchestrator.process_request_async(
+                "code_validation",
+                {
+                    "action": "validate",
+                    "code": code,
+                    "language": language,
+                }
+            )
+            validation_results = result.get("data", {})
+
         elif project_id:
             logger.info(f"Validating code for project: {project_id}")
-            validation_results = {
-                "total_files": 0,
-                "valid_files": 0,
-                "files_with_issues": 0,
-                "issues": [],
-                "code_quality_score": 0,
-            }
+            # Load project from database
+            db = get_database()
+            project = db.load_project(project_id)
+            if not project:
+                raise HTTPException(status_code=404, detail="Project not found")
+
+            # Call code validation agent via orchestrator
+            result = await orchestrator.process_request_async(
+                "code_validation",
+                {
+                    "action": "validate_project",
+                    "project": project,
+                }
+            )
+            validation_results = result.get("data", {})
+
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Provide either code+language or project_id",
             )
+
+        # Record event for analytics
+        record_event("code_validated", {
+            "project_id": project_id,
+            "language": language,
+        }, user_id=current_user)
 
         return SuccessResponse(
             success=True,
@@ -113,7 +138,7 @@ async def assess_maturity(
     code: Optional[str] = None,
     language: Optional[str] = None,
     project_id: Optional[str] = None,
-    db: ProjectDatabaseV2 = Depends(get_database),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Assess code maturity and quality metrics.
@@ -122,25 +147,55 @@ async def assess_maturity(
         code: Code to assess
         language: Programming language
         project_id: Project ID
-        db: Database connection
+        current_user: Authenticated user
 
     Returns:
         SuccessResponse with maturity assessment
     """
     try:
-        logger.info("Assessing code maturity")
+        from socrates_api.main import get_orchestrator
+        from socrates_api.routers.events import record_event
 
-        maturity_assessment = {
-            "maturity_score": 5.0,
-            "category_scores": {
-                "maintainability": 5.0,
-                "reliability": 5.0,
-                "security": 5.0,
-                "performance": 5.0,
-                "testability": 5.0,
-            },
-            "recommendations": [],
-        }
+        logger.info("Assessing code maturity")
+        orchestrator = get_orchestrator()
+
+        if project_id:
+            # Load project and assess maturity
+            db = get_database()
+            project = db.load_project(project_id)
+            if not project:
+                raise HTTPException(status_code=404, detail="Project not found")
+
+            result = await orchestrator.process_request_async(
+                "quality_controller",
+                {
+                    "action": "assess_maturity",
+                    "project": project,
+                }
+            )
+            maturity_assessment = result.get("data", {})
+        elif code and language:
+            # Assess inline code maturity
+            result = await orchestrator.process_request_async(
+                "quality_controller",
+                {
+                    "action": "assess_code",
+                    "code": code,
+                    "language": language,
+                }
+            )
+            maturity_assessment = result.get("data", {})
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Provide either code+language or project_id",
+            )
+
+        # Record event
+        record_event("maturity_assessed", {
+            "project_id": project_id,
+            "language": language,
+        }, user_id=current_user)
 
         return SuccessResponse(
             success=True,
@@ -148,6 +203,8 @@ async def assess_maturity(
             data=maturity_assessment,
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error assessing maturity: {str(e)}")
         raise HTTPException(
@@ -169,7 +226,7 @@ async def assess_maturity(
 async def run_tests(
     project_id: str,
     test_type: str = "all",
-    db: ProjectDatabaseV2 = Depends(get_database),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Run tests for a project.
@@ -177,25 +234,43 @@ async def run_tests(
     Args:
         project_id: Project ID
         test_type: Type of tests (unit, integration, all)
-        db: Database connection
+        current_user: Authenticated user
 
     Returns:
         SuccessResponse with test results
     """
     try:
+        from socrates_api.main import get_orchestrator
+        from socrates_api.routers.events import record_event
+
         logger.info(f"Running tests for project: {project_id}")
 
-        # TODO: Execute project tests
-        test_results = {
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Call code validation agent to run tests via orchestrator
+        orchestrator = get_orchestrator()
+        result = await orchestrator.process_request_async(
+            "code_validation",
+            {
+                "action": "run_tests",
+                "project": project,
+                "test_type": test_type,
+            }
+        )
+
+        test_results = result.get("data", {})
+
+        record_event("tests_executed", {
+            "project_id": project_id,
             "test_type": test_type,
-            "total_tests": 0,
-            "passed": 0,
-            "failed": 0,
-            "skipped": 0,
-            "duration": 0,
-            "coverage": 0,
-            "failures": [],
-        }
+            "passed": test_results.get("passed", 0),
+            "failed": test_results.get("failed", 0),
+        }, user_id=current_user)
 
         return SuccessResponse(
             success=True,
@@ -203,6 +278,8 @@ async def run_tests(
             data=test_results,
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error running tests: {str(e)}")
         raise HTTPException(
@@ -223,30 +300,45 @@ async def run_tests(
 )
 async def analyze_structure(
     project_id: str,
-    db: ProjectDatabaseV2 = Depends(get_database),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Analyze the code structure and architecture of a project.
 
     Args:
         project_id: Project ID
-        db: Database connection
+        current_user: Authenticated user
 
     Returns:
         SuccessResponse with structure analysis
     """
     try:
+        from socrates_api.main import get_orchestrator
+        from socrates_api.routers.events import record_event
+
         logger.info(f"Analyzing structure for project: {project_id}")
 
-        # TODO: Use CodeStructureAnalyzer to analyze project
-        structure_analysis = {
-            "files": 0,
-            "total_lines": 0,
-            "modules": [],
-            "dependencies": [],
-            "complexity_score": 0,
-            "maintainability_index": 0,
-        }
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Call context analyzer via orchestrator
+        orchestrator = get_orchestrator()
+        result = await orchestrator.process_request_async(
+            "context_analyzer",
+            {
+                "action": "analyze_structure",
+                "project": project,
+            }
+        )
+
+        structure_analysis = result.get("data", {})
+
+        record_event("structure_analyzed", {
+            "project_id": project_id,
+        }, user_id=current_user)
 
         return SuccessResponse(
             success=True,
@@ -254,6 +346,8 @@ async def analyze_structure(
             data=structure_analysis,
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error analyzing structure: {str(e)}")
         raise HTTPException(
@@ -275,7 +369,7 @@ async def analyze_structure(
 async def review_code(
     project_id: str,
     review_type: str = "full",
-    db: ProjectDatabaseV2 = Depends(get_database),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Perform automated code review on project.
@@ -283,25 +377,40 @@ async def review_code(
     Args:
         project_id: Project ID
         review_type: Type of review (full, quick, security, performance)
-        db: Database connection
+        current_user: Authenticated user
 
     Returns:
         SuccessResponse with review findings
     """
     try:
+        from socrates_api.main import get_orchestrator
+        from socrates_api.routers.events import record_event
+
         logger.info(f"Reviewing code for project: {project_id}")
 
-        # TODO: Use CodeReviewAgent for comprehensive review
-        review_findings = {
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Call quality controller via orchestrator for code review
+        orchestrator = get_orchestrator()
+        result = await orchestrator.process_request_async(
+            "quality_controller",
+            {
+                "action": "review_code",
+                "project": project,
+                "review_type": review_type,
+            }
+        )
+
+        review_findings = result.get("data", {})
+
+        record_event("code_reviewed", {
+            "project_id": project_id,
             "review_type": review_type,
-            "total_issues": 0,
-            "critical": 0,
-            "major": 0,
-            "minor": 0,
-            "suggestions": 0,
-            "findings": [],
-            "summary": "No issues found",
-        }
+        }, user_id=current_user)
 
         return SuccessResponse(
             success=True,
@@ -309,6 +418,8 @@ async def review_code(
             data=review_findings,
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error reviewing code: {str(e)}")
         raise HTTPException(
@@ -331,7 +442,7 @@ async def auto_fix_issues(
     project_id: str,
     issue_types: Optional[List[str]] = None,
     apply_changes: bool = False,
-    db: ProjectDatabaseV2 = Depends(get_database),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Automatically fix common code issues.
@@ -340,22 +451,45 @@ async def auto_fix_issues(
         project_id: Project ID
         issue_types: List of issue types to fix (formatting, naming, etc)
         apply_changes: Whether to apply changes or just preview
-        db: Database connection
+        current_user: Authenticated user
 
     Returns:
         SuccessResponse with fix results
     """
     try:
+        from socrates_api.main import get_orchestrator
+        from socrates_api.routers.events import record_event
+
         logger.info(f"Auto-fixing issues for project: {project_id}")
 
-        # TODO: Analyze and fix issues using appropriate agents
-        fix_results = {
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Default issue types if not specified
+        issues = issue_types or ["error_handling", "documentation", "type_hints"]
+
+        # Call code generator via orchestrator to generate fixes
+        orchestrator = get_orchestrator()
+        result = await orchestrator.process_request_async(
+            "code_generator",
+            {
+                "action": "fix_issues",
+                "project": project,
+                "issue_types": issues,
+                "apply_changes": apply_changes,
+            }
+        )
+
+        fix_results = result.get("data", {})
+
+        record_event("issues_fixed", {
+            "project_id": project_id,
+            "issue_types": len(issues),
             "apply_changes": apply_changes,
-            "files_modified": 0,
-            "issues_fixed": 0,
-            "changes": [],
-            "warnings": [],
-        }
+        }, user_id=current_user)
 
         return SuccessResponse(
             success=True,
@@ -363,6 +497,8 @@ async def auto_fix_issues(
             data=fix_results,
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error applying fixes: {str(e)}")
         raise HTTPException(
@@ -383,43 +519,45 @@ async def auto_fix_issues(
 )
 async def get_analysis_report(
     project_id: str,
-    db: ProjectDatabaseV2 = Depends(get_database),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Get comprehensive analysis report for a project.
 
     Args:
         project_id: Project ID
-        db: Database connection
+        current_user: Authenticated user
 
     Returns:
         SuccessResponse with analysis report
     """
     try:
+        from socrates_api.main import get_orchestrator
+        from socrates_api.routers.events import record_event
+
         logger.info(f"Generating analysis report for project: {project_id}")
 
-        # TODO: Compile all analysis results into a report
-        report = {
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Call orchestrator to generate comprehensive report
+        orchestrator = get_orchestrator()
+        result = await orchestrator.process_request_async(
+            "quality_controller",
+            {
+                "action": "generate_report",
+                "project": project,
+            }
+        )
+
+        report = result.get("data", {})
+
+        record_event("report_generated", {
             "project_id": project_id,
-            "generated_at": "",
-            "code_quality": {
-                "score": 0,
-                "grade": "N/A",
-            },
-            "validation": {
-                "status": "pending",
-                "issues": 0,
-            },
-            "tests": {
-                "status": "pending",
-                "coverage": 0,
-            },
-            "structure": {
-                "complexity": 0,
-                "maintainability": 0,
-            },
-            "recommendations": [],
-        }
+        }, user_id=current_user)
 
         return SuccessResponse(
             success=True,
@@ -427,6 +565,8 @@ async def get_analysis_report(
             data=report,
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error generating report: {str(e)}")
         raise HTTPException(

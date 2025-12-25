@@ -61,9 +61,12 @@ class CodeGenerateCommand(BaseCommand):
                 print(f"{Fore.WHITE}{script}")
                 print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}")
 
-                # Show save location
+                # Show save location if file actually exists
                 if save_path:
-                    print(ArtifactSaver.get_save_location_message(save_path))
+                    if Path(save_path).exists():
+                        print(ArtifactSaver.get_save_location_message(save_path))
+                    else:
+                        self.print_warning(f"Save path was returned but file not found: {save_path}")
 
             # Ask if user wants documentation
             doc_choice = input(f"{Fore.CYAN}Generate documentation? (y/n): ").lower()
@@ -81,9 +84,12 @@ class CodeGenerateCommand(BaseCommand):
                     print(f"{Fore.WHITE}{doc_result['documentation']}")
                     print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}")
 
-                    # Show save location
+                    # Show save location if file actually exists
                     if doc_save_path:
-                        print(ArtifactSaver.get_save_location_message(doc_save_path))
+                        if Path(doc_save_path).exists():
+                            print(ArtifactSaver.get_save_location_message(doc_save_path))
+                        else:
+                            self.print_warning(f"Documentation save path returned but file not found: {doc_save_path}")
 
             return self.success(data={"script": script, "save_path": save_path})
         else:

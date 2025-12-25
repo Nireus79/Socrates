@@ -85,7 +85,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             >
               {onEdit && (
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     onEdit(project.project_id);
                     setIsMenuOpen(false);
                   }}
@@ -96,20 +97,22 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
               )}
               {onArchive && (
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     onArchive(project.project_id);
                     setIsMenuOpen(false);
                   }}
                   className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
-                  Archive
+                  {project.is_archived ? 'Restore' : 'Archive'}
                 </button>
               )}
               {onDelete && (
                 <>
                   <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       onDelete(project.project_id);
                       setIsMenuOpen(false);
                     }}

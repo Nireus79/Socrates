@@ -149,9 +149,20 @@ class ArtifactSaver:
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(artifact)
 
+            # Verify file was created
+            if not file_path.exists():
+                logger.error(f"File was written but does not exist: {file_path}")
+                return False, ""
+
             logger.info(f"Saved {artifact_type} to {file_path}")
             return True, str(file_path)
 
+        except PermissionError as e:
+            logger.error(f"Permission denied saving artifact to {save_dir}: {e}")
+            return False, ""
+        except OSError as e:
+            logger.error(f"OS error saving artifact to {save_dir}: {e}")
+            return False, ""
         except Exception as e:
             logger.error(f"Error saving artifact: {e}")
             return False, ""
@@ -223,12 +234,13 @@ class ArtifactSaver:
         # Show relative path if possible
         try:
             rel_path = Path(file_path).relative_to(Path.home())
-            display_path = f"~/{rel_path}"
+            # Use forward slashes for display (more readable)
+            display_path = f"~/{rel_path.as_posix()}"
         except ValueError:
             display_path = file_path
 
         return (
-            f"\n{Fore.GREEN}Saved to:{Style.RESET_ALL} {Fore.YELLOW}{display_path}{Style.RESET_ALL}"
+            f"\n{Fore.GREEN}Saved to:{Style.RESET_ALL} {Fore.YELLOW}{display_path}{Style.RESET_ALL}\n"
         )
 
     @staticmethod

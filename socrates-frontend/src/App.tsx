@@ -17,6 +17,7 @@ import { AnalyticsPage } from './pages/analytics/AnalyticsPage';
 import { CollaborationPage } from './pages/collaboration/CollaborationPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 import { KnowledgeBasePage } from './pages/knowledge/KnowledgeBasePage';
+import { DocumentationPage } from './pages/documentation/DocumentationPage';
 import { MainLayout } from './components/layout';
 import { ErrorBoundary } from './components/common';
 import { NotificationProvider } from './components/providers/NotificationProvider';
@@ -202,20 +203,7 @@ function App() {
             path="/docs"
             element={
               <ProtectedRoute>
-                <div className="min-h-screen bg-white dark:bg-gray-900 p-8">
-                  <div className="max-w-4xl mx-auto">
-                    <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">Documentation</h1>
-                    <div className="prose dark:prose-invert max-w-none">
-                      <p className="text-gray-600 dark:text-gray-400 mb-6">
-                        Welcome to Socrates documentation. For API documentation, visit:
-                      </p>
-                      <ul className="list-disc pl-6 space-y-2 text-gray-600 dark:text-gray-400">
-                        <li><a href="/docs" className="text-blue-600 hover:underline">Swagger UI - /docs</a></li>
-                        <li><a href="/redoc" className="text-blue-600 hover:underline">ReDoc - /redoc</a></li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+                <DocumentationPage />
               </ProtectedRoute>
             }
           />

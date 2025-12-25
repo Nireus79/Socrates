@@ -528,6 +528,7 @@ async def get_me(
     },
 )
 async def update_me(
+    request_body: dict = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
@@ -535,6 +536,7 @@ async def update_me(
     Update the current authenticated user's profile.
 
     Args:
+        request_body: Request body with fields to update (name, avatar, etc.)
         current_user: Current authenticated user (from JWT)
         db: Database connection
 
@@ -552,9 +554,20 @@ async def update_me(
                 detail="User not found",
             )
 
-        # TODO: Update user profile fields from request body
-        # For now, just return the current profile
-        # In production, would update fields like subscription preferences, etc.
+        # Update user profile fields from request body
+        if request_body:
+            if "name" in request_body:
+                user.name = request_body.get("name", user.name)
+            if "avatar" in request_body:
+                user.avatar = request_body.get("avatar", user.avatar)
+
+            # Persist updates to database
+            db.save_user(user)
+
+        from socrates_api.routers.events import record_event
+        record_event("profile_updated", {
+            "username": current_user,
+        }, user_id=current_user)
 
         logger.info(f"User profile updated: {current_user}")
         return _user_to_response(user)

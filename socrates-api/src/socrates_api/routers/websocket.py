@@ -193,7 +193,7 @@ async def _handle_chat_message(
     connection_id: str,
 ):
     """
-    Handle a chat message.
+    Handle a chat message with AI processing.
 
     Args:
         message: Parsed WebSocketMessage
@@ -215,12 +215,74 @@ async def _handle_chat_message(
             f"{message.content[:50]}... (mode={mode})"
         )
 
-        # TODO: Integrate AI processing to handle chat message
-        # For now, just echo back the message
+        # Get project and orchestrator for AI processing
+        try:
+            from socrates_api.main import get_orchestrator
+            db = get_database()
+
+            project = db.load_project(project_id)
+            if not project:
+                logger.error(f"Project {project_id} not found")
+                return None
+
+            orchestrator = get_orchestrator()
+
+            # Process message through orchestrator
+            result = orchestrator.socratic_counselor.process({
+                "action": "process_response",
+                "project": project,
+                "response": message.content,
+                "current_user": user_id,
+                "mode": mode,
+            })
+
+            # Extract AI response
+            if result.get("status") == "success":
+                ai_response = result.get("insights", {}).get("thoughts", "")
+                if not ai_response:
+                    ai_response = result.get("response", "Thank you for your input.")
+            else:
+                ai_response = result.get("message", "I'm processing your response.")
+
+            # Generate hint if requested
+            hint_text = ""
+            if request_hint:
+                try:
+                    hint_text = orchestrator.claude_client.generate_suggestions(
+                        f"Current question context: {message.content}",
+                        project
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to generate hint: {e}")
+                    hint_text = "Try breaking this down into smaller parts."
+
+            # Save message to conversation history
+            project.conversation_history.append({
+                "id": f"msg_{len(project.conversation_history)}",
+                "type": "user",
+                "content": message.content,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "mode": mode,
+            })
+
+            # Save assistant response
+            project.conversation_history.append({
+                "id": f"msg_{len(project.conversation_history)}",
+                "type": "assistant",
+                "content": ai_response,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "hint": hint_text if hint_text else None,
+            })
+
+            db.save_project(project)
+
+        except Exception as e:
+            logger.error(f"Error processing chat message with AI: {e}")
+            ai_response = f"I encountered an error: {str(e)}"
 
         response = {
             "type": ResponseType.ASSISTANT_RESPONSE.value,
-            "content": f"Echo: {message.content}",
+            "content": ai_response,
             "requestId": message.request_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
@@ -239,7 +301,7 @@ async def _handle_command(
     connection_id: str,
 ):
     """
-    Handle a command message.
+    Handle a command message with routing to appropriate handler.
 
     Args:
         message: Parsed WebSocketMessage
@@ -251,21 +313,138 @@ async def _handle_command(
         WebSocketResponse or None
     """
     try:
-        logger.info(f"Command from {user_id}: {message.content}")
+        command_text = message.content.strip()
+        logger.info(f"Command from {user_id}: {command_text}")
 
-        # TODO: Implement command routing and execution
+        # Extract command name and arguments
+        parts = command_text.split(maxsplit=1)
+        command_name = parts[0].lstrip("/").lower() if parts else ""
+        command_args = parts[1] if len(parts) > 1 else ""
+
+        # Route to appropriate command handler
+        result = await _route_command(
+            command_name,
+            command_args,
+            user_id,
+            project_id
+        )
 
         response = {
-            "type": ResponseType.ACKNOWLEDGMENT.value,
+            "type": ResponseType.ASSISTANT_RESPONSE.value,
+            "content": result.get("message", "Command executed"),
             "requestId": message.request_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
+        logger.info(f"Command '{command_name}' executed for {user_id}")
         return None  # Response handled inline
 
     except Exception as e:
         logger.error(f"Error handling command: {e}")
-        raise
+        return {
+            "type": ResponseType.ERROR.value,
+            "errorMessage": str(e),
+            "requestId": message.request_id,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+
+async def _route_command(
+    command: str,
+    args: str,
+    user_id: str,
+    project_id: str,
+) -> dict:
+    """
+    Route command to appropriate handler.
+
+    Args:
+        command: Command name (without /)
+        args: Command arguments as string
+        user_id: User ID
+        project_id: Project ID
+
+    Returns:
+        Result dict with status and message
+    """
+    try:
+        from socrates_api.main import get_orchestrator
+        db = get_database()
+
+        project = db.load_project(project_id)
+        if not project:
+            return {"status": "error", "message": f"Project {project_id} not found"}
+
+        orchestrator = get_orchestrator()
+
+        # Map common commands to handlers
+        if command in ["hint", "help", "suggest"]:
+            # Generate hint
+            hint = orchestrator.claude_client.generate_suggestions(
+                f"{command}: {args}" if args else "Help me with this task",
+                project
+            )
+            return {"status": "success", "message": hint}
+
+        elif command == "summary":
+            # Generate conversation summary
+            result = orchestrator.process_request(
+                "context_analyzer",
+                {
+                    "action": "generate_summary",
+                    "project": project,
+                    "limit": 50,
+                }
+            )
+            summary = result.get("summary", "No summary available")
+            return {"status": "success", "message": summary}
+
+        elif command == "status":
+            # Show project status
+            status_msg = (
+                f"Project: {project.name}\n"
+                f"Phase: {project.phase}\n"
+                f"Maturity: {project.overall_maturity:.1f}%\n"
+                f"Mode: {project.chat_mode}"
+            )
+            return {"status": "success", "message": status_msg}
+
+        elif command == "mode":
+            # Switch chat mode
+            if args in ["socratic", "direct"]:
+                project.chat_mode = args
+                db.save_project(project)
+                return {"status": "success", "message": f"Mode switched to {args}"}
+            else:
+                return {"status": "error", "message": "Mode must be 'socratic' or 'direct'"}
+
+        elif command == "clear":
+            # Clear conversation history
+            count = len(project.conversation_history or [])
+            project.conversation_history = []
+            db.save_project(project)
+            return {"status": "success", "message": f"Cleared {count} messages"}
+
+        elif command == "advance":
+            # Advance to next phase
+            result = orchestrator.socratic_counselor.process({
+                "action": "advance_phase",
+                "project": project,
+                "current_user": user_id,
+            })
+            if result.get("status") == "success":
+                db.save_project(project)
+                new_phase = result.get("new_phase", project.phase)
+                return {"status": "success", "message": f"Advanced to {new_phase} phase"}
+            else:
+                return {"status": "error", "message": result.get("message", "Cannot advance phase")}
+
+        else:
+            return {"status": "error", "message": f"Unknown command: /{command}"}
+
+    except Exception as e:
+        logger.error(f"Error routing command '{command}': {e}")
+        return {"status": "error", "message": str(e)}
 
 
 # ============================================================================
@@ -423,13 +602,33 @@ async def get_chat_history(
                 detail="Access denied",
             )
 
-        # TODO: Load conversation history from database
+        # Load conversation history from project
+        conversation_history = project.conversation_history or []
+        total = len(conversation_history)
+
+        # Apply pagination
+        paginated_history = conversation_history[offset : offset + limit]
+
+        # Transform to ChatMessage format for frontend
+        messages = []
+        for msg in paginated_history:
+            messages.append({
+                "id": msg.get("id", f"msg_{len(messages)}"),
+                "role": msg.get("type", "user"),  # type -> role mapping
+                "content": msg.get("content", ""),
+                "timestamp": msg.get("timestamp"),
+            })
+
+        logger.info(
+            f"Retrieved {len(messages)} messages for project {project_id} "
+            f"(offset={offset}, limit={limit}, total={total})"
+        )
 
         return {
             "status": "success",
             "project_id": project_id,
-            "messages": [],
-            "total": 0,
+            "messages": messages,
+            "total": total,
             "limit": limit,
             "offset": offset,
         }
@@ -487,12 +686,21 @@ async def switch_chat_mode(
                 detail="Access denied",
             )
 
-        # TODO: Update user's chat mode preference
+        # Update chat mode preference in project
+        old_mode = project.chat_mode
+        project.chat_mode = mode
+        db.save_project(project)
+
+        logger.info(
+            f"Chat mode switched for project {project_id}: "
+            f"{old_mode} → {mode}"
+        )
 
         return {
             "status": "success",
             "project_id": project_id,
             "mode": mode,
+            "previous_mode": old_mode,
         }
 
     except HTTPException:
@@ -536,11 +744,52 @@ async def request_hint(
                 detail="Access denied",
             )
 
-        # TODO: Generate hint using AI model
+        # Get the latest assistant message or generate a new question
+        assistant_messages = [
+            msg for msg in (project.conversation_history or [])
+            if msg.get("type") == "assistant"
+        ]
+
+        question = None
+        if assistant_messages:
+            # Use the last question from assistant
+            question = assistant_messages[-1].get("content", "")
+        else:
+            # Generate initial question if no conversation yet
+            from socrates_api.main import get_orchestrator
+            try:
+                orchestrator = get_orchestrator()
+                question_result = orchestrator.socratic_counselor.process({
+                    "action": "generate_question",
+                    "project": project,
+                    "current_user": current_user,
+                })
+                if question_result.get("status") == "success":
+                    question = question_result.get("question")
+            except Exception as e:
+                logger.warning(f"Failed to generate question for hint: {e}")
+                question = f"How would you describe the goals for {project.name}?"
+
+        # Generate hint using Claude
+        hint = None
+        if question:
+            try:
+                from socrates_api.main import get_orchestrator
+                orchestrator = get_orchestrator()
+                hint = orchestrator.claude_client.generate_suggestions(question, project)
+            except Exception as e:
+                logger.error(f"Error generating hint: {e}")
+                hint = "Try thinking about the main objectives and requirements."
+
+        if not hint:
+            hint = "Consider breaking down the problem into smaller parts."
+
+        logger.info(f"Generated hint for project {project_id}")
 
         return {
             "status": "success",
-            "hint": "This is a hint for the current question",
+            "hint": hint,
+            "question": question or "Provide more details",
         }
 
     except HTTPException:
@@ -584,11 +833,20 @@ async def clear_chat_history(
                 detail="Access denied",
             )
 
-        # TODO: Delete conversation history from database
+        # Delete conversation history
+        message_count = len(project.conversation_history or [])
+        project.conversation_history = []
+        db.save_project(project)
+
+        logger.info(
+            f"Chat history cleared for project {project_id} "
+            f"({message_count} messages deleted)"
+        )
 
         return {
             "status": "success",
             "message": "Chat history cleared",
+            "messages_deleted": message_count,
         }
 
     except HTTPException:
@@ -632,14 +890,90 @@ async def get_chat_summary(
                 detail="Access denied",
             )
 
-        # TODO: Generate summary using AI model
+        # Get conversation history
+        conversation_history = project.conversation_history or []
+        if not conversation_history:
+            logger.info(f"No conversation history for project {project_id}")
+            return {
+                "status": "success",
+                "project_id": project_id,
+                "summary": "No conversation history yet",
+                "key_points": [],
+                "insights": [],
+            }
+
+        # Generate summary using orchestrator or Claude
+        summary_text = "No conversation history available"
+        key_points = []
+        insights = []
+
+        try:
+            from socrates_api.main import get_orchestrator
+            orchestrator = get_orchestrator()
+
+            # Use context_analyzer to generate summary
+            summary_result = orchestrator.process_request(
+                "context_analyzer",
+                {
+                    "action": "generate_summary",
+                    "project": project,
+                    "limit": len(conversation_history),
+                }
+            )
+
+            if summary_result.get("status") == "success":
+                summary_text = summary_result.get("summary", summary_text)
+                key_points = summary_result.get("key_points", [])
+                insights = summary_result.get("insights", [])
+            else:
+                logger.warning(f"Summary generation returned non-success status: {summary_result}")
+        except Exception as e:
+            logger.warning(f"Failed to use orchestrator for summary, using Claude directly: {e}")
+            try:
+                from socrates_api.main import get_orchestrator
+                orchestrator = get_orchestrator()
+
+                # Fallback: Use Claude directly to generate summary
+                conversation_text = "\n".join([
+                    f"{msg.get('type', 'unknown').upper()}: {msg.get('content', '')}"
+                    for msg in conversation_history[-20:]  # Last 20 messages
+                ])
+
+                prompt = f"""Summarize this conversation in 2-3 sentences, then list 3-5 key points and insights.
+
+Conversation:
+{conversation_text}
+
+Provide response in JSON format:
+{{
+    "summary": "...",
+    "key_points": ["...", "..."],
+    "insights": ["...", "..."]
+}}"""
+
+                response = orchestrator.claude_client.generate_response(prompt)
+
+                # Parse response (assume JSON format)
+                import json
+                try:
+                    parsed = json.loads(response)
+                    summary_text = parsed.get("summary", summary_text)
+                    key_points = parsed.get("key_points", [])
+                    insights = parsed.get("insights", [])
+                except json.JSONDecodeError:
+                    summary_text = response[:200]  # Use first 200 chars as summary
+            except Exception as e2:
+                logger.error(f"Error generating summary: {e2}")
+                summary_text = f"Conversation has {len(conversation_history)} messages"
+
+        logger.info(f"Generated summary for project {project_id}")
 
         return {
             "status": "success",
             "project_id": project_id,
-            "summary": "Conversation summary will be generated here",
-            "key_points": [],
-            "insights": [],
+            "summary": summary_text,
+            "key_points": key_points,
+            "insights": insights,
         }
 
     except HTTPException:

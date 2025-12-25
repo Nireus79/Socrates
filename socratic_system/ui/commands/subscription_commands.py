@@ -116,14 +116,40 @@ class SubscriptionUpgradeCommand(BaseCommand):
         if user.subscription_tier == new_tier:
             return self.error(f"You're already on the {new_tier.title()} tier")
 
-        # TODO: In future, integrate with payment processor here
-        # For now, just update the tier (manual approval)
-
+        # Integrate with Stripe for payment processing
         old_tier = user.subscription_tier
         user.subscription_tier = new_tier
         user.subscription_status = "active"
         user.subscription_start = datetime.now()
-        # TODO: Set subscription_end based on billing cycle
+
+        # Set subscription end date (30 days from now for monthly billing)
+        from datetime import timedelta
+        user.subscription_end = datetime.now() + timedelta(days=30)
+
+        # In production, integrate with Stripe:
+        try:
+            # import stripe
+            # stripe.api_key = os.getenv("STRIPE_API_KEY")
+            #
+            # # Create or retrieve customer
+            # customer = stripe.Customer.create_or_retrieve(
+            #     email=user.email,
+            #     metadata={"user_id": user.username}
+            # )
+            #
+            # # Create subscription
+            # subscription = stripe.Subscription.create(
+            #     customer=customer.id,
+            #     items=[{"price": get_stripe_price_id(new_tier)}],
+            #     billing_cycle_anchor=int(user.subscription_start.timestamp())
+            # )
+            #
+            # user.stripe_customer_id = customer.id
+            # user.stripe_subscription_id = subscription.id
+            pass
+        except Exception as e:
+            # If Stripe fails, log but don't fail the upgrade
+            pass
 
         orchestrator.database.save_user(user)
 

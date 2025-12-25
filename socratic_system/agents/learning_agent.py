@@ -427,6 +427,18 @@ class UserLearningAgent(Agent):
 
         try:
             # Create knowledge base document
+            # Generate embedding using sentence transformer
+            embedding = None
+            try:
+                from sentence_transformers import SentenceTransformer
+                model = SentenceTransformer('all-MiniLM-L6-v2')
+                # Generate embedding from content
+                embedding = model.encode(content[:500]).tolist()  # Use first 500 chars for embedding
+            except ImportError:
+                self.logger.warning("sentence_transformers not installed. Embeddings disabled.")
+            except Exception as e:
+                self.logger.warning(f"Could not generate embedding: {e}")
+
             doc = KnowledgeBaseDocument(
                 id=str(uuid.uuid4()),
                 project_id=project_id,
@@ -435,7 +447,7 @@ class UserLearningAgent(Agent):
                 file_size=file_size,
                 content_type=content_type,
                 content=content,
-                embedding=None,  # TODO: Generate embedding using sentence transformer
+                embedding=embedding,  # Generated embedding vector
                 uploaded_at=datetime.now(timezone.utc),
             )
 

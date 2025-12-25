@@ -5,7 +5,7 @@ export { useChatStore } from './chatStore';
 export { useCodeGenerationStore } from './codeGenerationStore';
 export { useCollaborationStore } from './collaborationStore';
 export { useSubscriptionStore, useFeatureGate } from './subscriptionStore';
-export { useUIStore } from './uiStore';
+export { useThemeStore } from './themeStore';
 export { useGitHubStore } from './githubStore';
 export { useKnowledgeStore } from './knowledgeStore';
 export { useLLMStore } from './llmStore';

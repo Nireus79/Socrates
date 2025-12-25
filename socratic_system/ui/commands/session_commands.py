@@ -391,38 +391,46 @@ If you don't have enough information, say so."""
             return False
 
         question = question_result["question"]
-        print(f"\n{Fore.BLUE}🤔 {question}")
 
-        print(
-            f"\n{Fore.YELLOW}Your response (or use /mode, /done, /advance, /help, /back, /exit):{Style.RESET_ALL}"
-        )
-        response = input(f"{Fore.WHITE}> ").strip()
+        # Inner loop: keep asking the same question until answered or session command
+        while True:
+            print(f"\n{Fore.BLUE}🤔 {question}")
 
-        # Handle / commands
-        if response.startswith("/"):
-            should_continue, session_active = self._handle_command(response, context)
-            if not should_continue:
-                return False
-            return session_active
+            print(
+                f"\n{Fore.YELLOW}Your response (or use /mode, /done, /advance, /help, /back, /exit):{Style.RESET_ALL}"
+            )
+            response = input(f"{Fore.WHITE}> ").strip()
 
-        # Handle special responses
-        handled, should_continue = self._handle_special_response(response, orchestrator, project)
-        if handled:
-            if not should_continue:
-                return False
-            if response.lower() in ["help", "suggestions", "hint"]:
-                suggestions = orchestrator.claude_client.generate_suggestions(question, project)
-                print(f"\n{Fore.MAGENTA}💡 {suggestions}")
-                print(
-                    f"{Fore.YELLOW}Now, would you like to try answering the question?{Style.RESET_ALL}"
-                )
+            # Handle / commands
+            if response.startswith("/"):
+                should_continue, session_active = self._handle_command(response, context)
+                if not should_continue:
+                    return False
+                # /advance returns to main loop to generate new question
+                if response.startswith("/advance"):
+                    return session_active
+                # Other commands: loop back and ask the same question again
+                continue
+
+            # Handle special responses
+            handled, should_continue = self._handle_special_response(response, orchestrator, project)
+            if handled:
+                if not should_continue:
+                    return False
+                if response.lower() in ["help", "suggestions", "hint"]:
+                    suggestions = orchestrator.claude_client.generate_suggestions(question, project)
+                    print(f"\n{Fore.MAGENTA}💡 {suggestions}")
+                    print(
+                        f"{Fore.YELLOW}Now, would you like to try answering the question?{Style.RESET_ALL}"
+                    )
+                # Loop back and ask the same question again
+                continue
+
+            # Process normal answer and exit the inner loop
+            self._process_user_answer(
+                response, orchestrator, project, user, mode="socratic", session_context="in_session"
+            )
             return True
-
-        # Process normal answer
-        self._process_user_answer(
-            response, orchestrator, project, user, mode="socratic", session_context="in_session"
-        )
-        return True
 
     def _handle_direct_mode_turn(self, orchestrator, project, user, context) -> bool:
         """Handle one turn of Direct mode (user asks, system answers)"""

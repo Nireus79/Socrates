@@ -6,28 +6,37 @@ Provides document import, search, and knowledge management functionality.
 
 import logging
 import os
+import tempfile
+import uuid
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, status, Depends
+from fastapi import APIRouter, HTTPException, UploadFile, File, status, Depends, Body, Form
 
 from socratic_system.database import ProjectDatabaseV2
 from socrates_api.models import SuccessResponse, ErrorResponse
+from socrates_api.auth import get_current_user
+from socrates_api.database import get_database
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/knowledge", tags=["knowledge"])
 
 
-def get_database() -> ProjectDatabaseV2:
-    """Get database instance."""
-    data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
-    db_path = os.path.join(data_dir, "projects.db")
-    return ProjectDatabaseV2(db_path)
+def _get_orchestrator():
+    """Get the global orchestrator instance for agent-based processing."""
+    from socrates_api.main import app_state
+
+    if app_state.get("orchestrator") is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Orchestrator not initialized. Please call /initialize first."
+        )
+    return app_state["orchestrator"]
 
 
 @router.get(
     "/documents",
-    response_model=list,
+    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
     summary="List documents",
     responses={
@@ -37,6 +46,7 @@ def get_database() -> ProjectDatabaseV2:
 )
 async def list_documents(
     project_id: Optional[str] = None,
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -44,18 +54,48 @@ async def list_documents(
 
     Args:
         project_id: Optional project ID to filter documents
+        current_user: Current authenticated user
         db: Database connection
 
     Returns:
-        List of documents
+        SuccessResponse with list of documents
     """
     try:
-        # TODO: Implement document listing from database
-        # For now, return empty list
-        documents = []
+        if project_id:
+            # Verify user has access to project
+            project = db.load_project(project_id)
+            if not project or project.owner != current_user:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied to this project"
+                )
+            documents = db.get_project_knowledge_documents(project_id)
+        else:
+            # Get all documents for user
+            documents = db.get_user_knowledge_documents(current_user)
 
-        return documents
+        # Transform to frontend format
+        doc_list = []
+        for doc in documents:
+            doc_list.append({
+                "id": doc["id"],
+                "title": doc["title"],
+                "source_type": doc["document_type"],
+                "created_at": doc["uploaded_at"],
+                "chunk_count": 0,
+            })
 
+        return SuccessResponse(
+            success=True,
+            message="Documents retrieved successfully",
+            data={
+                "documents": doc_list,
+                "total": len(doc_list)
+            }
+        )
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error listing documents: {str(e)}")
         raise HTTPException(
@@ -77,7 +117,9 @@ async def list_documents(
 )
 async def import_file(
     file: UploadFile = File(...),
-    project_id: Optional[str] = None,
+    project_id: Optional[str] = Form(None),
+    current_user: str = Depends(get_current_user),
+    orchestrator = Depends(_get_orchestrator),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -86,6 +128,8 @@ async def import_file(
     Args:
         file: File to import
         project_id: Optional project ID to associate document
+        current_user: Current authenticated user
+        orchestrator: Orchestrator instance
         db: Database connection
 
     Returns:
@@ -98,20 +142,72 @@ async def import_file(
                 detail="File name is required",
             )
 
-        logger.info(f"Importing file: {file.filename}")
+        logger.info(f"Importing file: {file.filename} for user {current_user}")
 
-        # TODO: Process file with DocumentProcessorAgent
-        # For now, return success
-        return SuccessResponse(
-            success=True,
-            message=f"File '{file.filename}' imported successfully",
-            data={
-                "filename": file.filename,
-                "size": file.size or 0,
-                "chunks": 0,
-                "entries": 0,
-            },
-        )
+        # Verify project access if provided
+        if project_id:
+            project = db.load_project(project_id)
+            if not project or project.owner != current_user:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied to this project"
+                )
+
+        # Save uploaded file temporarily
+        temp_dir = Path(tempfile.gettempdir()) / "socrates_uploads"
+        temp_dir.mkdir(exist_ok=True, parents=True)
+        temp_file = temp_dir / f"{uuid.uuid4()}_{file.filename}"
+
+        # Write file content
+        content = await file.read()
+        temp_file.write_bytes(content)
+
+        logger.debug(f"Saved temp file: {temp_file}")
+
+        try:
+            # Process via DocumentProcessorAgent
+            result = orchestrator.process_request(
+                "document_processor",
+                {
+                    "action": "import_file",
+                    "file_path": str(temp_file),
+                    "project_id": project_id,
+                }
+            )
+
+            logger.debug(f"DocumentProcessor result: {result}")
+
+            # Save metadata to database
+            doc_id = str(uuid.uuid4())
+            db.save_knowledge_document(
+                user_id=current_user,
+                project_id=project_id,
+                doc_id=doc_id,
+                title=file.filename,
+                content="",
+                source=file.filename,
+                document_type="file"
+            )
+
+            logger.info(f"File imported successfully: {file.filename}")
+
+            return SuccessResponse(
+                success=True,
+                message=f"File '{file.filename}' imported successfully",
+                data={
+                    "filename": file.filename,
+                    "size": len(content),
+                    "chunks": result.get("chunks_added", 0),
+                    "entries": result.get("entries_added", 0),
+                },
+            )
+
+        finally:
+            # Clean up temp file
+            try:
+                temp_file.unlink()
+            except Exception as e:
+                logger.warning(f"Failed to delete temp file {temp_file}: {e}")
 
     except HTTPException:
         raise
@@ -135,39 +231,76 @@ async def import_file(
     },
 )
 async def import_url(
-    url: str,
-    project_id: Optional[str] = None,
+    body: dict = Body(...),
+    current_user: str = Depends(get_current_user),
+    orchestrator = Depends(_get_orchestrator),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
     Import content from URL to knowledge base.
 
     Args:
-        url: URL to import from
-        project_id: Optional project ID
+        body: JSON body with url and optional projectId
+        current_user: Current authenticated user
+        orchestrator: Orchestrator instance
         db: Database connection
 
     Returns:
         SuccessResponse with import details
     """
     try:
+        url = body.get('url')
+        project_id = body.get('projectId')
+
         if not url:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="URL is required",
             )
 
-        logger.info(f"Importing from URL: {url}")
+        logger.info(f"Importing from URL: {url} for user {current_user}")
 
-        # TODO: Fetch URL content and process with DocumentProcessorAgent
-        # For now, return success
+        # Verify project access if provided
+        if project_id:
+            project = db.load_project(project_id)
+            if not project or project.owner != current_user:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied to this project"
+                )
+
+        # Process via DocumentProcessorAgent
+        result = orchestrator.process_request(
+            "document_processor",
+            {
+                "action": "import_url",
+                "url": url,
+                "project_id": project_id,
+            }
+        )
+
+        logger.debug(f"DocumentProcessor result: {result}")
+
+        # Save metadata
+        doc_id = str(uuid.uuid4())
+        db.save_knowledge_document(
+            user_id=current_user,
+            project_id=project_id,
+            doc_id=doc_id,
+            title=url,
+            source=url,
+            document_type="url"
+        )
+
+        logger.info(f"URL imported successfully: {url}")
+
         return SuccessResponse(
             success=True,
             message=f"Content from '{url}' imported successfully",
             data={
                 "url": url,
-                "chunks": 0,
-                "entries": 0,
+                "chunks": result.get("chunks_added", 0),
+                "entries": result.get("entries_added", 0),
             },
         )
 
@@ -193,43 +326,81 @@ async def import_url(
     },
 )
 async def import_text(
-    title: str,
-    content: str,
-    project_id: Optional[str] = None,
+    body: dict = Body(...),
+    current_user: str = Depends(get_current_user),
+    orchestrator = Depends(_get_orchestrator),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
     Import pasted text to knowledge base.
 
     Args:
-        title: Document title
-        content: Text content
-        project_id: Optional project ID
+        body: JSON body with title, content, and optional projectId
+        current_user: Current authenticated user
+        orchestrator: Orchestrator instance
         db: Database connection
 
     Returns:
         SuccessResponse with import details
     """
     try:
+        title = body.get('title')
+        content = body.get('content')
+        project_id = body.get('projectId')
+
         if not content:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Content is required",
             )
 
-        logger.info(f"Importing text document: {title}")
+        logger.info(f"Importing text document: {title} for user {current_user}")
 
-        # TODO: Process text with DocumentProcessorAgent
-        # For now, return success
+        # Verify project access if provided
+        if project_id:
+            project = db.load_project(project_id)
+            if not project or project.owner != current_user:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied to this project"
+                )
+
+        # Process via DocumentProcessorAgent
+        result = orchestrator.process_request(
+            "document_processor",
+            {
+                "action": "import_text",
+                "content": content,
+                "title": title or "Untitled",
+                "project_id": project_id,
+            }
+        )
+
+        logger.debug(f"DocumentProcessor result: {result}")
+
+        # Save metadata
+        doc_id = str(uuid.uuid4())
+        db.save_knowledge_document(
+            user_id=current_user,
+            project_id=project_id,
+            doc_id=doc_id,
+            title=title or "Untitled",
+            content=content[:1000],
+            source="pasted_text",
+            document_type="text"
+        )
+
+        logger.info(f"Text document imported successfully: {title}")
+
         word_count = len(content.split())
         return SuccessResponse(
             success=True,
-            message=f"Text document '{title}' imported successfully",
+            message=f"Text document '{title or 'Untitled'}' imported successfully",
             data={
                 "title": title,
                 "word_count": word_count,
-                "chunks": 0,
-                "entries": 0,
+                "chunks": result.get("chunks_added", 0),
+                "entries": result.get("entries_added", 0),
             },
         )
 
@@ -245,7 +416,7 @@ async def import_text(
 
 @router.get(
     "/search",
-    response_model=list,
+    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
     summary="Search knowledge base",
     responses={
@@ -254,23 +425,28 @@ async def import_text(
     },
 )
 async def search_knowledge(
-    q: str = None,
-    query: str = None,
+    q: Optional[str] = None,
+    query: Optional[str] = None,
     project_id: Optional[str] = None,
     top_k: int = 10,
+    current_user: str = Depends(get_current_user),
+    orchestrator = Depends(_get_orchestrator),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
-    Search knowledge base using full-text search.
+    Search knowledge base using semantic search.
 
     Args:
+        q: Search query (alternative parameter name)
         query: Search query
         project_id: Optional project ID to filter
         top_k: Number of results to return
+        current_user: Current authenticated user
+        orchestrator: Orchestrator instance
         db: Database connection
 
     Returns:
-        List of search results
+        SuccessResponse with search results
     """
     try:
         search_query = q or query
@@ -280,13 +456,57 @@ async def search_knowledge(
                 detail="Search query is required",
             )
 
-        logger.info(f"Searching knowledge base: {search_query}")
+        logger.info(f"Searching knowledge base: {search_query} for user {current_user}")
 
-        # TODO: Implement vector search via VectorDatabase
-        # For now, return empty results
-        results = []
+        # Verify project access if provided
+        if project_id:
+            project = db.load_project(project_id)
+            if not project or project.owner != current_user:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied to this project"
+                )
 
-        return results
+        # Use VectorDatabase via orchestrator
+        vector_db = orchestrator.vector_db
+        if not vector_db:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Vector database not initialized"
+            )
+
+        # Perform semantic search
+        results = vector_db.search_similar(
+            query=search_query,
+            top_k=top_k,
+            project_id=project_id
+        )
+
+        logger.debug(f"Found {len(results)} search results")
+
+        # Transform results to frontend format
+        search_results = []
+        for result in results:
+            metadata = result.get("metadata", {})
+            search_results.append({
+                "document_id": metadata.get("source", "unknown"),
+                "title": metadata.get("source", "Unknown"),
+                "excerpt": result.get("content", "")[:200],
+                "relevance_score": max(0, min(1, 1 - result.get("distance", 1))),
+                "source": metadata.get("source_type", "unknown")
+            })
+
+        logger.info(f"Search completed: found {len(search_results)} results")
+
+        return SuccessResponse(
+            success=True,
+            message=f"Search completed for '{search_query}'",
+            data={
+                "query": search_query,
+                "results": search_results,
+                "total": len(search_results)
+            }
+        )
 
     except HTTPException:
         raise
@@ -310,6 +530,7 @@ async def search_knowledge(
 )
 async def delete_document(
     document_id: str,
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -317,27 +538,43 @@ async def delete_document(
 
     Args:
         document_id: ID of document to delete
+        current_user: Current authenticated user
         db: Database connection
 
     Returns:
         SuccessResponse confirming deletion
     """
     try:
-        logger.info(f"Deleting document: {document_id}")
+        logger.info(f"Deleting document: {document_id} by user {current_user}")
 
-        # Check if document exists before attempting to delete
-        # For now, we'll check if document_id looks valid (not empty)
-        if not document_id or document_id == "nonexistent":
+        # Get document to verify ownership
+        doc = db.get_knowledge_document(document_id)
+        if not doc:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Document not found: {document_id}",
             )
 
-        # TODO: Actually check database for document existence
-        # For now, return success for valid-looking IDs
+        if doc["user_id"] != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this document",
+            )
+
+        # Delete from database
+        success = db.delete_knowledge_document(document_id)
+
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete document",
+            )
+
+        logger.info(f"Document deleted successfully: {document_id}")
+
         return SuccessResponse(
             success=True,
-            message=f"Document deleted successfully",
+            message="Document deleted successfully",
             data={"document_id": document_id},
         )
 
@@ -362,28 +599,72 @@ async def delete_document(
     },
 )
 async def add_knowledge_entry(
-    content: str,
-    category: str,
-    project_id: Optional[str] = None,
+    body: dict = Body(...),
+    current_user: str = Depends(get_current_user),
+    orchestrator = Depends(_get_orchestrator),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
     Add a new knowledge entry.
 
     Args:
-        content: Entry content
-        category: Knowledge category
-        project_id: Optional project ID
+        body: JSON body with content, category, and optional projectId
+        current_user: Current authenticated user
+        orchestrator: Orchestrator instance
         db: Database connection
 
     Returns:
         SuccessResponse with entry details
     """
     try:
-        logger.info(f"Adding knowledge entry in category: {category}")
+        content = body.get('content')
+        category = body.get('category')
+        project_id = body.get('projectId')
 
-        # TODO: Implement knowledge entry creation
-        # For now, return success
+        if not content:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Content is required",
+            )
+
+        logger.info(f"Adding knowledge entry in category: {category} for user {current_user}")
+
+        # Verify project access if provided
+        if project_id:
+            project = db.load_project(project_id)
+            if not project or project.owner != current_user:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied to this project"
+                )
+
+        # Process as text import with category metadata
+        result = orchestrator.process_request(
+            "document_processor",
+            {
+                "action": "import_text",
+                "content": content,
+                "title": f"{category} entry",
+                "project_id": project_id,
+            }
+        )
+
+        logger.debug(f"DocumentProcessor result: {result}")
+
+        # Save metadata
+        entry_id = str(uuid.uuid4())
+        db.save_knowledge_document(
+            user_id=current_user,
+            project_id=project_id,
+            doc_id=entry_id,
+            title=f"{category} entry",
+            content=content[:1000],
+            source="manual_entry",
+            document_type=category
+        )
+
+        logger.info(f"Knowledge entry added successfully: {category}")
+
         return SuccessResponse(
             success=True,
             message="Knowledge entry added successfully",
@@ -400,53 +681,4 @@ async def add_knowledge_entry(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to add entry: {str(e)}",
-        )
-
-
-@router.get(
-    "/export",
-    response_model=SuccessResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Export knowledge base",
-    responses={
-        200: {"description": "Knowledge base exported"},
-        404: {"description": "Project not found", "model": ErrorResponse},
-    },
-)
-async def export_knowledge(
-    project_id: Optional[str] = None,
-    db: ProjectDatabaseV2 = Depends(get_database),
-):
-    """
-    Export knowledge base for a project.
-
-    Args:
-        project_id: Optional project ID
-        db: Database connection
-
-    Returns:
-        SuccessResponse with export details
-    """
-    try:
-        logger.info(f"Exporting knowledge base for project: {project_id}")
-
-        # TODO: Implement knowledge export
-        # For now, return success
-        return SuccessResponse(
-            success=True,
-            message="Knowledge base exported successfully",
-            data={
-                "project_id": project_id,
-                "entries": 0,
-                "export_format": "json",
-            },
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error exporting knowledge base: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to export: {str(e)}",
         )

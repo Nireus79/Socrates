@@ -6,6 +6,7 @@ import React from 'react';
 import { Plus, Play, TrendingUp, MessageSquare, BookOpen } from 'lucide-react';
 import { useAuthStore } from '../../stores';
 import { useProjectStore } from '../../stores';
+import { showSuccess, showError } from '../../stores/notificationStore';
 import { projectsAPI } from '../../api';
 import {
   MainLayout,
@@ -95,27 +96,39 @@ export const DashboardPage: React.FC = () => {
   };
 
   const handleArchiveProject = async (projectId: string) => {
+    const projectToArchive = projects.find(p => p.project_id === projectId);
+    console.log('Archive clicked for:', projectToArchive?.name);
+
     try {
-      await projectsAPI.deleteProject(projectId);
-      await listProjects();
-      window.location.reload();
+      const result = await projectsAPI.deleteProject(projectId);
+      console.log('Delete API response:', result);
+      showSuccess('Project Archived', `${projectToArchive?.name} has been archived successfully`);
+      console.log('Notification shown');
+
+      setTimeout(async () => {
+        console.log('Refreshing projects list');
+        await listProjects();
+        console.log('Projects refreshed');
+      }, 3000);
     } catch (error) {
       console.error('Failed to archive project:', error);
-      alert('Failed to archive project');
+      showError('Failed to Archive Project', 'Unable to archive the project. Please try again.');
     }
   };
 
   const handleDeleteProject = async (projectId: string) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) {
+    if (!window.confirm('Are you sure you want to permanently delete this project? This action cannot be undone.')) {
       return;
     }
     try {
+      const projectToDelete = projects.find(p => p.project_id === projectId);
       await projectsAPI.deleteProject(projectId);
-      await listProjects();
-      window.location.reload();
+      showSuccess('Project Deleted', `${projectToDelete?.name} has been permanently deleted`);
+      // Refresh after notification is shown
+      setTimeout(() => listProjects(), 100);
     } catch (error) {
       console.error('Failed to delete project:', error);
-      alert('Failed to delete project');
+      showError('Failed to Delete Project', 'Unable to delete the project. Please try again.');
     }
   };
 

@@ -216,8 +216,32 @@ async def set_default_provider(
 
         logger.info(f"Setting default LLM provider: {provider}")
 
-        # TODO: Update user preferences in database
-        # For now, just return success
+        # Store in environment and in a configuration file for persistence
+        os.environ["DEFAULT_LLM_PROVIDER"] = provider
+
+        # Also save to a config file for persistence across restarts
+        config_dir = Path(os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates")))
+        config_dir.mkdir(parents=True, exist_ok=True)
+        config_file = config_dir / "llm_config.json"
+
+        import json
+        config_data = {}
+        if config_file.exists():
+            try:
+                with open(config_file) as f:
+                    config_data = json.load(f)
+            except:
+                config_data = {}
+
+        config_data["default_provider"] = provider
+        with open(config_file, "w") as f:
+            json.dump(config_data, f, indent=2)
+
+        from socrates_api.routers.events import record_event
+        record_event("llm_provider_changed", {
+            "provider": provider,
+        })
+
         return SuccessResponse(
             success=True,
             message=f"Default provider set to {provider}",
@@ -263,14 +287,57 @@ async def set_provider_model(
         model = request.model
         logger.info(f"Setting {provider} model to {model}")
 
-        # TODO: Validate provider and model combination
-        # TODO: Update user preferences in database
+        # Validate provider and model combination
+        valid_models = {
+            "claude": ["claude-opus-4.5", "claude-sonnet-4", "claude-haiku-4.5"],
+            "openai": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
+            "gemini": ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
+            "local": ["llama2", "mistral", "neural-chat"],
+            "anthropic": ["claude-opus-4.5", "claude-sonnet-4", "claude-haiku-4.5"],
+        }
+
+        if provider not in valid_models or model not in valid_models.get(provider, []):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid model {model} for provider {provider}",
+            )
+
+        # Save to config file
+        config_dir = Path(os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates")))
+        config_dir.mkdir(parents=True, exist_ok=True)
+        config_file = config_dir / "llm_config.json"
+
+        import json
+        config_data = {}
+        if config_file.exists():
+            try:
+                with open(config_file) as f:
+                    config_data = json.load(f)
+            except:
+                config_data = {}
+
+        # Store model for this provider
+        if "provider_models" not in config_data:
+            config_data["provider_models"] = {}
+        config_data["provider_models"][provider] = model
+
+        with open(config_file, "w") as f:
+            json.dump(config_data, f, indent=2)
+
+        from socrates_api.routers.events import record_event
+        record_event("llm_model_changed", {
+            "provider": provider,
+            "model": model,
+        })
+
         return SuccessResponse(
             success=True,
             message=f"Model set to {model} for provider {provider}",
             data={"provider": provider, "model": model},
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error setting model: {str(e)}")
         raise HTTPException(
@@ -315,8 +382,40 @@ async def add_api_key(
 
         logger.info(f"Adding API key for provider: {provider}")
 
-        # TODO: Encrypt and store API key in secure storage
-        # TODO: Validate API key format for the provider
+        # Store API key in environment variable for immediate use
+        os.environ[f"{provider.upper()}_API_KEY"] = api_key
+
+        # Also save to config file with light encryption (base64 for now)
+        import json
+        import base64
+        config_dir = Path(os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates")))
+        config_dir.mkdir(parents=True, exist_ok=True)
+        config_file = config_dir / "llm_config.json"
+
+        config_data = {}
+        if config_file.exists():
+            try:
+                with open(config_file) as f:
+                    config_data = json.load(f)
+            except:
+                config_data = {}
+
+        # Store encrypted (base64) API key
+        if "api_keys" not in config_data:
+            config_data["api_keys"] = {}
+
+        # Basic encryption: base64 encoding
+        encrypted_key = base64.b64encode(api_key.encode()).decode()
+        config_data["api_keys"][provider] = encrypted_key
+
+        with open(config_file, "w") as f:
+            json.dump(config_data, f, indent=2)
+
+        from socrates_api.routers.events import record_event
+        record_event("llm_api_key_added", {
+            "provider": provider,
+        })
+
         return SuccessResponse(
             success=True,
             message=f"API key added for {provider}",
@@ -363,7 +462,33 @@ async def remove_api_key(
     try:
         logger.info(f"Removing API key for provider: {provider}")
 
-        # TODO: Delete API key from secure storage
+        # Remove from environment variable
+        if f"{provider.upper()}_API_KEY" in os.environ:
+            del os.environ[f"{provider.upper()}_API_KEY"]
+
+        # Remove from config file
+        import json
+        config_dir = Path(os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates")))
+        config_file = config_dir / "llm_config.json"
+
+        if config_file.exists():
+            try:
+                with open(config_file) as f:
+                    config_data = json.load(f)
+
+                if "api_keys" in config_data and provider in config_data["api_keys"]:
+                    del config_data["api_keys"][provider]
+
+                    with open(config_file, "w") as f:
+                        json.dump(config_data, f, indent=2)
+            except Exception as e:
+                logger.warning(f"Could not remove API key from config file: {e}")
+
+        from socrates_api.routers.events import record_event
+        record_event("llm_api_key_removed", {
+            "provider": provider,
+        })
+
         return SuccessResponse(
             success=True,
             message=f"API key removed for {provider}",

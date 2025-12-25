@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { LogOut, Moon, Sun, Lock, CreditCard, Zap, Shield, Github } from 'lucide-react';
-import { useAuthStore, useUIStore, useSubscriptionStore, showSuccess, showError } from '../../stores';
+import { useAuthStore, useThemeStore, useSubscriptionStore, showSuccess, showError } from '../../stores';
 import { MainLayout, PageHeader } from '../../components/layout';
 import { authAPI } from '../../api';
 import {
@@ -24,7 +24,7 @@ import { ChangePasswordModal, TwoFactorSetup, SessionManager } from '../../compo
 
 export const SettingsPage: React.FC = () => {
   const { user, logout, deleteAccount, setTestingMode, isLoading } = useAuthStore();
-  const { theme, toggleTheme, setTheme } = useUIStore();
+  const { theme, toggleTheme, setTheme } = useThemeStore();
   const { tier, status, features, hasFeature } = useSubscriptionStore();
 
   const [activeTab, setActiveTab] = React.useState('account');

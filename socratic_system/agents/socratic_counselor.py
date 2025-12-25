@@ -979,9 +979,36 @@ Return only the question, no additional text or explanation."""
             print(f"Insights received: {insights}")
 
     def _remove_from_insights(self, value: str, insight_type: str):
-        """Remove a value from insights before context update"""
-        pass
+        """Remove a value from insights before context update.
+
+        This method is called when user rejects a conflicting insight.
+        Since insights are processed per-request and don't persist in agent state,
+        this mainly serves as a logging hook for conflict resolution decisions.
+
+        Args:
+            value: The value to remove (the new/conflicting value)
+            insight_type: Type of insight (goals, requirements, tech_stack, constraints)
+        """
+        from socratic_system.utils.logger import get_logger
+        logger = get_logger("socratic_counselor")
+        logger.info(f"Conflict resolution: Rejected {insight_type} - '{value}'")
 
     def _update_insights_value(self, old_value: str, new_value: str, insight_type: str):
-        """Update a value in insights before context update"""
-        pass
+        """Update a value in insights after manual conflict resolution.
+
+        This method is called when user manually resolves a conflict.
+        Since insights are processed per-request and don't persist in agent state,
+        this mainly serves as a logging hook for conflict resolution decisions.
+        The actual project context update happens via _remove_from_project_context.
+
+        Args:
+            old_value: The old/existing value in the project
+            new_value: The new/resolved value from manual input
+            insight_type: Type of insight (goals, requirements, tech_stack, constraints)
+        """
+        from socratic_system.utils.logger import get_logger
+        logger = get_logger("socratic_counselor")
+        logger.info(
+            f"Conflict resolution: Manual resolution for {insight_type} - "
+            f"'{old_value}' → '{new_value}'"
+        )

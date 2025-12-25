@@ -5,6 +5,7 @@
 import React from 'react';
 import { Plus, Search, Filter, Github } from 'lucide-react';
 import { useProjectStore, useAuthStore } from '../../stores';
+import { showSuccess, showError } from '../../stores/notificationStore';
 import { MainLayout, PageHeader } from '../../components/layout';
 import {
   Card,
@@ -76,21 +77,37 @@ export const ProjectsPage: React.FC = () => {
     if (!projectToDelete) return;
     try {
       setIsDeleting(true);
+      const deletedProject = projects.find(p => p.project_id === projectToDelete);
       await deleteProject(projectToDelete);
+      showSuccess('Project Archived', `${deletedProject?.name} has been archived successfully`);
       setShowDeleteDialog(false);
       setProjectToDelete(null);
     } catch (error) {
       console.error('Failed to archive project:', error);
+      showError('Failed to Archive Project', 'Unable to archive the project. Please try again.');
+      setShowDeleteDialog(false);
+      setProjectToDelete(null);
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const handleRestoreProject = async (projectId: string) => {
-    try {
-      await restoreProject(projectId);
-    } catch (error) {
-      console.error('Failed to restore project:', error);
+  const handleToggleArchive = async (projectId: string) => {
+    const project = projects.find(p => p.project_id === projectId);
+    if (!project) return;
+
+    if (project.is_archived) {
+      // Restore the project
+      try {
+        await restoreProject(projectId);
+        showSuccess('Project Restored', `${project.name} has been restored successfully`);
+      } catch (error) {
+        console.error('Failed to restore project:', error);
+        showError('Failed to Restore Project', 'Unable to restore the project. Please try again.');
+      }
+    } else {
+      // Archive the project
+      handleArchiveProject(projectId);
     }
   };
 
@@ -98,12 +115,14 @@ export const ProjectsPage: React.FC = () => {
     if (window.confirm('Are you sure you want to permanently delete this project? This action cannot be undone.')) {
       try {
         setIsDeleting(true);
+        const deletedProject = projects.find(p => p.project_id === projectId);
         await deleteProject(projectId);
         // Refresh the projects list after deletion
         await listProjects();
+        showSuccess('Project Deleted', `${deletedProject?.name} has been permanently deleted`);
       } catch (error) {
         console.error('Failed to delete project:', error);
-        // Show error to user - for now just log
+        showError('Failed to Delete Project', 'Unable to delete the project. Please try again.');
       } finally {
         setIsDeleting(false);
       }
@@ -220,8 +239,8 @@ export const ProjectsPage: React.FC = () => {
                 maturity={0}
                 teamCount={1}
                 onOpen={handleOpenProject}
-                onArchive={filterType === 'archived' ? handleRestoreProject : handleArchiveProject}
-                onDelete={filterType === 'archived' ? handleDeleteProjectPermanently : undefined}
+                onArchive={handleToggleArchive}
+                onDelete={project.is_archived ? handleDeleteProjectPermanently : undefined}
               />
             ))}
           </div>

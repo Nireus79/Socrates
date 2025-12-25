@@ -54,8 +54,12 @@ class ProjectContext:
     # Notes tracking
     notes: Optional[List[Dict]] = None  # Project notes list
 
+    # Code history tracking
+    code_history: Optional[List[Dict]] = None  # History of generated code with metadata
+
     # Maturity tracking fields
     phase_maturity_scores: Dict[str, float] = None  # Per-phase maturity (0-100)
+    overall_maturity: float = 0.0  # Overall project maturity (0-100)
     category_scores: Dict[str, Dict[str, float]] = None  # Category scores by phase
     categorized_specs: Dict[str, List[Dict[str, any]]] = (
         None  # Specs organized by phase and category
@@ -64,6 +68,9 @@ class ProjectContext:
 
     # Analytics tracking fields (real-time metrics updated after each Q&A)
     analytics_metrics: Dict[str, any] = None  # Real-time analytics metrics
+
+    # LLM Provider configuration
+    llm_configuration: Optional[Dict[str, any]] = None  # LLM provider config (provider, model, temperature, etc.)
 
     # GitHub repository tracking (for imported projects)
     repository_url: Optional[str] = None  # GitHub repository URL
@@ -175,6 +182,17 @@ class ProjectContext:
                 "strong_categories": [],
                 "last_updated": None,
             }
+        # Calculate overall maturity from phase scores
+        self.overall_maturity = self._calculate_overall_maturity()
+
+    def _calculate_overall_maturity(self) -> float:
+        """Calculate overall project maturity as average of phase scores."""
+        if not self.phase_maturity_scores:
+            return 0.0
+        scores = [s for s in self.phase_maturity_scores.values() if s > 0]
+        if not scores:
+            return 0.0
+        return sum(scores) / len(scores)
 
     def get_member_role(self, username: str) -> Optional[str]:
         """Get role for a specific team member."""

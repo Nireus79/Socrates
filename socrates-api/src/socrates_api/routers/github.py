@@ -77,18 +77,86 @@ async def import_repository(
 
         logger.info(f"Importing GitHub repository: {request.url}")
 
+        # Extract repository information from URL
+        import re
+        url_pattern = r'github\.com[:/](.+?)/(.+?)(?:\.git)?$'
+        match = re.search(url_pattern, request.url)
+
+        if not match:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid GitHub URL format",
+            )
+
+        repo_owner, repo_name = match.groups()
+        project_name = request.project_name or repo_name
+
+        # Try to fetch repository metadata using PyGithub
+        repo_metadata = {
+            "files": 0,
+            "languages": [],
+            "has_tests": False,
+            "has_readme": False,
+            "description": "",
+        }
+
+        try:
+            from github import Github
+            github_token = os.getenv("GITHUB_TOKEN")
+            if github_token:
+                g = Github(github_token)
+                try:
+                    repo = g.get_repo(f"{repo_owner}/{repo_name}")
+                    repo_metadata = {
+                        "description": repo.description or "",
+                        "languages": list(repo.get_languages().keys()) if repo.get_languages() else [],
+                        "has_tests": any("test" in f.path for f in repo.get_contents("")),
+                        "has_readme": any("readme" in f.name.lower() for f in repo.get_contents("")),
+                    }
+                except Exception as e:
+                    logger.warning(f"Could not fetch repo metadata: {e}")
+        except ImportError:
+            logger.warning("PyGithub not installed. Run: pip install PyGithub")
+        except Exception as e:
+            logger.warning(f"Error fetching GitHub metadata: {e}")
+
         # Create project from GitHub import
-        project_name = request.project_name or request.url.split('/')[-1].replace('.git', '')
+        from socratic_system.models.project import ProjectContext
+        from datetime import datetime
+
+        project = ProjectContext(
+            project_id=f"proj_{repo_name.lower()}",
+            name=project_name,
+            owner=current_user,
+            phase="planning",
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+            repository_url=request.url,
+            repository_owner=repo_owner,
+            repository_name=repo_name,
+            tech_stack=repo_metadata.get("languages", []),
+            description=repo_metadata.get("description", ""),
+        )
+
+        # Save project to database
+        db.save_project(project)
+
+        from socrates_api.routers.events import record_event
+        record_event("github_repository_imported", {
+            "repository": f"{repo_owner}/{repo_name}",
+            "project_id": project.project_id,
+            "user": current_user,
+        }, user_id=current_user)
 
         return SuccessResponse(
             success=True,
             message=f"Repository imported as project '{project_name}'",
             data={
-                "project_id": f"proj_{project_name.lower()}",
+                "project_id": project.project_id,
                 "project_name": project_name,
                 "repository_url": request.url,
                 "branch": request.branch or "main",
-                "metadata": {},
+                "metadata": repo_metadata,
                 "validation_results": {},
             },
         )
@@ -118,7 +186,7 @@ async def import_repository(
 )
 async def pull_changes(
     project_id: str,
-    current_user: str = Depends(lambda: "test_user"),  # TODO: Get from JWT
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -189,7 +257,7 @@ async def pull_changes(
 async def push_changes(
     project_id: str,
     commit_message: Optional[str] = None,
-    current_user: str = Depends(lambda: "test_user"),  # TODO: Get from JWT
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """

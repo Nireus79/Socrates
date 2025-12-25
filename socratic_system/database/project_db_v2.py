@@ -1311,9 +1311,19 @@ class ProjectDatabaseV2:
         cursor = conn.cursor()
 
         try:
+            # Convert Decimal to float for SQLite compatibility
             effectiveness_score = getattr(effectiveness, "effectiveness_score", 0.5)
+            if hasattr(effectiveness_score, '__float__'):
+                effectiveness_score = float(effectiveness_score)
+
             times_asked = getattr(effectiveness, "times_asked", 0)
+            if hasattr(times_asked, '__int__'):
+                times_asked = int(times_asked)
+
             times_answered_well = getattr(effectiveness, "times_answered_well", 0)
+            if hasattr(times_answered_well, '__int__'):
+                times_answered_well = int(times_answered_well)
+
             last_asked_at = getattr(effectiveness, "last_asked_at", None)
             if last_asked_at:
                 last_asked_at = serialize_datetime(last_asked_at)
@@ -1693,6 +1703,61 @@ class ProjectDatabaseV2:
 
         except Exception as e:
             self.logger.error(f"Error getting knowledge documents for project {project_id}: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def delete_knowledge_document(self, doc_id: str) -> bool:
+        """Delete a knowledge document by ID"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                "DELETE FROM knowledge_documents_v2 WHERE id = ?",
+                (doc_id,)
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            self.logger.error(f"Error deleting knowledge document {doc_id}: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def get_user_knowledge_documents(self, user_id: str) -> list:
+        """Get all knowledge documents for a user across all projects"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT id, project_id, user_id, title, content, source,
+                       document_type, uploaded_at
+                FROM knowledge_documents_v2
+                WHERE user_id = ?
+                ORDER BY uploaded_at DESC
+                """,
+                (user_id,)
+            )
+
+            documents = []
+            for row in cursor.fetchall():
+                documents.append({
+                    "id": row[0],
+                    "project_id": row[1],
+                    "user_id": row[2],
+                    "title": row[3],
+                    "content": row[4],
+                    "source": row[5],
+                    "document_type": row[6],
+                    "uploaded_at": row[7],
+                })
+
+            return documents
+        except Exception as e:
+            self.logger.error(f"Error getting user knowledge documents: {e}")
             return []
         finally:
             conn.close()

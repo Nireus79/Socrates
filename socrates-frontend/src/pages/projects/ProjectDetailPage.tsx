@@ -7,6 +7,7 @@ import { useParams } from 'react-router-dom';
 import { Users, Settings, TrendingUp, MessageSquare, Code, Github, Zap } from 'lucide-react';
 import { useProjectStore } from '../../stores';
 import { useCollaborationStore } from '../../stores/collaborationStore';
+import { showSuccess, showError } from '../../stores/notificationStore';
 import { MainLayout, PageHeader } from '../../components/layout';
 import {
   Card,
@@ -43,10 +44,14 @@ export const ProjectDetailPage: React.FC = () => {
     try {
       setIsDeleting(true);
       await deleteProject(projectId);
-      // Redirect to projects page after successful deletion
-      window.location.href = '/projects';
+      showSuccess('Project Deleted', `${currentProject?.name} has been deleted successfully`);
+      // Delay navigation to allow toast to be visible
+      setTimeout(() => {
+        window.location.href = '/projects';
+      }, 1500);
     } catch (error) {
       console.error('Failed to delete project:', error);
+      showError('Failed to Delete Project', 'Unable to delete the project. Please try again.');
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);

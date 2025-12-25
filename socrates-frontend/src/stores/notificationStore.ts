@@ -27,12 +27,8 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
       notifications: [...state.notifications, { ...notification, id }],
     }));
 
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-      set((state) => ({
-        notifications: state.notifications.filter((n) => n.id !== id),
-      }));
-    }, 5000);
+    // Don't auto-dismiss - let user close notifications manually with the X button
+    // This ensures users have time to read and interact with the message
   },
 
   removeNotification: (id) => {

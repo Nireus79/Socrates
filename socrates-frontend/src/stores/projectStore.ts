@@ -155,7 +155,9 @@ export const useProjectStore = create<ProjectState>((set) => ({
     try {
       await projectsAPI.deleteProject(projectId);
       set((state) => ({
-        projects: state.projects.filter((p) => p.project_id !== projectId),
+        projects: state.projects.map((p) =>
+          p.project_id === projectId ? { ...p, is_archived: true } : p
+        ),
         currentProject: state.currentProject?.project_id === projectId ? null : state.currentProject,
         isLoading: false,
       }));
@@ -174,7 +176,9 @@ export const useProjectStore = create<ProjectState>((set) => ({
     try {
       const restored = await projectsAPI.restoreProject(projectId);
       set((state) => ({
-        projects: [...state.projects, restored],
+        projects: state.projects.map((p) =>
+          p.project_id === projectId ? restored : p
+        ),
         isLoading: false,
       }));
       return restored;
