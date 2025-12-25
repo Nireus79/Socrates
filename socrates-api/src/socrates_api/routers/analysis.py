@@ -13,6 +13,8 @@ from fastapi import APIRouter, HTTPException, status, Depends
 
 from socratic_system.database import ProjectDatabaseV2
 from socrates_api.models import SuccessResponse, ErrorResponse
+from socrates_api.auth import get_current_user
+from socrates_api.database import get_database
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analysis", tags=["analysis"])
