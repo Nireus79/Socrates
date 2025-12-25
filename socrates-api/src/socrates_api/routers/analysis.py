@@ -137,72 +137,72 @@ async def validate_code(
     },
 )
 async def assess_maturity(
-    code: Optional[str] = None,
-    language: Optional[str] = None,
-    project_id: Optional[str] = None,
+    project_id: str,
+    phase: Optional[str] = None,
     current_user: str = Depends(get_current_user),
 ):
     """
-    Assess code maturity and quality metrics.
+    Assess project maturity for current or specified phase.
 
     Args:
-        code: Code to assess
-        language: Programming language
-        project_id: Project ID
+        project_id: Project ID (required)
+        phase: Phase to assess (discovery, analysis, design, implementation)
         current_user: Authenticated user
 
     Returns:
-        SuccessResponse with maturity assessment
+        SuccessResponse with maturity metrics from quality_controller
     """
     try:
         from socrates_api.main import get_orchestrator
         from socrates_api.routers.events import record_event
 
-        logger.info("Assessing code maturity")
+        logger.info(f"Assessing maturity for project: {project_id}")
+
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Determine phase
+        if not phase:
+            phase = project.phase
+
+        # Validate phase
+        valid_phases = ["discovery", "analysis", "design", "implementation"]
+        if phase not in valid_phases:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid phase. Must be one of: {', '.join(valid_phases)}"
+            )
+
         orchestrator = get_orchestrator()
 
-        if project_id:
-            # Load project and assess maturity
-            db = get_database()
-            project = db.load_project(project_id)
-            if not project:
-                raise HTTPException(status_code=404, detail="Project not found")
+        # Call quality_controller to calculate maturity - same as CLI does
+        result = orchestrator.process_request(
+            "quality_controller",
+            {
+                "action": "calculate_maturity",
+                "project": project,
+                "phase": phase,
+            }
+        )
 
-            result = await orchestrator.process_request_async(
-                "quality_controller",
-                {
-                    "action": "assess_maturity",
-                    "project": project,
-                }
-            )
-            maturity_assessment = result.get("data", {})
-        elif code and language:
-            # Assess inline code maturity
-            result = await orchestrator.process_request_async(
-                "quality_controller",
-                {
-                    "action": "assess_code",
-                    "code": code,
-                    "language": language,
-                }
-            )
-            maturity_assessment = result.get("data", {})
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Provide either code+language or project_id",
-            )
+        if result["status"] != "success":
+            raise HTTPException(status_code=500, detail=result.get("message", "Failed to calculate maturity"))
+
+        maturity_data = result.get("maturity", {})
 
         # Record event
         record_event("maturity_assessed", {
             "project_id": project_id,
-            "language": language,
+            "phase": phase,
         }, user_id=current_user)
 
         return SuccessResponse(
             success=True,
-            message="Maturity assessment completed",
-            data=maturity_assessment,
+            message=f"Maturity assessment for {phase} phase",
+            data=maturity_data,
         )
 
     except HTTPException:
@@ -227,7 +227,6 @@ async def assess_maturity(
 )
 async def run_tests(
     project_id: str,
-    test_type: str = "all",
     current_user: str = Depends(get_current_user),
 ):
     """
@@ -235,11 +234,10 @@ async def run_tests(
 
     Args:
         project_id: Project ID
-        test_type: Type of tests (unit, integration, all)
         current_user: Authenticated user
 
     Returns:
-        SuccessResponse with test results
+        SuccessResponse with test results from code_validation agent
     """
     try:
         from socrates_api.main import get_orchestrator
@@ -254,29 +252,28 @@ async def run_tests(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Call code validation agent to run tests via orchestrator
+        # Call code_validation agent - same as CLI uses
         orchestrator = get_orchestrator()
-        result = await orchestrator.process_request_async(
+        result = orchestrator.process_request(
             "code_validation",
             {
                 "action": "run_tests",
                 "project": project,
-                "test_type": test_type,
             }
         )
 
-        test_results = result.get("data", {})
+        if result["status"] != "success":
+            raise HTTPException(status_code=500, detail=result.get("message", "Failed to run tests"))
+
+        test_results = result
 
         record_event("tests_executed", {
             "project_id": project_id,
-            "test_type": test_type,
-            "passed": test_results.get("passed", 0),
-            "failed": test_results.get("failed", 0),
         }, user_id=current_user)
 
         return SuccessResponse(
             success=True,
-            message=f"{test_type} tests completed",
+            message="Tests completed",
             data=test_results,
         )
 
@@ -305,14 +302,14 @@ async def analyze_structure(
     current_user: str = Depends(get_current_user),
 ):
     """
-    Analyze the code structure and architecture of a project.
+    Analyze the project context and structure.
 
     Args:
         project_id: Project ID
         current_user: Authenticated user
 
     Returns:
-        SuccessResponse with structure analysis
+        SuccessResponse with structure/context analysis
     """
     try:
         from socrates_api.main import get_orchestrator
@@ -326,17 +323,20 @@ async def analyze_structure(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Call context analyzer via orchestrator
+        # Call context analyzer - same as CLI uses
         orchestrator = get_orchestrator()
-        result = await orchestrator.process_request_async(
+        result = orchestrator.process_request(
             "context_analyzer",
             {
-                "action": "analyze_structure",
+                "action": "analyze_context",
                 "project": project,
             }
         )
 
-        structure_analysis = result.get("data", {})
+        if result["status"] != "success":
+            raise HTTPException(status_code=500, detail=result.get("message", "Failed to analyze"))
+
+        structure_data = result
 
         record_event("structure_analyzed", {
             "project_id": project_id,
@@ -344,8 +344,8 @@ async def analyze_structure(
 
         return SuccessResponse(
             success=True,
-            message="Code structure analysis completed",
-            data=structure_analysis,
+            message="Context analysis completed",
+            data=structure_data,
         )
 
     except HTTPException:
@@ -370,25 +370,23 @@ async def analyze_structure(
 )
 async def review_code(
     project_id: str,
-    review_type: str = "full",
     current_user: str = Depends(get_current_user),
 ):
     """
-    Perform automated code review on project.
+    Get code statistics and quality summary for a project.
 
     Args:
         project_id: Project ID
-        review_type: Type of review (full, quick, security, performance)
         current_user: Authenticated user
 
     Returns:
-        SuccessResponse with review findings
+        SuccessResponse with project statistics
     """
     try:
         from socrates_api.main import get_orchestrator
         from socrates_api.routers.events import record_event
 
-        logger.info(f"Reviewing code for project: {project_id}")
+        logger.info(f"Getting code statistics for project: {project_id}")
 
         # Load project
         db = get_database()
@@ -396,37 +394,38 @@ async def review_code(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Call quality controller via orchestrator for code review
+        # Call context analyzer to get project statistics
         orchestrator = get_orchestrator()
-        result = await orchestrator.process_request_async(
-            "quality_controller",
+        result = orchestrator.process_request(
+            "context_analyzer",
             {
-                "action": "review_code",
+                "action": "get_statistics",
                 "project": project,
-                "review_type": review_type,
             }
         )
 
-        review_findings = result.get("data", {})
+        if result["status"] != "success":
+            raise HTTPException(status_code=500, detail=result.get("message", "Failed to get statistics"))
 
-        record_event("code_reviewed", {
+        stats = result
+
+        record_event("code_statistics_requested", {
             "project_id": project_id,
-            "review_type": review_type,
         }, user_id=current_user)
 
         return SuccessResponse(
             success=True,
-            message=f"Code review completed ({review_type})",
-            data=review_findings,
+            message="Code statistics retrieved",
+            data=stats,
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error reviewing code: {str(e)}")
+        logger.error(f"Error getting code statistics: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to review code: {str(e)}",
+            detail=f"Failed to get code statistics: {str(e)}",
         )
 
 
