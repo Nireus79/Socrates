@@ -66,20 +66,7 @@ async def validate_code(
 
         orchestrator = get_orchestrator()
 
-        if code and language:
-            logger.info(f"Validating inline code ({language})")
-            # Call code validation agent via orchestrator
-            result = await orchestrator.process_request_async(
-                "code_validation",
-                {
-                    "action": "validate",
-                    "code": code,
-                    "language": language,
-                }
-            )
-            validation_results = result.get("data", {})
-
-        elif project_id:
+        if project_id:
             logger.info(f"Validating code for project: {project_id}")
             # Load project from database
             db = get_database()
@@ -87,15 +74,19 @@ async def validate_code(
             if not project:
                 raise HTTPException(status_code=404, detail="Project not found")
 
-            # Call code validation agent via orchestrator
-            result = await orchestrator.process_request_async(
+            # Call code validation agent - same as CLI uses
+            result = orchestrator.process_request(
                 "code_validation",
                 {
                     "action": "validate_project",
                     "project": project,
                 }
             )
-            validation_results = result.get("data", {})
+
+            if result["status"] != "success":
+                raise HTTPException(status_code=500, detail=result.get("message", "Failed to validate"))
+
+            validation_results = result
 
         else:
             raise HTTPException(
@@ -441,21 +432,17 @@ async def review_code(
 )
 async def auto_fix_issues(
     project_id: str,
-    issue_types: Optional[List[str]] = None,
-    apply_changes: bool = False,
     current_user: str = Depends(get_current_user),
 ):
     """
-    Automatically fix common code issues.
+    Generate improved code for a project.
 
     Args:
         project_id: Project ID
-        issue_types: List of issue types to fix (formatting, naming, etc)
-        apply_changes: Whether to apply changes or just preview
         current_user: Authenticated user
 
     Returns:
-        SuccessResponse with fix results
+        SuccessResponse with generated code
     """
     try:
         from socrates_api.main import get_orchestrator
@@ -469,32 +456,28 @@ async def auto_fix_issues(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Default issue types if not specified
-        issues = issue_types or ["error_handling", "documentation", "type_hints"]
-
-        # Call code generator via orchestrator to generate fixes
+        # Call code generator to generate improved code
         orchestrator = get_orchestrator()
-        result = await orchestrator.process_request_async(
+        result = orchestrator.process_request(
             "code_generator",
             {
-                "action": "fix_issues",
+                "action": "generate_script",
                 "project": project,
-                "issue_types": issues,
-                "apply_changes": apply_changes,
             }
         )
 
-        fix_results = result.get("data", {})
+        if result["status"] != "success":
+            raise HTTPException(status_code=500, detail=result.get("message", "Failed to generate fixes"))
 
-        record_event("issues_fixed", {
+        fix_results = result
+
+        record_event("code_generated", {
             "project_id": project_id,
-            "issue_types": len(issues),
-            "apply_changes": apply_changes,
         }, user_id=current_user)
 
         return SuccessResponse(
             success=True,
-            message=f"Auto-fix completed ({'Applied' if apply_changes else 'Preview'})",
+            message="Code generation completed",
             data=fix_results,
         )
 
@@ -544,17 +527,20 @@ async def get_analysis_report(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Call orchestrator to generate comprehensive report
+        # Call context analyzer to generate report/summary
         orchestrator = get_orchestrator()
-        result = await orchestrator.process_request_async(
-            "quality_controller",
+        result = orchestrator.process_request(
+            "context_analyzer",
             {
-                "action": "generate_report",
+                "action": "generate_summary",
                 "project": project,
             }
         )
 
-        report = result.get("data", {})
+        if result["status"] != "success":
+            raise HTTPException(status_code=500, detail=result.get("message", "Failed to generate report"))
+
+        report = result
 
         record_event("report_generated", {
             "project_id": project_id,
