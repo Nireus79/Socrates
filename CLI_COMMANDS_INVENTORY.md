@@ -137,8 +137,8 @@
 | 51 | `analytics recommend` | ✅ API ready | `POST /analytics/recommend` | AI recommendations |
 | 52 | `analytics trends` | ✅ API ready | `GET /analytics/trends` | Maturity trends |
 | 53 | `analytics summary` | ✅ API ready | `GET /analytics/summary` | Analytics overview |
-| 54 | `analytics breakdown` | ❌ No API | - | Detailed breakdown |
-| 55 | `analytics status` | ❌ No API | - | Analytics status |
+| 54 | `analytics breakdown` | ✅ API ready | `GET /analytics/breakdown/{id}` | Detailed breakdown (Phase 3 NEW) |
+| 55 | `analytics status` | ✅ API ready | `GET /analytics/status/{id}` | Analytics status (Phase 3 NEW) |
 | 56 | `maturity` | ✅ API ready | `GET /projects/{id}/maturity` | Phase maturity breakdown |
 | 57 | `maturity summary` | ✅ API ready | `GET /projects/{id}/maturity` | Maturity overview |
 | 58 | `maturity history` | ✅ API ready | `GET /projects/{id}/maturity/history` | Maturity timeline (NEW) |
@@ -163,9 +163,9 @@
 
 | # | Command | Status | API Endpoint | Notes |
 |---|---------|--------|--------------|-------|
-| 64 | `ask` | ❌ No API | - | Ask direct question (non-Socratic) |
-| 65 | `explain` | ❌ No API | - | Explain concept |
-| 66 | `search` | ✅ API ready | `GET /knowledge/search` | Search knowledge base |
+| 64 | `ask` | ✅ API ready | `POST /query/explain` | Ask direct question (Phase 3 NEW) |
+| 65 | `explain` | ✅ API ready | `POST /query/explain` | Explain concept (Phase 3 NEW) |
+| 66 | `search` | ✅ API ready | `POST /query/search` | Search knowledge base (Phase 3 NEW) |
 
 ---
 
@@ -383,9 +383,9 @@
 | System/Control | 10 | 0 | 10 | 0% |
 | Finalization | 2 | 2 | 0 | 100% ✅ **PHASE 2** |
 | GitHub | 4 | 4 | 0 | 100% |
-| Analytics/Maturity | 10 | 8 | 2 | 80% |
+| Analytics/Maturity | 10 | 10 | 0 | 100% ✅ **PHASE 3** |
 | Notes | 4 | 4 | 0 | 100% ✅ **PHASE 2** |
-| Query | 3 | 1 | 2 | 33% |
+| Query | 3 | 3 | 0 | 100% ✅ **PHASE 3** |
 | Conversation | 2 | 2 | 0 | 100% ✅ **PHASE 2** |
 | Statistics | 3 | 1 | 2 | 33% |
 | Subscription | 5 | 5 | 0 | 100% ✅ **PHASE 3** |
@@ -394,7 +394,7 @@
 | Knowledge | 8 | 0 | 8 | 0% |
 | Skills | 2 | 0 | 2 | 0% |
 | Model Switching | 1 | 1 | 0 | 100% |
-| **TOTAL** | **~90** | **61** | **~29** | **68%** |
+| **TOTAL** | **~90** | **73** | **~17** | **81%** |
 
 ---
 
