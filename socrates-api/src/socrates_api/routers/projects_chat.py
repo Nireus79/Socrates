@@ -520,3 +520,208 @@ async def search_conversations(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to search conversations: {str(e)}",
         )
+
+
+@router.post(
+    "/{project_id}/chat/done",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Finish interactive session",
+)
+async def finish_session(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Finish the interactive session and finalize project state.
+
+    This endpoint is called when user wants to end the current chat session.
+    It ensures all conversation history and maturity data are persisted.
+
+    Args:
+        project_id: Project ID
+        current_user: Authenticated user
+
+    Returns:
+        SuccessResponse with session summary
+    """
+    try:
+        logger.info(f"Finishing session for project: {project_id}")
+
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Generate session summary with current state
+        conversation_count = len(project.conversation_history or [])
+        current_phase = project.phase
+        current_maturity = project.overall_maturity
+        phase_maturity = (project.phase_maturity_scores or {}).get(current_phase, 0.0)
+
+        # Save final project state
+        db.save_project(project)
+
+        return SuccessResponse(
+            success=True,
+            message="Session completed successfully",
+            data={
+                "session_summary": {
+                    "total_messages": conversation_count,
+                    "current_phase": current_phase,
+                    "overall_maturity": current_maturity,
+                    "phase_maturity": phase_maturity,
+                    "session_ended_at": None,  # Would use timestamp if available
+                },
+                "project_id": project_id,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error finishing session: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to finish session: {str(e)}",
+        )
+
+
+@router.get(
+    "/{project_id}/maturity/history",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get maturity history timeline",
+)
+async def get_maturity_history(
+    project_id: str,
+    limit: Optional[int] = None,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Get historical maturity tracking for a project.
+
+    Returns a timeline of maturity changes over time, showing how the project's
+    understanding has evolved through different phases.
+
+    Args:
+        project_id: Project ID
+        limit: Maximum number of history entries to return (optional)
+        current_user: Authenticated user
+
+    Returns:
+        SuccessResponse with maturity history
+    """
+    try:
+        logger.info(f"Getting maturity history for project: {project_id}")
+
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Get maturity history
+        history = project.maturity_history or []
+
+        # Apply limit if specified
+        if limit and limit > 0:
+            history = history[-limit:]
+
+        return SuccessResponse(
+            success=True,
+            message="Maturity history retrieved",
+            data={
+                "project_id": project_id,
+                "history": history,
+                "total_events": len(project.maturity_history or []),
+                "current_overall_maturity": project.overall_maturity,
+                "current_phase_maturity": (project.phase_maturity_scores or {}).get(project.phase, 0.0),
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting maturity history: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get maturity history: {str(e)}",
+        )
+
+
+@router.get(
+    "/{project_id}/maturity/status",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get maturity status and phase completion",
+)
+async def get_maturity_status(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Get detailed maturity status for all project phases.
+
+    Shows completion percentage for each phase and identifies areas needing
+    more learning/development.
+
+    Args:
+        project_id: Project ID
+        current_user: Authenticated user
+
+    Returns:
+        SuccessResponse with phase maturity breakdown
+    """
+    try:
+        logger.info(f"Getting maturity status for project: {project_id}")
+
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Get phase maturity scores
+        phase_scores = project.phase_maturity_scores or {}
+
+        # Identify strong and weak categories
+        strong_categories = []
+        weak_categories = []
+
+        if project.category_scores:
+            for phase, categories in project.category_scores.items():
+                for category, score in categories.items():
+                    if score >= 75:
+                        strong_categories.append({"phase": phase, "category": category, "score": score})
+                    elif score < 25:
+                        weak_categories.append({"phase": phase, "category": category, "score": score})
+
+        return SuccessResponse(
+            success=True,
+            message="Maturity status retrieved",
+            data={
+                "project_id": project_id,
+                "current_phase": project.phase,
+                "overall_maturity": project.overall_maturity,
+                "phase_maturity": {
+                    "discovery": phase_scores.get("discovery", 0.0),
+                    "analysis": phase_scores.get("analysis", 0.0),
+                    "design": phase_scores.get("design", 0.0),
+                    "implementation": phase_scores.get("implementation", 0.0),
+                },
+                "strong_areas": strong_categories,
+                "weak_areas": weak_categories,
+                "analytics_metrics": project.analytics_metrics or {},
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting maturity status: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get maturity status: {str(e)}",
+        )
