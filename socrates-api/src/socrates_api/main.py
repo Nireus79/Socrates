@@ -49,6 +49,7 @@ from .routers import (
     analytics_router,
     github_router,
     events_router,
+    notes_router,
 )
 
 # Configure logging
@@ -129,6 +130,7 @@ app.include_router(security_router)
 app.include_router(analytics_router)
 app.include_router(github_router)
 app.include_router(events_router)
+app.include_router(notes_router)
 
 
 @app.get("/")
