@@ -149,28 +149,39 @@ async def startup_event():
             logger.warning("ANTHROPIC_API_KEY not set. Orchestrator will be unavailable until /initialize is called with valid key.")
             return
 
+        logger.info(f"ANTHROPIC_API_KEY is set ({api_key[:10]}...)")
+
         # Create and initialize orchestrator
+        logger.info("Creating AgentOrchestrator...")
         orchestrator = AgentOrchestrator(api_key_or_config=api_key)
+        logger.info("AgentOrchestrator created successfully")
 
         # Test connection to ensure API key is valid (but don't fail startup if it's not)
         try:
+            logger.info("Testing API connection...")
             orchestrator.claude_client.test_connection()
             logger.info("Orchestrator initialized successfully with valid API key")
         except Exception as e:
-            logger.warning(f"API key connection test failed (this is normal for test keys): {e}")
+            logger.warning(f"API key connection test failed (this is normal for test keys): {type(e).__name__}: {str(e)[:100]}")
             logger.info("Orchestrator initialized with provided API key (operations will fail if key is invalid)")
 
         # Setup event listeners
+        logger.info("Setting up event listeners...")
         _setup_event_listeners(orchestrator)
+        logger.info("Event listeners set up")
 
         # Store in global state
+        logger.info("Storing orchestrator in global state...")
         app_state["orchestrator"] = orchestrator
         app_state["start_time"] = time.time()
+        logger.info(f"Orchestrator stored. app_state['orchestrator'] = {app_state['orchestrator']}")
 
         logger.info("Socrates API orchestrator fully initialized and ready")
 
     except Exception as e:
-        logger.error(f"Failed to auto-initialize orchestrator on startup: {e}. You can call /initialize manually later.")
+        logger.error(f"Failed to auto-initialize orchestrator on startup: {type(e).__name__}: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
 
 
 @app.on_event("shutdown")

@@ -140,11 +140,15 @@ async def create_project(
         HTTPException: If validation fails or creation fails
     """
     try:
+        logger.info(f"Creating project: {request.name} for user {current_user}")
+
         # Try to use orchestrator if available, but don't require it
         try:
+            logger.info("Checking if orchestrator is available...")
             from socrates_api.main import app_state
             orchestrator = app_state.get("orchestrator")
             if orchestrator:
+                logger.info("Orchestrator available, using it...")
                 # Use orchestrator pattern (same as CLI)
                 result = orchestrator.process_request(
                     "project_manager",
@@ -172,13 +176,19 @@ async def create_project(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=error_message
                     )
+            else:
+                logger.info("Orchestrator not available, will use fallback")
         except HTTPException:
+            logger.warning("HTTPException in orchestrator block, re-raising")
             raise
         except Exception as e:
-            logger.warning(f"Orchestrator unavailable, creating project directly: {e}")
+            logger.warning(f"Exception in orchestrator block, using fallback: {type(e).__name__}: {e}")
 
         # Fallback: create project directly in database without orchestrator
+        logger.info("Using fallback database creation...")
         project_id = ProjectIDGenerator.generate()
+        logger.info(f"Generated project ID: {project_id}")
+
         project = ProjectContext(
             project_id=project_id,
             name=request.name,
@@ -191,18 +201,21 @@ async def create_project(
             conversation_history=[],
             maturity=0,
         )
+        logger.info(f"Created ProjectContext object")
 
         db.save_project(project)
+        logger.info(f"Saved project to database")
         logger.info(f"Project {project_id} created by {current_user} (direct database)")
         return _project_to_response(project)
 
-    except HTTPException:
+    except HTTPException as e:
+        logger.error(f"HTTPException in create_project: {e.detail}")
         raise
     except Exception as e:
-        logger.error(f"Error creating project: {str(e)}")
+        logger.error(f"Exception in create_project: {type(e).__name__}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error creating project",
+            detail=f"Error creating project: {str(e)[:100]}",
         )
 
 
