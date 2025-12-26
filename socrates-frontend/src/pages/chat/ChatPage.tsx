@@ -3,21 +3,18 @@
  */
 
 import React from 'react';
-import { useParams } from 'react-router-dom';
-import { Search, MessageSquare, Wifi, WifiOff } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Search, MessageSquare, Send } from 'lucide-react';
 import { useChatStore, useProjectStore } from '../../stores';
-import { apiClient } from '../../api';
+import { apiClient, chatAPI, nluAPI } from '../../api';
 import { MainLayout, PageHeader } from '../../components/layout';
 import {
-  QuestionDisplay,
   ResponseInput,
-  ConversationHistory,
-  PhaseIndicator,
-  DialogueMode,
   HintDisplay,
   ChatMessage,
+  ConversationHeader,
+  ConflictResolutionModal,
 } from '../../components/chat';
-import type { ConversationItem } from '../../components/chat';
 import { Card, LoadingSpinner, Alert, Button, Input } from '../../components/common';
 
 interface DialogueQuestion {
@@ -37,112 +34,217 @@ export const ChatPage: React.FC = () => {
     mode,
     isLoading: chatLoading,
     isSearching,
-    isConnected,
     error: chatError,
+    conflicts,
+    pendingConflicts,
     loadHistory,
     switchMode,
     sendMessage,
+    addMessage: addChatMessage,
+    addSystemMessage,
     requestHint,
     searchConversations,
     getSummary,
-    connectWebSocket,
-    disconnectWebSocket,
-    handleWebSocketResponse,
     getQuestion,
+    resolveConflict,
+    clearConflicts,
     clearError,
     clearSearch,
+    reset: resetChat,
   } = useChatStore();
-  const { currentProject, isLoading: projectLoading, getProject } = useProjectStore();
+  const {
+    projects,
+    currentProject,
+    isLoading: projectLoading,
+    getProject,
+    listProjects,
+  } = useProjectStore();
 
   const [response, setResponse] = React.useState('');
   const [showHint, setShowHint] = React.useState(false);
   const [showSummary, setShowSummary] = React.useState(false);
   const [summaryData, setSummaryData] = React.useState<{ summary: string; key_points: string[] } | null>(null);
+  const [showSearchModal, setShowSearchModal] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [selectedMessage, setSelectedMessage] = React.useState<ConversationItem | null>(null);
-  const wsRef = React.useRef<WebSocket | null>(null);
+  const [searchInput, setSearchInput] = React.useState('');
+  const [isSearchingModal, setIsSearchingModal] = React.useState(false);
+  const [showDebugModal, setShowDebugModal] = React.useState(false);
+  const [debugInfo, setDebugInfo] = React.useState<{ debugEnabled: boolean; timestamp: string } | null>(null);
+  const [showTestingModeModal, setShowTestingModeModal] = React.useState(false);
+  const [testingModeStatus, setTestingModeStatus] = React.useState<{ enabled: boolean; message: string } | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = React.useState(projectId || '');
+  const [isSwitchingProject, setIsSwitchingProject] = React.useState(false);
+
+  // Pre-session NLU chat state
+  const [preSessionInput, setPreSessionInput] = React.useState('');
+  const [preSessionResponses, setPreSessionResponses] = React.useState<Array<{ role: 'user' | 'assistant'; content: string; type?: 'command' | 'suggestion' | 'message' }>>([]);
+  const [isInterpretingNLU, setIsInterpretingNLU] = React.useState(false);
+
+  // Refs for auto-scroll
+  const messagesContainerRef = React.useRef<HTMLDivElement>(null);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const preSessionEndRef = React.useRef<HTMLDivElement>(null);
+
+  // Load projects list on mount
+  React.useEffect(() => {
+    listProjects();
+  }, [listProjects]);
+
+  // Update selectedProjectId when URL projectId changes
+  React.useEffect(() => {
+    if (projectId) {
+      setSelectedProjectId(projectId);
+    }
+  }, [projectId]);
 
   // Load project and chat history
   React.useEffect(() => {
-    if (projectId) {
-      getProject(projectId);
-      loadHistory(projectId);
+    if (selectedProjectId) {
+      getProject(selectedProjectId);
+      loadHistory(selectedProjectId);
       // Load the first question if no messages exist
-      loadInitialQuestion(projectId);
+      loadInitialQuestion(selectedProjectId);
     }
-  }, [projectId, getProject, loadHistory]);
+  }, [selectedProjectId, getProject, loadHistory]);
 
-  // Load initial question
+  // Load initial question (only for Socratic mode)
   const loadInitialQuestion = React.useCallback(
     async (id: string) => {
       try {
-        if (messages.length === 0) {
+        if (messages.length === 0 && mode === 'socratic') {
           await getQuestion(id);
         }
       } catch (error) {
         console.error('Failed to load initial question:', error);
       }
     },
-    [messages.length, getQuestion]
+    [messages.length, getQuestion, mode]
   );
 
-  // WebSocket connection effect
+  // Auto-scroll to bottom when messages change
   React.useEffect(() => {
-    if (!projectId) return;
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length]);
 
-    const accessToken = apiClient.getAccessToken();
-    if (!accessToken) return;
+  // Auto-scroll for pre-session messages
+  React.useEffect(() => {
+    preSessionEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [preSessionResponses.length]);
 
-    const connectWS = async () => {
-      try {
-        await connectWebSocket(projectId, accessToken);
-        // Get WebSocket URL from chat API
-        const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-        const protocol = baseURL.startsWith('https') ? 'wss' : 'ws';
-        const wsBaseURL = baseURL.replace(/^https?/, protocol);
-        const wsURL = `${wsBaseURL}/ws/chat/${projectId}?token=${accessToken}`;
+  /**
+   * Handle pre-session free-form conversation with Claude
+   * Allows users to ask questions and explore before selecting a project
+   */
+  const handlePreSessionInput = async () => {
+    if (!preSessionInput.trim()) return;
 
-        wsRef.current = new WebSocket(wsURL);
+    const userInput = preSessionInput.trim();
 
-        wsRef.current.onopen = () => {
-          console.log('WebSocket connected');
-        };
+    // Add user message to pre-session responses
+    setPreSessionResponses(prev => [...prev, { role: 'user', content: userInput }]);
+    setPreSessionInput('');
 
-        wsRef.current.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            handleWebSocketResponse(data);
-          } catch (err) {
-            console.error('Failed to parse WebSocket message:', err);
-          }
-        };
+    // If input starts with /, treat as command
+    if (userInput.startsWith('/')) {
+      handlePreSessionCommand(userInput);
+      return;
+    }
 
-        wsRef.current.onerror = (error) => {
-          console.error('WebSocket error:', error);
-        };
+    // Otherwise, get free-form answer from Claude via presession/ask endpoint
+    setIsInterpretingNLU(true);
+    try {
+      const response = await apiClient.post<any>(
+        '/presession/ask',
+        {
+          question: userInput,
+          context: {}
+        }
+      );
 
-        wsRef.current.onclose = () => {
-          console.log('WebSocket disconnected');
-          disconnectWebSocket();
-        };
-      } catch (error) {
-        console.error('Failed to connect WebSocket:', error);
+      // Response structure: { success, message, data: { answer, has_context } }
+      const result = response.data.data;
+
+      if (!result || !result.answer) {
+        setPreSessionResponses(prev => [...prev, {
+          role: 'assistant',
+          content: "Sorry, I couldn't process that. Please try again.",
+          type: 'message'
+        }]);
+        return;
       }
-    };
 
-    connectWS();
+      // Display the answer from Claude
+      setPreSessionResponses(prev => [...prev, {
+        role: 'assistant',
+        content: result.answer,
+        type: 'message'
+      }]);
+    } catch (error) {
+      console.error('Pre-session question error:', error);
+      setPreSessionResponses(prev => [...prev, {
+        role: 'assistant',
+        content: "Sorry, I encountered an error processing your input. Please try again.",
+        type: 'message'
+      }]);
+    } finally {
+      setIsInterpretingNLU(false);
+    }
+  };
 
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-      disconnectWebSocket();
-    };
-  }, [projectId, connectWebSocket, disconnectWebSocket, handleWebSocketResponse]);
+  const handlePreSessionCommand = (command: string) => {
+    const parts = command.split(' ');
+    const cmd = parts[0].toLowerCase();
+
+    // Handle pre-session specific commands
+    switch (cmd) {
+      case '/help':
+        const helpText = `Available Commands:\n\n` +
+          `/help - Show this help message\n` +
+          `/info - Show system information\n` +
+          `/status - Show project status (requires active project)\n` +
+          `/docs [topic] - View documentation\n\n` +
+          `Or just type a question to chat with Claude!`;
+        setPreSessionResponses(prev => [...prev, {
+          role: 'assistant',
+          content: helpText,
+          type: 'command'
+        }]);
+        break;
+      case '/info':
+        const infoText = `**Socrates - AI-Powered Socratic Tutoring System**\n\n` +
+          `Version: 8.0.0\n` +
+          `Status: Ready\n\n` +
+          `Welcome! You can:\n` +
+          `- Ask questions to explore topics\n` +
+          `- Type /help for available commands\n` +
+          `- Create a project to start guided learning`;
+        setPreSessionResponses(prev => [...prev, {
+          role: 'assistant',
+          content: infoText,
+          type: 'command'
+        }]);
+        break;
+      default:
+        setPreSessionResponses(prev => [...prev, {
+          role: 'assistant',
+          content: `Unknown command: ${cmd}. Type /help for available commands.`,
+          type: 'command'
+        }]);
+    }
+  };
 
   const handleSubmitResponse = async () => {
     if (!response.trim()) return;
-    if (!projectId) return;
+
+    // Handle slash commands
+    const trimmedResponse = response.trim();
+    if (trimmedResponse.startsWith('/')) {
+      handleSlashCommand(trimmedResponse);
+      setResponse('');
+      return;
+    }
+
+    if (!selectedProjectId) return;
 
     try {
       await sendMessage(response);
@@ -152,8 +254,823 @@ export const ChatPage: React.FC = () => {
     }
   };
 
+  /**
+   * Handle switching to a different project
+   * If a project is already loaded, calls /done before switching
+   */
+  const handleProjectSwitch = async (newProjectId: string) => {
+    if (!newProjectId || newProjectId === selectedProjectId) return;
+
+    setIsSwitchingProject(true);
+    try {
+      // If a project is currently loaded, finish the session first
+      if (currentProject && currentProject.project_id !== newProjectId) {
+        try {
+          await chatAPI.finishSession(currentProject.project_id);
+          addSystemMessage(`Session finished for "${currentProject.name}"`);
+        } catch (error) {
+          console.error('Failed to finish previous session:', error);
+          addSystemMessage('Warning: Could not properly finish previous session');
+        }
+      }
+
+      // Clear old chat state before loading new project
+      resetChat();
+
+      // Load the new project
+      setSelectedProjectId(newProjectId);
+      addSystemMessage(`Switched to project`);
+    } catch (error) {
+      console.error('Failed to switch project:', error);
+      addSystemMessage('Failed to switch project');
+    } finally {
+      setIsSwitchingProject(false);
+    }
+  };
+
+  const handleSlashCommand = async (command: string) => {
+    const parts = command.split(' ');
+    const cmd = parts[0].toLowerCase();
+    const subCmd = parts[1]?.toLowerCase();
+
+    switch (cmd) {
+      case '/help':
+        handleHelpCommand();
+        break;
+      case '/status':
+        if (selectedProjectId) handleStatusCommand(selectedProjectId);
+        else addSystemMessage('No project selected');
+        break;
+      case '/stats':
+        if (selectedProjectId) handleStatsCommand(selectedProjectId);
+        else addSystemMessage('No project selected');
+        break;
+      case '/info':
+        handleInfoCommand();
+        break;
+      case '/logs':
+        handleLogsCommand(parts[1]);
+        break;
+      case '/knowledge':
+        if (selectedProjectId) handleKnowledgeCommand(selectedProjectId, subCmd, parts.slice(2));
+        else addSystemMessage('No project selected');
+        break;
+      case '/analytics':
+        if (selectedProjectId) handleAnalyticsCommand(selectedProjectId, subCmd);
+        else addSystemMessage('No project selected');
+        break;
+      case '/maturity':
+        if (selectedProjectId) handleMaturityCommand(selectedProjectId, subCmd);
+        else addSystemMessage('No project selected');
+        break;
+      case '/debug':
+        handleDebugCommand(subCmd || 'toggle');
+        break;
+      case '/subscription':
+        handleSubscriptionCommand(subCmd, parts.slice(2));
+        break;
+      case '/note':
+        if (selectedProjectId) handleNoteCommand(selectedProjectId, subCmd, parts.slice(2));
+        else addSystemMessage('No project selected');
+        break;
+      case '/advance':
+        if (selectedProjectId) handleAdvanceCommand(selectedProjectId);
+        else addSystemMessage('No project selected');
+        break;
+      case '/done':
+        if (selectedProjectId) handleDoneCommand(selectedProjectId);
+        else addSystemMessage('No project selected');
+        break;
+      case '/ask':
+        if (selectedProjectId) handleAskCommand(selectedProjectId, parts.slice(1));
+        else addSystemMessage('No project selected');
+        break;
+      case '/explain':
+        handleExplainCommand(parts.slice(1));
+        break;
+      case '/hint':
+        if (selectedProjectId) handleHintCommand(selectedProjectId);
+        else addSystemMessage('No project selected');
+        break;
+      case '/project':
+        if (selectedProjectId) handleProjectCommand(selectedProjectId, subCmd, parts.slice(2));
+        else addSystemMessage('No project selected');
+        break;
+      case '/docs':
+        handleDocsCommand(subCmd, parts.slice(2));
+        break;
+      case '/code':
+        if (selectedProjectId) handleCodeCommand(selectedProjectId, subCmd, parts.slice(2));
+        else addSystemMessage('No project selected');
+        break;
+      case '/finalize':
+        if (selectedProjectId) handleFinalizeCommand(selectedProjectId, subCmd);
+        else addSystemMessage('No project selected');
+        break;
+      case '/collab':
+        if (selectedProjectId) handleCollabCommand(selectedProjectId, subCmd, parts.slice(2));
+        else addSystemMessage('No project selected');
+        break;
+      case '/skills':
+        if (selectedProjectId) handleSkillsCommand(selectedProjectId, subCmd, parts.slice(2));
+        else addSystemMessage('No project selected');
+        break;
+      case '/github':
+        if (selectedProjectId) handleGithubCommand(selectedProjectId, subCmd);
+        else addSystemMessage('No project selected');
+        break;
+      case '/conversation':
+        if (selectedProjectId) handleConversationCommand(selectedProjectId, subCmd, parts.slice(2));
+        else addSystemMessage('No project selected');
+        break;
+      default:
+        addSystemMessage(`Unknown command: ${cmd}. Type /help for available commands.`);
+    }
+  };
+
+  const handleDebugCommand = async (action: string) => {
+    // For now, just toggle debug mode locally
+    const enabled = action === 'on' || (action !== 'off' && !(debugInfo?.debugEnabled ?? false));
+    setDebugInfo({
+      debugEnabled: enabled,
+      timestamp: new Date().toISOString(),
+    });
+    setShowDebugModal(true);
+
+    addSystemMessage(`Debug mode ${enabled ? 'enabled' : 'disabled'}`);
+  };
+
+  const handleTestingModeCommand = async (action: string) => {
+    if (!action || (action !== 'on' && action !== 'off')) {
+      addSystemMessage('Usage: /subscription testing-mode on|off');
+      return;
+    }
+
+    try {
+      // Call API to toggle testing mode (enabled is a query parameter)
+      const enabled = action === 'on';
+      await apiClient.put(`/auth/me/testing-mode?enabled=${enabled}`);
+      setTestingModeStatus({
+        enabled,
+        message: enabled
+          ? 'Testing mode enabled - all restrictions bypassed'
+          : 'Testing mode disabled - normal restrictions apply',
+      });
+      setShowTestingModeModal(true);
+
+      addSystemMessage(`Testing mode ${enabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Failed to toggle testing mode:', error);
+      addSystemMessage('Failed to toggle testing mode');
+    }
+  };
+
+  const handleHelpCommand = () => {
+    const helpText = `Available Commands:
+
+SYSTEM:
+  /help - Show this help message
+  /status - Show project status
+  /stats - Show project statistics
+  /info - Show system information
+  /logs [lines] - View system logs (default: 20 lines)
+  /debug [on|off] - Toggle debug mode
+
+CHAT & PHASES:
+  /advance - Advance to next project phase
+  /done - Finish current session
+  /ask <question> - Ask direct question (not Socratic mode)
+  /explain <topic> - Explain a concept
+  /hint - Get hint for current question
+
+PROJECT ANALYSIS:
+  /project analyze - Analyze code structure
+  /project test - Run project tests
+  /project fix - Apply automated fixes
+  /project validate - Validate project
+  /project review - Get code review
+
+NOTES & KNOWLEDGE:
+  /note add <text> - Add project note
+  /note list - List all notes
+  /note search <query> - Search notes
+  /note delete <id> - Delete note
+  /knowledge add|list|search - Knowledge management
+
+DOCUMENTATION & CODE:
+  /docs import - Import file documentation
+  /docs import-url - Import from URL
+  /docs paste - Import text content
+  /docs list - List all documents
+  /code generate - Generate code
+  /code docs - Generate documentation
+  /finalize generate - Generate final artifacts
+  /finalize docs - Generate final documentation
+
+COLLABORATION & SKILLS:
+  /collab add <user> - Add collaborator
+  /collab list - List collaborators
+  /collab remove <user> - Remove collaborator
+  /collab role <user> <role> - Change role
+  /skills set - Set project skills
+  /skills list - List project skills
+
+SUBSCRIPTION & GITHUB:
+  /subscription status - Show subscription tier
+  /subscription upgrade - Upgrade subscription
+  /subscription downgrade - Downgrade subscription
+  /subscription compare - Compare subscription tiers
+  /subscription testing-mode on|off - Toggle testing mode
+  /github import - Import GitHub repository
+  /github pull - Pull latest changes
+  /github push - Push changes
+  /github sync - Bidirectional sync
+
+ANALYTICS & CONVERSATIONS:
+  /analytics [breakdown|status] - View analytics data
+  /maturity [history|status] - View maturity tracking
+  /conversation search <query> - Search conversation history
+  /conversation summary - Summarize conversation`;
+    addSystemMessage(helpText);
+  };
+
+  const handleStatusCommand = async (id: string) => {
+    try {
+      const response = await apiClient.get(`/projects/${id}/progress/status`) as any;
+      const status = response?.status || 'unknown';
+      const progress = response?.progress || 0;
+      const phase = currentProject?.phase || 'N/A';
+
+      addSystemMessage(`Project Status: ${status} | Phase: ${phase} | Progress: ${progress}%`);
+    } catch (error) {
+      addSystemMessage('Could not fetch project status');
+    }
+  };
+
+  const handleStatsCommand = async (id: string) => {
+    try {
+      const response = await apiClient.get(`/projects/${id}/stats`) as any;
+      const stats = response?.data || response;
+      const summary = `Messages: ${stats.message_count || 0} | Insights: ${stats.insight_count || 0} | Questions: ${stats.question_count || 0}`;
+      addSystemMessage(`Stats: ${summary}`);
+    } catch (error) {
+      addSystemMessage('Could not fetch project statistics');
+    }
+  };
+
+  const handleInfoCommand = () => {
+    const info = `System Information:
+Project: ${currentProject?.name || 'None selected'}
+Phase: ${currentProject?.phase || 'N/A'}
+Mode: ${mode}
+User: ${currentProject?.owner || 'N/A'}`;
+    addSystemMessage(info);
+  };
+
+  const handleLogsCommand = async (lines: string) => {
+    try {
+      const numLines = parseInt(lines) || 20;
+      const response = await apiClient.post('/system/logs', { lines: numLines }) as any;
+      const logText = response?.logs || 'No logs available';
+      addSystemMessage(`Recent logs (${numLines} lines):\n${logText}`);
+    } catch (error) {
+      addSystemMessage('Could not fetch system logs');
+    }
+  };
+
+  const handleKnowledgeCommand = async (id: string, action: string, args: string[]) => {
+    try {
+      if (action === 'add') {
+        const text = args.join(' ');
+        if (!text) {
+          addSystemMessage('Usage: /knowledge add <text>');
+          return;
+        }
+        await apiClient.post(`/projects/${id}/knowledge/add`, { content: text });
+        addSystemMessage('Knowledge entry added');
+      } else if (action === 'list') {
+        const response = await apiClient.get(`/projects/${id}/knowledge/list`) as any;
+        const entries = response?.entries || [];
+        if (entries.length === 0) {
+          addSystemMessage('No knowledge entries found');
+        } else {
+          const list = entries.map((e: any) => `• ${e.content?.substring(0, 50) || 'N/A'}`).join('\n');
+          addSystemMessage(`Knowledge Entries:\n${list}`);
+        }
+      } else if (action === 'search') {
+        const query = args.join(' ');
+        if (!query) {
+          addSystemMessage('Usage: /knowledge search <query>');
+          return;
+        }
+        const response = await apiClient.post(`/projects/${id}/knowledge/search`, { query }) as any;
+        const results = response?.results || [];
+        if (results.length === 0) {
+          addSystemMessage('No matching knowledge found');
+        } else {
+          const list = results.map((r: any) => `• ${r.content?.substring(0, 50) || 'N/A'}`).join('\n');
+          addSystemMessage(`Search Results:\n${list}`);
+        }
+      } else {
+        addSystemMessage('Usage: /knowledge [add|list|search]');
+      }
+    } catch (error) {
+      console.error('Knowledge command error:', error);
+      addSystemMessage('Knowledge command failed');
+    }
+  };
+
+  const handleAnalyticsCommand = async (id: string, action?: string) => {
+    try {
+      const response = action === 'breakdown'
+        ? (await apiClient.get(`/analytics/breakdown/${id}`) as any)
+        : action === 'status'
+        ? (await apiClient.get(`/analytics/status/${id}`) as any)
+        : (await apiClient.get(`/analytics/projects/${id}`) as any);
+
+      const data = response?.data || response;
+
+      // Format analytics data for readable display
+      let summary = '📊 Analytics Report\n\n';
+      if (data.maturity_score !== undefined) {
+        summary += `Overall Maturity: ${data.maturity_score.toFixed(2)}\n`;
+      }
+
+      if (data.phase_maturity_scores) {
+        summary += '\nPhase Scores:\n';
+        Object.entries(data.phase_maturity_scores).forEach(([phase, score]: [string, any]) => {
+          summary += `  • ${phase}: ${score.toFixed(2)}\n`;
+        });
+      }
+
+      if (data.completion_percentage !== undefined) {
+        summary += `\nCompletion: ${data.completion_percentage.toFixed(1)}%\n`;
+      }
+
+      if (data.total_questions !== undefined) {
+        summary += `\nTotal Questions Asked: ${data.total_questions}\n`;
+      }
+
+      if (data.average_response_time !== undefined) {
+        summary += `Avg Response Time: ${data.average_response_time.toFixed(2)}s\n`;
+      }
+
+      // If no formatted data was added, show raw JSON
+      if (summary === '📊 Analytics Report\n\n') {
+        summary += JSON.stringify(data, null, 2);
+      }
+
+      addSystemMessage(summary);
+    } catch (error) {
+      addSystemMessage('Could not fetch analytics data');
+    }
+  };
+
+  const handleMaturityCommand = async (id: string, action?: string) => {
+    try {
+      const response = action === 'history'
+        ? (await apiClient.get(`/projects/${id}/maturity/history`) as any)
+        : action === 'status'
+        ? (await apiClient.get(`/projects/${id}/maturity/status`) as any)
+        : (await apiClient.get(`/projects/${id}/maturity`) as any);
+
+      const data = response?.data || response;
+
+      // Format maturity data for readable display
+      let summary = '📈 Maturity Report\n\n';
+
+      if (data.overall_maturity !== undefined) {
+        summary += `Overall Maturity: ${data.overall_maturity.toFixed(2)}\n`;
+      } else if (data.maturity_score !== undefined) {
+        summary += `Overall Maturity: ${data.maturity_score.toFixed(2)}\n`;
+      }
+
+      if (data.phase_maturity_scores) {
+        summary += '\nPhase Scores:\n';
+        Object.entries(data.phase_maturity_scores).forEach(([phase, score]: [string, any]) => {
+          const displayPhase = phase.charAt(0).toUpperCase() + phase.slice(1);
+          summary += `  • ${displayPhase}: ${score.toFixed(2)}\n`;
+        });
+      }
+
+      if (data.current_phase) {
+        summary += `\nCurrent Phase: ${data.current_phase}\n`;
+      }
+
+      if (data.readiness_percentage !== undefined) {
+        summary += `Phase Readiness: ${data.readiness_percentage.toFixed(1)}%\n`;
+      }
+
+      if (data.issues_count !== undefined) {
+        summary += `Open Issues: ${data.issues_count}\n`;
+      }
+
+      if (data.last_updated) {
+        summary += `Last Updated: ${new Date(data.last_updated).toLocaleString()}\n`;
+      }
+
+      // If no formatted data was added, show raw JSON
+      if (summary === '📈 Maturity Report\n\n') {
+        summary += JSON.stringify(data, null, 2);
+      }
+
+      addSystemMessage(summary);
+    } catch (error) {
+      addSystemMessage('Could not fetch maturity data');
+    }
+  };
+
+  // SUBSCRIPTION COMMANDS
+  const handleSubscriptionCommand = async (action: string, args: string[]) => {
+    try {
+      if (action === 'testing-mode') {
+        const mode = args[0]?.toLowerCase();
+        if (!mode || (mode !== 'on' && mode !== 'off')) {
+          addSystemMessage('Usage: /subscription testing-mode on|off');
+          return;
+        }
+        await apiClient.put(`/auth/me/testing-mode?enabled=${mode === 'on'}`);
+        setTestingModeStatus({
+          enabled: mode === 'on',
+          message: mode === 'on'
+            ? 'Testing mode enabled - all restrictions bypassed'
+            : 'Testing mode disabled - normal restrictions apply',
+        });
+        setShowTestingModeModal(true);
+        addSystemMessage(`Testing mode ${mode}`);
+      } else if (action === 'status') {
+        const response = await apiClient.get('/subscription/status') as any;
+        const tier = response?.tier || 'free';
+        const status = response?.status || 'active';
+        addSystemMessage(`📊 Subscription Status\nTier: ${tier}\nStatus: ${status}`);
+      } else if (action === 'upgrade') {
+        const plan = args[0]?.toLowerCase();
+        if (!plan) {
+          addSystemMessage('Usage: /subscription upgrade <plan>\nAvailable plans: pro, enterprise');
+          return;
+        }
+        try {
+          const response = await apiClient.post('/subscription/upgrade', { plan }) as any;
+          addSystemMessage(`✅ Subscription upgraded to ${plan}\n${response?.message || 'Upgrade successful'}`);
+        } catch (error) {
+          addSystemMessage(`Could not upgrade to ${plan}. Please check the plan name or try again.`);
+        }
+      } else if (action === 'downgrade') {
+        const plan = args[0]?.toLowerCase();
+        if (!plan) {
+          addSystemMessage('Usage: /subscription downgrade <plan>\nAvailable plans: free, pro');
+          return;
+        }
+        try {
+          const response = await apiClient.post('/subscription/downgrade', { plan }) as any;
+          addSystemMessage(`✅ Subscription downgraded to ${plan}\n${response?.message || 'Downgrade successful'}`);
+        } catch (error) {
+          addSystemMessage(`Could not downgrade to ${plan}. Please check the plan name or try again.`);
+        }
+      } else if (action === 'compare') {
+        const response = await apiClient.get('/subscription/plans') as any;
+        const plans = response?.plans || [];
+        if (plans.length === 0) {
+          addSystemMessage('📋 Available Plans\nNo plans available at this time.');
+        } else {
+          const list = plans.map((p: any) => `• ${p.tier}: ${p.description || 'N/A'}`).join('\n');
+          addSystemMessage(`📋 Available Plans\n${list}`);
+        }
+      } else {
+        addSystemMessage('Usage: /subscription [status|upgrade|downgrade|compare|testing-mode on|off]');
+      }
+    } catch (error) {
+      addSystemMessage('Subscription command failed');
+    }
+  };
+
+  // NOTE COMMANDS
+  const handleNoteCommand = async (id: string, action: string, args: string[]) => {
+    try {
+      if (action === 'add') {
+        const text = args.join(' ');
+        if (!text) {
+          addSystemMessage('Usage: /note add <text>');
+          return;
+        }
+        await apiClient.post(`/projects/${id}/notes`, { content: text });
+        addSystemMessage('Note added');
+      } else if (action === 'list') {
+        const response = await apiClient.get(`/projects/${id}/notes`) as any;
+        const notes = response?.notes || [];
+        if (notes.length === 0) {
+          addSystemMessage('No notes found');
+        } else {
+          const list = notes.map((n: any) => `• (${n.id}) ${n.content?.substring(0, 50)}`).join('\n');
+          addSystemMessage(`Notes:\n${list}`);
+        }
+      } else if (action === 'search') {
+        const query = args.join(' ');
+        if (!query) {
+          addSystemMessage('Usage: /note search <query>');
+          return;
+        }
+        const response = await apiClient.post(`/projects/${id}/notes/search`, { query }) as any;
+        const results = response?.results || [];
+        if (results.length === 0) {
+          addSystemMessage('No matching notes');
+        } else {
+          const list = results.map((n: any) => `• ${n.content?.substring(0, 50)}`).join('\n');
+          addSystemMessage(`Search Results:\n${list}`);
+        }
+      } else if (action === 'delete') {
+        const noteId = args[0];
+        if (!noteId) {
+          addSystemMessage('Usage: /note delete <id>');
+          return;
+        }
+        await apiClient.delete(`/projects/${id}/notes/${noteId}`);
+        addSystemMessage('Note deleted');
+      } else {
+        addSystemMessage('Usage: /note [add|list|search|delete]');
+      }
+    } catch (error) {
+      addSystemMessage('Note command failed');
+    }
+  };
+
+  // CORE CHAT COMMANDS
+  const handleAdvanceCommand = async (id: string) => {
+    try {
+      await apiClient.put(`/projects/${id}/phase`);
+      addSystemMessage('Advancing to next phase...');
+    } catch (error) {
+      addSystemMessage('Could not advance phase');
+    }
+  };
+
+  const handleDoneCommand = async (id: string) => {
+    try {
+      await apiClient.post(`/projects/${id}/chat/done`);
+      addSystemMessage('Session finished. Great work!');
+    } catch (error) {
+      addSystemMessage('Could not finish session');
+    }
+  };
+
+  const handleAskCommand = async (id: string, args: string[]) => {
+    const question = args.join(' ');
+    if (!question) {
+      addSystemMessage('Usage: /ask <question>');
+      return;
+    }
+    try {
+      await sendMessage(question);
+    } catch (error) {
+      addSystemMessage('Failed to send question');
+    }
+  };
+
+  const handleExplainCommand = async (args: string[]) => {
+    const topic = args.join(' ');
+    if (!topic) {
+      addSystemMessage('Usage: /explain <topic>');
+      return;
+    }
+    try {
+      const response = await apiClient.post('/query/explain', { topic }) as any;
+      const explanation = response?.explanation || 'No explanation available';
+      addSystemMessage(`Explanation of "${topic}":\n${explanation}`);
+    } catch (error) {
+      addSystemMessage('Could not explain topic');
+    }
+  };
+
+  const handleHintCommand = async (id: string) => {
+    try {
+      const response = await apiClient.get(`/projects/${id}/chat/hint`) as any;
+      const hint = response?.hint || 'No hint available';
+      addSystemMessage(`💡 Hint:\n${hint}`);
+    } catch (error) {
+      addSystemMessage('Could not get hint');
+    }
+  };
+
+  // PROJECT ANALYSIS COMMANDS
+  const handleProjectCommand = async (id: string, action: string, args: string[]) => {
+    try {
+      switch (action) {
+        case 'analyze':
+          const analyzeResp = await apiClient.post('/analysis/structure', { project_id: id }) as any;
+          addSystemMessage(`Analysis:\n${analyzeResp?.summary || 'Analysis complete'}`);
+          break;
+        case 'test':
+          const testResp = await apiClient.post('/analysis/test', { project_id: id }) as any;
+          addSystemMessage(`Tests: ${testResp?.summary || 'Tests executed'}`);
+          break;
+        case 'fix':
+          const fixResp = await apiClient.post('/analysis/fix', { project_id: id }) as any;
+          addSystemMessage(`Fixes Applied: ${fixResp?.summary || 'Fixes completed'}`);
+          break;
+        case 'validate':
+          const validateResp = await apiClient.post('/analysis/validate', { project_id: id }) as any;
+          addSystemMessage(`Validation: ${validateResp?.summary || 'Valid'}`);
+          break;
+        case 'review':
+          const reviewResp = await apiClient.post('/analysis/review', { project_id: id }) as any;
+          addSystemMessage(`Code Review:\n${reviewResp?.summary || 'Review complete'}`);
+          break;
+        default:
+          addSystemMessage('Usage: /project [analyze|test|fix|validate|review]');
+      }
+    } catch (error) {
+      addSystemMessage('Project command failed');
+    }
+  };
+
+  // DOCUMENTATION COMMANDS
+  const handleDocsCommand = async (action: string, args: string[]) => {
+    try {
+      switch (action) {
+        case 'import':
+          addSystemMessage('Usage: /docs import <file-path> (File import via form recommended)');
+          break;
+        case 'import-url':
+          const url = args.join(' ');
+          if (!url) {
+            addSystemMessage('Usage: /docs import-url <url>');
+            return;
+          }
+          const urlResp = await apiClient.post('/knowledge/import/url', { url }) as any;
+          addSystemMessage('Document imported from URL');
+          break;
+        case 'paste':
+          if (!selectedProjectId) {
+            addSystemMessage('No project selected');
+            return;
+          }
+          addSystemMessage('Usage: /docs paste <text> (Paste content via UI recommended)');
+          break;
+        case 'list':
+          const listResp = await apiClient.get('/knowledge/documents') as any;
+          const docs = listResp?.documents || [];
+          if (docs.length === 0) {
+            addSystemMessage('No documents');
+          } else {
+            const list = docs.map((d: any) => `• ${d.title || d.name}`).join('\n');
+            addSystemMessage(`Documents:\n${list}`);
+          }
+          break;
+        default:
+          addSystemMessage('Usage: /docs [import|import-url|paste|list]');
+      }
+    } catch (error) {
+      addSystemMessage('Documentation command failed');
+    }
+  };
+
+  // CODE COMMANDS
+  const handleCodeCommand = async (id: string, action: string, args: string[]) => {
+    try {
+      if (action === 'generate') {
+        const response = await apiClient.post(`/code/${id}/generate`) as any;
+        addSystemMessage(`Code generated:\n${response?.code?.substring(0, 200) || 'Code generated'}`);
+      } else if (action === 'docs') {
+        const response = await apiClient.post(`/projects/${id}/docs/generate`) as any;
+        addSystemMessage(`Documentation generated:\n${response?.docs?.substring(0, 200) || 'Docs generated'}`);
+      } else {
+        addSystemMessage('Usage: /code [generate|docs]');
+      }
+    } catch (error) {
+      addSystemMessage('Code command failed');
+    }
+  };
+
+  // FINALIZATION COMMANDS
+  const handleFinalizeCommand = async (id: string, action: string) => {
+    try {
+      if (action === 'generate') {
+        const response = await apiClient.post(`/projects/${id}/finalize/generate`) as any;
+        addSystemMessage(`Artifacts generated:\n${response?.summary || 'Artifacts created'}`);
+      } else if (action === 'docs') {
+        const response = await apiClient.post(`/projects/${id}/finalize/docs`) as any;
+        addSystemMessage(`Final documentation generated:\n${response?.summary || 'Docs created'}`);
+      } else {
+        addSystemMessage('Usage: /finalize [generate|docs]');
+      }
+    } catch (error) {
+      addSystemMessage('Finalize command failed');
+    }
+  };
+
+  // COLLABORATION COMMANDS
+  const handleCollabCommand = async (id: string, action: string, args: string[]) => {
+    try {
+      if (action === 'add') {
+        const username = args[0];
+        if (!username) {
+          addSystemMessage('Usage: /collab add <username>');
+          return;
+        }
+        await apiClient.post(`/projects/${id}/collaborators`, { username, role: 'editor' });
+        addSystemMessage(`Collaborator ${username} added`);
+      } else if (action === 'list') {
+        const response = await apiClient.get(`/projects/${id}/collaborators`) as any;
+        const collabs = response?.collaborators || [];
+        const list = collabs.map((c: any) => `• ${c.username} (${c.role})`).join('\n');
+        addSystemMessage(`Collaborators:\n${list}`);
+      } else if (action === 'remove') {
+        const username = args[0];
+        if (!username) {
+          addSystemMessage('Usage: /collab remove <username>');
+          return;
+        }
+        await apiClient.delete(`/projects/${id}/collaborators/${username}`);
+        addSystemMessage(`Collaborator ${username} removed`);
+      } else if (action === 'role') {
+        const username = args[0];
+        const role = args[1];
+        if (!username || !role) {
+          addSystemMessage('Usage: /collab role <username> <role>');
+          return;
+        }
+        await apiClient.put(`/projects/${id}/collaborators/${username}/role`, { role });
+        addSystemMessage(`Role updated: ${username} -> ${role}`);
+      } else {
+        addSystemMessage('Usage: /collab [add|list|remove|role]');
+      }
+    } catch (error) {
+      addSystemMessage('Collaboration command failed');
+    }
+  };
+
+  // SKILLS COMMANDS
+  const handleSkillsCommand = async (id: string, action: string, args: string[]) => {
+    try {
+      if (action === 'set') {
+        const skills = args.join(',').split(',').map((s: string) => s.trim());
+        await apiClient.post(`/projects/${id}/skills`, { skills });
+        addSystemMessage(`Skills updated: ${skills.join(', ')}`);
+      } else if (action === 'list') {
+        const response = await apiClient.get(`/projects/${id}/skills`) as any;
+        const skills = response?.skills || [];
+        addSystemMessage(`Skills: ${skills.join(', ')}`);
+      } else {
+        addSystemMessage('Usage: /skills [set|list]');
+      }
+    } catch (error) {
+      addSystemMessage('Skills command failed');
+    }
+  };
+
+  // GITHUB COMMANDS
+  const handleGithubCommand = async (id: string, action: string) => {
+    try {
+      if (action === 'import') {
+        addSystemMessage('Usage: /github import <repo-url>');
+      } else if (action === 'pull') {
+        const response = await apiClient.post(`/github/projects/${id}/pull`) as any;
+        addSystemMessage('Latest changes pulled');
+      } else if (action === 'push') {
+        const response = await apiClient.post(`/github/projects/${id}/push`) as any;
+        addSystemMessage('Changes pushed');
+      } else if (action === 'sync') {
+        const response = await apiClient.post(`/github/projects/${id}/sync`) as any;
+        addSystemMessage('Repository synced');
+      } else {
+        addSystemMessage('Usage: /github [import|pull|push|sync]');
+      }
+    } catch (error) {
+      addSystemMessage('GitHub command failed');
+    }
+  };
+
+  // CONVERSATION COMMANDS
+  const handleConversationCommand = async (id: string, action: string, args: string[]) => {
+    try {
+      if (action === 'search') {
+        const query = args.join(' ');
+        if (!query) {
+          addSystemMessage('Usage: /conversation search <query>');
+          return;
+        }
+        const response = await apiClient.post(`/projects/${id}/chat/search`, { query }) as any;
+        const results = response?.results || [];
+        if (results.length === 0) {
+          addSystemMessage('No matching conversations');
+        } else {
+          const list = results.map((r: any) => `• ${r.substring(0, 50)}`).join('\n');
+          addSystemMessage(`Search Results:\n${list}`);
+        }
+      } else if (action === 'summary') {
+        const response = await apiClient.get(`/projects/${id}/chat/summary`) as any;
+        const summary = response?.summary || 'No summary available';
+        addSystemMessage(`Conversation Summary:\n${summary}`);
+      } else {
+        addSystemMessage('Usage: /conversation [search|summary]');
+      }
+    } catch (error) {
+      addSystemMessage('Conversation command failed');
+    }
+  };
+
   const handleSkipQuestion = async () => {
-    if (!projectId) return;
+    if (!selectedProjectId) return;
     try {
       // In a real implementation, this would skip to the next question
       // For now, we just clear the response
@@ -164,18 +1081,18 @@ export const ChatPage: React.FC = () => {
   };
 
   const handleSwitchMode = async (newMode: 'socratic' | 'direct') => {
-    if (!projectId) return;
+    if (!selectedProjectId) return;
     try {
-      await switchMode(projectId, newMode);
+      await switchMode(selectedProjectId, newMode);
     } catch (error) {
       console.error('Failed to switch mode:', error);
     }
   };
 
   const handleRequestHint = async () => {
-    if (!projectId) return;
+    if (!selectedProjectId) return;
     try {
-      await requestHint(projectId);
+      await requestHint(selectedProjectId);
       setShowHint(true);
     } catch (error) {
       console.error('Failed to get hint:', error);
@@ -183,22 +1100,42 @@ export const ChatPage: React.FC = () => {
   };
 
   const handleSearchConversations = async () => {
-    if (!searchQuery.trim() || !projectId) return;
+    if (!searchQuery.trim() || !selectedProjectId) return;
     try {
-      await searchConversations(projectId, searchQuery);
+      await searchConversations(selectedProjectId, searchQuery);
     } catch (error) {
       console.error('Search failed:', error);
     }
   };
 
   const handleGetSummary = async () => {
-    if (!projectId) return;
+    if (!selectedProjectId) return;
     try {
-      const summary = await getSummary(projectId);
+      const summary = await getSummary(selectedProjectId);
       setSummaryData(summary);
       setShowSummary(true);
     } catch (error) {
       console.error('Failed to get summary:', error);
+    }
+  };
+
+  const handleOpenSearch = () => {
+    setShowSearchModal(true);
+    setSearchInput('');
+  };
+
+  const handlePerformSearch = async () => {
+    if (!searchInput.trim() || !selectedProjectId) return;
+
+    setIsSearchingModal(true);
+    try {
+      await searchConversations(selectedProjectId, searchInput);
+      // Search results are stored in store's searchResults
+    } catch (error) {
+      console.error('Search failed:', error);
+      addSystemMessage('Search failed');
+    } finally {
+      setIsSearchingModal(false);
     }
   };
 
@@ -267,146 +1204,182 @@ export const ChatPage: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Panel - Question Display and Mode */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="flex justify-between items-start">
-            <PageHeader
-              title="Dialogue"
-              description={currentProject ? `${currentProject.name}` : 'Loading...'}
-            />
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
-              isConnected
-                ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400'
-            }`}>
-              {isConnected ? (
-                <>
-                  <Wifi size={16} />
-                  <span className="text-xs font-medium">Live</span>
-                </>
+      <div className="flex flex-col h-[calc(100vh-4rem)] max-w-5xl mx-auto w-full">
+        {/* Project Selector Dropdown */}
+        <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 dark:from-blue-900 dark:to-indigo-900 dark:border-blue-800">
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+              Active Project:
+            </label>
+            <select
+              value={selectedProjectId}
+              onChange={(e) => handleProjectSwitch(e.target.value)}
+              disabled={isSwitchingProject}
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="">-- Choose a Project --</option>
+              {projects.length > 0 ? (
+                projects.map((project) => (
+                  <option key={project.project_id} value={project.project_id}>
+                    {project.name} {selectedProjectId === project.project_id ? '(Current)' : ''}
+                  </option>
+                ))
               ) : (
-                <>
-                  <WifiOff size={16} />
-                  <span className="text-xs font-medium">Offline</span>
-                </>
+                <option disabled>No projects available</option>
               )}
-            </div>
+            </select>
+            {isSwitchingProject && (
+              <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                Switching...
+              </div>
+            )}
+            {currentProject && (
+              <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                Phase: <span className="font-semibold capitalize">{currentProject.phase || 'N/A'}</span>
+              </div>
+            )}
           </div>
+        </Card>
 
-          {currentProject && (
-            <>
-              <Card>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Current Phase
-                </h3>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {phases.find((p) => p.isCurrent)?.name || 'Unknown'}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                  {phases.find((p) => p.isCurrent)?.description}
-                </p>
-              </Card>
+        {/* Pre-Session Chat (when no project selected) */}
+        {!selectedProjectId ? (
+          <>
+            {/* Pre-Session Header */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900 dark:to-blue-900">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                Welcome to Socrates
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Ask me anything or describe what you'd like to do. I'll help guide you through the system.
+              </p>
+            </div>
 
-              <DialogueMode
-                mode={mode}
-                onModeChange={handleSwitchMode}
-              />
-
-              <Card>
-                <div className="space-y-3">
-                  <Button
-                    onClick={handleGetSummary}
-                    disabled={chatLoading || messages.length === 0}
-                    variant="outline"
-                    className="w-full flex items-center justify-center gap-2"
-                  >
-                    <MessageSquare size={18} />
-                    Get Summary
-                  </Button>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Search conversation..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') handleSearchConversations();
-                      }}
-                      disabled={isSearching}
-                    />
-                    <Button
-                      onClick={handleSearchConversations}
-                      disabled={isSearching || !searchQuery.trim()}
-                      variant="primary"
-                      className="flex items-center gap-2"
-                    >
-                      <Search size={18} />
-                      Search
-                    </Button>
+            {/* Pre-Session Messages Area */}
+            <div
+              className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900"
+              ref={messagesContainerRef}
+            >
+              {preSessionResponses.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center text-gray-500 dark:text-gray-400">
+                    <MessageSquare className="mx-auto mb-4 text-gray-400" size={48} />
+                    <p className="text-lg font-medium">Start a conversation</p>
+                    <p className="text-sm mt-2">Type your question, describe what you want, or use commands like /help</p>
                   </div>
                 </div>
-              </Card>
-            </>
-          )}
-        </div>
+              ) : (
+                preSessionResponses.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-xs px-4 py-3 rounded-lg ${
+                        msg.role === 'user'
+                          ? 'bg-blue-600 text-white rounded-br-none'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-none'
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={preSessionEndRef} />
+            </div>
 
-        {/* Center Panel - Response Input and History */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Your Response
-            </h2>
-            <ResponseInput
-              value={response}
-              onChange={setResponse}
-              onSubmit={handleSubmitResponse}
-              onSkip={handleSkipQuestion}
-              onRequestHint={handleRequestHint}
-              isLoading={chatLoading}
-              minLength={1}
-              maxLength={5000}
+            {/* Pre-Session Input Area */}
+            <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 p-4">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={preSessionInput}
+                  onChange={(e) => setPreSessionInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handlePreSessionInput();
+                    }
+                  }}
+                  disabled={isInterpretingNLU}
+                  placeholder="Ask anything or try /help for commands..."
+                  className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
+                />
+                <button
+                  onClick={handlePreSessionInput}
+                  disabled={isInterpretingNLU || !preSessionInput.trim()}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isInterpretingNLU ? (
+                    <>
+                      <LoadingSpinner size="sm" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={18} />
+                      Send
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Project-Specific Chat */}
+            {/* Conversation Header */}
+            <ConversationHeader
+              projectName={currentProject?.name || 'Project'}
+              mode={mode}
+              currentPhase={phases.findIndex((p) => p.isCurrent) + 1}
+              phases={phases}
+              onModeChange={handleSwitchMode}
+              onSearch={handleOpenSearch}
+              onSummary={handleGetSummary}
             />
-          </Card>
 
-          {/* ConversationHistory requires structured Q&A pairs, not raw chat messages */}
-        </div>
-
-        {/* Right Panel - Phase and Maturity Tracking */}
-        <div className="lg:col-span-1 space-y-6">
-          <PhaseIndicator
-            phases={phases}
-            currentPhase={phases.findIndex((p) => p.isCurrent) + 1}
-            maturityByPhase={{
-              1: 0,
-              2: 0,
-              3: 0,
-              4: 0,
-            }}
-            onAdvance={() => {
-              // Phase advancement would be handled by store
-            }}
-            canAdvance={false}
-          />
-
-          {/* Chat Messages Display */}
-          {messages.length > 0 && (
-            <Card>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Recent Messages
-              </h3>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {messages.slice(-3).map((msg, index) => (
+            {/* Messages Area - Full Height, Scrollable */}
+            <div
+              className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900"
+              ref={messagesContainerRef}
+            >
+              {messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center text-gray-500 dark:text-gray-400">
+                    <p className="text-lg">Conversation will start here...</p>
+                    <p className="text-sm mt-2">The initial question will appear as the first message.</p>
+                  </div>
+                </div>
+              ) : (
+                messages.map((msg) => (
                   <ChatMessage
-                    key={msg.id || `msg-${index}-${msg.role}-${msg.timestamp}`}
+                    key={msg.id || `msg-${msg.role}-${msg.timestamp}`}
                     role={msg.role}
                     content={msg.content}
                     timestamp={msg.timestamp ? new Date(msg.timestamp) : new Date()}
                   />
-                ))}
-              </div>
-            </Card>
-          )}
-        </div>
+                ))
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area - Fixed at Bottom */}
+            <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 p-4">
+              <ResponseInput
+                value={response}
+                onChange={setResponse}
+                onSubmit={handleSubmitResponse}
+                onSkip={mode === 'socratic' ? handleSkipQuestion : undefined}
+                onRequestHint={mode === 'socratic' ? handleRequestHint : undefined}
+                isLoading={chatLoading}
+                minLength={1}
+                maxLength={5000}
+                placeholder={mode === 'socratic' ? 'Type your response...' : 'Ask your question...'}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Summary Modal */}
@@ -496,6 +1469,25 @@ export const ChatPage: React.FC = () => {
         </div>
       )}
 
+      {/* Conflict Resolution Modal */}
+      <ConflictResolutionModal
+        conflicts={conflicts || []}
+        isOpen={pendingConflicts}
+        onResolve={async (resolution) => {
+          if (selectedProjectId) {
+            try {
+              await resolveConflict(selectedProjectId, resolution);
+            } catch (error) {
+              console.error('Failed to resolve conflict:', error);
+            }
+          }
+        }}
+        onClose={() => {
+          clearConflicts();
+        }}
+        isLoading={chatLoading}
+      />
+
       {/* Hint Modal */}
       <HintDisplay
         isOpen={showHint}
@@ -503,6 +1495,195 @@ export const ChatPage: React.FC = () => {
         hint="Check the project context for hints"
         questionNumber={1}
       />
+
+      {/* Debug Modal */}
+      {showDebugModal && debugInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Debug Mode</h3>
+                <button
+                  onClick={() => setShowDebugModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div className="bg-gray-50 border border-gray-200 rounded p-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Status:</p>
+                  <p className={`text-lg font-bold ${debugInfo.debugEnabled ? 'text-green-600' : 'text-gray-600'}`}>
+                    {debugInfo.debugEnabled ? 'Enabled' : 'Disabled'}
+                  </p>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <p className="font-medium mb-1">When enabled:</p>
+                  <ul className="space-y-1 ml-4">
+                    <li>• Detailed logs printed to console</li>
+                    <li>• Full request/response details</li>
+                    <li>• Performance metrics</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="mt-6 flex gap-2">
+                <button
+                  onClick={() => setShowDebugModal(false)}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Testing Mode Modal */}
+      {showTestingModeModal && testingModeStatus && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Testing Mode</h3>
+                <button
+                  onClick={() => setShowTestingModeModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div className={`border rounded-lg p-4 ${testingModeStatus.enabled ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Status:</p>
+                  <p className={`text-lg font-bold ${testingModeStatus.enabled ? 'text-blue-600' : 'text-gray-600'}`}>
+                    {testingModeStatus.enabled ? 'Enabled' : 'Disabled'}
+                  </p>
+                </div>
+                <div className="bg-yellow-50 border border-yellow-200 rounded p-4">
+                  <p className="text-sm text-yellow-800">{testingModeStatus.message}</p>
+                </div>
+                {testingModeStatus.enabled && (
+                  <div className="text-sm text-gray-600">
+                    <p className="font-medium mb-1">Testing mode grants:</p>
+                    <ul className="space-y-1 ml-4">
+                      <li>• Unlimited projects</li>
+                      <li>• Unlimited team members</li>
+                      <li>• All LLM models available</li>
+                      <li>• All premium features</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <div className="mt-6 flex gap-2">
+                <button
+                  onClick={() => setShowTestingModeModal(false)}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Search Modal */}
+      {showSearchModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <Card className="max-w-2xl w-full max-h-96 overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Search Conversation
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowSearchModal(false);
+                    clearSearch();
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Search Input */}
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="Search conversation..."
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handlePerformSearch();
+                      }
+                    }}
+                    disabled={isSearchingModal}
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handlePerformSearch}
+                    disabled={isSearchingModal || !searchInput.trim()}
+                    isLoading={isSearchingModal}
+                  >
+                    Search
+                  </Button>
+                </div>
+
+                {/* Search Results */}
+                {searchResults && searchResults.length > 0 ? (
+                  <div className="space-y-3 border-t pt-4">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                    </p>
+                    {searchResults.map((result: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                      >
+                        <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                          {result.role === 'assistant' ? '🤖 Assistant' : '👤 You'}
+                        </p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3">
+                          {result.content}
+                        </p>
+                        {result.timestamp && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            {new Date(result.timestamp).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : isSearchingModal ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600 dark:text-gray-400">Searching...</p>
+                  </div>
+                ) : searchQuery && searchResults?.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600 dark:text-gray-400">No results found</p>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="mt-6 flex gap-2 justify-end">
+                <button
+                  onClick={() => {
+                    setShowSearchModal(false);
+                    clearSearch();
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </MainLayout>
   );
 };
