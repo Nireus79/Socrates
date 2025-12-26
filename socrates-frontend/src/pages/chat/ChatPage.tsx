@@ -48,6 +48,7 @@ export const ChatPage: React.FC = () => {
     connectWebSocket,
     disconnectWebSocket,
     handleWebSocketResponse,
+    getQuestion,
     clearError,
     clearSearch,
   } = useChatStore();
@@ -66,8 +67,24 @@ export const ChatPage: React.FC = () => {
     if (projectId) {
       getProject(projectId);
       loadHistory(projectId);
+      // Load the first question if no messages exist
+      loadInitialQuestion(projectId);
     }
   }, [projectId, getProject, loadHistory]);
+
+  // Load initial question
+  const loadInitialQuestion = React.useCallback(
+    async (id: string) => {
+      try {
+        if (messages.length === 0) {
+          await getQuestion(id);
+        }
+      } catch (error) {
+        console.error('Failed to load initial question:', error);
+      }
+    },
+    [messages.length, getQuestion]
+  );
 
   // WebSocket connection effect
   React.useEffect(() => {

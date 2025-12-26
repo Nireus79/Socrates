@@ -155,7 +155,12 @@
       "Bash(if [ -z \"$ANTHROPIC_API_KEY\" ])",
       "Bash(then echo \"Not set\")",
       "Bash(else echo \"Is set\")",
-      "Bash(fi)"
+      "Bash(fi)",
+      "Bash(__NEW_LINE__ curl -s http://127.0.0.1:8000/health)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0ZmxvdzIiLCJleHAiOjE3NjY3MDI3NzcsImlhdCI6MTc2NjcwMTg3NywidHlwZSI6ImFjY2VzcyJ9.40M5Y7l444TjCERRhfd9_Vq1N67p7qfH6RtLG1GIzL8\" PROJ_ID=\"proj_20bebbb2-827c-4b4e-a6aa-422aa88d5d40\" curl:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0ZmxvdzIiLCJleHAiOjE3NjY3MDI3NzcsImlhdCI6MTc2NjcwMTg3NywidHlwZSI6ImFjY2VzcyJ9.40M5Y7l444TjCERRhfd9_Vq1N67p7qfH6RtLG1GIzL8\")",
+      "Bash(PROJ_ID=\"proj_20bebbb2-827c-4b4e-a6aa-422aa88d5d40\":*)",
+      "Bash(__NEW_LINE__ curl -s -X POST \"http://127.0.0.1:8000/projects/$PROJ_ID/chat/message\" )"
     ],
     "deny": [],
     "ask": []

@@ -14,6 +14,15 @@ import type {
 
 export const chatAPI = {
   /**
+   * Get next Socratic question
+   */
+  async getQuestion(projectId: string): Promise<{ question: string; phase: string }> {
+    return apiClient.get<{ question: string; phase: string }>(
+      `/projects/${projectId}/chat/question`
+    );
+  },
+
+  /**
    * Send a chat message
    */
   async sendMessage(

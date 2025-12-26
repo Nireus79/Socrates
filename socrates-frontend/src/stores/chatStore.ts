@@ -20,6 +20,7 @@ interface ChatState {
   // Actions
   connectWebSocket: (projectId: string, token: string) => Promise<void>;
   disconnectWebSocket: () => void;
+  getQuestion: (projectId: string) => Promise<string>;
   sendMessage: (content: string) => Promise<void>;
   addMessage: (message: ChatMessage) => void;
   addSystemMessage: (content: string) => void;
@@ -78,6 +79,31 @@ export const useChatStore = create<ChatState>((set, get) => ({
       currentProjectId: null,
     });
     get().addSystemMessage('Disconnected from chat');
+  },
+
+  // Get next question
+  getQuestion: async (projectId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await chatAPI.getQuestion(projectId);
+
+      // Add question as assistant message
+      get().addMessage({
+        id: `q_${Date.now()}`,
+        role: 'assistant',
+        content: response.question,
+        timestamp: new Date().toISOString(),
+      });
+
+      set({ isLoading: false });
+      return response.question;
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to get question',
+        isLoading: false,
+      });
+      throw error;
+    }
   },
 
   // Send message

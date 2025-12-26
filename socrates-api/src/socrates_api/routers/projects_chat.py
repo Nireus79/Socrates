@@ -11,14 +11,85 @@ Provides REST endpoints for chat operations on projects including:
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status, Depends, Query
+from fastapi import APIRouter, HTTPException, status, Depends
+from pydantic import BaseModel
 
 from socrates_api.models import SuccessResponse, ErrorResponse
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
 
+
+class ChatMessageRequest(BaseModel):
+    """Request body for sending a chat message"""
+    message: str
+    mode: str = "socratic"
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["chat"])
+
+
+@router.get(
+    "/{project_id}/chat/question",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get next Socratic question",
+)
+async def get_question(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Get the next Socratic question for a project.
+
+    Args:
+        project_id: Project ID
+        current_user: Authenticated user
+
+    Returns:
+        SuccessResponse with question
+    """
+    try:
+        from socrates_api.main import get_orchestrator
+
+        logger.info(f"Getting question for project {project_id}")
+
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Call socratic_counselor to generate question
+        orchestrator = get_orchestrator()
+        result = orchestrator.process_request(
+            "socratic_counselor",
+            {
+                "action": "generate_question",
+                "project": project,
+                "current_user": current_user,
+            }
+        )
+
+        if result.get("status") != "success":
+            raise HTTPException(status_code=500, detail=result.get("message", "Failed to generate question"))
+
+        return SuccessResponse(
+            success=True,
+            message="Question generated",
+            data={
+                "question": result.get("question", ""),
+                "phase": project.phase,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting question: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get question: {str(e)}",
+        )
 
 
 @router.post(
@@ -29,8 +100,7 @@ router = APIRouter(prefix="/projects", tags=["chat"])
 )
 async def send_message(
     project_id: str,
-    message: str = Query(..., description="Message content"),
-    mode: str = Query("socratic", description="Chat mode (socratic or direct)"),
+    request: ChatMessageRequest,
     current_user: str = Depends(get_current_user),
 ):
     """
@@ -48,7 +118,7 @@ async def send_message(
     try:
         from socrates_api.main import get_orchestrator
 
-        logger.info(f"Sending message to project {project_id}")
+        logger.info(f"Sending message to project {project_id}: {request.message[:50]}...")
 
         # Load project
         db = get_database()
@@ -63,7 +133,7 @@ async def send_message(
             {
                 "action": "process_response",
                 "project": project,
-                "response": message,
+                "response": request.message,
                 "current_user": current_user,
             }
         )
