@@ -47,9 +47,9 @@
 | 17 | `user login` | ✅ API ready | `POST /auth/login` | Login to account |
 | 18 | `user create` | ✅ API ready | `POST /auth/register` | Create new account |
 | 19 | `user logout` | ✅ API ready | `POST /auth/logout` | Logout current user |
-| 20 | `user archive` | ❌ No API | - | Archive user account |
+| 20 | `user archive` | ✅ API ready | `POST /auth/me/archive` | Archive user account (Phase 3 NEW) |
 | 21 | `user delete` | ✅ API ready | `DELETE /auth/me` | Delete user account |
-| 22 | `user restore` | ❌ No API | - | Restore archived account |
+| 22 | `user restore` | ✅ API ready | `POST /auth/me/restore` | Restore archived account (Phase 3 NEW) |
 
 ---
 
@@ -195,11 +195,11 @@
 
 | # | Command | Status | API Endpoint | Notes |
 |---|---------|--------|--------------|-------|
-| 72 | `subscription status` | ❌ No API | - | Show subscription tier |
-| 73 | `subscription upgrade` | ❌ No API | - | Upgrade subscription |
-| 74 | `subscription downgrade` | ❌ No API | - | Downgrade subscription |
-| 75 | `subscription compare` | ❌ No API | - | Compare tiers |
-| 76 | `subscription testing-mode` | ⚠️ Special | - | **HIDDEN: Enable/disable testing mode** |
+| 72 | `subscription status` | ✅ API ready | `GET /subscription/status` | Show subscription tier (Phase 3 NEW) |
+| 73 | `subscription upgrade` | ✅ API ready | `POST /subscription/upgrade` | Upgrade subscription (Phase 3 NEW) |
+| 74 | `subscription downgrade` | ✅ API ready | `POST /subscription/downgrade` | Downgrade subscription (Phase 3 NEW) |
+| 75 | `subscription compare` | ✅ API ready | `GET /subscription/plans` | Compare tiers (Phase 3 NEW) |
+| 76 | `subscription testing-mode` | ✅ API ready | `PUT /subscription/testing-mode` | **HIDDEN: Enable/disable testing mode** (Phase 3 NEW) |
 
 ---
 
@@ -376,7 +376,7 @@
 |----------|-------|-------------|---------|----------------|
 | Project Management | 11 | 10 | 1 | 91% |
 | Session/Chat | 5 | 5 | 0 | 100% ✅ **PHASE 1** |
-| User Management | 6 | 4 | 2 | 67% |
+| User Management | 6 | 6 | 0 | 100% ✅ **PHASE 3** |
 | Code Generation | 2 | 2 | 0 | 100% ✅ **PHASE 2** |
 | Collaboration | 4 | 4 | 0 | 100% |
 | Documentation | 5 | 5 | 0 | 100% ✅ **PHASE 2** |
@@ -388,13 +388,13 @@
 | Query | 3 | 1 | 2 | 33% |
 | Conversation | 2 | 2 | 0 | 100% ✅ **PHASE 2** |
 | Statistics | 3 | 1 | 2 | 33% |
-| Subscription | 5 | 0 | 5 | 0% |
+| Subscription | 5 | 5 | 0 | 100% ✅ **PHASE 3** |
 | LLM Management | 1 | 1 | 0 | 100% |
 | Debug | 3 | 0 | 3 | 0% |
 | Knowledge | 8 | 0 | 8 | 0% |
 | Skills | 2 | 0 | 2 | 0% |
 | Model Switching | 1 | 1 | 0 | 100% |
-| **TOTAL** | **~90** | **54** | **~36** | **60%** |
+| **TOTAL** | **~90** | **61** | **~29** | **68%** |
 
 ---
 
