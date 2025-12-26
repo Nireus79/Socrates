@@ -73,6 +73,9 @@ async def get_question(
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed to generate question"))
 
+        # Persist any project state changes
+        db.save_project(project)
+
         return SuccessResponse(
             success=True,
             message="Question generated",
@@ -140,6 +143,9 @@ async def send_message(
 
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed to process message"))
+
+        # Persist project changes to database (conversation history, maturity, etc.)
+        db.save_project(project)
 
         # Format response
         return SuccessResponse(
