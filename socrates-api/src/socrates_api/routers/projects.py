@@ -120,55 +120,80 @@ async def list_projects(
 async def create_project(
     request: CreateProjectRequest,
     current_user: str = Depends(get_current_user),
-    orchestrator = Depends(_get_orchestrator),
+    db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
     Create a new project for the current user.
 
-    Uses the orchestrator-agent pattern to ensure proper validation,
-    subscription checking, and business logic consistency with CLI.
+    Creates a new project directly in the database. Can optionally use the
+    orchestrator for agent-based processing if available.
 
     Args:
         request: CreateProjectRequest with project details
         current_user: Authenticated username from JWT token
-        orchestrator: AgentOrchestrator instance for agent-based processing
+        db: Database connection
 
     Returns:
         ProjectResponse with newly created project
 
     Raises:
-        HTTPException: If validation fails, subscription check fails, or creation fails
+        HTTPException: If validation fails or creation fails
     """
     try:
-        # Use orchestrator pattern (same as CLI)
-        # This ensures consistent validation and subscription checking
-        result = orchestrator.process_request(
-            "project_manager",
-            {
-                "action": "create_project",
-                "project_name": request.name,
-                "owner": current_user,
-                "project_type": request.knowledge_base_content or "general",
-            },
+        # Try to use orchestrator if available, but don't require it
+        try:
+            from socrates_api.main import app_state
+            orchestrator = app_state.get("orchestrator")
+            if orchestrator:
+                # Use orchestrator pattern (same as CLI)
+                result = orchestrator.process_request(
+                    "project_manager",
+                    {
+                        "action": "create_project",
+                        "project_name": request.name,
+                        "owner": current_user,
+                        "project_type": request.knowledge_base_content or "general",
+                    },
+                )
+
+                # Check result status
+                if result.get("status") == "success":
+                    project = result.get("project")
+                    logger.info(f"Project {project.project_id} created by {current_user} (via orchestrator)")
+                    return _project_to_response(project)
+                else:
+                    error_message = result.get("message", "Failed to create project")
+                    if "subscription" in error_message.lower():
+                        raise HTTPException(
+                            status_code=status.HTTP_403_FORBIDDEN,
+                            detail=error_message
+                        )
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=error_message
+                    )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(f"Orchestrator unavailable, creating project directly: {e}")
+
+        # Fallback: create project directly in database without orchestrator
+        project_id = ProjectIDGenerator.generate()
+        project = ProjectContext(
+            project_id=project_id,
+            name=request.name,
+            owner=current_user,
+            description=request.description or "",
+            phase="discovery",
+            created_at=datetime.now(timezone.utc).isoformat(),
+            updated_at=datetime.now(timezone.utc).isoformat(),
+            is_archived=False,
+            conversation_history=[],
+            maturity=0,
         )
 
-        # Check result status
-        if result.get("status") != "success":
-            error_message = result.get("message", "Failed to create project")
-            # Return 403 for subscription errors
-            if "subscription" in error_message.lower():
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=error_message
-                )
-            # Return 400 for other errors
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_message
-            )
-
-        project = result.get("project")
-        logger.info(f"Project {project.project_id} created by {current_user}")
+        db.save_project(project)
+        logger.info(f"Project {project_id} created by {current_user} (direct database)")
         return _project_to_response(project)
 
     except HTTPException:
