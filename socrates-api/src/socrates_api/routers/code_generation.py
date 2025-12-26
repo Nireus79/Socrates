@@ -517,3 +517,159 @@ async def refactor_code(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error refactoring code",
         )
+
+
+@router.post(
+    "/{project_id}/docs/generate",
+    status_code=status.HTTP_200_OK,
+    summary="Generate project documentation",
+)
+async def generate_documentation(
+    project_id: str,
+    format: Optional[str] = "markdown",
+    include_examples: Optional[bool] = True,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Generate comprehensive documentation for project code.
+
+    Creates documentation in the specified format (markdown, html, etc.)
+    based on the project's code, conversation history, and metadata.
+
+    Args:
+        project_id: Project ID
+        format: Documentation format (markdown, html, rst) - default: markdown
+        include_examples: Include code examples in documentation - default: true
+        current_user: Authenticated user
+
+    Returns:
+        Documentation in the requested format
+    """
+    try:
+        logger.info(f"Generating documentation for project {project_id} in format: {format}")
+
+        # Validate format
+        valid_formats = ["markdown", "html", "rst", "pdf"]
+        if format not in valid_formats:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid format. Must be one of: {', '.join(valid_formats)}",
+            )
+
+        # Verify project access
+        db = get_database()
+        project = db.load_project(project_id)
+        if project is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found",
+            )
+
+        if project.owner != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied",
+            )
+
+        # Generate documentation
+        from datetime import datetime
+
+        # Build documentation from project metadata
+        doc_sections = []
+
+        # Title and introduction
+        doc_sections.append(f"# {project.name}")
+        if project.description:
+            doc_sections.append(f"\n{project.description}\n")
+
+        # Project metadata
+        doc_sections.append("## Project Information")
+        doc_sections.append(f"- **Type**: {project.project_type}")
+        doc_sections.append(f"- **Phase**: {project.phase}")
+        doc_sections.append(f"- **Language**: {project.language_preferences}")
+        doc_sections.append(f"- **Deployment**: {project.deployment_target}")
+
+        # Goals and requirements
+        if project.goals:
+            doc_sections.append("\n## Goals")
+            doc_sections.append(project.goals)
+
+        if project.requirements:
+            doc_sections.append("\n## Requirements")
+            for req in project.requirements:
+                doc_sections.append(f"- {req}")
+
+        # Tech stack
+        if project.tech_stack:
+            doc_sections.append("\n## Technology Stack")
+            for tech in project.tech_stack:
+                doc_sections.append(f"- {tech}")
+
+        # Code examples if requested
+        if include_examples and project.code_history:
+            doc_sections.append("\n## Code Examples")
+            for code_item in project.code_history[:3]:  # Limit to first 3
+                language = code_item.get("language", "text")
+                code = code_item.get("code", "")
+                doc_sections.append(f"\n### Example: {code_item.get('explanation', 'Generated code')}")
+                doc_sections.append(f"```{language}")
+                doc_sections.append(code[:500])  # Limit code preview
+                doc_sections.append("```")
+
+        # Conversation insights
+        if project.conversation_history:
+            doc_sections.append("\n## Key Insights from Conversations")
+            doc_sections.append(f"- {len(project.conversation_history)} conversations recorded")
+            doc_sections.append(f"- Current maturity level: {int(project.overall_maturity)}%")
+
+        # Compile documentation
+        documentation = "\n".join(doc_sections)
+
+        # Convert to requested format
+        if format == "markdown":
+            output = documentation
+        elif format == "html":
+            # Simple HTML conversion (in production, would use markdown library)
+            output = f"<html><body><pre>{documentation}</pre></body></html>"
+        elif format == "rst":
+            # Convert to reStructuredText format
+            output = documentation.replace("# ", "==== \n").replace("## ", "---- \n")
+        else:
+            output = documentation
+
+        # Save documentation metadata
+        generation_id = f"doc_{int(__import__('time').time() * 1000)}"
+        if not hasattr(project, "documentation_history"):
+            project.documentation_history = []
+        project.documentation_history = getattr(project, "documentation_history", [])
+        project.documentation_history.append({
+            "id": generation_id,
+            "format": format,
+            "generated_at": datetime.utcnow().isoformat(),
+            "length": len(output),
+        })
+        db.save_project(project)
+
+        from socrates_api.routers.events import record_event
+        record_event("documentation_generated", {
+            "project_id": project_id,
+            "format": format,
+            "include_examples": include_examples,
+        }, user_id=current_user)
+
+        return {
+            "status": "success",
+            "documentation": output,
+            "format": format,
+            "length": len(output),
+            "generation_id": generation_id,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating documentation: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error generating documentation",
+        )
