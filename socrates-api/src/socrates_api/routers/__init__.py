@@ -20,6 +20,7 @@ from socrates_api.routers.events import router as events_router
 from socrates_api.routers.notes import router as notes_router
 from socrates_api.routers.finalization import router as finalization_router
 from socrates_api.routers.subscription import router as subscription_router
+from socrates_api.routers.query import router as query_router
 
 __all__ = [
     "auth_router",
@@ -39,4 +40,5 @@ __all__ = [
     "notes_router",
     "finalization_router",
     "subscription_router",
+    "query_router",
 ]

@@ -52,6 +52,7 @@ from .routers import (
     notes_router,
     finalization_router,
     subscription_router,
+    query_router,
 )
 
 # Configure logging
@@ -135,6 +136,7 @@ app.include_router(events_router)
 app.include_router(notes_router)
 app.include_router(finalization_router)
 app.include_router(subscription_router)
+app.include_router(query_router)
 
 
 @app.get("/")
