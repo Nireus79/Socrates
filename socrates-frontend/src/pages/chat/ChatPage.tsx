@@ -378,9 +378,9 @@ export const ChatPage: React.FC = () => {
                 Recent Messages
               </h3>
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {messages.slice(-3).map((msg) => (
+                {messages.slice(-3).map((msg, index) => (
                   <ChatMessage
-                    key={msg.id}
+                    key={msg.id || `msg-${index}-${msg.role}-${msg.timestamp}`}
                     role={msg.role}
                     content={msg.content}
                     timestamp={msg.timestamp ? new Date(msg.timestamp) : new Date()}
@@ -424,9 +424,9 @@ export const ChatPage: React.FC = () => {
                     Key Points
                   </h4>
                   <ul className="space-y-2">
-                    {summaryData.key_points.map((point, index) => (
+                    {summaryData.key_points.map((point) => (
                       <li
-                        key={`point-${index}-${point.substring(0, 20)}`}
+                        key={`kp-${point.substring(0, 30).replace(/\s/g, '-')}`}
                         className="flex gap-2 text-gray-700 dark:text-gray-300"
                       >
                         <span className="text-blue-600 dark:text-blue-400 font-bold">
