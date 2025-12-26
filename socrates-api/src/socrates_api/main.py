@@ -152,13 +152,13 @@ async def startup_event():
         # Create and initialize orchestrator
         orchestrator = AgentOrchestrator(api_key_or_config=api_key)
 
-        # Test connection to ensure API key is valid
+        # Test connection to ensure API key is valid (but don't fail startup if it's not)
         try:
             orchestrator.claude_client.test_connection()
-            logger.info("Orchestrator initialized successfully on startup")
+            logger.info("Orchestrator initialized successfully with valid API key")
         except Exception as e:
-            logger.error(f"Failed to test API key connection: {e}. Orchestrator will be unavailable.")
-            return
+            logger.warning(f"API key connection test failed (this is normal for test keys): {e}")
+            logger.info("Orchestrator initialized with provided API key (operations will fail if key is invalid)")
 
         # Setup event listeners
         _setup_event_listeners(orchestrator)
