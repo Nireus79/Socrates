@@ -471,10 +471,10 @@
 - [x] Add maturity history and status endpoints - GET /projects/{id}/maturity/history, /status (NEW)
 
 ### Phase 2: Important Features (Days 3-5)
-- [ ] Wire all note commands (add, list, search, delete)
-- [ ] Add documentation generation
-- [ ] Add conversation search/summary
-- [ ] Add finalization commands
+- [x] Wire all note commands (add, list, search, delete) - NEW endpoints created
+- [x] Add documentation generation - POST /projects/{id}/docs/generate (NEW)
+- [x] Add conversation search/summary - GET/POST endpoints already exist (from Phase 1)
+- [ ] Add finalization commands - Generate and docs endpoints needed
 
 ### Phase 3: System Commands (Days 6-7)
 - [ ] Add system control commands (help, exit, menu, etc.)
