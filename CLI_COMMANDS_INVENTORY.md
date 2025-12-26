@@ -31,8 +31,8 @@
 
 | # | Command | Status | API Endpoint | Notes |
 |---|---------|--------|--------------|-------|
-| 12 | `chat` | ⚠️ Partial | `GET /projects/{id}/chat/question` | Interactive session with Socratic/direct modes |
-| 13 | `done` | ❌ No API | - | Finish interactive session |
+| 12 | `chat` | ✅ API ready | `GET /projects/{id}/chat/question` | Interactive session with Socratic/direct modes |
+| 13 | `done` | ✅ API ready | `POST /projects/{id}/chat/done` | Finish interactive session (NEW) |
 | 14 | `advance` | ✅ API ready | `PUT /projects/{id}/phase` | Advance project phase |
 | 15 | `mode` | ✅ API ready | `PUT /projects/{id}/chat/mode` | Switch Socratic/direct mode |
 | 16 | `hint` | ✅ API ready | `GET /projects/{id}/chat/hint` | Get hint for question |
@@ -141,8 +141,8 @@
 | 55 | `analytics status` | ❌ No API | - | Analytics status |
 | 56 | `maturity` | ✅ API ready | `GET /projects/{id}/maturity` | Phase maturity breakdown |
 | 57 | `maturity summary` | ✅ API ready | `GET /projects/{id}/maturity` | Maturity overview |
-| 58 | `maturity history` | ❌ No API | - | Maturity timeline |
-| 59 | `maturity status` | ❌ No API | - | Phase completion status |
+| 58 | `maturity history` | ✅ API ready | `GET /projects/{id}/maturity/history` | Maturity timeline (NEW) |
+| 59 | `maturity status` | ✅ API ready | `GET /projects/{id}/maturity/status` | Phase completion status (NEW) |
 
 ---
 
@@ -375,7 +375,7 @@
 | Category | Total | Implemented | Missing | % Implemented |
 |----------|-------|-------------|---------|----------------|
 | Project Management | 11 | 10 | 1 | 91% |
-| Session/Chat | 5 | 3 | 2 | 60% |
+| Session/Chat | 5 | 5 | 0 | 100% ✅ **PHASE 1 COMPLETE** |
 | User Management | 6 | 4 | 2 | 67% |
 | Code Generation | 2 | 1 | 1 | 50% |
 | Collaboration | 4 | 4 | 0 | 100% |
@@ -383,7 +383,7 @@
 | System/Control | 10 | 0 | 10 | 0% |
 | Finalization | 2 | 0 | 2 | 0% |
 | GitHub | 4 | 4 | 0 | 100% |
-| Analytics/Maturity | 10 | 6 | 4 | 60% |
+| Analytics/Maturity | 10 | 8 | 2 | 80% |
 | Notes | 4 | 0 | 4 | 0% |
 | Query | 3 | 1 | 2 | 33% |
 | Conversation | 2 | 0 | 2 | 0% |
@@ -394,7 +394,7 @@
 | Knowledge | 8 | 0 | 8 | 0% |
 | Skills | 2 | 0 | 2 | 0% |
 | Model Switching | 1 | 1 | 0 | 100% |
-| **TOTAL** | **~90** | **42** | **~48** | **47%** |
+| **TOTAL** | **~90** | **46** | **~44** | **51%** |
 
 ---
 
@@ -402,12 +402,12 @@
 
 ### By Priority
 
-**CRITICAL (5 commands)**
-1. `chat` - Interactive session with guidance
-2. `done` - Finish session
-3. `ask` - Direct questions
-4. `maturity history` - Timeline tracking
-5. `maturity status` - Phase completion
+**CRITICAL (5 commands - 5 COMPLETED)**
+1. ✅ `chat` - Interactive session with guidance (GET /projects/{id}/chat/question)
+2. ✅ `done` - Finish session (POST /projects/{id}/chat/done)
+3. ✅ `ask` - Direct questions (POST /projects/{id}/chat/message mode=direct)
+4. ✅ `maturity history` - Timeline tracking (GET /projects/{id}/maturity/history)
+5. ✅ `maturity status` - Phase completion (GET /projects/{id}/maturity/status)
 
 **HIGH (10 commands)**
 1. `docs import-dir` - Batch file import
@@ -465,10 +465,10 @@
 ## IMPLEMENTATION PRIORITY ROADMAP
 
 ### Phase 1: Critical Session Features (Days 1-2)
-- [ ] Wire `chat` command for guided pre-session chat
-- [ ] Add `done` command to finish sessions
-- [ ] Add `ask` command for direct questions
-- [ ] Add maturity history and status endpoints
+- [x] Wire `chat` command for guided pre-session chat - GET /projects/{id}/chat/question
+- [x] Add `done` command to finish sessions - POST /projects/{id}/chat/done (NEW)
+- [x] Add `ask` command for direct questions - POST /projects/{id}/chat/message with mode=direct
+- [x] Add maturity history and status endpoints - GET /projects/{id}/maturity/history, /status (NEW)
 
 ### Phase 2: Important Features (Days 3-5)
 - [ ] Wire all note commands (add, list, search, delete)
