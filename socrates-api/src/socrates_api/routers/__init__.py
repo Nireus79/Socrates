@@ -6,7 +6,6 @@ Organizes endpoints by functional area (auth, projects, chat, etc.)
 
 from socrates_api.routers.auth import router as auth_router
 from socrates_api.routers.projects import router as projects_router
-from socrates_api.routers.websocket import router as websocket_router
 from socrates_api.routers.collaboration import router as collaboration_router, collab_router
 from socrates_api.routers.code_generation import router as code_generation_router
 from socrates_api.routers.knowledge import router as knowledge_router
@@ -21,11 +20,16 @@ from socrates_api.routers.notes import router as notes_router
 from socrates_api.routers.finalization import router as finalization_router
 from socrates_api.routers.subscription import router as subscription_router
 from socrates_api.routers.query import router as query_router
+from socrates_api.routers.knowledge_management import router as knowledge_management_router
+from socrates_api.routers.skills import router as skills_router
+from socrates_api.routers.progress import router as progress_router
+from socrates_api.routers.system import router as system_router
+from socrates_api.routers.nlu import router as nlu_router
+from socrates_api.routers.presession import router as presession_router
 
 __all__ = [
     "auth_router",
     "projects_router",
-    "websocket_router",
     "collaboration_router",
     "collab_router",
     "code_generation_router",
@@ -41,4 +45,10 @@ __all__ = [
     "finalization_router",
     "subscription_router",
     "query_router",
+    "knowledge_management_router",
+    "skills_router",
+    "progress_router",
+    "system_router",
+    "nlu_router",
+    "presession_router",
 ]

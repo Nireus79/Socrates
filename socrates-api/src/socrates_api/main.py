@@ -37,7 +37,6 @@ from .models import (
 from .routers import (
     auth_router,
     projects_router,
-    websocket_router,
     collaboration_router,
     collab_router,
     code_generation_router,
@@ -53,6 +52,12 @@ from .routers import (
     finalization_router,
     subscription_router,
     query_router,
+    knowledge_management_router,
+    skills_router,
+    progress_router,
+    system_router,
+    nlu_router,
+    presession_router,
 )
 
 # Configure logging
@@ -121,7 +126,6 @@ app.add_middleware(
 # Include API routers
 app.include_router(auth_router)
 app.include_router(projects_router)
-app.include_router(websocket_router)
 app.include_router(collaboration_router)
 app.include_router(collab_router)
 app.include_router(code_generation_router)
@@ -137,6 +141,12 @@ app.include_router(notes_router)
 app.include_router(finalization_router)
 app.include_router(subscription_router)
 app.include_router(query_router)
+app.include_router(knowledge_management_router)
+app.include_router(skills_router)
+app.include_router(progress_router)
+app.include_router(system_router)
+app.include_router(nlu_router)
+app.include_router(presession_router)
 
 
 @app.get("/")
