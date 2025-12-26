@@ -729,6 +729,119 @@ async def set_testing_mode(
         )
 
 
+@router.post(
+    "/me/archive",
+    status_code=status.HTTP_200_OK,
+    summary="Archive user account",
+)
+async def archive_account(
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Archive user account (soft delete).
+
+    Marks account as archived without permanently deleting data.
+    User can restore account later.
+
+    Args:
+        current_user: Authenticated user
+
+    Returns:
+        Success response with archive confirmation
+    """
+    try:
+        logger.info(f"Archiving account for user: {current_user}")
+
+        db = get_database()
+
+        # Load user
+        user = db.get_user(current_user)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Archive user
+        user.archived = True
+        user.archived_at = datetime.now(timezone.utc).isoformat()
+        db.save_user(user)
+
+        return SuccessResponse(
+            success=True,
+            message="Account archived successfully",
+            data={
+                "user_id": current_user,
+                "archived_at": user.archived_at,
+                "can_restore": True,
+                "restore_deadline": "90 days",
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error archiving account: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to archive account: {str(e)}",
+        )
+
+
+@router.post(
+    "/me/restore",
+    status_code=status.HTTP_200_OK,
+    summary="Restore archived user account",
+)
+async def restore_account(
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Restore archived user account.
+
+    Reactivates a previously archived account and all associated data.
+
+    Args:
+        current_user: Authenticated user
+
+    Returns:
+        Success response with restore confirmation
+    """
+    try:
+        logger.info(f"Restoring account for user: {current_user}")
+
+        db = get_database()
+
+        # Load user
+        user = db.get_user(current_user)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if not getattr(user, 'archived', False):
+            raise HTTPException(status_code=400, detail="Account is not archived")
+
+        # Restore user
+        user.archived = False
+        user.archived_at = None
+        db.save_user(user)
+
+        return SuccessResponse(
+            success=True,
+            message="Account restored successfully",
+            data={
+                "user_id": current_user,
+                "restored_at": datetime.now(timezone.utc).isoformat(),
+                "status": "active",
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error restoring account: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to restore account: {str(e)}",
+        )
+
+
 # ============================================================================
 # Helper Functions
 # ============================================================================
