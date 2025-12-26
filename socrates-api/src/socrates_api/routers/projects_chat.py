@@ -11,7 +11,7 @@ Provides REST endpoints for chat operations on projects including:
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Query
 
 from socrates_api.models import SuccessResponse, ErrorResponse
 from socrates_api.auth import get_current_user
@@ -29,8 +29,8 @@ router = APIRouter(prefix="/projects", tags=["chat"])
 )
 async def send_message(
     project_id: str,
-    message: str,
-    mode: str = "socratic",
+    message: str = Query(..., description="Message content"),
+    mode: str = Query("socratic", description="Chat mode (socratic or direct)"),
     current_user: str = Depends(get_current_user),
 ):
     """
