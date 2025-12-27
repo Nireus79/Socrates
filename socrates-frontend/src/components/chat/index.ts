@@ -11,3 +11,6 @@ export type { ConversationItem } from './ConversationHistory';
 export { PhaseIndicator } from './PhaseIndicator';
 export { DialogueMode } from './DialogueMode';
 export { HintDisplay } from './HintDisplay';
+export { CompactPhaseIndicator } from './CompactPhaseIndicator';
+export { ConversationHeader } from './ConversationHeader';
+export { ConflictResolutionModal } from './ConflictResolutionModal';

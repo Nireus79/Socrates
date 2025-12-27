@@ -12,13 +12,48 @@ interface DialogueModeProps {
   mode: DialogueMode;
   onModeChange: (mode: DialogueMode) => void;
   disabled?: boolean;
+  variant?: 'default' | 'compact';
 }
 
 export const DialogueMode: React.FC<DialogueModeProps> = ({
   mode,
   onModeChange,
   disabled = false,
+  variant = 'default',
 }) => {
+  // Compact inline toggle variant
+  if (variant === 'compact') {
+    return (
+      <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+        <button
+          onClick={() => onModeChange('socratic')}
+          disabled={disabled}
+          className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
+            mode === 'socratic'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          title="Socratic Mode"
+        >
+          Socratic
+        </button>
+        <button
+          onClick={() => onModeChange('direct')}
+          disabled={disabled}
+          className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
+            mode === 'direct'
+              ? 'bg-purple-600 text-white'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          title="Direct Mode"
+        >
+          Direct
+        </button>
+      </div>
+    );
+  }
+
+  // Default full card variant
   return (
     <Card>
       <div className="space-y-4">

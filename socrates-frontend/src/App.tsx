@@ -18,6 +18,8 @@ import { CollaborationPage } from './pages/collaboration/CollaborationPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 import { KnowledgeBasePage } from './pages/knowledge/KnowledgeBasePage';
 import { DocumentationPage } from './pages/documentation/DocumentationPage';
+import { FilesPage } from './pages/files/FilesPage';
+import { AnalysisPage as CodeAnalysisPage } from './pages/analysis/AnalysisPage';
 import { MainLayout } from './components/layout';
 import { ErrorBoundary } from './components/common';
 import { NotificationProvider } from './components/providers/NotificationProvider';
@@ -204,6 +206,42 @@ function App() {
             element={
               <ProtectedRoute>
                 <DocumentationPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Files Management Route */}
+          <Route
+            path="/files"
+            element={
+              <ProtectedRoute>
+                <FilesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:projectId/files"
+            element={
+              <ProtectedRoute>
+                <FilesPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Code Analysis Route */}
+          <Route
+            path="/analysis"
+            element={
+              <ProtectedRoute>
+                <CodeAnalysisPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:projectId/analysis"
+            element={
+              <ProtectedRoute>
+                <CodeAnalysisPage />
               </ProtectedRoute>
             }
           />

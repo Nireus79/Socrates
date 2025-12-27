@@ -24,7 +24,7 @@ import { ProjectCard, CreateProjectModal } from '../../components/project';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuthStore();
-  const { projects, isLoading, listProjects, createProject, getOrCreateOnboardingProject } = useProjectStore();
+  const { projects, isLoading, listProjects, createProject } = useProjectStore();
   const [showCreateModal, setShowCreateModal] = React.useState(false);
   const [isChatLoading, setIsChatLoading] = React.useState(false);
   const [stats, setStats] = React.useState({ questionsAnswered: 0, codeGenerated: 0 });
@@ -86,8 +86,8 @@ export const DashboardPage: React.FC = () => {
   const handleChatNow = async () => {
     try {
       setIsChatLoading(true);
-      const projectId = await getOrCreateOnboardingProject();
-      window.location.href = `/projects/${projectId}/chat`;
+      // Navigate to pre-session chat - user will select or create a project there
+      window.location.href = `/chat`;
     } catch (error) {
       console.error('Failed to start chat:', error);
     } finally {

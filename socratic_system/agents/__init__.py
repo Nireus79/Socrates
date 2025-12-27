@@ -6,6 +6,7 @@ from .code_validation_agent import CodeValidationAgent
 from .conflict_detector import ConflictDetectorAgent
 from .context_analyzer import ContextAnalyzerAgent
 from .document_processor import DocumentProcessorAgent
+from .knowledge_analysis import KnowledgeAnalysisAgent
 from .knowledge_manager import KnowledgeManagerAgent
 from .learning_agent import UserLearningAgent
 from .multi_llm_agent import MultiLLMAgent
@@ -30,6 +31,7 @@ __all__ = [
     "DocumentProcessorAgent",
     "NoteManagerAgent",
     "QualityControllerAgent",
+    "KnowledgeAnalysisAgent",
     "KnowledgeManagerAgent",
     "UserLearningAgent",
     "MultiLLMAgent",

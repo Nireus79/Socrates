@@ -1,36 +1,55 @@
 /**
- * Chat Store - Chat messaging and WebSocket state
+ * Chat Store - Chat messaging (REST API only)
  */
 
 import { create } from 'zustand';
-import type { ChatMessage, ChatMode, WebSocketResponse } from '../types/models';
+import type { ChatMessage, ChatMode } from '../types/models';
 import { chatAPI } from '../api';
+
+const logger = {
+  info: (msg: string) => console.log('[ChatStore]', msg),
+  warn: (msg: string) => console.warn('[ChatStore]', msg),
+  error: (msg: string) => console.error('[ChatStore]', msg),
+};
+
+interface Conflict {
+  conflict_id: string;
+  conflict_type: string;
+  old_value: string;
+  new_value: string;
+  old_author: string;
+  new_author: string;
+  old_timestamp: string;
+  new_timestamp: string;
+  severity: string;
+  suggestions: string[];
+}
 
 interface ChatState {
   // State
   messages: ChatMessage[];
   searchResults: ChatMessage[];
-  isConnected: boolean;
   isLoading: boolean;
   isSearching: boolean;
   error: string | null;
   mode: ChatMode;
   currentProjectId: string | null;
+  conflicts: Conflict[] | null;
+  pendingConflicts: boolean;
 
   // Actions
-  connectWebSocket: (projectId: string, token: string) => Promise<void>;
-  disconnectWebSocket: () => void;
   getQuestion: (projectId: string) => Promise<string>;
   sendMessage: (content: string) => Promise<void>;
   addMessage: (message: ChatMessage) => void;
   addSystemMessage: (content: string) => void;
-  handleWebSocketResponse: (response: WebSocketResponse) => void;
   switchMode: (projectId: string, mode: ChatMode) => Promise<void>;
   requestHint: (projectId: string) => Promise<string>;
   clearHistory: (projectId: string) => Promise<void>;
   loadHistory: (projectId: string) => Promise<void>;
   getSummary: (projectId: string) => Promise<{ summary: string; key_points: string[] }>;
   searchConversations: (projectId: string, query: string) => Promise<void>;
+  resolveConflict: (projectId: string, resolution: any) => Promise<void>;
+  clearConflicts: () => void;
   clearSearch: () => void;
   clearError: () => void;
   reset: () => void;
@@ -40,50 +59,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
   // Initial state
   messages: [],
   searchResults: [],
-  isConnected: false,
   isLoading: false,
   isSearching: false,
   error: null,
   mode: 'socratic',
   currentProjectId: null,
-
-  // Connect WebSocket
-  connectWebSocket: async (projectId: string, token: string) => {
-    set({ isLoading: true, error: null, currentProjectId: projectId });
-    try {
-      // In a real implementation, this would create a WebSocket connection
-      // For now, we'll simulate the connection
-      const wsURL = chatAPI.getWebSocketURL(projectId, token);
-      console.log('WebSocket URL:', wsURL);
-
-      set({
-        isConnected: true,
-        isLoading: false,
-      });
-
-      // Add connection message
-      get().addSystemMessage('Connected to chat');
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : 'Failed to connect',
-        isLoading: false,
-      });
-      throw error;
-    }
-  },
-
-  // Disconnect WebSocket
-  disconnectWebSocket: () => {
-    set({
-      isConnected: false,
-      currentProjectId: null,
-    });
-    get().addSystemMessage('Disconnected from chat');
-  },
+  conflicts: null,
+  pendingConflicts: false,
 
   // Get next question
   getQuestion: async (projectId: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, currentProjectId: projectId });
     try {
       const response = await chatAPI.getQuestion(projectId);
 
@@ -139,6 +125,31 @@ export const useChatStore = create<ChatState>((set, get) => ({
         timestamp: response.message.timestamp,
       });
 
+      // If conflicts were detected, store them and notify user
+      if (response.conflicts_pending && response.conflicts) {
+        logger.warn(`Conflicts detected: ${response.conflicts.length} conflict(s)`);
+        set({
+          conflicts: response.conflicts,
+          pendingConflicts: true,
+          isLoading: false,
+        });
+        get().addSystemMessage('Conflicts detected in your response. Please resolve them to proceed.');
+        return;
+      }
+
+      // Get next question only for Socratic mode (not for direct mode)
+      if (state.mode === 'socratic') {
+        try {
+          const nextQuestion = await get().getQuestion(state.currentProjectId);
+          logger.info(`Got next question: ${nextQuestion.substring(0, 50)}...`);
+        } catch (questionError) {
+          logger.warn(`Failed to get next question: ${questionError}`);
+          // Don't fail the whole send if we can't get next question
+        }
+      } else {
+        logger.info('Direct mode: waiting for next user question');
+      }
+
       set({ isLoading: false });
     } catch (error) {
       set({
@@ -165,22 +176,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       timestamp: new Date().toISOString(),
     };
     get().addMessage(message);
-  },
-
-  // Handle WebSocket response
-  handleWebSocketResponse: (response: WebSocketResponse) => {
-    if (response.type === 'assistant_response' && response.content) {
-      get().addMessage({
-        id: response.requestId || `ws_${Date.now()}`,
-        role: 'assistant',
-        content: response.content,
-        timestamp: response.timestamp,
-      });
-    } else if (response.type === 'event') {
-      console.log('Event received:', response.eventType, response.data);
-    } else if (response.type === 'error') {
-      set({ error: response.errorMessage || 'WebSocket error' });
-    }
   },
 
   // Switch mode
@@ -233,7 +228,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   // Load history
   loadHistory: async (projectId: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, currentProjectId: projectId });
     try {
       const history = await chatAPI.getHistory(projectId);
       set({ messages: history.messages, isLoading: false });
@@ -280,6 +275,38 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
+  // Resolve conflict
+  resolveConflict: async (projectId: string, resolution: any) => {
+    const state = get();
+    if (!state.currentProjectId) {
+      set({ error: 'No project selected' });
+      return;
+    }
+
+    set({ isLoading: true, error: null });
+    try {
+      // TODO: Call conflict resolution API endpoint when implemented
+      // For now, just clear conflicts and continue
+      set({ conflicts: null, pendingConflicts: false, isLoading: false });
+
+      // Get next question to continue flow
+      try {
+        await get().getQuestion(projectId);
+      } catch (questionError) {
+        logger.warn(`Failed to get next question: ${questionError}`);
+      }
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to resolve conflict',
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  // Clear conflicts
+  clearConflicts: () => set({ conflicts: null, pendingConflicts: false }),
+
   // Clear search results
   clearSearch: () => set({ searchResults: [] }),
 
@@ -291,12 +318,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({
       messages: [],
       searchResults: [],
-      isConnected: false,
       isLoading: false,
       isSearching: false,
       error: null,
       mode: 'socratic',
       currentProjectId: null,
+      conflicts: null,
+      pendingConflicts: false,
     });
   },
 }));

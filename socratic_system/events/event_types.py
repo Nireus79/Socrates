@@ -36,6 +36,7 @@ class EventType(Enum):
 
     # Socratic dialogue events
     QUESTION_GENERATED = "question.generated"
+    QUESTIONS_REGENERATED = "questions.regenerated"
     RESPONSE_RECEIVED = "response.received"
     RESPONSE_ANALYZED = "response.analyzed"
     PHASE_ADVANCED = "phase.advanced"

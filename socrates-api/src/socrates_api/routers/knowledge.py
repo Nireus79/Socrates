@@ -167,7 +167,7 @@ async def import_file(
         try:
             # Process via DocumentProcessorAgent
             result = orchestrator.process_request(
-                "document_processor",
+                "document_agent",
                 {
                     "action": "import_file",
                     "file_path": str(temp_file),
@@ -190,6 +190,25 @@ async def import_file(
             )
 
             logger.info(f"File imported successfully: {file.filename}")
+
+            # Emit DOCUMENT_IMPORTED event to trigger knowledge analysis and question regeneration
+            try:
+                from socratic_system.events import EventType
+                orchestrator.event_emitter.emit(
+                    EventType.DOCUMENT_IMPORTED,
+                    {
+                        "project_id": project_id,
+                        "file_name": file.filename,
+                        "source_type": "file",
+                        "words_extracted": result.get("words_extracted", 0),
+                        "chunks_created": result.get("chunks_added", 0),
+                        "user_id": current_user,
+                    }
+                )
+                logger.debug(f"Emitted DOCUMENT_IMPORTED event for {file.filename}")
+            except Exception as e:
+                logger.warning(f"Failed to emit DOCUMENT_IMPORTED event: {e}")
+                # Don't fail the import if event emission fails
 
             return SuccessResponse(
                 success=True,
@@ -271,7 +290,7 @@ async def import_url(
 
         # Process via DocumentProcessorAgent
         result = orchestrator.process_request(
-            "document_processor",
+            "document_agent",
             {
                 "action": "import_url",
                 "url": url,
@@ -293,6 +312,25 @@ async def import_url(
         )
 
         logger.info(f"URL imported successfully: {url}")
+
+        # Emit DOCUMENT_IMPORTED event to trigger knowledge analysis and question regeneration
+        try:
+            from socratic_system.events import EventType
+            orchestrator.event_emitter.emit(
+                EventType.DOCUMENT_IMPORTED,
+                {
+                    "project_id": project_id,
+                    "file_name": url,
+                    "source_type": "url",
+                    "words_extracted": result.get("words_extracted", 0),
+                    "chunks_created": result.get("chunks_added", 0),
+                    "user_id": current_user,
+                }
+            )
+            logger.debug(f"Emitted DOCUMENT_IMPORTED event for {url}")
+        except Exception as e:
+            logger.warning(f"Failed to emit DOCUMENT_IMPORTED event: {e}")
+            # Don't fail the import if event emission fails
 
         return SuccessResponse(
             success=True,
@@ -367,7 +405,7 @@ async def import_text(
 
         # Process via DocumentProcessorAgent
         result = orchestrator.process_request(
-            "document_processor",
+            "document_agent",
             {
                 "action": "import_text",
                 "content": content,
@@ -392,7 +430,26 @@ async def import_text(
 
         logger.info(f"Text document imported successfully: {title}")
 
+        # Emit DOCUMENT_IMPORTED event to trigger knowledge analysis and question regeneration
         word_count = len(content.split())
+        try:
+            from socratic_system.events import EventType
+            orchestrator.event_emitter.emit(
+                EventType.DOCUMENT_IMPORTED,
+                {
+                    "project_id": project_id,
+                    "file_name": title or "Untitled",
+                    "source_type": "text",
+                    "words_extracted": word_count,
+                    "chunks_created": result.get("chunks_added", 0),
+                    "user_id": current_user,
+                }
+            )
+            logger.debug(f"Emitted DOCUMENT_IMPORTED event for {title}")
+        except Exception as e:
+            logger.warning(f"Failed to emit DOCUMENT_IMPORTED event: {e}")
+            # Don't fail the import if event emission fails
+
         return SuccessResponse(
             success=True,
             message=f"Text document '{title or 'Untitled'}' imported successfully",
@@ -640,7 +697,7 @@ async def add_knowledge_entry(
 
         # Process as text import with category metadata
         result = orchestrator.process_request(
-            "document_processor",
+            "document_agent",
             {
                 "action": "import_text",
                 "content": content,

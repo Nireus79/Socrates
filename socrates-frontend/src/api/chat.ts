@@ -28,8 +28,8 @@ export const chatAPI = {
   async sendMessage(
     projectId: string,
     request: SendChatMessageRequest
-  ): Promise<{ message: ChatMessage }> {
-    return apiClient.post<{ message: ChatMessage }>(
+  ): Promise<{ message: ChatMessage; conflicts_pending?: boolean; conflicts?: any[] }> {
+    return apiClient.post<{ message: ChatMessage; conflicts_pending?: boolean; conflicts?: any[] }>(
       `/projects/${projectId}/chat/message`,
       request
     );
@@ -98,12 +98,13 @@ export const chatAPI = {
   },
 
   /**
-   * Get WebSocket connection URL
+   * Finish chat session for project
    */
-  getWebSocketURL(projectId: string, token: string): string {
-    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    const protocol = baseURL.startsWith('https') ? 'wss' : 'ws';
-    const wsBaseURL = baseURL.replace(/^https?/, protocol);
-    return `${wsBaseURL}/ws/chat/${projectId}?token=${token}`;
+  async finishSession(projectId: string): Promise<{ success: boolean; message: string }> {
+    return apiClient.post<{ success: boolean; message: string }>(
+      `/projects/${projectId}/chat/done`,
+      {}
+    );
   },
+
 };

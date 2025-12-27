@@ -20,8 +20,9 @@ import { Card, Button, Tab, Alert, LoadingSpinner } from '../../components/commo
 
 export const CollaborationPage: React.FC = () => {
   const { projectId } = useParams<{ projectId?: string }>();
-  const { currentProject, getProject, isLoading: projectLoading } = useProjectStore();
+  const { currentProject, projects, getProject, listProjects, isLoading: projectLoading } = useProjectStore();
   const { hasFeature } = useSubscriptionStore();
+  const [selectedProjectId, setSelectedProjectId] = React.useState(projectId || '');
   const {
     collaborators,
     isLoading: collabLoading,
@@ -59,14 +60,24 @@ export const CollaborationPage: React.FC = () => {
   const [isRemoving, setIsRemoving] = React.useState(false);
   const { activities, fetchActivities } = useCollaborationStore();
 
+  // Load projects list on mount
+  React.useEffect(() => {
+    listProjects();
+  }, [listProjects]);
+
   // Load collaboration data
   React.useEffect(() => {
-    if (projectId) {
-      getProject(projectId);
-      loadCollaborators(projectId);
-      fetchActivities(projectId);
+    if (selectedProjectId) {
+      getProject(selectedProjectId);
+      loadCollaborators(selectedProjectId);
+      fetchActivities(selectedProjectId);
     }
-  }, [projectId, getProject, loadCollaborators, fetchActivities]);
+  }, [selectedProjectId, getProject, loadCollaborators, fetchActivities]);
+
+  // Handle project selection change
+  const handleProjectChange = (newProjectId: string) => {
+    setSelectedProjectId(newProjectId);
+  };
 
   const tabs = [
     { label: 'Team Members', value: 'team' },
@@ -75,21 +86,21 @@ export const CollaborationPage: React.FC = () => {
   ];
 
   const handleAddCollaborator = async (email: string, role: string) => {
-    if (!projectId) return;
+    if (!selectedProjectId) return;
     try {
-      await addCollaborator(projectId, email.split('@')[0], role as any);
+      await addCollaborator(selectedProjectId, email.split('@')[0], role as any);
       setShowAddModal(false);
       // Refresh activities from backend
-      await fetchActivities(projectId);
+      await fetchActivities(selectedProjectId);
     } catch (error) {
       console.error('Failed to add collaborator:', error);
     }
   };
 
   const handleChangeRole = async (username: string, newRole: string) => {
-    if (!projectId) return;
+    if (!selectedProjectId) return;
     try {
-      await updateCollaboratorRole(projectId, username, newRole as any);
+      await updateCollaboratorRole(selectedProjectId, username, newRole as any);
     } catch (error) {
       console.error('Failed to change role:', error);
     }
@@ -101,12 +112,12 @@ export const CollaborationPage: React.FC = () => {
   };
 
   const handleConfirmRemove = async () => {
-    if (!projectId || !collabToRemove) return;
+    if (!selectedProjectId || !collabToRemove) return;
     try {
       setIsRemoving(true);
-      await removeCollaborator(projectId, collabToRemove);
+      await removeCollaborator(selectedProjectId, collabToRemove);
       // Refresh activities from backend
-      await fetchActivities(projectId);
+      await fetchActivities(selectedProjectId);
       setShowRemoveConfirm(false);
       setCollabToRemove(null);
     } catch (error) {
@@ -148,6 +159,30 @@ export const CollaborationPage: React.FC = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
+        {/* Project Selector */}
+        {projects.length > 0 && (
+          <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 dark:from-blue-900 dark:to-indigo-900 dark:border-blue-800">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                Select Project:
+              </label>
+              <select
+                value={selectedProjectId}
+                onChange={(e) => handleProjectChange(e.target.value)}
+                disabled={projectLoading}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">-- Choose a Project --</option>
+                {projects.map((project) => (
+                  <option key={project.project_id} value={project.project_id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </Card>
+        )}
+
         {/* Header */}
         <PageHeader
           title={currentProject ? `${currentProject.name} - Collaboration` : 'Collaboration'}
@@ -161,6 +196,7 @@ export const CollaborationPage: React.FC = () => {
               variant="primary"
               icon={<Plus className="h-4 w-4" />}
               onClick={() => setShowAddModal(true)}
+              disabled={!selectedProjectId}
             >
               Add Member
             </Button>

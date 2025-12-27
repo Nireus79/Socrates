@@ -5,8 +5,9 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Search, MessageSquare, Send } from 'lucide-react';
-import { useChatStore, useProjectStore } from '../../stores';
+import { useChatStore, useProjectStore, useSubscriptionStore } from '../../stores';
 import { apiClient, chatAPI, nluAPI } from '../../api';
+import type { NLUInterpretResponse } from '../../api/nlu';
 import { MainLayout, PageHeader } from '../../components/layout';
 import {
   ResponseInput,
@@ -132,58 +133,48 @@ export const ChatPage: React.FC = () => {
   }, [preSessionResponses.length]);
 
   /**
-   * Handle pre-session free-form conversation with Claude
-   * Allows users to ask questions and explore before selecting a project
+   * Handle pre-session input with NLU command interpretation
+   * Uses NLU system to interpret commands and natural language
    */
   const handlePreSessionInput = async () => {
     if (!preSessionInput.trim()) return;
 
     const userInput = preSessionInput.trim();
 
-    // Add user message to pre-session responses
+    // Add user message
     setPreSessionResponses(prev => [...prev, { role: 'user', content: userInput }]);
     setPreSessionInput('');
 
-    // If input starts with /, treat as command
-    if (userInput.startsWith('/')) {
-      handlePreSessionCommand(userInput);
-      return;
-    }
-
-    // Otherwise, get free-form answer from Claude via presession/ask endpoint
     setIsInterpretingNLU(true);
     try {
-      const response = await apiClient.post<any>(
-        '/presession/ask',
-        {
-          question: userInput,
-          context: {}
-        }
-      );
+      // Use NLU to interpret the input (handles both /commands and natural language)
+      const nluResult = await nluAPI.interpret(userInput, {});
 
-      // Response structure: { success, message, data: { answer, has_context } }
-      const result = response.data.data;
-
-      if (!result || !result.answer) {
+      if (nluResult.status === 'success' && nluResult.command) {
+        // High confidence command match
+        console.log('[Pre-Session] NLU matched command:', nluResult.command);
+        await handleNLUCommand(nluResult.command);
+      } else if (nluResult.status === 'suggestions' && nluResult.suggestions?.length) {
+        // Medium confidence - show suggestions
+        const suggestionText = nluResult.suggestions
+          .slice(0, 3)
+          .map((s, i) => `${i + 1}. \`${s.command}\` (${Math.round(s.confidence * 100)}%) - ${s.reasoning}`)
+          .join('\n');
         setPreSessionResponses(prev => [...prev, {
           role: 'assistant',
-          content: "Sorry, I couldn't process that. Please try again.",
-          type: 'message'
+          content: `I found a few possibilities:\n\n${suggestionText}\n\nTry typing one of these commands or rephrase your question!`,
+          type: 'suggestion'
         }]);
-        return;
+      } else {
+        // No command match - treat as free-form question for Claude
+        console.log('[Pre-Session] No NLU match, treating as free-form question');
+        await handleFreeFormQuestion(userInput);
       }
-
-      // Display the answer from Claude
-      setPreSessionResponses(prev => [...prev, {
-        role: 'assistant',
-        content: result.answer,
-        type: 'message'
-      }]);
     } catch (error) {
-      console.error('Pre-session question error:', error);
+      console.error('Pre-session input error:', error);
       setPreSessionResponses(prev => [...prev, {
         role: 'assistant',
-        content: "Sorry, I encountered an error processing your input. Please try again.",
+        content: "Sorry, I encountered an error. Please try again.",
         type: 'message'
       }]);
     } finally {
@@ -191,43 +182,279 @@ export const ChatPage: React.FC = () => {
     }
   };
 
-  const handlePreSessionCommand = (command: string) => {
+  /**
+   * Handle NLU-interpreted commands
+   */
+  const handleNLUCommand = async (command: string) => {
+    console.log('[Pre-Session] Executing NLU command:', command);
+
+    // Show command being executed
+    setPreSessionResponses(prev => [...prev, {
+      role: 'assistant',
+      content: `Understood! Executing: \`${command}\``,
+      type: 'command'
+    }]);
+
+    // Extract command name for routing
+    const cmdLower = command.toLowerCase();
+    const cmdParts = cmdLower.split(/\s+/);
+    const baseCmd = cmdParts[0]; // e.g., '/help', '/docs', '/subscription'
+
+    // Commands that can be handled in pre-session (no project required)
+    const preSessionCommands = [
+      '/help', '/info', '/docs', '/status', '/debug', '/menu', '/clear',
+      '/exit', '/back', '/model', '/mode', '/nlu', '/subscription'
+    ];
+
+    // Check if this is a pre-session compatible command
+    const isPreSessionCommand = preSessionCommands.includes(baseCmd);
+
+    if (isPreSessionCommand) {
+      // Handle pre-session commands
+      if (baseCmd === '/help') {
+        handlePreSessionCommand('/help');
+      } else if (baseCmd === '/info') {
+        handlePreSessionCommand('/info');
+      } else if (baseCmd === '/docs') {
+        await handlePreSessionCommand(command);
+      } else if (baseCmd === '/status') {
+        handlePreSessionCommand('/status');
+      } else if (baseCmd === '/subscription') {
+        // Handle subscription commands (e.g., /subscription testing-mode on/off)
+        await handlePreSessionSubscriptionCommand(command);
+      } else {
+        // For other pre-session commands, show a generic message
+        setPreSessionResponses(prev => [...prev, {
+          role: 'assistant',
+          content: `Command \`${command}\` has been recognized. This feature may require project context or additional setup.`,
+          type: 'message'
+        }]);
+      }
+    } else {
+      // Commands that require a project
+      setPreSessionResponses(prev => [...prev, {
+        role: 'assistant',
+        content: `This command requires an active project or workspace. Create or select a project to use this feature!`,
+        type: 'message'
+      }]);
+    }
+  };
+
+  const handlePreSessionSubscriptionCommand = async (command: string) => {
+    // Import subscription store to update testing mode
+    const { setTestingMode } = useSubscriptionStore.getState();
+
+    // Parse subscription command for pre-session
+    const parts = command.split(/\s+/);
+
+    if (parts.length >= 3 && parts[1].toLowerCase() === 'testing-mode') {
+      const mode = parts[2].toLowerCase(); // 'on' or 'off'
+      const enabled = mode === 'on';
+
+      try {
+        const response = await apiClient.put<any>(
+          `/auth/me/testing-mode?enabled=${enabled}`
+        );
+
+        const result = response?.data || response;
+        const message = (result && result.message) || `Testing mode has been turned ${enabled ? 'ON' : 'OFF'}. All restrictions bypassed!`;
+
+        // Update the store to reflect testing mode change
+        setTestingMode(enabled);
+
+        setPreSessionResponses(prev => [...prev, {
+          role: 'assistant',
+          content: message,
+          type: 'message'
+        }]);
+      } catch (error) {
+        console.error('Subscription command error:', error);
+        setPreSessionResponses(prev => [...prev, {
+          role: 'assistant',
+          content: `Failed to execute subscription command. Please try again.`,
+          type: 'message'
+        }]);
+      }
+    } else {
+      setPreSessionResponses(prev => [...prev, {
+        role: 'assistant',
+        content: `Usage: /subscription testing-mode [on|off]`,
+        type: 'message'
+      }]);
+    }
+  };
+
+  /**
+   * Handle free-form questions without command match
+   */
+  const handleFreeFormQuestion = async (question: string) => {
+    try {
+      const response = await apiClient.post<any>(
+        '/presession/ask',
+        {
+          question,
+          context: {}
+        }
+      );
+
+      const result = response.data;
+      if (result?.answer) {
+        setPreSessionResponses(prev => [...prev, {
+          role: 'assistant',
+          content: result.answer,
+          type: 'message'
+        }]);
+      } else {
+        setPreSessionResponses(prev => [...prev, {
+          role: 'assistant',
+          content: "I couldn't process that question. Please try again or use a command like /help.",
+          type: 'message'
+        }]);
+      }
+    } catch (error) {
+      console.error('Free-form question error:', error);
+      setPreSessionResponses(prev => [...prev, {
+        role: 'assistant',
+        content: "Sorry, I encountered an error. Please try again.",
+        type: 'message'
+      }]);
+    }
+  };
+
+  const handlePreSessionCommand = async (command: string) => {
     const parts = command.split(' ');
     const cmd = parts[0].toLowerCase();
+    const args = parts.slice(1).join(' ');
 
     // Handle pre-session specific commands
     switch (cmd) {
       case '/help':
-        const helpText = `Available Commands:\n\n` +
-          `/help - Show this help message\n` +
-          `/info - Show system information\n` +
-          `/status - Show project status (requires active project)\n` +
-          `/docs [topic] - View documentation\n\n` +
-          `Or just type a question to chat with Claude!`;
-        setPreSessionResponses(prev => [...prev, {
-          role: 'assistant',
-          content: helpText,
-          type: 'command'
-        }]);
+        // Fetch available commands from backend
+        setIsInterpretingNLU(true);
+        try {
+          const commands = await nluAPI.getAvailableCommands();
+
+          let helpText = `## Available Commands\n\n`;
+
+          if (Object.keys(commands).length > 0) {
+            // Group commands by category
+            for (const [category, commandList] of Object.entries(commands)) {
+              helpText += `### ${category.toUpperCase()}\n`;
+              for (const cmd of (commandList as any)) {
+                helpText += `**${cmd.usage}** - ${cmd.description}\n`;
+              }
+              helpText += '\n';
+            }
+          } else {
+            // Fallback to basic commands if fetch fails
+            helpText += `**/help** - Show this help message\n` +
+              `**/info** - Show system information\n` +
+              `**/docs** [topic] - Get documentation on a topic\n` +
+              `**/status** - Show system status\n` +
+              `**/debug** - Debug information\n` +
+              `**/subscription testing-mode [on|off]** - Toggle testing mode\n\n`;
+          }
+
+          helpText += `**Or just type a question** to chat with Claude about anything!`;
+
+          setPreSessionResponses(prev => [...prev, {
+            role: 'assistant',
+            content: helpText,
+            type: 'command'
+          }]);
+        } catch (error) {
+          console.error('Error fetching commands:', error);
+          // Fallback help text
+          const fallbackHelp = `## Available Commands\n\n` +
+            `**/help** - Show this help message\n` +
+            `**/info** - Show system information\n` +
+            `**/docs** [topic] - Get documentation on a topic\n` +
+            `**/status** - Show system status\n` +
+            `**/subscription testing-mode [on|off]** - Toggle testing mode\n\n` +
+            `**Or just type a question** to chat with Claude about anything!`;
+          setPreSessionResponses(prev => [...prev, {
+            role: 'assistant',
+            content: fallbackHelp,
+            type: 'command'
+          }]);
+        } finally {
+          setIsInterpretingNLU(false);
+        }
         break;
+
       case '/info':
-        const infoText = `**Socrates - AI-Powered Socratic Tutoring System**\n\n` +
-          `Version: 8.0.0\n` +
-          `Status: Ready\n\n` +
-          `Welcome! You can:\n` +
-          `- Ask questions to explore topics\n` +
-          `- Type /help for available commands\n` +
-          `- Create a project to start guided learning`;
+        const infoText = `# Socrates - AI-Powered Socratic Tutoring System\n\n` +
+          `**Version:** 8.0.0 | **Status:** Ready\n\n` +
+          `## Features\n` +
+          `- 🎓 Socratic method learning\n` +
+          `- 💬 Interactive dialogue\n` +
+          `- 💻 Code generation and analysis\n` +
+          `- 📚 Knowledge base & documentation\n` +
+          `- 👥 Team collaboration\n\n` +
+          `## Get Started\n` +
+          `- Ask questions to explore\n` +
+          `- Use /docs to learn more\n` +
+          `- Create a project for guided learning`;
         setPreSessionResponses(prev => [...prev, {
           role: 'assistant',
           content: infoText,
           type: 'command'
         }]);
         break;
+
+      case '/docs':
+        // Handle /docs command by asking Claude for documentation
+        setIsInterpretingNLU(true);
+        try {
+          const topic = args || 'Socrates';
+          const docQuestion = `Provide a brief guide on: ${topic}. Focus on key features and how to use it.`;
+
+          const response = await apiClient.post<any>(
+            '/presession/ask',
+            {
+              question: docQuestion,
+              context: {}
+            }
+          );
+
+          const result = response.data;
+          if (result?.answer) {
+            setPreSessionResponses(prev => [...prev, {
+              role: 'assistant',
+              content: result.answer,
+              type: 'message'
+            }]);
+          } else {
+            setPreSessionResponses(prev => [...prev, {
+              role: 'assistant',
+              content: `Could not retrieve documentation for "${topic}". Try asking a question instead!`,
+              type: 'command'
+            }]);
+          }
+        } catch (error) {
+          console.error('Docs error:', error);
+          setPreSessionResponses(prev => [...prev, {
+            role: 'assistant',
+            content: `Error retrieving documentation. Please try again.`,
+            type: 'command'
+          }]);
+        } finally {
+          setIsInterpretingNLU(false);
+        }
+        break;
+
+      case '/status':
+        setPreSessionResponses(prev => [...prev, {
+          role: 'assistant',
+          content: `The /status command requires an active project. Create or select a project to see its status.`,
+          type: 'command'
+        }]);
+        break;
+
       default:
         setPreSessionResponses(prev => [...prev, {
           role: 'assistant',
-          content: `Unknown command: ${cmd}. Type /help for available commands.`,
+          content: `Unknown command: \`${cmd}\`. Type /help for available commands.`,
           type: 'command'
         }]);
     }

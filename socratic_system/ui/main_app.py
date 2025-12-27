@@ -39,6 +39,7 @@ from socratic_system.ui.commands import (  # Analytics commands; Code commands; 
     ConvSearchCommand,
     ConvSummaryCommand,
     DebugCommand,
+    DocsCommand,
     DocImportCommand,
     DocImportDirCommand,
     DocImportUrlCommand,
@@ -195,6 +196,7 @@ COMMAND_REGISTRY = [
     (SkillsListCommand, []),
 
     # Document commands
+    (DocsCommand, []),
     (DocImportCommand, []),
     (DocImportDirCommand, []),
     (DocImportUrlCommand, []),

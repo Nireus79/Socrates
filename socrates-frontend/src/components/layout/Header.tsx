@@ -24,10 +24,12 @@ export const Header: React.FC = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">S</span>
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Socratic</h1>
+            <img
+              src="/images/logo.png"
+              alt="Socrates Logo"
+              className="w-8 h-8 object-contain rounded-md"
+            />
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Socrates</h1>
           </div>
 
           {/* Search Bar - placeholder */}

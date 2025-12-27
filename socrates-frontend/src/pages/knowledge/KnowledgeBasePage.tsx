@@ -9,10 +9,17 @@ import { useProjectStore } from '../../stores';
 import { useKnowledgeStore } from '../../stores/knowledgeStore';
 import { MainLayout, PageHeader } from '../../components/layout';
 import { Card, Tab, Alert, LoadingSpinner, Button, Input } from '../../components/common';
+import { NLUChatWidget } from '../../components/nlu';
 
 export const KnowledgeBasePage: React.FC = () => {
   const { projectId } = useParams<{ projectId?: string }>();
-  const { currentProject } = useProjectStore();
+  const {
+    projects,
+    currentProject,
+    isLoading: projectLoading,
+    getProject,
+    listProjects,
+  } = useProjectStore();
 
   const {
     documents,
@@ -33,6 +40,7 @@ export const KnowledgeBasePage: React.FC = () => {
     clearSearch,
   } = useKnowledgeStore();
 
+  const [selectedProjectId, setSelectedProjectId] = React.useState(projectId || '');
   const [activeTab, setActiveTab] = React.useState('documents');
   const [fileInput, setFileInput] = React.useState<HTMLInputElement | null>(null);
   const [importUrl, setImportUrl] = React.useState('');
@@ -42,12 +50,25 @@ export const KnowledgeBasePage: React.FC = () => {
   const [entryContent, setEntryContent] = React.useState('');
   const [entryCategory, setEntryCategory] = React.useState('general');
 
-  // Load documents on mount
+  // Load projects on mount
+  React.useEffect(() => {
+    listProjects();
+  }, [listProjects]);
+
+  // Update selectedProjectId when URL projectId changes
   React.useEffect(() => {
     if (projectId) {
-      listDocuments(projectId);
+      setSelectedProjectId(projectId);
     }
-  }, [projectId, listDocuments]);
+  }, [projectId]);
+
+  // Load project and documents when selectedProjectId changes
+  React.useEffect(() => {
+    if (selectedProjectId) {
+      getProject(selectedProjectId);
+      listDocuments(selectedProjectId);
+    }
+  }, [selectedProjectId, getProject, listDocuments]);
 
   // Clear errors on unmount
   React.useEffect(() => {
@@ -59,9 +80,9 @@ export const KnowledgeBasePage: React.FC = () => {
   // Handle file import
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && projectId) {
+    if (file && selectedProjectId) {
       try {
-        await importFile(file, projectId);
+        await importFile(file, selectedProjectId);
         // Reset input
         if (fileInput) fileInput.value = '';
       } catch (err) {
@@ -72,9 +93,9 @@ export const KnowledgeBasePage: React.FC = () => {
 
   // Handle URL import
   const handleImportURL = async () => {
-    if (!importUrl || !projectId) return;
+    if (!importUrl || !selectedProjectId) return;
     try {
-      await importURL(importUrl, projectId);
+      await importURL(importUrl, selectedProjectId);
       setImportUrl('');
     } catch (err) {
       console.error('URL import failed:', err);
@@ -83,9 +104,9 @@ export const KnowledgeBasePage: React.FC = () => {
 
   // Handle text import
   const handleImportText = async () => {
-    if (!importTitle || !importContent || !projectId) return;
+    if (!importTitle || !importContent || !selectedProjectId) return;
     try {
-      await importText(importTitle, importContent, projectId);
+      await importText(importTitle, importContent, selectedProjectId);
       setImportTitle('');
       setImportContent('');
     } catch (err) {
@@ -95,9 +116,9 @@ export const KnowledgeBasePage: React.FC = () => {
 
   // Handle search
   const handleSearch = async () => {
-    if (!searchQuery || !projectId) return;
+    if (!searchQuery || !selectedProjectId) return;
     try {
-      await searchKnowledge(searchQuery, projectId);
+      await searchKnowledge(searchQuery, selectedProjectId);
     } catch (err) {
       console.error('Search failed:', err);
     }
@@ -108,6 +129,8 @@ export const KnowledgeBasePage: React.FC = () => {
     if (!window.confirm('Are you sure you want to delete this document?')) return;
     try {
       await deleteDocument(documentId);
+      // Refresh documents after deletion
+      await listDocuments(selectedProjectId);
     } catch (err) {
       console.error('Delete failed:', err);
     }
@@ -115,9 +138,9 @@ export const KnowledgeBasePage: React.FC = () => {
 
   // Handle add knowledge entry
   const handleAddEntry = async () => {
-    if (!entryContent || !projectId) return;
+    if (!entryContent || !selectedProjectId) return;
     try {
-      await addKnowledgeEntry(entryContent, entryCategory, projectId);
+      await addKnowledgeEntry(entryContent, entryCategory, selectedProjectId);
       setEntryContent('');
       setEntryCategory('general');
     } catch (err) {
@@ -142,25 +165,68 @@ export const KnowledgeBasePage: React.FC = () => {
           </Alert>
         )}
 
-        {/* Header */}
-        <PageHeader
-          title="Knowledge Base"
-          description="Manage your project's knowledge base documents and entries"
-          breadcrumbs={[
-            { label: 'Dashboard', onClick: () => window.location.href = '/dashboard' },
-            { label: 'Knowledge Base' },
-          ]}
-        />
+        {/* Project Selector */}
+        {!selectedProjectId && projects.length === 0 ? (
+          <Alert type="info" title="No Projects">
+            You don't have any projects yet. Create a project first to manage its knowledge base.
+          </Alert>
+        ) : (
+          <>
+            <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 dark:from-blue-900 dark:to-indigo-900 dark:border-blue-800">
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  Project:
+                </label>
+                <select
+                  value={selectedProjectId}
+                  onChange={(e) => setSelectedProjectId(e.target.value)}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value="">-- Choose a Project --</option>
+                  {projects.length > 0 ? (
+                    projects.map((project) => (
+                      <option key={project.project_id} value={project.project_id}>
+                        {project.name} {selectedProjectId === project.project_id ? '(Current)' : ''}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>No projects available</option>
+                  )}
+                </select>
+                {currentProject && (
+                  <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                    Phase: <span className="font-semibold capitalize">{currentProject.phase || 'N/A'}</span>
+                  </div>
+                )}
+              </div>
+            </Card>
 
-        {/* Tabs */}
-        <Card>
-          <Tab
-            tabs={tabs}
-            activeTab={activeTab}
-            onChange={setActiveTab}
-            variant="default"
-          />
-        </Card>
+            {/* Header */}
+            <PageHeader
+              title="Knowledge Base"
+              description="Manage your project's knowledge base documents and entries"
+              breadcrumbs={[
+                { label: 'Dashboard', onClick: () => window.location.href = '/dashboard' },
+                { label: 'Knowledge Base' },
+              ]}
+            />
+
+            {/* Show tabs only if project is selected */}
+            {!selectedProjectId ? (
+              <Alert type="info" title="Select a Project">
+                Choose a project from the dropdown above to manage its knowledge base.
+              </Alert>
+            ) : (
+              <>
+                {/* Tabs */}
+                <Card>
+                  <Tab
+                    tabs={tabs}
+                    activeTab={activeTab}
+                    onChange={setActiveTab}
+                    variant="default"
+                  />
+                </Card>
 
         {/* Documents Tab */}
         {activeTab === 'documents' && (
@@ -221,13 +287,20 @@ export const KnowledgeBasePage: React.FC = () => {
                     type="file"
                     onChange={handleImportFile}
                     disabled={isImporting}
-                    className="flex-1"
+                    className="hidden"
                     accept=".pdf,.txt,.doc,.docx"
+                    id="file-input"
                   />
+                  <label className="flex-1" htmlFor="file-input">
+                    <span className="block w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 truncate">
+                      {fileInput?.files?.[0]?.name || 'Choose file...'}
+                    </span>
+                  </label>
                   <Button
+                    onClick={() => fileInput?.click()}
                     disabled={isImporting}
                     variant="primary"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 whitespace-nowrap"
                   >
                     <Upload size={18} />
                     {isImporting ? 'Uploading...' : 'Upload'}
@@ -412,7 +485,21 @@ export const KnowledgeBasePage: React.FC = () => {
             </Alert>
           </div>
         )}
+              </>
+            )}
+          </>
+        )}
       </div>
+
+      {/* NLU Chat Widget */}
+      <NLUChatWidget
+        initiallyOpen={false}
+        context={{ project_id: selectedProjectId }}
+        onCommandExecute={(command) => {
+          // Command execution handled by slash commands
+          console.log('Command executed:', command);
+        }}
+      />
     </MainLayout>
   );
 };

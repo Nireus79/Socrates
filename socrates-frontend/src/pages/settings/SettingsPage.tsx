@@ -25,7 +25,7 @@ import { ChangePasswordModal, TwoFactorSetup, SessionManager } from '../../compo
 export const SettingsPage: React.FC = () => {
   const { user, logout, deleteAccount, setTestingMode, isLoading } = useAuthStore();
   const { theme, toggleTheme, setTheme } = useThemeStore();
-  const { tier, status, features, hasFeature } = useSubscriptionStore();
+  const { tier, status, features, hasFeature, refreshSubscription } = useSubscriptionStore();
 
   const [activeTab, setActiveTab] = React.useState('account');
   const [isSaving, setIsSaving] = React.useState(false);
@@ -36,6 +36,11 @@ export const SettingsPage: React.FC = () => {
   const [showChangePassword, setShowChangePassword] = React.useState(false);
   const [show2FA, setShow2FA] = React.useState(false);
   const [showDeveloper, setShowDeveloper] = React.useState(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = React.useState(false);
+  const [showDowngradeDialog, setShowDowngradeDialog] = React.useState(false);
+  const [upgradeInProgress, setUpgradeInProgress] = React.useState(false);
+  const [downgradeInProgress, setDowngradeInProgress] = React.useState(false);
+  const [upgradeTier, setUpgradeTier] = React.useState<'pro' | 'enterprise'>('pro');
   const [sessions, setSessions] = React.useState<any[]>([
     {
       id: 'session_1',
@@ -91,6 +96,46 @@ export const SettingsPage: React.FC = () => {
   const handleLogout = () => {
     logout();
     window.location.href = '/auth/login';
+  };
+
+  const handleUpgrade = async (newTier: 'pro' | 'enterprise') => {
+    setUpgradeInProgress(true);
+    try {
+      const response = await apiClient.post(`/subscription/upgrade?new_tier=${newTier}`, {}) as any;
+
+      if (response?.success) {
+        showSuccess('Success', `Successfully upgraded to ${newTier} plan!`);
+        await refreshSubscription();
+        setShowUpgradeDialog(false);
+      } else {
+        showError('Upgrade Failed', response?.detail || 'Failed to upgrade subscription');
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to upgrade subscription';
+      showError('Upgrade Error', message);
+    } finally {
+      setUpgradeInProgress(false);
+    }
+  };
+
+  const handleDowngrade = async () => {
+    setDowngradeInProgress(true);
+    try {
+      const response = await apiClient.post('/subscription/downgrade?new_tier=free', {}) as any;
+
+      if (response?.success) {
+        showSuccess('Success', 'Successfully downgraded to free plan');
+        await refreshSubscription();
+        setShowDowngradeDialog(false);
+      } else {
+        showError('Downgrade Failed', response?.detail || 'Failed to downgrade subscription');
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to downgrade subscription';
+      showError('Downgrade Error', message);
+    } finally {
+      setDowngradeInProgress(false);
+    }
   };
 
   const handleDeleteAccount = () => {
@@ -400,7 +445,11 @@ export const SettingsPage: React.FC = () => {
                       fullWidth
                       className="mt-4"
                       icon={<CreditCard className="h-4 w-4" />}
-                      onClick={() => window.location.href = 'https://socrates.example.com/upgrade/pro'}
+                      onClick={() => {
+                        setUpgradeTier('pro');
+                        setShowUpgradeDialog(true);
+                      }}
+                      disabled={upgradeInProgress}
                     >
                       Upgrade to Pro
                     </Button>
@@ -422,13 +471,36 @@ export const SettingsPage: React.FC = () => {
                       variant="secondary"
                       fullWidth
                       className="mt-4"
-                      onClick={() => window.location.href = 'mailto:sales@socrates.example.com?subject=Enterprise%20Plan%20Inquiry'}
+                      onClick={() => {
+                        setUpgradeTier('enterprise');
+                        setShowUpgradeDialog(true);
+                      }}
+                      disabled={upgradeInProgress}
                     >
-                      Contact Sales
+                      Upgrade to Enterprise
                     </Button>
                   )}
                 </div>
               </div>
+
+              {/* Downgrade Option */}
+              {tier !== 'free' && (
+                <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                    Want to downgrade?
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    You can downgrade to the free plan at any time. You'll lose access to premium features.
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDowngradeDialog(true)}
+                    disabled={downgradeInProgress}
+                  >
+                    Downgrade to Free
+                  </Button>
+                </div>
+              )}
 
               <Alert type="info" title="Billing">
                 Your subscription status is {status}. Changes to your plan take effect at the start of your next billing cycle.
@@ -625,6 +697,34 @@ export const SettingsPage: React.FC = () => {
             setShow2FA(false);
             // Show success message
           }}
+        />
+
+        {/* Subscription Upgrade Dialog */}
+        <Dialog
+          isOpen={showUpgradeDialog}
+          onClose={() => setShowUpgradeDialog(false)}
+          title={`Upgrade to ${upgradeTier === 'pro' ? 'Pro' : 'Enterprise'} Plan?`}
+          description={upgradeTier === 'pro'
+            ? 'Upgrade to Pro to unlock advanced features, unlimited code generation, and team collaboration.'
+            : 'Upgrade to Enterprise for unlimited everything and premium support.'}
+          confirmLabel={`Upgrade to ${upgradeTier === 'pro' ? 'Pro' : 'Enterprise'}`}
+          cancelLabel="Cancel"
+          onConfirm={() => handleUpgrade(upgradeTier)}
+          isLoading={upgradeInProgress}
+          variant="primary"
+        />
+
+        {/* Subscription Downgrade Dialog */}
+        <Dialog
+          isOpen={showDowngradeDialog}
+          onClose={() => setShowDowngradeDialog(false)}
+          title="Downgrade to Free Plan?"
+          description="Downgrading will remove access to all premium features. Your projects and data will remain intact, but some features will be unavailable."
+          confirmLabel="Confirm Downgrade"
+          cancelLabel="Keep Current Plan"
+          onConfirm={handleDowngrade}
+          isLoading={downgradeInProgress}
+          variant="warning"
         />
 
         {/* Delete Account Confirmation Dialogs */}

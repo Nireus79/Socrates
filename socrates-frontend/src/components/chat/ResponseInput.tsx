@@ -32,12 +32,23 @@ export const ResponseInput: React.FC<ResponseInputProps> = ({
   const isValid = value.trim().length >= minLength && value.length <= maxLength;
   const charCount = value.length;
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Submit on Ctrl+Enter or Cmd+Enter
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (isValid && !isLoading) {
+        onSubmit();
+      }
+    }
+  };
+
   return (
     <div className="space-y-3">
       {/* Text Input */}
       <TextArea
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         rows={4}
         disabled={isLoading}
@@ -45,10 +56,10 @@ export const ResponseInput: React.FC<ResponseInputProps> = ({
         className="resize-none"
       />
 
-      {/* Character Count */}
+      {/* Character Count and Help Text */}
       <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
         <span>
-          {charCount} / {maxLength} characters
+          {charCount} / {maxLength} characters (Ctrl+Enter to submit)
         </span>
         {charCount >= maxLength * 0.9 && (
           <span className="text-orange-600 dark:text-orange-400">

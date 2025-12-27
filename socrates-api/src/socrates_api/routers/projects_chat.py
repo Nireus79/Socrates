@@ -10,6 +10,7 @@ Provides REST endpoints for chat operations on projects including:
 
 import logging
 from typing import Optional
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
@@ -24,13 +25,22 @@ class ChatMessageRequest(BaseModel):
     message: str
     mode: str = "socratic"
 
+
+class ChatModeRequest(BaseModel):
+    """Request body for switching chat mode"""
+    mode: str
+
+
+class SearchRequest(BaseModel):
+    """Request body for searching conversations"""
+    query: str
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["chat"])
 
 
 @router.get(
     "/{project_id}/chat/question",
-    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
     summary="Get next Socratic question",
 )
@@ -76,14 +86,11 @@ async def get_question(
         # Persist any project state changes
         db.save_project(project)
 
-        return SuccessResponse(
-            success=True,
-            message="Question generated",
-            data={
-                "question": result.get("question", ""),
-                "phase": project.phase,
-            },
-        )
+        # Return unwrapped data (frontend expects this format)
+        return {
+            "question": result.get("question", ""),
+            "phase": project.phase,
+        }
 
     except HTTPException:
         raise
@@ -97,7 +104,6 @@ async def get_question(
 
 @router.post(
     "/{project_id}/chat/message",
-    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
     summary="Send chat message",
 )
@@ -138,6 +144,7 @@ async def send_message(
                 "project": project,
                 "response": request.message,
                 "current_user": current_user,
+                "is_api_mode": True,  # Indicate API mode to handle conflicts differently
             }
         )
 
@@ -147,19 +154,53 @@ async def send_message(
         # Persist project changes to database (conversation history, maturity, etc.)
         db.save_project(project)
 
-        # Format response
-        return SuccessResponse(
-            success=True,
-            message="Message processed",
-            data={
+        # Check if conflicts detected - if so, return them for frontend resolution
+        if result.get("conflicts_pending") and result.get("conflicts"):
+            logger.info(f"Conflicts detected: {len(result['conflicts'])} conflict(s)")
+            return {
                 "message": {
                     "id": f"msg_{id(result)}",
                     "role": "assistant",
-                    "content": result.get("message", ""),
-                    "timestamp": "",
-                }
-            },
-        )
+                    "content": "Conflict detected. Please resolve the conflict to proceed.",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                },
+                "conflicts_pending": True,
+                "conflicts": result.get("conflicts", [])
+            }
+
+        # Format insights for response
+        insights = result.get("insights", {})
+        content = ""
+        if insights:
+            # Format insights as a readable string for the frontend
+            content_parts = []
+            if insights.get("goals"):
+                content_parts.append(f"Goals: {insights.get('goals')}")
+            if insights.get("requirements"):
+                content_parts.append(f"Requirements: {', '.join(insights.get('requirements', []))}")
+            if insights.get("tech_stack"):
+                content_parts.append(f"Tech Stack: {', '.join(insights.get('tech_stack', []))}")
+            if insights.get("constraints"):
+                content_parts.append(f"Constraints: {', '.join(insights.get('constraints', []))}")
+            if insights.get("team_structure"):
+                content_parts.append(f"Team: {insights.get('team_structure')}")
+            if insights.get("note"):
+                content_parts.append(f"Note: {insights.get('note')}")
+            content = "\n".join(content_parts) if content_parts else "Insights recorded."
+        else:
+            content = "Response recorded. No new insights detected."
+
+        # Return unwrapped data (frontend expects this format)
+        response_data = {
+            "message": {
+                "id": f"msg_{id(result)}",
+                "role": "assistant",
+                "content": content,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        }
+
+        return response_data
 
     except HTTPException:
         raise
@@ -173,7 +214,6 @@ async def send_message(
 
 @router.get(
     "/{project_id}/chat/history",
-    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
     summary="Get chat history",
 )
@@ -209,16 +249,13 @@ async def get_history(
         if limit and limit > 0:
             history = history[-limit:]
 
-        return SuccessResponse(
-            success=True,
-            message="Conversation history retrieved",
-            data={
-                "project_id": project_id,
-                "messages": history,
-                "mode": getattr(project, "chat_mode", "socratic"),
-                "total": len(history),
-            },
-        )
+        # Return unwrapped data (frontend expects this format)
+        return {
+            "project_id": project_id,
+            "messages": history,
+            "mode": getattr(project, "chat_mode", "socratic"),
+            "total": len(history),
+        }
 
     except HTTPException:
         raise
@@ -232,13 +269,12 @@ async def get_history(
 
 @router.put(
     "/{project_id}/chat/mode",
-    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
     summary="Switch chat mode",
 )
 async def switch_mode(
     project_id: str,
-    mode: str,
+    request: ChatModeRequest,
     current_user: str = Depends(get_current_user),
 ):
     """
@@ -253,9 +289,9 @@ async def switch_mode(
         SuccessResponse with confirmation
     """
     try:
-        logger.info(f"Switching chat mode to {mode} for project {project_id}")
+        logger.info(f"Switching chat mode to {request.mode} for project {project_id}")
 
-        if mode not in ["socratic", "direct"]:
+        if request.mode not in ["socratic", "direct"]:
             raise HTTPException(status_code=400, detail="Invalid chat mode")
 
         # Load project
@@ -265,14 +301,10 @@ async def switch_mode(
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Update project mode
-        project.chat_mode = mode
+        project.chat_mode = request.mode
         db.save_project(project)
 
-        return SuccessResponse(
-            success=True,
-            message=f"Chat mode switched to {mode}",
-            data={"mode": mode},
-        )
+        return {"mode": request.mode}
 
     except HTTPException:
         raise
@@ -286,7 +318,6 @@ async def switch_mode(
 
 @router.get(
     "/{project_id}/chat/hint",
-    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
     summary="Get hint",
 )
@@ -328,22 +359,14 @@ async def get_hint(
         if result.get("status") != "success":
             # Fallback to a generic hint if hint generation fails
             logger.warning(f"Failed to generate hint: {result.get('message', 'Unknown error')}")
-            return SuccessResponse(
-                success=True,
-                message="Hint retrieved",
-                data={
-                    "hint": "Review the project requirements and consider what step comes next in your learning journey."
-                },
-            )
+            return {
+                "hint": "Review the project requirements and consider what step comes next in your learning journey."
+            }
 
-        return SuccessResponse(
-            success=True,
-            message="Hint retrieved",
-            data={
-                "hint": result.get("hint", "Continue working on your project."),
-                "context": result.get("context", ""),
-            },
-        )
+        # Return unwrapped data (frontend expects this format)
+        return {
+            "hint": result.get("hint", "Continue working on your project."),
+        }
 
     except HTTPException:
         raise
@@ -357,7 +380,6 @@ async def get_hint(
 
 @router.delete(
     "/{project_id}/chat/clear",
-    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
     summary="Clear chat history",
 )
@@ -388,11 +410,7 @@ async def clear_history(
         project.conversation_history = []
         db.save_project(project)
 
-        return SuccessResponse(
-            success=True,
-            message="Chat history cleared",
-            data={"success": True},
-        )
+        return {"success": True}
 
     except HTTPException:
         raise
@@ -406,7 +424,6 @@ async def clear_history(
 
 @router.get(
     "/{project_id}/chat/summary",
-    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
     summary="Get conversation summary",
 )
@@ -448,15 +465,12 @@ async def get_summary(
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed to generate summary"))
 
-        return SuccessResponse(
-            success=True,
-            message="Conversation summary generated",
-            data={
-                "summary": result.get("summary", ""),
-                "key_points": result.get("key_points", []),
-                "insights": result.get("insights", []),
-            },
-        )
+        # Return unwrapped data (frontend expects this format)
+        return {
+            "summary": result.get("summary", ""),
+            "key_points": result.get("key_points", []),
+            "insights": result.get("insights", []),
+        }
 
     except HTTPException:
         raise
@@ -470,13 +484,12 @@ async def get_summary(
 
 @router.post(
     "/{project_id}/chat/search",
-    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
     summary="Search conversations",
 )
 async def search_conversations(
     project_id: str,
-    query: str,
+    request: SearchRequest,
     current_user: str = Depends(get_current_user),
 ):
     """
@@ -503,14 +516,11 @@ async def search_conversations(
         history = project.conversation_history or []
         results = [
             msg for msg in history
-            if query.lower() in str(msg).lower()
+            if request.query.lower() in str(msg).lower()
         ]
 
-        return SuccessResponse(
-            success=True,
-            message="Search completed",
-            data={"results": results},
-        )
+        # Return unwrapped data (frontend expects this format)
+        return {"results": results}
 
     except HTTPException:
         raise
@@ -524,7 +534,6 @@ async def search_conversations(
 
 @router.post(
     "/{project_id}/chat/done",
-    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
     summary="Finish interactive session",
 )
@@ -563,20 +572,16 @@ async def finish_session(
         # Save final project state
         db.save_project(project)
 
-        return SuccessResponse(
-            success=True,
-            message="Session completed successfully",
-            data={
-                "session_summary": {
-                    "total_messages": conversation_count,
-                    "current_phase": current_phase,
-                    "overall_maturity": current_maturity,
-                    "phase_maturity": phase_maturity,
-                    "session_ended_at": None,  # Would use timestamp if available
-                },
-                "project_id": project_id,
+        return {
+            "session_summary": {
+                "total_messages": conversation_count,
+                "current_phase": current_phase,
+                "overall_maturity": current_maturity,
+                "phase_maturity": phase_maturity,
+                "session_ended_at": None,  # Would use timestamp if available
             },
-        )
+            "project_id": project_id,
+        }
 
     except HTTPException:
         raise
@@ -590,7 +595,6 @@ async def finish_session(
 
 @router.get(
     "/{project_id}/maturity/history",
-    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
     summary="Get maturity history timeline",
 )
@@ -629,17 +633,13 @@ async def get_maturity_history(
         if limit and limit > 0:
             history = history[-limit:]
 
-        return SuccessResponse(
-            success=True,
-            message="Maturity history retrieved",
-            data={
-                "project_id": project_id,
-                "history": history,
-                "total_events": len(project.maturity_history or []),
-                "current_overall_maturity": project.overall_maturity,
-                "current_phase_maturity": (project.phase_maturity_scores or {}).get(project.phase, 0.0),
-            },
-        )
+        return {
+            "project_id": project_id,
+            "history": history,
+            "total_events": len(project.maturity_history or []),
+            "current_overall_maturity": project.overall_maturity,
+            "current_phase_maturity": (project.phase_maturity_scores or {}).get(project.phase, 0.0),
+        }
 
     except HTTPException:
         raise
@@ -653,7 +653,6 @@ async def get_maturity_history(
 
 @router.get(
     "/{project_id}/maturity/status",
-    response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
     summary="Get maturity status and phase completion",
 )
@@ -698,24 +697,20 @@ async def get_maturity_status(
                     elif score < 25:
                         weak_categories.append({"phase": phase, "category": category, "score": score})
 
-        return SuccessResponse(
-            success=True,
-            message="Maturity status retrieved",
-            data={
-                "project_id": project_id,
-                "current_phase": project.phase,
-                "overall_maturity": project.overall_maturity,
-                "phase_maturity": {
-                    "discovery": phase_scores.get("discovery", 0.0),
-                    "analysis": phase_scores.get("analysis", 0.0),
-                    "design": phase_scores.get("design", 0.0),
-                    "implementation": phase_scores.get("implementation", 0.0),
-                },
-                "strong_areas": strong_categories,
-                "weak_areas": weak_categories,
-                "analytics_metrics": project.analytics_metrics or {},
+        return {
+            "project_id": project_id,
+            "current_phase": project.phase,
+            "overall_maturity": project.overall_maturity,
+            "phase_maturity": {
+                "discovery": phase_scores.get("discovery", 0.0),
+                "analysis": phase_scores.get("analysis", 0.0),
+                "design": phase_scores.get("design", 0.0),
+                "implementation": phase_scores.get("implementation", 0.0),
             },
-        )
+            "strong_areas": strong_categories,
+            "weak_areas": weak_categories,
+            "analytics_metrics": project.analytics_metrics or {},
+        }
 
     except HTTPException:
         raise

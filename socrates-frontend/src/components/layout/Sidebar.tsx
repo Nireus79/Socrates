@@ -17,6 +17,8 @@ import {
   Menu,
   X,
   BookOpen,
+  Files,
+  CheckSquare,
 } from 'lucide-react';
 
 interface NavItem {
@@ -51,6 +53,16 @@ const navItems: NavItem[] = [
     label: 'Knowledge Base',
     icon: <BookOpen size={20} />,
     path: '/knowledge',
+  },
+  {
+    label: 'Files',
+    icon: <Files size={20} />,
+    path: '/files',
+  },
+  {
+    label: 'Analysis',
+    icon: <CheckSquare size={20} />,
+    path: '/analysis',
   },
   {
     label: 'Analytics',

@@ -225,6 +225,14 @@ class AgentOrchestrator:
         return self._agents_cache["knowledge_manager"]
 
     @property
+    def knowledge_analysis(self) -> "KnowledgeAnalysisAgent":
+        """Lazy-load knowledge analysis agent"""
+        if "knowledge_analysis" not in self._agents_cache:
+            from socratic_system.agents.knowledge_analysis import KnowledgeAnalysisAgent
+            self._agents_cache["knowledge_analysis"] = KnowledgeAnalysisAgent(self)
+        return self._agents_cache["knowledge_analysis"]
+
+    @property
     def quality_controller(self) -> "QualityControllerAgent":
         """Lazy-load quality controller agent"""
         if "quality_controller" not in self._agents_cache:

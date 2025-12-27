@@ -11,7 +11,38 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Initialize API_BASE_URL with fallback chain:
+// 1. Try to load from server-config.json (written by full-stack startup)
+// 2. Fall back to environment variable
+// 3. Final fallback to localhost:8000
+let API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+// Store callback for when config is loaded
+let onConfigLoaded: ((url: string) => void) | null = null;
+
+// Load server config if available
+const loadServerConfig = async () => {
+  try {
+    const response = await fetch('/server-config.json');
+    if (response.ok) {
+      const config = await response.json();
+      if (config.api_url) {
+        API_BASE_URL = config.api_url;
+        console.log('[APIClient] Loaded API URL from server config:', API_BASE_URL);
+        // Notify any waiting listeners
+        if (onConfigLoaded) {
+          onConfigLoaded(API_BASE_URL);
+        }
+      }
+    }
+  } catch (error) {
+    // Silently ignore - will use fallback
+    console.debug('[APIClient] Could not load server config, using default:', API_BASE_URL);
+  }
+};
+
+// Call on module load
+loadServerConfig();
 
 export interface APIClientConfig {
   baseURL?: string;
@@ -42,7 +73,12 @@ class APIClient {
 
     // Setup request interceptor
     this.client.interceptors.request.use(
-      (config: InternalAxiosRequestConfig) => this.injectToken(config),
+      async (config: InternalAxiosRequestConfig) => {
+        // Proactively refresh token if needed
+        await this.proactiveTokenRefresh();
+        // Then inject the (possibly refreshed) token
+        return this.injectToken(config);
+      },
       (error) => Promise.reject(error)
     );
 
@@ -51,6 +87,12 @@ class APIClient {
       (response) => response,
       (error) => this.handleResponseError(error)
     );
+
+    // Register callback to update baseURL when server config is loaded
+    onConfigLoaded = (url: string) => {
+      this.client.defaults.baseURL = url;
+      console.log('[APIClient] Updated baseURL to:', url);
+    };
   }
 
   /**
@@ -59,6 +101,11 @@ class APIClient {
   private loadTokens(): void {
     this.accessToken = localStorage.getItem('access_token');
     this.refreshToken = localStorage.getItem('refresh_token');
+    console.log('[APIClient] Tokens loaded on init:', {
+      hasAccessToken: !!this.accessToken,
+      hasRefreshToken: !!this.refreshToken,
+      tokenLength: this.accessToken?.length,
+    });
   }
 
   /**
@@ -82,13 +129,91 @@ class APIClient {
   }
 
   /**
+   * Check if access token is expired
+   */
+  private isTokenExpired(token: string): boolean {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return true;
+
+      const payload = JSON.parse(atob(parts[1]));
+      const expiresAt = payload.exp * 1000; // Convert to milliseconds
+      const now = Date.now();
+      const expired = now > expiresAt;
+
+      if (expired) {
+        console.warn('[APIClient] Access token is EXPIRED:', {
+          expiresAt: new Date(expiresAt).toISOString(),
+          now: new Date(now).toISOString(),
+        });
+      }
+      return expired;
+    } catch (error) {
+      console.error('[APIClient] Error checking token expiration:', error);
+      return true; // Assume expired if we can't parse
+    }
+  }
+
+  /**
    * Inject JWT token into request headers
+   * Also proactively refreshes if token is expired
    */
   private injectToken(config: InternalAxiosRequestConfig): InternalAxiosRequestConfig {
     if (this.accessToken) {
+      // Check if token is expired before using it
+      if (this.isTokenExpired(this.accessToken)) {
+        console.warn('[APIClient] Expired token detected, will attempt refresh on 401');
+      }
+
       config.headers.Authorization = `Bearer ${this.accessToken}`;
+      console.log('[APIClient] Token injected for request:', config.url);
+    } else {
+      console.warn('[APIClient] NO TOKEN available for request:', config.url, {
+        hasAccessToken: !!this.accessToken,
+        localStorageToken: !!localStorage.getItem('access_token'),
+      });
     }
     return config;
+  }
+
+  /**
+   * Proactively refresh token if it's about to expire
+   * This prevents 401 errors by refreshing before expiry
+   */
+  private async proactiveTokenRefresh(): Promise<void> {
+    if (!this.accessToken || !this.refreshToken) {
+      return; // No tokens to refresh
+    }
+
+    try {
+      const parts = this.accessToken.split('.');
+      if (parts.length !== 3) return;
+
+      const payload = JSON.parse(atob(parts[1]));
+      const expiresAt = payload.exp * 1000;
+      const now = Date.now();
+      const timeUntilExpiry = expiresAt - now;
+      const REFRESH_THRESHOLD = 2 * 60 * 1000; // Refresh if less than 2 minutes left
+
+      if (timeUntilExpiry < REFRESH_THRESHOLD && !this.isRefreshing) {
+        console.log('[APIClient] Token expiring soon, proactively refreshing...');
+        this.isRefreshing = true;
+
+        try {
+          const response = await this.refreshAccessToken();
+          this.saveTokens(response.access_token, response.refresh_token);
+          console.log('[APIClient] Token proactively refreshed successfully');
+        } catch (error) {
+          console.error('[APIClient] Proactive token refresh failed:', error);
+          // Don't throw - let the request proceed, it will handle 401 normally
+        } finally {
+          this.isRefreshing = false;
+        }
+      }
+    } catch (error) {
+      // Silently ignore errors in proactive refresh check
+      console.debug('[APIClient] Error in proactive refresh check:', error);
+    }
   }
 
   /**
@@ -97,8 +222,17 @@ class APIClient {
   private async handleResponseError(error: AxiosError): Promise<any> {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
+    // Log all errors for debugging
+    console.error('[APIClient] Response error:', {
+      status: error.response?.status,
+      url: originalRequest.url,
+      message: error.message,
+      detail: (error.response?.data as any)?.detail,
+    });
+
     // If error is 401 and we haven't already retried
     if (error.response?.status === 401 && !originalRequest._retry) {
+      console.warn('[APIClient] Received 401 Unauthorized, attempting token refresh...');
       if (this.isRefreshing) {
         // Queue request while token is being refreshed
         return new Promise((resolve, reject) => {
@@ -153,12 +287,19 @@ class APIClient {
    * Refresh access token using refresh token
    */
   private async refreshAccessToken(): Promise<{ access_token: string; refresh_token: string }> {
-    const response = await axios.post(
-      `${API_BASE_URL}/auth/refresh`,
-      { refresh_token: this.refreshToken },
-      { timeout: 10000 }
-    );
-    return response.data;
+    try {
+      console.log('[APIClient] Attempting to refresh access token...');
+      const response = await axios.post(
+        `${API_BASE_URL}/auth/refresh`,
+        { refresh_token: this.refreshToken },
+        { timeout: 10000 }
+      );
+      console.log('[APIClient] Token refresh successful');
+      return response.data;
+    } catch (error) {
+      console.error('[APIClient] Token refresh failed:', error instanceof Error ? error.message : error);
+      throw error;
+    }
   }
 
   /**
@@ -172,7 +313,16 @@ class APIClient {
    * Set authentication tokens
    */
   setTokens(accessToken: string, refreshToken: string): void {
+    console.log('[APIClient] setTokens called with:', {
+      hasAccessToken: !!accessToken,
+      hasRefreshToken: !!refreshToken,
+      accessTokenLength: accessToken?.length,
+    });
     this.saveTokens(accessToken, refreshToken);
+    console.log('[APIClient] Tokens saved. Current state:', {
+      accessTokenSet: !!this.accessToken,
+      refreshTokenSet: !!this.refreshToken,
+    });
   }
 
   /**

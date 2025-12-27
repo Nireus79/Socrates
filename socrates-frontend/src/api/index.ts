@@ -13,3 +13,4 @@ export { knowledgeAPI } from './knowledge';
 export { llmAPI } from './llm';
 export { analysisAPI } from './analysis';
 export { analyticsAPI } from './analytics';
+export { nluAPI } from './nlu';

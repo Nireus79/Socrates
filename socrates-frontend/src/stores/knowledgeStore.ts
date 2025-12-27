@@ -74,8 +74,14 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
       const response = await knowledgeAPI.listDocuments(projectId);
       const documentsMap = new Map<string, DocumentMetadata>();
 
-      response.documents.forEach((doc) => {
-        documentsMap.set(doc.id, doc);
+      // Handle different response formats
+      const documents = response?.documents || response?.data?.documents || response || [];
+      const docArray = Array.isArray(documents) ? documents : [];
+
+      docArray.forEach((doc: any) => {
+        if (doc.id) {
+          documentsMap.set(doc.id, doc);
+        }
       });
 
       set({ documents: documentsMap, isLoading: false });

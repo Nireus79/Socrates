@@ -178,6 +178,8 @@ def start_full_stack() -> None:
     import time
     import signal
     import requests
+    import json
+    import webbrowser
 
     project_root = Path(__file__).parent
 
@@ -185,10 +187,20 @@ def start_full_stack() -> None:
     api_port = _find_available_port(8000, "localhost")
     frontend_port = _find_available_port(5173, "localhost")
 
+    # Write port configuration to file for frontend discovery
+    config_dir = project_root / "socrates-frontend" / "public"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config_file = config_dir / "server-config.json"
+    with open(config_file, "w") as f:
+        json.dump({"api_url": f"http://localhost:{api_port}"}, f)
+
+    print(f"[INFO] Wrote server config to {config_file}")
+
     # Store process references for cleanup
     processes = []
     api_ready = threading.Event()
     api_process = None
+    browser_opened = threading.Event()
 
     def start_api_server_process():
         """Start API in separate subprocess (not thread)"""
@@ -245,6 +257,26 @@ uvicorn.run(
         print("[ERROR] API server did not start in time")
         return False
 
+    def wait_for_frontend_and_open_browser(max_retries: int = 30, retry_delay: float = 1.0) -> None:
+        """Wait for frontend to be ready and open browser"""
+        frontend_url = f"http://localhost:{frontend_port}"
+        print(f"[INFO] Waiting for frontend to be ready at {frontend_url}...")
+
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(frontend_url, timeout=2)
+                if response.status_code == 200:
+                    print(f"[INFO] Frontend is ready! Opening browser...")
+                    webbrowser.open(frontend_url)
+                    browser_opened.set()
+                    return
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+                if attempt < max_retries - 1:
+                    print(f"[INFO] Frontend not ready yet, waiting... ({attempt + 1}/{max_retries})")
+                    time.sleep(retry_delay)
+
+        print("[WARN] Frontend did not start in time, but continuing...")
+
     def start_frontend_server():
         """Start frontend in separate process"""
         frontend_dir = project_root / "socrates-frontend"
@@ -284,6 +316,14 @@ uvicorn.run(
                 stderr=None
             )
             processes.append(proc)
+
+            # Start a thread to wait for frontend and open browser
+            browser_thread = threading.Thread(
+                target=wait_for_frontend_and_open_browser,
+                daemon=True
+            )
+            browser_thread.start()
+
             proc.wait()  # Wait for process to finish
         except Exception as e:
             print(f"[ERROR] Frontend server failed: {e}")

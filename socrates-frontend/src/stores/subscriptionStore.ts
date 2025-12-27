@@ -3,6 +3,8 @@
  */
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { apiClient } from '../api/client';
 import type { SubscriptionTier } from '../types/models';
 
 interface SubscriptionState {
@@ -10,14 +12,17 @@ interface SubscriptionState {
   tier: 'free' | 'pro' | 'enterprise';
   status: 'active' | 'inactive' | 'suspended';
   features: SubscriptionTier['features'];
+  testingMode: boolean;
 
   // Actions
   setTier: (tier: 'free' | 'pro' | 'enterprise', status: 'active' | 'inactive' | 'suspended') => void;
+  setTestingMode: (enabled: boolean) => void;
   hasFeature: (feature: keyof SubscriptionTier['features']) => boolean;
   canPerformAction: (feature: string) => boolean;
   getAvailableProjects: () => number | null;
   getAvailableTeamMembers: () => number | null;
   getAvailableQuestions: () => number | null;
+  refreshSubscription: () => Promise<void>;
 }
 
 // Default feature sets for each tier
@@ -51,24 +56,38 @@ const TIER_FEATURES: Record<string, SubscriptionTier['features']> = {
   },
 };
 
-export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
-  // Initial state
-  tier: 'free',
-  status: 'active',
-  features: TIER_FEATURES['free'],
+export const useSubscriptionStore = create<SubscriptionState>(
+  persist(
+    (set, get) => ({
+      // Initial state
+      tier: 'free',
+      status: 'active',
+      features: TIER_FEATURES['free'],
+      testingMode: false,
 
-  // Set tier
-  setTier: (tier: 'free' | 'pro' | 'enterprise', status: 'active' | 'inactive' | 'suspended') => {
-    set({
-      tier,
-      status,
-      features: TIER_FEATURES[tier],
-    });
-  },
+      // Set tier
+      setTier: (tier: 'free' | 'pro' | 'enterprise', status: 'active' | 'inactive' | 'suspended') => {
+        set({
+          tier,
+          status,
+          features: TIER_FEATURES[tier],
+        });
+      },
+
+      // Set testing mode
+      setTestingMode: (enabled: boolean) => {
+        set({ testingMode: enabled });
+      },
 
   // Check if has feature
   hasFeature: (feature: keyof SubscriptionTier['features']): boolean => {
     const state = get();
+
+    // Testing mode bypasses all restrictions
+    if (state.testingMode) {
+      return true;
+    }
+
     if (state.status !== 'active') return false;
 
     const featureValue = state.features[feature];
@@ -107,7 +126,30 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   getAvailableQuestions: (): number | null => {
     return get().features.max_questions_per_month;
   },
-}));
+
+  // Refresh subscription status from API
+  refreshSubscription: async (): Promise<void> => {
+    try {
+      const response = await apiClient.get('/subscription/status') as any;
+      if (response?.data?.current_tier) {
+        const newTier = response.data.current_tier as 'free' | 'pro' | 'enterprise';
+        const newStatus = response.data.status || 'active' as 'active' | 'inactive' | 'suspended';
+        get().setTier(newTier, newStatus);
+      }
+    } catch (error) {
+      console.error('Failed to refresh subscription status:', error);
+      // Don't throw - gracefully degrade if API fails
+    }
+  },
+    }),
+    {
+      name: 'subscription-store',
+      partialize: (state) => ({
+        testingMode: state.testingMode,
+      }),
+    }
+  )
+);
 
 /**
  * Hook to check if feature is available

@@ -22,7 +22,7 @@ class TeamMemberRole:
     """
 
     username: str
-    role: str  # Universal roles: "lead", "creator", "specialist", "analyst", "coordinator"
+    role: str  # Universal roles: "lead", "creator", "specialist", "analyst", "coordinator", "tester"
     skills: List[str]  # Domain-specific skills (e.g., "python", "ui-design", "copywriting")
     joined_at: datetime
 
@@ -73,10 +73,15 @@ ROLE_FOCUS_AREAS = {
         "timelines, schedules, dependencies, process management, team coordination, "
         "milestone tracking, resource scheduling"
     ),
+    "tester": (
+        "quality assurance, testing strategies, bug identification and reporting, "
+        "edge case validation, user acceptance testing, test coverage, performance testing, "
+        "critical assessment of deliverables"
+    ),
 }
 
 # Valid universal roles that work across all project types
-VALID_ROLES = ["lead", "creator", "specialist", "analyst", "coordinator"]
+VALID_ROLES = ["lead", "creator", "specialist", "analyst", "coordinator", "tester"]
 
 # ============================================================================
 # How Roles Map Across Project Types (for reference)
@@ -89,6 +94,7 @@ ROLE_EXAMPLES = {
         "specialist": "Security Expert",
         "analyst": "Business Analyst",
         "coordinator": "Project Manager",
+        "tester": "QA Engineer",
     },
     "business": {
         "lead": "CEO/Owner",
@@ -96,6 +102,7 @@ ROLE_EXAMPLES = {
         "specialist": "Financial Expert",
         "analyst": "Market Researcher",
         "coordinator": "Operations Manager",
+        "tester": "Quality Auditor",
     },
     "creative": {
         "lead": "Director",
@@ -103,6 +110,7 @@ ROLE_EXAMPLES = {
         "specialist": "Genre Expert",
         "analyst": "Critic/Reviewer",
         "coordinator": "Producer",
+        "tester": "Quality Reviewer",
     },
     "research": {
         "lead": "Principal Investigator",
@@ -110,6 +118,7 @@ ROLE_EXAMPLES = {
         "specialist": "Methodology Expert",
         "analyst": "Data Analyst",
         "coordinator": "Lab Manager",
+        "tester": "Research Validator",
     },
     "marketing": {
         "lead": "CMO",
@@ -117,6 +126,7 @@ ROLE_EXAMPLES = {
         "specialist": "SEO Expert",
         "analyst": "Market Analyst",
         "coordinator": "Campaign Manager",
+        "tester": "Campaign Tester",
     },
     "educational": {
         "lead": "Lead Instructor",
@@ -124,5 +134,6 @@ ROLE_EXAMPLES = {
         "specialist": "Subject Expert",
         "analyst": "Assessment Specialist",
         "coordinator": "Program Coordinator",
+        "tester": "Quality Assurance Reviewer",
     },
 }

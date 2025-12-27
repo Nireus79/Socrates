@@ -12,7 +12,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Query
 from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
@@ -342,30 +342,37 @@ async def downgrade_subscription(
     "/testing-mode",
     response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
-    summary="Toggle testing mode (admin/hidden)",
+    summary="Toggle testing mode (bypasses subscription restrictions)",
 )
 async def toggle_testing_mode(
-    enabled: bool,
+    enabled: bool = Query(...),
     current_user: str = Depends(get_current_user),
 ):
     """
     Enable/disable testing mode (bypasses subscription restrictions).
 
-    This is a hidden admin-only command that bypasses all monetization restrictions
-    for development and testing purposes.
+    ## Authorization Model: Owner-Based, Not Admin-Based
+
+    Socrates uses OWNER-BASED AUTHORIZATION, not global admin roles:
+    - There is NO admin role in the system
+    - Testing mode is available to ANY authenticated user for their own account
+    - This allows all registered users to test the system without monetization limits
+    - No admin check is needed - users can manage their own testing mode
+
+    ## NOTE: Primary Implementation
+
+    For persistent storage, use `/auth/me/testing-mode` (PUT) instead.
+    This endpoint provides informational response about testing mode capabilities.
 
     Args:
-        enabled: True to enable testing mode, False to disable
-        current_user: Authenticated user
+        enabled: True to enable testing mode, False to disable (query parameter)
+        current_user: Authenticated user (from JWT token)
 
     Returns:
-        SuccessResponse with testing mode status
+        SuccessResponse with testing mode status and restrictions bypassed
     """
     try:
         logger.info(f"Toggling testing mode to {enabled} for user: {current_user}")
-
-        # In production, would check if user is admin
-        # For now, allow any authenticated user (dev environment)
 
         return SuccessResponse(
             success=True,

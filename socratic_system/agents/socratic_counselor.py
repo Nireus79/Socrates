@@ -489,6 +489,7 @@ Return only the question, no additional text or explanation."""
         user_response = request.get("response")
         current_user = request.get("current_user")
         pre_extracted_insights = request.get("pre_extracted_insights")
+        is_api_mode = request.get("is_api_mode", False)  # NEW: API mode flag
 
         logger.debug(f"Processing user response ({len(user_response)} chars) from {current_user}")
 
@@ -517,8 +518,14 @@ Return only the question, no additional text or explanation."""
 
         # REAL-TIME CONFLICT DETECTION
         if insights:
-            if not self._handle_conflict_detection(insights, project, current_user, logger):
-                return {"status": "success", "insights": insights, "conflicts_pending": True}
+            conflict_result = self._handle_conflict_detection(insights, project, current_user, logger, is_api_mode)
+            if conflict_result.get("has_conflicts"):
+                return {
+                    "status": "success",
+                    "insights": insights,
+                    "conflicts_pending": True,
+                    "conflicts": conflict_result.get("conflicts", [])
+                }
 
         # Update context and maturity
         self._update_project_and_maturity(project, insights, logger)
@@ -528,8 +535,15 @@ Return only the question, no additional text or explanation."""
 
         return {"status": "success", "insights": insights}
 
-    def _handle_conflict_detection(self, insights, project, current_user, logger) -> bool:
-        """Handle conflict detection and return whether to continue"""
+    def _handle_conflict_detection(self, insights, project, current_user, logger, is_api_mode=False) -> dict:
+        """Handle conflict detection and return result dict with conflict status
+
+        Args:
+            is_api_mode: If True, returns conflicts for frontend handling. If False, handles interactively.
+
+        Returns:
+            Dict with 'has_conflicts' bool and 'conflicts' list if in API mode
+        """
         logger.info("Running conflict detection on new insights...")
         conflict_result = self.orchestrator.process_request(
             "conflict_detector",
@@ -543,14 +557,23 @@ Return only the question, no additional text or explanation."""
 
         if not (conflict_result["status"] == "success" and conflict_result["conflicts"]):
             logger.debug("No conflicts detected")
-            return True
+            return {"has_conflicts": False}
 
         logger.warning(f"Detected {len(conflict_result['conflicts'])} conflict(s)")
+
+        # If in API mode, return conflicts to frontend
+        if is_api_mode:
+            return {
+                "has_conflicts": True,
+                "conflicts": [self._conflict_to_dict(c) for c in conflict_result["conflicts"]]
+            }
+
+        # CLI mode: handle interactively
         conflicts_resolved = self._handle_conflicts_realtime(conflict_result["conflicts"], project)
         if not conflicts_resolved:
             logger.info("User chose not to resolve conflicts")
-            return False
-        return True
+            return {"has_conflicts": True, "conflicts": conflict_result["conflicts"]}
+        return {"has_conflicts": False}
 
     def _update_project_and_maturity(self, project, insights, logger) -> None:
         """Update project context and phase maturity"""
@@ -980,6 +1003,21 @@ Return only the question, no additional text or explanation."""
             print(f"{Fore.YELLOW}Warning: Error updating project context: {e}")
             print(f"Insights received: {insights}")
 
+    def _conflict_to_dict(self, conflict) -> dict:
+        """Convert ConflictInfo object to dictionary for JSON serialization"""
+        return {
+            "conflict_id": conflict.conflict_id,
+            "conflict_type": conflict.conflict_type,
+            "old_value": conflict.old_value,
+            "new_value": conflict.new_value,
+            "old_author": conflict.old_author,
+            "new_author": conflict.new_author,
+            "old_timestamp": conflict.old_timestamp,
+            "new_timestamp": conflict.new_timestamp,
+            "severity": conflict.severity,
+            "suggestions": conflict.suggestions,
+        }
+
     def _remove_from_insights(self, value: str, insight_type: str):
         """Remove a value from insights before context update.
 
@@ -1012,7 +1050,7 @@ Return only the question, no additional text or explanation."""
         logger = get_logger("socratic_counselor")
         logger.info(
             f"Conflict resolution: Manual resolution for {insight_type} - "
-            f"'{old_value}' → '{new_value}'"
+            f"'{old_value}' -> '{new_value}'"
         )
 
     def _generate_hint(self, request: Dict[str, Any]) -> Dict[str, Any]:

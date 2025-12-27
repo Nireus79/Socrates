@@ -14,7 +14,7 @@ import jwt
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, status, Depends, Header
+from fastapi import APIRouter, HTTPException, status, Depends, Header, Query
 
 from socratic_system.database import ProjectDatabaseV2
 from socratic_system.models import User
@@ -673,26 +673,42 @@ async def delete_account(
     },
 )
 async def set_testing_mode(
-    enabled: bool,
+    enabled: bool = Query(...),
     current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
     Enable or disable testing mode for the current user.
 
-    When enabled, all subscription checks are bypassed. This is for development
-    and testing purposes only. Only admins can enable testing mode.
+    ## Authorization Model: Owner-Based, Not Admin-Based
+
+    Socrates uses OWNER-BASED AUTHORIZATION, not global admin roles:
+    - There is NO admin role in the system
+    - Testing mode is available to ANY authenticated user for their own account
+    - This allows all registered users to test the system without monetization limits
+    - No admin check is needed - users manage their own testing mode flag
+
+    ## Behavior When Testing Mode Is Enabled
+
+    When enabled, all subscription checks are bypassed:
+    - Project limits are ignored
+    - Team member limits are ignored
+    - Feature flags are ignored
+    - Usage quotas are not enforced
+    - Cost tracking is disabled
+
+    This is for development and testing purposes only.
 
     Args:
-        enabled: Whether to enable or disable testing mode
-        current_user: Current authenticated user (from JWT)
+        enabled: Whether to enable or disable testing mode (query parameter)
+        current_user: Current authenticated user (from JWT token)
         db: Database connection
 
     Returns:
-        SuccessResponse confirming testing mode update
+        SuccessResponse confirming testing mode was updated
 
     Raises:
-        HTTPException: If user not found, not authenticated, or not admin
+        HTTPException: If user not found or not authenticated
     """
     try:
         user = db.load_user(current_user)
@@ -702,14 +718,9 @@ async def set_testing_mode(
                 detail="User not found",
             )
 
-        # Only allow admin users to enable testing mode (security check)
-        if enabled and not getattr(user, 'is_admin', False):
-            logger.warning(f"Non-admin user {current_user} attempted to enable testing mode")
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only administrators can enable testing mode",
-            )
-
+        # Any authenticated user can toggle testing mode for their own account
+        # This is NOT an admin-only feature - aligns with owner-based authorization model
+        # Users don't need admin privileges to fully test the system
         user.testing_mode = enabled
         db.save_user(user)
 

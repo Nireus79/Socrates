@@ -85,6 +85,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   login: async (username: string, password: string) => {
     set({ isLoading: true, error: null });
     try {
+      // Create a temporary axios instance for login (no auth header needed)
       const response = await axios.post(`${API_URL}/auth/login`, {
         username,
         password,
@@ -98,6 +99,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
       if (accessToken) {
         setAuthTokens(accessToken, refreshToken, user);
         set({ user, isLoading: false, isAuthenticated: true });
+        // Log for debugging
+        console.log('[Auth] Login successful, tokens stored:', {
+          hasAccessToken: !!localStorage.getItem('access_token'),
+          hasRefreshToken: !!localStorage.getItem('refresh_token'),
+          apiClientAuthenticated: apiClient.isAuthenticated()
+        });
       } else {
         throw new Error('No access token in response');
       }

@@ -9,7 +9,20 @@ from typing import List, Optional
 
 @dataclass
 class User:
-    """Represents a user of the Socratic RAG System"""
+    """
+    Represents a user of the Socratic RAG System.
+
+    ## Authorization Model
+
+    The Socrates system uses OWNER-BASED AUTHORIZATION, not global admin roles:
+    - There is NO `is_admin` field - no global admin users exist
+    - Each user can OWN projects they create
+    - Within projects, users can collaborate as: "owner", "editor", or "viewer"
+    - Within projects, team members have roles: "lead", "creator", "specialist", "analyst", "coordinator"
+    - Project owners control all project management (settings, collaborators, deletion)
+
+    This decentralized model allows collaborative development without central admins.
+    """
 
     username: str
     email: str
@@ -30,6 +43,8 @@ class User:
     usage_reset_date: Optional[datetime.datetime] = None
 
     # Testing mode - bypasses all monetization restrictions
+    # Any authenticated user can enable this for their own account to bypass monetization
+    # during development/testing. This is NOT an admin-only feature.
     testing_mode: bool = False
 
     # Claude authentication method: "api_key" or "subscription"
