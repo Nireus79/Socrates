@@ -93,9 +93,20 @@ async def create_chat_session(
 )
 async def list_chat_sessions(
     project_id: str,
+    archived: Optional[bool] = None,
+    search: Optional[str] = None,
+    limit: Optional[int] = 50,
+    offset: Optional[int] = 0,
     current_user: str = Depends(get_current_user),
 ):
-    """List all chat sessions for a project."""
+    """List chat sessions for a project with optional filtering and pagination.
+
+    Query parameters:
+    - archived: Filter by archive status (True/False/None for all)
+    - search: Search session titles (case-insensitive substring match)
+    - limit: Maximum sessions to return (default 50)
+    - offset: Number of sessions to skip for pagination (default 0)
+    """
     try:
         db = get_database()
         project = db.load_project(project_id)
@@ -106,6 +117,16 @@ async def list_chat_sessions(
         sessions_list = []
 
         for session_id, session in sessions_dict.items():
+            # Apply archive filter
+            if archived is not None and session.get('archived', False) != archived:
+                continue
+
+            # Apply search filter
+            if search is not None:
+                title = session.get('title', '').lower()
+                if search.lower() not in title:
+                    continue
+
             created_at = datetime.fromisoformat(session.get('created_at', datetime.now(timezone.utc).isoformat()))
             updated_at = datetime.fromisoformat(session.get('updated_at', datetime.now(timezone.utc).isoformat()))
 
@@ -120,9 +141,18 @@ async def list_chat_sessions(
                 message_count=len(session.get('messages', []))
             ))
 
+        # Sort by created_at descending
+        sessions_list.sort(key=lambda s: s.created_at, reverse=True)
+
+        # Apply pagination
+        total = len(sessions_list)
+        start = offset if offset else 0
+        end = start + (limit if limit else 50)
+        paginated = sessions_list[start:end]
+
         return ListChatSessionsResponse(
-            sessions=sessions_list,
-            total=len(sessions_list)
+            sessions=paginated,
+            total=total
         )
 
     except HTTPException:
@@ -254,10 +284,18 @@ async def send_chat_message(
 async def get_chat_messages(
     project_id: str,
     session_id: str,
-    limit: Optional[int] = None,
+    limit: Optional[int] = 50,
+    offset: Optional[int] = 0,
+    order: str = "asc",
     current_user: str = Depends(get_current_user),
 ):
-    """Get all messages in a chat session."""
+    """Get messages from a chat session with pagination and ordering.
+
+    Query parameters:
+    - limit: Maximum messages to return (default 50)
+    - offset: Number of messages to skip for pagination (default 0)
+    - order: Sort order 'asc' (oldest first) or 'desc' (newest first) (default asc)
+    """
     try:
         db = get_database()
         project = db.load_project(project_id)
@@ -269,13 +307,20 @@ async def get_chat_messages(
         if not session:
             raise HTTPException(status_code=404, detail="Chat session not found")
 
+        all_messages = session.get('messages', [])
+        total_count = len(all_messages)
+
+        # Apply ordering
+        ordered_messages = all_messages if order == "asc" else reversed(all_messages)
+        ordered_messages = list(ordered_messages)
+
+        # Apply pagination
+        start = offset if offset and offset >= 0 else 0
+        end = start + (limit if limit and limit > 0 else 50)
+        paginated_messages = ordered_messages[start:end]
+
         messages_list = []
-        messages = session.get('messages', [])
-
-        if limit and limit > 0:
-            messages = messages[-limit:]
-
-        for msg in messages:
+        for msg in paginated_messages:
             created_at = datetime.fromisoformat(msg.get('created_at', datetime.now(timezone.utc).isoformat()))
             updated_at = datetime.fromisoformat(msg.get('updated_at', datetime.now(timezone.utc).isoformat()))
 
@@ -292,7 +337,7 @@ async def get_chat_messages(
 
         return GetChatMessagesResponse(
             messages=messages_list,
-            total=len(session.get('messages', [])),
+            total=total_count,
             session_id=session_id
         )
 
