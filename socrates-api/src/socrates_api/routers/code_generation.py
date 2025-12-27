@@ -19,7 +19,7 @@ from socratic_system.database import ProjectDatabaseV2
 
 from socrates_api.database import get_database
 from socrates_api.auth import get_current_user, get_current_user_object
-from socrates_api.models import SubscriptionChecker
+from socrates_api.middleware.subscription import SubscriptionChecker
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["code-generation"])

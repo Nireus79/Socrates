@@ -22,8 +22,8 @@ from socrates_api.models import (
     SuccessResponse,
     ErrorResponse,
     CollaborationInviteRequest,
-    SubscriptionChecker,
 )
+from socrates_api.middleware.subscription import SubscriptionChecker
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["collaboration"])

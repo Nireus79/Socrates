@@ -13,7 +13,8 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, status, Depends, Body
 
 from socratic_system.database import ProjectDatabaseV2
-from socrates_api.models import SuccessResponse, ErrorResponse, SubscriptionChecker
+from socrates_api.models import SuccessResponse, ErrorResponse
+from socrates_api.middleware.subscription import SubscriptionChecker
 from socrates_api.auth import get_current_user, get_current_user_object
 from socrates_api.database import get_database
 
