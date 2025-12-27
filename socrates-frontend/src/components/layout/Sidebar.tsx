@@ -20,6 +20,7 @@ import {
   Files,
   CheckSquare,
   Notebook,
+  Search,
 } from 'lucide-react';
 
 interface NavItem {
@@ -59,6 +60,11 @@ const navItems: NavItem[] = [
     label: 'Notes',
     icon: <Notebook size={20} />,
     path: '/notes',
+  },
+  {
+    label: 'Search',
+    icon: <Search size={20} />,
+    path: '/search',
   },
   {
     label: 'Files',
