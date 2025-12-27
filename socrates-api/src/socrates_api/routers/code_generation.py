@@ -18,7 +18,8 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from socratic_system.database import ProjectDatabaseV2
 
 from socrates_api.database import get_database
-from socrates_api.auth import get_current_user
+from socrates_api.auth import get_current_user, get_current_user_object
+from socrates_api.models import SubscriptionChecker
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["code-generation"])
@@ -77,6 +78,38 @@ async def generate_code(
         Generated code with explanation and metadata
     """
     try:
+        # CRITICAL: Validate subscription for code generation feature
+        logger.info(f"Validating subscription for code generation by {current_user}")
+        try:
+            user_object = get_current_user_object(current_user)
+
+            # Check if user has active subscription
+            if not user_object.subscription.is_active:
+                logger.warning(f"User {current_user} attempted to generate code without active subscription")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Active subscription required to generate code"
+                )
+
+            # Check subscription tier - only Professional and Enterprise can generate code
+            subscription_tier = user_object.subscription.tier.lower()
+            if subscription_tier == "free":
+                logger.warning(f"Free-tier user {current_user} attempted to generate code")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Code generation feature requires Professional or Enterprise subscription"
+                )
+
+            logger.info(f"Subscription validation passed for code generation by {current_user}")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error validating subscription for code generation: {type(e).__name__}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error validating subscription: {str(e)[:100]}"
+            )
+
         # Validate language
         if language not in SUPPORTED_LANGUAGES:
             raise HTTPException(
@@ -216,6 +249,38 @@ async def validate_code(
         Validation results with errors, warnings, and suggestions
     """
     try:
+        # CRITICAL: Validate subscription for code validation feature
+        logger.info(f"Validating subscription for code validation by {current_user}")
+        try:
+            user_object = get_current_user_object(current_user)
+
+            # Check if user has active subscription
+            if not user_object.subscription.is_active:
+                logger.warning(f"User {current_user} attempted to validate code without active subscription")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Active subscription required to validate code"
+                )
+
+            # Check subscription tier - only Professional and Enterprise can validate code
+            subscription_tier = user_object.subscription.tier.lower()
+            if subscription_tier == "free":
+                logger.warning(f"Free-tier user {current_user} attempted to validate code")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Code validation feature requires Professional or Enterprise subscription"
+                )
+
+            logger.info(f"Subscription validation passed for code validation by {current_user}")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error validating subscription for code validation: {type(e).__name__}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error validating subscription: {str(e)[:100]}"
+            )
+
         # Validate language
         if language not in SUPPORTED_LANGUAGES:
             raise HTTPException(
@@ -439,6 +504,38 @@ async def refactor_code(
         Refactored code with explanation
     """
     try:
+        # CRITICAL: Validate subscription for code refactoring feature
+        logger.info(f"Validating subscription for code refactoring by {current_user}")
+        try:
+            user_object = get_current_user_object(current_user)
+
+            # Check if user has active subscription
+            if not user_object.subscription.is_active:
+                logger.warning(f"User {current_user} attempted to refactor code without active subscription")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Active subscription required to refactor code"
+                )
+
+            # Check subscription tier - only Professional and Enterprise can refactor code
+            subscription_tier = user_object.subscription.tier.lower()
+            if subscription_tier == "free":
+                logger.warning(f"Free-tier user {current_user} attempted to refactor code")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Code refactoring feature requires Professional or Enterprise subscription"
+                )
+
+            logger.info(f"Subscription validation passed for code refactoring by {current_user}")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error validating subscription for code refactoring: {type(e).__name__}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error validating subscription: {str(e)[:100]}"
+            )
+
         # Validate inputs
         if language not in SUPPORTED_LANGUAGES:
             raise HTTPException(

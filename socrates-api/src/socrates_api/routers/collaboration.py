@@ -17,11 +17,12 @@ from fastapi import APIRouter, HTTPException, status, Depends
 
 from socratic_system.database import ProjectDatabaseV2
 from socrates_api.database import get_database
-from socrates_api.auth import get_current_user
+from socrates_api.auth import get_current_user, get_current_user_object
 from socrates_api.models import (
     SuccessResponse,
     ErrorResponse,
     CollaborationInviteRequest,
+    SubscriptionChecker,
 )
 
 logger = logging.getLogger(__name__)
@@ -104,23 +105,106 @@ async def add_collaborator(
                 detail="Only project owner can add collaborators",
             )
 
+        # CRITICAL: Validate subscription before adding collaborators
+        logger.info(f"Validating subscription for adding collaborator for user {current_user}")
+        try:
+            user_object = get_current_user_object(current_user)
+
+            # Check if user has active subscription
+            if not user_object.subscription.is_active:
+                logger.warning(f"User {current_user} attempted to add collaborator without active subscription")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Active subscription required to add collaborators"
+                )
+
+            # Check subscription tier - only Professional and Enterprise can add collaborators
+            subscription_tier = user_object.subscription.tier.lower()
+            if subscription_tier == "free":
+                logger.warning(f"Free-tier user {current_user} attempted to add collaborators")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Collaboration feature requires Professional or Enterprise subscription"
+                )
+
+            # Check team member limit for subscription tier
+            current_team_size = len(project.team_members) if project.team_members else 0
+            can_add, error_msg = SubscriptionChecker.check_team_member_limit(
+                user_object,
+                current_team_size
+            )
+            if not can_add:
+                logger.warning(f"User {current_user} exceeded team member limit: {error_msg}")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=error_msg
+                )
+
+            logger.info(f"Subscription validation passed for {current_user}")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error validating subscription for collaboration: {type(e).__name__}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error validating subscription: {str(e)[:100]}"
+            )
+
         # Initialize team_members if not present
         from datetime import datetime
         from socratic_system.models.role import TeamMemberRole
 
         project.team_members = project.team_members or []
 
+        # Try to resolve username from email if it looks like an email
+        resolved_username = username
+        if '@' in username:
+            # Username looks like an email, try to look it up
+            try:
+                user = db.load_user_by_email(username)
+                if user:
+                    resolved_username = user.username
+                    logger.info(f"Resolved email {username} to username {resolved_username}")
+                else:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"No user found with email '{username}'",
+                    )
+            except HTTPException:
+                raise
+            except Exception as e:
+                logger.warning(f"Error looking up user by email {username}: {e}")
+                # Fall back to using email prefix as username
+                resolved_username = username.split('@')[0]
+                logger.info(f"Could not resolve email, using prefix: {resolved_username}")
+        else:
+            # Username provided directly
+            # Try to verify it exists, but don't fail if we can't (backward compatibility)
+            try:
+                user_exists = db.user_exists(resolved_username)
+                if not user_exists:
+                    logger.warning(f"User '{resolved_username}' not found in users table, will add as pending collaborator")
+            except Exception as e:
+                logger.warning(f"Could not verify user {resolved_username} exists: {e}")
+
+        # Cannot add the owner as a team member
+        if resolved_username == project.owner:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot add project owner as a collaborator",
+            )
+
         # Check if collaborator already exists
-        existing = any(m.username == username for m in project.team_members)
+        existing = any(m.username == resolved_username for m in project.team_members)
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"User {username} is already a collaborator",
+                detail=f"User {resolved_username} is already a collaborator",
             )
 
         # Add collaborator to team
         new_member = TeamMemberRole(
-            username=username,
+            username=resolved_username,
             role=role,
             skills=[],
             joined_at=datetime.utcnow(),
@@ -134,16 +218,16 @@ async def add_collaborator(
         from socrates_api.routers.events import record_event
         record_event("collaborator_added", {
             "project_id": project_id,
-            "username": username,
+            "username": resolved_username,
             "role": role,
         }, user_id=current_user)
 
-        logger.info(f"Collaborator {username} added to project {project_id} by {current_user}")
+        logger.info(f"Collaborator {resolved_username} added to project {project_id} by {current_user}")
 
         return {
             "status": "success",
             "collaborator": {
-                "username": username,
+                "username": resolved_username,
                 "role": role,
                 "added_at": datetime.utcnow().isoformat(),
                 "status": "active",
@@ -207,9 +291,12 @@ async def list_collaborators(
             }
         ]
 
-        # Add team members if present
+        # Add team members if present (excluding owner to avoid duplicates)
         if project.team_members:
             for member in project.team_members:
+                # Skip if this member is the owner (avoid duplicates)
+                if member.username == project.owner:
+                    continue
                 collaborators.append({
                     "username": member.username,
                     "role": member.role,
@@ -527,6 +614,69 @@ async def record_activity(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error recording activity",
+        )
+
+
+@router.get(
+    "/{project_id}/activities",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get project activities",
+)
+async def get_activities(
+    project_id: str,
+    limit: int = 50,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabaseV2 = Depends(get_database),
+):
+    """
+    Get recent activities in a project.
+
+    Args:
+        project_id: Project identifier
+        limit: Maximum number of activities to return
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        List of recent project activities
+    """
+    try:
+        # Verify project access
+        project = db.load_project(project_id)
+        if project is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found",
+            )
+
+        # Return empty activity list for now (can be extended to fetch from database)
+        # TODO: Implement activity history storage and retrieval
+        activities = [
+            {
+                "id": f"act_1",
+                "type": "project_created",
+                "user_name": project.owner,
+                "description": f"Project '{project.name}' created",
+                "timestamp": project.created_at.isoformat() if hasattr(project.created_at, 'isoformat') else str(project.created_at),
+                "data": {}
+            }
+        ]
+
+        logger.debug(f"Retrieved {len(activities)} activities for project {project_id}")
+
+        return SuccessResponse(
+            message="Activities retrieved successfully",
+            data={"activities": activities}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching activities: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error fetching activities",
         )
 
 

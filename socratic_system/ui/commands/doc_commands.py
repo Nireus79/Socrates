@@ -8,6 +8,67 @@ from colorama import Fore, Style
 from socratic_system.ui.commands.base import BaseCommand
 
 
+class DocsCommand(BaseCommand):
+    """View documentation on a topic"""
+
+    def __init__(self):
+        super().__init__(
+            name="docs",
+            description="View documentation on a topic (e.g., docs projects, docs authentication)",
+            usage="docs [topic]",
+        )
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute docs command to retrieve documentation on a topic"""
+        # Get topic from args
+        if not args:
+            topic = input(f"{Fore.WHITE}Enter topic to learn about: ").strip()
+        else:
+            topic = " ".join(args)
+
+        if not topic:
+            return self.error("Please specify a topic (e.g., 'docs projects')")
+
+        orchestrator = context.get("orchestrator")
+        if not orchestrator:
+            return self.error("Orchestrator not available")
+
+        # Check if Claude client is available
+        if not hasattr(orchestrator, "claude_client") or not orchestrator.claude_client:
+            return self.error("Claude client not available")
+
+        try:
+            # Build documentation request prompt
+            prompt = f"""Provide a clear, concise guide on: {topic}
+
+Focus on:
+- Key features and concepts
+- How to use it
+- Pro tips and best practices
+- When to use it
+
+Keep the response well-formatted and easy to read."""
+
+            # Get documentation from Claude
+            print(f"{Fore.YELLOW}Fetching documentation on '{topic}'...{Style.RESET_ALL}")
+            documentation = orchestrator.claude_client.generate_response(prompt)
+
+            if documentation:
+                self.print_success(f"Documentation: {topic}")
+                print(documentation)
+                return self.success(
+                    data={
+                        "topic": topic,
+                        "documentation": documentation,
+                    }
+                )
+            else:
+                return self.error(f"Could not retrieve documentation for '{topic}'")
+
+        except Exception as e:
+            return self.error(f"Error retrieving documentation: {str(e)}")
+
+
 class DocImportCommand(BaseCommand):
     """Import a single document into the knowledge base"""
 
@@ -63,6 +124,24 @@ class DocImportCommand(BaseCommand):
             print(f"{Fore.WHITE}Content extracted: {words} words")
             print(f"Chunks created: {chunks}")
             print(f"Stored in knowledge base: {entries} entries")
+
+            # CRITICAL: Emit DOCUMENT_IMPORTED event to trigger knowledge analysis
+            try:
+                from socratic_system.events import EventType
+                orchestrator.event_emitter.emit(
+                    EventType.DOCUMENT_IMPORTED,
+                    {
+                        "project_id": project_id,
+                        "file_name": file_name,
+                        "source_type": "file",
+                        "words_extracted": words,
+                        "chunks_created": chunks,
+                        "user_id": context.get("user").username if context.get("user") else "unknown",
+                    }
+                )
+                print(f"{Fore.GREEN}Knowledge analysis triggered{Style.RESET_ALL}")
+            except Exception as e:
+                print(f"{Fore.YELLOW}Warning: Could not trigger knowledge analysis: {str(e)}{Style.RESET_ALL}")
 
             return self.success(
                 data={
@@ -144,6 +223,24 @@ class DocImportDirCommand(BaseCommand):
             print(f"Total content:       {total_words} words")
             print(f"Chunks created:      {total_chunks}")
             print(f"Stored in knowledge: {total_entries} entries")
+
+            # CRITICAL: Emit DOCUMENT_IMPORTED event to trigger knowledge analysis
+            try:
+                from socratic_system.events import EventType
+                orchestrator.event_emitter.emit(
+                    EventType.DOCUMENT_IMPORTED,
+                    {
+                        "project_id": project_id,
+                        "file_name": f"directory_import_{successful}_files",
+                        "source_type": "directory",
+                        "words_extracted": total_words,
+                        "chunks_created": total_chunks,
+                        "user_id": context.get("user").username if context.get("user") else "unknown",
+                    }
+                )
+                print(f"{Fore.GREEN}Knowledge analysis triggered{Style.RESET_ALL}")
+            except Exception as e:
+                print(f"{Fore.YELLOW}Warning: Could not trigger knowledge analysis: {str(e)}{Style.RESET_ALL}")
 
             return self.success(
                 data={
@@ -235,6 +332,24 @@ class DocPasteCommand(BaseCommand):
             print(f"Chunks created: {chunks}")
             print(f"Stored in knowledge base: {entries} entries")
 
+            # CRITICAL: Emit DOCUMENT_IMPORTED event to trigger knowledge analysis
+            try:
+                from socratic_system.events import EventType
+                orchestrator.event_emitter.emit(
+                    EventType.DOCUMENT_IMPORTED,
+                    {
+                        "project_id": project_id,
+                        "file_name": title,
+                        "source_type": "pasted_text",
+                        "words_extracted": words,
+                        "chunks_created": chunks,
+                        "user_id": context.get("user").username if context.get("user") else "unknown",
+                    }
+                )
+                print(f"{Fore.GREEN}Knowledge analysis triggered{Style.RESET_ALL}")
+            except Exception as e:
+                print(f"{Fore.YELLOW}Warning: Could not trigger knowledge analysis: {str(e)}{Style.RESET_ALL}")
+
             return self.success(
                 data={
                     "title": title,
@@ -307,6 +422,25 @@ class DocImportUrlCommand(BaseCommand):
             print(f"{Fore.WHITE}Content extracted: {words} words")
             print(f"Chunks created: {chunks}")
             print(f"Stored in knowledge base: {entries} entries")
+
+            # CRITICAL: Emit DOCUMENT_IMPORTED event to trigger knowledge analysis
+            try:
+                from socratic_system.events import EventType
+                orchestrator.event_emitter.emit(
+                    EventType.DOCUMENT_IMPORTED,
+                    {
+                        "project_id": project_id,
+                        "file_name": file_name,
+                        "source_type": "url",
+                        "url": url,
+                        "words_extracted": words,
+                        "chunks_created": chunks,
+                        "user_id": context.get("user").username if context.get("user") else "unknown",
+                    }
+                )
+                print(f"{Fore.GREEN}Knowledge analysis triggered{Style.RESET_ALL}")
+            except Exception as e:
+                print(f"{Fore.YELLOW}Warning: Could not trigger knowledge analysis: {str(e)}{Style.RESET_ALL}")
 
             return self.success(
                 data={

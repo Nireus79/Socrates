@@ -2,6 +2,27 @@
 Projects API endpoints.
 
 Provides full CRUD operations for project management with subscription-based access control.
+
+## Authorization Model: Owner-Based (No Global Admins)
+
+The Socrates system uses OWNER-BASED AUTHORIZATION:
+
+- There is NO global admin role in the system
+- Each project has an OWNER (the user who created it)
+- Only the project owner can:
+  - Update project settings
+  - Delete the project
+  - Archive/restore the project
+  - Add/remove/manage collaborators
+  - Invite team members with specific roles
+
+- Within projects, users can be:
+  - OWNER: Full project control
+  - EDITOR: Can edit and contribute
+  - VIEWER: Can view only
+
+This decentralized model allows collaborative development without central admin control.
+See socratic_system/models/user.py for complete authorization architecture documentation.
 """
 
 import logging
@@ -186,6 +207,44 @@ async def create_project(
 
         # Fallback: create project directly in database without orchestrator
         logger.info("Using fallback database creation...")
+
+        # CRITICAL: Validate subscription before creating project in fallback path
+        logger.info("Validating subscription for fallback project creation...")
+        try:
+            user_object = get_current_user_object(current_user)
+
+            # Check if user has active subscription
+            if not user_object.subscription.is_active:
+                logger.warning(f"User {current_user} attempted to create project without active subscription")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Active subscription required to create projects"
+                )
+
+            # Check project limit for subscription tier
+            active_projects = db.get_user_projects(current_user)
+            can_create, error_msg = SubscriptionChecker.check_project_limit(
+                user_object,
+                len(active_projects)
+            )
+            if not can_create:
+                logger.warning(f"User {current_user} exceeded project limit: {error_msg}")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=error_msg
+                )
+
+            logger.info(f"Subscription validation passed for {current_user}")
+        except HTTPException:
+            # Re-raise HTTP exceptions
+            raise
+        except Exception as e:
+            logger.error(f"Error validating subscription in fallback: {type(e).__name__}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error validating subscription: {str(e)[:100]}"
+            )
+
         project_id = ProjectIDGenerator.generate()
         logger.info(f"Generated project ID: {project_id}")
 
@@ -368,7 +427,7 @@ async def delete_project(
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
-    Archive a project (soft delete).
+    Permanently delete a project.
 
     Args:
         project_id: Project identifier
@@ -393,16 +452,15 @@ async def delete_project(
                 detail="Access denied to this project",
             )
 
-        # Archive the project
-        project.is_archived = True
-        project.archived_at = datetime.now(timezone.utc)
-        db.save_project(project)
+        # Permanently delete the project from database
+        project_name = project.name
+        db.delete_project(project_id)
 
-        logger.info(f"Project {project_id} archived by {current_user}")
+        logger.info(f"Project {project_id} permanently deleted by {current_user}")
 
         return SuccessResponse(
             success=True,
-            message=f"Project '{project.name}' has been archived",
+            message=f"Project '{project_name}' has been permanently deleted",
         )
 
     except HTTPException:

@@ -13,8 +13,8 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, status, Depends, Body
 
 from socratic_system.database import ProjectDatabaseV2
-from socrates_api.models import SuccessResponse, ErrorResponse
-from socrates_api.auth import get_current_user
+from socrates_api.models import SuccessResponse, ErrorResponse, SubscriptionChecker
+from socrates_api.auth import get_current_user, get_current_user_object
 from socrates_api.database import get_database
 
 logger = logging.getLogger(__name__)
@@ -47,6 +47,38 @@ async def get_analytics_summary(
         SuccessResponse with summary data
     """
     try:
+        # CRITICAL: Validate subscription for analytics feature
+        logger.info(f"Validating subscription for analytics summary access by {current_user}")
+        try:
+            user_object = get_current_user_object(current_user)
+
+            # Check if user has active subscription
+            if not user_object.subscription.is_active:
+                logger.warning(f"User {current_user} attempted to access analytics without active subscription")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Active subscription required to access analytics"
+                )
+
+            # Check subscription tier - only Professional and Enterprise can access analytics
+            subscription_tier = user_object.subscription.tier.lower()
+            if subscription_tier == "free":
+                logger.warning(f"Free-tier user {current_user} attempted to access analytics")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Analytics feature requires Professional or Enterprise subscription"
+                )
+
+            logger.info(f"Subscription validation passed for analytics access by {current_user}")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error validating subscription for analytics: {type(e).__name__}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error validating subscription: {str(e)[:100]}"
+            )
+
         if project_id:
             # Get real project data
             project = db.load_project(project_id)
@@ -343,6 +375,38 @@ async def get_trends(
         SuccessResponse with trend data
     """
     try:
+        # CRITICAL: Validate subscription for trends feature
+        logger.info(f"Validating subscription for trends access by {current_user}")
+        try:
+            user_object = get_current_user_object(current_user)
+
+            # Check if user has active subscription
+            if not user_object.subscription.is_active:
+                logger.warning(f"User {current_user} attempted to access trends without active subscription")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Active subscription required to access trends"
+                )
+
+            # Check subscription tier - only Professional and Enterprise can access trends
+            subscription_tier = user_object.subscription.tier.lower()
+            if subscription_tier == "free":
+                logger.warning(f"Free-tier user {current_user} attempted to access trends")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Trends feature requires Professional or Enterprise subscription"
+                )
+
+            logger.info(f"Subscription validation passed for trends access by {current_user}")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error validating subscription for trends: {type(e).__name__}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error validating subscription: {str(e)[:100]}"
+            )
+
         from socrates_api.main import get_orchestrator
         from socrates_api.routers.events import record_event
 
@@ -413,6 +477,38 @@ async def get_recommendations(
         SuccessResponse with recommendations
     """
     try:
+        # CRITICAL: Validate subscription for recommendations feature
+        logger.info(f"Validating subscription for recommendations access by {current_user}")
+        try:
+            user_object = get_current_user_object(current_user)
+
+            # Check if user has active subscription
+            if not user_object.subscription.is_active:
+                logger.warning(f"User {current_user} attempted to access recommendations without active subscription")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Active subscription required to access recommendations"
+                )
+
+            # Check subscription tier - only Professional and Enterprise can access recommendations
+            subscription_tier = user_object.subscription.tier.lower()
+            if subscription_tier == "free":
+                logger.warning(f"Free-tier user {current_user} attempted to access recommendations")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Recommendations feature requires Professional or Enterprise subscription"
+                )
+
+            logger.info(f"Subscription validation passed for recommendations access by {current_user}")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error validating subscription for recommendations: {type(e).__name__}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error validating subscription: {str(e)[:100]}"
+            )
+
         from socrates_api.main import get_orchestrator
         from socrates_api.routers.events import record_event
 
