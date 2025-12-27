@@ -562,27 +562,28 @@ async def get_presence(
 
 
 @router.post(
-    "/{project_id}/activity",
+    "/{project_id}/activities",
     response_model=dict,
     status_code=status.HTTP_201_CREATED,
     summary="Record activity",
 )
 async def record_activity(
     project_id: str,
-    activity_type: str,
-    data: Optional[dict] = None,
+    activity_type: str = None,
+    activity_data: Optional[dict] = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
     Record user activity in project.
 
-    Activity types: typing, editing, viewing, commenting, etc.
+    Activity types: member_added, member_removed, role_changed, file_uploaded,
+    message_sent, project_updated, session_started, session_ended, typing, editing, etc.
 
     Args:
         project_id: Project identifier
         activity_type: Type of activity
-        data: Additional activity data
+        activity_data: Additional activity data (dict)
         current_user: Current authenticated user
         db: Database connection
 
@@ -590,6 +591,9 @@ async def record_activity(
         Activity recording confirmation
     """
     try:
+        from datetime import datetime
+        import uuid
+
         # Verify project access
         project = db.load_project(project_id)
         if project is None:
@@ -598,13 +602,37 @@ async def record_activity(
                 detail="Project not found",
             )
 
-        # TODO: Store activity and broadcast to collaborators
+        # Verify user is project member or owner
+        is_owner = project.owner == current_user
+        is_member = any(m.username == current_user for m in (project.team_members or []))
 
-        logger.debug(f"Activity recorded: {activity_type} in project {project_id}")
+        if not (is_owner or is_member):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only project members can record activities",
+            )
+
+        # Create activity record
+        activity = {
+            "id": f"act_{uuid.uuid4().hex[:12]}",
+            "project_id": project_id,
+            "user_id": current_user,
+            "activity_type": activity_type or "unknown",
+            "activity_data": activity_data,
+            "created_at": datetime.utcnow().isoformat(),
+        }
+
+        # Save to database
+        db.save_activity(activity)
+
+        # TODO: Broadcast to collaborators via WebSocket
+        logger.debug(f"Activity recorded: {activity_type} in project {project_id} by {current_user}")
 
         return {
             "status": "success",
-            "activity_id": f"act_{int(__import__('time').time() * 1000)}",
+            "activity_id": activity["id"],
+            "activity_type": activity_type,
+            "timestamp": activity["created_at"],
         }
 
     except HTTPException:
@@ -619,27 +647,29 @@ async def record_activity(
 
 @router.get(
     "/{project_id}/activities",
-    response_model=SuccessResponse,
+    response_model=dict,
     status_code=status.HTTP_200_OK,
     summary="Get project activities",
 )
 async def get_activities(
     project_id: str,
     limit: int = 50,
+    offset: int = 0,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
-    Get recent activities in a project.
+    Get recent activities in a project with pagination.
 
     Args:
         project_id: Project identifier
-        limit: Maximum number of activities to return
+        limit: Maximum number of activities to return (default 50)
+        offset: Number of activities to skip (default 0)
         current_user: Current authenticated user
         db: Database connection
 
     Returns:
-        List of recent project activities
+        Paginated list of recent project activities
     """
     try:
         # Verify project access
@@ -650,25 +680,33 @@ async def get_activities(
                 detail="Project not found",
             )
 
-        # Return empty activity list for now (can be extended to fetch from database)
-        # TODO: Implement activity history storage and retrieval
-        activities = [
-            {
-                "id": f"act_1",
-                "type": "project_created",
-                "user_name": project.owner,
-                "description": f"Project '{project.name}' created",
-                "timestamp": project.created_at.isoformat() if hasattr(project.created_at, 'isoformat') else str(project.created_at),
-                "data": {}
-            }
-        ]
+        # Verify user is project member or owner
+        is_owner = project.owner == current_user
+        is_member = any(m.username == current_user for m in (project.team_members or []))
+
+        if not (is_owner or is_member):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only project members can view activities",
+            )
+
+        # Load activities
+        activities = db.get_project_activities(project_id, limit=limit, offset=offset)
+        total = db.count_project_activities(project_id)
 
         logger.debug(f"Retrieved {len(activities)} activities for project {project_id}")
 
-        return SuccessResponse(
-            message="Activities retrieved successfully",
-            data={"activities": activities}
-        )
+        return {
+            "status": "success",
+            "project_id": project_id,
+            "activities": activities,
+            "pagination": {
+                "limit": limit,
+                "offset": offset,
+                "total": total,
+                "has_more": offset + limit < total,
+            }
+        }
 
     except HTTPException:
         raise

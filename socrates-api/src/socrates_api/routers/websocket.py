@@ -1107,3 +1107,194 @@ async def search_conversations(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error searching conversations",
         )
+
+
+# ============================================================================
+# Collaboration WebSocket Endpoint - Real-time Presence & Activity Tracking
+# ============================================================================
+
+
+@router.websocket("/ws/collaboration/{project_id}")
+async def websocket_collaboration_endpoint(
+    websocket: WebSocket,
+    project_id: str,
+    token: str = None,
+):
+    """
+    WebSocket endpoint for real-time collaboration features.
+
+    Clients connect with:
+    - URL: /ws/collaboration/{project_id}
+    - Query param: token={jwt_token}
+
+    Send messages with format:
+    {
+        "type": "heartbeat" | "activity" | "typing",
+        "typing": true/false,  (for typing indicator)
+        "activity_type": "...",
+        "activity_data": {...}
+    }
+
+    Receive events with format:
+    {
+        "type": "user_joined" | "user_left" | "typing" | "activity" | "presence",
+        "user_id": "...",
+        "user_status": "online|offline",
+        "last_activity": "ISO8601",
+        "current_activity": "...",
+        "timestamp": "ISO8601"
+    }
+
+    Args:
+        websocket: FastAPI WebSocket connection
+        project_id: Project identifier
+        token: JWT token for authentication (optional)
+    """
+    connection_id = str(uuid.uuid4())
+    connection_manager = get_connection_manager()
+    db = get_database()
+
+    try:
+        # Note: In production, would extract and verify user from token
+        # For now, using connection_id as identifier
+        user_id = connection_id
+
+        # Accept connection
+        try:
+            await connection_manager.connect(
+                websocket,
+                user_id,
+                project_id,
+                connection_id,
+            )
+        except RuntimeError as e:
+            await websocket.close(code=1008, reason=str(e))
+            return
+
+        logger.info(f"Collaboration WebSocket connected: {connection_id} for project {project_id}")
+
+        # Send welcome message with presence info
+        await websocket.send_json(
+            {
+                "type": "acknowledgment",
+                "message": "Connected to collaboration",
+                "connectionId": connection_id,
+                "project_id": project_id,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+
+        # Broadcast user joined event to other collaborators
+        await connection_manager.broadcast_to_project(
+            project_id,
+            {
+                "type": "user_joined",
+                "user_id": user_id,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "connection_id": connection_id,
+            },
+            exclude_connection=connection_id,
+        )
+
+        # Main message loop
+        while True:
+            try:
+                # Receive message from client
+                data = await websocket.receive_json()
+
+                message_type = data.get("type", "unknown")
+                logger.debug(f"Received {message_type} from {user_id} in project {project_id}")
+
+                # Handle heartbeat (keep-alive)
+                if message_type == "heartbeat":
+                    await websocket.send_json(
+                        {
+                            "type": "heartbeat_ack",
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        }
+                    )
+
+                # Handle activity events
+                elif message_type == "activity":
+                    activity_type = data.get("activity_type", "unknown")
+                    activity_data = data.get("activity_data", {})
+
+                    # Record activity in database
+                    try:
+                        activity = {
+                            "id": f"act_{uuid.uuid4().hex[:12]}",
+                            "project_id": project_id,
+                            "user_id": user_id,
+                            "activity_type": activity_type,
+                            "activity_data": activity_data,
+                            "created_at": datetime.utcnow().isoformat(),
+                        }
+                        db.save_activity(activity)
+                        logger.debug(f"Recorded activity: {activity_type}")
+                    except Exception as e:
+                        logger.error(f"Error saving activity: {e}")
+
+                    # Broadcast activity to all collaborators
+                    await connection_manager.broadcast_to_project(
+                        project_id,
+                        {
+                            "type": "activity",
+                            "user_id": user_id,
+                            "activity_type": activity_type,
+                            "activity_data": activity_data,
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        },
+                    )
+
+                # Handle typing indicators
+                elif message_type == "typing":
+                    is_typing = data.get("typing", False)
+
+                    # Broadcast typing indicator to all collaborators
+                    await connection_manager.broadcast_to_project(
+                        project_id,
+                        {
+                            "type": "typing",
+                            "user_id": user_id,
+                            "typing": is_typing,
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        },
+                        exclude_connection=connection_id,
+                    )
+
+                else:
+                    logger.debug(f"Unknown message type: {message_type}")
+
+            except json.JSONDecodeError:
+                logger.warning(f"Invalid JSON received from {user_id}")
+                continue
+            except Exception as e:
+                logger.error(f"Error processing message: {e}")
+                continue
+
+    except WebSocketDisconnect:
+        logger.info(f"Collaboration WebSocket disconnected: {connection_id}")
+
+        # Broadcast user left event
+        await connection_manager.broadcast_to_project(
+            project_id,
+            {
+                "type": "user_left",
+                "user_id": user_id,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "connection_id": connection_id,
+            },
+        )
+
+        # Remove connection
+        try:
+            await connection_manager.disconnect(websocket, user_id, project_id, connection_id)
+        except Exception as e:
+            logger.error(f"Error during disconnect: {e}")
+
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+        try:
+            await websocket.close(code=1011, reason="Internal server error")
+        except Exception as close_error:
+            logger.error(f"Error closing WebSocket: {close_error}")
