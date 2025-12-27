@@ -4,45 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.6.6">
-      <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/auth.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/knowledge.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/knowledge.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects_chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects_chat.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/subscription.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/subscription.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/App.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/api/chat.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/api/chat.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/api/client.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/api/client.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/api/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/api/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/chat/DialogueMode.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/chat/DialogueMode.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/chat/ResponseInput.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/chat/ResponseInput.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/chat/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/chat/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/layout/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/layout/Header.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/layout/Sidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/layout/Sidebar.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/analytics/AnalyticsPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/analytics/AnalyticsPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/chat/ChatPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/chat/ChatPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/collaboration/CollaborationPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/collaboration/CollaborationPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/dashboard/DashboardPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/dashboard/DashboardPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/knowledge/KnowledgeBasePage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/knowledge/KnowledgeBasePage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/settings/SettingsPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/settings/SettingsPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/authStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/authStore.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/chatStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/chatStore.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/knowledgeStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/knowledgeStore.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/subscriptionStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/subscriptionStore.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/vite.config.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/agents/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/events/event_types.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/events/event_types.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/models/role.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/role.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/models/user.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/user.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/ui/commands/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/commands/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/ui/main_app.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/ui/main_app.py" afterDir="false" />
-    </list>
+    <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.6.6" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
