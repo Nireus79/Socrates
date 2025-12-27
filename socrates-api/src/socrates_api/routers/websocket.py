@@ -7,6 +7,7 @@ Provides:
 - Message routing and event broadcasting
 """
 
+import json
 import logging
 import os
 import uuid
@@ -103,10 +104,12 @@ async def websocket_chat_endpoint(
         while True:
             # Receive message from client
             raw_message = await websocket.receive_text()
+            logger.info(f"[WebSocket {connection_id}] Received raw message: {raw_message[:100]}")
 
             try:
                 # Parse message
                 message = await message_handler.parse_message(raw_message)
+                logger.info(f"[WebSocket {connection_id}] Parsed message type: {message.type}, content: {message.content[:50] if hasattr(message, 'content') else 'N/A'}")
 
                 # Handle ping/pong
                 if message.type == MessageType.PING:
@@ -128,7 +131,8 @@ async def websocket_chat_endpoint(
                     )
 
                     if response:
-                        await websocket.send_text(response.to_json())
+                        response_text = json.dumps(response) if isinstance(response, dict) else response.to_json()
+                        await websocket.send_text(response_text)
 
                 elif message.type == MessageType.COMMAND:
                     # Process command
@@ -140,7 +144,8 @@ async def websocket_chat_endpoint(
                     )
 
                     if response:
-                        await websocket.send_text(response.to_json())
+                        response_text = json.dumps(response) if isinstance(response, dict) else response.to_json()
+                        await websocket.send_text(response_text)
 
                 else:
                     # Unknown message type
@@ -205,13 +210,14 @@ async def _handle_chat_message(
         WebSocketResponse or None
     """
     try:
+        logger.info(f"[_handle_chat_message] Starting to handle chat message for project {project_id}")
         # Extract metadata
         metadata = message.metadata or {}
         mode = metadata.get("mode", "socratic")
         request_hint = metadata.get("requestHint", False)
 
         logger.info(
-            f"Chat message from {user_id} in project {project_id}: "
+            f"[_handle_chat_message] Chat message from {user_id} in project {project_id}: "
             f"{message.content[:50]}... (mode={mode})"
         )
 
@@ -226,6 +232,7 @@ async def _handle_chat_message(
                 return None
 
             orchestrator = get_orchestrator()
+            logger.info(f"[_handle_chat_message] Got orchestrator, calling process_request")
 
             # Process message through orchestrator using process_request (standard pattern)
             result = orchestrator.process_request(
@@ -237,6 +244,7 @@ async def _handle_chat_message(
                     "current_user": user_id,
                 }
             )
+            logger.info(f"[_handle_chat_message] Orchestrator result: {result.get('status')}")
 
             # Extract insights from response
             if result.get("status") == "success":
@@ -303,7 +311,8 @@ async def _handle_chat_message(
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
-        return None  # Response handled via broadcast
+        # Return response so it gets sent to client
+        return response
 
     except Exception as e:
         logger.error(f"Error handling chat message: {e}")
@@ -353,7 +362,7 @@ async def _handle_command(
         }
 
         logger.info(f"Command '{command_name}' executed for {user_id}")
-        return None  # Response handled inline
+        return response
 
     except Exception as e:
         logger.error(f"Error handling command: {e}")
@@ -442,12 +451,16 @@ async def _route_command(
             return {"status": "success", "message": f"Cleared {count} messages"}
 
         elif command == "advance":
-            # Advance to next phase
-            result = orchestrator.socratic_counselor.process({
-                "action": "advance_phase",
-                "project": project,
-                "current_user": user_id,
-            })
+            # Advance to next phase via orchestrator routing (not direct call)
+            result = await orchestrator.process_request_async(
+                "socratic_counselor",
+                {
+                    "action": "advance_phase",
+                    "project": project,
+                    "current_user": user_id,
+                    "is_api_mode": True,
+                }
+            )
             if result.get("status") == "success":
                 db.save_project(project)
                 new_phase = result.get("new_phase", project.phase)
@@ -493,12 +506,15 @@ async def send_chat_message(
         Response with assistant reply and metadata
     """
     try:
+        logger.info(f"[send_chat_message] Starting for project {project_id}")
         # Import here to avoid circular dependency
         from socrates_api.main import get_orchestrator
         orchestrator = get_orchestrator()
+        logger.info(f"[send_chat_message] Got orchestrator: {orchestrator is not None}")
         # Extract message and mode from request body
         message = request_body.get("message", "").strip()
         mode = request_body.get("mode", "socratic").lower()
+        logger.info(f"[send_chat_message] Message: {message[:50]}, Mode: {mode}")
 
         if not message:
             raise HTTPException(
@@ -534,43 +550,58 @@ async def send_chat_message(
 
         question_response = None
         if not assistant_messages:
-            # Generate initial question
+            # Generate initial question via orchestrator routing (not direct call)
             try:
-                question_result = orchestrator.socratic_counselor.process({
-                    "action": "generate_question",
-                    "project": project,
-                    "current_user": current_user,
-                })
+                question_result = await orchestrator.process_request_async(
+                    "socratic_counselor",
+                    {
+                        "action": "generate_question",
+                        "project": project,
+                        "current_user": current_user,
+                        "is_api_mode": True,
+                    }
+                )
                 if question_result.get("status") == "success":
                     question_response = question_result.get("question")
                     logger.info(f"Generated initial question for {project_id}")
             except Exception as e:
                 logger.error(f"Error generating initial question: {e}")
 
-        # Process user response with orchestrator
+        # Process user response with orchestrator via routing (not direct call)
         try:
-            response_result = orchestrator.socratic_counselor.process({
-                "action": "process_response",
-                "project": project,
-                "current_user": current_user,
-                "mode": mode,
-            })
+            logger.info(f"[send_chat_message] Calling orchestrator.process_request_async")
+            response_result = await orchestrator.process_request_async(
+                "socratic_counselor",
+                {
+                    "action": "process_response",
+                    "project": project,
+                    "current_user": current_user,
+                    "mode": mode,
+                    "is_api_mode": True,
+                }
+            )
+            logger.info(f"[send_chat_message] Orchestrator returned: {response_result}")
             assistant_response = response_result.get("insights", {}).get("thoughts",
                                                     "Thank you for your response.")
+            logger.info(f"[send_chat_message] Assistant response: {assistant_response[:50]}")
         except Exception as e:
-            logger.error(f"Error processing response: {e}")
+            logger.error(f"[send_chat_message] Error processing response: {e}", exc_info=True)
             assistant_response = "Thank you for your response. I'm processing your input."
 
         # Save updated project
         db.save_project(project)
 
+        # Return response in format expected by frontend
         return {
             "status": "success",
+            "message": {
+                "id": f"msg_{int(datetime.now(timezone.utc).timestamp() * 1000)}",
+                "role": "assistant",
+                "content": assistant_response,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
             "initial_question": question_response,
-            "response_feedback": assistant_response,
-            "message": message,
             "mode": mode,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
     except HTTPException:
@@ -771,15 +802,19 @@ async def request_hint(
             # Use the last question from assistant
             question = assistant_messages[-1].get("content", "")
         else:
-            # Generate initial question if no conversation yet
+            # Generate initial question if no conversation yet via orchestrator routing (not direct call)
             from socrates_api.main import get_orchestrator
             try:
                 orchestrator = get_orchestrator()
-                question_result = orchestrator.socratic_counselor.process({
-                    "action": "generate_question",
-                    "project": project,
-                    "current_user": current_user,
-                })
+                question_result = await orchestrator.process_request_async(
+                    "socratic_counselor",
+                    {
+                        "action": "generate_question",
+                        "project": project,
+                        "current_user": current_user,
+                        "is_api_mode": True,
+                    }
+                )
                 if question_result.get("status") == "success":
                     question = question_result.get("question")
             except Exception as e:

@@ -139,13 +139,18 @@ async def generate_code(
 
             orchestrator = get_orchestrator()
 
-            # Use code generator agent
-            result = orchestrator.code_generator.process({
-                "action": "generate_code",
-                "project": project,
-                "language": language,
-                "requirements": description,
-            })
+            # Use code generator agent via orchestrator routing (not direct call)
+            result = await orchestrator.process_request_async(
+                "code_generator",
+                {
+                    "action": "generate_code",
+                    "project": project,
+                    "language": language,
+                    "requirements": specification,
+                    "current_user": current_user,
+                    "is_api_mode": True,
+                }
+            )
 
             if result.get("status") == "success":
                 generated_code = result.get("code", "")
