@@ -58,6 +58,7 @@ from .routers import (
     system_router,
     nlu_router,
     presession_router,
+    chat_sessions_router,
 )
 
 # Configure logging
@@ -123,6 +124,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+
 # Include API routers
 app.include_router(auth_router)
 app.include_router(projects_router)
@@ -147,6 +150,7 @@ app.include_router(progress_router)
 app.include_router(system_router)
 app.include_router(nlu_router)
 app.include_router(presession_router)
+app.include_router(chat_sessions_router)
 
 
 @app.get("/")

@@ -658,3 +658,19 @@ class GetChatMessagesResponse(BaseModel):
                 "session_id": "sess_abc123",
             }
         }
+
+
+class UpdateMessageRequest(BaseModel):
+    """Request body for updating a chat message"""
+
+    content: str = Field(..., min_length=1, description="Updated message content")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Optional metadata for the message")
+
+    class Config:
+        extra = "forbid"
+        json_schema_extra = {
+            "example": {
+                "content": "Updated message content",
+                "metadata": None
+            }
+        }

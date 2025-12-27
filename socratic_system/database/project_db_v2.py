@@ -2270,3 +2270,335 @@ class ProjectDatabaseV2:
             return []
         finally:
             conn.close()
+
+    # ========================================================================
+    # CHAT OPERATIONS (Phase 2 - Session-based chat)
+    # ========================================================================
+
+    def save_chat_session(self, session: Dict) -> None:
+        """
+        Save or update a chat session
+
+        Args:
+            session: Dictionary with session_id, project_id, user_id, title, created_at, updated_at, archived
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO chat_sessions (
+                    session_id, project_id, user_id, title, created_at, updated_at, archived
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    session.get("session_id"),
+                    session.get("project_id"),
+                    session.get("user_id"),
+                    session.get("title"),
+                    session.get("created_at"),  # Already in ISO format string
+                    session.get("updated_at"),  # Already in ISO format string
+                    1 if session.get("archived") else 0,
+                ),
+            )
+            conn.commit()
+            self.logger.debug(f"Saved chat session {session.get('session_id')}")
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error saving chat session: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def load_chat_sessions(self, project_id: str, archived: Optional[bool] = None) -> List[Dict]:
+        """
+        Load all chat sessions for a project
+
+        Args:
+            project_id: Project ID
+            archived: Optional filter (True/False/None for all)
+
+        Returns:
+            List of session dictionaries
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            if archived is None:
+                cursor.execute(
+                    "SELECT * FROM chat_sessions WHERE project_id = ? ORDER BY created_at DESC",
+                    (project_id,),
+                )
+            else:
+                cursor.execute(
+                    "SELECT * FROM chat_sessions WHERE project_id = ? AND archived = ? ORDER BY created_at DESC",
+                    (project_id, 1 if archived else 0),
+                )
+
+            sessions = []
+            for row in cursor.fetchall():
+                session = {
+                    "session_id": row["session_id"],
+                    "project_id": row["project_id"],
+                    "user_id": row["user_id"],
+                    "title": row["title"],
+                    "created_at": row["created_at"],
+                    "updated_at": row["updated_at"],
+                    "archived": bool(row["archived"]),
+                    "message_count": self._count_session_messages(row["session_id"]),
+                }
+                sessions.append(session)
+
+            return sessions
+        except Exception as e:
+            self.logger.error(f"Error loading chat sessions for project {project_id}: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def get_chat_session(self, session_id: str) -> Optional[Dict]:
+        """Get a single chat session by ID"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT * FROM chat_sessions WHERE session_id = ?", (session_id,))
+            row = cursor.fetchone()
+
+            if not row:
+                return None
+
+            return {
+                "session_id": row["session_id"],
+                "project_id": row["project_id"],
+                "user_id": row["user_id"],
+                "title": row["title"],
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
+                "archived": bool(row["archived"]),
+                "message_count": self._count_session_messages(session_id),
+            }
+        except Exception as e:
+            self.logger.error(f"Error getting chat session {session_id}: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def archive_chat_session(self, session_id: str, archived: bool) -> None:
+        """Archive or restore a chat session"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            now = datetime.now()
+            cursor.execute(
+                "UPDATE chat_sessions SET archived = ?, updated_at = ? WHERE session_id = ?",
+                (1 if archived else 0, now.isoformat(), session_id),
+            )
+            conn.commit()
+            self.logger.debug(f"{'Archived' if archived else 'Restored'} chat session {session_id}")
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error archiving chat session: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def delete_chat_session(self, session_id: str) -> None:
+        """Delete a chat session (cascade deletes messages)"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("DELETE FROM chat_sessions WHERE session_id = ?", (session_id,))
+            conn.commit()
+            self.logger.debug(f"Deleted chat session {session_id}")
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error deleting chat session: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def _count_session_messages(self, session_id: str) -> int:
+        """Count messages in a session (helper method)"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT COUNT(*) FROM chat_messages WHERE session_id = ?", (session_id,))
+            result = cursor.fetchone()
+            return result[0] if result else 0
+        except Exception as e:
+            self.logger.warning(f"Error counting messages for session {session_id}: {e}")
+            return 0
+        finally:
+            conn.close()
+
+    def save_chat_message(self, message: Dict) -> None:
+        """
+        Save a chat message
+
+        Args:
+            message: Dictionary with message_id, session_id, user_id, content, role, metadata, created_at, updated_at
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            metadata_json = json.dumps(message.get("metadata")) if message.get("metadata") else None
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO chat_messages (
+                    message_id, session_id, user_id, content, role, metadata, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    message.get("message_id"),
+                    message.get("session_id"),
+                    message.get("user_id"),
+                    message.get("content"),
+                    message.get("role"),
+                    metadata_json,
+                    message.get("created_at"),
+                    message.get("updated_at"),
+                ),
+            )
+            conn.commit()
+            self.logger.debug(f"Saved chat message {message.get('message_id')}")
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error saving chat message: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def load_chat_messages(
+        self, session_id: str, limit: int = 50, offset: int = 0, order: str = "asc"
+    ) -> List[Dict]:
+        """
+        Load messages for a session with pagination
+
+        Args:
+            session_id: Session ID
+            limit: Maximum number of messages to return
+            offset: Number of messages to skip
+            order: 'asc' or 'desc' for message ordering
+
+        Returns:
+            List of message dictionaries
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            order_by = "ASC" if order == "asc" else "DESC"
+            cursor.execute(
+                f"""
+                SELECT * FROM chat_messages
+                WHERE session_id = ?
+                ORDER BY created_at {order_by}
+                LIMIT ? OFFSET ?
+                """,
+                (session_id, limit, offset),
+            )
+
+            messages = []
+            for row in cursor.fetchall():
+                message = {
+                    "message_id": row["message_id"],
+                    "session_id": row["session_id"],
+                    "user_id": row["user_id"],
+                    "content": row["content"],
+                    "role": row["role"],
+                    "metadata": json.loads(row["metadata"]) if row["metadata"] else None,
+                    "created_at": row["created_at"],
+                    "updated_at": row["updated_at"],
+                }
+                messages.append(message)
+
+            return messages
+        except Exception as e:
+            self.logger.error(f"Error loading chat messages for session {session_id}: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def get_chat_message(self, message_id: str) -> Optional[Dict]:
+        """Get a single chat message by ID"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT * FROM chat_messages WHERE message_id = ?", (message_id,))
+            row = cursor.fetchone()
+
+            if not row:
+                return None
+
+            return {
+                "message_id": row["message_id"],
+                "session_id": row["session_id"],
+                "user_id": row["user_id"],
+                "content": row["content"],
+                "role": row["role"],
+                "metadata": json.loads(row["metadata"]) if row["metadata"] else None,
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
+            }
+        except Exception as e:
+            self.logger.error(f"Error getting chat message {message_id}: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def update_chat_message(self, message_id: str, content: str, metadata: Optional[Dict] = None) -> None:
+        """Update a chat message's content and metadata"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            now = datetime.now()
+            metadata_json = json.dumps(metadata) if metadata else None
+            cursor.execute(
+                """
+                UPDATE chat_messages
+                SET content = ?, metadata = ?, updated_at = ?
+                WHERE message_id = ?
+                """,
+                (content, metadata_json, now.isoformat(), message_id),
+            )
+            conn.commit()
+            self.logger.debug(f"Updated chat message {message_id}")
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error updating chat message: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def delete_chat_message(self, message_id: str) -> None:
+        """Delete a chat message"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("DELETE FROM chat_messages WHERE message_id = ?", (message_id,))
+            conn.commit()
+            self.logger.debug(f"Deleted chat message {message_id}")
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error deleting chat message: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def get_session_message_count(self, session_id: str) -> int:
+        """Get total message count for a session"""
+        return self._count_session_messages(session_id)

@@ -7,35 +7,8 @@
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.6.6">
       <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/future/ARCHITECTURAL_INVESTIGATION_SUMMARY.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/future/ARCHITECTURAL_INVESTIGATION_SUMMARY.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/future/FUTURE_FEATURES.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/future/FUTURE_FEATURES.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/future/INVESTIGATION_SUMMARY_FOR_TEAM.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/future/INVESTIGATION_SUMMARY_FOR_TEAM.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/future/UNIFIED_ARCHITECTURE_RISK_ANALYSIS.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/future/UNIFIED_ARCHITECTURE_RISK_ANALYSIS.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/future/VERIFICATION_FINDINGS_DETAILED.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/future/VERIFICATION_FINDINGS_DETAILED.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/collaboration.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/collaboration.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/knowledge_management.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/knowledge_management.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects_chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects_chat.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/api/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/api/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/analysis/AnalysisActionPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/analysis/AnalysisActionPanel.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/analysis/AnalysisResultsDisplay.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/analysis/AnalysisResultsDisplay.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/analysis/ProjectAnalysisPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/analysis/ProjectAnalysisPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/analysis/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/analysis/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/chat/CompactPhaseIndicator.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/chat/CompactPhaseIndicator.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/code/CodeReviewPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/code/CodeReviewPanel.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/github/GitHubImportModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/github/GitHubImportModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/github/SyncStatusWidget.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/github/SyncStatusWidget.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/github/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/github/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/analysis/AnalysisPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/analysis/AnalysisPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/files/FilesPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/files/FilesPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/notes/NotesPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/notes/NotesPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/projects/ProjectAnalysisPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/projects/ProjectAnalysisPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/search/SearchPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/search/SearchPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/settings/SettingsPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/settings/SettingsPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/githubStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/githubStore.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/knowledgeStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/knowledgeStore.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/subscriptionStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/subscriptionStore.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
