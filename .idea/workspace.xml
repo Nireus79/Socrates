@@ -26,6 +26,7 @@
       <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/collaboration/CollaborationPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/collaboration/CollaborationPage.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/dashboard/DashboardPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/dashboard/DashboardPage.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/knowledge/KnowledgeBasePage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/knowledge/KnowledgeBasePage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/settings/SettingsPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/settings/SettingsPage.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/authStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/authStore.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/chatStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/chatStore.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/knowledgeStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/knowledgeStore.ts" afterDir="false" />

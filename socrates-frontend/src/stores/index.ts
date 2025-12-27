@@ -12,3 +12,4 @@ export { useLLMStore } from './llmStore';
 export { useAnalysisStore } from './analysisStore';
 export { useAnalyticsStore } from './analyticsStore';
 export { useNotesStore } from './notesStore';
+export { useProjectAnalysisStore } from './projectAnalysisStore';

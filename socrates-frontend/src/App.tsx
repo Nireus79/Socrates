@@ -21,6 +21,7 @@ import { DocumentationPage } from './pages/documentation/DocumentationPage';
 import { FilesPage } from './pages/files/FilesPage';
 import { AnalysisPage as CodeAnalysisPage } from './pages/analysis/AnalysisPage';
 import { NotesPage } from './pages/notes/NotesPage';
+import { ProjectAnalysisPage } from './pages/projects/ProjectAnalysisPage';
 import { MainLayout } from './components/layout';
 import { ErrorBoundary } from './components/common';
 import { NotificationProvider } from './components/providers/NotificationProvider';
@@ -243,6 +244,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CodeAnalysisPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:projectId/analyze"
+            element={
+              <ProtectedRoute>
+                <ProjectAnalysisPage />
               </ProtectedRoute>
             }
           />
