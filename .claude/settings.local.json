@@ -176,7 +176,19 @@
       "Bash(\"socrates-api/src/socrates_api/routers/collaboration.py\" )",
       "Bash(\"socrates-api/src/socrates_api/routers/analytics.py\" )",
       "Bash(\"socrates-api/src/socrates_api/routers/code_generation.py\" )",
-      "Bash(\"socratic_system/ui/commands/doc_commands.py\")"
+      "Bash(\"socratic_system/ui/commands/doc_commands.py\")",
+      "Bash(/tmp/phase1_test.sh)",
+      "Bash(bash \"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\\\\phase1_test.sh\")",
+      "Bash(bash:*)",
+      "Bash(timeout:*)",
+      "Bash(\"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\\\\.venv\\\\Scripts\\\\python.exe\" phase4_integration_tests.py)",
+      "Bash(\"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\\\\.venv\\\\Scripts\\\\python.exe\" C:tmpdebug_collaborator.py)",
+      "Bash(\"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\\\\.venv\\\\Scripts\\\\python.exe\" \"C:\\\\tmp\\\\debug_collaborator.py\")",
+      "Bash(\"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\\\\.venv\\\\Scripts\\\\python.exe\" \"C:\\\\tmp\\\\inspect_routes.py\")",
+      "Bash(\"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\\\\.venv\\\\Scripts\\\\python.exe\" \"C:\\\\tmp\\\\inspect_routes_detail.py\")",
+      "Bash(\"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\\\\.venv\\\\Scripts\\\\python.exe\" \"C:\\\\tmp\\\\debug_collaborator_with_param.py\")",
+      "Bash(\"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\\\\.venv\\\\Scripts\\\\python.exe\" -m json.tool)",
+      "Bash(\"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\\\\.venv\\\\Scripts\\\\python.exe\" -m py_compile socrates-api/src/socrates_api/routers/knowledge_management.py)"
     ],
     "deny": [],
     "ask": []

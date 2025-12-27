@@ -8,7 +8,8 @@ export { projectsAPI } from './projects';
 export { chatAPI } from './chat';
 export { collaborationAPI } from './collaboration';
 export { codeGenerationAPI } from './codeGeneration';
-export { githubAPI } from './github';
+// GitHub exports individual functions, not githubAPI object
+export * as github from './github';
 export { knowledgeAPI } from './knowledge';
 export { llmAPI } from './llm';
 export { analysisAPI } from './analysis';

@@ -3,7 +3,6 @@
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { apiClient } from '../api/client';
 import type { SubscriptionTier } from '../types/models';
 
@@ -56,17 +55,15 @@ const TIER_FEATURES: Record<string, SubscriptionTier['features']> = {
   },
 };
 
-export const useSubscriptionStore = create<SubscriptionState>(
-  persist(
-    (set, get) => ({
-      // Initial state
-      tier: 'free',
-      status: 'active',
-      features: TIER_FEATURES['free'],
-      testingMode: false,
+export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
+  // Initial state
+  tier: 'free',
+  status: 'active',
+  features: TIER_FEATURES['free'],
+  testingMode: false,
 
-      // Set tier
-      setTier: (tier: 'free' | 'pro' | 'enterprise', status: 'active' | 'inactive' | 'suspended') => {
+  // Set tier
+  setTier: (tier: 'free' | 'pro' | 'enterprise', status: 'active' | 'inactive' | 'suspended') => {
         set({
           tier,
           status,
@@ -141,15 +138,7 @@ export const useSubscriptionStore = create<SubscriptionState>(
       // Don't throw - gracefully degrade if API fails
     }
   },
-    }),
-    {
-      name: 'subscription-store',
-      partialize: (state) => ({
-        testingMode: state.testingMode,
-      }),
-    }
-  )
-);
+}));
 
 /**
  * Hook to check if feature is available

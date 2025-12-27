@@ -75,7 +75,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
       const documentsMap = new Map<string, DocumentMetadata>();
 
       // Handle different response formats
-      const documents = response?.documents || response?.data?.documents || response || [];
+      const documents = response?.documents || response || [];
       const docArray = Array.isArray(documents) ? documents : [];
 
       docArray.forEach((doc: any) => {

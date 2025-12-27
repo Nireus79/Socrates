@@ -9,21 +9,20 @@ Provides REST endpoints for chat operations on projects including:
 """
 
 import logging
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
+import uuid
 
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 
-from socrates_api.models import SuccessResponse, ErrorResponse
+from socrates_api.models import (
+    SuccessResponse, ErrorResponse,
+    CreateChatSessionRequest, ChatSessionResponse, ListChatSessionsResponse,
+    ChatMessageRequest, ChatMessage, GetChatMessagesResponse
+)
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-
-
-class ChatMessageRequest(BaseModel):
-    """Request body for sending a chat message"""
-    message: str
-    mode: str = "socratic"
 
 
 class ChatModeRequest(BaseModel):
@@ -37,6 +36,415 @@ class SearchRequest(BaseModel):
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["chat"])
+
+
+# ============================================================================
+# Chat Sessions Endpoints (Phase 2)
+# ============================================================================
+
+@router.post(
+    "/{project_id}/chat/sessions",
+    response_model=ChatSessionResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new chat session",
+)
+async def create_chat_session(
+    project_id: str,
+    request: CreateChatSessionRequest,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Create a new chat session for a project.
+
+    Args:
+        project_id: Project ID
+        request: Session creation request with optional title
+        current_user: Authenticated user
+
+    Returns:
+        ChatSessionResponse with new session details
+    """
+    try:
+        logger.info(f"Creating chat session for project {project_id}")
+
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Initialize sessions storage if needed
+        if not hasattr(project, 'chat_sessions'):
+            project.chat_sessions = {}
+
+        # Create new session
+        session_id = f"sess_{uuid.uuid4().hex[:12]}"
+        now = datetime.now(timezone.utc)
+
+        session = {
+            "session_id": session_id,
+            "project_id": project_id,
+            "user_id": current_user,
+            "title": request.title or f"Session {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+            "archived": False,
+            "messages": []
+        }
+
+        project.chat_sessions[session_id] = session
+        db.save_project(project)
+
+        return ChatSessionResponse(
+            session_id=session_id,
+            project_id=project_id,
+            user_id=current_user,
+            title=session["title"],
+            created_at=now,
+            updated_at=now,
+            archived=False,
+            message_count=0
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating chat session: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create chat session: {str(e)}",
+        )
+
+
+@router.get(
+    "/{project_id}/chat/sessions",
+    response_model=ListChatSessionsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="List chat sessions",
+)
+async def list_chat_sessions(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    List all chat sessions for a project.
+
+    Args:
+        project_id: Project ID
+        current_user: Authenticated user
+
+    Returns:
+        ListChatSessionsResponse with all sessions
+    """
+    try:
+        logger.info(f"Listing chat sessions for project {project_id}")
+
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Get sessions
+        sessions_dict = getattr(project, 'chat_sessions', {})
+        sessions_list = []
+
+        for session_id, session in sessions_dict.items():
+            created_at = datetime.fromisoformat(session.get('created_at', datetime.now(timezone.utc).isoformat()))
+            updated_at = datetime.fromisoformat(session.get('updated_at', datetime.now(timezone.utc).isoformat()))
+
+            sessions_list.append(ChatSessionResponse(
+                session_id=session.get('session_id'),
+                project_id=session.get('project_id'),
+                user_id=session.get('user_id'),
+                title=session.get('title'),
+                created_at=created_at,
+                updated_at=updated_at,
+                archived=session.get('archived', False),
+                message_count=len(session.get('messages', []))
+            ))
+
+        return ListChatSessionsResponse(
+            sessions=sessions_list,
+            total=len(sessions_list)
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error listing chat sessions: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list chat sessions: {str(e)}",
+        )
+
+
+@router.get(
+    "/{project_id}/chat/sessions/{session_id}",
+    response_model=ChatSessionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get chat session details",
+)
+async def get_chat_session(
+    project_id: str,
+    session_id: str,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Get details of a specific chat session.
+
+    Args:
+        project_id: Project ID
+        session_id: Session ID
+        current_user: Authenticated user
+
+    Returns:
+        ChatSessionResponse with session details
+    """
+    try:
+        logger.info(f"Getting chat session {session_id} for project {project_id}")
+
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Get session
+        sessions_dict = getattr(project, 'chat_sessions', {})
+        session = sessions_dict.get(session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Chat session not found")
+
+        created_at = datetime.fromisoformat(session.get('created_at', datetime.now(timezone.utc).isoformat()))
+        updated_at = datetime.fromisoformat(session.get('updated_at', datetime.now(timezone.utc).isoformat()))
+
+        return ChatSessionResponse(
+            session_id=session.get('session_id'),
+            project_id=session.get('project_id'),
+            user_id=session.get('user_id'),
+            title=session.get('title'),
+            created_at=created_at,
+            updated_at=updated_at,
+            archived=session.get('archived', False),
+            message_count=len(session.get('messages', []))
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting chat session: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get chat session: {str(e)}",
+        )
+
+
+@router.delete(
+    "/{project_id}/chat/sessions/{session_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Delete a chat session",
+)
+async def delete_chat_session(
+    project_id: str,
+    session_id: str,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Delete a chat session.
+
+    Args:
+        project_id: Project ID
+        session_id: Session ID
+        current_user: Authenticated user
+
+    Returns:
+        SuccessResponse with confirmation
+    """
+    try:
+        logger.info(f"Deleting chat session {session_id} for project {project_id}")
+
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Delete session
+        sessions_dict = getattr(project, 'chat_sessions', {})
+        if session_id not in sessions_dict:
+            raise HTTPException(status_code=404, detail="Chat session not found")
+
+        del sessions_dict[session_id]
+        db.save_project(project)
+
+        return {"success": True, "message": "Chat session deleted"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting chat session: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete chat session: {str(e)}",
+        )
+
+
+@router.post(
+    "/{project_id}/chat/{session_id}/message",
+    response_model=ChatMessage,
+    status_code=status.HTTP_201_CREATED,
+    summary="Send a message in chat session",
+)
+async def send_chat_message(
+    project_id: str,
+    session_id: str,
+    request: ChatMessageRequest,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Send a message in a chat session.
+
+    Args:
+        project_id: Project ID
+        session_id: Session ID
+        request: Message request with content
+        current_user: Authenticated user
+
+    Returns:
+        ChatMessage with the sent message details
+    """
+    try:
+        logger.info(f"Sending message to session {session_id} in project {project_id}")
+
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Get session
+        sessions_dict = getattr(project, 'chat_sessions', {})
+        session = sessions_dict.get(session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Chat session not found")
+
+        # Create message
+        message_id = f"msg_{uuid.uuid4().hex[:12]}"
+        now = datetime.now(timezone.utc)
+
+        message = {
+            "message_id": message_id,
+            "session_id": session_id,
+            "user_id": current_user,
+            "content": request.message,
+            "role": request.role,
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+            "metadata": None
+        }
+
+        session["messages"].append(message)
+        session["updated_at"] = now.isoformat()
+        db.save_project(project)
+
+        return ChatMessage(
+            message_id=message_id,
+            session_id=session_id,
+            user_id=current_user,
+            content=request.message,
+            role=request.role,
+            created_at=now,
+            updated_at=now,
+            metadata=None
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending chat message: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to send chat message: {str(e)}",
+        )
+
+
+@router.get(
+    "/{project_id}/chat/{session_id}/messages",
+    response_model=GetChatMessagesResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get chat session messages",
+)
+async def get_chat_messages(
+    project_id: str,
+    session_id: str,
+    limit: Optional[int] = None,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Get all messages in a chat session.
+
+    Args:
+        project_id: Project ID
+        session_id: Session ID
+        limit: Maximum number of messages to return
+        current_user: Authenticated user
+
+    Returns:
+        GetChatMessagesResponse with all session messages
+    """
+    try:
+        logger.info(f"Getting messages for session {session_id} in project {project_id}")
+
+        # Load project
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Get session
+        sessions_dict = getattr(project, 'chat_sessions', {})
+        session = sessions_dict.get(session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Chat session not found")
+
+        # Get messages
+        messages_list = []
+        messages = session.get('messages', [])
+
+        # Apply limit if specified
+        if limit and limit > 0:
+            messages = messages[-limit:]
+
+        for msg in messages:
+            created_at = datetime.fromisoformat(msg.get('created_at', datetime.now(timezone.utc).isoformat()))
+            updated_at = datetime.fromisoformat(msg.get('updated_at', datetime.now(timezone.utc).isoformat()))
+
+            messages_list.append(ChatMessage(
+                message_id=msg.get('message_id'),
+                session_id=msg.get('session_id'),
+                user_id=msg.get('user_id'),
+                content=msg.get('content'),
+                role=msg.get('role'),
+                created_at=created_at,
+                updated_at=updated_at,
+                metadata=msg.get('metadata')
+            ))
+
+        return GetChatMessagesResponse(
+            messages=messages_list,
+            total=len(session.get('messages', [])),
+            session_id=session_id
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting chat messages: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get chat messages: {str(e)}",
+        )
 
 
 @router.get(

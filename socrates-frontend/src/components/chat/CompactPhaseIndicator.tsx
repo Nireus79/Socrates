@@ -47,7 +47,7 @@ export const CompactPhaseIndicator: React.FC<CompactPhaseIndicatorProps> = ({
         <Tooltip
           key={phase.number}
           content={phase.name}
-          side="bottom"
+          position="bottom"
         >
           <button
             onClick={() => onPhaseClick?.(phase.number)}

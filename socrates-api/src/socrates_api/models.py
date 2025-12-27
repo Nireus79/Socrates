@@ -515,3 +515,146 @@ class InitializeRequest(BaseModel):
         json_schema_extra = {
             "example": {"api_key": "sk-ant-..."}
         }
+
+
+# ============================================================================
+# Chat Session and Message Models
+# ============================================================================
+
+
+class CreateChatSessionRequest(BaseModel):
+    """Request body for creating a chat session"""
+
+    title: Optional[str] = Field(None, max_length=255, description="Session title")
+
+    class Config:
+        extra = "forbid"
+        json_schema_extra = {
+            "example": {
+                "title": "Initial Design Discussion"
+            }
+        }
+
+
+class ChatSessionResponse(BaseModel):
+    """Response model for a chat session"""
+
+    session_id: str = Field(..., description="Unique session identifier")
+    project_id: str = Field(..., description="Project ID this session belongs to")
+    user_id: str = Field(..., description="User who created the session")
+    title: Optional[str] = Field(None, description="Session title")
+    created_at: datetime = Field(..., description="Session creation timestamp")
+    updated_at: datetime = Field(..., description="Session last update timestamp")
+    archived: bool = Field(default=False, description="Whether session is archived")
+    message_count: int = Field(default=0, description="Number of messages in session")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "session_id": "sess_abc123",
+                "project_id": "proj_xyz789",
+                "user_id": "alice",
+                "title": "Initial Design Discussion",
+                "created_at": "2025-12-04T10:00:00Z",
+                "updated_at": "2025-12-04T10:30:00Z",
+                "archived": False,
+                "message_count": 5,
+            }
+        }
+
+
+class ListChatSessionsResponse(BaseModel):
+    """Response model for listing chat sessions"""
+
+    sessions: List[ChatSessionResponse] = Field(..., description="List of chat sessions")
+    total: int = Field(..., description="Total number of sessions")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "sessions": [
+                    {
+                        "session_id": "sess_abc123",
+                        "project_id": "proj_xyz789",
+                        "user_id": "alice",
+                        "title": "Initial Design Discussion",
+                        "created_at": "2025-12-04T10:00:00Z",
+                        "updated_at": "2025-12-04T10:30:00Z",
+                        "archived": False,
+                        "message_count": 5,
+                    }
+                ],
+                "total": 1,
+            }
+        }
+
+
+class ChatMessageRequest(BaseModel):
+    """Request body for sending a chat message"""
+
+    message: str = Field(..., min_length=1, description="Message content")
+    role: str = Field(default="user", description="Message role (user or assistant)")
+
+    class Config:
+        extra = "forbid"
+        json_schema_extra = {
+            "example": {
+                "message": "What should I focus on next?",
+                "role": "user"
+            }
+        }
+
+
+class ChatMessage(BaseModel):
+    """Model for a chat message"""
+
+    message_id: str = Field(..., description="Unique message identifier")
+    session_id: str = Field(..., description="Session ID this message belongs to")
+    user_id: str = Field(..., description="User who sent the message")
+    content: str = Field(..., description="Message content")
+    role: str = Field(..., description="Message role (user or assistant)")
+    created_at: datetime = Field(..., description="Message creation timestamp")
+    updated_at: datetime = Field(..., description="Message last update timestamp")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional message metadata")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message_id": "msg_def456",
+                "session_id": "sess_abc123",
+                "user_id": "alice",
+                "content": "What should I focus on next?",
+                "role": "user",
+                "created_at": "2025-12-04T10:10:00Z",
+                "updated_at": "2025-12-04T10:10:00Z",
+                "metadata": None,
+            }
+        }
+
+
+class GetChatMessagesResponse(BaseModel):
+    """Response model for listing chat messages"""
+
+    messages: List[ChatMessage] = Field(..., description="List of messages in session")
+    total: int = Field(..., description="Total number of messages")
+    session_id: str = Field(..., description="Session ID")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "messages": [
+                    {
+                        "message_id": "msg_def456",
+                        "session_id": "sess_abc123",
+                        "user_id": "alice",
+                        "content": "What should I focus on next?",
+                        "role": "user",
+                        "created_at": "2025-12-04T10:10:00Z",
+                        "updated_at": "2025-12-04T10:10:00Z",
+                        "metadata": None,
+                    }
+                ],
+                "total": 1,
+                "session_id": "sess_abc123",
+            }
+        }

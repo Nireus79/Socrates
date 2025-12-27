@@ -9,17 +9,23 @@ interface GitHubState {
   // State
   selectedProjectId: string | null;
   isLoading: boolean;
+  isImporting?: boolean;  // Alias for isLoading
   error: string | null;
   syncStatus: any | null;
+  syncStatuses?: Map<string, any>;  // Per-project sync statuses
   isConnected: boolean;
 
   // Actions
   setSelectedProject: (projectId: string | null) => void;
   importRepository: (url: string, projectName?: string) => Promise<void>;
   pullFromGithub: (projectId: string) => Promise<void>;
+  pullChanges?: (projectId: string) => Promise<void>;  // Alias
   pushToGithub: (projectId: string, message?: string) => Promise<void>;
+  pushChanges?: (projectId: string, message?: string) => Promise<void>;  // Alias
   syncWithGithub: (projectId: string) => Promise<void>;
+  syncProject?: (projectId: string) => Promise<void>;  // Alias
   getStatus: (projectId: string) => Promise<void>;
+  getSyncStatus?: (projectId: string) => Promise<void>;  // Alias
   disconnect: (projectId: string) => Promise<void>;
   clearError: () => void;
 }

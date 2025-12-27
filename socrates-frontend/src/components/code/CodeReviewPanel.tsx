@@ -10,36 +10,8 @@
  */
 
 import React, { useState } from "react";
-import {
-  Box,
-  Paper,
-  TextField,
-  Button,
-  Avatar,
-  Typography,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  IconButton,
-  Tooltip,
-  Menu,
-  MenuItem,
-} from "@mui/material";
-import {
-  DeleteIcon,
-  ReplyIcon,
-  MoreVertIcon,
-  CheckCircleIcon,
-  WarningIcon,
-  ErrorIcon,
-} from "@mui/icons-material";
+import { MessageCircle, MoreVertical, CheckCircle, AlertTriangle, AlertCircle } from "lucide-react";
+import { Button } from "../common";
 
 interface CodeAnnotation {
   id: string;
@@ -100,9 +72,9 @@ export const CodeReviewPanel: React.FC<CodeReviewPanelProps> = ({
   };
 
   const getAnnotationIcon = (annotation: CodeAnnotation) => {
-    if (annotation.severity === "error") return <ErrorIcon fontSize="small" />;
-    if (annotation.severity === "warning") return <WarningIcon fontSize="small" />;
-    return <CheckCircleIcon fontSize="small" />;
+    if (annotation.severity === "error") return <AlertCircle className="w-4 h-4" />;
+    if (annotation.severity === "warning") return <AlertTriangle className="w-4 h-4" />;
+    return <CheckCircle className="w-4 h-4" />;
   };
 
   const handleAddComment = () => {
@@ -136,237 +108,199 @@ export const CodeReviewPanel: React.FC<CodeReviewPanelProps> = ({
   };
 
   return (
-    <Box sx={{ display: "flex", height: "100%", gap: 2 }}>
+    <div className="flex h-full gap-2">
       {/* Code Panel */}
-      <Paper
-        sx={{
-          flex: 1,
-          overflow: "auto",
-          fontFamily: "monospace",
-          fontSize: "0.875rem",
-          backgroundColor: "#f5f5f5",
-        }}
-      >
-        <Box sx={{ p: 2 }}>
-          <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: "bold" }}>
-            📄 {fileName}
-          </Typography>
+      <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+        <div className="p-4">
+          <div className="mb-4 font-bold text-sm">📄 {fileName}</div>
 
-          <Box sx={{ display: "flex", flexDirection: "column" }}>
+          <div className="font-mono text-sm space-y-0">
             {lines.map((line, index) => {
               const lineNumber = index + 1;
               const lineAnnotations = getAnnotationsForLine(lineNumber);
 
               return (
                 <div key={lineNumber}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      backgroundColor:
-                        selectedLine === lineNumber ? "rgba(66, 165, 245, 0.1)" : "transparent",
-                      transition: "background-color 0.2s",
-                      cursor: "pointer",
-                      "&:hover": {
-                        backgroundColor: "rgba(0, 0, 0, 0.02)",
-                      },
-                    }}
+                  <div
+                    className={`flex items-start cursor-pointer transition-colors ${
+                      selectedLine === lineNumber
+                        ? "bg-blue-50 dark:bg-blue-900/20"
+                        : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                    }`}
                     onClick={() => setSelectedLine(lineNumber)}
                   >
                     {/* Line Number */}
-                    <Box
-                      sx={{
-                        width: "50px",
-                        padding: "4px 12px",
-                        backgroundColor: "#f0f0f0",
-                        color: "#999",
-                        textAlign: "right",
-                        userSelect: "none",
-                        borderRight: "1px solid #ddd",
-                        fontSize: "0.8rem",
-                      }}
-                    >
+                    <div className="w-12 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-right border-r border-gray-200 dark:border-gray-700 text-xs flex-shrink-0">
                       {lineNumber}
-                    </Box>
+                    </div>
 
                     {/* Code Content */}
-                    <Box
-                      sx={{
-                        flex: 1,
-                        padding: "4px 12px",
-                        whiteSpace: "pre-wrap",
-                        wordBreak: "break-all",
-                        color: "#333",
-                      }}
-                    >
+                    <div className="flex-1 px-3 py-1 whitespace-pre-wrap break-all text-gray-700 dark:text-gray-300">
                       {line || " "}
-                    </Box>
+                    </div>
 
                     {/* Annotation Indicators */}
                     {lineAnnotations.length > 0 && (
-                      <Box sx={{ display: "flex", gap: 0.5, px: 1, alignItems: "center" }}>
+                      <div className="flex gap-1 px-2 items-center">
                         {lineAnnotations.map((ann) => (
-                          <Tooltip key={ann.id} title={ann.content}>
-                            <Box
-                              sx={{
-                                width: "8px",
-                                height: "8px",
-                                borderRadius: "50%",
-                                backgroundColor: getAnnotationColor(ann),
-                              }}
-                            />
-                          </Tooltip>
+                          <div
+                            key={ann.id}
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: getAnnotationColor(ann) }}
+                            title={ann.content}
+                          />
                         ))}
-                      </Box>
+                      </div>
                     )}
 
                     {/* Add Comment Button */}
                     {!readOnly && selectedLine === lineNumber && (
                       <Button
-                        size="small"
-                        sx={{ ml: 1 }}
+                        variant="ghost"
+                        size="sm"
+                        icon={<MessageCircle className="w-4 h-4" />}
                         onClick={(e) => {
                           e.stopPropagation();
                           setCommentDialogOpen(true);
                         }}
+                        className="ml-2"
                       >
-                        💬 Comment
+                        Comment
                       </Button>
                     )}
-                  </Box>
+                  </div>
 
                   {/* Inline Annotations */}
                   {lineAnnotations.map((annotation) => (
-                    <Box
+                    <div
                       key={annotation.id}
-                      sx={{
-                        ml: "50px",
-                        pl: 2,
-                        py: 1,
-                        borderLeft: `3px solid ${getAnnotationColor(annotation)}`,
-                        backgroundColor: "rgba(0,0,0,0.02)",
-                      }}
+                      className="ml-12 pl-4 py-2 border-l-4 bg-gray-50 dark:bg-gray-800/50"
+                      style={{ borderLeftColor: getAnnotationColor(annotation) }}
                     >
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                      <div className="flex items-center gap-2 mb-2">
                         {getAnnotationIcon(annotation)}
-                        <Typography variant="caption" sx={{ fontWeight: "bold" }}>
+                        <span className="text-xs font-bold text-gray-900 dark:text-white">
                           {annotation.type.charAt(0).toUpperCase() + annotation.type.slice(1)}
-                        </Typography>
-                        <Typography variant="caption" color="textSecondary">
+                        </span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
                           by {annotation.author}
-                        </Typography>
+                        </span>
                         {annotation.resolved && (
-                          <Chip label="Resolved" size="small" variant="outlined" />
+                          <span className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300">
+                            Resolved
+                          </span>
                         )}
-                      </Box>
+                      </div>
 
-                      <Typography variant="body2" sx={{ mb: 1 }}>
+                      <div className="text-sm text-gray-700 dark:text-gray-300 mb-2">
                         {annotation.content}
-                      </Typography>
+                      </div>
 
                       {annotation.replies.length > 0 && (
-                        <Box sx={{ mt: 1, ml: 2, borderLeft: "1px solid #ddd", pl: 1 }}>
+                        <div className="mt-2 ml-4 border-l border-gray-300 dark:border-gray-600 pl-2 space-y-1">
                           {annotation.replies.map((reply) => (
-                            <Box key={reply.id} sx={{ mb: 1 }}>
-                              <Typography variant="caption" sx={{ fontWeight: "bold" }}>
+                            <div key={reply.id} className="text-xs">
+                              <span className="font-bold text-gray-700 dark:text-gray-300">
                                 {reply.author}:
-                              </Typography>
-                              <Typography variant="caption"> {reply.content}</Typography>
-                            </Box>
+                              </span>
+                              <span className="text-gray-600 dark:text-gray-400 ml-1">
+                                {reply.content}
+                              </span>
+                            </div>
                           ))}
-                        </Box>
+                        </div>
                       )}
 
                       {!readOnly && (
-                        <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
+                        <div className="flex gap-2 mt-2">
                           <Button
-                            size="small"
-                            startIcon={<ReplyIcon />}
+                            variant="ghost"
+                            size="sm"
+                            icon={<MessageCircle className="w-4 h-4" />}
                             onClick={() => setSelectedAnnotation(annotation)}
                           >
                             Reply
                           </Button>
                           {!annotation.resolved && (
                             <Button
-                              size="small"
+                              variant="ghost"
+                              size="sm"
                               onClick={() => onResolveAnnotation?.(annotation.id)}
                             >
                               Resolve
                             </Button>
                           )}
-                          <IconButton
-                            size="small"
+                          <button
                             onClick={(e) => {
-                              setAnnotationMenuAnchor(e.currentTarget);
+                              setAnnotationMenuAnchor(e.currentTarget as HTMLElement);
                               setSelectedAnnotation(annotation);
                             }}
+                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                           >
-                            <MoreVertIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
-                    </Box>
+                    </div>
                   ))}
                 </div>
               );
             })}
-          </Box>
-        </Box>
-      </Paper>
+          </div>
+        </div>
+      </div>
 
       {/* Add Comment Dialog */}
-      <Dialog
-        open={commentDialogOpen}
-        onClose={() => {
-          setCommentDialogOpen(false);
-          setCommentText("");
-          setCommentType("comment");
-        }}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Add Comment to Line {selectedLine}</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <TextField
-            select
-            fullWidth
-            label="Comment Type"
-            value={commentType}
-            onChange={(e) => setCommentType(e.target.value as any)}
-            sx={{ mb: 2 }}
-          >
-            <MenuItem value="comment">💬 Comment</MenuItem>
-            <MenuItem value="issue">⚠️ Issue</MenuItem>
-            <MenuItem value="suggestion">💡 Suggestion</MenuItem>
-          </TextField>
+      {commentDialogOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+              <h2 className="font-semibold text-gray-900 dark:text-white">
+                Add Comment to Line {selectedLine}
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <select
+                value={commentType}
+                onChange={(e) => setCommentType(e.target.value as any)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="comment">💬 Comment</option>
+                <option value="issue">⚠️ Issue</option>
+                <option value="suggestion">💡 Suggestion</option>
+              </select>
 
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            placeholder="Write your comment..."
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCommentDialogOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleAddComment} disabled={!commentText.trim()}>
-            Add Comment
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Annotation Menu */}
-      <Menu
-        anchorEl={annotationMenuAnchor}
-        open={Boolean(annotationMenuAnchor)}
-        onClose={() => setAnnotationMenuAnchor(null)}
-      >
-        <MenuItem onClick={() => setAnnotationMenuAnchor(null)}>Edit</MenuItem>
-        <MenuItem onClick={() => setAnnotationMenuAnchor(null)}>Delete</MenuItem>
-      </Menu>
-    </Box>
+              <textarea
+                rows={4}
+                placeholder="Write your comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setCommentDialogOpen(false);
+                  setCommentText("");
+                  setCommentType("comment");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleAddComment}
+                disabled={!commentText.trim()}
+              >
+                Add Comment
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

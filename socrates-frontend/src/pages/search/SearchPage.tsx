@@ -42,7 +42,7 @@ export const SearchPage: React.FC = () => {
       {/* Header */}
       <PageHeader
         title="Search"
-        subtitle="Find projects, conversations, knowledge, and notes"
+        description="Find projects, conversations, knowledge, and notes"
       />
 
       {/* Main Content */}

@@ -12,6 +12,7 @@ import logging
 from typing import Optional, List
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, status, Depends, Body
+from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
@@ -19,6 +20,91 @@ from socrates_api.models import SuccessResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["knowledge"])
+
+
+# Request models
+class KnowledgeDocumentRequest(BaseModel):
+    """Request body for adding a knowledge document"""
+    title: str
+    content: str
+    type: Optional[str] = "text"
+
+
+@router.post(
+    "/{project_id}/knowledge/documents",
+    status_code=status.HTTP_201_CREATED,
+    summary="Add knowledge document to project",
+)
+async def add_knowledge_document(
+    project_id: str,
+    request: KnowledgeDocumentRequest,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Add a knowledge document to the project's knowledge base.
+
+    Args:
+        project_id: Project identifier
+        request: Document request with title, content, and type
+        current_user: Authenticated user
+
+    Returns:
+        Success response with document details
+    """
+    try:
+        logger.info(f"Adding knowledge document to project {project_id}")
+
+        db = get_database()
+        project = db.load_project(project_id)
+
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        # Create document
+        doc_id = f"doc_{int(datetime.now(timezone.utc).timestamp() * 1000)}"
+        document = {
+            "id": doc_id,
+            "title": request.title,
+            "content": request.content,
+            "type": request.type or "text",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_by": current_user,
+        }
+
+        # Initialize knowledge documents if needed
+        if not hasattr(project, "knowledge_documents"):
+            project.knowledge_documents = []
+
+        # Add to project
+        project.knowledge_documents.append(document)
+
+        # Persist changes
+        db.save_project(project)
+
+        logger.info(f"Knowledge document added: {doc_id}")
+
+        return {
+            "success": True,
+            "message": "Knowledge document added successfully",
+            "data": {
+                "document_id": doc_id,
+                "title": request.title,
+                "type": request.type,
+                "created_at": document["created_at"],
+            },
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error adding knowledge document: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to add knowledge document: {str(e)}",
+        )
 
 
 @router.post(

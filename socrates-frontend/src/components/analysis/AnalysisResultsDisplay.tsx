@@ -30,21 +30,17 @@ export const AnalysisResultsDisplay: React.FC<AnalysisResultsDisplayProps> = ({
 
   if (error) {
     return (
-      <Alert
-        title="Error"
-        description={error}
-        variant="error"
-      />
+      <Alert type="error" title="Error">
+        {error}
+      </Alert>
     );
   }
 
   if (!result) {
     return (
-      <Alert
-        title="No Results"
-        description={`No ${title} data available. Run an analysis to generate results.`}
-        variant="info"
-      />
+      <Alert type="info" title="No Results">
+        No {title} data available. Run an analysis to generate results.
+      </Alert>
     );
   }
 

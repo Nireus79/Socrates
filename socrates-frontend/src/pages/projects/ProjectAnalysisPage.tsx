@@ -86,12 +86,9 @@ export const ProjectAnalysisPage: React.FC = () => {
         )}
 
         {error && (
-          <Alert
-            title="Error"
-            description={error}
-            variant="error"
-            onClose={clearError}
-          />
+          <Alert type="error" title="Error" onClose={clearError}>
+            {error}
+          </Alert>
         )}
 
         <AnalysisActionPanel
@@ -142,37 +139,20 @@ export const ProjectAnalysisPage: React.FC = () => {
 
         {selectedProjectId && (
           <>
-            <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
-              <Tab
-                label="Validation"
-                active={activeTab === 'validation'}
-                onClick={() => setActiveTab('validation')}
-              />
-              <Tab
-                label="Testing"
-                active={activeTab === 'testing'}
-                onClick={() => setActiveTab('testing')}
-              />
-              <Tab
-                label="Review"
-                active={activeTab === 'review'}
-                onClick={() => setActiveTab('review')}
-              />
-              <Tab
-                label="Maturity"
-                active={activeTab === 'maturity'}
-                onClick={() => setActiveTab('maturity')}
-              />
-              <Tab
-                label="Structure"
-                active={activeTab === 'structure'}
-                onClick={() => setActiveTab('structure')}
-              />
-              <Tab
-                label="Report"
-                active={activeTab === 'report'}
-                onClick={() => setActiveTab('report')}
-              />
+            <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+              {(['Validation', 'Testing', 'Review', 'Maturity', 'Structure', 'Report'] as const).map((label) => (
+                <button
+                  key={label}
+                  onClick={() => setActiveTab(label.toLowerCase() as TabType)}
+                  className={`px-4 py-2 font-medium transition-colors whitespace-nowrap ${
+                    activeTab === label.toLowerCase()
+                      ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
             <div>

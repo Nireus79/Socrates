@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { GitBranch, RefreshCw, Upload, Download, Check, AlertCircle } from 'lucide-react';
-import { useGitHubStore } from '../../stores';
+import { useGithubStore } from '../../stores';
 import { Button } from '../common';
 import { Card } from '../common';
 
@@ -20,7 +20,7 @@ export const SyncStatusWidget: React.FC<SyncStatusWidgetProps> = ({
   onSync,
 }) => {
   const { getSyncStatus, syncProject, pullChanges, pushChanges, isLoading, syncStatuses } =
-    useGitHubStore();
+    useGithubStore();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   const syncStatus = syncStatuses.get(projectId);

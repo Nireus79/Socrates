@@ -6,7 +6,7 @@ export { useCodeGenerationStore } from './codeGenerationStore';
 export { useCollaborationStore } from './collaborationStore';
 export { useSubscriptionStore, useFeatureGate } from './subscriptionStore';
 export { useThemeStore } from './themeStore';
-export { useGitHubStore } from './githubStore';
+export { useGithubStore } from './githubStore';
 export { useKnowledgeStore } from './knowledgeStore';
 export { useLLMStore } from './llmStore';
 export { useAnalysisStore } from './analysisStore';

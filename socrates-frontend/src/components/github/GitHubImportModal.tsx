@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { AlertCircle, GitBranch, Plus } from 'lucide-react';
-import { useGitHubStore } from '../../stores';
+import { useGithubStore } from '../../stores';
 import { Modal } from '../common';
 import { Button } from '../common';
 import { Input } from '../common';
@@ -22,7 +22,7 @@ export const GitHubImportModal: React.FC<GitHubImportModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { importRepository, isImporting, error } = useGitHubStore();
+  const { importRepository, isImporting, error } = useGithubStore();
   const [url, setUrl] = React.useState('');
   const [projectName, setProjectName] = React.useState('');
   const [branch, setBranch] = React.useState('main');
@@ -43,11 +43,7 @@ export const GitHubImportModal: React.FC<GitHubImportModalProps> = ({
     setValidationError(null);
 
     try {
-      await importRepository({
-        url: url.trim(),
-        projectName: projectName.trim() || undefined,
-        branch: branch || 'main',
-      });
+      await importRepository(url.trim(), projectName.trim() || undefined);
 
       // Reset form
       setUrl('');

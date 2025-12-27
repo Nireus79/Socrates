@@ -93,7 +93,7 @@ export const AnalysisActionPanel: React.FC<AnalysisActionPanelProps> = ({
 
         {/* Fix Button */}
         <Button
-          variant="warning"
+          variant="secondary"
           icon={<Wand2 className="h-4 w-4" />}
           onClick={onFix}
           disabled={isLoading || !projectId}

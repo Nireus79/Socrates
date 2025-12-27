@@ -6,7 +6,7 @@ import React from 'react';
 import { LogOut, Moon, Sun, Lock, CreditCard, Zap, Shield, Github } from 'lucide-react';
 import { useAuthStore, useThemeStore, useSubscriptionStore, showSuccess, showError } from '../../stores';
 import { MainLayout, PageHeader } from '../../components/layout';
-import { authAPI } from '../../api';
+import { authAPI, apiClient } from '../../api';
 import {
   Card,
   Button,
@@ -711,7 +711,7 @@ export const SettingsPage: React.FC = () => {
           cancelLabel="Cancel"
           onConfirm={() => handleUpgrade(upgradeTier)}
           isLoading={upgradeInProgress}
-          variant="primary"
+          variant="info"
         />
 
         {/* Subscription Downgrade Dialog */}
