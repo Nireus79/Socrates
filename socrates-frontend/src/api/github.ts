@@ -1,123 +1,69 @@
 /**
- * GitHub Integration API service
- * Handles repository import, pull, push, and sync operations
+ * GitHub Integration API - Repository import and sync
  */
 
 import { apiClient } from './client';
 
 export interface GitHubImportRequest {
   url: string;
-  projectName?: string;
+  project_name?: string;
   branch?: string;
 }
 
-export interface GitHubImportResponse {
+export interface GitHubSyncStatus {
   project_id: string;
-  project_name: string;
-  repository_url: string;
-  metadata: Record<string, any>;
-  validation_results: Record<string, any>;
+  last_sync?: string;
+  status: 'synced' | 'pending' | 'failed';
+  changes_count?: number;
+  [key: string]: any;
 }
 
-export interface GitHubSyncStatusResponse {
-  project_id: string;
-  is_linked: boolean;
-  repository_url?: string;
-  repository_imported_at?: string;
+/**
+ * Import GitHub repository as project
+ */
+export async function importRepository(request: GitHubImportRequest): Promise<any> {
+  const response = await apiClient.post('/github/import', request) as any;
+  return response?.data || response;
 }
 
-export interface GitHubPullResponse {
-  project_id: string;
-  message: string;
-  diff_summary?: string;
+/**
+ * Pull changes from GitHub
+ */
+export async function pullFromGithub(projectId: string): Promise<any> {
+  const response = await apiClient.post(`/github/projects/${projectId}/pull`, {}) as any;
+  return response?.data || response;
 }
 
-export interface GitHubPushResponse {
-  project_id: string;
-  commit_message: string;
-  message: string;
+/**
+ * Push changes to GitHub
+ */
+export async function pushToGithub(projectId: string, message?: string): Promise<any> {
+  const response = await apiClient.post(`/github/projects/${projectId}/push`, {
+    message: message || 'Sync from Socrates',
+  }) as any;
+  return response?.data || response;
 }
 
-export interface GitHubSyncResponse {
-  project_id: string;
-  pull: GitHubPullResponse;
-  push: GitHubPushResponse;
+/**
+ * Sync project with GitHub
+ */
+export async function syncWithGithub(projectId: string): Promise<any> {
+  const response = await apiClient.post(`/github/projects/${projectId}/sync`, {}) as any;
+  return response?.data || response;
 }
 
-export const githubAPI = {
-  /**
-   * Import a GitHub repository as a new project
-   */
-  async importRepository(
-    request: GitHubImportRequest
-  ): Promise<GitHubImportResponse> {
-    const params = new URLSearchParams();
-    params.append('url', request.url);
-    if (request.projectName) {
-      params.append('project_name', request.projectName);
-    }
-    if (request.branch) {
-      params.append('branch', request.branch);
-    }
+/**
+ * Get GitHub sync status
+ */
+export async function getGithubStatus(projectId: string): Promise<GitHubSyncStatus> {
+  const response = await apiClient.get(`/github/projects/${projectId}/status`) as any;
+  return response?.data || response;
+}
 
-    return apiClient.post<GitHubImportResponse>(
-      `/github/import?${params.toString()}`,
-      {}
-    );
-  },
-
-  /**
-   * Pull latest changes from GitHub for a project
-   */
-  async pullChanges(projectId: string): Promise<GitHubPullResponse> {
-    return apiClient.post<GitHubPullResponse>(
-      `/github/projects/${projectId}/pull`,
-      {}
-    );
-  },
-
-  /**
-   * Push local changes to GitHub for a project
-   */
-  async pushChanges(
-    projectId: string,
-    commitMessage?: string
-  ): Promise<GitHubPushResponse> {
-    const params = new URLSearchParams();
-    if (commitMessage) {
-      params.append('commit_message', commitMessage);
-    }
-
-    return apiClient.post<GitHubPushResponse>(
-      `/github/projects/${projectId}/push?${params.toString()}`,
-      {}
-    );
-  },
-
-  /**
-   * Sync with GitHub (pull then push)
-   */
-  async syncProject(
-    projectId: string,
-    commitMessage?: string
-  ): Promise<GitHubSyncResponse> {
-    const params = new URLSearchParams();
-    if (commitMessage) {
-      params.append('commit_message', commitMessage);
-    }
-
-    return apiClient.post<GitHubSyncResponse>(
-      `/github/projects/${projectId}/sync?${params.toString()}`,
-      {}
-    );
-  },
-
-  /**
-   * Get GitHub sync status for a project
-   */
-  async getSyncStatus(projectId: string): Promise<GitHubSyncStatusResponse> {
-    return apiClient.get<GitHubSyncStatusResponse>(
-      `/github/projects/${projectId}/status`
-    );
-  },
-};
+/**
+ * Disconnect project from GitHub
+ */
+export async function disconnectGithub(projectId: string): Promise<any> {
+  const response = await apiClient.post(`/github/disconnect`, { project_id: projectId }) as any;
+  return response?.data || response;
+}

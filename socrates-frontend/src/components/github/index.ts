@@ -1,2 +1,5 @@
-export { GitHubImportModal } from './GitHubImportModal';
-export { SyncStatusWidget } from './SyncStatusWidget';
+/**
+ * GitHub Components - Exports
+ */
+
+export { GitHubSyncWidget } from './GitHubSyncWidget';

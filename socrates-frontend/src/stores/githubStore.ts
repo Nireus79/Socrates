@@ -1,109 +1,118 @@
 /**
- * GitHub Integration Store - Manages GitHub operations state
- * Uses Zustand for state management
+ * GitHub Store - GitHub integration state management
  */
 
 import { create } from 'zustand';
-import { githubAPI } from '../api/github';
-import type { GitHubImportRequest, GitHubSyncStatusResponse } from '../api/github';
+import * as githubAPI from '../api/github';
 
 interface GitHubState {
   // State
-  isImporting: boolean;
+  selectedProjectId: string | null;
   isLoading: boolean;
   error: string | null;
-  syncStatuses: Map<string, GitHubSyncStatusResponse>;
-  lastSyncedProject: string | null;
+  syncStatus: any | null;
+  isConnected: boolean;
 
   // Actions
-  importRepository: (request: GitHubImportRequest) => Promise<void>;
-  pullChanges: (projectId: string) => Promise<void>;
-  pushChanges: (projectId: string, commitMessage?: string) => Promise<void>;
-  syncProject: (projectId: string, commitMessage?: string) => Promise<void>;
-  getSyncStatus: (projectId: string) => Promise<void>;
+  setSelectedProject: (projectId: string | null) => void;
+  importRepository: (url: string, projectName?: string) => Promise<void>;
+  pullFromGithub: (projectId: string) => Promise<void>;
+  pushToGithub: (projectId: string, message?: string) => Promise<void>;
+  syncWithGithub: (projectId: string) => Promise<void>;
+  getStatus: (projectId: string) => Promise<void>;
+  disconnect: (projectId: string) => Promise<void>;
   clearError: () => void;
 }
 
-export const useGitHubStore = create<GitHubState>((set, get) => ({
-  // Initial state
-  isImporting: false,
+export const useGithubStore = create<GitHubState>((set) => ({
+  selectedProjectId: null,
   isLoading: false,
   error: null,
-  syncStatuses: new Map(),
-  lastSyncedProject: null,
+  syncStatus: null,
+  isConnected: false,
 
-  // Import repository from GitHub
-  importRepository: async (request: GitHubImportRequest) => {
-    set({ isImporting: true, error: null });
+  setSelectedProject: (projectId: string | null) => {
+    set({ selectedProjectId: projectId });
+  },
+
+  importRepository: async (url: string, projectName?: string) => {
+    set({ isLoading: true, error: null });
     try {
-      const result = await githubAPI.importRepository(request);
+      const result = await githubAPI.importRepository({ url, project_name: projectName });
       set({
-        isImporting: false,
-        lastSyncedProject: result.project_id,
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to import repository';
-      set({ error: message, isImporting: false });
-      throw err;
-    }
-  },
-
-  // Pull latest changes from GitHub
-  pullChanges: async (projectId: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      await githubAPI.pullChanges(projectId);
-      set({ isLoading: false, lastSyncedProject: projectId });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to pull changes';
-      set({ error: message, isLoading: false });
-      throw err;
-    }
-  },
-
-  // Push local changes to GitHub
-  pushChanges: async (projectId: string, commitMessage?: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      await githubAPI.pushChanges(projectId, commitMessage);
-      set({ isLoading: false, lastSyncedProject: projectId });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to push changes';
-      set({ error: message, isLoading: false });
-      throw err;
-    }
-  },
-
-  // Sync with GitHub (pull then push)
-  syncProject: async (projectId: string, commitMessage?: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      await githubAPI.syncProject(projectId, commitMessage);
-      set({ isLoading: false, lastSyncedProject: projectId });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to sync with GitHub';
-      set({ error: message, isLoading: false });
-      throw err;
-    }
-  },
-
-  // Get sync status for a project
-  getSyncStatus: async (projectId: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      const status = await githubAPI.getSyncStatus(projectId);
-      set((state) => ({
-        syncStatuses: new Map(state.syncStatuses).set(projectId, status),
         isLoading: false,
-      }));
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to get sync status';
+        isConnected: true,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to import repository';
       set({ error: message, isLoading: false });
-      throw err;
     }
   },
 
-  // Clear error message
-  clearError: () => set({ error: null }),
-}));
+  pullFromGithub: async (projectId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await githubAPI.pullFromGithub(projectId);
+      set({ isLoading: false });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to pull from GitHub';
+      set({ error: message, isLoading: false });
+    }
+  },
 
+  pushToGithub: async (projectId: string, message?: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await githubAPI.pushToGithub(projectId, message);
+      set({ isLoading: false });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to push to GitHub';
+      set({ error: message, isLoading: false });
+    }
+  },
+
+  syncWithGithub: async (projectId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await githubAPI.syncWithGithub(projectId);
+      set({ isLoading: false });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to sync with GitHub';
+      set({ error: message, isLoading: false });
+    }
+  },
+
+  getStatus: async (projectId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const status = await githubAPI.getGithubStatus(projectId);
+      set({
+        syncStatus: status,
+        isLoading: false,
+        isConnected: status.status === 'synced',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to get status';
+      set({ error: message, isLoading: false });
+    }
+  },
+
+  disconnect: async (projectId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await githubAPI.disconnectGithub(projectId);
+      set({
+        isLoading: false,
+        isConnected: false,
+        syncStatus: null,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to disconnect';
+      set({ error: message, isLoading: false });
+    }
+  },
+
+  clearError: () => {
+    set({ error: null });
+  },
+}));
