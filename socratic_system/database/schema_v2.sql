@@ -388,6 +388,61 @@ CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_created ON chat_messages(created_at);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_session_created ON chat_messages(session_id, created_at);
 
+-- Collaboration invitations (Phase 2 feature - token-based invitations)
+CREATE TABLE IF NOT EXISTS collaboration_invitations (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    inviter_id TEXT NOT NULL,
+    invitee_email TEXT NOT NULL,
+    role TEXT NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    status TEXT DEFAULT 'pending',  -- pending, accepted, expired, cancelled
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    accepted_at TEXT,
+
+    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE,
+    FOREIGN KEY (inviter_id) REFERENCES users_v2(username)
+);
+CREATE INDEX IF NOT EXISTS idx_invitations_project ON collaboration_invitations(project_id);
+CREATE INDEX IF NOT EXISTS idx_invitations_email ON collaboration_invitations(invitee_email);
+CREATE INDEX IF NOT EXISTS idx_invitations_token ON collaboration_invitations(token);
+CREATE INDEX IF NOT EXISTS idx_invitations_status ON collaboration_invitations(status);
+CREATE INDEX IF NOT EXISTS idx_invitations_created ON collaboration_invitations(created_at DESC);
+
+-- Collaboration activities (Phase 2 feature - activity logging)
+CREATE TABLE IF NOT EXISTS collaboration_activities (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    activity_type TEXT NOT NULL,  -- member_added, member_removed, role_changed, file_uploaded, message_sent, etc.
+    activity_data TEXT,  -- JSON for extensibility
+    created_at TEXT NOT NULL,
+
+    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+);
+CREATE INDEX IF NOT EXISTS idx_activities_project ON collaboration_activities(project_id);
+CREATE INDEX IF NOT EXISTS idx_activities_created ON collaboration_activities(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activities_type ON collaboration_activities(activity_type);
+CREATE INDEX IF NOT EXISTS idx_activities_project_created ON collaboration_activities(project_id, created_at DESC);
+
+-- Knowledge analytics (Phase 2 feature - document usage tracking)
+CREATE TABLE IF NOT EXISTS knowledge_analytics (
+    id TEXT PRIMARY KEY,
+    document_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    event_type TEXT NOT NULL,  -- viewed, searched, exported, downloaded
+    created_at TEXT NOT NULL,
+
+    FOREIGN KEY (document_id) REFERENCES knowledge_documents_v2(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+);
+CREATE INDEX IF NOT EXISTS idx_analytics_document ON knowledge_analytics(document_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_created ON knowledge_analytics(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_analytics_type ON knowledge_analytics(event_type);
+CREATE INDEX IF NOT EXISTS idx_analytics_document_created ON knowledge_analytics(document_id, created_at DESC);
+
 -- ============================================================================
 -- Summary of Key Improvements
 -- ============================================================================

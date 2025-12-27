@@ -16,12 +16,14 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, status, Depends, Body
 
 from socratic_system.database import ProjectDatabaseV2
+from socratic_system.models import User
 from socrates_api.database import get_database
 from socrates_api.auth import get_current_user, get_current_user_object
 from socrates_api.models import (
     SuccessResponse,
     ErrorResponse,
     CollaborationInviteRequest,
+    CollaborationInvitationResponse,
 )
 from socrates_api.middleware.subscription import SubscriptionChecker
 
@@ -62,6 +64,7 @@ async def add_collaborator_new(
     project_id: str,
     request: CollaborationInviteRequest = Body(...),
     current_user: str = Depends(get_current_user),
+    user_object: "User" = Depends(get_current_user_object),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -105,50 +108,47 @@ async def add_collaborator_new(
             )
 
         # CRITICAL: Validate subscription before adding collaborators
-        # TODO: Re-enable subscription validation after fixing dependency injection
-        # logger.info(f"Validating subscription for adding collaborator for user {current_user}")
-        # try:
-        #     # Check if user has active subscription
-        #     if not user_object.subscription.is_active:
-        #         logger.warning(f"User {current_user} attempted to add collaborator without active subscription")
-        #         raise HTTPException(
-        #             status_code=status.HTTP_403_FORBIDDEN,
-        #             detail="Active subscription required to add collaborators"
-        #         )
-        #
-        #     # Check subscription tier - only Professional and Enterprise can add collaborators
-        #     subscription_tier = user_object.subscription.tier.lower()
-        #     if subscription_tier == "free":
-        #         logger.warning(f"Free-tier user {current_user} attempted to add collaborators")
-        #         raise HTTPException(
-        #             status_code=status.HTTP_403_FORBIDDEN,
-        #             detail="Collaboration feature requires Professional or Enterprise subscription"
-        #         )
-        #
-        #     # Check team member limit for subscription tier
-        #     current_team_size = len(project.team_members) if project.team_members else 0
-        #     can_add, error_msg = SubscriptionChecker.check_team_member_limit(
-        #         user_object,
-        #         current_team_size
-        #     )
-        #     if not can_add:
-        #         logger.warning(f"User {current_user} exceeded team member limit: {error_msg}")
-        #         raise HTTPException(
-        #             status_code=status.HTTP_403_FORBIDDEN,
-        #             detail=error_msg
-        #         )
-        #
-        #     logger.info(f"Subscription validation passed for {current_user}")
-        # except HTTPException:
-        #     raise
-        # except Exception as e:
-        #     logger.error(f"Error validating subscription for collaboration: {type(e).__name__}: {e}")
-        #     raise HTTPException(
-        #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #         detail=f"Error validating subscription: {str(e)[:100]}"
-        #     )
+        logger.info(f"Validating subscription for adding collaborator for user {current_user}")
+        try:
+            # Check if user has active subscription
+            if user_object.subscription_status != "active":
+                logger.warning(f"User {current_user} attempted to add collaborator without active subscription (status: {user_object.subscription_status})")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Active subscription required to add collaborators"
+                )
 
-        logger.info(f"Skipping subscription validation (TODO: fix dependency injection)")
+            # Check subscription tier - only Professional and Enterprise can add collaborators
+            subscription_tier = user_object.subscription_tier.lower()
+            if subscription_tier == "free":
+                logger.warning(f"Free-tier user {current_user} attempted to add collaborators")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Collaboration feature requires 'pro' or 'enterprise' subscription"
+                )
+
+            # Check team member limit for subscription tier
+            current_team_size = len(project.team_members) if project.team_members else 0
+            can_add, error_msg = SubscriptionChecker.can_add_team_member(
+                subscription_tier,
+                current_team_size
+            )
+            if not can_add:
+                logger.warning(f"User {current_user} exceeded team member limit: {error_msg}")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=error_msg
+                )
+
+            logger.info(f"Subscription validation passed for {current_user} (tier: {subscription_tier})")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error validating subscription for collaboration: {type(e).__name__}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error validating subscription: {str(e)[:100]}"
+            )
 
         # Initialize team_members if not present
         from datetime import datetime
@@ -685,6 +685,351 @@ async def get_activities(
 # ============================================================================
 
 
+@router.post(
+    "/{project_id}/invitations",
+    response_model=CollaborationInvitationResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Invite collaborator to project",
+)
+async def create_project_invitation(
+    project_id: str,
+    request: CollaborationInviteRequest = Body(...),
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabaseV2 = Depends(get_database),
+):
+    """
+    Create and send an invitation to a collaborator.
+
+    Args:
+        project_id: Project to invite collaborator to
+        request: Invitation request with email and role
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        CollaborationInvitationResponse with invitation details
+    """
+    try:
+        from datetime import datetime, timedelta
+        import uuid
+        import secrets
+
+        # Verify project exists and user is owner
+        project = db.load_project(project_id)
+        if project is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found",
+            )
+
+        if project.owner != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only project owner can invite collaborators",
+            )
+
+        # Validate email
+        email = request.email.strip().lower()
+        if '@' not in email or '.' not in email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid email format",
+            )
+
+        # Validate role
+        if not CollaboratorRole.is_valid(request.role):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid role. Must be owner, editor, or viewer",
+            )
+
+        # Generate unique invitation token
+        token = secrets.token_urlsafe(32)
+
+        # Set expiration to 7 days from now
+        now = datetime.utcnow()
+        expires_at = now + timedelta(days=7)
+
+        # Create invitation record
+        invitation = {
+            "id": f"inv_{uuid.uuid4().hex[:12]}",
+            "project_id": project_id,
+            "inviter_id": current_user,
+            "invitee_email": email,
+            "role": request.role,
+            "token": token,
+            "status": "pending",
+            "created_at": now.isoformat(),
+            "expires_at": expires_at.isoformat(),
+            "accepted_at": None,
+        }
+
+        # Save to database
+        db.save_invitation(invitation)
+
+        logger.info(f"Created invitation {invitation['id']} for {email} to project {project_id}")
+
+        return CollaborationInvitationResponse(**invitation)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating invitation: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error creating invitation",
+        )
+
+
+@router.get(
+    "/{project_id}/invitations",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    summary="List project invitations",
+)
+async def get_project_invitations(
+    project_id: str,
+    status_filter: Optional[str] = None,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabaseV2 = Depends(get_database),
+):
+    """
+    List invitations for a project.
+
+    Args:
+        project_id: Project identifier
+        status_filter: Filter by status (pending, accepted, etc.)
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        List of invitations
+    """
+    try:
+        # Verify project access
+        project = db.load_project(project_id)
+        if project is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found",
+            )
+
+        if project.owner != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only project owner can view invitations",
+            )
+
+        # Load invitations
+        invitations = db.get_project_invitations(project_id, status=status_filter)
+
+        return {
+            "status": "success",
+            "project_id": project_id,
+            "invitations": invitations,
+            "total": len(invitations),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting invitations: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving invitations",
+        )
+
+
+@router.post(
+    "/invitations/{token}/accept",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    summary="Accept collaboration invitation",
+)
+async def accept_invitation(
+    token: str,
+    current_user: str = Depends(get_current_user),
+    user_obj: User = Depends(get_current_user_object),
+    db: ProjectDatabaseV2 = Depends(get_database),
+):
+    """
+    Accept a collaboration invitation using the invitation token.
+
+    Args:
+        token: Invitation token from email
+        current_user: Current authenticated user
+        user_obj: Current user object
+        db: Database connection
+
+    Returns:
+        Success response with project details
+    """
+    try:
+        from datetime import datetime
+
+        # Find invitation by token
+        invitation = db.get_invitation_by_token(token)
+        if not invitation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invitation not found or already used",
+            )
+
+        # Check if already accepted
+        if invitation["status"] == "accepted":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invitation already accepted",
+            )
+
+        # Check if expired
+        expires_at = datetime.fromisoformat(invitation["expires_at"])
+        if datetime.utcnow() > expires_at:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invitation has expired",
+            )
+
+        # Check if email matches
+        if user_obj.email.lower() != invitation["invitee_email"].lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This invitation was sent to a different email address",
+            )
+
+        # Load project
+        project = db.load_project(invitation["project_id"])
+        if project is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found",
+            )
+
+        # Add user to project team
+        from socratic_system.models.role import TeamMemberRole
+
+        project.team_members = project.team_members or []
+
+        # Check if already a member
+        if any(m.username == current_user for m in project.team_members):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User is already a collaborator on this project",
+            )
+
+        # Add as team member
+        new_member = TeamMemberRole(
+            username=current_user,
+            role=invitation["role"],
+            skills=[],
+            joined_at=datetime.utcnow(),
+        )
+        project.team_members.append(new_member)
+
+        # Save project
+        db.save_project(project)
+
+        # Mark invitation as accepted
+        db.accept_invitation(invitation["id"])
+
+        # Record activity
+        from socrates_api.routers.events import record_event
+        record_event("collaborator_added", {
+            "project_id": invitation["project_id"],
+            "username": current_user,
+            "role": invitation["role"],
+            "via_invitation": True,
+        }, user_id=current_user)
+
+        logger.info(f"User {current_user} accepted invitation for project {invitation['project_id']}")
+
+        return {
+            "status": "success",
+            "message": f"Successfully joined project '{project.name}'",
+            "project_id": invitation["project_id"],
+            "role": invitation["role"],
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error accepting invitation: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error accepting invitation",
+        )
+
+
+@router.delete(
+    "/{project_id}/invitations/{invitation_id}",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    summary="Cancel invitation",
+)
+async def cancel_invitation(
+    project_id: str,
+    invitation_id: str,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabaseV2 = Depends(get_database),
+):
+    """
+    Cancel a pending invitation.
+
+    Args:
+        project_id: Project identifier
+        invitation_id: Invitation identifier
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        Success response
+    """
+    try:
+        # Verify project ownership
+        project = db.load_project(project_id)
+        if project is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found",
+            )
+
+        if project.owner != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only project owner can cancel invitations",
+            )
+
+        # Get invitation to verify it belongs to this project
+        invitations = db.get_project_invitations(project_id)
+        invitation = next((i for i in invitations if i["id"] == invitation_id), None)
+
+        if not invitation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invitation not found",
+            )
+
+        # Delete invitation
+        db.delete_invitation(invitation_id)
+
+        logger.info(f"Cancelled invitation {invitation_id} for project {project_id}")
+
+        return {
+            "status": "success",
+            "message": "Invitation cancelled",
+            "invitation_id": invitation_id,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error cancelling invitation: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error cancelling invitation",
+        )
+
+
 @collab_router.post(
     "/invite",
     response_model=SuccessResponse,
@@ -700,7 +1045,7 @@ async def invite_team_member(
     request: CollaborationInviteRequest,
 ):
     """
-    Invite a team member via email.
+    Invite a team member via email (global team).
 
     Args:
         request: Request body with email and optional role

@@ -2602,3 +2602,277 @@ class ProjectDatabaseV2:
     def get_session_message_count(self, session_id: str) -> int:
         """Get total message count for a session"""
         return self._count_session_messages(session_id)
+
+    # ========================================================================
+    # Collaboration Invitation Methods
+    # ========================================================================
+
+    def save_invitation(self, invitation: Dict) -> None:
+        """Save or update a collaboration invitation"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO collaboration_invitations
+                (id, project_id, inviter_id, invitee_email, role, token, status, created_at, expires_at, accepted_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    invitation.get("id"),
+                    invitation.get("project_id"),
+                    invitation.get("inviter_id"),
+                    invitation.get("invitee_email"),
+                    invitation.get("role"),
+                    invitation.get("token"),
+                    invitation.get("status", "pending"),
+                    invitation.get("created_at"),
+                    invitation.get("expires_at"),
+                    invitation.get("accepted_at"),
+                ),
+            )
+            conn.commit()
+            self.logger.debug(f"Saved invitation {invitation.get('id')}")
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error saving invitation: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def get_invitation_by_token(self, token: str) -> Optional[Dict]:
+        """Get invitation by token"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT * FROM collaboration_invitations WHERE token = ?", (token,))
+            row = cursor.fetchone()
+
+            if not row:
+                return None
+
+            return {
+                "id": row["id"],
+                "project_id": row["project_id"],
+                "inviter_id": row["inviter_id"],
+                "invitee_email": row["invitee_email"],
+                "role": row["role"],
+                "token": row["token"],
+                "status": row["status"],
+                "created_at": row["created_at"],
+                "expires_at": row["expires_at"],
+                "accepted_at": row["accepted_at"],
+            }
+        except Exception as e:
+            self.logger.error(f"Error getting invitation by token: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def get_project_invitations(self, project_id: str, status: Optional[str] = None) -> List[Dict]:
+        """Get invitations for a project, optionally filtered by status"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            if status:
+                cursor.execute(
+                    "SELECT * FROM collaboration_invitations WHERE project_id = ? AND status = ? ORDER BY created_at DESC",
+                    (project_id, status),
+                )
+            else:
+                cursor.execute(
+                    "SELECT * FROM collaboration_invitations WHERE project_id = ? ORDER BY created_at DESC",
+                    (project_id,),
+                )
+
+            invitations = []
+            for row in cursor.fetchall():
+                invitations.append({
+                    "id": row["id"],
+                    "project_id": row["project_id"],
+                    "inviter_id": row["inviter_id"],
+                    "invitee_email": row["invitee_email"],
+                    "role": row["role"],
+                    "token": row["token"],
+                    "status": row["status"],
+                    "created_at": row["created_at"],
+                    "expires_at": row["expires_at"],
+                    "accepted_at": row["accepted_at"],
+                })
+
+            return invitations
+        except Exception as e:
+            self.logger.error(f"Error getting project invitations for {project_id}: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def get_user_invitations(self, email: str, status: Optional[str] = None) -> List[Dict]:
+        """Get invitations for a user by email, optionally filtered by status"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            if status:
+                cursor.execute(
+                    "SELECT * FROM collaboration_invitations WHERE invitee_email = ? AND status = ? ORDER BY created_at DESC",
+                    (email, status),
+                )
+            else:
+                cursor.execute(
+                    "SELECT * FROM collaboration_invitations WHERE invitee_email = ? ORDER BY created_at DESC",
+                    (email,),
+                )
+
+            invitations = []
+            for row in cursor.fetchall():
+                invitations.append({
+                    "id": row["id"],
+                    "project_id": row["project_id"],
+                    "inviter_id": row["inviter_id"],
+                    "invitee_email": row["invitee_email"],
+                    "role": row["role"],
+                    "token": row["token"],
+                    "status": row["status"],
+                    "created_at": row["created_at"],
+                    "expires_at": row["expires_at"],
+                    "accepted_at": row["accepted_at"],
+                })
+
+            return invitations
+        except Exception as e:
+            self.logger.error(f"Error getting invitations for {email}: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def accept_invitation(self, invitation_id: str) -> None:
+        """Accept an invitation and mark it as accepted"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            now = datetime.now()
+            cursor.execute(
+                """
+                UPDATE collaboration_invitations
+                SET status = ?, accepted_at = ?
+                WHERE id = ?
+                """,
+                ("accepted", now.isoformat(), invitation_id),
+            )
+            conn.commit()
+            self.logger.debug(f"Accepted invitation {invitation_id}")
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error accepting invitation: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def delete_invitation(self, invitation_id: str) -> None:
+        """Delete/cancel an invitation"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("DELETE FROM collaboration_invitations WHERE id = ?", (invitation_id,))
+            conn.commit()
+            self.logger.debug(f"Deleted invitation {invitation_id}")
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error deleting invitation: {e}")
+            raise
+        finally:
+            conn.close()
+
+    # ========================================================================
+    # Collaboration Activity Methods
+    # ========================================================================
+
+    def save_activity(self, activity: Dict) -> None:
+        """Save a collaboration activity"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            activity_data_json = json.dumps(activity.get("activity_data")) if activity.get("activity_data") else None
+            cursor.execute(
+                """
+                INSERT INTO collaboration_activities
+                (id, project_id, user_id, activity_type, activity_data, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    activity.get("id"),
+                    activity.get("project_id"),
+                    activity.get("user_id"),
+                    activity.get("activity_type"),
+                    activity_data_json,
+                    activity.get("created_at"),
+                ),
+            )
+            conn.commit()
+            self.logger.debug(f"Saved activity {activity.get('id')}")
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error saving activity: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def get_project_activities(self, project_id: str, limit: int = 50, offset: int = 0) -> List[Dict]:
+        """Get activities for a project with pagination"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT * FROM collaboration_activities
+                WHERE project_id = ?
+                ORDER BY created_at DESC
+                LIMIT ? OFFSET ?
+                """,
+                (project_id, limit, offset),
+            )
+
+            activities = []
+            for row in cursor.fetchall():
+                activities.append({
+                    "id": row["id"],
+                    "project_id": row["project_id"],
+                    "user_id": row["user_id"],
+                    "activity_type": row["activity_type"],
+                    "activity_data": json.loads(row["activity_data"]) if row["activity_data"] else None,
+                    "created_at": row["created_at"],
+                })
+
+            return activities
+        except Exception as e:
+            self.logger.error(f"Error getting project activities for {project_id}: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def count_project_activities(self, project_id: str) -> int:
+        """Count total activities for a project"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT COUNT(*) as count FROM collaboration_activities WHERE project_id = ?", (project_id,))
+            row = cursor.fetchone()
+            return row[0] if row else 0
+        except Exception as e:
+            self.logger.error(f"Error counting activities for {project_id}: {e}")
+            return 0
+        finally:
+            conn.close()

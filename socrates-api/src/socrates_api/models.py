@@ -493,6 +493,37 @@ class CollaborationInviteRequest(BaseModel):
         }
 
 
+class CollaborationInvitationResponse(BaseModel):
+    """Response body for invitation operations"""
+
+    id: str = Field(..., description="Invitation ID")
+    project_id: str = Field(..., description="Project ID")
+    inviter_id: str = Field(..., description="Username of inviter")
+    invitee_email: str = Field(..., description="Email of invitee")
+    role: str = Field(..., description="Assigned role")
+    token: str = Field(..., description="Unique invitation token")
+    status: str = Field(..., description="Invitation status (pending, accepted, expired, cancelled)")
+    created_at: str = Field(..., description="Creation timestamp")
+    expires_at: str = Field(..., description="Expiration timestamp")
+    accepted_at: Optional[str] = Field(None, description="Acceptance timestamp")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "inv_123",
+                "project_id": "proj_123",
+                "inviter_id": "user1",
+                "invitee_email": "user2@example.com",
+                "role": "editor",
+                "token": "eyJ...",
+                "status": "pending",
+                "created_at": "2024-01-01T00:00:00Z",
+                "expires_at": "2024-01-08T00:00:00Z",
+                "accepted_at": None
+            }
+        }
+
+
 class DeleteDocumentRequest(BaseModel):
     """Request body for deleting knowledge document"""
 
