@@ -18,7 +18,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Body
 from socratic_system.database import ProjectDatabaseV2
 from socratic_system.models import User
 from socrates_api.database import get_database
-from socrates_api.auth import get_current_user, get_current_user_object
+from socrates_api.auth import get_current_user, get_current_user_object, require_project_role
 from socrates_api.models import (
     SuccessResponse,
     ErrorResponse,
@@ -510,6 +510,7 @@ async def remove_collaborator(
     response_model=dict,
     status_code=status.HTTP_200_OK,
     summary="Get active collaborators",
+    dependencies=[require_project_role("viewer")],
 )
 async def get_presence(
     project_id: str,
@@ -566,6 +567,7 @@ async def get_presence(
     response_model=dict,
     status_code=status.HTTP_201_CREATED,
     summary="Record activity",
+    dependencies=[require_project_role("viewer")],
 )
 async def record_activity(
     project_id: str,
@@ -650,6 +652,7 @@ async def record_activity(
     response_model=dict,
     status_code=status.HTTP_200_OK,
     summary="Get project activities",
+    dependencies=[require_project_role("viewer")],
 )
 async def get_activities(
     project_id: str,

@@ -163,3 +163,84 @@ async def get_current_user_object_optional(
         return user
     except Exception:
         return None
+
+
+def require_project_role(required_role: str):
+    """
+    Dependency factory to enforce role-based access control for project endpoints.
+
+    Role hierarchy: owner > editor > viewer
+
+    Usage in endpoint:
+        @router.put("/{project_id}/settings", dependencies=[Depends(require_project_role("editor"))])
+        async def update_project_settings(project_id: str, current_user: str = Depends(get_current_user)):
+            ...
+
+    Args:
+        required_role: Minimum required role (owner, editor, or viewer)
+
+    Returns:
+        A dependency that validates the user's role for the project
+    """
+
+    async def check_role(
+        project_id: str,
+        current_user: str = Depends(get_current_user),
+        db: ProjectDatabaseV2 = Depends(get_database),
+    ) -> str:
+        """
+        Validate user has required role for project.
+
+        Args:
+            project_id: Project identifier
+            current_user: Current authenticated user
+            db: Database connection
+
+        Returns:
+            Current user (if authorized)
+
+        Raises:
+            HTTPException: 403 if user lacks required role
+            HTTPException: 404 if project not found
+        """
+        # Load project
+        project = db.load_project(project_id)
+        if project is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found"
+            )
+
+        # Owner always has access
+        if project.owner == current_user:
+            return current_user
+
+        # Check team members for role
+        user_role = None
+        if project.team_members:
+            for member in project.team_members:
+                if member.username == current_user:
+                    user_role = member.role
+                    break
+
+        # User must be team member
+        if user_role is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User is not a project member"
+            )
+
+        # Validate role hierarchy
+        role_hierarchy = {"owner": 3, "editor": 2, "viewer": 1}
+        required_level = role_hierarchy.get(required_role, 0)
+        user_level = role_hierarchy.get(user_role, 0)
+
+        if user_level < required_level:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Requires {required_role} role (user has {user_role})"
+            )
+
+        return current_user
+
+    return Depends(check_role)
