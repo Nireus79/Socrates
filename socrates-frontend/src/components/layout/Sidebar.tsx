@@ -19,6 +19,7 @@ import {
   BookOpen,
   Files,
   CheckSquare,
+  Notebook,
 } from 'lucide-react';
 
 interface NavItem {
@@ -53,6 +54,11 @@ const navItems: NavItem[] = [
     label: 'Knowledge Base',
     icon: <BookOpen size={20} />,
     path: '/knowledge',
+  },
+  {
+    label: 'Notes',
+    icon: <Notebook size={20} />,
+    path: '/notes',
   },
   {
     label: 'Files',

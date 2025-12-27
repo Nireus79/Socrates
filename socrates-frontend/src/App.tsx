@@ -20,6 +20,7 @@ import { KnowledgeBasePage } from './pages/knowledge/KnowledgeBasePage';
 import { DocumentationPage } from './pages/documentation/DocumentationPage';
 import { FilesPage } from './pages/files/FilesPage';
 import { AnalysisPage as CodeAnalysisPage } from './pages/analysis/AnalysisPage';
+import { NotesPage } from './pages/notes/NotesPage';
 import { MainLayout } from './components/layout';
 import { ErrorBoundary } from './components/common';
 import { NotificationProvider } from './components/providers/NotificationProvider';
@@ -242,6 +243,24 @@ function App() {
             element={
               <ProtectedRoute>
                 <CodeAnalysisPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Notes Route */}
+          <Route
+            path="/notes"
+            element={
+              <ProtectedRoute>
+                <NotesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:projectId/notes"
+            element={
+              <ProtectedRoute>
+                <NotesPage />
               </ProtectedRoute>
             }
           />
