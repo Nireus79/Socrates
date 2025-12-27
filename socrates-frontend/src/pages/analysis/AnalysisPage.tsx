@@ -1,14 +1,14 @@
-"""
-Analysis & Testing Control Panel
-
-Allows users to:
-- Run code validation (syntax, dependencies)
-- Execute tests (pytest, jest, mocha)
-- Analyze code structure and quality
-- Auto-fix issues
-- Refactor code
-- View analysis results and recommendations
-"""
+/**
+ * Analysis & Testing Control Panel
+ *
+ * Allows users to:
+ * - Run code validation (syntax, dependencies)
+ * - Execute tests (pytest, jest, mocha)
+ * - Analyze code structure and quality
+ * - Auto-fix issues
+ * - Refactor code
+ * - View analysis results and recommendations
+ */
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";

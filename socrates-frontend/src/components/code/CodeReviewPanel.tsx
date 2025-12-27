@@ -1,13 +1,13 @@
-"""
-Code Review Panel - Display code with inline comments and annotations
-
-Features:
-- Line-by-line code display
-- Inline comments on specific lines
-- Issue highlighting and annotation
-- Reviewer marks and status badges
-- Discussion threads per annotation
-"""
+/**
+ * Code Review Panel - Display code with inline comments and annotations
+ *
+ * Features:
+ * - Line-by-line code display
+ * - Inline comments on specific lines
+ * - Issue highlighting and annotation
+ * - Reviewer marks and status badges
+ * - Discussion threads per annotation
+ */
 
 import React, { useState } from "react";
 import {

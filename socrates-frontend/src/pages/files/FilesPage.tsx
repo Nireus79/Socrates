@@ -1,12 +1,12 @@
-"""
-Files Page - Browse generated, imported, and saved project files
-
-Displays:
-- Directory structure of generated files
-- File explorer with syntax highlighting preview
-- File statistics and metadata
-- Import/export operations
-"""
+/**
+ * Files Page - Browse generated, imported, and saved project files
+ *
+ * Displays:
+ * - Directory structure of generated files
+ * - File explorer with syntax highlighting preview
+ * - File statistics and metadata
+ * - Import/export operations
+ */
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
