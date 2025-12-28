@@ -285,3 +285,200 @@ export interface LanguageInfo {
   display: string;
   version: string;
 }
+
+// ============================================================================
+// Collaboration - Invitations
+// ============================================================================
+
+export type CollaboratorRole = 'owner' | 'editor' | 'viewer';
+
+export interface Invitation {
+  id: string;
+  project_id: string;
+  inviter_id: string;
+  invitee_email: string;
+  role: CollaboratorRole;
+  token: string;
+  status: 'pending' | 'accepted' | 'cancelled' | 'expired';
+  created_at: string;
+  expires_at: string;
+  accepted_at?: string;
+}
+
+export interface InvitationResponse {
+  invitation_id?: string;
+  id?: string;
+  token: string;
+  email: string;
+  role: CollaboratorRole;
+  status: string;
+  created_at: string;
+  expires_at: string;
+}
+
+export interface InvitationsListResponse {
+  invitations: Invitation[];
+  total?: number;
+  pagination?: {
+    limit: number;
+    offset: number;
+    total: number;
+    has_more: boolean;
+  };
+}
+
+export interface AcceptInvitationResponse {
+  status: string;
+  message?: string;
+  project?: Project;
+  member?: {
+    username: string;
+    role: CollaboratorRole;
+  };
+}
+
+// ============================================================================
+// Collaboration - Real-Time
+// ============================================================================
+
+export interface UserPresence {
+  username: string;
+  status: 'active' | 'idle' | 'offline';
+  last_seen: string;
+  avatar_url?: string;
+}
+
+export interface Activity {
+  id: string;
+  project_id: string;
+  user_id: string;
+  activity_type: string;
+  activity_data?: Record<string, any>;
+  created_at: string;
+}
+
+export interface ActivitiesResponse {
+  activities: Activity[];
+  total: number;
+  pagination?: {
+    limit: number;
+    offset: number;
+    total: number;
+    has_more: boolean;
+  };
+}
+
+export interface PresenceResponse {
+  collaborators: UserPresence[];
+  total?: number;
+}
+
+// ============================================================================
+// Knowledge Base - Documents
+// ============================================================================
+
+export interface DocumentDetails {
+  id: string;
+  title: string;
+  source: string;
+  document_type: 'text' | 'file' | 'url';
+  uploaded_at: string;
+  word_count: number;
+  character_count?: number;
+  preview?: string;
+  content?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface DocumentDetailsResponse {
+  status: string;
+  document: DocumentDetails;
+}
+
+export interface DocumentAnalytics {
+  word_count: number;
+  character_count?: number;
+  estimated_reading_time_minutes?: number;
+  views?: number;
+  searches?: number;
+  last_accessed?: string;
+}
+
+export interface DocumentAnalyticsResponse {
+  status: string;
+  analytics: DocumentAnalytics;
+}
+
+// ============================================================================
+// Knowledge Base - Bulk Operations
+// ============================================================================
+
+export interface BulkDeleteResponse {
+  status: string;
+  deleted: string[];
+  failed: Array<{
+    id: string;
+    reason: string;
+  }>;
+  summary: {
+    total_requested: number;
+    deleted_count: number;
+    failed_count: number;
+  };
+}
+
+export interface BulkImportResult {
+  file: string;
+  status: 'success' | 'failed';
+  document_id?: string;
+  error?: string;
+}
+
+export interface BulkImportResponse {
+  status: string;
+  results: BulkImportResult[];
+  summary: {
+    total: number;
+    imported: number;
+    failed: number;
+  };
+}
+
+// ============================================================================
+// Knowledge Base - Filtering & Pagination
+// ============================================================================
+
+export interface DocumentListFilters {
+  projectId?: string;
+  documentType?: 'text' | 'file' | 'url' | null;
+  searchQuery?: string;
+  sortBy?: 'uploaded_at' | 'title' | 'document_type';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface PaginationInfo {
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
+export interface Document {
+  id: string;
+  title: string;
+  source: string;
+  document_type: 'text' | 'file' | 'url';
+  uploaded_at: string;
+  word_count?: number;
+}
+
+export interface DocumentListResponse {
+  status: string;
+  data?: {
+    documents: Document[];
+    pagination: PaginationInfo;
+  };
+  documents?: Document[];
+  pagination?: PaginationInfo;
+  total?: number;
+}

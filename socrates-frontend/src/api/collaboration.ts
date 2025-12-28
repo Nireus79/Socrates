@@ -3,7 +3,17 @@
  */
 
 import { apiClient } from './client';
-import type { Collaborator, ProjectPresence, CollaboratorRole } from '../types/models';
+import type {
+  Collaborator,
+  ProjectPresence,
+  CollaboratorRole,
+  Invitation,
+  InvitationResponse,
+  InvitationsListResponse,
+  Activity,
+  ActivitiesResponse,
+  PresenceResponse,
+} from '../types/models';
 
 export const collaborationAPI = {
   /**
@@ -68,11 +78,18 @@ export const collaborationAPI = {
   },
 
   /**
-   * Get project activities
+   * Get project activities with pagination
    */
-  async getActivities(projectId: string): Promise<{ activities: any[] }> {
-    return apiClient.get<{ activities: any[] }>(
-      `/projects/${projectId}/activities`
+  async getActivities(
+    projectId: string,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<ActivitiesResponse> {
+    return apiClient.get<ActivitiesResponse>(
+      `/projects/${projectId}/activities`,
+      {
+        params: { limit, offset },
+      }
     );
   },
 
@@ -83,13 +100,61 @@ export const collaborationAPI = {
     projectId: string,
     activityType: string,
     data?: Record<string, any>
-  ): Promise<{ activity_id: string }> {
-    return apiClient.post<{ activity_id: string }>(
-      `/projects/${projectId}/activity`,
-      { activity_type: activityType, data },
+  ): Promise<{ activity_id: string; activity: Activity }> {
+    return apiClient.post<{ activity_id: string; activity: Activity }>(
+      `/projects/${projectId}/activities`,
+      { activity_type: activityType, activity_data: data }
+    );
+  },
+
+  /**
+   * Create an invitation for a collaborator
+   */
+  async createInvitation(
+    projectId: string,
+    email: string,
+    role: CollaboratorRole = 'editor'
+  ): Promise<InvitationResponse> {
+    return apiClient.post<InvitationResponse>(
+      `/projects/${projectId}/invitations`,
+      { email, role }
+    );
+  },
+
+  /**
+   * List invitations for a project
+   */
+  async listInvitations(
+    projectId: string,
+    statusFilter?: string
+  ): Promise<InvitationsListResponse> {
+    return apiClient.get<InvitationsListResponse>(
+      `/projects/${projectId}/invitations`,
       {
-        params: { activity_type: activityType },
+        params: statusFilter ? { status: statusFilter } : {},
       }
+    );
+  },
+
+  /**
+   * Accept an invitation using the token
+   */
+  async acceptInvitation(token: string): Promise<{ status: string; message?: string }> {
+    return apiClient.post<{ status: string; message?: string }>(
+      `/projects/invitations/${token}/accept`,
+      { email: '' }
+    );
+  },
+
+  /**
+   * Cancel/delete an invitation
+   */
+  async cancelInvitation(
+    projectId: string,
+    invitationId: string
+  ): Promise<{ status: string }> {
+    return apiClient.delete<{ status: string }>(
+      `/projects/${projectId}/invitations/${invitationId}`
     );
   },
 };

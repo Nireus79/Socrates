@@ -5,9 +5,20 @@
  * - Document import (file, URL, text)
  * - Document search and management
  * - Knowledge entries
+ * - Bulk operations
+ * - Advanced filtering and analytics
  */
 
 import { apiClient } from './client';
+import type {
+  DocumentDetails,
+  DocumentDetailsResponse,
+  DocumentAnalyticsResponse,
+  BulkDeleteResponse,
+  BulkImportResponse,
+  DocumentListFilters,
+  DocumentListResponse as TypesDocumentListResponse,
+} from '../types/models';
 
 // Type definitions for Knowledge Base API
 
@@ -86,12 +97,24 @@ export interface ExportResponse {
  */
 export const knowledgeAPI = {
   /**
-   * List all documents in knowledge base
+   * List all documents in knowledge base with filtering, sorting, and pagination
    */
-  async listDocuments(projectId?: string): Promise<DocumentListResponse> {
+  async listDocuments(filters: DocumentListFilters = {}): Promise<TypesDocumentListResponse> {
     const params = new URLSearchParams();
-    if (projectId) params.append('project_id', projectId);
-    return apiClient.get<DocumentListResponse>(
+
+    if (filters.projectId) params.append('project_id', filters.projectId);
+    if (filters.documentType) params.append('document_type', filters.documentType);
+    if (filters.searchQuery) params.append('search_query', filters.searchQuery);
+    if (filters.sortBy) params.append('sort_by', filters.sortBy);
+    if (filters.sortOrder) params.append('sort_order', filters.sortOrder);
+
+    // Handle pagination (defaults)
+    const limit = filters.limit || 50;
+    const offset = filters.offset || 0;
+    params.append('limit', limit.toString());
+    params.append('offset', offset.toString());
+
+    return apiClient.get<TypesDocumentListResponse>(
       `/knowledge/documents${params.toString() ? `?${params.toString()}` : ''}`
     );
   },
@@ -189,5 +212,64 @@ export const knowledgeAPI = {
    */
   async exportKnowledge(projectId: string): Promise<ExportResponse> {
     return apiClient.get<ExportResponse>(`/knowledge/export/${projectId}`);
+  },
+
+  /**
+   * Get detailed information about a document
+   */
+  async getDocumentDetails(
+    documentId: string,
+    includeContent: boolean = false
+  ): Promise<DocumentDetailsResponse> {
+    const params = new URLSearchParams();
+    if (includeContent) params.append('include_content', 'true');
+
+    return apiClient.get<DocumentDetailsResponse>(
+      `/knowledge/documents/${documentId}${params.toString() ? `?${params.toString()}` : ''}`
+    );
+  },
+
+  /**
+   * Delete multiple documents in bulk
+   */
+  async bulkDeleteDocuments(documentIds: string[]): Promise<BulkDeleteResponse> {
+    return apiClient.post<BulkDeleteResponse>('/knowledge/documents/bulk-delete', {
+      document_ids: documentIds,
+    });
+  },
+
+  /**
+   * Import multiple files/documents in bulk
+   */
+  async bulkImportDocuments(
+    files: File[],
+    projectId?: string
+  ): Promise<BulkImportResponse> {
+    const formData = new FormData();
+
+    // Add all files to formData
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    // Add project_id if provided
+    if (projectId) {
+      formData.append('project_id', projectId);
+    }
+
+    return apiClient.post<BulkImportResponse>('/knowledge/documents/bulk-import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  /**
+   * Get analytics for a document
+   */
+  async getDocumentAnalytics(documentId: string): Promise<DocumentAnalyticsResponse> {
+    return apiClient.get<DocumentAnalyticsResponse>(
+      `/knowledge/documents/${documentId}/analytics`
+    );
   },
 };
