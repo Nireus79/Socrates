@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socrates-ai"
-version = "0.6.6"
-description = "A Socratic method tutoring system powered by Claude AI with multi-agent orchestration"
+version = "1.0.0"
+description = "Production-ready collaborative development platform with Socratic AI guidance, multi-agent orchestration, real-time collaboration, and RAG knowledge management"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
@@ -23,10 +23,18 @@ keywords = [
     "retrieval-augmented-generation",
     "multi-agent",
     "education",
-    "software-engineering"
+    "software-engineering",
+    "collaboration",
+    "real-time",
+    "knowledge-management",
+    "kubernetes",
+    "fastapi",
+    "postgres",
+    "vector-database",
+    "chromadb"
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
     "License :: OSI Approved :: MIT License",
@@ -39,6 +47,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Education",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Operating System :: OS Independent",
 ]
 requires-python = ">=3.8"
 
@@ -48,6 +57,19 @@ dependencies = [
     "sentence-transformers>=3.0.0",
     "pypdf>=4.0.0",
     "python-dateutil>=2.8.0",
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "PyJWT>=2.8.0",
+    "bcrypt>=4.0.0",
+    "passlib>=1.7.4",
+    "httpx>=0.24.0",
+    "sqlalchemy>=2.0.0",
+    "redis>=5.0.0",
+    "slowapi>=0.1.9",
+    "prometheus-client>=0.19.0",
+    "alembic>=1.12.0",
 ]
 
 [project.optional-dependencies]
@@ -71,10 +93,12 @@ docs = [
 
 [project.urls]
 Homepage = "https://github.com/Nireus79/Socrates"
-Documentation = "https://github.com/Nireus79/Socrates"
+Documentation = "https://github.com/Nireus79/Socrates/tree/master/docs"
 Repository = "https://github.com/Nireus79/Socrates"
+"Source Code" = "https://github.com/Nireus79/Socrates"
 "Bug Tracker" = "https://github.com/Nireus79/Socrates/issues"
 Changelog = "https://github.com/Nireus79/Socrates/releases"
+"PyPI Package" = "https://pypi.org/project/socrates-ai/"
 
 [tool.setuptools]
 packages = [
