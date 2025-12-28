@@ -10,6 +10,10 @@ import { useKnowledgeStore } from '../../stores/knowledgeStore';
 import { MainLayout, PageHeader } from '../../components/layout';
 import { Card, Tab, Alert, LoadingSpinner, Button, Input } from '../../components/common';
 import { NLUChatWidget } from '../../components/nlu';
+import DocumentFilters from '../../components/knowledge/DocumentFilters';
+import DocumentBulkActions from '../../components/knowledge/DocumentBulkActions';
+import BulkImportModal from '../../components/knowledge/BulkImportModal';
+import { DocumentCard } from '../../components/knowledge/DocumentCard';
 
 export const KnowledgeBasePage: React.FC = () => {
   const { projectId } = useParams<{ projectId?: string }>();
@@ -30,6 +34,7 @@ export const KnowledgeBasePage: React.FC = () => {
     isSearching,
     error,
     listDocuments,
+    loadDocuments,
     importFile,
     importURL,
     importText,
@@ -38,6 +43,9 @@ export const KnowledgeBasePage: React.FC = () => {
     addKnowledgeEntry,
     clearError,
     clearSearch,
+    selectedDocuments,
+    toggleDocumentSelection,
+    clearSelection,
   } = useKnowledgeStore();
 
   const [selectedProjectId, setSelectedProjectId] = React.useState(projectId || '');
@@ -49,6 +57,7 @@ export const KnowledgeBasePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [entryContent, setEntryContent] = React.useState('');
   const [entryCategory, setEntryCategory] = React.useState('general');
+  const [showBulkImportModal, setShowBulkImportModal] = React.useState(false);
 
   // Load projects on mount
   React.useEffect(() => {
@@ -231,6 +240,20 @@ export const KnowledgeBasePage: React.FC = () => {
         {/* Documents Tab */}
         {activeTab === 'documents' && (
           <div className="space-y-6">
+            {/* Filters */}
+            <DocumentFilters />
+
+            {/* Bulk Actions */}
+            {documents.size > 0 && (
+              <DocumentBulkActions
+                selectedCount={selectedDocuments.size}
+                totalCount={documents.size}
+                onBulkImportClick={() => setShowBulkImportModal(true)}
+                projectId={selectedProjectId}
+              />
+            )}
+
+            {/* Documents Grid */}
             {isLoading ? (
               <div className="flex justify-center py-12">
                 <LoadingSpinner size="lg" />
@@ -238,30 +261,14 @@ export const KnowledgeBasePage: React.FC = () => {
             ) : documents.size > 0 ? (
               <div className="grid gap-4">
                 {Array.from(documents.values()).map((doc) => (
-                  <Card key={doc.id} className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
-                        {doc.title}
-                      </h3>
-                      <div className="mt-2 flex gap-4 text-sm text-gray-600 dark:text-gray-400">
-                        <span>Type: {doc.source_type}</span>
-                        <span>Chunks: {doc.chunk_count}</span>
-                        {doc.size && <span>Size: {(doc.size / 1024).toFixed(2)} KB</span>}
-                        <span>
-                          Added: {new Date(doc.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => handleDeleteDocument(doc.id)}
-                      variant="danger"
-                      size="sm"
-                      className="flex items-center gap-2"
-                    >
-                      <Trash2 size={16} />
-                      Delete
-                    </Button>
-                  </Card>
+                  <DocumentCard
+                    key={doc.id}
+                    document={doc}
+                    isSelected={selectedDocuments.has(doc.id)}
+                    onSelect={(selected) => toggleDocumentSelection(doc.id)}
+                    onDelete={() => handleDeleteDocument(doc.id)}
+                    onView={() => console.log('View document:', doc.id)}
+                  />
                 ))}
               </div>
             ) : (
@@ -269,6 +276,13 @@ export const KnowledgeBasePage: React.FC = () => {
                 No documents in your knowledge base yet. Use the Import tab to add content.
               </Alert>
             )}
+
+            {/* Bulk Import Modal */}
+            <BulkImportModal
+              isOpen={showBulkImportModal}
+              onClose={() => setShowBulkImportModal(false)}
+              projectId={selectedProjectId}
+            />
           </div>
         )}
 
