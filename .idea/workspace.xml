@@ -5,133 +5,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.6.6">
-      <change afterPath="$PROJECT_DIR$/docs/future/ARCHITECTURAL_INVESTIGATION_SUMMARY.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/future/FUTURE_FEATURES.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/future/INVESTIGATION_SUMMARY_FOR_TEAM.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/future/UNIFIED_ARCHITECTURE_RISK_ANALYSIS.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/future/VERIFICATION_FINDINGS_DETAILED.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.coveragerc" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.pre-commit-config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/.pre-commit-config.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FIX_SPECIFICATION_CRITICAL_ISSUES.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/FIX_SPECIFICATION_CRITICAL_ISSUES.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FRONTEND_IMPLEMENTATION_PLAN.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/FRONTEND_IMPLEMENTATION_PLAN.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FRONTEND_PROGRESS_SUMMARY.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/FRONTEND_PROGRESS_SUMMARY.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE1_TESTING_REPORT.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/PHASE1_TESTING_REPORT.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE2_BLOCKER_ANALYSIS.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/PHASE2_BLOCKER_ANALYSIS.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE2_SPRINT2_COMPLETION.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/PHASE2_SPRINT2_COMPLETION.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE4_INTEGRATION_REPORT.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/PHASE4_INTEGRATION_REPORT.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE5_PLANNING_REPORT.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/PHASE5_PLANNING_REPORT.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE6_COMPLETION_REPORT.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/PHASE6_COMPLETION_REPORT.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE6_FINAL_REPORT.md" beforeDir="false" afterPath="$PROJECT_DIR$/archive/PHASE6_FINAL_REPORT.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/archive/CLI_COMMANDS_INVENTORY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/KNOWLEDGE_ENRICHMENT_SYSTEM.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/MONETIZATION_DEMO.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/PHASE_COMPLETION_SUMMARY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/QUALITY_MATURITY_ANALYTICS.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/QUICK_START_SOCRATES.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/SOCRATES_USAGE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/STARTUP_GUIDE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/SYSTEM_STARTUP.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/phase1_test.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/phase1_test.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/phase1_test_results.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/phase2_audit.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/phase4_integration_tests.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/analytics.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/analytics.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/auth.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/collaboration.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/collaboration.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/github.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/github.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/nlu.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/nlu.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/presession.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/presession.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/security.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/security.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/websocket.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/websocket.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/collaboration/ActivityFeed.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/collaboration/ActivityFeed.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/common/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/common/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/common/status/Skeleton.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/common/status/Skeleton.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/knowledge/DocumentCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/knowledge/DocumentCard.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/collaboration/CollaborationPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/collaboration/CollaborationPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/knowledge/KnowledgeBasePage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/knowledge/KnowledgeBasePage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/collaborationStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/collaborationStore.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/knowledgeStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/knowledgeStore.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/database/project_db_async.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/project_db_async.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/database/project_db_v2.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/project_db_v2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/database/schema_v2.sql" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/schema_v2.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/tests/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/TEST_SUITE_SUMMARY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/agents/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/agents/test_agent_process_methods.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/agents/test_code_generator_agent.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/agents/test_project_manager_agent.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/agents/test_remaining_agents.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/archive/test_all_workflows.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/archive/test_all_workflows_comprehensive.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/archive/test_e2e_workflows_strict.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/archive/test_workflows.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/async/test_async_agents.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/async/test_async_database.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/clients/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/clients/test_claude_client.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/clients/test_claude_client_extended.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/core/test_analytics_calculator.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/core/test_learning_engine.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/execute_tests_direct.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/load_test.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/run_comprehensive_tests.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/run_pytest_tests.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/run_tests.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/run_tests_and_coverage.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_analytics_calculator.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_analytics_integration.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_api_endpoints.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_architectural_fixes_verification.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_authorization_fixes.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_chat_api.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_claude_categorization.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_config.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_conflict_resolution.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_e2e_complete.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_e2e_comprehensive.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_e2e_interconnection.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_events.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_exceptions.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_full_flow.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_knowledge_analysis.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_knowledge_analysis_fixes.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_knowledge_management.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_knowledge_manager_integration.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_maturity_implementation.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_models.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_modularization.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_monetization_system.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_multi_file_generation.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_nlu_handler.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_orchestration_and_events.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_orchestration_expansion.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_orchestrator_integration.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_performance.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_phase2_integration.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_phase2_smoke.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_phase4_verification.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_project_types.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_recent_fixes.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_routing_fixes.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_runner_subprocess.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_send_message_fix.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_simple_api.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_team_management_system.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/ui/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/ui/commands/test_doc_query_stats_commands.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/ui/commands/test_github_and_project_commands.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/ui/commands/test_note_commands.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/ui/commands/test_subscription_commands.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/ui/test_command_handler.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/ui/test_commands.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/validate_test_suite.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/socrates_ai-0.6.6-py3-none-any.whl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dist/socrates_ai-0.6.6.tar.gz" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-frontend/public/server-config.json" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/public/server-config.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_data/generate_knowledge_base.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_data/projects.db" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/data_level0.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/header.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/length.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_data/vector_db/3d6899bf-1684-4b4e-8074-9776b3fa752b/link_lists.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_data/vector_db/chroma.sqlite3" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
