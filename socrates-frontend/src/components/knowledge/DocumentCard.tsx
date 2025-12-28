@@ -10,7 +10,7 @@
  * - Delete and view actions
  */
 
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Trash2, FileText, Link, Upload, Type, Eye } from 'lucide-react';
 import type { DocumentMetadata } from '../../api/knowledge';
 import { Card } from '../common';
@@ -29,7 +29,53 @@ interface DocumentCardProps {
   };
 }
 
-export const DocumentCard: React.FC<DocumentCardProps> = ({
+const getSourceIcon = (sourceType?: string) => {
+  switch (sourceType) {
+    case 'file':
+      return <Upload className="h-4 w-4" />;
+    case 'url':
+      return <Link className="h-4 w-4" />;
+    case 'text':
+      return <Type className="h-4 w-4" />;
+    default:
+      return <FileText className="h-4 w-4" />;
+  }
+};
+
+const getSourceLabel = (sourceType?: string) => {
+  switch (sourceType) {
+    case 'file':
+      return 'File Upload';
+    case 'url':
+      return 'Web URL';
+    case 'text':
+      return 'Pasted Text';
+    default:
+      return 'Document';
+  }
+};
+
+const formatDate = (dateString: string) => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  } catch {
+    return dateString;
+  }
+};
+
+const formatSize = (bytes?: number) => {
+  if (!bytes) return '-';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const DocumentCardComponent: React.FC<DocumentCardProps> = ({
   document,
   isSelected = false,
   onSelect,
@@ -37,51 +83,28 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
   onView,
   analytics,
 }) => {
-  const getSourceIcon = () => {
-    switch (document.source_type) {
-      case 'file':
-        return <Upload className="h-4 w-4" />;
-      case 'url':
-        return <Link className="h-4 w-4" />;
-      case 'text':
-        return <Type className="h-4 w-4" />;
-      default:
-        return <FileText className="h-4 w-4" />;
-    }
-  };
+  // Memoize event handlers to prevent unnecessary re-renders of children
+  const handleSelectChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      e.stopPropagation();
+      onSelect?.(e.target.checked);
+    },
+    [onSelect]
+  );
 
-  const getSourceLabel = () => {
-    switch (document.source_type) {
-      case 'file':
-        return 'File Upload';
-      case 'url':
-        return 'Web URL';
-      case 'text':
-        return 'Pasted Text';
-      default:
-        return 'Document';
-    }
-  };
+  const handleDeleteClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onDelete?.();
+    },
+    [onDelete]
+  );
 
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
-    } catch {
-      return dateString;
-    }
-  };
-
-  const formatSize = (bytes?: number) => {
-    if (!bytes) return '-';
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
+  // Memoize formatted values to avoid recomputation
+  const formattedDate = useMemo(() => formatDate(document.created_at), [document.created_at]);
+  const formattedSize = useMemo(() => formatSize(document.size), [document.size]);
+  const sourceIcon = useMemo(() => getSourceIcon(document.source_type), [document.source_type]);
+  const sourceLabel = useMemo(() => getSourceLabel(document.source_type), [document.source_type]);
 
   return (
     <Card
@@ -96,10 +119,7 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
           <input
             type="checkbox"
             checked={isSelected}
-            onChange={(e) => {
-              e.stopPropagation();
-              onSelect(e.target.checked);
-            }}
+            onChange={handleSelectChange}
             className="mt-1 h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
           />
         )}
@@ -116,11 +136,11 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="secondary">
               <span className="flex items-center gap-1 text-xs">
-                {getSourceIcon()} {getSourceLabel()}
+                {sourceIcon} {sourceLabel}
               </span>
             </Badge>
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              {formatDate(document.created_at)}
+              {formattedDate}
             </span>
             {analytics && (analytics.views || 0) > 0 && (
               <Badge variant="outline" className="text-xs">
@@ -134,7 +154,7 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
 
           <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
             <span>{document.chunk_count} chunks</span>
-            {document.size && <span>{formatSize(document.size)}</span>}
+            {document.size && <span>{formattedSize}</span>}
           </div>
         </div>
 
@@ -144,10 +164,7 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
             variant="ghost"
             size="sm"
             icon={<Trash2 className="h-4 w-4" />}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete?.();
-            }}
+            onClick={handleDeleteClick}
             className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
           />
         </div>
@@ -155,3 +172,6 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
     </Card>
   );
 };
+
+// Export with React.memo to prevent unnecessary re-renders
+export const DocumentCard = React.memo(DocumentCardComponent);

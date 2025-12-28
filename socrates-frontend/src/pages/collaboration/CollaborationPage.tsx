@@ -1,11 +1,12 @@
 /**
- * CollaborationPage - Team collaboration and activity tracking
+ * CollaborationPage - Team collaboration and activity tracking with real-time features
  */
 
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import { useCollaborationStore, useProjectStore, useSubscriptionStore } from '../../stores';
+import { useCollaborationStore, useProjectStore, useSubscriptionStore, useAuthStore } from '../../stores';
+import { showSuccess, showError, showInfo } from '../../stores/notificationStore';
 import { MainLayout, PageHeader } from '../../components/layout';
 import {
   CollaboratorList,
@@ -13,11 +14,16 @@ import {
   ActivityFeed,
 } from '../../components/collaboration';
 import InvitationManager from '../../components/collaboration/InvitationManager';
+import PresencePanel from '../../components/collaboration/PresencePanel';
 import type {
   Activity,
 } from '../../components/collaboration';
 import type { Collaborator } from '../../types/models';
-import { Card, Button, Tab, Alert, LoadingSpinner } from '../../components/common';
+import { Card, Button, Tab, Alert, LoadingSpinner, SkeletonList, SkeletonCard, ErrorBoundary } from '../../components/common';
+import {
+  createCollaborationWebSocketClient,
+  closeCollaborationWebSocket,
+} from '../../services/collaborationWebSocket';
 
 export const CollaborationPage: React.FC = () => {
   const { projectId } = useParams<{ projectId?: string }>();
@@ -76,6 +82,39 @@ export const CollaborationPage: React.FC = () => {
     }
   }, [selectedProjectId, getProject, loadCollaborators, fetchActivities]);
 
+  // WebSocket connection management
+  React.useEffect(() => {
+    if (!selectedProjectId || !hasFeature('collaboration')) {
+      closeCollaborationWebSocket();
+      return;
+    }
+
+    const { token } = useAuthStore.getState();
+    if (!token) return;
+
+    try {
+      const wsClient = createCollaborationWebSocketClient(token, selectedProjectId);
+      wsClient.connect().catch((error) => {
+        console.error('Failed to connect to collaboration WebSocket:', error);
+      });
+
+      // Listen for activity broadcasts and update feed
+      const handleActivityBroadcast = (data: any) => {
+        fetchActivities(selectedProjectId);
+      };
+
+      wsClient.on('activity', handleActivityBroadcast);
+
+      // Cleanup on unmount or project change
+      return () => {
+        wsClient.off('activity', handleActivityBroadcast);
+        closeCollaborationWebSocket();
+      };
+    } catch (error) {
+      console.error('Error setting up WebSocket:', error);
+    }
+  }, [selectedProjectId, hasFeature('collaboration'), fetchActivities]);
+
   // Handle project selection change
   const handleProjectChange = (newProjectId: string) => {
     setSelectedProjectId(newProjectId);
@@ -97,8 +136,10 @@ export const CollaborationPage: React.FC = () => {
       setShowAddModal(false);
       // Refresh activities from backend
       await fetchActivities(selectedProjectId);
+      showSuccess('Collaborator Added', `${email} has been invited to the project`);
     } catch (error) {
       console.error('Failed to add collaborator:', error);
+      showError('Failed to Add Collaborator', 'There was an error adding the collaborator. Please try again.');
     }
   };
 
@@ -106,8 +147,10 @@ export const CollaborationPage: React.FC = () => {
     if (!selectedProjectId) return;
     try {
       await updateCollaboratorRole(selectedProjectId, username, newRole as any);
+      showSuccess('Role Updated', `${username}'s role has been changed to ${newRole}`);
     } catch (error) {
       console.error('Failed to change role:', error);
+      showError('Failed to Update Role', 'There was an error updating the role. Please try again.');
     }
   };
 
@@ -124,9 +167,12 @@ export const CollaborationPage: React.FC = () => {
       // Refresh activities from backend
       await fetchActivities(selectedProjectId);
       setShowRemoveConfirm(false);
+      const removedUser = collabToRemove;
       setCollabToRemove(null);
+      showSuccess('Collaborator Removed', `${removedUser} has been removed from the project`);
     } catch (error) {
       console.error('Failed to remove collaborator:', error);
+      showError('Failed to Remove Collaborator', 'There was an error removing the collaborator. Please try again.');
     } finally {
       setIsRemoving(false);
     }
@@ -162,8 +208,9 @@ export const CollaborationPage: React.FC = () => {
   }
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
+    <ErrorBoundary>
+      <MainLayout>
+        <div className="space-y-6">
         {/* Project Selector */}
         {projects.length > 0 && (
           <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 dark:from-blue-900 dark:to-indigo-900 dark:border-blue-800">
@@ -244,58 +291,81 @@ export const CollaborationPage: React.FC = () => {
 
         {/* Team Members Tab */}
         {activeTab === 'team' && (
-          <CollaboratorList
-            collaborators={collaborators as Collaborator[]}
-            isLoading={isLoading}
-            canManage={true}
-            onChangeRole={(username: string, role: string) => handleChangeRole(username, role)}
-            onRemove={(username: string) => handleRemoveClick(username)}
-          />
+          <>
+            {isLoading && collaborators.length === 0 ? (
+              <SkeletonList count={3} height="80px" />
+            ) : (
+              <CollaboratorList
+                collaborators={collaborators as Collaborator[]}
+                isLoading={isLoading}
+                canManage={true}
+                onChangeRole={(username: string, role: string) => handleChangeRole(username, role)}
+                onRemove={(username: string) => handleRemoveClick(username)}
+              />
+            )}
+          </>
         )}
 
         {/* Activity Tab */}
         {activeTab === 'activity' && (
-          <ActivityFeed activities={activities as Activity[]} isLoading={isLoading} />
+          <>
+            {isLoading && activities.length === 0 ? (
+              <SkeletonList count={5} height="100px" />
+            ) : (
+              <ActivityFeed activities={activities as Activity[]} isLoading={isLoading} />
+            )}
+          </>
         )}
 
         {/* Presence Tab */}
         {activeTab === 'presence' && (
-          <Card>
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Member Status
-              </h3>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <Card>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Member Status
+                  </h3>
 
-              {collaborators.map((collab: any) => (
-                <div
-                  key={collab.username}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
-                        {collab.username.charAt(0).toUpperCase()}
+                  {collaborators.map((collab: any) => (
+                    <div
+                      key={collab.username}
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
+                            {collab.username.charAt(0).toUpperCase()}
+                          </div>
+                          <div className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white dark:border-gray-800 ${
+                            collab.status === 'active' ? 'bg-green-500' : collab.status === 'idle' ? 'bg-yellow-500' : 'bg-gray-400'
+                          }`} />
+                        </div>
+
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {collab.username}
+                          </p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            {collab.role}
+                          </p>
+                        </div>
                       </div>
-                      <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white dark:border-gray-800 bg-green-500" />
-                    </div>
 
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {collab.username}
-                      </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        {collab.role}
+                      <p className="text-xs text-gray-500 dark:text-gray-500">
+                        {collab.joined_at ? new Date(collab.joined_at).toLocaleTimeString() : 'Just joined'}
                       </p>
                     </div>
-                  </div>
-
-                  <p className="text-xs text-gray-500 dark:text-gray-500">
-                    {collab.joined_at ? new Date(collab.joined_at).toLocaleTimeString() : 'Just joined'}
-                  </p>
+                  ))}
                 </div>
-              ))}
+              </Card>
             </div>
-          </Card>
+
+            {/* Online Users Sidebar */}
+            <div>
+              <PresencePanel compact={false} />
+            </div>
+          </div>
         )}
 
         {/* Invitations Tab */}
@@ -343,6 +413,8 @@ export const CollaborationPage: React.FC = () => {
           </Card>
         </div>
       )}
-    </MainLayout>
+        </div>
+      </MainLayout>
+    </ErrorBoundary>
   );
 };

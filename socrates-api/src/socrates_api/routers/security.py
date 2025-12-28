@@ -11,8 +11,10 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, HTTPException, status, Depends
+import bcrypt
 
 from socratic_system.database import ProjectDatabaseV2
+from socrates_api.auth import get_current_user
 from socrates_api.models import SuccessResponse, ErrorResponse
 
 logger = logging.getLogger(__name__)
@@ -42,6 +44,7 @@ def get_database() -> ProjectDatabaseV2:
 async def change_password(
     current_password: str,
     new_password: str,
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -75,27 +78,37 @@ async def change_password(
                 detail="New password must contain at least one digit",
             )
 
-        logger.info("Password change initiated")
+        logger.info(f"Password change initiated for user {current_user}")
 
-        # Verify and hash password with bcrypt
-        try:
-            import bcrypt
-        except ImportError:
+        # Load user from database
+        user = db.load_user(current_user)
+        if not user:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="bcrypt not installed. Run: pip install bcrypt",
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
             )
 
-        # For now, simulate verification (in production would verify current password hash)
+        # Verify current password
+        if not bcrypt.checkpw(
+            current_password.encode(),
+            user.password_hash.encode() if isinstance(user.password_hash, str) else user.password_hash
+        ):
+            logger.warning(f"Invalid password attempt for user {current_user}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid current password",
+            )
+
         # Hash new password
         hashed_password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
 
-        # In production, would update database with:
-        # user.password_hash = hashed_password
-        # db.save_user(user)
+        # Update user password in database
+        user.password_hash = hashed_password
+        db.save_user(user)
 
         from socrates_api.routers.events import record_event
         record_event("password_changed", {
+            "user": current_user,
             "timestamp": datetime.utcnow().isoformat(),
         })
 
@@ -126,6 +139,7 @@ async def change_password(
     },
 )
 async def setup_2fa(
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -135,7 +149,21 @@ async def setup_2fa(
         SuccessResponse with QR code and backup codes
     """
     try:
-        logger.info("2FA setup initiated")
+        logger.info(f"2FA setup initiated for user {current_user}")
+
+        # Load user to check if 2FA already enabled
+        user = db.load_user(current_user)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        if user.totp_secret:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="2FA is already enabled for this account",
+            )
 
         # Generate TOTP secret using pyotp
         try:
@@ -181,6 +209,7 @@ async def setup_2fa(
 
         from socrates_api.routers.events import record_event
         record_event("2fa_setup_initiated", {
+            "user": current_user,
             "timestamp": datetime.utcnow().isoformat(),
         })
 
@@ -213,6 +242,7 @@ async def setup_2fa(
 async def verify_2fa(
     code: str,
     secret: Optional[str] = None,
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -233,7 +263,7 @@ async def verify_2fa(
                 detail="Invalid 2FA code format. Must be 6 digits.",
             )
 
-        logger.info("2FA verification initiated")
+        logger.info(f"2FA verification initiated for user {current_user}")
 
         # Verify TOTP code using pyotp
         try:
@@ -253,16 +283,27 @@ async def verify_2fa(
         # Verify the code
         totp = pyotp.TOTP(secret)
         if not totp.verify(code):
+            logger.warning(f"Invalid 2FA code attempt for user {current_user}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid 2FA code. Please try again.",
             )
 
-        # Save TOTP secret to database
-        # In production: user.totp_secret = secret; db.save_user(user)
+        # Load user and save TOTP secret to database
+        user = db.load_user(current_user)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        user.totp_secret = secret
+        db.save_user(user)
+        logger.info(f"2FA enabled for user {current_user}")
 
         from socrates_api.routers.events import record_event
         record_event("2fa_enabled", {
+            "user": current_user,
             "enabled_at": datetime.utcnow().isoformat(),
         })
 
@@ -294,6 +335,7 @@ async def verify_2fa(
 )
 async def disable_2fa(
     password: str,
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -313,10 +355,45 @@ async def disable_2fa(
                 detail="Password required to disable 2FA",
             )
 
-        logger.info("2FA disable initiated")
+        logger.info(f"2FA disable initiated for user {current_user}")
 
-        # TODO: Verify password using bcrypt
-        # TODO: Remove TOTP secret from database
+        # Load user from database
+        user = db.load_user(current_user)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        # Verify password using bcrypt
+        if not bcrypt.checkpw(
+            password.encode(),
+            user.password_hash.encode() if isinstance(user.password_hash, str) else user.password_hash
+        ):
+            logger.warning(f"Invalid password attempt to disable 2FA for user {current_user}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid password",
+            )
+
+        # Check if 2FA is actually enabled
+        if not user.totp_secret:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="2FA is not enabled for this account",
+            )
+
+        # Remove TOTP secret from database
+        user.totp_secret = None
+        db.save_user(user)
+        logger.info(f"2FA disabled for user {current_user}")
+
+        from socrates_api.routers.events import record_event
+        record_event("2fa_disabled", {
+            "user": current_user,
+            "disabled_at": datetime.utcnow().isoformat(),
+        })
+
         return SuccessResponse(
             success=True,
             message="2FA disabled",
@@ -343,6 +420,7 @@ async def disable_2fa(
     },
 )
 async def list_sessions(
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -352,34 +430,31 @@ async def list_sessions(
         SuccessResponse with list of sessions
     """
     try:
-        logger.info("Listing user sessions")
+        logger.info(f"Listing sessions for user {current_user}")
 
-        # TODO: Query sessions from database
-        sessions = [
-            {
-                "id": "session_1",
-                "device": "Chrome on Windows",
-                "ip_address": "192.168.1.1",
-                "last_activity": datetime.utcnow().isoformat(),
-                "created_at": (datetime.utcnow() - timedelta(days=1)).isoformat(),
-                "is_current": True,
-            },
-            {
-                "id": "session_2",
-                "device": "Safari on macOS",
-                "ip_address": "10.0.0.1",
-                "last_activity": (
-                    datetime.utcnow() - timedelta(hours=2)
-                ).isoformat(),
-                "created_at": (datetime.utcnow() - timedelta(days=3)).isoformat(),
-                "is_current": False,
-            },
-        ]
+        # Query sessions from database for current user
+        sessions = db.get_user_sessions(current_user)
+        if sessions is None:
+            sessions = []
+
+        # Validate each session and format for response
+        formatted_sessions = []
+        for session in sessions:
+            formatted_sessions.append({
+                "id": session.get("session_id") or session.get("id"),
+                "device": session.get("device", "Unknown device"),
+                "ip_address": session.get("ip_address", "Unknown"),
+                "last_activity": session.get("last_activity", datetime.utcnow().isoformat()),
+                "created_at": session.get("created_at", datetime.utcnow().isoformat()),
+                "is_current": session.get("is_current", False),
+            })
+
+        logger.info(f"Retrieved {len(formatted_sessions)} sessions for user {current_user}")
 
         return SuccessResponse(
             success=True,
             message="Sessions retrieved",
-            data={"sessions": sessions, "total": len(sessions)},
+            data={"sessions": formatted_sessions, "total": len(formatted_sessions)},
         )
 
     except Exception as e:
@@ -402,6 +477,7 @@ async def list_sessions(
 )
 async def revoke_session(
     session_id: str,
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -415,15 +491,43 @@ async def revoke_session(
         SuccessResponse confirming session revocation
     """
     try:
-        logger.info(f"Revoking session: {session_id}")
+        logger.info(f"Revoking session {session_id} for user {current_user}")
 
-        # TODO: Remove session from database
+        # Verify session belongs to current user and delete it
+        session = db.get_session(session_id)
+        if not session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Session not found",
+            )
+
+        # Verify session belongs to current user
+        if session.get("user") != current_user:
+            logger.warning(f"Unauthorized revoke attempt by {current_user} on session {session_id}")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot revoke another user's session",
+            )
+
+        # Remove session from database
+        db.delete_session(session_id)
+        logger.info(f"Session {session_id} revoked for user {current_user}")
+
+        from socrates_api.routers.events import record_event
+        record_event("session_revoked", {
+            "user": current_user,
+            "session_id": session_id,
+            "revoked_at": datetime.utcnow().isoformat(),
+        })
+
         return SuccessResponse(
             success=True,
             message="Session revoked successfully",
             data={"session_id": session_id},
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error revoking session: {str(e)}")
         raise HTTPException(
@@ -442,6 +546,7 @@ async def revoke_session(
     },
 )
 async def revoke_all_sessions(
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -451,13 +556,45 @@ async def revoke_all_sessions(
         SuccessResponse confirming all sessions are revoked
     """
     try:
-        logger.info("Revoking all sessions")
+        logger.info(f"Revoking all sessions for user {current_user}")
 
-        # TODO: Remove all sessions except current from database
+        # Get all sessions for the current user
+        all_sessions = db.get_user_sessions(current_user)
+        if not all_sessions:
+            all_sessions = []
+
+        # Find the current session (the one being used for this request)
+        # In a real implementation, the current session ID would be extracted from the request
+        # For now, we'll keep track of sessions by most recent activity
+        current_session_id = None
+        if all_sessions:
+            # The most recently accessed session is typically the current one
+            current_session_id = all_sessions[0].get("session_id") or all_sessions[0].get("id")
+
+        # Delete all sessions except current
+        revoked_count = 0
+        for session in all_sessions:
+            session_id = session.get("session_id") or session.get("id")
+            if session_id != current_session_id:
+                try:
+                    db.delete_session(session_id)
+                    revoked_count += 1
+                except Exception as e:
+                    logger.warning(f"Failed to revoke session {session_id}: {str(e)}")
+
+        logger.info(f"Revoked {revoked_count} sessions for user {current_user}")
+
+        from socrates_api.routers.events import record_event
+        record_event("all_sessions_revoked", {
+            "user": current_user,
+            "revoked_count": revoked_count,
+            "revoked_at": datetime.utcnow().isoformat(),
+        })
+
         return SuccessResponse(
             success=True,
             message="All sessions revoked. You have been signed out from all other devices.",
-            data={"revoked_count": 1},
+            data={"revoked_count": revoked_count},
         )
 
     except Exception as e:

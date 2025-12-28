@@ -1,0 +1,171 @@
+# Default values for Socrates Helm Chart
+
+# Global settings
+global:
+  environment: production
+  domain: socrates.example.com
+
+# API Configuration
+api:
+  replicaCount: 3
+  image:
+    repository: ghcr.io/your-org/socrates-api
+    pullPolicy: IfNotPresent
+    tag: latest
+
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8000
+
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+  # Health checks
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 30
+    periodSeconds: 10
+
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 10
+    periodSeconds: 5
+
+# Frontend Configuration
+frontend:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ghcr.io/your-org/socrates-frontend
+    pullPolicy: IfNotPresent
+    tag: latest
+
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 3000
+
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+# Ingress Configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
+  hosts:
+    - host: socrates.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+  tls:
+    - secretName: socrates-tls
+      hosts:
+        - socrates.example.com
+
+# PostgreSQL Configuration
+postgresql:
+  enabled: true
+  auth:
+    username: socrates_user
+    password: changeme
+    database: socrates
+
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+
+# Redis Configuration
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: changeme
+
+  replica:
+    replicaCount: 1
+
+  persistence:
+    enabled: true
+    size: 10Gi
+
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+# Storage Configuration
+storage:
+  class: standard
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"  # Daily at 2 AM
+
+# Environment Variables
+env:
+  ENVIRONMENT: production
+  LOG_LEVEL: INFO
+  ENABLE_RATE_LIMITING: "true"
+  ENABLE_METRICS: "true"
+  ENABLE_WEBSOCKET: "true"
+  ENABLE_CACHING: "true"
+
+# Monitoring (optional)
+monitoring:
+  enabled: false
+  prometheus:
+    enabled: false
+  grafana:
+    enabled: false
+
+# RBAC
+rbac:
+  create: true
+
+# Service Account
+serviceAccount:
+  create: true
+  name: socrates

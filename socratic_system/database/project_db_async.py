@@ -897,6 +897,163 @@ class AsyncProjectDatabase:
             return history
 
     # =====================================================================
+    # PRE-SESSION CONVERSATIONS (async)
+    # =====================================================================
+
+    async def save_presession_message(
+        self,
+        username: str,
+        session_id: str,
+        message_type: str,
+        content: str,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """
+        Save a message to presession conversation history (async).
+
+        Args:
+            username: User who created the message
+            session_id: Session identifier for grouping
+            message_type: Either 'user' or 'assistant'
+            content: Message content
+            metadata: Optional metadata dict
+        """
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO presession_conversations
+                (username, session_id, message_type, content, timestamp, metadata)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    username,
+                    session_id,
+                    message_type,
+                    content,
+                    datetime.now().isoformat(),
+                    json.dumps(metadata or {}),
+                ),
+            )
+            await conn.commit()
+
+    async def get_presession_conversation(
+        self, username: str, session_id: str, limit: int = 50
+    ) -> List[Dict[str, Any]]:
+        """
+        Get presession conversation history for a session (async).
+
+        Args:
+            username: Username to filter by
+            session_id: Session identifier
+            limit: Maximum messages to return
+
+        Returns:
+            List of message dicts
+        """
+        async with self.pool.acquire() as conn:
+            cursor = await conn.execute(
+                """
+                SELECT message_type, content, timestamp, metadata
+                FROM presession_conversations
+                WHERE username = ? AND session_id = ?
+                ORDER BY timestamp ASC
+                LIMIT ?
+            """,
+                (username, session_id, limit),
+            )
+            rows = await cursor.fetchall()
+
+            history = []
+            for row in rows:
+                history.append(
+                    {
+                        "role": row["message_type"],
+                        "content": row["content"],
+                        "timestamp": row["timestamp"],
+                        "metadata": json.loads(row["metadata"]) if row["metadata"] else {},
+                    }
+                )
+
+            return history
+
+    async def get_presession_sessions(
+        self, username: str, limit: int = 20
+    ) -> List[Dict[str, Any]]:
+        """
+        Get list of presession sessions for a user (async).
+
+        Args:
+            username: Username to filter by
+            limit: Maximum sessions to return
+
+        Returns:
+            List of session summary dicts
+        """
+        async with self.pool.acquire() as conn:
+            cursor = await conn.execute(
+                """
+                SELECT
+                    session_id,
+                    MIN(timestamp) as started_at,
+                    MAX(timestamp) as last_activity,
+                    COUNT(*) as message_count,
+                    SUM(CASE WHEN message_type = 'user' THEN 1 ELSE 0 END) as user_messages,
+                    SUM(CASE WHEN message_type = 'assistant' THEN 1 ELSE 0 END) as assistant_messages
+                FROM presession_conversations
+                WHERE username = ?
+                GROUP BY session_id
+                ORDER BY MAX(timestamp) DESC
+                LIMIT ?
+            """,
+                (username, limit),
+            )
+            rows = await cursor.fetchall()
+
+            sessions = []
+            for row in rows:
+                sessions.append(
+                    {
+                        "session_id": row["session_id"],
+                        "started_at": row["started_at"],
+                        "last_activity": row["last_activity"],
+                        "message_count": row["message_count"],
+                        "user_messages": row["user_messages"],
+                        "assistant_messages": row["assistant_messages"],
+                    }
+                )
+
+            return sessions
+
+    async def delete_presession_session(self, username: str, session_id: str) -> bool:
+        """
+        Delete a presession session and all its messages (async).
+
+        Args:
+            username: Username (for authorization)
+            session_id: Session to delete
+
+        Returns:
+            True if deleted, False if not found
+        """
+        async with self.pool.acquire() as conn:
+            # Verify ownership
+            cursor = await conn.execute(
+                "SELECT COUNT(*) as count FROM presession_conversations WHERE username = ? AND session_id = ?",
+                (username, session_id),
+            )
+            row = await cursor.fetchone()
+            if row["count"] == 0:
+                return False
+
+            # Delete session messages
+            await conn.execute(
+                "DELETE FROM presession_conversations WHERE username = ? AND session_id = ?",
+                (username, session_id),
+            )
+            await conn.commit()
+            return True
+
+    # =====================================================================
     # PRIVATE HELPER METHODS
     # =====================================================================
 

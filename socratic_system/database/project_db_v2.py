@@ -764,6 +764,212 @@ class ProjectDatabaseV2:
             conn.close()
 
     # ========================================================================
+    # PRE-SESSION CONVERSATIONS (before project selection)
+    # ========================================================================
+
+    def save_presession_message(
+        self,
+        username: str,
+        session_id: str,
+        message_type: str,
+        content: str,
+        metadata: Optional[Dict] = None,
+    ) -> None:
+        """
+        Save a single message to presession conversation history.
+
+        Args:
+            username: User who created the message
+            session_id: Session identifier for grouping conversations
+            message_type: Either 'user' or 'assistant'
+            content: Message content
+            metadata: Optional metadata (topics, intents, etc.)
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                INSERT INTO presession_conversations
+                (username, session_id, message_type, content, timestamp, metadata)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    username,
+                    session_id,
+                    message_type,
+                    content,
+                    datetime.now().isoformat(),
+                    json.dumps(metadata or {}),
+                ),
+            )
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(
+                f"Error saving presession message for {username} in session {session_id}: {e}"
+            )
+            raise
+        finally:
+            conn.close()
+
+    def get_presession_conversation(
+        self, username: str, session_id: str, limit: int = 50
+    ) -> List[Dict]:
+        """
+        Load presession conversation history for a specific session.
+
+        Args:
+            username: Username to filter by
+            session_id: Session identifier
+            limit: Maximum number of messages to return
+
+        Returns:
+            List of message dicts with timestamp and metadata
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT * FROM presession_conversations
+                WHERE username = ? AND session_id = ?
+                ORDER BY timestamp ASC, rowid ASC
+                LIMIT ?
+            """,
+                (username, session_id, limit),
+            )
+
+            rows = cursor.fetchall()
+            messages = []
+
+            for row in rows:
+                messages.append(
+                    {
+                        "role": row["message_type"],
+                        "content": row["content"],
+                        "timestamp": row["timestamp"],
+                        "metadata": json.loads(row["metadata"]) if row["metadata"] else {},
+                    }
+                )
+
+            return messages
+
+        except Exception as e:
+            self.logger.error(
+                f"Error loading presession conversation for {username} session {session_id}: {e}"
+            )
+            return []
+        finally:
+            conn.close()
+
+    def get_presession_sessions(self, username: str, limit: int = 20) -> List[Dict]:
+        """
+        Get list of presession sessions for a user.
+
+        Args:
+            username: Username to filter by
+            limit: Maximum number of sessions to return
+
+        Returns:
+            List of session dicts with metadata
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    session_id,
+                    MIN(timestamp) as started_at,
+                    MAX(timestamp) as last_activity,
+                    COUNT(*) as message_count,
+                    SUM(CASE WHEN message_type = 'user' THEN 1 ELSE 0 END) as user_messages,
+                    SUM(CASE WHEN message_type = 'assistant' THEN 1 ELSE 0 END) as assistant_messages
+                FROM presession_conversations
+                WHERE username = ?
+                GROUP BY session_id
+                ORDER BY MAX(timestamp) DESC
+                LIMIT ?
+            """,
+                (username, limit),
+            )
+
+            rows = cursor.fetchall()
+            sessions = []
+
+            for row in rows:
+                sessions.append(
+                    {
+                        "session_id": row["session_id"],
+                        "started_at": row["started_at"],
+                        "last_activity": row["last_activity"],
+                        "message_count": row["message_count"],
+                        "user_messages": row["user_messages"],
+                        "assistant_messages": row["assistant_messages"],
+                    }
+                )
+
+            return sessions
+
+        except Exception as e:
+            self.logger.error(f"Error loading presession sessions for {username}: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def delete_presession_session(self, username: str, session_id: str) -> bool:
+        """
+        Delete a presession session and all its messages.
+
+        Args:
+            username: Username (for authorization check)
+            session_id: Session identifier to delete
+
+        Returns:
+            True if deleted successfully, False otherwise
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            # Verify ownership by checking if session exists for this user
+            cursor.execute(
+                "SELECT COUNT(*) as count FROM presession_conversations WHERE username = ? AND session_id = ?",
+                (username, session_id),
+            )
+            if cursor.fetchone()["count"] == 0:
+                self.logger.warning(
+                    f"Presession session {session_id} not found for user {username}"
+                )
+                return False
+
+            # Delete all messages in session
+            cursor.execute(
+                "DELETE FROM presession_conversations WHERE username = ? AND session_id = ?",
+                (username, session_id),
+            )
+            conn.commit()
+            self.logger.info(
+                f"Deleted presession session {session_id} for user {username}"
+            )
+            return True
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(
+                f"Error deleting presession session {session_id} for {username}: {e}"
+            )
+            return False
+        finally:
+            conn.close()
+
+    # ========================================================================
     # USER OPERATIONS
     # ========================================================================
 

@@ -39,7 +39,7 @@ export { Toast } from './interactive/Toast';
 
 // Status Components
 export { LoadingSpinner } from './status/LoadingSpinner';
-export { Skeleton } from './status/Skeleton';
+export { Skeleton, SkeletonText, SkeletonCard, SkeletonList, SkeletonTableRow } from './status/Skeleton';
 export { EmptyState } from './status/EmptyState';
 export { ErrorState } from './status/ErrorState';
 export { NotFound } from './status/NotFound';

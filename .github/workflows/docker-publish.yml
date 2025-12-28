@@ -1,0 +1,444 @@
+name: Docker Build and Publish
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      push_images:
+        description: 'Push images to registry'
+        required: true
+        default: 'false'
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
+jobs:
+  build-api:
+    name: Build and Push API Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      api-image: ${{ steps.meta.outputs.tags }}
+      api-digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}/api
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push API image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.api
+          push: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')) }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            VCS_REF=${{ github.sha }}
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.meta.outputs.tags }}
+          format: spdx-json
+          output-file: sbom-api.spdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v3
+        with:
+          name: sbom-api
+          path: sbom-api.spdx.json
+
+      - name: Sign the image
+        if: github.event_name != 'pull_request'
+        env:
+          COSIGN_YES: true
+        run: |
+          # Install cosign
+          wget https://github.com/sigstore/cosign/releases/download/v2.0.0/cosign-linux-amd64
+          chmod +x cosign-linux-amd64
+
+          # Sign image
+          ./cosign-linux-amd64 sign --key env://COSIGN_KEY ghcr.io/${{ github.repository }}/api@${{ steps.build.outputs.digest }}
+        continue-on-error: true
+
+  build-frontend:
+    name: Build and Push Frontend Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      frontend-image: ${{ steps.meta.outputs.tags }}
+      frontend-digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}/frontend
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push frontend image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./socrates-frontend
+          file: ./socrates-frontend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')) }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            VCS_REF=${{ github.sha }}
+            VITE_API_URL=${{ secrets.VITE_API_URL || 'https://api.socrates.app' }}
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.meta.outputs.tags }}
+          format: spdx-json
+          output-file: sbom-frontend.spdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v3
+        with:
+          name: sbom-frontend
+          path: sbom-frontend.spdx.json
+
+  scan-images:
+    name: Scan Images with Trivy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [build-api, build-frontend]
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Run Trivy vulnerability scanner (API)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ needs.build-api.outputs.api-image }}
+          format: 'sarif'
+          output: 'trivy-api-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Run Trivy vulnerability scanner (Frontend)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ needs.build-frontend.outputs.frontend-image }}
+          format: 'sarif'
+          output: 'trivy-frontend-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-api-results.sarif'
+          category: 'trivy-api'
+
+      - name: Upload Trivy results to GitHub Security (Frontend)
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-frontend-results.sarif'
+          category: 'trivy-frontend'
+
+  test-images:
+    name: Test Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [build-api, build-frontend]
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Load API image from ghcr.io
+        run: |
+          docker pull ${{ needs.build-api.outputs.api-image }}
+          docker tag ${{ needs.build-api.outputs.api-image }} socrates-api:test
+
+      - name: Load frontend image from ghcr.io
+        run: |
+          docker pull ${{ needs.build-frontend.outputs.frontend-image }}
+          docker tag ${{ needs.build-frontend.outputs.frontend-image }} socrates-frontend:test
+
+      - name: Test API image
+        run: |
+          docker run --rm --entrypoint python socrates-api:test -m py_compile socrates_api/main.py
+          echo "✓ API image compiles successfully"
+
+      - name: Test API health check
+        run: |
+          docker run -d --name api-test \
+            -e DATABASE_URL="sqlite+aiosqlite:///:memory:" \
+            -e ANTHROPIC_API_KEY="test" \
+            -p 8000:8000 \
+            socrates-api:test
+
+          sleep 5
+
+          # Test health endpoint
+          curl -f http://localhost:8000/health || exit 1
+          echo "✓ API health check passed"
+
+          docker stop api-test
+          docker rm api-test
+
+      - name: Test frontend image
+        run: |
+          docker run --rm --name frontend-test \
+            -p 3000:80 \
+            socrates-frontend:test &
+
+          sleep 3
+
+          # Test that frontend serves content
+          curl -f http://localhost:3000/ || exit 1
+          echo "✓ Frontend loads successfully"
+
+          pkill -f "docker run"
+
+      - name: Check image sizes
+        run: |
+          echo "API Image size:"
+          docker images socrates-api:test --format "{{.Size}}"
+
+          echo "Frontend Image size:"
+          docker images socrates-frontend:test --format "{{.Size}}"
+
+  publish-release:
+    name: Publish Release Notes
+    runs-on: ubuntu-latest
+    needs: [build-api, build-frontend, scan-images, test-images]
+    if: startsWith(github.ref, 'refs/tags/')
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            sbom-api.spdx.json
+            sbom-frontend.spdx.json
+          body: |
+            ## Docker Images
+
+            ### API
+            ```
+            ghcr.io/${{ github.repository }}/api:${{ github.ref_name }}
+            ```
+
+            ### Frontend
+            ```
+            ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}
+            ```
+
+            ## Deployment
+
+            ```bash
+            kubectl set image deployment/socrates-api \
+              socrates-api=ghcr.io/${{ github.repository }}/api:${{ github.ref_name }} \
+              -n socrates-prod
+
+            kubectl set image deployment/socrates-frontend \
+              socrates-frontend=ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }} \
+              -n socrates-prod
+            ```
+
+            ## Security
+
+            - Images signed with Cosign
+            - SBOMs provided for transparency
+            - Trivy security scan performed
+
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-deployment:
+    name: Notify Deployment
+    runs-on: ubuntu-latest
+    needs: [build-api, build-frontend]
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
+    timeout-minutes: 10
+
+    steps:
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1
+        if: secrets.SLACK_WEBHOOK_URL
+        with:
+          payload: |
+            {
+              "text": "🐳 Docker Images Published",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Docker Images Published*\n\n*API*\n`ghcr.io/${{ github.repository }}/api:${{ github.ref_name }}`\n\n*Frontend*\n`ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}`"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch*\n${{ github.ref_name }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Send Discord notification
+        if: secrets.DISCORD_WEBHOOK_URL
+        run: |
+          curl -X POST ${{ secrets.DISCORD_WEBHOOK_URL }} \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "🐳 Docker Images Published",
+                "color": 3447003,
+                "fields": [
+                  {
+                    "name": "API Image",
+                    "value": "ghcr.io/${{ github.repository }}/api:${{ github.ref_name }}",
+                    "inline": false
+                  },
+                  {
+                    "name": "Frontend Image",
+                    "value": "ghcr.io/${{ github.repository }}/frontend:${{ github.ref_name }}",
+                    "inline": false
+                  },
+                  {
+                    "name": "Commit",
+                    "value": "${{ github.sha }}",
+                    "inline": true
+                  },
+                  {
+                    "name": "Branch",
+                    "value": "${{ github.ref_name }}",
+                    "inline": true
+                  }
+                ],
+                "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+              }]
+            }'
+
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [build-api, build-frontend]
+    if: always()
+    timeout-minutes: 5
+
+    steps:
+      - name: Print summary
+        run: |
+          echo "## Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status | Image |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| API | ${{ needs.build-api.result }} | ghcr.io/${{ github.repository }}/api |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ${{ needs.build-frontend.result }} | ghcr.io/${{ github.repository }}/frontend |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Details:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Trigger: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Timestamp: $(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_STEP_SUMMARY

@@ -1,52 +1,167 @@
-# Socrates Test Suite
+# Socrates Testing Guide
 
-Comprehensive test suite for the Socrates AI library, CLI, and REST API.
+Comprehensive guide for running, writing, and maintaining tests in the Socrates project.
 
-## Overview
+## Table of Contents
 
-The test suite is organized into multiple categories:
+1. [Quick Start](#quick-start)
+2. [Test Organization](#test-organization)
+3. [Running Tests](#running-tests)
+4. [Writing Tests](#writing-tests)
+5. [Test Coverage](#test-coverage)
+6. [CI/CD Integration](#cicd-integration)
+7. [Best Practices](#best-practices)
 
-- **Unit Tests**: Fast tests for individual components (no external dependencies)
-- **Integration Tests**: Tests for component interactions with mocked dependencies
-- **End-to-End Tests**: Full workflow tests
+---
 
-## Test Structure
-
-```
-tests/                          # Main library tests
-├── conftest.py               # Pytest fixtures and configuration
-├── test_config.py            # Configuration system tests
-├── test_events.py            # Event system tests
-├── test_exceptions.py        # Exception hierarchy tests
-├── test_models.py            # Data model tests
-├── test_orchestrator_integration.py  # Orchestrator integration tests
-
-socrates-cli/tests/           # CLI tests
-├── test_cli.py              # Click command tests
-
-socrates-api/tests/          # REST API tests
-├── test_api.py              # FastAPI endpoint tests
-
-pytest.ini                     # Pytest configuration
-```
-
-## Installation
+## Quick Start
 
 ### Install Test Dependencies
 
 ```bash
-# Install main dependencies
-pip install socrates-ai socrates-cli socrates-api
-
-# Install test dependencies
-pip install pytest pytest-asyncio pytest-cov pytest-mock pytest-timeout
+pip install pytest pytest-asyncio pytest-cov pytest-xdist pytest-mock
 ```
 
-Or use the development dependency set:
+### Run All Tests
 
 ```bash
-# From socrates-ai
-pip install -e ".[dev]"
+# Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run with coverage report
+pytest --cov=socrates_api --cov=socratic_system --cov-report=html
+
+# Run in parallel (faster)
+pytest -n auto
+```
+
+### Run Specific Test Categories
+
+```bash
+# Unit tests only
+pytest tests/unit/
+
+# Integration tests only
+pytest tests/integration/
+
+# E2E tests only
+pytest tests/e2e/
+
+# Specific test file
+pytest tests/unit/routers/test_auth.py
+
+# Specific test class
+pytest tests/unit/routers/test_auth.py::TestAuthEndpoints
+
+# Specific test function
+pytest tests/unit/routers/test_auth.py::TestAuthEndpoints::test_login_success
+```
+
+### Run with Markers
+
+```bash
+# Run only fast tests (skip slow)
+pytest -m "not slow"
+
+# Run only slow tests
+pytest -m slow
+
+# Run only API tests
+pytest -m api
+
+# Combine markers
+pytest -m "unit and not slow"
+```
+
+---
+
+## Test Organization
+
+### Directory Structure
+
+```
+tests/
+├── conftest.py                    # Shared fixtures and configuration
+├── pytest.ini                     # Pytest configuration
+├── README.md                      # This file
+│
+├── unit/                          # Unit tests (fast, isolated)
+│   ├── conftest.py               # Unit test fixtures
+│   ├── models/
+│   │   ├── test_user.py
+│   │   ├── test_project.py
+│   │   ├── test_knowledge.py
+│   │   └── test_llm_config.py
+│   ├── routers/
+│   │   ├── test_auth.py
+│   │   ├── test_projects.py
+│   │   ├── test_chat_sessions.py
+│   │   ├── test_collaboration.py
+│   │   ├── test_knowledge.py
+│   │   ├── test_analytics.py
+│   │   ├── test_code_generation.py
+│   │   ├── test_nlu.py
+│   │   ├── test_presession.py
+│   │   └── ... (one per router)
+│   ├── agents/
+│   │   ├── test_socratic_counselor.py
+│   │   ├── test_code_generator.py
+│   │   ├── test_project_manager.py
+│   │   └── ... (one per agent)
+│   ├── database/
+│   │   ├── test_project_db.py
+│   │   ├── test_async_db.py
+│   │   ├── test_vector_db.py
+│   │   └── test_migrations.py
+│   ├── middleware/
+│   │   ├── test_rate_limit.py
+│   │   ├── test_security_headers.py
+│   │   ├── test_metrics.py
+│   │   └── test_auth.py
+│   ├── services/
+│   │   ├── test_orchestrator.py
+│   │   ├── test_knowledge_base.py
+│   │   └── test_document_understanding.py
+│   ├── caching/
+│   │   ├── test_redis_cache.py
+│   │   └── test_embedding_cache.py
+│   └── utils/
+│       ├── test_validators.py
+│       └── test_parsers.py
+│
+├── integration/                   # Integration tests (slower, test interactions)
+│   ├── conftest.py               # Integration test fixtures
+│   ├── test_auth_workflows.py
+│   ├── test_project_workflows.py
+│   ├── test_chat_workflows.py
+│   ├── test_collaboration_workflows.py
+│   ├── test_knowledge_workflows.py
+│   ├── test_github_import_workflows.py
+│   ├── test_websocket_workflows.py
+│   └── test_subscription_enforcement.py
+│
+├── e2e/                           # End-to-end tests (full user workflows)
+│   ├── conftest.py               # E2E test fixtures
+│   ├── test_user_journey_free.py
+│   ├── test_user_journey_pro.py
+│   ├── test_full_project_lifecycle.py
+│   └── test_collaboration_session.py
+│
+└── performance/                   # Performance and load tests
+    ├── test_load_testing.py
+    ├── test_database_performance.py
+    └── test_cache_performance.py
+```
+
+### Test Naming Conventions
+
+- **Test files:** `test_<module>.py` (e.g., `test_auth.py`)
+- **Test classes:** `Test<Feature>` (e.g., `TestAuthEndpoints`)
+- **Test functions:** `test_<behavior>` (e.g., `test_login_success`)
+- **Fixtures:** Descriptive names (e.g., `authenticated_client`, `sample_project`)
 
 # From socrates-cli
 pip install -e socrates-cli/[dev]

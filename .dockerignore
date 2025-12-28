@@ -1,0 +1,127 @@
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# Virtual environments
+.venv
+venv
+ENV
+env
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Node/Frontend
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm
+dist/
+build/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+.sublime-project
+.sublime-workspace
+*.iml
+*.iws
+*.ipr
+
+# Testing
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+test_*.py
+*_test.py
+
+# Documentation
+docs/
+*.md
+!README.md
+!LICENSE
+README.md
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+*.bak
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.old
+
+# Archive
+archive/
+ARCHIVE/
+deprecated/
+DEPRECATED/
+
+# Development only
+.env.local
+.env.development
+docker-compose.override.yml
+.vscode/
+.editorconfig
+
+# CI/CD
+.circleci/
+.travis.yml
+.github/workflows/
+
+# Keep only essential files
+!.dockerignore
+!.gitignore
+!README.md
+!LICENSE

@@ -1,0 +1,175 @@
+---
+# Ingress for Socrates API
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: socrates-api-ingress
+  namespace: socrates-prod
+  labels:
+    app: socrates-api
+  annotations:
+    # Nginx ingress controller specific
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+
+    # Security
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+    # Headers
+    nginx.ingress.kubernetes.io/add-headers: "socrates-prod/security-headers"
+
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+
+    # CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://yourdomain.com"
+
+    # Size limits
+    nginx.ingress.kubernetes.io/client-max-body-size: "100m"
+
+    # Timeouts
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - api.yourdomain.com
+    secretName: socrates-api-tls
+
+  rules:
+  # API endpoint
+  - host: api.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: socrates-api
+            port:
+              number: 80
+
+---
+# ConfigMap with security headers for nginx
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: security-headers
+  namespace: socrates-prod
+data:
+  X-Frame-Options: "DENY"
+  X-Content-Type-Options: "nosniff"
+  X-XSS-Protection: "1; mode=block"
+  Strict-Transport-Security: "max-age=31536000; includeSubDomains; preload"
+  Referrer-Policy: "strict-origin-when-cross-origin"
+  Permissions-Policy: "accelerometer=(), ambient-light-sensor=(), autoplay=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+
+---
+# Certificate Issuer for Let's Encrypt (requires cert-manager)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@yourdomain.com
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+
+---
+# Network Policy for ingress to API
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: socrates-api-allow-ingress
+  namespace: socrates-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: socrates-api
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8000
+
+---
+# Network Policy to restrict database access to API only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres-api-only
+  namespace: socrates-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: socrates-api
+    ports:
+    - protocol: TCP
+      port: 5432
+
+---
+# Network Policy to restrict Redis access to API only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-api-only
+  namespace: socrates-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: socrates-api
+    ports:
+    - protocol: TCP
+      port: 6379
+
+---
+# Network Policy to restrict ChromaDB access to API only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: chromadb-api-only
+  namespace: socrates-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: chromadb
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: socrates-api
+    ports:
+    - protocol: TCP
+      port: 8000

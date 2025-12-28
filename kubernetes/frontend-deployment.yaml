@@ -1,0 +1,147 @@
+---
+# Frontend Deployment for Socrates
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: socrates-frontend
+  namespace: socrates-prod
+  labels:
+    app: socrates-frontend
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: socrates-frontend
+  template:
+    metadata:
+      labels:
+        app: socrates-frontend
+        version: v1
+    spec:
+      containers:
+      - name: socrates-frontend
+        image: ghcr.io/your-org/socrates-frontend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP
+
+        env:
+        - name: VITE_API_URL
+          value: "https://api.yourdomain.com"
+        - name: VITE_WS_URL
+          value: "wss://api.yourdomain.com"
+        - name: NODE_ENV
+          value: "production"
+
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 101  # www-data user
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: nginx-cache
+          mountPath: /var/cache/nginx
+
+      securityContext:
+        fsGroup: 101
+
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: nginx-cache
+        emptyDir: {}
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - socrates-frontend
+              topologyKey: kubernetes.io/hostname
+
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: socrates-frontend
+  namespace: socrates-prod
+  labels:
+    app: socrates-frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: socrates-frontend
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+    protocol: TCP
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: socrates-frontend-hpa
+  namespace: socrates-prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: socrates-frontend
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

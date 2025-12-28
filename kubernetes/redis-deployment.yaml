@@ -1,0 +1,238 @@
+---
+# Redis Deployment for Socrates (caching and rate limiting)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: socrates-prod
+  labels:
+    app: redis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: socrates-prod
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: redis
+        version: v1
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: redis
+          containerPort: 6379
+          protocol: TCP
+
+        command:
+        - redis-server
+        args:
+        - /usr/local/etc/redis/redis.conf
+
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+        # Health checks
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+        # Volume mounts
+        volumeMounts:
+        - name: redis-storage
+          mountPath: /data
+        - name: redis-config
+          mountPath: /usr/local/etc/redis
+          readOnly: true
+
+        # Security context
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 999  # redis user
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+
+      # Pod-level security and volumes
+      securityContext:
+        fsGroup: 999
+
+      volumes:
+      - name: redis-storage
+        persistentVolumeClaim:
+          claimName: redis-pvc
+      - name: redis-config
+        configMap:
+          name: redis-config
+      - name: tmp
+        emptyDir: {}
+
+      # Mounts for writable directories
+      initContainers:
+      - name: setup-redis-dir
+        image: busybox:latest
+        command: ['sh', '-c', 'chmod 777 /data || true']
+        volumeMounts:
+        - name: redis-storage
+          mountPath: /data
+
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: socrates-prod
+  labels:
+    app: redis
+spec:
+  type: ClusterIP
+  selector:
+    app: redis
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: 6379
+    protocol: TCP
+  sessionAffinity: None
+
+---
+# ConfigMap for Redis configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: socrates-prod
+data:
+  redis.conf: |
+    # Redis configuration for Socrates
+
+    # Network and General
+    bind 0.0.0.0
+    port 6379
+    timeout 0
+    tcp-backlog 511
+    tcp-keepalive 300
+    daemonize no
+    pidfile /var/run/redis.pid
+    loglevel notice
+    logfile ""
+    syslog-enabled no
+    syslog-ident redis
+    syslog-facility local0
+    databases 16
+
+    # Snapshotting (persistence)
+    save 900 1
+    save 300 10
+    save 60 10000
+    stop-writes-on-bgsave-error yes
+    rdbcompression yes
+    rdbchecksum yes
+    dbfilename dump.rdb
+    dir /data
+
+    # Replication (single instance, not replicated)
+    repl-diskless-sync no
+    repl-diskless-sync-delay 5
+
+    # Security
+    # requirepass <password> # Set in environment if needed
+
+    # Clients
+    maxclients 10000
+
+    # Memory management
+    maxmemory 800mb
+    maxmemory-policy allkeys-lru
+    maxmemory-samples 5
+
+    # Lazy freeing
+    lazyfree-lazy-eviction no
+    lazyfree-lazy-expire no
+    lazyfree-lazy-server-del no
+    replica-lazy-flush no
+
+    # Appendonly mode (persistence)
+    appendonly no
+    appendfilename "appendonly.aof"
+    appendfsync everysec
+    no-appendfsync-on-rewrite no
+    auto-aof-rewrite-percentage 100
+    auto-aof-rewrite-min-size 64mb
+    aof-load-truncated yes
+    aof-use-rdb-preamble yes
+
+    # Lua scripting
+    lua-time-limit 5000
+
+    # Redis cluster (disabled for single node)
+    cluster-enabled no
+
+    # Slow log
+    slowlog-log-slower-than 10000
+    slowlog-max-len 128
+
+    # Event notification
+    notify-keyspace-events ""
+
+    # Advanced config
+    hash-max-ziplist-entries 512
+    hash-max-ziplist-value 64
+    list-max-ziplist-size -2
+    list-compress-depth 0
+    set-max-intset-entries 512
+    zset-max-ziplist-entries 128
+    zset-max-ziplist-value 64
+    hll-sparse-max-bytes 3000
+    activerehashing yes
+    client-output-buffer-limit normal 0 0 0
+    client-output-buffer-limit replica 256mb 64mb 60
+    client-output-buffer-limit pubsub 32mb 8mb 60
+    hz 10

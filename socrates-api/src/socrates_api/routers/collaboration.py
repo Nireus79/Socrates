@@ -4,14 +4,17 @@ Collaboration Router - Team collaboration and project sharing endpoints.
 Provides:
 - Team member management (add, remove, list)
 - Role-based access control
-- Real-time presence tracking
+- Real-time presence tracking with WebSocket broadcasting
 - Collaboration notifications
+- Activity tracking with real-time updates
 """
 
 import logging
 import os
+import uuid
 from pathlib import Path
-from typing import Optional
+from datetime import datetime
+from typing import Optional, List, Dict, Any
 
 from fastapi import APIRouter, HTTPException, status, Depends, Body
 
@@ -26,6 +29,7 @@ from socrates_api.models import (
     CollaborationInvitationResponse,
 )
 from socrates_api.middleware.subscription import SubscriptionChecker
+from socrates_api.websocket import get_connection_manager
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["collaboration"])
@@ -47,6 +51,112 @@ class CollaboratorRole:
     def is_valid(role: str) -> bool:
         """Check if role is valid."""
         return role in [CollaboratorRole.OWNER, CollaboratorRole.EDITOR, CollaboratorRole.VIEWER]
+
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
+
+async def _get_active_collaborators(project_id: str) -> List[Dict[str, Any]]:
+    """
+    Get list of active collaborators connected to a project via WebSocket.
+
+    Args:
+        project_id: Project identifier
+
+    Returns:
+        List of active collaborator info dicts with username, status, activity
+    """
+    try:
+        connection_manager = get_connection_manager()
+
+        # Get all metadata to find connections for this project
+        active_collaborators = []
+        seen_users = set()
+
+        # Access the metadata directly (this is a workaround since get_project_connections
+        # requires both user_id and project_id)
+        async with connection_manager._lock:
+            for connection_id, metadata in connection_manager._metadata.items():
+                if metadata.project_id == project_id and metadata.user_id not in seen_users:
+                    seen_users.add(metadata.user_id)
+                    active_collaborators.append({
+                        "username": metadata.user_id,
+                        "status": "online",
+                        "last_activity": metadata.last_message_at or metadata.connected_at,
+                        "connected_at": metadata.connected_at,
+                        "message_count": metadata.message_count,
+                    })
+
+        logger.debug(f"Found {len(active_collaborators)} active collaborators in project {project_id}")
+        return active_collaborators
+
+    except Exception as e:
+        logger.error(f"Error getting active collaborators for {project_id}: {e}")
+        return []
+
+
+async def _broadcast_activity(
+    project_id: str,
+    current_user: str,
+    activity_type: str,
+    activity_data: Optional[Dict[str, Any]] = None,
+) -> int:
+    """
+    Broadcast an activity event to all collaborators in a project via WebSocket.
+
+    Args:
+        project_id: Project identifier
+        current_user: User who triggered the activity
+        activity_type: Type of activity (e.g., 'editing', 'commenting', 'viewing')
+        activity_data: Optional additional activity data
+
+    Returns:
+        Number of connections the message was sent to
+    """
+    try:
+        connection_manager = get_connection_manager()
+
+        # Prepare activity broadcast message
+        activity_message = {
+            "type": "activity_update",
+            "project_id": project_id,
+            "user_id": current_user,
+            "activity_type": activity_type,
+            "activity_data": activity_data or {},
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+
+        # Broadcast to all users in the project
+        total_sent = 0
+        async with connection_manager._lock:
+            # Get all users connected to this project
+            users_in_project = set()
+            for user_id, projects in connection_manager._connections.items():
+                if project_id in projects:
+                    users_in_project.add(user_id)
+
+        # Broadcast to each user
+        for user_id in users_in_project:
+            sent_count = await connection_manager.broadcast_to_project(
+                user_id=user_id,
+                project_id=project_id,
+                message=activity_message,
+            )
+            total_sent += sent_count
+
+        if total_sent > 0:
+            logger.debug(
+                f"Broadcasted activity '{activity_type}' from {current_user} "
+                f"in project {project_id} to {total_sent} connections"
+            )
+
+        return total_sent
+
+    except Exception as e:
+        logger.error(f"Error broadcasting activity in project {project_id}: {e}")
+        return 0
 
 
 # ============================================================================
@@ -537,20 +647,22 @@ async def get_presence(
                 detail="Project not found",
             )
 
-        # TODO: Load active presence from WebSocket connection manager
+        # Load active presence from WebSocket connection manager
+        active_collaborators = await _get_active_collaborators(project_id)
 
-        return {
-            "status": "success",
-            "project_id": project_id,
-            "active_collaborators": [
-                {
-                    "username": current_user,
-                    "status": "online",
-                    "last_activity": "2024-01-01T00:00:00Z",
-                    "current_activity": "editing",
-                }
-            ],
-        }
+        logger.info(
+            f"Retrieved presence info for project {project_id}: "
+            f"{len(active_collaborators)} active collaborators"
+        )
+
+        return SuccessResponse(
+            message="Presence retrieved successfully",
+            data={
+                "project_id": project_id,
+                "active_collaborators": active_collaborators,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
 
     except HTTPException:
         raise
@@ -627,8 +739,18 @@ async def record_activity(
         # Save to database
         db.save_activity(activity)
 
-        # TODO: Broadcast to collaborators via WebSocket
-        logger.debug(f"Activity recorded: {activity_type} in project {project_id} by {current_user}")
+        # Broadcast to collaborators via WebSocket
+        broadcast_count = await _broadcast_activity(
+            project_id=project_id,
+            current_user=current_user,
+            activity_type=activity_type or "unknown",
+            activity_data=activity_data,
+        )
+
+        logger.info(
+            f"Activity recorded and broadcasted: {activity_type} in project {project_id} by {current_user} "
+            f"(sent to {broadcast_count} connections)"
+        )
 
         return {
             "status": "success",

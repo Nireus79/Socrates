@@ -3,10 +3,17 @@ Natural Language Understanding (NLU) API endpoints for Socrates.
 
 Provides REST endpoints for interpreting natural language input and translating
 it into structured commands. Enables pre-session chat and command discovery.
+
+Features:
+- AI-powered intent recognition via Claude
+- Entity extraction from user input
+- Context-aware command suggestions
+- Semantic understanding beyond keyword matching
 """
 
+import json
 import logging
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 
 from fastapi import APIRouter, HTTPException, status, Depends
@@ -38,30 +45,164 @@ class NLUInterpretResponse(BaseModel):
     command: Optional[str] = None
     suggestions: Optional[List[CommandSuggestionResponse]] = None
     message: str
+    entities: Optional[Dict[str, Any]] = None
+    intent: Optional[str] = None
+
+
+async def _extract_entities(text: str, context: Optional[dict] = None) -> Dict[str, Any]:
+    """
+    Extract entities from user input using Claude AI.
+
+    Args:
+        text: User input text
+        context: Optional context about the project
+
+    Returns:
+        Dictionary of extracted entities (action, object, parameters, etc.)
+    """
+    try:
+        from socrates_api.main import get_orchestrator
+        orchestrator = get_orchestrator()
+
+        prompt = f"""Analyze this user input and extract structured entities.
+
+User input: "{text}"
+
+Extract the following in JSON format:
+{{
+    "action": "the main action (analyze, create, test, fix, etc.) or null if none",
+    "object": "the object being acted upon (project, code, docs, etc.) or null",
+    "parameters": ["list of additional parameters or arguments"],
+    "intent_category": "one of: project, code, docs, collaboration, chat, system, query",
+    "confidence": 0.0-1.0 confidence in the extraction
+}}
+
+Respond ONLY with valid JSON."""
+
+        response = orchestrator.claude_client.generate_response(prompt)
+
+        try:
+            entities = json.loads(response)
+            logger.debug(f"Extracted entities: {entities}")
+            return entities
+        except json.JSONDecodeError:
+            logger.warning(f"Failed to parse entity extraction response: {response}")
+            return {
+                "action": None,
+                "object": None,
+                "parameters": [],
+                "intent_category": "query",
+                "confidence": 0.0
+            }
+    except Exception as e:
+        logger.warning(f"Error extracting entities: {str(e)}")
+        return {
+            "action": None,
+            "object": None,
+            "parameters": [],
+            "intent_category": "query",
+            "confidence": 0.0
+        }
+
+
+async def _get_ai_command_suggestions(text: str, context: Optional[dict] = None) -> List[Dict[str, Any]]:
+    """
+    Get AI-powered command suggestions using Claude.
+
+    Args:
+        text: User input text
+        context: Optional context about the project
+
+    Returns:
+        List of suggested commands with reasoning
+    """
+    try:
+        from socrates_api.main import get_orchestrator
+        orchestrator = get_orchestrator()
+
+        # Build context string for better suggestions
+        context_str = ""
+        if context:
+            if context.get("project_name"):
+                context_str += f"Project: {context['project_name']}\n"
+            if context.get("current_phase"):
+                context_str += f"Current Phase: {context['current_phase']}\n"
+            if context.get("recent_actions"):
+                context_str += f"Recent Actions: {', '.join(context['recent_actions'])}\n"
+
+        prompt = f"""Based on this user request, suggest the most relevant commands.
+
+{context_str}
+User request: "{text}"
+
+Available commands:
+- /project analyze: Analyze project structure
+- /project test: Run tests
+- /project fix: Apply fixes
+- /code generate: Generate code
+- /code docs: Generate documentation
+- /docs import: Import documentation
+- /advance: Move to next phase
+- /status: Show project status
+- /help: Show help
+- /hint: Get a hint
+- /search: Search conversations
+- /summary: Get conversation summary
+
+Respond with JSON:
+{{
+    "suggestions": [
+        {{
+            "command": "/command_name",
+            "confidence": 0.0-1.0,
+            "reasoning": "why this command matches",
+            "args": ["any", "arguments"]
+        }}
+    ]
+}}
+
+Respond ONLY with valid JSON."""
+
+        response = orchestrator.claude_client.generate_response(prompt)
+
+        try:
+            result = json.loads(response)
+            suggestions = result.get("suggestions", [])
+            # Sort by confidence and limit to top 5
+            suggestions.sort(key=lambda x: x.get("confidence", 0), reverse=True)
+            logger.debug(f"AI suggestions: {suggestions[:5]}")
+            return suggestions[:5]
+        except json.JSONDecodeError:
+            logger.warning(f"Failed to parse AI suggestions: {response}")
+            return []
+    except Exception as e:
+        logger.warning(f"Error getting AI suggestions: {str(e)}")
+        return []
 
 
 @router.post(
     "/interpret",
     response_model=SuccessResponse,
     status_code=status.HTTP_200_OK,
-    summary="Interpret natural language input",
+    summary="Interpret natural language input with AI",
 )
 async def interpret_input(
     request: NLUInterpretRequest,
     current_user: str = Depends(get_current_user),
 ):
     """
-    Interpret natural language input and return command suggestions.
+    Interpret natural language input and return command suggestions using AI.
 
-    This endpoint provides basic command matching and suggestions for user queries.
-    For full NLU with Claude interpretation, use from the CLI.
+    This endpoint provides AI-powered intent recognition, entity extraction, and
+    context-aware command suggestions. It uses Claude for semantic understanding
+    beyond simple keyword matching.
 
     Args:
         request: NLUInterpretRequest with input string and optional context
         current_user: Authenticated user
 
     Returns:
-        SuccessResponse with interpreted commands or suggestions
+        SuccessResponse with interpreted commands, suggestions, and extracted entities
     """
     try:
         if not request.input or not request.input.strip():
@@ -70,6 +211,8 @@ async def interpret_input(
                 data={
                     "status": "no_match",
                     "message": "Please enter a command or question.",
+                    "entities": None,
+                    "intent": None,
                 }
             )
 
@@ -80,72 +223,112 @@ async def interpret_input(
         # Check if input is a direct command (starts with /)
         if user_input.startswith('/'):
             # Direct command - return as-is
-            matched_command = user_input
-        else:
-            # Simple pattern-based command matching
-            # Map common phrases to commands
-            command_map = {
-                "analyze": "/project analyze",
-                "test": "/project test",
-                "fix": "/project fix",
-                "validate": "/project validate",
-                "review": "/project review",
-                "help": "/help",
-                "info": "/info",
-                "status": "/status",
-                "debug": "/debug",
-                "hint": "/hint",
-                "done": "/done",
-                "advance": "/advance",
-                "notes": "/note list",
-                "documents": "/docs list",
-                "docs": "/docs",
-                "skills": "/skills list",
-                "collaborators": "/collab list",
-                "search": "/conversation search",
-                "summary": "/conversation summary",
-                "generate code": "/code generate",
-                "generate docs": "/code docs",
-                "subscription": "/subscription",
-                "mode": "/mode",
-                "model": "/model",
-                "nlu": "/nlu",
-                "menu": "/menu",
-                "clear": "/clear",
-                "exit": "/exit",
-                "back": "/back",
-                "maturity": "/maturity",
-                "analytics": "/analytics",
-            }
+            logger.debug(f"Direct command detected: {user_input}")
+            return SuccessResponse(
+                message=f"Understood! Executing: {user_input}",
+                data={
+                    "status": "success",
+                    "command": user_input,
+                    "message": f"Understood! Executing: {user_input}",
+                    "entities": None,
+                    "intent": "direct_command",
+                }
+            )
 
-            # Find matching commands
-            suggestions = []
-            matched_command = None
+        # Try AI-powered interpretation first
+        logger.debug("Using AI-powered NLU interpretation")
 
-            for phrase, command in command_map.items():
-                if phrase in user_input_lower:
-                    confidence = 0.9 if phrase in user_input_lower else 0.5
-                    if phrase in user_input_lower and len(phrase.split()) == len(user_input_lower.split()):
-                        # Exact match
-                        matched_command = command
-                        confidence = 0.95
-                    else:
-                        # Partial match
-                        suggestions.append({
-                            "command": command,
-                            "confidence": confidence,
-                            "reasoning": f"Matched keyword: {phrase}",
-                            "args": []
-                        })
+        # Extract entities using Claude
+        entities = await _extract_entities(user_input, request.context)
+        intent = entities.get("intent_category", "query")
+        entity_confidence = entities.get("confidence", 0.0)
+
+        # Get AI suggestions if confidence is moderate or higher
+        ai_suggestions = []
+        if entity_confidence >= 0.3:
+            ai_suggestions = await _get_ai_command_suggestions(user_input, request.context)
+
+            # Format AI suggestions properly
+            if ai_suggestions:
+                logger.info(f"AI suggestions for '{user_input}': {len(ai_suggestions)} suggestions")
+                return SuccessResponse(
+                    message="I found some relevant commands:",
+                    data={
+                        "status": "suggestions",
+                        "suggestions": ai_suggestions[:3],
+                        "message": "I found some relevant commands:",
+                        "entities": entities,
+                        "intent": intent,
+                    }
+                )
+
+        # Fall back to keyword-based matching if AI confidence is low
+        logger.debug("Falling back to keyword-based matching")
+        command_map = {
+            "analyze": "/project analyze",
+            "test": "/project test",
+            "fix": "/project fix",
+            "validate": "/project validate",
+            "review": "/project review",
+            "help": "/help",
+            "info": "/info",
+            "status": "/status",
+            "debug": "/debug",
+            "hint": "/hint",
+            "done": "/done",
+            "advance": "/advance",
+            "notes": "/note list",
+            "documents": "/docs list",
+            "docs": "/docs",
+            "skills": "/skills list",
+            "collaborators": "/collab list",
+            "search": "/conversation search",
+            "summary": "/conversation summary",
+            "generate code": "/code generate",
+            "generate docs": "/code docs",
+            "subscription": "/subscription",
+            "mode": "/mode",
+            "model": "/model",
+            "nlu": "/nlu",
+            "menu": "/menu",
+            "clear": "/clear",
+            "exit": "/exit",
+            "back": "/back",
+            "maturity": "/maturity",
+            "analytics": "/analytics",
+        }
+
+        # Find matching commands
+        suggestions = []
+        matched_command = None
+
+        for phrase, command in command_map.items():
+            if phrase in user_input_lower:
+                confidence = 0.9 if phrase in user_input_lower else 0.5
+                if phrase in user_input_lower and len(phrase.split()) == len(user_input_lower.split()):
+                    # Exact match
+                    matched_command = command
+                    confidence = 0.95
+                else:
+                    # Partial match
+                    suggestions.append({
+                        "command": command,
+                        "confidence": confidence,
+                        "reasoning": f"Matched keyword: {phrase}",
+                        "args": []
+                    })
 
         # If exact match found, return it
         if matched_command:
+            logger.info(f"Exact keyword match: {matched_command}")
             return SuccessResponse(
                 message=f"Understood! Executing: {matched_command}",
                 data={
                     "status": "success",
                     "command": matched_command,
                     "message": f"Understood! Executing: {matched_command}",
+                    "entities": entities,
+                    "intent": intent,
                 }
             )
 
@@ -153,31 +336,39 @@ async def interpret_input(
         if suggestions:
             # Sort by confidence
             suggestions.sort(key=lambda x: x["confidence"], reverse=True)
+            logger.info(f"Found {len(suggestions)} keyword-based suggestions")
             return SuccessResponse(
                 message="Did you mean one of these?",
                 data={
                     "status": "suggestions",
-                    "suggestions": suggestions[:3],  # Top 3 suggestions
+                    "suggestions": suggestions[:3],
                     "message": "Did you mean one of these?",
+                    "entities": entities,
+                    "intent": intent,
                 }
             )
 
         # No match found
+        logger.info(f"No match found for input: {user_input}")
         return SuccessResponse(
             message="I didn't understand that. Try describing what you want or typing a command like /help",
             data={
                 "status": "no_match",
                 "message": "I didn't understand that. Try:\n• Describing what you want (analyze, test, fix, etc.)\n• Typing a command like /help\n• Selecting a project from the dropdown",
+                "entities": entities,
+                "intent": intent,
             }
         )
 
     except Exception as e:
-        logger.error(f"Error interpreting input: {e}", exc_info=True)
+        logger.error(f"Error interpreting input: {str(e)}", exc_info=True)
         return SuccessResponse(
             message="Error processing your request. Please try again.",
             data={
                 "status": "error",
-                "message": "Error processing your request. Please try again.",
+                "message": f"Error processing your request. Please try again.",
+                "entities": None,
+                "intent": None,
             }
         )
 
@@ -287,4 +478,207 @@ async def get_available_commands(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve available commands"
+        )
+
+
+@router.get(
+    "/suggestions",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get context-aware command suggestions",
+)
+async def get_context_aware_suggestions(
+    project_id: Optional[str] = None,
+    current_phase: Optional[str] = None,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Get command suggestions based on current project context.
+
+    This endpoint uses project context (current phase, recent actions) to
+    suggest the most relevant commands for the user's current workflow.
+
+    Args:
+        project_id: Optional project ID for context
+        current_phase: Optional current phase (specification, analysis, design, etc.)
+        current_user: Authenticated user
+
+    Returns:
+        SuccessResponse with context-aware command suggestions
+
+    Example:
+        Request: GET /nlu/suggestions?project_id=proj-123&current_phase=analysis
+
+        Response:
+        ```json
+        {
+            "status": "success",
+            "data": {
+                "suggestions": [
+                    {
+                        "command": "/project analyze",
+                        "reasoning": "Relevant for analysis phase",
+                        "priority": "high"
+                    },
+                    {
+                        "command": "/code generate",
+                        "reasoning": "Common next step after analysis",
+                        "priority": "medium"
+                    }
+                ]
+            }
+        }
+        ```
+    """
+    try:
+        logger.info(
+            f"Context-aware suggestions requested by {current_user} "
+            f"for project {project_id}, phase {current_phase}"
+        )
+
+        # Map phases to suggested commands
+        phase_command_map = {
+            "specification": [
+                {
+                    "command": "/hint",
+                    "reasoning": "Get guidance on project specification",
+                    "priority": "high"
+                },
+                {
+                    "command": "/help",
+                    "reasoning": "Learn about available features",
+                    "priority": "medium"
+                },
+                {
+                    "command": "/advance",
+                    "reasoning": "Move to next phase when ready",
+                    "priority": "medium"
+                },
+            ],
+            "analysis": [
+                {
+                    "command": "/project analyze",
+                    "reasoning": "Analyze project requirements and structure",
+                    "priority": "high"
+                },
+                {
+                    "command": "/code generate",
+                    "reasoning": "Generate code templates based on analysis",
+                    "priority": "medium"
+                },
+                {
+                    "command": "/summary",
+                    "reasoning": "Review conversation summary",
+                    "priority": "low"
+                },
+            ],
+            "design": [
+                {
+                    "command": "/code generate",
+                    "reasoning": "Generate design documentation",
+                    "priority": "high"
+                },
+                {
+                    "command": "/code docs",
+                    "reasoning": "Create API documentation",
+                    "priority": "high"
+                },
+                {
+                    "command": "/project review",
+                    "reasoning": "Get design review feedback",
+                    "priority": "medium"
+                },
+            ],
+            "implementation": [
+                {
+                    "command": "/project test",
+                    "reasoning": "Run tests and validate implementation",
+                    "priority": "high"
+                },
+                {
+                    "command": "/project fix",
+                    "reasoning": "Apply fixes for issues",
+                    "priority": "high"
+                },
+                {
+                    "command": "/code generate",
+                    "reasoning": "Generate additional code sections",
+                    "priority": "medium"
+                },
+            ],
+            "review": [
+                {
+                    "command": "/project review",
+                    "reasoning": "Conduct code review",
+                    "priority": "high"
+                },
+                {
+                    "command": "/project test",
+                    "reasoning": "Verify all tests pass",
+                    "priority": "high"
+                },
+                {
+                    "command": "/advance",
+                    "reasoning": "Move to next phase after review",
+                    "priority": "medium"
+                },
+            ],
+            "deployment": [
+                {
+                    "command": "/project validate",
+                    "reasoning": "Validate deployment readiness",
+                    "priority": "high"
+                },
+                {
+                    "command": "/status",
+                    "reasoning": "Check deployment status",
+                    "priority": "medium"
+                },
+                {
+                    "command": "/done",
+                    "reasoning": "Complete the project",
+                    "priority": "medium"
+                },
+            ],
+        }
+
+        # Get suggestions for current phase
+        suggestions = phase_command_map.get(
+            current_phase.lower() if current_phase else "specification",
+            []
+        )
+
+        # Always include general commands
+        general_commands = [
+            {
+                "command": "/help",
+                "reasoning": "View all available commands",
+                "priority": "low"
+            },
+            {
+                "command": "/status",
+                "reasoning": "Check current project status",
+                "priority": "low"
+            },
+        ]
+
+        # Combine phase-specific and general commands
+        all_suggestions = suggestions + general_commands
+
+        logger.info(f"Returning {len(all_suggestions)} context-aware suggestions")
+
+        return SuccessResponse(
+            message=f"Suggestions for {current_phase or 'specification'} phase",
+            data={
+                "suggestions": all_suggestions,
+                "phase": current_phase or "specification",
+                "project_id": project_id,
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting context-aware suggestions: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get context-aware suggestions"
         )

@@ -163,15 +163,21 @@ export const useCollaborationStore = create<CollaborationState>((set, get) => ({
 
   // Remove collaborator
   removeCollaborator: async (projectId: string, username: string) => {
-    set({ isLoading: true, error: null });
+    // Optimistic update: remove immediately from UI
+    const previousCollaborators = get().collaborators;
+    set((state) => ({
+      collaborators: state.collaborators.filter((c) => c.username !== username),
+      isLoading: true,
+      error: null,
+    }));
+
     try {
       await collaborationAPI.removeCollaborator(projectId, username);
-      set((state) => ({
-        collaborators: state.collaborators.filter((c) => c.username !== username),
-        isLoading: false,
-      }));
+      set({ isLoading: false });
     } catch (error) {
+      // Rollback: restore the collaborator on failure
       set({
+        collaborators: previousCollaborators,
         error: error instanceof Error ? error.message : 'Failed to remove collaborator',
         isLoading: false,
       });

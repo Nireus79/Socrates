@@ -1,0 +1,9 @@
+---
+# Kubernetes Namespace for Socrates
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: socrates-prod
+  labels:
+    app: socrates
+    environment: production

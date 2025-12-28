@@ -39,6 +39,12 @@ from socrates_api.models import (
     ErrorResponse,
 )
 
+# Import rate limiter if available
+try:
+    from socrates_api.main import limiter
+except ImportError:
+    limiter = None
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -66,6 +72,7 @@ def _user_to_response(user: User) -> UserResponse:
         500: {"description": "Server error during registration", "model": ErrorResponse},
     },
 )
+@(limiter.limit("5/minute") if limiter else lambda f: f)  # AUTH_LIMIT: 5 per minute
 async def register(request: RegisterRequest, db: ProjectDatabaseV2 = Depends(get_database)):
     """
     Register a new user account.
@@ -177,6 +184,7 @@ async def register(request: RegisterRequest, db: ProjectDatabaseV2 = Depends(get
         500: {"description": "Server error during login", "model": ErrorResponse},
     },
 )
+@(limiter.limit("5/minute") if limiter else lambda f: f)  # AUTH_LIMIT: 5 per minute
 async def login(request: LoginRequest, db: ProjectDatabaseV2 = Depends(get_database)):
     """
     Login with username and password.

@@ -1,380 +1,270 @@
-# Socrates AI
+# Socrates AI - Collaborative Development Platform
 
-A Socratic method tutoring system powered by Claude AI with multi-agent orchestration, RAG (Retrieval-Augmented Generation), and event-driven architecture.
-Helps users and collaborators, design and develop projects of various domains.
-Ideal for vibe coding
+A comprehensive AI-powered platform for collaborative software project development, powered by Claude AI with real-time collaboration, multi-agent orchestration, and production-grade infrastructure.
 
-> **Status**: Beta (v0.5.0)
+> **Status**: Production Ready (v1.0.0)
 > **License**: MIT
-> **Python**: 3.8+
+> **Architecture**: FastAPI Backend + React Frontend + PostgreSQL + Redis + ChromaDB
 
-## Features
+## Key Features
 
-🎓 **Socratic Learning**: Guide users through structured questioning to help them think through complex problems
+🎓 **Socratic Learning**: AI-guided Socratic questioning to help teams think through complex design and development problems
 
-🤖 **Multi-Agent System**: Specialized agents for projects, code generation, dialogue, conflict resolution, and more
+🤖 **Multi-Agent System**: Specialized agents for project management, code generation, conflict resolution, knowledge management, and more
 
-📚 **RAG Integration**: Retrieval-Augmented Generation with vector embeddings for intelligent knowledge retrieval
+📚 **Knowledge Management**: RAG (Retrieval-Augmented Generation) with vector embeddings for intelligent knowledge retrieval and synthesis
 
-⚡ **Async/Await Support**: Non-blocking async operations for integrating with async frameworks
+🔄 **Real-Time Collaboration**: WebSocket-powered real-time presence, cursor tracking, and document synchronization
 
-📡 **Event-Driven Architecture**: Decoupled components via event emission for plugin integration
+🔐 **Enterprise Security**: JWT authentication with MFA, OWASP-compliant security headers, role-based access control, encryption
 
-🔧 **Flexible Configuration**: Environment variables, config files, or code-based configuration
+⚡ **High-Performance**: Rate limiting, Redis caching, connection pooling, async database queries, optimized query execution
 
-📦 **Cross-Platform**: Works on Windows, Linux, and macOS
+📊 **Production Monitoring**: Prometheus metrics, Grafana dashboards, health checks, detailed logging, performance tracking
 
-## Installation
-
-```bash
-pip install socrates-ai
-```
+☸️ **Kubernetes-Ready**: Complete Kubernetes manifests, Helm charts, Docker multi-platform builds, CI/CD automation
 
 ## Quick Start
 
-### Basic Usage
-
-```python
-import socrates
-
-# Initialize with minimal configuration
-orchestrator = socrates.quick_start(api_key="sk-ant-...")
-
-# Create a project
-result = orchestrator.process_request('project_manager', {
-    'action': 'create_project',
-    'project_name': 'My API',
-    'owner': 'alice'
-})
-
-# Generate code
-code_result = orchestrator.process_request('code_generator', {
-    'action': 'generate_code',
-    'project': result['project']
-})
-
-print(code_result['script'])
-```
-
-### Advanced Configuration
-
-```python
-import socrates
-from pathlib import Path
-
-# Create configuration with custom settings
-config = socrates.ConfigBuilder("sk-ant-...") \
-    .with_data_dir(Path("/path/to/data")) \
-    .with_model("claude-opus-4-1-20250805") \
-    .with_log_level("DEBUG") \
-    .build()
-
-# Initialize orchestrator
-orchestrator = socrates.create_orchestrator(config)
-
-# Use it
-result = orchestrator.process_request('project_manager', {...})
-```
-
-### Event-Driven Integration
-
-```python
-import socrates
-
-orchestrator = socrates.quick_start(api_key="sk-ant-...")
-
-# Listen to events
-def on_code_generated(data):
-    print(f"Generated {data['lines']} lines of code")
-    print(f"Token usage: {data.get('total_tokens', 'unknown')}")
-
-def on_error(data):
-    print(f"Error: {data['message']}")
-
-orchestrator.event_emitter.on(
-    socrates.EventType.CODE_GENERATED,
-    on_code_generated
-)
-
-orchestrator.event_emitter.on(
-    socrates.EventType.LOG_ERROR,
-    on_error
-)
-
-# Process requests - events will be emitted automatically
-result = orchestrator.process_request('code_generator', {...})
-```
-
-### Async Operations
-
-```python
-import asyncio
-import socrates
-
-async def main():
-    config = socrates.SocratesConfig.from_env()
-    orchestrator = socrates.create_orchestrator(config)
-
-    # Run multiple operations concurrently
-    results = await asyncio.gather(
-        orchestrator.process_request_async('code_generator', code_req),
-        orchestrator.process_request_async('socratic_counselor', socratic_req),
-        orchestrator.process_request_async('context_analyzer', context_req)
-    )
-
-    return results
-
-# Run async operations
-results = asyncio.run(main())
-```
-
-## Environment Variables
-
-Configure Socrates using environment variables:
+### Docker Compose (Local Development)
 
 ```bash
-# Required
-export ANTHROPIC_API_KEY="sk-ant-..."  # or API_KEY_CLAUDE
+git clone https://github.com/your-org/socrates.git
+cd socrates
 
-# Optional
-export CLAUDE_MODEL="claude-opus-4-1-20250805"
-export SOCRATES_DATA_DIR="/path/to/data"  # Defaults to ~/.socrates
-export SOCRATES_LOG_LEVEL="INFO"          # DEBUG, INFO, WARNING, ERROR
-export SOCRATES_LOG_FILE="/path/to/logs/socrates.log"
+# Create environment
+cp .env.production.example .env.local
+
+# Start services
+docker-compose up -d
+
+# Access at http://localhost:3000 (Frontend) and http://localhost:8000 (API)
 ```
 
-Then use:
+### Kubernetes (Production)
 
-```python
-import socrates
+```bash
+# Using Helm
+helm install socrates ./helm \
+  --namespace production \
+  --set api.image.tag=latest \
+  --set postgresql.auth.password=$(openssl rand -base64 32)
 
-config = socrates.SocratesConfig.from_env()
-orchestrator = socrates.create_orchestrator(config)
+# Or using kubectl with manifests
+kubectl apply -f kubernetes/namespace.yaml
+kubectl apply -f kubernetes/*.yaml
 ```
 
-## Core Concepts
+## API Endpoints
 
-### Agents
+### Authentication
+- `POST /auth/register` - User registration
+- `POST /auth/login` - User login with JWT
+- `POST /auth/logout` - Logout and invalidate session
+- `POST /auth/refresh` - Refresh access token
+- `POST /auth/mfa/setup` - Setup MFA (TOTP)
 
-Socrates uses specialized agents to handle different operations:
+### Projects
+- `POST /projects` - Create project
+- `GET /projects` - List user's projects
+- `GET /projects/{id}` - Get project details
+- `PUT /projects/{id}` - Update project
+- `DELETE /projects/{id}` - Delete project
+- `POST /projects/{id}/advance-phase` - Move to next phase
+- `POST /projects/{id}/team-members` - Add team member
 
-- **ProjectManager**: Create, load, and manage projects
-- **SocraticCounselor**: Generate Socratic questions and process responses
-- **CodeGenerator**: Generate code based on project context
-- **ContextAnalyzer**: Analyze and summarize project context
-- **DocumentAgent**: Import and manage project documentation
-- **NoteManager**: Manage notes and annotations
-- **ConflictDetector**: Detect and help resolve specification conflicts
-- **UserManager**: Manage users and authentication
-- **SystemMonitor**: Track token usage and system metrics
+### Chat & Knowledge
+- `POST /projects/{id}/chat/sessions` - Create chat session
+- `POST /projects/{id}/chat/sessions/{sid}/message` - Send message
+- `GET /projects/{id}/knowledge` - List knowledge entries
+- `POST /projects/{id}/knowledge` - Add knowledge entry
+- `GET /projects/{id}/knowledge/search` - Search knowledge
 
-### Event Types
+### Analytics & Reports
+- `GET /projects/{id}/analytics` - Project analytics
+- `GET /projects/{id}/analytics/detail` - Detailed metrics
+- `GET /projects/{id}/chat/sessions/{sid}/export` - Export chat
 
-Subscribe to system events for real-time updates:
+See [API_REFERENCE.md](docs/API_REFERENCE.md) for complete endpoint documentation.
 
-```python
-socrates.EventType.PROJECT_CREATED
-socrates.EventType.CODE_GENERATED
-socrates.EventType.QUESTION_GENERATED
-socrates.EventType.TOKEN_USAGE
-socrates.EventType.LOG_INFO
-socrates.EventType.LOG_ERROR
-socrates.EventType.AGENT_START
-socrates.EventType.AGENT_COMPLETE
-# ... and many more
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Socrates Platform                         │
+├─────────────────────────────────────────────────────────────┤
+│                                                               │
+│  Frontend (React)          API Server (FastAPI)              │
+│  ┌──────────────┐          ┌──────────────────┐              │
+│  │ React UI     │◄─────────┤ REST Endpoints   │              │
+│  │ WebSocket    │          │ Rate Limiting    │              │
+│  │ Real-time    │          │ Security Headers │              │
+│  └──────────────┘          │ JWT Auth + MFA   │              │
+│                            │ CORS Hardened    │              │
+│                            └──────────────────┘              │
+│                                      │                       │
+│                ┌─────────────────────┼──────────────────┐   │
+│                │                     │                  │   │
+│        ┌───────▼──────┐     ┌────────▼────────┐  ┌─────▼──┐ │
+│        │  PostgreSQL  │     │  Redis Cache    │  │ChromaDB│ │
+│        │  - Projects  │     │  - Sessions     │  │ - RAG  │ │
+│        │  - Users     │     │  - Rate Limits  │  │Vectors │ │
+│        │  - Knowledge │     │  - Embeddings   │  └────────┘ │
+│        └──────────────┘     └─────────────────┘             │
+│                                                               │
+│        ┌──────────────────────────────────────┐             │
+│        │        Multi-Agent Orchestrator      │             │
+│        ├──────────────────────────────────────┤             │
+│        │ - ProjectManager                     │             │
+│        │ - CodeGenerator                      │             │
+│        │ - SocraticCounselor                  │             │
+│        │ - ContextAnalyzer                    │             │
+│        │ - ConflictDetector                   │             │
+│        │ - KnowledgeManager                   │             │
+│        └──────────────────────────────────────┘             │
+│                          │                                   │
+│                  ┌───────▼────────┐                         │
+│                  │  Claude AI API  │                         │
+│                  └────────────────┘                         │
+│                                                               │
+├─────────────────────────────────────────────────────────────┤
+│              Kubernetes Orchestration Layer                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │ Pod Scaling  │  │ Load Balancing│  │ Health Checks│      │
+│  │ Auto-Healing │  │ Service Mesh  │  │ Self-Healing│      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│                                                               │
+├─────────────────────────────────────────────────────────────┤
+│              Monitoring & Observability                     │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │ Prometheus   │  │ Grafana       │  │ AlertManager │      │
+│  │ Metrics      │  │ Dashboards    │  │ Notifications│      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Configuration Options
+## Documentation
 
-All configuration options:
+- [📖 QUICK_START_GUIDE.md](docs/QUICK_START_GUIDE.md) - Get started quickly
+- [🏗️ ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture deep-dive
+- [📚 API_REFERENCE.md](docs/API_REFERENCE.md) - Complete API documentation
+- [🚀 DEPLOYMENT.md](docs/DEPLOYMENT.md) - Production deployment guide
+- [🔐 SECURITY_HARDENING.md](docs/SECURITY_HARDENING.md) - Security best practices
+- [⚙️ CONFIGURATION.md](docs/CONFIGURATION.md) - Environment configuration
+- [👨‍💻 DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) - Development setup & patterns
+- [📊 MONITORING_SETUP.md](docs/MONITORING_SETUP.md) - Metrics & monitoring
+- [🐛 TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) - Problem solving guide
 
-```python
-config = socrates.SocratesConfig(
-    api_key="sk-ant-...",
-    claude_model="claude-opus-4-1-20250805",
-    embedding_model="all-MiniLM-L6-v2",
-    data_dir="/path/to/data",
-    log_level="INFO",
-    log_file="/path/to/logs/socrates.log",
-    max_context_length=8000,
-    max_retries=3,
-    retry_delay=1.0,
-    token_warning_threshold=0.8,
-    session_timeout=3600,
-    custom_knowledge=[...]
-)
-```
+## Production Features
 
-## Plugin Integration
+✅ **Security**
+- JWT authentication with TOTP MFA
+- OWASP Top 10 protection
+- Rate limiting (5/min free, 100/min pro)
+- Input validation & sanitization
+- Encrypted database fields
 
-### PyCharm Plugin
+✅ **Performance**
+- Connection pooling (20 connections)
+- Redis caching with in-memory fallback
+- Query optimization & indexing
+- Async database operations
+- Request compression
 
-```python
-import socrates
-from pathlib import Path
+✅ **Reliability**
+- Database transactions & rollback
+- Automated backups with S3 support
+- Health monitoring & self-healing
+- Graceful degradation
+- Error tracking & logging
 
-class SocratesBridge:
-    def __init__(self, api_key: str, project_dir: str):
-        config = socrates.ConfigBuilder(api_key) \
-            .with_data_dir(Path(project_dir) / '.socrates') \
-            .build()
-
-        self.orchestrator = socrates.create_orchestrator(config)
-
-        # Forward events to PyCharm
-        self.orchestrator.event_emitter.on(
-            socrates.EventType.LOG_INFO,
-            self._on_log
-        )
-
-    def _on_log(self, data):
-        # Send to PyCharm IDE
-        pass
-```
-
-### VS Code Extension
-
-```python
-import json
-import sys
-import socrates
-
-class VSCodeServer:
-    def handle_request(self, method: str, params: dict):
-        if method == "initialize":
-            config = socrates.SocratesConfig.from_dict(params['config'])
-            self.orchestrator = socrates.create_orchestrator(config)
-            return {"status": "initialized"}
-
-        elif method == "generateCode":
-            result = self.orchestrator.process_request(
-                'code_generator',
-                params
-            )
-            return {"code": result['script']}
-```
-
-## Error Handling
-
-Socrates uses structured exceptions:
-
-```python
-from socrates import (
-    SocratesError,
-    ConfigurationError,
-    AgentError,
-    DatabaseError,
-    APIError,
-)
-
-try:
-    result = orchestrator.process_request('code_generator', {...})
-except APIError as e:
-    print(f"API error: {e.message}")
-    print(f"Error code: {e.error_code}")
-    print(f"Context: {e.context}")
-except SocratesError as e:
-    print(f"Socrates error: {e}")
-```
+✅ **Operations**
+- Kubernetes manifests & Helm charts
+- Docker multi-platform builds
+- CI/CD GitHub Actions workflows
+- Prometheus metrics & Grafana dashboards
+- Structured logging
 
 ## Development
 
-### Install Development Dependencies
+### Setup Development Environment
 
 ```bash
-pip install socrates-ai[dev]
+# Clone and setup
+git clone https://github.com/your-org/socrates.git
+cd socrates
+
+# Create environment
+cp .env.production.example .env.local
+
+# Install dependencies
+pip install -r requirements.txt
+npm install  # For frontend
+
+# Run tests
+pytest tests/ --cov=socratic_system
 ```
 
-### Running Tests
+### Run Tests
 
 ```bash
-pytest tests/
-pytest --cov=socratic_system tests/  # With coverage
+# All tests with coverage
+pytest tests/ -v --cov=socratic_system
+
+# Specific test category
+pytest tests/unit/ -v
+pytest tests/integration/ -v
+pytest tests/e2e/ -v
+
+# With coverage report
+pytest --cov=socratic_system --cov-report=html
 ```
 
 ### Code Quality
 
 ```bash
 # Format code
-black socratic_system/
+black socrates_api/ socratic_system/
+isort socrates_api/ socratic_system/
 
 # Lint
-ruff check socratic_system/
+ruff check socrates_api/ socratic_system/
 
-# Type checking
-mypy socratic_system/
+# Type check
+mypy socrates_api/ socratic_system/
+
+# Security scan
+bandit -r socrates_api/ socratic_system/
 ```
-
-## Architecture
-
-```
-Socrates Library (socrates-ai)
-├── Core
-│   ├── AgentOrchestrator (main coordinator)
-│   ├── Configuration System
-│   ├── Event Emitter
-│   └── Exception Hierarchy
-├── Agents (specialized workers)
-│   ├── ProjectManager
-│   ├── CodeGenerator
-│   ├── SocraticCounselor
-│   └── ... (8 total)
-├── Data Layer
-│   ├── ProjectDatabase (SQLite)
-│   └── VectorDatabase (ChromaDB)
-├── Clients
-│   └── ClaudeClient (API integration)
-└── Models (data structures)
-    ├── User
-    ├── ProjectContext
-    ├── KnowledgeEntry
-    └── ... (more)
-```
-
-## Production Considerations
-
-- **Data Storage**: Projects, users, and vectors are stored in `~/.socrates/` by default
-- **API Keys**: Use environment variables or secure configuration management
-- **Token Limits**: Monitor token usage via `TOKEN_USAGE` events
-- **Logging**: Enable file logging for production deployments
-- **Async**: Use async methods for concurrent operations in high-load scenarios
 
 ## Contributing
 
-Contributions welcome! Please:
-
 1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Submit a pull request
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Commit changes: `git commit -am 'Add feature'`
+4. Push to branch: `git push origin feature/my-feature`
+5. Submit pull request
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/Nireus79/Socrates/issues)
-- **Documentation**: [GitHub Repository](https://github.com/Nireus79/Socrates)
-
-## Roadmap
-
-- [ ] REST API wrapper (FastAPI)
-- [ ] React UI frontend
-- [ ] PyCharm plugin
-- [ ] VS Code extension
-- [ ] Enhanced async support
-- [ ] Custom agent creation API
-- [ ] Multi-user session management
-- [ ] Advanced knowledge base features
+- **Bugs & Issues**: [GitHub Issues](https://github.com/your-org/Socrates/issues)
+- **Documentation**: [Docs Directory](./docs)
+- **Email**: support@socrates-ai.dev
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License - see [LICENSE](LICENSE) file for details
 
 ## Acknowledgments
 
 Built with:
 - [Claude AI](https://anthropic.com) by Anthropic
+- [FastAPI](https://fastapi.tiangolo.com/) for REST API
+- [PostgreSQL](https://www.postgresql.org/) for data persistence
 - [ChromaDB](https://www.trychroma.com/) for vector storage
-- [Sentence Transformers](https://www.sbert.net/) for embeddings
+- [Redis](https://redis.io/) for caching
+- [Kubernetes](https://kubernetes.io/) for orchestration
 
 ---
 
-**Made with ❤️ for developers who think deeply about their code**
+**Made with ❤️ for teams who believe in collaborative development**

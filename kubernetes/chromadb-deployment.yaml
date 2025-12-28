@@ -1,0 +1,141 @@
+---
+# ChromaDB Deployment for Socrates (vector database for embeddings)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: chromadb-pvc
+  namespace: socrates-prod
+  labels:
+    app: chromadb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chromadb
+  namespace: socrates-prod
+  labels:
+    app: chromadb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chromadb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: chromadb
+        version: v1
+    spec:
+      containers:
+      - name: chromadb
+        image: chromadb/chroma:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+
+        env:
+        - name: CHROMA_DB_IMPL
+          value: "duckdb+parquet"
+        - name: PERSIST_DIRECTORY
+          value: "/data/chroma"
+        - name: CHROMA_SERVER_HOST
+          value: "0.0.0.0"
+        - name: CHROMA_SERVER_PORT
+          value: "8000"
+        - name: CHROMA_SERVER_AUTH_PROVIDER
+          value: "chromadb.auth.basic_auth.BasicAuthProvider"
+        - name: CHROMA_SERVER_AUTH_CREDENTIALS
+          valueFrom:
+            secretKeyRef:
+              name: socrates-secrets
+              key: chromadb-password
+              optional: true
+
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /api/v1/heartbeat
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /api/v1/heartbeat
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        # Volume mounts
+        volumeMounts:
+        - name: chromadb-storage
+          mountPath: /data
+        - name: tmp
+          mountPath: /tmp
+
+        # Security context
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+
+      # Pod-level security and volumes
+      securityContext:
+        fsGroup: 1000
+
+      volumes:
+      - name: chromadb-storage
+        persistentVolumeClaim:
+          claimName: chromadb-pvc
+      - name: tmp
+        emptyDir: {}
+
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chromadb
+  namespace: socrates-prod
+  labels:
+    app: chromadb
+spec:
+  type: ClusterIP
+  selector:
+    app: chromadb
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+    protocol: TCP
+  sessionAffinity: None

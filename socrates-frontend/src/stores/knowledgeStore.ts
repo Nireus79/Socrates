@@ -604,7 +604,17 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
 
     if (selectedIds.length === 0) return;
 
+    // Save state for rollback in case of failure
+    const previousDocuments = state.documents;
+
+    // Optimistic update: remove documents immediately from UI
+    const newDocuments = new Map(state.documents);
+    selectedIds.forEach((id) => {
+      newDocuments.delete(id);
+    });
+
     set({
+      documents: newDocuments,
       isBulkOperationLoading: true,
       error: null,
       bulkOperationProgress: {
@@ -619,14 +629,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     try {
       const response = await knowledgeAPI.bulkDeleteDocuments(selectedIds);
 
-      // Update documents map - remove deleted ones
-      const newDocuments = new Map(state.documents);
-      selectedIds.forEach((id) => {
-        newDocuments.delete(id);
-      });
-
       set({
-        documents: newDocuments,
         selectedDocuments: new Set(),
         isBulkOperationLoading: false,
         bulkOperationProgress: {
@@ -643,7 +646,9 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Failed to delete documents';
+      // Rollback: restore deleted documents on failure
       set({
+        documents: previousDocuments,
         error: message,
         isBulkOperationLoading: false,
         bulkOperationProgress: {

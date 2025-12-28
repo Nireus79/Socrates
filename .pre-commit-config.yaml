@@ -8,7 +8,12 @@ repos:
       - id: end-of-file-fixer
         name: Fix end of file
       - id: check-yaml
-        name: Check YAML files
+        name: Check YAML syntax
+        args: ['--safe']
+      - id: check-json
+        name: Check JSON syntax
+      - id: check-toml
+        name: Check TOML syntax
       - id: check-added-large-files
         name: Check for large files
         args: ['--maxkb=1000']
@@ -16,6 +21,8 @@ repos:
         name: Check for merge conflicts
       - id: detect-private-key
         name: Detect private keys
+      - id: mixed-line-ending
+        name: Fix mixed line endings
 
   # Code formatting with Black
   - repo: https://github.com/psf/black
@@ -24,7 +31,7 @@ repos:
       - id: black
         name: Format code with Black
         language_version: python3.11
-        types: [python]
+        args: ['--line-length=100']
 
   # Import sorting with isort
   - repo: https://github.com/PyCQA/isort
@@ -32,7 +39,6 @@ repos:
     hooks:
       - id: isort
         name: Sort imports with isort
-        types: [python]
         args: ['--profile=black', '--line-length=100']
 
   # Linting with Ruff
@@ -41,11 +47,9 @@ repos:
     hooks:
       - id: ruff
         name: Lint with Ruff
-        types: [python]
-        args: ['check', '--fix', '--show-fixes']
+        args: ['check', '--fix', '--exit-non-zero-on-fix']
       - id: ruff-format
         name: Format with Ruff
-        types: [python]
 
   # Type checking with MyPy
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -53,9 +57,9 @@ repos:
     hooks:
       - id: mypy
         name: Type check with MyPy
-        types: [python]
         args: ['--ignore-missing-imports', '--no-error-summary']
-        additional_dependencies: [types-all]
+        additional_dependencies: [types-all, pydantic, sqlalchemy, fastapi]
+        exclude: ^(tests/|migrations/)
 
   # Security checks with Bandit
   - repo: https://github.com/PyCQA/bandit
@@ -63,14 +67,32 @@ repos:
     hooks:
       - id: bandit
         name: Security check with Bandit
-        types: [python]
-        args: ['-ll', '-r', 'socratic_system', 'socrates_cli', 'socrates_api']
+        args: ['-ll']
+        exclude: ^(tests/|scripts/)
+
+  # Spell checking
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+      - id: codespell
+        name: Check spelling
+        args: ['--skip=.git,__pycache__,.venv,.egg-info,node_modules,*.pyc']
 
 default_language_version:
   python: python3.11
 
-# Configuration for preventing commits with uncommitted changes
-fail_fast: false
+# Exclude patterns
+exclude: |
+  (?x)^(
+      migrations/|
+      .venv/|
+      venv/|
+      node_modules/|
+      build/|
+      dist/|
+      \.eggs/|
+      .*\.egg-info/
+  )$
 
-# Allow running on all branches
+fail_fast: false
 default_stages: [commit]

@@ -7,8 +7,9 @@ import { useParams } from 'react-router-dom';
 import { Upload, Trash2, Search, Plus } from 'lucide-react';
 import { useProjectStore } from '../../stores';
 import { useKnowledgeStore } from '../../stores/knowledgeStore';
+import { showSuccess, showError, showInfo } from '../../stores/notificationStore';
 import { MainLayout, PageHeader } from '../../components/layout';
-import { Card, Tab, Alert, LoadingSpinner, Button, Input } from '../../components/common';
+import { Card, Tab, Alert, LoadingSpinner, Button, Input, SkeletonList, ErrorBoundary } from '../../components/common';
 import { NLUChatWidget } from '../../components/nlu';
 import DocumentFilters from '../../components/knowledge/DocumentFilters';
 import DocumentBulkActions from '../../components/knowledge/DocumentBulkActions';
@@ -140,8 +141,10 @@ export const KnowledgeBasePage: React.FC = () => {
       await deleteDocument(documentId);
       // Refresh documents after deletion
       await listDocuments(selectedProjectId);
+      showSuccess('Document Deleted', 'The document has been successfully removed from your knowledge base');
     } catch (err) {
       console.error('Delete failed:', err);
+      showError('Delete Failed', 'There was an error deleting the document. Please try again.');
     }
   };
 
@@ -152,8 +155,10 @@ export const KnowledgeBasePage: React.FC = () => {
       await addKnowledgeEntry(entryContent, entryCategory, selectedProjectId);
       setEntryContent('');
       setEntryCategory('general');
+      showSuccess('Entry Added', 'Your knowledge entry has been added successfully');
     } catch (err) {
       console.error('Add entry failed:', err);
+      showError('Failed to Add Entry', 'There was an error adding the knowledge entry. Please try again.');
     }
   };
 
@@ -165,8 +170,9 @@ export const KnowledgeBasePage: React.FC = () => {
   ];
 
   return (
-    <MainLayout>
-      <div className="space-y-8">
+    <ErrorBoundary>
+      <MainLayout>
+        <div className="space-y-8">
         {/* Error Alert */}
         {error && (
           <Alert type="error" title="Error">
@@ -254,10 +260,8 @@ export const KnowledgeBasePage: React.FC = () => {
             )}
 
             {/* Documents Grid */}
-            {isLoading ? (
-              <div className="flex justify-center py-12">
-                <LoadingSpinner size="lg" />
-              </div>
+            {isLoading && documents.size === 0 ? (
+              <SkeletonList count={4} height="100px" />
             ) : documents.size > 0 ? (
               <div className="grid gap-4">
                 {Array.from(documents.values()).map((doc) => (
@@ -514,6 +518,7 @@ export const KnowledgeBasePage: React.FC = () => {
           console.log('Command executed:', command);
         }}
       />
-    </MainLayout>
+      </MainLayout>
+    </ErrorBoundary>
   );
 };

@@ -168,27 +168,33 @@ async def websocket_chat_endpoint(
                 await websocket.send_json(error_response)
 
             except Exception as e:
-                logger.error(f"Error processing message: {e}", exc_info=True)
+                logger.error(f"Error processing message in chat: {str(e)}", exc_info=True)
                 error_response = {
                     "type": "error",
                     "errorCode": "PROCESSING_ERROR",
-                    "errorMessage": "Error processing message",
+                    "errorMessage": f"Error processing message: {str(e)}",
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
-                await websocket.send_json(error_response)
+                try:
+                    await websocket.send_json(error_response)
+                except Exception as send_error:
+                    logger.error(f"Failed to send error response to client: {str(send_error)}", exc_info=True)
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected: {connection_id}")
         await connection_manager.disconnect(connection_id)
 
     except Exception as e:
-        logger.error(f"WebSocket error: {e}", exc_info=True)
+        logger.error(f"WebSocket error in chat endpoint: {str(e)}", exc_info=True)
         try:
             await websocket.close(code=1011, reason="Server error")
-        except Exception:
-            pass
+        except Exception as close_error:
+            logger.error(f"Failed to close WebSocket connection: {str(close_error)}", exc_info=True)
         finally:
-            await connection_manager.disconnect(connection_id)
+            try:
+                await connection_manager.disconnect(connection_id)
+            except Exception as disconnect_error:
+                logger.error(f"Error disconnecting from connection manager: {str(disconnect_error)}", exc_info=True)
 
 
 async def _handle_chat_message(
@@ -315,7 +321,7 @@ async def _handle_chat_message(
         return response
 
     except Exception as e:
-        logger.error(f"Error handling chat message: {e}")
+        logger.error(f"Unhandled error in _handle_chat_message for project {project_id}, user {user_id}: {str(e)}", exc_info=True)
         raise
 
 
@@ -365,10 +371,11 @@ async def _handle_command(
         return response
 
     except Exception as e:
-        logger.error(f"Error handling command: {e}")
+        logger.error(f"Error handling command '{message.content}' for user {user_id}: {str(e)}", exc_info=True)
         return {
             "type": ResponseType.ERROR.value,
-            "errorMessage": str(e),
+            "errorCode": "COMMAND_ERROR",
+            "errorMessage": f"Error executing command: {str(e)}",
             "requestId": message.request_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
@@ -472,8 +479,8 @@ async def _route_command(
             return {"status": "error", "message": f"Unknown command: /{command}"}
 
     except Exception as e:
-        logger.error(f"Error routing command '{command}': {e}")
-        return {"status": "error", "message": str(e)}
+        logger.error(f"Error routing command '{command}' for user {user_id}: {str(e)}", exc_info=True)
+        return {"status": "error", "message": f"Failed to execute command: {str(e)}"}
 
 
 # ============================================================================
@@ -1265,36 +1272,59 @@ async def websocket_collaboration_endpoint(
                 else:
                     logger.debug(f"Unknown message type: {message_type}")
 
-            except json.JSONDecodeError:
-                logger.warning(f"Invalid JSON received from {user_id}")
+            except json.JSONDecodeError as json_error:
+                logger.warning(f"Invalid JSON received from {user_id}: {str(json_error)}")
+                # Send error response to client
+                try:
+                    await websocket.send_json({
+                        "type": "error",
+                        "errorCode": "INVALID_JSON",
+                        "errorMessage": "Invalid JSON format",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    })
+                except Exception as send_error:
+                    logger.error(f"Failed to send JSON error response: {str(send_error)}", exc_info=True)
                 continue
             except Exception as e:
-                logger.error(f"Error processing message: {e}")
+                logger.error(f"Error processing collaboration message: {str(e)}", exc_info=True)
+                # Send error response to client
+                try:
+                    await websocket.send_json({
+                        "type": "error",
+                        "errorCode": "PROCESSING_ERROR",
+                        "errorMessage": f"Error processing message: {str(e)}",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    })
+                except Exception as send_error:
+                    logger.error(f"Failed to send error response: {str(send_error)}", exc_info=True)
                 continue
 
     except WebSocketDisconnect:
-        logger.info(f"Collaboration WebSocket disconnected: {connection_id}")
+        logger.info(f"Collaboration WebSocket disconnected normally: {connection_id}")
 
         # Broadcast user left event
-        await connection_manager.broadcast_to_project(
-            project_id,
-            {
-                "type": "user_left",
-                "user_id": user_id,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "connection_id": connection_id,
-            },
-        )
+        try:
+            await connection_manager.broadcast_to_project(
+                project_id,
+                {
+                    "type": "user_left",
+                    "user_id": user_id,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "connection_id": connection_id,
+                },
+            )
+        except Exception as broadcast_error:
+            logger.warning(f"Failed to broadcast user_left event: {str(broadcast_error)}", exc_info=True)
 
         # Remove connection
         try:
             await connection_manager.disconnect(websocket, user_id, project_id, connection_id)
-        except Exception as e:
-            logger.error(f"Error during disconnect: {e}")
+        except Exception as disconnect_error:
+            logger.error(f"Error during disconnect cleanup: {str(disconnect_error)}", exc_info=True)
 
     except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+        logger.error(f"WebSocket error in collaboration endpoint: {str(e)}", exc_info=True)
         try:
             await websocket.close(code=1011, reason="Internal server error")
         except Exception as close_error:
-            logger.error(f"Error closing WebSocket: {close_error}")
+            logger.error(f"Failed to close WebSocket in collaboration endpoint: {str(close_error)}", exc_info=True)

@@ -1,0 +1,254 @@
+---
+# ConfigMap for non-sensitive Socrates configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: socrates-config
+  namespace: socrates-prod
+  labels:
+    app: socrates-api
+data:
+  # Environment
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+
+  # API Configuration
+  SOCRATES_API_HOST: "0.0.0.0"
+  SOCRATES_API_PORT: "8000"
+  SOCRATES_API_RELOAD: "false"
+
+  # Database Configuration
+  database-host: "postgres"
+  database-port: "5432"
+  database-name: "socrates"
+
+  # Redis Configuration
+  redis-host: "redis"
+  redis-port: "6379"
+
+  # ChromaDB Configuration
+  chromadb-host: "chromadb"
+  chromadb-port: "8000"
+
+  # LLM Configuration
+  CLAUDE_MODEL: "claude-haiku-4-5-20251001"
+  CLAUDE_TIMEOUT: "120"
+
+  # Feature Flags
+  ENABLE_RATE_LIMITING: "true"
+  ENABLE_METRICS: "true"
+  ENABLE_WEBSOCKET: "true"
+  ENABLE_CACHING: "true"
+  ENABLE_PROFILING: "false"  # Disable in production for performance
+
+  # Rate Limiting (requests per minute)
+  RATE_LIMIT_AUTH: "5"
+  RATE_LIMIT_CHAT: "30"
+  RATE_LIMIT_PRESESSION: "20"
+  RATE_LIMIT_PRO: "100"
+  RATE_LIMIT_ENTERPRISE: "500"
+
+  # Caching TTLs (seconds)
+  CACHE_TTL_USER: "3600"
+  CACHE_TTL_PROJECT: "1800"
+  CACHE_TTL_SESSION: "86400"
+  CACHE_TTL_SEARCH: "1800"
+
+  # Security
+  ALLOWED_ORIGINS: "https://yourdomain.com,https://app.yourdomain.com"
+  CORS_ALLOW_CREDENTIALS: "true"
+  CORS_ALLOW_METHODS: "GET,POST,PUT,DELETE,PATCH,OPTIONS"
+  CORS_ALLOW_HEADERS: "Content-Type,Authorization"
+
+  # Session Configuration
+  SESSION_MAX_AGE: "86400"  # 24 hours
+  SESSION_SECURE: "true"
+  SESSION_HTTPONLY: "true"
+  SESSION_SAMESITE: "Lax"
+
+  # Monitoring
+  ENABLE_PROMETHEUS_METRICS: "true"
+  METRICS_PORT: "8000"
+  METRICS_ENDPOINT: "/metrics"
+
+  # Health Check Configuration
+  HEALTH_CHECK_INTERVAL: "30"
+  HEALTH_CHECK_TIMEOUT: "5"
+
+  # Database Connection Pool
+  DB_POOL_SIZE: "20"
+  DB_MAX_OVERFLOW: "10"
+  DB_POOL_RECYCLE: "3600"
+
+  # Logging Configuration
+  LOG_FORMAT: "json"
+  LOG_TO_FILE: "true"
+  LOG_FILE: "/var/log/socrates/api.log"
+  LOG_ROTATION_SIZE: "10485760"  # 10MB
+  LOG_RETENTION_DAYS: "7"
+
+  # Query Profiling (development only)
+  PROFILE_QUERIES: "false"
+  SLOW_QUERY_THRESHOLD_MS: "100"
+
+  # Performance Tuning
+  WORKER_COUNT: "4"
+  WORKER_TIMEOUT: "120"
+  GRACEFUL_SHUTDOWN_TIMEOUT: "30"
+
+  # Feature Toggle Configuration
+  ENABLE_CODE_GENERATION: "true"
+  ENABLE_KNOWLEDGE_BASE: "true"
+  ENABLE_COLLABORATION: "true"
+  ENABLE_ANALYTICS: "true"
+  ENABLE_NLU: "true"
+  ENABLE_PRESESSION: "true"
+
+  # Email Configuration (optional)
+  EMAIL_ENABLED: "false"
+  EMAIL_SMTP_HOST: "smtp.gmail.com"
+  EMAIL_SMTP_PORT: "587"
+  EMAIL_FROM: "noreply@yourdomain.com"
+
+  # Observability
+  ENABLE_SENTRY: "false"
+  SENTRY_SAMPLE_RATE: "0.1"
+  ENABLE_DISTRIBUTED_TRACING: "false"
+
+---
+# Secret template for sensitive configuration
+# IMPORTANT: Use kubectl to create from this template with actual values
+# kubectl create secret generic socrates-secrets \
+#   --from-literal=database-password=<secure-password> \
+#   --from-literal=database-user=socrates_user \
+#   --from-literal=jwt-secret-key=<strong-secret-key> \
+#   --from-literal=anthropic-api-key=sk-ant-xxx \
+#   --from-literal=chromadb-password=<optional-password> \
+#   -n socrates-prod
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: socrates-secrets-template
+  namespace: socrates-prod
+  labels:
+    app: socrates-api
+type: Opaque
+data:
+  # These are base64-encoded example values - REPLACE WITH ACTUAL SECRETS
+  # Generate with: echo -n "value" | base64
+  database-user: c29jcmF0ZXNfdXNlcg==  # socrates_user
+  database-password: Y2hhbmdlLW1lLWltbWVkaWF0ZWx5  # change-me-immediately
+  jwt-secret-key: Y2hhbmdlLW1lLWltbWVkaWF0ZWx5LXRvLWE1Mi1jaGFyLXNlY3VyZS1rZXk=  # change-me-immediately-to-a-52-char-secure-key
+  anthropic-api-key: Y2hhbmdlLW1lLWltbWVkaWF0ZWx5  # change-me-immediately
+  chromadb-password: ""  # optional
+
+---
+# Namespace Labels for default deny network policy
+# Apply security labels to namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: socrates-prod
+  labels:
+    app: socrates
+    environment: production
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+
+---
+# RBAC - Service Account for Socrates API
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: socrates-api
+  namespace: socrates-prod
+  labels:
+    app: socrates-api
+
+---
+# RBAC - Role for Socrates API (minimal permissions)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: socrates-api
+  namespace: socrates-prod
+rules:
+# Read ConfigMaps
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list"]
+  resourceNames: ["socrates-config"]
+
+# Read Secrets
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+  resourceNames: ["socrates-secrets"]
+
+---
+# RBAC - RoleBinding for Socrates API
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: socrates-api
+  namespace: socrates-prod
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: socrates-api
+subjects:
+- kind: ServiceAccount
+  name: socrates-api
+  namespace: socrates-prod
+
+---
+# Resource Quota for socrates-prod namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: socrates-quota
+  namespace: socrates-prod
+spec:
+  hard:
+    requests.cpu: "10"
+    requests.memory: "20Gi"
+    limits.cpu: "20"
+    limits.memory: "40Gi"
+    pods: "50"
+    services: "10"
+    persistentvolumeclaims: "5"
+
+---
+# Network Policy - Default deny all
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: socrates-prod
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+
+---
+# Network Policy - Allow DNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: socrates-prod
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53

@@ -84,6 +84,22 @@ CREATE TABLE IF NOT EXISTS conversation_history (
 CREATE INDEX IF NOT EXISTS idx_conversation_project_timestamp ON conversation_history(project_id, timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_conversation_project ON conversation_history(project_id);
 
+-- Pre-session conversations (before project selection)
+CREATE TABLE IF NOT EXISTS presession_conversations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    session_id TEXT NOT NULL,
+    message_type TEXT NOT NULL,  -- 'user' or 'assistant'
+    content TEXT NOT NULL,
+    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    metadata TEXT,  -- JSON for extensibility (topics, intents, etc.)
+
+    FOREIGN KEY (username) REFERENCES users_v2(username) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_presession_user_session ON presession_conversations(username, session_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_presession_user ON presession_conversations(username, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_presession_session ON presession_conversations(session_id);
+
 -- Team members (normalized from array)
 CREATE TABLE IF NOT EXISTS team_members (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

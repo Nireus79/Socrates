@@ -1,5 +1,11 @@
 /**
- * Skeleton Component - Loading placeholder
+ * Skeleton Component - Loading placeholder with shimmer animation
+ *
+ * Features:
+ * - Multiple skeleton variants for different content types
+ * - Shimmer animation for visual feedback
+ * - Customizable dimensions
+ * - Dark mode support
  */
 
 import React from 'react';
@@ -17,7 +23,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   width = '100%',
   height = '16px',
 }) => {
-  const baseClass = 'bg-gray-200 dark:bg-gray-700 animate-pulse rounded';
+  const baseClass = 'bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-pulse rounded';
 
   const getStyle = (): React.CSSProperties => {
     const w = typeof width === 'number' ? `${width}px` : width;
@@ -67,3 +73,51 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 };
 
 Skeleton.displayName = 'Skeleton';
+
+// Specialized skeleton variants
+export const SkeletonText: React.FC<{ lines?: number }> = ({ lines = 1 }) => (
+  <div className="space-y-2">
+    {Array.from({ length: lines }).map((_, i) => (
+      <Skeleton key={i} type="text" height={i === lines - 1 ? '14px' : '16px'} width={i === lines - 1 ? '60%' : '100%'} />
+    ))}
+  </div>
+);
+
+SkeletonText.displayName = 'SkeletonText';
+
+export const SkeletonCard: React.FC<{ lines?: number }> = ({ lines = 3 }) => (
+  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-4">
+    <div className="flex gap-4">
+      <Skeleton type="circle" width="48" height="48" />
+      <div className="flex-1 space-y-2">
+        <Skeleton type="text" height="16px" width="60%" />
+        <Skeleton type="text" height="14px" width="40%" />
+      </div>
+    </div>
+    {Array.from({ length: lines - 1 }).map((_, i) => (
+      <Skeleton key={i} type="text" height="16px" />
+    ))}
+  </div>
+);
+
+SkeletonCard.displayName = 'SkeletonCard';
+
+export const SkeletonList: React.FC<{ count?: number; height?: string | number }> = ({ count = 3, height = '60px' }) => (
+  <div className="space-y-3">
+    {Array.from({ length: count }).map((_, i) => (
+      <Skeleton key={i} type="card" height={height} />
+    ))}
+  </div>
+);
+
+SkeletonList.displayName = 'SkeletonList';
+
+export const SkeletonTableRow: React.FC<{ columns?: number }> = ({ columns = 4 }) => (
+  <div className="flex gap-4 p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    {Array.from({ length: columns }).map((_, i) => (
+      <Skeleton key={i} type="text" width={`${100 / columns}%`} height="20px" />
+    ))}
+  </div>
+);
+
+SkeletonTableRow.displayName = 'SkeletonTableRow';

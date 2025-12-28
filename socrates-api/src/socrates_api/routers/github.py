@@ -333,7 +333,7 @@ async def push_changes(
 async def sync_project(
     project_id: str,
     commit_message: Optional[str] = None,
-    current_user: str = Depends(lambda: "test_user"),  # TODO: Get from JWT
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -411,7 +411,7 @@ async def sync_project(
 )
 async def get_sync_status(
     project_id: str,
-    current_user: str = Depends(lambda: "test_user"),  # TODO: Get from JWT
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -481,7 +481,7 @@ async def get_sync_status(
     },
 )
 async def pull_github_changes(
-    current_user: str = Depends(lambda: "test_user"),  # TODO: Get from JWT
+    current_user: str = Depends(get_current_user),
 ):
     """
     Pull latest changes from linked GitHub repository.
@@ -530,7 +530,7 @@ async def pull_github_changes(
 )
 async def push_github_changes(
     commit_message: Optional[str] = None,
-    current_user: str = Depends(lambda: "test_user"),  # TODO: Get from JWT
+    current_user: str = Depends(get_current_user),
 ):
     """
     Push local changes to GitHub repository.
@@ -582,7 +582,7 @@ async def push_github_changes(
     },
 )
 async def get_github_status(
-    current_user: str = Depends(lambda: "test_user"),  # TODO: Get from JWT
+    current_user: str = Depends(get_current_user),
     db: ProjectDatabaseV2 = Depends(get_database),
 ):
     """
@@ -632,7 +632,7 @@ async def get_github_status(
     },
 )
 async def disconnect_github(
-    current_user: str = Depends(lambda: "test_user"),  # TODO: Get from JWT
+    current_user: str = Depends(get_current_user),
 ):
     """
     Disconnect GitHub integration.

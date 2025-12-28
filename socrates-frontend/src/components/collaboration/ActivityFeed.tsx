@@ -1,8 +1,15 @@
 /**
- * ActivityFeed Component - Timeline of team activities
+ * ActivityFeed Component - Timeline of team activities with real-time updates
+ *
+ * Features:
+ * - Displays team activities in chronological order
+ * - Real-time updates via WebSocket
+ * - New activity animations
+ * - Connection status indicator
+ * - Auto-scroll to newest activity
  */
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   MessageSquare,
   Code2,
@@ -10,8 +17,11 @@ import {
   Users,
   CheckCircle,
   Zap,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import { Card, Badge } from '../common';
+import { getCollaborationWebSocketClient } from '../../services/collaborationWebSocket';
 
 export type ActivityType =
   | 'dialogue'
@@ -31,11 +41,14 @@ export interface Activity {
   action: string;
   description?: string;
   timestamp: Date;
+  isNew?: boolean; // Flag for animations
 }
 
 interface ActivityFeedProps {
   activities: Activity[];
   isLoading?: boolean;
+  onNewActivity?: (activity: Activity) => void;
+  showConnectionStatus?: boolean;
 }
 
 const activityIcons = {
@@ -59,7 +72,63 @@ const activityColors = {
 export const ActivityFeed: React.FC<ActivityFeedProps> = ({
   activities,
   isLoading = false,
+  onNewActivity,
+  showConnectionStatus = true,
 }) => {
+  const feedEndRef = useRef<HTMLDivElement>(null);
+  const [wsConnected, setWsConnected] = React.useState(false);
+
+  // Setup WebSocket listeners
+  useEffect(() => {
+    const ws = getCollaborationWebSocketClient();
+    if (!ws) return;
+
+    // Listen for connected event
+    const handleConnected = () => {
+      setWsConnected(true);
+    };
+
+    // Listen for disconnected event
+    const handleDisconnected = () => {
+      setWsConnected(false);
+    };
+
+    // Listen for activity events
+    const handleActivityBroadcast = (data: any) => {
+      if (onNewActivity) {
+        const newActivity: Activity = {
+          id: data.id || `activity-${Date.now()}`,
+          type: (data.activity_type?.toLowerCase() as ActivityType) || 'other',
+          user: { name: data.user_id || 'Unknown' },
+          action: data.activity_type || data.description || 'Activity',
+          description: data.activity_data?.description,
+          timestamp: new Date(data.created_at || new Date()),
+          isNew: true,
+        };
+        onNewActivity(newActivity);
+
+        // Auto-scroll to bottom
+        setTimeout(() => {
+          feedEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    };
+
+    ws.on('connected', handleConnected);
+    ws.on('disconnected', handleDisconnected);
+    ws.on('activity', handleActivityBroadcast);
+
+    // Set initial connection status
+    setWsConnected(ws.isConnected());
+
+    // Cleanup
+    return () => {
+      ws.off('connected', handleConnected);
+      ws.off('disconnected', handleDisconnected);
+      ws.off('activity', handleActivityBroadcast);
+    };
+  }, [onNewActivity]);
+
   const getTimeAgo = (date: Date): string => {
     const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
     const intervals = {
@@ -82,9 +151,30 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
 
   return (
     <Card>
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        Activity Feed
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Activity Feed
+        </h3>
+        {showConnectionStatus && (
+          <div className="flex items-center gap-2">
+            {wsConnected ? (
+              <>
+                <Wifi className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                  Live
+                </span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  Offline
+                </span>
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       {activities.length === 0 ? (
         <div className="text-center py-8">
@@ -93,13 +183,18 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {activities.map((activity, index) => {
+        <div className="space-y-4 max-h-96 overflow-y-auto">
+          {activities.map((activity) => {
             const Icon = activityIcons[activity.type];
             const colorClass = activityColors[activity.type];
 
             return (
-              <div key={activity.id} className="flex gap-4 pb-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 last:pb-0">
+              <div
+                key={activity.id}
+                className={`flex gap-4 pb-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 last:pb-0 transition-all ${
+                  activity.isNew ? 'animate-pulse bg-blue-50 dark:bg-blue-900 p-2 rounded' : ''
+                }`}
+              >
                 {/* Avatar */}
                 <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${colorClass}`}>
                   <Icon className="h-5 w-5" />
@@ -114,6 +209,11 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                     <Badge variant="secondary" size="sm">
                       {activity.type}
                     </Badge>
+                    {activity.isNew && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                        New
+                      </span>
+                    )}
                   </div>
 
                   <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">
@@ -133,6 +233,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
               </div>
             );
           })}
+          <div ref={feedEndRef} />
         </div>
       )}
     </Card>

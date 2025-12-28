@@ -11,13 +11,25 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Depends, Body, status
+from fastapi import FastAPI, HTTPException, Depends, Body, status, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
 import uvicorn
 
 from socratic_system.orchestration.orchestrator import AgentOrchestrator
 from socratic_system.events import EventType
+from socrates_api.middleware.rate_limit import (
+    initialize_limiter,
+    get_rate_limiter,
+    RateLimitConfig,
+)
+from socrates_api.middleware.security_headers import add_security_headers_middleware
+from socrates_api.middleware.metrics import (
+    add_metrics_middleware,
+    get_metrics_text,
+    get_metrics_summary,
+)
 
 from .auth import get_current_user
 from .models import (
@@ -67,8 +79,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Initialize rate limiter before app creation
+_redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
+limiter = initialize_limiter(_redis_url)  # Export for use in routers
+
 # Global state
-app_state = {"orchestrator": None, "start_time": time.time(), "event_listeners_registered": False}
+app_state = {
+    "orchestrator": None,
+    "start_time": time.time(),
+    "event_listeners_registered": False,
+    "limiter": limiter,
+}
 
 
 def get_orchestrator() -> AgentOrchestrator:
@@ -76,6 +97,30 @@ def get_orchestrator() -> AgentOrchestrator:
     if app_state["orchestrator"] is None:
         raise RuntimeError("Orchestrator not initialized. Call /initialize first.")
     return app_state["orchestrator"]
+
+
+def get_rate_limiter_for_app():
+    """Get rate limiter instance from app state"""
+    return app_state.get("limiter")
+
+
+def conditional_rate_limit(limit_string: str):
+    """
+    Conditional rate limit decorator that applies limit if limiter is available.
+    Falls back to no limit if limiter is not initialized.
+    """
+    def decorator(func):
+        async def wrapper(*args, **kwargs):
+            limiter = get_rate_limiter_for_app()
+            if limiter:
+                # Apply the rate limit
+                limited_func = limiter.limit(limit_string)(func)
+                return await limited_func(*args, **kwargs)
+            else:
+                # No rate limiting
+                return await func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 def _setup_event_listeners(orchestrator: AgentOrchestrator):
@@ -115,13 +160,58 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Add CORS middleware
+# Add security headers middleware
+environment = os.getenv("ENVIRONMENT", "production")
+add_security_headers_middleware(app, environment=environment)
+
+# Add metrics middleware
+add_metrics_middleware(app)
+
+# Configure CORS based on environment
+if environment == "production":
+    # Production: Only allow specific origins
+    allowed_origins = os.getenv(
+        "ALLOWED_ORIGINS",
+        "https://socrates.app"  # Default production origin
+    ).split(",")
+    allowed_origins = [origin.strip() for origin in allowed_origins]
+elif environment == "staging":
+    # Staging: Allow staging domains
+    allowed_origins = os.getenv(
+        "ALLOWED_ORIGINS",
+        "https://staging.socrates.app,https://socrates-staging.vercel.app"
+    ).split(",")
+    allowed_origins = [origin.strip() for origin in allowed_origins]
+else:
+    # Development: Allow localhost and common dev URLs
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:8080",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:8080",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+    # Allow additional dev origins from environment variable
+    dev_origins = os.getenv("ALLOWED_ORIGINS", "")
+    if dev_origins:
+        allowed_origins.extend([o.strip() for o in dev_origins.split(",")])
+
+# Add CORS middleware with hardened configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    expose_headers=["X-Process-Time", "X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining"],
+    max_age=3600,  # Cache preflight requests for 1 hour
+)
+
+logger.info(
+    f"CORS configured for {environment} environment with origins: {allowed_origins}"
 )
 
 
@@ -163,6 +253,12 @@ async def root():
 async def startup_event():
     """Initialize application on startup"""
     logger.info("Starting Socrates API server...")
+
+    # Rate limiter initialized at module load time
+    if app_state.get("limiter"):
+        logger.info("Rate limiter is active")
+    else:
+        logger.warning("Rate limiting is disabled")
 
     # Auto-initialize orchestrator on startup
     try:
@@ -217,8 +313,187 @@ async def shutdown_event():
 
 @app.get("/health", response_model=dict)
 async def health_check():
-    """Health check endpoint"""
-    return {"status": "ok", "initialized": app_state["orchestrator"] is not None}
+    """
+    Health check endpoint.
+
+    Returns overall system status and component health.
+    """
+    orchestrator_ready = app_state.get("orchestrator") is not None
+    limiter_ready = app_state.get("limiter") is not None
+
+    overall_status = "healthy" if (orchestrator_ready and limiter_ready) else "degraded"
+
+    return {
+        "status": overall_status,
+        "timestamp": time.time(),
+        "components": {
+            "orchestrator": "ready" if orchestrator_ready else "not_ready",
+            "rate_limiter": "ready" if limiter_ready else "disabled",
+            "api": "operational",
+        },
+    }
+
+
+@app.get("/health/detailed")
+async def detailed_health_check():
+    """
+    Detailed health check endpoint.
+
+    Returns comprehensive system status including database, cache, and service details.
+    """
+    from socrates_api.caching import get_cache
+    from socratic_system.database.query_profiler import get_profiler
+
+    try:
+        cache = get_cache()
+        cache_status = (await cache.get_stats()) if cache else {"status": "unavailable"}
+    except Exception as e:
+        cache_status = {"status": "error", "error": str(e)}
+
+    try:
+        profiler = get_profiler()
+        profiler_stats = profiler.get_stats()
+        slow_queries = profiler.get_slow_queries(min_slow_count=1)
+    except Exception as e:
+        profiler_stats = {}
+        slow_queries = []
+
+    orchestrator_ready = app_state.get("orchestrator") is not None
+    limiter_ready = app_state.get("limiter") is not None
+
+    overall_status = "healthy" if (orchestrator_ready and limiter_ready) else "degraded"
+
+    return {
+        "status": overall_status,
+        "timestamp": time.time(),
+        "uptime_seconds": time.time() - app_state.get("start_time", time.time()),
+        "components": {
+            "orchestrator": {
+                "status": "ready" if orchestrator_ready else "not_ready",
+                "api_key_configured": orchestrator_ready,
+            },
+            "rate_limiter": {
+                "status": "ready" if limiter_ready else "disabled",
+                "backend": "redis" if limiter_ready else "none",
+            },
+            "cache": cache_status,
+            "api": {
+                "status": "operational",
+                "version": "8.0.0",
+            },
+        },
+        "database_metrics": {
+            "total_queries": len(profiler_stats),
+            "slow_queries": len(slow_queries),
+            "slowest_query_avg_ms": max(
+                (q.get("avg_time_ms", 0) for q in profiler_stats.values()), default=0
+            ),
+        },
+        "metrics": {
+            "queries_tracked": len(profiler_stats),
+            "cache_type": cache_status.get("type", "unknown"),
+        },
+    }
+
+
+@app.get("/metrics", response_class=type("PlainTextResponse", (), {}))
+async def metrics_endpoint():
+    """
+    Prometheus metrics endpoint.
+
+    Returns metrics in Prometheus text format for scraping by monitoring systems.
+
+    Example:
+        GET /metrics
+        http_requests_total{method="GET",endpoint="/health",status="200"} 1234
+        http_request_duration_seconds_bucket{method="GET",endpoint="/health",status="200",le="0.01"} 100
+    """
+    from fastapi.responses import Response
+
+    metrics_text = get_metrics_text()
+    return Response(
+        content=metrics_text,
+        media_type="text/plain; version=0.0.4; charset=utf-8",
+    )
+
+
+@app.get("/metrics/summary", response_model=dict)
+async def metrics_summary():
+    """
+    Get a summary of key metrics.
+
+    Returns:
+        Dictionary with high-level metric summaries
+    """
+    return get_metrics_summary()
+
+
+@app.get("/metrics/queries")
+async def query_metrics():
+    """
+    Get database query performance metrics.
+
+    Returns query profiler statistics including:
+    - Query execution counts
+    - Average/min/max execution times
+    - Slow query counts and percentages
+    - Error counts per query
+
+    Example:
+        GET /metrics/queries
+        {
+            "get_project": {
+                "count": 150,
+                "avg_time_ms": 23.5,
+                "min_time_ms": 5.2,
+                "max_time_ms": 145.3,
+                "total_time_ms": 3525.0,
+                "slow_count": 3,
+                "slow_percentage": 2.0,
+                "error_count": 0,
+                "last_executed_at": 1735152385.234
+            },
+            ...
+        }
+    """
+    from socratic_system.database.query_profiler import get_profiler
+
+    profiler = get_profiler()
+    return profiler.get_stats()
+
+
+@app.get("/metrics/queries/slow")
+async def slow_query_metrics(min_count: int = 1):
+    """
+    Get list of queries with slow executions.
+
+    Args:
+        min_count: Minimum number of slow executions to include (default: 1)
+
+    Returns:
+        List of slow queries sorted by slow execution count
+    """
+    from socratic_system.database.query_profiler import get_profiler
+
+    profiler = get_profiler()
+    return profiler.get_slow_queries(min_slow_count=min_count)
+
+
+@app.get("/metrics/queries/slowest")
+async def slowest_query_metrics(limit: int = 10):
+    """
+    Get slowest queries by average execution time.
+
+    Args:
+        limit: Maximum number of queries to return (default: 10)
+
+    Returns:
+        List of slowest queries sorted by average execution time
+    """
+    from socratic_system.database.query_profiler import get_profiler
+
+    profiler = get_profiler()
+    return profiler.get_slowest_queries(limit=limit)
 
 
 @app.post("/initialize", response_model=SystemInfoResponse)
@@ -507,6 +782,20 @@ async def generate_code(request: GenerateCodeRequest):
 #             details=getattr(exc, "context", None),
 #         ).model_dump(),
 #     )
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    """Handle rate limit exceeded errors"""
+    logger.warning(f"Rate limit exceeded for {request.client.host}: {request.url.path}")
+    return JSONResponse(
+        status_code=429,
+        content={
+            "error": "TooManyRequests",
+            "message": "Rate limit exceeded. Please try again later.",
+            "error_code": "RATE_LIMIT_EXCEEDED",
+        },
+    )
 
 
 @app.exception_handler(Exception)
