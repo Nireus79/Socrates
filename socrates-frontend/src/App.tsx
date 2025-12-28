@@ -23,6 +23,7 @@ import { AnalysisPage as CodeAnalysisPage } from './pages/analysis/AnalysisPage'
 import { NotesPage } from './pages/notes/NotesPage';
 import { ProjectAnalysisPage } from './pages/projects/ProjectAnalysisPage';
 import { SearchPage } from './pages/search/SearchPage';
+import AcceptInvitationPage from './pages/invitations/AcceptInvitationPage';
 import { MainLayout } from './components/layout';
 import { ErrorBoundary } from './components/common';
 import { NotificationProvider } from './components/providers/NotificationProvider';
@@ -104,6 +105,9 @@ function App() {
               </PublicRoute>
             }
           />
+
+          {/* Invitation Routes */}
+          <Route path="/invitations/accept/:token" element={<AcceptInvitationPage />} />
 
           {/* Protected Routes */}
           <Route

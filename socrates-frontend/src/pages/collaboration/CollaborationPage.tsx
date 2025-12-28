@@ -12,6 +12,7 @@ import {
   AddCollaboratorModal,
   ActivityFeed,
 } from '../../components/collaboration';
+import InvitationManager from '../../components/collaboration/InvitationManager';
 import type {
   Activity,
 } from '../../components/collaboration';
@@ -25,6 +26,7 @@ export const CollaborationPage: React.FC = () => {
   const [selectedProjectId, setSelectedProjectId] = React.useState(projectId || '');
   const {
     collaborators,
+    invitations,
     isLoading: collabLoading,
     error: collabError,
     loadCollaborators,
@@ -79,10 +81,13 @@ export const CollaborationPage: React.FC = () => {
     setSelectedProjectId(newProjectId);
   };
 
+  const pendingInvitationCount = invitations.filter((inv) => inv.status === 'pending').length;
+
   const tabs = [
     { label: 'Team Members', value: 'team' },
     { label: 'Activity', value: 'activity' },
     { label: 'Presence', value: 'presence' },
+    { label: `Invitations (${pendingInvitationCount})`, value: 'invitations' },
   ];
 
   const handleAddCollaborator = async (email: string, role: string) => {
@@ -220,7 +225,9 @@ export const CollaborationPage: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pending Invites</p>
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">0</p>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {pendingInvitationCount}
+              </p>
             </div>
           </div>
         </Card>
@@ -289,6 +296,11 @@ export const CollaborationPage: React.FC = () => {
               ))}
             </div>
           </Card>
+        )}
+
+        {/* Invitations Tab */}
+        {activeTab === 'invitations' && selectedProjectId && (
+          <InvitationManager projectId={selectedProjectId} />
         )}
 
         {/* Info Alert */}
