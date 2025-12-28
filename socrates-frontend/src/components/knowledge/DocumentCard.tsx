@@ -2,14 +2,16 @@
  * Document Card - Display individual document metadata
  *
  * Shows:
+ * - Selection checkbox for bulk operations
  * - Document title and source
  * - Creation date
  * - Chunk count and file size
- * - Delete action
+ * - Analytics badge (views/searches)
+ * - Delete and view actions
  */
 
 import React from 'react';
-import { Trash2, FileText, Link, Upload, Type } from 'lucide-react';
+import { Trash2, FileText, Link, Upload, Type, Eye } from 'lucide-react';
 import type { DocumentMetadata } from '../../api/knowledge';
 import { Card } from '../common';
 import { Button } from '../common';
@@ -17,14 +19,23 @@ import { Badge } from '../common';
 
 interface DocumentCardProps {
   document: DocumentMetadata;
+  isSelected?: boolean;
+  onSelect?: (selected: boolean) => void;
   onDelete?: () => void;
   onView?: () => void;
+  analytics?: {
+    views?: number;
+    searches?: number;
+  };
 }
 
 export const DocumentCard: React.FC<DocumentCardProps> = ({
   document,
+  isSelected = false,
+  onSelect,
   onDelete,
   onView,
+  analytics,
 }) => {
   const getSourceIcon = () => {
     switch (document.source_type) {
@@ -74,27 +85,51 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
 
   return (
     <Card
-      className="hover:shadow-md transition-shadow cursor-pointer"
+      className={`hover:shadow-md transition-all cursor-pointer ${
+        isSelected ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900' : ''
+      }`}
       onClick={onView}
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-start gap-3">
+        {/* Checkbox */}
+        {onSelect && (
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(e) => {
+              e.stopPropagation();
+              onSelect(e.target.checked);
+            }}
+            className="mt-1 h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+          />
+        )}
+
+        {/* Content */}
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            <h3 className="font-semibold text-gray-900 dark:text-white">
+            <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+            <h3 className="font-semibold text-gray-900 dark:text-white truncate">
               {document.title}
             </h3>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="secondary">
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 text-xs">
                 {getSourceIcon()} {getSourceLabel()}
               </span>
             </Badge>
             <span className="text-xs text-gray-500 dark:text-gray-400">
               {formatDate(document.created_at)}
             </span>
+            {analytics && (analytics.views || 0) > 0 && (
+              <Badge variant="outline" className="text-xs">
+                <span className="flex items-center gap-1">
+                  <Eye className="h-3 w-3" />
+                  {analytics.views} views
+                </span>
+              </Badge>
+            )}
           </div>
 
           <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
@@ -103,18 +138,19 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
           </div>
         </div>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={<Trash2 className="h-4 w-4" />}
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete?.();
-          }}
-          className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-        >
-          Delete
-        </Button>
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Trash2 className="h-4 w-4" />}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.();
+            }}
+            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+          />
+        </div>
       </div>
     </Card>
   );
