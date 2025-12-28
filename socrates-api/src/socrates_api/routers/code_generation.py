@@ -15,7 +15,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, status, Depends
 
-from socratic_system.database import ProjectDatabaseV2
+from socratic_system.database import ProjectDatabase
 
 from socrates_api.database import get_database
 from socrates_api.auth import get_current_user, get_current_user_object
@@ -59,7 +59,7 @@ async def generate_code(
     language: str = "python",
     requirements: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Generate code from specification.
@@ -238,7 +238,7 @@ async def validate_code(
     code: str,
     language: str = "python",
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Validate generated code for syntax and best practices.
@@ -405,7 +405,7 @@ async def get_code_history(
     limit: int = 20,
     offset: int = 0,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get history of generated code for a project.
@@ -490,7 +490,7 @@ async def refactor_code(
     language: str = "python",
     refactor_type: str = "optimize",
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Refactor existing code.

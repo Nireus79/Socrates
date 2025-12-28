@@ -163,6 +163,9 @@ def start_api(host: str = "0.0.0.0", port: int = 8000, reload: bool = False, aut
     display_host = "localhost" if host == "0.0.0.0" else host
     print(f"[INFO] API server running on http://{display_host}:{port}")
 
+    # Set development environment for local development
+    os.environ['ENVIRONMENT'] = 'development'
+
     uvicorn.run(
         "socrates_api.main:app",
         host=host,
@@ -207,11 +210,16 @@ def start_full_stack() -> None:
         nonlocal api_process
         try:
             # Create subprocess for API server
+            env = os.environ.copy()
+            env['ENVIRONMENT'] = 'development'
             api_process = subprocess.Popen(
                 [sys.executable, "-c", f"""
 import sys
+import os
+os.environ['ENVIRONMENT'] = 'development'
 sys.path.insert(0, r'{project_root}')
 sys.path.insert(0, r'{project_root / "socrates-api" / "src"}')
+print(f'[STARTUP] ENVIRONMENT={{os.getenv("ENVIRONMENT")}}', flush=True)
 import uvicorn
 uvicorn.run(
     'socrates_api.main:app',
@@ -222,7 +230,7 @@ uvicorn.run(
 )
 """],
                 cwd=project_root,
-                env=os.environ.copy(),
+                env=env,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -302,7 +310,7 @@ uvicorn.run(
 
             # Set frontend port via environment variable
             env = os.environ.copy()
-            env["VITE_PORT"] = str(frontend_port)
+            env["PORT"] = str(frontend_port)
             env["VITE_API_URL"] = f"http://localhost:{api_port}"
 
             print(f"[INFO] Starting frontend on port {frontend_port}...")

@@ -34,7 +34,7 @@ from socratic_system.agents.question_queue_agent import QuestionQueueAgent
 from socratic_system.clients import ClaudeClient
 from socratic_system.config import SocratesConfig
 from socratic_system.database import ProjectDatabase, VectorDatabase
-from socratic_system.database.project_db_v2 import ProjectDatabaseV2
+from socratic_system.database.project_db_v2 import ProjectDatabase
 from socratic_system.events import EventEmitter, EventType
 from socratic_system.models import KnowledgeEntry
 

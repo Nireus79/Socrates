@@ -11,7 +11,7 @@ from typing import Optional, List, Dict, Any
 
 from fastapi import APIRouter, HTTPException, status, Depends
 
-from socratic_system.database import ProjectDatabaseV2
+from socratic_system.database import ProjectDatabase
 from socrates_api.models import SuccessResponse, ErrorResponse
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
@@ -20,11 +20,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
 
-def get_database() -> ProjectDatabaseV2:
+def get_database() -> ProjectDatabase:
     """Get database instance."""
     data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
     db_path = os.path.join(data_dir, "projects.db")
-    return ProjectDatabaseV2(db_path)
+    return ProjectDatabase(db_path)
 
 
 @router.post(

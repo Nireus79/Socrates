@@ -1,2 +1,0 @@
-# Add your dependencies here
-# Example: requests>=2.28

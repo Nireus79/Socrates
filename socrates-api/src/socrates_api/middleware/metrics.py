@@ -169,7 +169,13 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
         # Collect metrics
         duration = time.time() - start_time
-        status_code = response.status
+
+        # Handle both regular and streaming responses
+        try:
+            status_code = response.status
+        except AttributeError:
+            # Streaming responses don't have a status attribute until sent
+            status_code = 200  # Default to 200 for streaming responses
 
         # Record request metrics
         http_requests_total.labels(
@@ -206,8 +212,12 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
         app_requests_in_progress.dec()
 
-        # Add request timing header
-        response.headers["X-Process-Time"] = f"{duration:.4f}"
+        # Add request timing header (if response headers are mutable)
+        try:
+            response.headers["X-Process-Time"] = f"{duration:.4f}"
+        except (AttributeError, TypeError):
+            # Some response types don't allow header modification
+            pass
 
         # Log slow requests
         if duration > 1.0:

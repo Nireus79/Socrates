@@ -16,7 +16,7 @@ from unittest.mock import patch, MagicMock
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from socrates_api.main import app
-from socratic_system.database.project_db_v2 import ProjectDatabaseV2
+from socratic_system.database.project_db_v2 import ProjectDatabase
 
 
 @pytest.fixture
@@ -28,7 +28,7 @@ def client():
 @pytest.fixture
 def test_db():
     """Create test database"""
-    db = ProjectDatabaseV2(":memory:")
+    db = ProjectDatabase(":memory:")
     return db
 
 
@@ -241,10 +241,10 @@ class TestHighIssue7_HardcodedLocalhost:
 
     def test_data_dir_from_environment(self):
         """Verify data directory uses environment variable"""
-        from socratic_system.database.project_db_v2 import ProjectDatabaseV2
+        from socratic_system.database.project_db_v2 import ProjectDatabase
         import inspect
 
-        source = inspect.getsource(ProjectDatabaseV2.__init__)
+        source = inspect.getsource(ProjectDatabase.__init__)
 
         # Should allow environment variable to override
         assert 'SOCRATES_DATA_DIR' in source or \
@@ -344,10 +344,10 @@ class TestMediumIssue10_EnvironmentValidation:
 
     def test_startup_validates_data_directory(self):
         """Verify system validates data directory is writable"""
-        from socratic_system.database.project_db_v2 import ProjectDatabaseV2
+        from socratic_system.database.project_db_v2 import ProjectDatabase
         import inspect
 
-        source = inspect.getsource(ProjectDatabaseV2.__init__)
+        source = inspect.getsource(ProjectDatabase.__init__)
 
         # Should check directory exists and is writable
         assert 'mkdir' in source or \

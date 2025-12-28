@@ -10,9 +10,10 @@ from pathlib import Path
 from typing import Optional
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, status, Depends, Body, FileResponse
+from fastapi import APIRouter, HTTPException, status, Depends, Body
+from fastapi.responses import FileResponse
 
-from socratic_system.database import ProjectDatabaseV2
+from socratic_system.database import ProjectDatabase
 from socrates_api.models import SuccessResponse, ErrorResponse
 from socrates_api.middleware.subscription import SubscriptionChecker
 from socrates_api.auth import get_current_user, get_current_user_object
@@ -35,7 +36,7 @@ router = APIRouter(prefix="/analytics", tags=["analytics"])
 async def get_analytics_summary(
     project_id: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get analytics summary for a project or overall.
@@ -189,7 +190,7 @@ async def get_analytics_summary(
 async def get_project_analytics(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get detailed analytics for a specific project.
@@ -343,11 +344,11 @@ async def get_usage_analytics():
         )
 
 
-def get_database() -> ProjectDatabaseV2:
+def get_database() -> ProjectDatabase:
     """Get database instance."""
     data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
     db_path = os.path.join(data_dir, "projects.db")
-    return ProjectDatabaseV2(db_path)
+    return ProjectDatabase(db_path)
 
 
 @router.get(
@@ -575,7 +576,7 @@ async def get_recommendations(
 async def export_analytics(
     request_data: dict = Body(...),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ) -> SuccessResponse:
     """
     Export project analytics to PDF or CSV format.
@@ -827,7 +828,7 @@ async def download_analytics_report(
 )
 async def compare_projects(
     request_data: dict = Body(...),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Compare analytics between two projects.
@@ -908,7 +909,7 @@ async def compare_projects(
 )
 async def generate_report(
     request_data: dict = Body(...),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Generate a comprehensive analytics report for a project.
@@ -991,7 +992,7 @@ async def generate_report(
 )
 async def analyze_project(
     request_data: dict = Body(...),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Perform deep analysis on a project's analytics.
@@ -1063,7 +1064,7 @@ async def analyze_project(
 )
 async def get_dashboard_analytics(
     project_id: str,
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get comprehensive analytics dashboard data for a project.

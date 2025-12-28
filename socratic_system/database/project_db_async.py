@@ -161,10 +161,10 @@ class AsyncProjectDatabase:
 
         # Create schema if needed
         async with self.pool.acquire() as conn:
-            # Create projects_v2 table if not exists
+            # Create projects table if not exists
             await conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS projects_v2 (
+                CREATE TABLE IF NOT EXISTS projects (
                     project_id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
                     owner TEXT NOT NULL,
@@ -182,7 +182,7 @@ class AsyncProjectDatabase:
                     created_at TIMESTAMP NOT NULL,
                     updated_at TIMESTAMP NOT NULL,
                     archived_at TIMESTAMP,
-                    FOREIGN KEY (owner) REFERENCES users_v2(username)
+                    FOREIGN KEY (owner) REFERENCES users(username)
                 )
                 """
             )
@@ -196,7 +196,7 @@ class AsyncProjectDatabase:
                     requirement TEXT NOT NULL,
                     sort_order INTEGER DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+                    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
                 )
                 """
             )
@@ -209,7 +209,7 @@ class AsyncProjectDatabase:
                     technology TEXT NOT NULL,
                     sort_order INTEGER DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+                    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
                 )
                 """
             )
@@ -222,7 +222,7 @@ class AsyncProjectDatabase:
                     constraint_text TEXT NOT NULL,
                     sort_order INTEGER DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+                    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
                 )
                 """
             )
@@ -236,7 +236,7 @@ class AsyncProjectDatabase:
                     content TEXT NOT NULL,
                     timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     metadata TEXT,
-                    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+                    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
                 )
                 """
             )
@@ -251,7 +251,7 @@ class AsyncProjectDatabase:
                     skills TEXT,
                     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(project_id, username),
-                    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+                    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
                 )
                 """
             )
@@ -264,7 +264,7 @@ class AsyncProjectDatabase:
                     score REAL DEFAULT 0.0,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (project_id, phase),
-                    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+                    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
                 )
                 """
             )
@@ -279,7 +279,7 @@ class AsyncProjectDatabase:
                     score REAL NOT NULL,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(project_id, phase, category),
-                    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+                    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
                 )
                 """
             )
@@ -292,7 +292,7 @@ class AsyncProjectDatabase:
                     question_data TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     sort_order INTEGER DEFAULT 0,
-                    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+                    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
                 )
                 """
             )
@@ -307,14 +307,14 @@ class AsyncProjectDatabase:
                     weak_categories TEXT,
                     strong_categories TEXT,
                     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+                    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
                 )
                 """
             )
 
             await conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS users_v2 (
+                CREATE TABLE IF NOT EXISTS users (
                     username TEXT PRIMARY KEY,
                     passcode_hash TEXT NOT NULL,
                     subscription_tier TEXT DEFAULT 'free',
@@ -332,7 +332,7 @@ class AsyncProjectDatabase:
             # Create additional tables from full schema
             await conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS project_notes_v2 (
+                CREATE TABLE IF NOT EXISTS project_notes (
                     note_id TEXT PRIMARY KEY,
                     project_id TEXT NOT NULL,
                     title TEXT,
@@ -340,7 +340,7 @@ class AsyncProjectDatabase:
                     note_type TEXT,
                     created_at TIMESTAMP NOT NULL,
                     updated_at TIMESTAMP NOT NULL,
-                    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+                    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
                 )
                 """
             )
@@ -355,7 +355,7 @@ class AsyncProjectDatabase:
                     spec_data TEXT NOT NULL,
                     sort_order INTEGER DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+                    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
                 )
                 """
             )
@@ -371,14 +371,14 @@ class AsyncProjectDatabase:
                     event_type TEXT,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     metadata TEXT,
-                    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+                    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
                 )
                 """
             )
 
             await conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS question_effectiveness_v2 (
+                CREATE TABLE IF NOT EXISTS question_effectiveness (
                     id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
                     question_template_id TEXT NOT NULL,
@@ -389,14 +389,14 @@ class AsyncProjectDatabase:
                     created_at TIMESTAMP NOT NULL,
                     updated_at TIMESTAMP NOT NULL,
                     UNIQUE(user_id, question_template_id),
-                    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+                    FOREIGN KEY (user_id) REFERENCES users(username)
                 )
                 """
             )
 
             await conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS behavior_patterns_v2 (
+                CREATE TABLE IF NOT EXISTS behavior_patterns (
                     id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
                     pattern_type TEXT NOT NULL,
@@ -405,14 +405,14 @@ class AsyncProjectDatabase:
                     learned_at TIMESTAMP NOT NULL,
                     updated_at TIMESTAMP NOT NULL,
                     UNIQUE(user_id, pattern_type),
-                    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+                    FOREIGN KEY (user_id) REFERENCES users(username)
                 )
                 """
             )
 
             await conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS knowledge_documents_v2 (
+                CREATE TABLE IF NOT EXISTS knowledge_documents (
                     id TEXT PRIMARY KEY,
                     project_id TEXT,
                     user_id TEXT NOT NULL,
@@ -421,15 +421,15 @@ class AsyncProjectDatabase:
                     source TEXT,
                     document_type TEXT DEFAULT 'document',
                     uploaded_at TIMESTAMP NOT NULL,
-                    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE,
-                    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+                    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users(username)
                 )
                 """
             )
 
             await conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS llm_provider_configs_v2 (
+                CREATE TABLE IF NOT EXISTS llm_provider_configs (
                     id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
                     provider TEXT NOT NULL,
@@ -437,14 +437,14 @@ class AsyncProjectDatabase:
                     created_at TIMESTAMP NOT NULL,
                     updated_at TIMESTAMP NOT NULL,
                     UNIQUE(user_id, provider),
-                    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+                    FOREIGN KEY (user_id) REFERENCES users(username)
                 )
                 """
             )
 
             await conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS api_keys_v2 (
+                CREATE TABLE IF NOT EXISTS api_keys (
                     id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
                     provider TEXT NOT NULL,
@@ -454,14 +454,14 @@ class AsyncProjectDatabase:
                     updated_at TIMESTAMP NOT NULL,
                     last_used_at TIMESTAMP,
                     UNIQUE(user_id, provider),
-                    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+                    FOREIGN KEY (user_id) REFERENCES users(username)
                 )
                 """
             )
 
             await conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS llm_usage_v2 (
+                CREATE TABLE IF NOT EXISTS llm_usage (
                     id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
                     provider TEXT NOT NULL,
@@ -470,7 +470,7 @@ class AsyncProjectDatabase:
                     output_tokens INTEGER DEFAULT 0,
                     cost REAL DEFAULT 0.0,
                     timestamp TIMESTAMP NOT NULL,
-                    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+                    FOREIGN KEY (user_id) REFERENCES users(username)
                 )
                 """
             )
@@ -502,7 +502,7 @@ class AsyncProjectDatabase:
         async with self.pool.acquire() as conn:
             # Load main project data
             cursor = await conn.execute(
-                "SELECT * FROM projects_v2 WHERE project_id = ?", (project_id,)
+                "SELECT * FROM projects WHERE project_id = ?", (project_id,)
             )
             row = await cursor.fetchone()
 
@@ -564,7 +564,7 @@ class AsyncProjectDatabase:
 
                 await conn.execute(
                     """
-                    INSERT OR REPLACE INTO projects_v2
+                    INSERT OR REPLACE INTO projects
                     (project_id, name, owner, phase, project_type, team_structure,
                      language_preferences, deployment_target, code_style, chat_mode,
                      goals, status, progress, is_archived, created_at, updated_at, archived_at)
@@ -632,7 +632,7 @@ class AsyncProjectDatabase:
                 where_clause += " AND is_archived = 0"
 
             cursor = await conn.execute(
-                f"SELECT * FROM projects_v2 {where_clause} ORDER BY updated_at DESC",
+                f"SELECT * FROM projects {where_clause} ORDER BY updated_at DESC",
                 (username,),
             )
             rows = await cursor.fetchall()
@@ -659,7 +659,7 @@ class AsyncProjectDatabase:
             now = datetime.now()
             await conn.execute(
                 """
-                UPDATE projects_v2
+                UPDATE projects
                 SET is_archived = 1, archived_at = ?
                 WHERE project_id = ?
                 """,
@@ -683,7 +683,7 @@ class AsyncProjectDatabase:
                 await conn.execute("BEGIN TRANSACTION")
 
                 # Foreign key cascades will delete related tables
-                await conn.execute("DELETE FROM projects_v2 WHERE project_id = ?", (project_id,))
+                await conn.execute("DELETE FROM projects WHERE project_id = ?", (project_id,))
 
                 await conn.execute("COMMIT")
                 return True
@@ -722,7 +722,7 @@ class AsyncProjectDatabase:
         """
         async with self.pool.acquire() as conn:
             cursor = await conn.execute(
-                "SELECT * FROM users_v2 WHERE username = ?", (username,)
+                "SELECT * FROM users WHERE username = ?", (username,)
             )
             row = await cursor.fetchone()
 
@@ -757,7 +757,7 @@ class AsyncProjectDatabase:
 
             await conn.execute(
                 """
-                INSERT OR REPLACE INTO users_v2
+                INSERT OR REPLACE INTO users
                 (username, passcode_hash, subscription_tier, subscription_status,
                  subscription_start, subscription_end, testing_mode, is_archived, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -792,7 +792,7 @@ class AsyncProjectDatabase:
             if not include_archived:
                 where_clause += " AND is_archived = 0"
 
-            cursor = await conn.execute(f"SELECT * FROM users_v2 {where_clause}")
+            cursor = await conn.execute(f"SELECT * FROM users {where_clause}")
             rows = await cursor.fetchall()
 
             users = []
@@ -900,7 +900,7 @@ class AsyncProjectDatabase:
     # PRE-SESSION CONVERSATIONS (async)
     # =====================================================================
 
-    async def save_presession_message(
+    async def save_free_session_message(
         self,
         username: str,
         session_id: str,
@@ -909,7 +909,7 @@ class AsyncProjectDatabase:
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
-        Save a message to presession conversation history (async).
+        Save a message to free_session conversation history (async).
 
         Args:
             username: User who created the message
@@ -921,7 +921,7 @@ class AsyncProjectDatabase:
         async with self.pool.acquire() as conn:
             await conn.execute(
                 """
-                INSERT INTO presession_conversations
+                INSERT INTO free_session_conversations
                 (username, session_id, message_type, content, timestamp, metadata)
                 VALUES (?, ?, ?, ?, ?, ?)
             """,
@@ -936,11 +936,11 @@ class AsyncProjectDatabase:
             )
             await conn.commit()
 
-    async def get_presession_conversation(
+    async def get_free_session_conversation(
         self, username: str, session_id: str, limit: int = 50
     ) -> List[Dict[str, Any]]:
         """
-        Get presession conversation history for a session (async).
+        Get free_session conversation history for a session (async).
 
         Args:
             username: Username to filter by
@@ -954,7 +954,7 @@ class AsyncProjectDatabase:
             cursor = await conn.execute(
                 """
                 SELECT message_type, content, timestamp, metadata
-                FROM presession_conversations
+                FROM free_session_conversations
                 WHERE username = ? AND session_id = ?
                 ORDER BY timestamp ASC
                 LIMIT ?
@@ -976,11 +976,11 @@ class AsyncProjectDatabase:
 
             return history
 
-    async def get_presession_sessions(
+    async def get_free_session_sessions(
         self, username: str, limit: int = 20
     ) -> List[Dict[str, Any]]:
         """
-        Get list of presession sessions for a user (async).
+        Get list of free_session sessions for a user (async).
 
         Args:
             username: Username to filter by
@@ -999,7 +999,7 @@ class AsyncProjectDatabase:
                     COUNT(*) as message_count,
                     SUM(CASE WHEN message_type = 'user' THEN 1 ELSE 0 END) as user_messages,
                     SUM(CASE WHEN message_type = 'assistant' THEN 1 ELSE 0 END) as assistant_messages
-                FROM presession_conversations
+                FROM free_session_conversations
                 WHERE username = ?
                 GROUP BY session_id
                 ORDER BY MAX(timestamp) DESC
@@ -1024,9 +1024,9 @@ class AsyncProjectDatabase:
 
             return sessions
 
-    async def delete_presession_session(self, username: str, session_id: str) -> bool:
+    async def delete_free_session_session(self, username: str, session_id: str) -> bool:
         """
-        Delete a presession session and all its messages (async).
+        Delete a free_session session and all its messages (async).
 
         Args:
             username: Username (for authorization)
@@ -1038,7 +1038,7 @@ class AsyncProjectDatabase:
         async with self.pool.acquire() as conn:
             # Verify ownership
             cursor = await conn.execute(
-                "SELECT COUNT(*) as count FROM presession_conversations WHERE username = ? AND session_id = ?",
+                "SELECT COUNT(*) as count FROM free_session_conversations WHERE username = ? AND session_id = ?",
                 (username, session_id),
             )
             row = await cursor.fetchone()
@@ -1047,7 +1047,7 @@ class AsyncProjectDatabase:
 
             # Delete session messages
             await conn.execute(
-                "DELETE FROM presession_conversations WHERE username = ? AND session_id = ?",
+                "DELETE FROM free_session_conversations WHERE username = ? AND session_id = ?",
                 (username, session_id),
             )
             await conn.commit()

@@ -413,7 +413,6 @@ export const CollaborationPage: React.FC = () => {
           </Card>
         </div>
       )}
-        </div>
       </MainLayout>
     </ErrorBoundary>
   );

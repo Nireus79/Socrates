@@ -41,9 +41,9 @@ class RateLimitConfig:
     CHAT_LIMIT = "30/minute"
     CHAT_HOURLY_LIMIT = "500/hour"
 
-    # Presession (free tier) limits
-    PRESESSION_LIMIT = "20/minute"
-    PRESESSION_HOURLY_LIMIT = "200/hour"
+    # Free session (free tier) limits
+    FREE_SESSION_LIMIT = "20/minute"
+    FREE_SESSION_HOURLY_LIMIT = "200/hour"
 
     # Professional tier limits
     PRO_CHAT_LIMIT = "100/minute"

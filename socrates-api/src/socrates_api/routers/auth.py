@@ -16,7 +16,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, status, Depends, Header, Query
 
-from socratic_system.database import ProjectDatabaseV2
+from socratic_system.database import ProjectDatabase
 from socratic_system.models import User
 from socrates_api.database import get_database
 from socrates_api.auth import (
@@ -73,7 +73,7 @@ def _user_to_response(user: User) -> UserResponse:
     },
 )
 @(limiter.limit("5/minute") if limiter else lambda f: f)  # AUTH_LIMIT: 5 per minute
-async def register(request: RegisterRequest, db: ProjectDatabaseV2 = Depends(get_database)):
+async def register(request: RegisterRequest, db: ProjectDatabase = Depends(get_database)):
     """
     Register a new user account.
 
@@ -185,7 +185,7 @@ async def register(request: RegisterRequest, db: ProjectDatabaseV2 = Depends(get
     },
 )
 @(limiter.limit("5/minute") if limiter else lambda f: f)  # AUTH_LIMIT: 5 per minute
-async def login(request: LoginRequest, db: ProjectDatabaseV2 = Depends(get_database)):
+async def login(request: LoginRequest, db: ProjectDatabase = Depends(get_database)):
     """
     Login with username and password.
 
@@ -271,7 +271,7 @@ async def login(request: LoginRequest, db: ProjectDatabaseV2 = Depends(get_datab
         500: {"description": "Server error during refresh", "model": ErrorResponse},
     },
 )
-async def refresh(request: RefreshTokenRequest, db: ProjectDatabaseV2 = Depends(get_database)):
+async def refresh(request: RefreshTokenRequest, db: ProjectDatabase = Depends(get_database)):
     """
     Refresh an access token using a refresh token.
 
@@ -350,7 +350,7 @@ async def refresh(request: RefreshTokenRequest, db: ProjectDatabaseV2 = Depends(
 async def change_password(
     request: ChangePasswordRequest,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Change user password.
@@ -442,7 +442,7 @@ async def change_password(
 )
 async def logout(
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Logout from the account.
@@ -489,7 +489,7 @@ async def logout(
 )
 async def get_me(
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get the current authenticated user's profile.
@@ -538,7 +538,7 @@ async def get_me(
 async def update_me(
     request_body: dict = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Update the current authenticated user's profile.
@@ -592,7 +592,7 @@ async def update_me(
 
 async def _delete_user_helper(
     current_user: str,
-    db: ProjectDatabaseV2,
+    db: ProjectDatabase,
 ):
     """
     Helper function to delete a user and all their data.
@@ -625,7 +625,7 @@ async def _delete_user_helper(
 )
 async def delete_account(
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Permanently delete the current user's account.
@@ -683,7 +683,7 @@ async def delete_account(
 async def set_testing_mode(
     enabled: bool = Query(...),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Enable or disable testing mode for the current user.
@@ -866,7 +866,7 @@ async def restore_account(
 # ============================================================================
 
 
-def _store_refresh_token(db: ProjectDatabaseV2, username: str, token: str) -> None:
+def _store_refresh_token(db: ProjectDatabase, username: str, token: str) -> None:
     """
     Store refresh token in database.
 
@@ -902,7 +902,7 @@ def _store_refresh_token(db: ProjectDatabaseV2, username: str, token: str) -> No
         # Generate unique ID for this token record
         token_id = str(uuid.uuid4())
 
-        # Get database connection from the ProjectDatabaseV2 object
+        # Get database connection from the ProjectDatabase object
         # We need to access the underlying sqlite3 connection
         conn = sqlite3.connect(db.db_path)
         cursor = conn.cursor()
@@ -940,7 +940,7 @@ def _store_refresh_token(db: ProjectDatabaseV2, username: str, token: str) -> No
         # The JWT itself is still valid even if DB storage fails
 
 
-def _validate_refresh_token(db: ProjectDatabaseV2, username: str, token: str) -> bool:
+def _validate_refresh_token(db: ProjectDatabase, username: str, token: str) -> bool:
     """
     Validate refresh token against database.
 
@@ -1011,7 +1011,7 @@ def _validate_refresh_token(db: ProjectDatabaseV2, username: str, token: str) ->
         return False
 
 
-def _revoke_refresh_token(db: ProjectDatabaseV2, username: str) -> None:
+def _revoke_refresh_token(db: ProjectDatabase, username: str) -> None:
     """
     Revoke all refresh tokens for a user (used during logout).
 

@@ -11,7 +11,7 @@ All components should use DatabaseSingleton.get_instance() to access the databas
 import os
 import logging
 from pathlib import Path
-from socratic_system.database import ProjectDatabaseV2
+from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class DatabaseSingleton:
     preventing data inconsistencies from accessing different databases.
     """
 
-    _instance: ProjectDatabaseV2 = None
+    _instance: ProjectDatabase = None
     _db_path: str = None
 
     @classmethod
@@ -49,7 +49,7 @@ class DatabaseSingleton:
         cls._instance = None
 
     @classmethod
-    def get_instance(cls) -> ProjectDatabaseV2:
+    def get_instance(cls) -> ProjectDatabase:
         """
         Get or create the global database instance.
 
@@ -57,7 +57,7 @@ class DatabaseSingleton:
         they access the same database.
 
         Returns:
-            ProjectDatabaseV2: The shared database instance
+            ProjectDatabase: The shared database instance
         """
         if cls._instance is None:
             # Initialize path if not already done
@@ -66,7 +66,7 @@ class DatabaseSingleton:
 
             # Create database instance
             try:
-                cls._instance = ProjectDatabaseV2(cls._db_path)
+                cls._instance = ProjectDatabase(cls._db_path)
                 logger.info(f"Database singleton initialized at {cls._db_path}")
             except Exception as e:
                 logger.error(f"Failed to initialize database: {e}")
@@ -82,12 +82,12 @@ class DatabaseSingleton:
 
 
 # FastAPI dependency that uses the singleton
-def get_database() -> ProjectDatabaseV2:
+def get_database() -> ProjectDatabase:
     """
     FastAPI dependency that gets the shared database instance.
 
     Returns:
-        ProjectDatabaseV2: The shared database instance from DatabaseSingleton
+        ProjectDatabase: The shared database instance from DatabaseSingleton
     """
     return DatabaseSingleton.get_instance()
 

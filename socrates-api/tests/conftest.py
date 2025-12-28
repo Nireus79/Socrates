@@ -18,9 +18,9 @@ sys.modules['socrates'] = socratic_system
 @pytest.fixture
 def test_db(monkeypatch):
     """Fixture to provide a test database."""
-    from socratic_system.database.project_db_v2 import ProjectDatabaseV2
+    from socratic_system.database.project_db_v2 import ProjectDatabase
     # Use in-memory database for tests
-    db = ProjectDatabaseV2(":memory:")
+    db = ProjectDatabase(":memory:")
     return db
 
 

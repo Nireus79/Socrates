@@ -201,7 +201,7 @@ class SchemaMigrator:
 
                     # Insert into V2
                     cursor.execute("""
-                        INSERT OR IGNORE INTO users_v2 (
+                        INSERT OR IGNORE INTO users (
                             username, passcode_hash, subscription_tier,
                             subscription_status, testing_mode, created_at
                         ) VALUES (?, ?, ?, ?, ?, ?)
@@ -244,7 +244,7 @@ class SchemaMigrator:
 
                     # Insert main project record
                     cursor.execute("""
-                        INSERT OR IGNORE INTO projects_v2 (
+                        INSERT OR IGNORE INTO projects (
                             project_id, name, owner, phase, project_type,
                             team_structure, language_preferences, deployment_target,
                             code_style, chat_mode, goals, status, progress,
@@ -401,7 +401,7 @@ class SchemaMigrator:
                     note_data = pickle.loads(row['data']) if row['data'] else {}
 
                     cursor.execute("""
-                        INSERT OR IGNORE INTO project_notes_v2 (
+                        INSERT OR IGNORE INTO project_notes (
                             note_id, project_id, title, content, created_at, updated_at
                         ) VALUES (?, ?, ?, ?, ?, ?)
                     """, (
@@ -438,7 +438,7 @@ class SchemaMigrator:
                     data = pickle.loads(row['data']) if row['data'] else {}
 
                     cursor.execute("""
-                        INSERT OR IGNORE INTO question_effectiveness_v2 (
+                        INSERT OR IGNORE INTO question_effectiveness (
                             id, user_id, question_template_id, effectiveness_score,
                             times_asked, times_answered_well, created_at, updated_at
                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -479,7 +479,7 @@ class SchemaMigrator:
                     data = pickle.loads(row['data']) if row['data'] else {}
 
                     cursor.execute("""
-                        INSERT OR IGNORE INTO behavior_patterns_v2 (
+                        INSERT OR IGNORE INTO behavior_patterns (
                             id, user_id, pattern_type, pattern_data,
                             learned_at, updated_at
                         ) VALUES (?, ?, ?, ?, ?, ?)
@@ -517,7 +517,7 @@ class SchemaMigrator:
                     data = pickle.loads(row['data']) if row['data'] else {}
 
                     cursor.execute("""
-                        INSERT OR IGNORE INTO knowledge_documents_v2 (
+                        INSERT OR IGNORE INTO knowledge_documents (
                             id, project_id, user_id, title, content, uploaded_at
                         ) VALUES (?, ?, ?, ?, ?, ?)
                     """, (
@@ -555,7 +555,7 @@ class SchemaMigrator:
                     data = pickle.loads(row['data']) if row['data'] else {}
 
                     cursor.execute("""
-                        INSERT OR IGNORE INTO llm_provider_configs_v2 (
+                        INSERT OR IGNORE INTO llm_provider_configs (
                             id, user_id, provider, config_data, created_at, updated_at
                         ) VALUES (?, ?, ?, ?, ?, ?)
                     """, (
@@ -583,11 +583,11 @@ class SchemaMigrator:
 
             # Check V1 and V2 table counts match
             for v1_table, v2_table in [
-                ("users", "users_v2"),
-                ("projects", "projects_v2"),
-                ("project_notes", "project_notes_v2"),
-                ("question_effectiveness", "question_effectiveness_v2"),
-                ("behavior_patterns", "behavior_patterns_v2"),
+                ("users", "users"),
+                ("projects", "projects"),
+                ("project_notes", "project_notes"),
+                ("question_effectiveness", "question_effectiveness"),
+                ("behavior_patterns", "behavior_patterns"),
             ]:
                 try:
                     cursor.execute(f"SELECT COUNT(*) FROM {v1_table}")
@@ -604,16 +604,16 @@ class SchemaMigrator:
                     pass
 
             # Check for NULL required fields
-            cursor.execute("SELECT COUNT(*) FROM users_v2 WHERE username IS NULL")
+            cursor.execute("SELECT COUNT(*) FROM users WHERE username IS NULL")
             null_count = cursor.fetchone()[0]
             if null_count > 0:
-                logger.error(f"Found {null_count} NULL usernames in users_v2")
+                logger.error(f"Found {null_count} NULL usernames in users")
                 return False
 
-            cursor.execute("SELECT COUNT(*) FROM projects_v2 WHERE project_id IS NULL")
+            cursor.execute("SELECT COUNT(*) FROM projects WHERE project_id IS NULL")
             null_count = cursor.fetchone()[0]
             if null_count > 0:
-                logger.error(f"Found {null_count} NULL project_ids in projects_v2")
+                logger.error(f"Found {null_count} NULL project_ids in projects")
                 return False
 
             logger.info("✓ Validation checks passed")

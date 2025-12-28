@@ -14,7 +14,7 @@ from collections import deque
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.responses import StreamingResponse
 
-from socratic_system.database import ProjectDatabaseV2
+from socratic_system.database import ProjectDatabase
 from socrates_api.models import SuccessResponse, ErrorResponse
 
 logger = logging.getLogger(__name__)
@@ -25,13 +25,13 @@ _event_queue = deque(maxlen=1000)
 _event_subscribers = []  # List of async queues for streaming clients
 
 
-def get_database() -> ProjectDatabaseV2:
+def get_database() -> ProjectDatabase:
     """Get database instance."""
     from pathlib import Path
     import os
     data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
     db_path = os.path.join(data_dir, "projects.db")
-    return ProjectDatabaseV2(db_path)
+    return ProjectDatabase(db_path)
 
 
 def record_event(event_type: str, data: dict = None, user_id: str = None) -> None:
@@ -73,7 +73,7 @@ async def get_event_history(
     limit: Optional[int] = 100,
     offset: Optional[int] = 0,
     event_type: Optional[str] = None,
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get historical events from the API.
@@ -131,7 +131,7 @@ async def get_event_history(
     },
 )
 async def stream_events(
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Stream events as they occur (Server-Sent Events).

@@ -25,7 +25,7 @@ from socrates_api.routers.skills import router as skills_router
 from socrates_api.routers.progress import router as progress_router
 from socrates_api.routers.system import router as system_router
 from socrates_api.routers.nlu import router as nlu_router
-from socrates_api.routers.presession import router as presession_router
+from socrates_api.routers.free_session import router as free_session_router
 from socrates_api.routers.chat_sessions import router as chat_sessions_router
 
 __all__ = [
@@ -51,6 +51,6 @@ __all__ = [
     "progress_router",
     "system_router",
     "nlu_router",
-    "presession_router",
+    "free_session_router",
     "chat_sessions_router",
 ]

@@ -77,14 +77,14 @@ export const ChatPage: React.FC = () => {
   const [isSwitchingProject, setIsSwitchingProject] = React.useState(false);
 
   // Pre-session NLU chat state
-  const [preSessionInput, setPreSessionInput] = React.useState('');
-  const [preSessionResponses, setPreSessionResponses] = React.useState<Array<{ role: 'user' | 'assistant'; content: string; type?: 'command' | 'suggestion' | 'message' }>>([]);
+  const [freeSessionInput, setFreeSessionInput] = React.useState('');
+  const [freeSessionResponses, setFreeSessionResponses] = React.useState<Array<{ role: 'user' | 'assistant'; content: string; type?: 'command' | 'suggestion' | 'message' }>>([]);
   const [isInterpretingNLU, setIsInterpretingNLU] = React.useState(false);
 
   // Refs for auto-scroll
   const messagesContainerRef = React.useRef<HTMLDivElement>(null);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
-  const preSessionEndRef = React.useRef<HTMLDivElement>(null);
+  const freeSessionEndRef = React.useRef<HTMLDivElement>(null);
 
   // Load projects list on mount
   React.useEffect(() => {
@@ -102,9 +102,9 @@ export const ChatPage: React.FC = () => {
   React.useEffect(() => {
     if (selectedProjectId) {
       getProject(selectedProjectId);
-      loadHistory(selectedProjectId);
-      // Load the first question if no messages exist
+      // Load the first question if no messages exist (before loading history)
       loadInitialQuestion(selectedProjectId);
+      loadHistory(selectedProjectId);
     }
   }, [selectedProjectId, getProject, loadHistory]);
 
@@ -129,21 +129,21 @@ export const ChatPage: React.FC = () => {
 
   // Auto-scroll for pre-session messages
   React.useEffect(() => {
-    preSessionEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [preSessionResponses.length]);
+    freeSessionEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [freeSessionResponses.length]);
 
   /**
    * Handle pre-session input with NLU command interpretation
    * Uses NLU system to interpret commands and natural language
    */
-  const handlePreSessionInput = async () => {
-    if (!preSessionInput.trim()) return;
+  const handleFreeSessionInput = async () => {
+    if (!freeSessionInput.trim()) return;
 
-    const userInput = preSessionInput.trim();
+    const userInput = freeSessionInput.trim();
 
     // Add user message
-    setPreSessionResponses(prev => [...prev, { role: 'user', content: userInput }]);
-    setPreSessionInput('');
+    setFreeSessionResponses(prev => [...prev, { role: 'user', content: userInput }]);
+    setFreeSessionInput('');
 
     setIsInterpretingNLU(true);
     try {
@@ -160,7 +160,7 @@ export const ChatPage: React.FC = () => {
           .slice(0, 3)
           .map((s, i) => `${i + 1}. \`${s.command}\` (${Math.round(s.confidence * 100)}%) - ${s.reasoning}`)
           .join('\n');
-        setPreSessionResponses(prev => [...prev, {
+        setFreeSessionResponses(prev => [...prev, {
           role: 'assistant',
           content: `I found a few possibilities:\n\n${suggestionText}\n\nTry typing one of these commands or rephrase your question!`,
           type: 'suggestion'
@@ -172,7 +172,7 @@ export const ChatPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Pre-session input error:', error);
-      setPreSessionResponses(prev => [...prev, {
+      setFreeSessionResponses(prev => [...prev, {
         role: 'assistant',
         content: "Sorry, I encountered an error. Please try again.",
         type: 'message'
@@ -189,7 +189,7 @@ export const ChatPage: React.FC = () => {
     console.log('[Pre-Session] Executing NLU command:', command);
 
     // Show command being executed
-    setPreSessionResponses(prev => [...prev, {
+    setFreeSessionResponses(prev => [...prev, {
       role: 'assistant',
       content: `Understood! Executing: \`${command}\``,
       type: 'command'
@@ -201,30 +201,30 @@ export const ChatPage: React.FC = () => {
     const baseCmd = cmdParts[0]; // e.g., '/help', '/docs', '/subscription'
 
     // Commands that can be handled in pre-session (no project required)
-    const preSessionCommands = [
+    const freeSessionCommands = [
       '/help', '/info', '/docs', '/status', '/debug', '/menu', '/clear',
       '/exit', '/back', '/model', '/mode', '/nlu', '/subscription'
     ];
 
     // Check if this is a pre-session compatible command
-    const isPreSessionCommand = preSessionCommands.includes(baseCmd);
+    const isFreeSessionCommand = freeSessionCommands.includes(baseCmd);
 
-    if (isPreSessionCommand) {
+    if (isFreeSessionCommand) {
       // Handle pre-session commands
       if (baseCmd === '/help') {
-        handlePreSessionCommand('/help');
+        handleFreeSessionCommand('/help');
       } else if (baseCmd === '/info') {
-        handlePreSessionCommand('/info');
+        handleFreeSessionCommand('/info');
       } else if (baseCmd === '/docs') {
-        await handlePreSessionCommand(command);
+        await handleFreeSessionCommand(command);
       } else if (baseCmd === '/status') {
-        handlePreSessionCommand('/status');
+        handleFreeSessionCommand('/status');
       } else if (baseCmd === '/subscription') {
         // Handle subscription commands (e.g., /subscription testing-mode on/off)
-        await handlePreSessionSubscriptionCommand(command);
+        await handleFreeSessionSubscriptionCommand(command);
       } else {
         // For other pre-session commands, show a generic message
-        setPreSessionResponses(prev => [...prev, {
+        setFreeSessionResponses(prev => [...prev, {
           role: 'assistant',
           content: `Command \`${command}\` has been recognized. This feature may require project context or additional setup.`,
           type: 'message'
@@ -232,7 +232,7 @@ export const ChatPage: React.FC = () => {
       }
     } else {
       // Commands that require a project
-      setPreSessionResponses(prev => [...prev, {
+      setFreeSessionResponses(prev => [...prev, {
         role: 'assistant',
         content: `This command requires an active project or workspace. Create or select a project to use this feature!`,
         type: 'message'
@@ -240,7 +240,7 @@ export const ChatPage: React.FC = () => {
     }
   };
 
-  const handlePreSessionSubscriptionCommand = async (command: string) => {
+  const handleFreeSessionSubscriptionCommand = async (command: string) => {
     // Import subscription store to update testing mode
     const { setTestingMode } = useSubscriptionStore.getState();
 
@@ -262,21 +262,21 @@ export const ChatPage: React.FC = () => {
         // Update the store to reflect testing mode change
         setTestingMode(enabled);
 
-        setPreSessionResponses(prev => [...prev, {
+        setFreeSessionResponses(prev => [...prev, {
           role: 'assistant',
           content: message,
           type: 'message'
         }]);
       } catch (error) {
         console.error('Subscription command error:', error);
-        setPreSessionResponses(prev => [...prev, {
+        setFreeSessionResponses(prev => [...prev, {
           role: 'assistant',
           content: `Failed to execute subscription command. Please try again.`,
           type: 'message'
         }]);
       }
     } else {
-      setPreSessionResponses(prev => [...prev, {
+      setFreeSessionResponses(prev => [...prev, {
         role: 'assistant',
         content: `Usage: /subscription testing-mode [on|off]`,
         type: 'message'
@@ -290,7 +290,7 @@ export const ChatPage: React.FC = () => {
   const handleFreeFormQuestion = async (question: string) => {
     try {
       const response = await apiClient.post<any>(
-        '/presession/ask',
+        '/free_session/ask',
         {
           question,
           context: {}
@@ -299,13 +299,13 @@ export const ChatPage: React.FC = () => {
 
       const result = response.data;
       if (result?.answer) {
-        setPreSessionResponses(prev => [...prev, {
+        setFreeSessionResponses(prev => [...prev, {
           role: 'assistant',
           content: result.answer,
           type: 'message'
         }]);
       } else {
-        setPreSessionResponses(prev => [...prev, {
+        setFreeSessionResponses(prev => [...prev, {
           role: 'assistant',
           content: "I couldn't process that question. Please try again or use a command like /help.",
           type: 'message'
@@ -313,7 +313,7 @@ export const ChatPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Free-form question error:', error);
-      setPreSessionResponses(prev => [...prev, {
+      setFreeSessionResponses(prev => [...prev, {
         role: 'assistant',
         content: "Sorry, I encountered an error. Please try again.",
         type: 'message'
@@ -321,7 +321,7 @@ export const ChatPage: React.FC = () => {
     }
   };
 
-  const handlePreSessionCommand = async (command: string) => {
+  const handleFreeSessionCommand = async (command: string) => {
     const parts = command.split(' ');
     const cmd = parts[0].toLowerCase();
     const args = parts.slice(1).join(' ');
@@ -357,7 +357,7 @@ export const ChatPage: React.FC = () => {
 
           helpText += `**Or just type a question** to chat with Claude about anything!`;
 
-          setPreSessionResponses(prev => [...prev, {
+          setFreeSessionResponses(prev => [...prev, {
             role: 'assistant',
             content: helpText,
             type: 'command'
@@ -372,7 +372,7 @@ export const ChatPage: React.FC = () => {
             `**/status** - Show system status\n` +
             `**/subscription testing-mode [on|off]** - Toggle testing mode\n\n` +
             `**Or just type a question** to chat with Claude about anything!`;
-          setPreSessionResponses(prev => [...prev, {
+          setFreeSessionResponses(prev => [...prev, {
             role: 'assistant',
             content: fallbackHelp,
             type: 'command'
@@ -395,7 +395,7 @@ export const ChatPage: React.FC = () => {
           `- Ask questions to explore\n` +
           `- Use /docs to learn more\n` +
           `- Create a project for guided learning`;
-        setPreSessionResponses(prev => [...prev, {
+        setFreeSessionResponses(prev => [...prev, {
           role: 'assistant',
           content: infoText,
           type: 'command'
@@ -410,7 +410,7 @@ export const ChatPage: React.FC = () => {
           const docQuestion = `Provide a brief guide on: ${topic}. Focus on key features and how to use it.`;
 
           const response = await apiClient.post<any>(
-            '/presession/ask',
+            '/free_session/ask',
             {
               question: docQuestion,
               context: {}
@@ -419,13 +419,13 @@ export const ChatPage: React.FC = () => {
 
           const result = response.data;
           if (result?.answer) {
-            setPreSessionResponses(prev => [...prev, {
+            setFreeSessionResponses(prev => [...prev, {
               role: 'assistant',
               content: result.answer,
               type: 'message'
             }]);
           } else {
-            setPreSessionResponses(prev => [...prev, {
+            setFreeSessionResponses(prev => [...prev, {
               role: 'assistant',
               content: `Could not retrieve documentation for "${topic}". Try asking a question instead!`,
               type: 'command'
@@ -433,7 +433,7 @@ export const ChatPage: React.FC = () => {
           }
         } catch (error) {
           console.error('Docs error:', error);
-          setPreSessionResponses(prev => [...prev, {
+          setFreeSessionResponses(prev => [...prev, {
             role: 'assistant',
             content: `Error retrieving documentation. Please try again.`,
             type: 'command'
@@ -444,7 +444,7 @@ export const ChatPage: React.FC = () => {
         break;
 
       case '/status':
-        setPreSessionResponses(prev => [...prev, {
+        setFreeSessionResponses(prev => [...prev, {
           role: 'assistant',
           content: `The /status command requires an active project. Create or select a project to see its status.`,
           type: 'command'
@@ -452,7 +452,7 @@ export const ChatPage: React.FC = () => {
         break;
 
       default:
-        setPreSessionResponses(prev => [...prev, {
+        setFreeSessionResponses(prev => [...prev, {
           role: 'assistant',
           content: `Unknown command: \`${cmd}\`. Type /help for available commands.`,
           type: 'command'
@@ -1486,7 +1486,7 @@ User: ${currentProject?.owner || 'N/A'}`;
               className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900"
               ref={messagesContainerRef}
             >
-              {preSessionResponses.length === 0 ? (
+              {freeSessionResponses.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center text-gray-500 dark:text-gray-400">
                     <MessageSquare className="mx-auto mb-4 text-gray-400" size={48} />
@@ -1495,7 +1495,7 @@ User: ${currentProject?.owner || 'N/A'}`;
                   </div>
                 </div>
               ) : (
-                preSessionResponses.map((msg, idx) => (
+                freeSessionResponses.map((msg, idx) => (
                   <div
                     key={idx}
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -1512,7 +1512,7 @@ User: ${currentProject?.owner || 'N/A'}`;
                   </div>
                 ))
               )}
-              <div ref={preSessionEndRef} />
+              <div ref={freeSessionEndRef} />
             </div>
 
             {/* Pre-Session Input Area */}
@@ -1520,12 +1520,12 @@ User: ${currentProject?.owner || 'N/A'}`;
               <div className="flex gap-2">
                 <input
                   type="text"
-                  value={preSessionInput}
-                  onChange={(e) => setPreSessionInput(e.target.value)}
+                  value={freeSessionInput}
+                  onChange={(e) => setFreeSessionInput(e.target.value)}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
-                      handlePreSessionInput();
+                      handleFreeSessionInput();
                     }
                   }}
                   disabled={isInterpretingNLU}
@@ -1533,8 +1533,8 @@ User: ${currentProject?.owner || 'N/A'}`;
                   className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
                 />
                 <button
-                  onClick={handlePreSessionInput}
-                  disabled={isInterpretingNLU || !preSessionInput.trim()}
+                  onClick={handleFreeSessionInput}
+                  disabled={isInterpretingNLU || !freeSessionInput.trim()}
                   className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {isInterpretingNLU ? (

@@ -30,7 +30,7 @@ from socratic_system.utils.datetime_helpers import deserialize_datetime, seriali
 logger = logging.getLogger("socrates.database.v2")
 
 
-class ProjectDatabaseV2:
+class ProjectDatabase:
     """
     Version 2 database implementation using normalized schema.
     Replaces pickle-based storage with queryable columns and separate tables.
@@ -77,7 +77,7 @@ class ProjectDatabaseV2:
 
             # Test if V2 tables exist
             cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='projects_v2'"
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='projects'"
             )
             if cursor.fetchone():
                 self.logger.info("V2 schema already exists (foreign keys enabled)")
@@ -188,7 +188,7 @@ class ProjectDatabaseV2:
             counts["team_members"] = cursor.fetchone()[0]
 
             cursor.execute(
-                "SELECT COUNT(*) FROM project_notes_v2 WHERE project_id = ?", (project_id,)
+                "SELECT COUNT(*) FROM project_notes WHERE project_id = ?", (project_id,)
             )
             counts["notes"] = cursor.fetchone()[0]
 
@@ -232,7 +232,7 @@ class ProjectDatabaseV2:
             # Insert or replace main project record
             cursor.execute(
                 """
-                INSERT OR REPLACE INTO projects_v2 (
+                INSERT OR REPLACE INTO projects (
                     project_id, name, owner, phase, project_type,
                     team_structure, language_preferences, deployment_target,
                     code_style, chat_mode, goals, status, progress,
@@ -406,7 +406,7 @@ class ProjectDatabaseV2:
 
         try:
             # Load main project record
-            cursor.execute("SELECT * FROM projects_v2 WHERE project_id = ?", (project_id,))
+            cursor.execute("SELECT * FROM projects WHERE project_id = ?", (project_id,))
             row = cursor.fetchone()
 
             if not row:
@@ -502,7 +502,7 @@ class ProjectDatabaseV2:
 
             cursor.execute(
                 f"""
-                SELECT * FROM projects_v2 {where_clause}
+                SELECT * FROM projects {where_clause}
                 ORDER BY updated_at DESC
             """,
                 (username,),
@@ -513,7 +513,7 @@ class ProjectDatabaseV2:
             # Query collaborated projects
             cursor.execute(
                 """
-                SELECT DISTINCT p.* FROM projects_v2 p
+                SELECT DISTINCT p.* FROM projects p
                 INNER JOIN team_members t ON p.project_id = t.project_id
                 WHERE t.username = ?
             """,
@@ -571,7 +571,7 @@ class ProjectDatabaseV2:
             cascade_counts = self._get_cascade_delete_counts(cursor, project_id)
 
             # Delete the project (cascade deletes will occur automatically)
-            cursor.execute("DELETE FROM projects_v2 WHERE project_id = ?", (project_id,))
+            cursor.execute("DELETE FROM projects WHERE project_id = ?", (project_id,))
             conn.commit()
 
             deleted = cursor.rowcount > 0
@@ -613,7 +613,7 @@ class ProjectDatabaseV2:
         try:
             cursor.execute(
                 """
-                UPDATE projects_v2
+                UPDATE projects
                 SET is_archived = 1, archived_at = ?, status = 'archived'
                 WHERE project_id = ?
             """,
@@ -650,7 +650,7 @@ class ProjectDatabaseV2:
         try:
             cursor.execute(
                 """
-                UPDATE projects_v2
+                UPDATE projects
                 SET is_archived = 0, archived_at = NULL, status = 'active'
                 WHERE project_id = ?
             """,
@@ -767,7 +767,7 @@ class ProjectDatabaseV2:
     # PRE-SESSION CONVERSATIONS (before project selection)
     # ========================================================================
 
-    def save_presession_message(
+    def save_free_session_message(
         self,
         username: str,
         session_id: str,
@@ -776,7 +776,7 @@ class ProjectDatabaseV2:
         metadata: Optional[Dict] = None,
     ) -> None:
         """
-        Save a single message to presession conversation history.
+        Save a single message to free_session conversation history.
 
         Args:
             username: User who created the message
@@ -791,7 +791,7 @@ class ProjectDatabaseV2:
         try:
             cursor.execute(
                 """
-                INSERT INTO presession_conversations
+                INSERT INTO free_session_conversations
                 (username, session_id, message_type, content, timestamp, metadata)
                 VALUES (?, ?, ?, ?, ?, ?)
             """,
@@ -808,17 +808,17 @@ class ProjectDatabaseV2:
         except Exception as e:
             conn.rollback()
             self.logger.error(
-                f"Error saving presession message for {username} in session {session_id}: {e}"
+                f"Error saving free_session message for {username} in session {session_id}: {e}"
             )
             raise
         finally:
             conn.close()
 
-    def get_presession_conversation(
+    def get_free_session_conversation(
         self, username: str, session_id: str, limit: int = 50
     ) -> List[Dict]:
         """
-        Load presession conversation history for a specific session.
+        Load free_session conversation history for a specific session.
 
         Args:
             username: Username to filter by
@@ -835,7 +835,7 @@ class ProjectDatabaseV2:
         try:
             cursor.execute(
                 """
-                SELECT * FROM presession_conversations
+                SELECT * FROM free_session_conversations
                 WHERE username = ? AND session_id = ?
                 ORDER BY timestamp ASC, rowid ASC
                 LIMIT ?
@@ -860,15 +860,15 @@ class ProjectDatabaseV2:
 
         except Exception as e:
             self.logger.error(
-                f"Error loading presession conversation for {username} session {session_id}: {e}"
+                f"Error loading free_session conversation for {username} session {session_id}: {e}"
             )
             return []
         finally:
             conn.close()
 
-    def get_presession_sessions(self, username: str, limit: int = 20) -> List[Dict]:
+    def get_free_session_sessions(self, username: str, limit: int = 20) -> List[Dict]:
         """
-        Get list of presession sessions for a user.
+        Get list of free_session sessions for a user.
 
         Args:
             username: Username to filter by
@@ -891,7 +891,7 @@ class ProjectDatabaseV2:
                     COUNT(*) as message_count,
                     SUM(CASE WHEN message_type = 'user' THEN 1 ELSE 0 END) as user_messages,
                     SUM(CASE WHEN message_type = 'assistant' THEN 1 ELSE 0 END) as assistant_messages
-                FROM presession_conversations
+                FROM free_session_conversations
                 WHERE username = ?
                 GROUP BY session_id
                 ORDER BY MAX(timestamp) DESC
@@ -918,14 +918,14 @@ class ProjectDatabaseV2:
             return sessions
 
         except Exception as e:
-            self.logger.error(f"Error loading presession sessions for {username}: {e}")
+            self.logger.error(f"Error loading free_session sessions for {username}: {e}")
             return []
         finally:
             conn.close()
 
-    def delete_presession_session(self, username: str, session_id: str) -> bool:
+    def delete_free_session_session(self, username: str, session_id: str) -> bool:
         """
-        Delete a presession session and all its messages.
+        Delete a free_session session and all its messages.
 
         Args:
             username: Username (for authorization check)
@@ -940,30 +940,30 @@ class ProjectDatabaseV2:
         try:
             # Verify ownership by checking if session exists for this user
             cursor.execute(
-                "SELECT COUNT(*) as count FROM presession_conversations WHERE username = ? AND session_id = ?",
+                "SELECT COUNT(*) as count FROM free_session_conversations WHERE username = ? AND session_id = ?",
                 (username, session_id),
             )
             if cursor.fetchone()["count"] == 0:
                 self.logger.warning(
-                    f"Presession session {session_id} not found for user {username}"
+                    f"free-session session {session_id} not found for user {username}"
                 )
                 return False
 
             # Delete all messages in session
             cursor.execute(
-                "DELETE FROM presession_conversations WHERE username = ? AND session_id = ?",
+                "DELETE FROM free_session_conversations WHERE username = ? AND session_id = ?",
                 (username, session_id),
             )
             conn.commit()
             self.logger.info(
-                f"Deleted presession session {session_id} for user {username}"
+                f"Deleted free_session session {session_id} for user {username}"
             )
             return True
 
         except Exception as e:
             conn.rollback()
             self.logger.error(
-                f"Error deleting presession session {session_id} for {username}: {e}"
+                f"Error deleting free_session session {session_id} for {username}: {e}"
             )
             return False
         finally:
@@ -984,7 +984,7 @@ class ProjectDatabaseV2:
 
             cursor.execute(
                 """
-                INSERT OR REPLACE INTO users_v2 (
+                INSERT OR REPLACE INTO users (
                     username, email, passcode_hash, subscription_tier, subscription_status,
                     subscription_start, subscription_end, testing_mode, created_at,
                     claude_auth_method
@@ -1020,7 +1020,7 @@ class ProjectDatabaseV2:
         cursor = conn.cursor()
 
         try:
-            cursor.execute("SELECT * FROM users_v2 WHERE username = ?", (username,))
+            cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
             row = cursor.fetchone()
 
             if not row:
@@ -1057,7 +1057,7 @@ class ProjectDatabaseV2:
         cursor = conn.cursor()
 
         try:
-            cursor.execute("SELECT * FROM users_v2 WHERE email = ?", (email,))
+            cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
             row = cursor.fetchone()
 
             if not row:
@@ -1105,7 +1105,7 @@ class ProjectDatabaseV2:
             cursor.execute(
                 """
                 SELECT id, user_id, provider, config_data, created_at, updated_at
-                FROM llm_provider_configs_v2
+                FROM llm_provider_configs
                 WHERE user_id = ?
                 ORDER BY created_at DESC
             """,
@@ -1161,7 +1161,7 @@ class ProjectDatabaseV2:
             cursor.execute(
                 """
                 SELECT id, user_id, provider, config_data, created_at, updated_at
-                FROM llm_provider_configs_v2
+                FROM llm_provider_configs
                 WHERE user_id = ? AND provider = ?
             """,
                 (user_id, provider),
@@ -1216,7 +1216,7 @@ class ProjectDatabaseV2:
 
             cursor.execute(
                 """
-                INSERT OR REPLACE INTO llm_provider_configs_v2
+                INSERT OR REPLACE INTO llm_provider_configs
                 (id, user_id, provider, config_data, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?)
             """,
@@ -1263,7 +1263,7 @@ class ProjectDatabaseV2:
 
             cursor.execute(
                 """
-                INSERT OR REPLACE INTO api_keys_v2
+                INSERT OR REPLACE INTO api_keys
                 (id, user_id, provider, encrypted_key, key_hash, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
@@ -1307,7 +1307,7 @@ class ProjectDatabaseV2:
         try:
             cursor.execute(
                 """
-                SELECT encrypted_key FROM api_keys_v2
+                SELECT encrypted_key FROM api_keys
                 WHERE user_id = ? AND provider = ?
                 ORDER BY updated_at DESC
                 LIMIT 1
@@ -1343,7 +1343,7 @@ class ProjectDatabaseV2:
         try:
             cursor.execute(
                 """
-                DELETE FROM api_keys_v2
+                DELETE FROM api_keys
                 WHERE user_id = ? AND provider = ?
             """,
                 (user_id, provider),
@@ -1393,7 +1393,7 @@ class ProjectDatabaseV2:
 
             cursor.execute(
                 """
-                INSERT OR REPLACE INTO knowledge_documents_v2
+                INSERT OR REPLACE INTO knowledge_documents
                 (id, project_id, user_id, title, content, source, document_type, uploaded_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -1430,7 +1430,7 @@ class ProjectDatabaseV2:
         cursor = conn.cursor()
 
         try:
-            cursor.execute("SELECT 1 FROM users_v2 WHERE username = ?", (username,))
+            cursor.execute("SELECT 1 FROM users WHERE username = ?", (username,))
             result = cursor.fetchone()
             return result is not None
         finally:
@@ -1453,7 +1453,7 @@ class ProjectDatabaseV2:
                 cursor = conn.cursor()
 
                 cursor.execute(
-                    "UPDATE projects_v2 SET is_archived = 1, updated_at = ? WHERE owner = ? AND is_archived = 0",
+                    "UPDATE projects SET is_archived = 1, updated_at = ? WHERE owner = ? AND is_archived = 0",
                     (serialize_datetime(datetime.now()), username),
                 )
                 conn.commit()
@@ -1490,11 +1490,11 @@ class ProjectDatabaseV2:
 
         try:
             # Delete user and all associated data
-            cursor.execute("DELETE FROM users_v2 WHERE username = ?", (username,))
-            cursor.execute("DELETE FROM question_effectiveness_v2 WHERE user_id = ?", (username,))
-            cursor.execute("DELETE FROM behavior_patterns_v2 WHERE user_id = ?", (username,))
-            cursor.execute("DELETE FROM llm_usage_v2 WHERE user_id = ?", (username,))
-            cursor.execute("DELETE FROM knowledge_documents_v2 WHERE user_id = ?", (username,))
+            cursor.execute("DELETE FROM users WHERE username = ?", (username,))
+            cursor.execute("DELETE FROM question_effectiveness WHERE user_id = ?", (username,))
+            cursor.execute("DELETE FROM behavior_patterns WHERE user_id = ?", (username,))
+            cursor.execute("DELETE FROM llm_usage WHERE user_id = ?", (username,))
+            cursor.execute("DELETE FROM knowledge_documents WHERE user_id = ?", (username,))
 
             conn.commit()
             self.logger.debug(f"Permanently deleted user {username}")
@@ -1539,7 +1539,7 @@ class ProjectDatabaseV2:
 
             cursor.execute(
                 """
-                INSERT OR REPLACE INTO question_effectiveness_v2
+                INSERT OR REPLACE INTO question_effectiveness
                 (id, user_id, question_template_id, effectiveness_score, times_asked,
                  times_answered_well, last_asked_at, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1582,7 +1582,7 @@ class ProjectDatabaseV2:
                 """
                 SELECT id, user_id, question_template_id, effectiveness_score, times_asked,
                        times_answered_well, last_asked_at, created_at, updated_at
-                FROM question_effectiveness_v2
+                FROM question_effectiveness
                 WHERE user_id = ? AND question_template_id = ?
             """,
                 (user_id, question_template_id),
@@ -1625,7 +1625,7 @@ class ProjectDatabaseV2:
 
         try:
             cursor.execute(
-                "SELECT effectiveness_json FROM question_effectiveness_v2 WHERE user_id = ?",
+                "SELECT effectiveness_json FROM question_effectiveness WHERE user_id = ?",
                 (user_id,),
             )
             results = cursor.fetchall()
@@ -1672,7 +1672,7 @@ class ProjectDatabaseV2:
 
             cursor.execute(
                 """
-                INSERT OR REPLACE INTO behavior_patterns_v2
+                INSERT OR REPLACE INTO behavior_patterns
                 (id, user_id, pattern_type, pattern_data, frequency, learned_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
@@ -1708,7 +1708,7 @@ class ProjectDatabaseV2:
         try:
             cursor.execute(
                 """
-                SELECT pattern_json FROM behavior_patterns_v2
+                SELECT pattern_json FROM behavior_patterns
                 WHERE user_id = ? AND pattern_type = ?
             """,
                 (user_id, pattern_type),
@@ -1740,7 +1740,7 @@ class ProjectDatabaseV2:
 
         try:
             cursor.execute(
-                "SELECT pattern_json FROM behavior_patterns_v2 WHERE user_id = ?",
+                "SELECT pattern_json FROM behavior_patterns WHERE user_id = ?",
                 (user_id,),
             )
             results = cursor.fetchall()
@@ -1781,7 +1781,7 @@ class ProjectDatabaseV2:
         cursor = conn.cursor()
 
         try:
-            cursor.execute("DELETE FROM project_notes_v2 WHERE note_id = ?", (note_id,))
+            cursor.execute("DELETE FROM project_notes WHERE note_id = ?", (note_id,))
             conn.commit()
             self.logger.debug(f"Deleted note {note_id}")
             return True
@@ -1805,7 +1805,7 @@ class ProjectDatabaseV2:
             cursor.execute(
                 """
                 SELECT note_id, project_id, title, content, created_at
-                FROM project_notes_v2
+                FROM project_notes
                 WHERE project_id = ? AND (title LIKE ? OR content LIKE ?)
                 ORDER BY created_at DESC
             """,
@@ -1847,7 +1847,7 @@ class ProjectDatabaseV2:
             cursor.execute(
                 """
                 SELECT id, project_id, user_id, title, content, source, document_type, uploaded_at
-                FROM knowledge_documents_v2
+                FROM knowledge_documents
                 WHERE id = ?
             """,
                 (doc_id,),
@@ -1883,7 +1883,7 @@ class ProjectDatabaseV2:
             cursor.execute(
                 """
                 SELECT id, project_id, user_id, title, content, source, document_type, uploaded_at
-                FROM knowledge_documents_v2
+                FROM knowledge_documents
                 WHERE project_id = ?
                 ORDER BY created_at DESC
             """,
@@ -1920,7 +1920,7 @@ class ProjectDatabaseV2:
 
         try:
             cursor.execute(
-                "DELETE FROM knowledge_documents_v2 WHERE id = ?",
+                "DELETE FROM knowledge_documents WHERE id = ?",
                 (doc_id,)
             )
             conn.commit()
@@ -1941,7 +1941,7 @@ class ProjectDatabaseV2:
                 """
                 SELECT id, project_id, user_id, title, content, source,
                        document_type, uploaded_at
-                FROM knowledge_documents_v2
+                FROM knowledge_documents
                 WHERE user_id = ?
                 ORDER BY uploaded_at DESC
                 """,
@@ -1985,7 +1985,7 @@ class ProjectDatabaseV2:
 
             cursor.execute(
                 """
-                INSERT INTO llm_usage_v2
+                INSERT INTO llm_usage
                 (id, user_id, provider, model, usage_json, timestamp, cost)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
@@ -2023,7 +2023,7 @@ class ProjectDatabaseV2:
             cursor.execute(
                 """
                 SELECT id, user_id, provider, model, usage_json, timestamp, cost
-                FROM llm_usage_v2
+                FROM llm_usage
                 WHERE user_id = ? AND provider = ? AND timestamp >= ?
                 ORDER BY timestamp DESC
             """,
@@ -2069,7 +2069,7 @@ class ProjectDatabaseV2:
                 cursor.execute(
                     """
                     SELECT project_id, name, owner, phase, updated_at
-                    FROM projects_v2
+                    FROM projects
                     WHERE is_archived = 1
                     ORDER BY updated_at DESC
                 """
@@ -2091,7 +2091,7 @@ class ProjectDatabaseV2:
                 cursor.execute(
                     """
                     SELECT username, created_at
-                    FROM users_v2
+                    FROM users
                     WHERE is_archived = 1
                     ORDER BY created_at DESC
                 """
@@ -2126,7 +2126,7 @@ class ProjectDatabaseV2:
         try:
             cursor.execute(
                 """
-                UPDATE llm_provider_configs_v2
+                UPDATE llm_provider_configs
                 SET is_default = 0
                 WHERE user_id = ? AND provider != ?
             """,
@@ -2158,7 +2158,7 @@ class ProjectDatabaseV2:
 
             cursor.execute(
                 """
-                INSERT OR REPLACE INTO llm_provider_configs_v2
+                INSERT OR REPLACE INTO llm_provider_configs
                 (id, user_id, provider, config_data, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?)
             """,
@@ -2195,7 +2195,7 @@ class ProjectDatabaseV2:
 
             cursor.execute(
                 """
-                INSERT OR REPLACE INTO api_keys_v2
+                INSERT OR REPLACE INTO api_keys
                 (id, user_id, provider, encrypted_key, key_hash, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
@@ -2413,7 +2413,7 @@ class ProjectDatabaseV2:
         try:
             cursor.execute(
                 """
-                INSERT OR REPLACE INTO project_notes_v2 (
+                INSERT OR REPLACE INTO project_notes (
                     note_id, project_id, title, content, created_at, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?)
             """,
@@ -2448,7 +2448,7 @@ class ProjectDatabaseV2:
         try:
             cursor.execute(
                 """
-                SELECT * FROM project_notes_v2
+                SELECT * FROM project_notes
                 WHERE project_id = ?
                 ORDER BY created_at DESC
             """,

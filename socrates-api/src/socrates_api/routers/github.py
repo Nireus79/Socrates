@@ -9,7 +9,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, status, Depends
 
-from socratic_system.database import ProjectDatabaseV2
+from socratic_system.database import ProjectDatabase
 from socrates_api.auth import get_current_user
 from socrates_api.models import (
     SuccessResponse,
@@ -21,13 +21,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/github", tags=["github"])
 
 
-def get_database() -> ProjectDatabaseV2:
+def get_database() -> ProjectDatabase:
     """Get database instance."""
     import os
     from pathlib import Path
     data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
     db_path = os.path.join(data_dir, "projects.db")
-    return ProjectDatabaseV2(db_path)
+    return ProjectDatabase(db_path)
 
 
 @router.post(
@@ -45,7 +45,7 @@ def get_database() -> ProjectDatabaseV2:
 async def import_repository(
     request: GitHubImportRequest,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Import a GitHub repository as a new project.
@@ -187,7 +187,7 @@ async def import_repository(
 async def pull_changes(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Pull latest changes from GitHub repository.
@@ -258,7 +258,7 @@ async def push_changes(
     project_id: str,
     commit_message: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Push local changes to GitHub repository.
@@ -334,7 +334,7 @@ async def sync_project(
     project_id: str,
     commit_message: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Sync project with GitHub (pull latest changes, then push local changes).
@@ -412,7 +412,7 @@ async def sync_project(
 async def get_sync_status(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get GitHub sync status for a project.
@@ -583,7 +583,7 @@ async def push_github_changes(
 )
 async def get_github_status(
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get GitHub sync status for all projects.

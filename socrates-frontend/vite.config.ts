@@ -9,5 +9,7 @@ export default defineConfig({
   server: {
     // Development server configuration
     middlewareMode: false,
+    port: parseInt(process.env.PORT || '5173', 10),
+    host: '127.0.0.1',
   },
 })

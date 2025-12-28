@@ -36,7 +36,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Query
 if TYPE_CHECKING:
     import socrates
 
-from socratic_system.database import ProjectDatabaseV2
+from socratic_system.database import ProjectDatabase
 from socratic_system.models import ProjectContext
 from socratic_system.utils.id_generator import ProjectIDGenerator
 from socrates_api.database import get_database
@@ -94,7 +94,7 @@ def _project_to_response(project: ProjectContext) -> ProjectResponse:
 )
 async def list_projects(
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     List all projects for the current user.
@@ -141,7 +141,7 @@ async def list_projects(
 async def create_project(
     request: CreateProjectRequest,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Create a new project for the current user.
@@ -292,7 +292,7 @@ async def create_project(
 async def get_project(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get detailed information about a specific project.
@@ -357,7 +357,7 @@ async def update_project(
     project_id: str,
     request: UpdateProjectRequest,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Update project metadata.
@@ -424,7 +424,7 @@ async def update_project(
 async def delete_project(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Permanently delete a project.
@@ -487,7 +487,7 @@ async def delete_project(
 async def restore_project(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Restore an archived project.
@@ -549,7 +549,7 @@ async def restore_project(
 async def get_project_stats(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get statistics about a project.
@@ -614,7 +614,7 @@ async def get_project_stats(
 async def get_project_maturity(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get maturity assessment for a project.
@@ -676,7 +676,7 @@ async def advance_phase(
     project_id: str,
     new_phase: str = Query(..., description="New phase (discovery, analysis, design, implementation)"),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Advance project to the next phase.
@@ -748,7 +748,7 @@ async def advance_phase(
 async def get_project_analytics(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get detailed analytics for a project.
@@ -850,7 +850,7 @@ async def get_project_analytics(
 async def get_project_files(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get all files in a project.

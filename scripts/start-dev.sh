@@ -102,7 +102,7 @@ print_header "Starting Services"
 
 # Start Backend
 print_info "Starting Backend API (port 8000)..."
-python3 -m uvicorn socratic_system.main:app \
+ENVIRONMENT=development python3 -m uvicorn socrates_api.main:app \
     --host 0.0.0.0 \
     --port 8000 \
     --reload > /tmp/socrates-backend.log 2>&1 &

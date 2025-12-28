@@ -130,7 +130,7 @@ export const NotesPage: React.FC = () => {
                 <div className="space-y-2">
                   {projects.map((project) => (
                     <button
-                      key={project.id}
+                      key={project.project_id || project.id}
                       onClick={() => handleProjectChange(project.id)}
                       className={`w-full text-left px-3 py-2 rounded text-sm font-medium transition-colors ${
                         selectedProjectId === project.id

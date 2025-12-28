@@ -18,7 +18,7 @@ from typing import Optional, List, Dict, Any
 
 from fastapi import APIRouter, HTTPException, status, Depends, Body
 
-from socratic_system.database import ProjectDatabaseV2
+from socratic_system.database import ProjectDatabase
 from socratic_system.models import User
 from socrates_api.database import get_database
 from socrates_api.auth import get_current_user, get_current_user_object, require_project_role
@@ -175,7 +175,7 @@ async def add_collaborator_new(
     request: CollaborationInviteRequest = Body(...),
     current_user: str = Depends(get_current_user),
     user_object: "User" = Depends(get_current_user_object),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Add a collaborator to a project.
@@ -363,7 +363,7 @@ async def add_collaborator_new(
 async def list_collaborators(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     List all collaborators for a project.
@@ -442,7 +442,7 @@ async def update_collaborator_role(
     username: str,
     role: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Update a collaborator's role.
@@ -533,7 +533,7 @@ async def remove_collaborator(
     project_id: str,
     username: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Remove a collaborator from a project.
@@ -625,7 +625,7 @@ async def remove_collaborator(
 async def get_presence(
     project_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get list of currently active collaborators.
@@ -686,7 +686,7 @@ async def record_activity(
     activity_type: str = None,
     activity_data: Optional[dict] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Record user activity in project.
@@ -781,7 +781,7 @@ async def get_activities(
     limit: int = 50,
     offset: int = 0,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get recent activities in a project with pagination.
@@ -858,7 +858,7 @@ async def create_project_invitation(
     project_id: str,
     request: CollaborationInviteRequest = Body(...),
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Create and send an invitation to a collaborator.
@@ -954,7 +954,7 @@ async def get_project_invitations(
     project_id: str,
     status_filter: Optional[str] = None,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     List invitations for a project.
@@ -1013,7 +1013,7 @@ async def accept_invitation(
     token: str,
     current_user: str = Depends(get_current_user),
     user_obj: User = Depends(get_current_user_object),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Accept a collaboration invitation using the invitation token.
@@ -1133,7 +1133,7 @@ async def cancel_invitation(
     project_id: str,
     invitation_id: str,
     current_user: str = Depends(get_current_user),
-    db: ProjectDatabaseV2 = Depends(get_database),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Cancel a pending invitation.

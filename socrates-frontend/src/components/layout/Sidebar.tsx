@@ -130,6 +130,13 @@ export const Sidebar: React.FC = () => {
         className={`fixed left-0 top-16 bottom-0 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 overflow-y-auto transition-transform duration-300 z-20 lg:static lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`.trim()}
+        style={{
+          backgroundImage: 'url(/images/SocratesLogo.png)',
+          backgroundPosition: '0% 100%',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: '100%',
+          backgroundAttachment: 'scroll',
+        }}
       >
         <nav className="p-4 space-y-2">
           {navItems.map((item) => (

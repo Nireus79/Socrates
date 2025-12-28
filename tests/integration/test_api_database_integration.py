@@ -20,7 +20,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 # Mock the FastAPI app since we're testing integration concepts
-from socratic_system.database.project_db_v2 import ProjectDatabaseV2
+from socratic_system.database.project_db_v2 import ProjectDatabase
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.user import User
 
@@ -34,7 +34,7 @@ class TestAuthDatabaseIntegration:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
 
-        db_instance = ProjectDatabaseV2(db_path)
+        db_instance = ProjectDatabase(db_path)
         yield db_instance
 
         if os.path.exists(db_path):
@@ -119,7 +119,7 @@ class TestProjectDatabaseIntegration:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
 
-        db_instance = ProjectDatabaseV2(db_path)
+        db_instance = ProjectDatabase(db_path)
         yield db_instance
 
         if os.path.exists(db_path):
@@ -309,7 +309,7 @@ class TestChatDatabaseIntegration:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
 
-        db_instance = ProjectDatabaseV2(db_path)
+        db_instance = ProjectDatabase(db_path)
         yield db_instance
 
         if os.path.exists(db_path):
@@ -424,7 +424,7 @@ class TestCollaborationDatabaseIntegration:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
 
-        db_instance = ProjectDatabaseV2(db_path)
+        db_instance = ProjectDatabase(db_path)
         yield db_instance
 
         if os.path.exists(db_path):
@@ -526,7 +526,7 @@ class TestPhaseProgressDatabaseIntegration:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
 
-        db_instance = ProjectDatabaseV2(db_path)
+        db_instance = ProjectDatabase(db_path)
         yield db_instance
 
         if os.path.exists(db_path):
@@ -606,7 +606,7 @@ class TestDataConsistency:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
 
-        db_instance = ProjectDatabaseV2(db_path)
+        db_instance = ProjectDatabase(db_path)
         yield db_instance
 
         if os.path.exists(db_path):

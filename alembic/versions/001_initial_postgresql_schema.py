@@ -27,7 +27,7 @@ def upgrade() -> None:
     """Apply schema upgrade to target database."""
     # Users table (base for all other entities)
     op.create_table(
-        'users_v2',
+        'users',
         sa.Column('username', sa.String(255), primary_key=True),
         sa.Column('email', sa.String(255), nullable=False),
         sa.Column('passcode_hash', sa.String(500), nullable=False),
@@ -42,17 +42,17 @@ def upgrade() -> None:
         sa.Column('claude_auth_method', sa.String(50), default='api_key'),
     )
 
-    op.create_index('idx_users_archived', 'users_v2', ['is_archived'])
-    op.create_index('idx_users_subscription_tier', 'users_v2', ['subscription_tier'])
-    op.create_index('idx_users_subscription_status', 'users_v2', ['subscription_status'])
-    op.create_index('idx_users_subscription', 'users_v2', ['subscription_tier', 'subscription_status'])
+    op.create_index('idx_users_archived', 'users', ['is_archived'])
+    op.create_index('idx_users_subscription_tier', 'users', ['subscription_tier'])
+    op.create_index('idx_users_subscription_status', 'users', ['subscription_status'])
+    op.create_index('idx_users_subscription', 'users', ['subscription_tier', 'subscription_status'])
 
     # Projects table with JSONB for flexible data
     op.create_table(
-        'projects_v2',
+        'projects',
         sa.Column('project_id', sa.String(255), primary_key=True),
         sa.Column('name', sa.String(500), nullable=False),
-        sa.Column('owner', sa.String(255), sa.ForeignKey('users_v2.username'), nullable=False),
+        sa.Column('owner', sa.String(255), sa.ForeignKey('users.username'), nullable=False),
         sa.Column('phase', sa.String(50), default='discovery'),
         sa.Column('project_type', sa.String(100), default='software'),
         sa.Column('team_structure', sa.String(50), default='individual'),
@@ -81,20 +81,20 @@ def upgrade() -> None:
     )
 
     # Performance indexes for projects
-    op.create_index('idx_projects_owner', 'projects_v2', ['owner'])
-    op.create_index('idx_projects_phase', 'projects_v2', ['phase'])
-    op.create_index('idx_projects_archived', 'projects_v2', ['is_archived'])
-    op.create_index('idx_projects_updated_desc', 'projects_v2', [sa.desc('updated_at')])
-    op.create_index('idx_projects_owner_archived', 'projects_v2', ['owner', 'is_archived'])
-    op.create_index('idx_projects_status', 'projects_v2', ['status'])
-    op.create_index('idx_projects_team_members', 'projects_v2', ['team_members'], postgresql_using='gin')
-    op.create_index('idx_projects_analytics', 'projects_v2', ['analytics_metrics'], postgresql_using='gin')
+    op.create_index('idx_projects_owner', 'projects', ['owner'])
+    op.create_index('idx_projects_phase', 'projects', ['phase'])
+    op.create_index('idx_projects_archived', 'projects', ['is_archived'])
+    op.create_index('idx_projects_updated_desc', 'projects', [sa.desc('updated_at')])
+    op.create_index('idx_projects_owner_archived', 'projects', ['owner', 'is_archived'])
+    op.create_index('idx_projects_status', 'projects', ['status'])
+    op.create_index('idx_projects_team_members', 'projects', ['team_members'], postgresql_using='gin')
+    op.create_index('idx_projects_analytics', 'projects', ['analytics_metrics'], postgresql_using='gin')
 
     # Project requirements (normalized from array)
     op.create_table(
         'project_requirements',
         sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), nullable=False),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), nullable=False),
         sa.Column('requirement', sa.Text, nullable=False),
         sa.Column('sort_order', sa.Integer, default=0),
         sa.Column('created_at', sa.DateTime, default=sa.func.now()),
@@ -105,7 +105,7 @@ def upgrade() -> None:
     op.create_table(
         'project_tech_stack',
         sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), nullable=False),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), nullable=False),
         sa.Column('technology', sa.String(255), nullable=False),
         sa.Column('sort_order', sa.Integer, default=0),
         sa.Column('created_at', sa.DateTime, default=sa.func.now()),
@@ -116,7 +116,7 @@ def upgrade() -> None:
     op.create_table(
         'project_constraints',
         sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), nullable=False),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), nullable=False),
         sa.Column('constraint_text', sa.Text, nullable=False),
         sa.Column('sort_order', sa.Integer, default=0),
         sa.Column('created_at', sa.DateTime, default=sa.func.now()),
@@ -127,7 +127,7 @@ def upgrade() -> None:
     op.create_table(
         'conversation_history',
         sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), nullable=False),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), nullable=False),
         sa.Column('message_type', sa.String(50), nullable=False),
         sa.Column('content', sa.Text, nullable=False),
         sa.Column('timestamp', sa.DateTime, nullable=False, server_default=sa.func.now()),
@@ -140,8 +140,8 @@ def upgrade() -> None:
     op.create_table(
         'team_members',
         sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), nullable=False),
-        sa.Column('username', sa.String(255), sa.ForeignKey('users_v2.username'), nullable=False),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), nullable=False),
+        sa.Column('username', sa.String(255), sa.ForeignKey('users.username'), nullable=False),
         sa.Column('role', sa.String(50), nullable=False),
         sa.Column('skills', postgresql.JSONB, nullable=True),
         sa.Column('joined_at', sa.DateTime, default=sa.func.now()),
@@ -153,7 +153,7 @@ def upgrade() -> None:
     # Phase maturity scores (normalized from dict)
     op.create_table(
         'phase_maturity_scores',
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), primary_key=True),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), primary_key=True),
         sa.Column('phase', sa.String(50), primary_key=True),
         sa.Column('score', sa.Float, default=0.0),
         sa.Column('updated_at', sa.DateTime, default=sa.func.now(), onupdate=sa.func.now()),
@@ -164,7 +164,7 @@ def upgrade() -> None:
     op.create_table(
         'category_scores',
         sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), nullable=False),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), nullable=False),
         sa.Column('phase', sa.String(50), nullable=False),
         sa.Column('category', sa.String(100), nullable=False),
         sa.Column('score', sa.Float, nullable=False),
@@ -177,7 +177,7 @@ def upgrade() -> None:
     op.create_table(
         'categorized_specs',
         sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), nullable=False),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), nullable=False),
         sa.Column('phase', sa.String(50), nullable=False),
         sa.Column('category', sa.String(100), nullable=False),
         sa.Column('spec_data', postgresql.JSONB, nullable=False),
@@ -190,7 +190,7 @@ def upgrade() -> None:
     op.create_table(
         'maturity_history',
         sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), nullable=False),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), nullable=False),
         sa.Column('phase', sa.String(50), nullable=False),
         sa.Column('old_score', sa.Float, nullable=True),
         sa.Column('new_score', sa.Float, nullable=True),
@@ -203,7 +203,7 @@ def upgrade() -> None:
     # Analytics metrics
     op.create_table(
         'analytics_metrics',
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), primary_key=True),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), primary_key=True),
         sa.Column('velocity', sa.Float, default=0.0),
         sa.Column('total_qa_sessions', sa.Integer, default=0),
         sa.Column('avg_confidence', sa.Float, default=0.0),
@@ -217,7 +217,7 @@ def upgrade() -> None:
     op.create_table(
         'pending_questions',
         sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), nullable=False),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), nullable=False),
         sa.Column('question_data', postgresql.JSONB, nullable=False),
         sa.Column('created_at', sa.DateTime, default=sa.func.now()),
         sa.Column('sort_order', sa.Integer, default=0),
@@ -226,23 +226,23 @@ def upgrade() -> None:
 
     # Project notes
     op.create_table(
-        'project_notes_v2',
+        'project_notes',
         sa.Column('note_id', sa.String(255), primary_key=True),
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), nullable=False),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), nullable=False),
         sa.Column('title', sa.String(500), nullable=True),
         sa.Column('content', sa.Text, nullable=True),
         sa.Column('note_type', sa.String(100), nullable=True),
         sa.Column('created_at', sa.DateTime, nullable=False, server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime, nullable=False, server_default=sa.func.now(), onupdate=sa.func.now()),
     )
-    op.create_index('idx_project_notes_project', 'project_notes_v2', ['project_id'])
-    op.create_index('idx_project_notes_created', 'project_notes_v2', [sa.desc('created_at')])
+    op.create_index('idx_project_notes_project', 'project_notes', ['project_id'])
+    op.create_index('idx_project_notes_created', 'project_notes', [sa.desc('created_at')])
 
     # Question effectiveness tracking
     op.create_table(
-        'question_effectiveness_v2',
+        'question_effectiveness',
         sa.Column('id', sa.String(255), primary_key=True),
-        sa.Column('user_id', sa.String(255), sa.ForeignKey('users_v2.username'), nullable=False),
+        sa.Column('user_id', sa.String(255), sa.ForeignKey('users.username'), nullable=False),
         sa.Column('question_template_id', sa.String(255), nullable=False),
         sa.Column('effectiveness_score', sa.Float, default=0.5),
         sa.Column('times_asked', sa.Integer, default=0),
@@ -252,14 +252,14 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime, nullable=False, server_default=sa.func.now(), onupdate=sa.func.now()),
         sa.UniqueConstraint('user_id', 'question_template_id', name='uq_question_effectiveness'),
     )
-    op.create_index('idx_question_effectiveness_user', 'question_effectiveness_v2', ['user_id'])
-    op.create_index('idx_question_effectiveness_template', 'question_effectiveness_v2', ['question_template_id'])
+    op.create_index('idx_question_effectiveness_user', 'question_effectiveness', ['user_id'])
+    op.create_index('idx_question_effectiveness_template', 'question_effectiveness', ['question_template_id'])
 
     # Behavior patterns
     op.create_table(
-        'behavior_patterns_v2',
+        'behavior_patterns',
         sa.Column('id', sa.String(255), primary_key=True),
-        sa.Column('user_id', sa.String(255), sa.ForeignKey('users_v2.username'), nullable=False),
+        sa.Column('user_id', sa.String(255), sa.ForeignKey('users.username'), nullable=False),
         sa.Column('pattern_type', sa.String(100), nullable=False),
         sa.Column('pattern_data', postgresql.JSONB, nullable=False),
         sa.Column('frequency', sa.Integer, default=1),
@@ -267,44 +267,44 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime, nullable=False, server_default=sa.func.now(), onupdate=sa.func.now()),
         sa.UniqueConstraint('user_id', 'pattern_type', name='uq_behavior_patterns'),
     )
-    op.create_index('idx_behavior_patterns_user', 'behavior_patterns_v2', ['user_id'])
-    op.create_index('idx_behavior_patterns_type', 'behavior_patterns_v2', ['pattern_type'])
+    op.create_index('idx_behavior_patterns_user', 'behavior_patterns', ['user_id'])
+    op.create_index('idx_behavior_patterns_type', 'behavior_patterns', ['pattern_type'])
 
     # Knowledge documents
     op.create_table(
-        'knowledge_documents_v2',
+        'knowledge_documents',
         sa.Column('id', sa.String(255), primary_key=True),
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), nullable=True),
-        sa.Column('user_id', sa.String(255), sa.ForeignKey('users_v2.username'), nullable=False),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), nullable=True),
+        sa.Column('user_id', sa.String(255), sa.ForeignKey('users.username'), nullable=False),
         sa.Column('title', sa.String(500), nullable=True),
         sa.Column('content', sa.Text, nullable=True),
         sa.Column('source', sa.String(100), nullable=True),
         sa.Column('document_type', sa.String(50), default='document'),
         sa.Column('uploaded_at', sa.DateTime, nullable=False, server_default=sa.func.now()),
     )
-    op.create_index('idx_knowledge_documents_project', 'knowledge_documents_v2', ['project_id'])
-    op.create_index('idx_knowledge_documents_user', 'knowledge_documents_v2', ['user_id'])
-    op.create_index('idx_knowledge_documents_type', 'knowledge_documents_v2', ['document_type'])
+    op.create_index('idx_knowledge_documents_project', 'knowledge_documents', ['project_id'])
+    op.create_index('idx_knowledge_documents_user', 'knowledge_documents', ['user_id'])
+    op.create_index('idx_knowledge_documents_type', 'knowledge_documents', ['document_type'])
 
     # LLM Provider configurations
     op.create_table(
-        'llm_provider_configs_v2',
+        'llm_provider_configs',
         sa.Column('id', sa.String(255), primary_key=True),
-        sa.Column('user_id', sa.String(255), sa.ForeignKey('users_v2.username'), nullable=False),
+        sa.Column('user_id', sa.String(255), sa.ForeignKey('users.username'), nullable=False),
         sa.Column('provider', sa.String(100), nullable=False),
         sa.Column('config_data', postgresql.JSONB, nullable=False),
         sa.Column('created_at', sa.DateTime, nullable=False, server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime, nullable=False, server_default=sa.func.now(), onupdate=sa.func.now()),
         sa.UniqueConstraint('user_id', 'provider', name='uq_llm_configs'),
     )
-    op.create_index('idx_llm_configs_user', 'llm_provider_configs_v2', ['user_id'])
-    op.create_index('idx_llm_configs_provider', 'llm_provider_configs_v2', ['provider'])
+    op.create_index('idx_llm_configs_user', 'llm_provider_configs', ['user_id'])
+    op.create_index('idx_llm_configs_provider', 'llm_provider_configs', ['provider'])
 
     # API keys
     op.create_table(
-        'api_keys_v2',
+        'api_keys',
         sa.Column('id', sa.String(255), primary_key=True),
-        sa.Column('user_id', sa.String(255), sa.ForeignKey('users_v2.username'), nullable=False),
+        sa.Column('user_id', sa.String(255), sa.ForeignKey('users.username'), nullable=False),
         sa.Column('provider', sa.String(100), nullable=False),
         sa.Column('encrypted_key', sa.String(500), nullable=False),
         sa.Column('key_hash', sa.String(500), nullable=False),
@@ -313,15 +313,15 @@ def upgrade() -> None:
         sa.Column('last_used_at', sa.DateTime, nullable=True),
         sa.UniqueConstraint('user_id', 'provider', name='uq_api_keys'),
     )
-    op.create_index('idx_api_keys_user', 'api_keys_v2', ['user_id'])
-    op.create_index('idx_api_keys_provider', 'api_keys_v2', ['provider'])
-    op.create_index('idx_api_keys_user_provider', 'api_keys_v2', ['user_id', 'provider'])
+    op.create_index('idx_api_keys_user', 'api_keys', ['user_id'])
+    op.create_index('idx_api_keys_provider', 'api_keys', ['provider'])
+    op.create_index('idx_api_keys_user_provider', 'api_keys', ['user_id', 'provider'])
 
     # LLM usage tracking
     op.create_table(
-        'llm_usage_v2',
+        'llm_usage',
         sa.Column('id', sa.String(255), primary_key=True),
-        sa.Column('user_id', sa.String(255), sa.ForeignKey('users_v2.username'), nullable=False),
+        sa.Column('user_id', sa.String(255), sa.ForeignKey('users.username'), nullable=False),
         sa.Column('provider', sa.String(100), nullable=False),
         sa.Column('model', sa.String(100), nullable=False),
         sa.Column('input_tokens', sa.Integer, default=0),
@@ -329,16 +329,16 @@ def upgrade() -> None:
         sa.Column('cost', sa.Float, default=0.0),
         sa.Column('timestamp', sa.DateTime, nullable=False, server_default=sa.func.now()),
     )
-    op.create_index('idx_llm_usage_user', 'llm_usage_v2', ['user_id'])
-    op.create_index('idx_llm_usage_timestamp', 'llm_usage_v2', [sa.desc('timestamp')])
-    op.create_index('idx_llm_usage_user_timestamp', 'llm_usage_v2', ['user_id', sa.desc('timestamp')])
-    op.create_index('idx_llm_usage_provider', 'llm_usage_v2', ['provider'])
+    op.create_index('idx_llm_usage_user', 'llm_usage', ['user_id'])
+    op.create_index('idx_llm_usage_timestamp', 'llm_usage', [sa.desc('timestamp')])
+    op.create_index('idx_llm_usage_user_timestamp', 'llm_usage', ['user_id', sa.desc('timestamp')])
+    op.create_index('idx_llm_usage_provider', 'llm_usage', ['provider'])
 
     # Refresh tokens for JWT authentication
     op.create_table(
         'refresh_tokens',
         sa.Column('id', sa.String(255), primary_key=True),
-        sa.Column('user_id', sa.String(255), sa.ForeignKey('users_v2.username', ondelete='CASCADE'), nullable=False),
+        sa.Column('user_id', sa.String(255), sa.ForeignKey('users.username', ondelete='CASCADE'), nullable=False),
         sa.Column('token_hash', sa.String(500), nullable=False),
         sa.Column('expires_at', sa.DateTime, nullable=False),
         sa.Column('created_at', sa.DateTime, default=sa.func.now()),
@@ -352,7 +352,7 @@ def upgrade() -> None:
     op.create_table(
         'api_tokens',
         sa.Column('id', sa.String(255), primary_key=True),
-        sa.Column('user_id', sa.String(255), sa.ForeignKey('users_v2.username', ondelete='CASCADE'), nullable=False),
+        sa.Column('user_id', sa.String(255), sa.ForeignKey('users.username', ondelete='CASCADE'), nullable=False),
         sa.Column('name', sa.String(255), nullable=False),
         sa.Column('token_hash', sa.String(500), nullable=False),
         sa.Column('last_used_at', sa.DateTime, nullable=True),
@@ -368,8 +368,8 @@ def upgrade() -> None:
     op.create_table(
         'chat_sessions',
         sa.Column('session_id', sa.String(255), primary_key=True),
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), nullable=False),
-        sa.Column('user_id', sa.String(255), sa.ForeignKey('users_v2.username'), nullable=False),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), nullable=False),
+        sa.Column('user_id', sa.String(255), sa.ForeignKey('users.username'), nullable=False),
         sa.Column('title', sa.String(500), nullable=True),
         sa.Column('created_at', sa.DateTime, nullable=False, server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime, nullable=False, server_default=sa.func.now(), onupdate=sa.func.now()),
@@ -385,7 +385,7 @@ def upgrade() -> None:
         'chat_messages',
         sa.Column('message_id', sa.String(255), primary_key=True),
         sa.Column('session_id', sa.String(255), sa.ForeignKey('chat_sessions.session_id', ondelete='CASCADE'), nullable=False),
-        sa.Column('user_id', sa.String(255), sa.ForeignKey('users_v2.username'), nullable=False),
+        sa.Column('user_id', sa.String(255), sa.ForeignKey('users.username'), nullable=False),
         sa.Column('content', sa.Text, nullable=False),
         sa.Column('role', sa.String(50), nullable=False),
         sa.Column('metadata', postgresql.JSONB, nullable=True),
@@ -402,8 +402,8 @@ def upgrade() -> None:
     op.create_table(
         'collaboration_invitations',
         sa.Column('id', sa.String(255), primary_key=True),
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), nullable=False),
-        sa.Column('inviter_id', sa.String(255), sa.ForeignKey('users_v2.username'), nullable=False),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), nullable=False),
+        sa.Column('inviter_id', sa.String(255), sa.ForeignKey('users.username'), nullable=False),
         sa.Column('invitee_email', sa.String(255), nullable=False),
         sa.Column('role', sa.String(50), nullable=False),
         sa.Column('token', sa.String(500), nullable=False, unique=True),
@@ -422,8 +422,8 @@ def upgrade() -> None:
     op.create_table(
         'collaboration_activities',
         sa.Column('id', sa.String(255), primary_key=True),
-        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects_v2.project_id', ondelete='CASCADE'), nullable=False),
-        sa.Column('user_id', sa.String(255), sa.ForeignKey('users_v2.username'), nullable=False),
+        sa.Column('project_id', sa.String(255), sa.ForeignKey('projects.project_id', ondelete='CASCADE'), nullable=False),
+        sa.Column('user_id', sa.String(255), sa.ForeignKey('users.username'), nullable=False),
         sa.Column('activity_type', sa.String(100), nullable=False),
         sa.Column('activity_data', postgresql.JSONB, nullable=True),
         sa.Column('created_at', sa.DateTime, nullable=False, server_default=sa.func.now()),
@@ -437,8 +437,8 @@ def upgrade() -> None:
     op.create_table(
         'knowledge_analytics',
         sa.Column('id', sa.String(255), primary_key=True),
-        sa.Column('document_id', sa.String(255), sa.ForeignKey('knowledge_documents_v2.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('user_id', sa.String(255), sa.ForeignKey('users_v2.username'), nullable=False),
+        sa.Column('document_id', sa.String(255), sa.ForeignKey('knowledge_documents.id', ondelete='CASCADE'), nullable=False),
+        sa.Column('user_id', sa.String(255), sa.ForeignKey('users.username'), nullable=False),
         sa.Column('event_type', sa.String(100), nullable=False),
         sa.Column('created_at', sa.DateTime, nullable=False, server_default=sa.func.now()),
     )
@@ -459,13 +459,13 @@ def downgrade() -> None:
         'chat_sessions',
         'api_tokens',
         'refresh_tokens',
-        'llm_usage_v2',
-        'api_keys_v2',
-        'llm_provider_configs_v2',
-        'knowledge_documents_v2',
-        'behavior_patterns_v2',
-        'question_effectiveness_v2',
-        'project_notes_v2',
+        'llm_usage',
+        'api_keys',
+        'llm_provider_configs',
+        'knowledge_documents',
+        'behavior_patterns',
+        'question_effectiveness',
+        'project_notes',
         'pending_questions',
         'analytics_metrics',
         'maturity_history',
@@ -477,8 +477,8 @@ def downgrade() -> None:
         'project_constraints',
         'project_tech_stack',
         'project_requirements',
-        'projects_v2',
-        'users_v2',
+        'projects',
+        'users',
     ]
 
     for table in tables:

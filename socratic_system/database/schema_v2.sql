@@ -4,7 +4,7 @@
 -- ============================================================================
 
 -- Main projects table (extracted from pickle BLOB)
-CREATE TABLE IF NOT EXISTS projects_v2 (
+CREATE TABLE IF NOT EXISTS projects (
     project_id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     owner TEXT NOT NULL,
@@ -23,16 +23,16 @@ CREATE TABLE IF NOT EXISTS projects_v2 (
     updated_at TIMESTAMP NOT NULL,
     archived_at TIMESTAMP,
 
-    FOREIGN KEY (owner) REFERENCES users_v2(username)
+    FOREIGN KEY (owner) REFERENCES users(username)
 );
 
 -- Indexes for common queries
-CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects_v2(owner);
-CREATE INDEX IF NOT EXISTS idx_projects_phase ON projects_v2(phase);
-CREATE INDEX IF NOT EXISTS idx_projects_archived ON projects_v2(is_archived);
-CREATE INDEX IF NOT EXISTS idx_projects_updated ON projects_v2(updated_at DESC);
-CREATE INDEX IF NOT EXISTS idx_projects_owner_archived ON projects_v2(owner, is_archived);
-CREATE INDEX IF NOT EXISTS idx_projects_status ON projects_v2(status);
+CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner);
+CREATE INDEX IF NOT EXISTS idx_projects_phase ON projects(phase);
+CREATE INDEX IF NOT EXISTS idx_projects_archived ON projects(is_archived);
+CREATE INDEX IF NOT EXISTS idx_projects_updated ON projects(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_projects_owner_archived ON projects(owner, is_archived);
+CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 
 -- Project requirements (normalized from array)
 CREATE TABLE IF NOT EXISTS project_requirements (
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS project_requirements (
     sort_order INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_project_requirements_project ON project_requirements(project_id);
 
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS project_tech_stack (
     sort_order INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_project_tech_stack_project ON project_tech_stack(project_id);
 
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS project_constraints (
     sort_order INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_project_constraints_project ON project_constraints(project_id);
 
@@ -79,13 +79,13 @@ CREATE TABLE IF NOT EXISTS conversation_history (
     timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     metadata TEXT,  -- JSON for extensibility
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_conversation_project_timestamp ON conversation_history(project_id, timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_conversation_project ON conversation_history(project_id);
 
 -- Pre-session conversations (before project selection)
-CREATE TABLE IF NOT EXISTS presession_conversations (
+CREATE TABLE IF NOT EXISTS free_session_conversations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL,
     session_id TEXT NOT NULL,
@@ -94,11 +94,11 @@ CREATE TABLE IF NOT EXISTS presession_conversations (
     timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     metadata TEXT,  -- JSON for extensibility (topics, intents, etc.)
 
-    FOREIGN KEY (username) REFERENCES users_v2(username) ON DELETE CASCADE
+    FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_presession_user_session ON presession_conversations(username, session_id, timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_presession_user ON presession_conversations(username, timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_presession_session ON presession_conversations(session_id);
+CREATE INDEX IF NOT EXISTS idx_free_session_user_session ON free_session_conversations(username, session_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_free_session_user ON free_session_conversations(username, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_free_session_session ON free_session_conversations(session_id);
 
 -- Team members (normalized from array)
 CREATE TABLE IF NOT EXISTS team_members (
@@ -110,8 +110,8 @@ CREATE TABLE IF NOT EXISTS team_members (
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     UNIQUE(project_id, username),
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE,
-    FOREIGN KEY (username) REFERENCES users_v2(username)
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
+    FOREIGN KEY (username) REFERENCES users(username)
 );
 CREATE INDEX IF NOT EXISTS idx_team_members_project ON team_members(project_id);
 CREATE INDEX IF NOT EXISTS idx_team_members_user ON team_members(username);
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS phase_maturity_scores (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (project_id, phase),
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_phase_maturity_project ON phase_maturity_scores(project_id);
 
@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS category_scores (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     UNIQUE(project_id, phase, category),
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_category_scores_project_phase ON category_scores(project_id, phase);
 
@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS categorized_specs (
     sort_order INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_categorized_specs_project_phase ON categorized_specs(project_id, phase);
 
@@ -167,7 +167,7 @@ CREATE TABLE IF NOT EXISTS maturity_history (
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     metadata TEXT,  -- JSON
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_maturity_history_project ON maturity_history(project_id);
 
@@ -181,7 +181,7 @@ CREATE TABLE IF NOT EXISTS analytics_metrics (
     strong_categories TEXT,  -- JSON array
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_analytics_metrics_project ON analytics_metrics(project_id);
 
@@ -193,12 +193,12 @@ CREATE TABLE IF NOT EXISTS pending_questions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     sort_order INTEGER DEFAULT 0,
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_pending_questions_project ON pending_questions(project_id);
 
 -- Project notes (separate table)
-CREATE TABLE IF NOT EXISTS project_notes_v2 (
+CREATE TABLE IF NOT EXISTS project_notes (
     note_id TEXT PRIMARY KEY,
     project_id TEXT NOT NULL,
     title TEXT,
@@ -207,13 +207,13 @@ CREATE TABLE IF NOT EXISTS project_notes_v2 (
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_project_notes_project ON project_notes_v2(project_id);
-CREATE INDEX IF NOT EXISTS idx_project_notes_created ON project_notes_v2(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_project_notes_project ON project_notes(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_notes_created ON project_notes(created_at DESC);
 
 -- Users table (normalized)
-CREATE TABLE IF NOT EXISTS users_v2 (
+CREATE TABLE IF NOT EXISTS users (
     username TEXT PRIMARY KEY,
     email TEXT NOT NULL,
     passcode_hash TEXT NOT NULL,
@@ -227,13 +227,13 @@ CREATE TABLE IF NOT EXISTS users_v2 (
     archived_at TIMESTAMP,
     claude_auth_method TEXT DEFAULT 'api_key'  -- 'api_key' or 'subscription'
 );
-CREATE INDEX IF NOT EXISTS idx_users_archived ON users_v2(is_archived);
-CREATE INDEX IF NOT EXISTS idx_users_subscription_tier ON users_v2(subscription_tier);
-CREATE INDEX IF NOT EXISTS idx_users_subscription_status ON users_v2(subscription_status);
-CREATE INDEX IF NOT EXISTS idx_users_subscription ON users_v2(subscription_tier, subscription_status);
+CREATE INDEX IF NOT EXISTS idx_users_archived ON users(is_archived);
+CREATE INDEX IF NOT EXISTS idx_users_subscription_tier ON users(subscription_tier);
+CREATE INDEX IF NOT EXISTS idx_users_subscription_status ON users(subscription_status);
+CREATE INDEX IF NOT EXISTS idx_users_subscription ON users(subscription_tier, subscription_status);
 
 -- Question effectiveness tracking
-CREATE TABLE IF NOT EXISTS question_effectiveness_v2 (
+CREATE TABLE IF NOT EXISTS question_effectiveness (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     question_template_id TEXT NOT NULL,
@@ -245,13 +245,13 @@ CREATE TABLE IF NOT EXISTS question_effectiveness_v2 (
     updated_at TIMESTAMP NOT NULL,
 
     UNIQUE(user_id, question_template_id),
-    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+    FOREIGN KEY (user_id) REFERENCES users(username)
 );
-CREATE INDEX IF NOT EXISTS idx_question_effectiveness_user ON question_effectiveness_v2(user_id);
-CREATE INDEX IF NOT EXISTS idx_question_effectiveness_template ON question_effectiveness_v2(question_template_id);
+CREATE INDEX IF NOT EXISTS idx_question_effectiveness_user ON question_effectiveness(user_id);
+CREATE INDEX IF NOT EXISTS idx_question_effectiveness_template ON question_effectiveness(question_template_id);
 
 -- Behavior patterns
-CREATE TABLE IF NOT EXISTS behavior_patterns_v2 (
+CREATE TABLE IF NOT EXISTS behavior_patterns (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     pattern_type TEXT NOT NULL,
@@ -261,13 +261,13 @@ CREATE TABLE IF NOT EXISTS behavior_patterns_v2 (
     updated_at TIMESTAMP NOT NULL,
 
     UNIQUE(user_id, pattern_type),
-    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+    FOREIGN KEY (user_id) REFERENCES users(username)
 );
-CREATE INDEX IF NOT EXISTS idx_behavior_patterns_user ON behavior_patterns_v2(user_id);
-CREATE INDEX IF NOT EXISTS idx_behavior_patterns_type ON behavior_patterns_v2(pattern_type);
+CREATE INDEX IF NOT EXISTS idx_behavior_patterns_user ON behavior_patterns(user_id);
+CREATE INDEX IF NOT EXISTS idx_behavior_patterns_type ON behavior_patterns(pattern_type);
 
 -- Knowledge documents
-CREATE TABLE IF NOT EXISTS knowledge_documents_v2 (
+CREATE TABLE IF NOT EXISTS knowledge_documents (
     id TEXT PRIMARY KEY,
     project_id TEXT,  -- NULL for global knowledge
     user_id TEXT NOT NULL,
@@ -277,15 +277,15 @@ CREATE TABLE IF NOT EXISTS knowledge_documents_v2 (
     document_type TEXT DEFAULT 'document',
     uploaded_at TIMESTAMP NOT NULL,
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(username)
 );
-CREATE INDEX IF NOT EXISTS idx_knowledge_documents_project ON knowledge_documents_v2(project_id);
-CREATE INDEX IF NOT EXISTS idx_knowledge_documents_user ON knowledge_documents_v2(user_id);
-CREATE INDEX IF NOT EXISTS idx_knowledge_documents_type ON knowledge_documents_v2(document_type);
+CREATE INDEX IF NOT EXISTS idx_knowledge_documents_project ON knowledge_documents(project_id);
+CREATE INDEX IF NOT EXISTS idx_knowledge_documents_user ON knowledge_documents(user_id);
+CREATE INDEX IF NOT EXISTS idx_knowledge_documents_type ON knowledge_documents(document_type);
 
 -- LLM Provider configurations
-CREATE TABLE IF NOT EXISTS llm_provider_configs_v2 (
+CREATE TABLE IF NOT EXISTS llm_provider_configs (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     provider TEXT NOT NULL,
@@ -294,13 +294,13 @@ CREATE TABLE IF NOT EXISTS llm_provider_configs_v2 (
     updated_at TIMESTAMP NOT NULL,
 
     UNIQUE(user_id, provider),
-    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+    FOREIGN KEY (user_id) REFERENCES users(username)
 );
-CREATE INDEX IF NOT EXISTS idx_llm_configs_user ON llm_provider_configs_v2(user_id);
-CREATE INDEX IF NOT EXISTS idx_llm_configs_provider ON llm_provider_configs_v2(provider);
+CREATE INDEX IF NOT EXISTS idx_llm_configs_user ON llm_provider_configs(user_id);
+CREATE INDEX IF NOT EXISTS idx_llm_configs_provider ON llm_provider_configs(provider);
 
 -- API keys
-CREATE TABLE IF NOT EXISTS api_keys_v2 (
+CREATE TABLE IF NOT EXISTS api_keys (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     provider TEXT NOT NULL,
@@ -311,14 +311,14 @@ CREATE TABLE IF NOT EXISTS api_keys_v2 (
     last_used_at TIMESTAMP,
 
     UNIQUE(user_id, provider),
-    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+    FOREIGN KEY (user_id) REFERENCES users(username)
 );
-CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys_v2(user_id);
-CREATE INDEX IF NOT EXISTS idx_api_keys_provider ON api_keys_v2(provider);
-CREATE INDEX IF NOT EXISTS idx_api_keys_user_provider ON api_keys_v2(user_id, provider);
+CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_provider ON api_keys(provider);
+CREATE INDEX IF NOT EXISTS idx_api_keys_user_provider ON api_keys(user_id, provider);
 
 -- LLM usage tracking
-CREATE TABLE IF NOT EXISTS llm_usage_v2 (
+CREATE TABLE IF NOT EXISTS llm_usage (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     provider TEXT NOT NULL,
@@ -328,12 +328,12 @@ CREATE TABLE IF NOT EXISTS llm_usage_v2 (
     cost REAL DEFAULT 0.0,
     timestamp TIMESTAMP NOT NULL,
 
-    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+    FOREIGN KEY (user_id) REFERENCES users(username)
 );
-CREATE INDEX IF NOT EXISTS idx_llm_usage_user ON llm_usage_v2(user_id);
-CREATE INDEX IF NOT EXISTS idx_llm_usage_timestamp ON llm_usage_v2(timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_llm_usage_user_timestamp ON llm_usage_v2(user_id, timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_llm_usage_provider ON llm_usage_v2(provider);
+CREATE INDEX IF NOT EXISTS idx_llm_usage_user ON llm_usage(user_id);
+CREATE INDEX IF NOT EXISTS idx_llm_usage_timestamp ON llm_usage(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_llm_usage_user_timestamp ON llm_usage(user_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_llm_usage_provider ON llm_usage(provider);
 
 -- Refresh tokens for JWT authentication
 CREATE TABLE IF NOT EXISTS refresh_tokens (
@@ -344,7 +344,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     revoked_at TIMESTAMP,
 
-    FOREIGN KEY (user_id) REFERENCES users_v2(username) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(username) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires ON refresh_tokens(expires_at);
@@ -361,7 +361,7 @@ CREATE TABLE IF NOT EXISTS api_tokens (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     revoked_at TIMESTAMP,
 
-    FOREIGN KEY (user_id) REFERENCES users_v2(username) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(username) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_api_tokens_user ON api_tokens(user_id);
 CREATE INDEX IF NOT EXISTS idx_api_tokens_expires ON api_tokens(expires_at);
@@ -377,8 +377,8 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
     updated_at TEXT NOT NULL,
     archived INTEGER DEFAULT 0,
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(username)
 );
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_project ON chat_sessions(project_id);
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_user ON chat_sessions(user_id);
@@ -397,7 +397,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     updated_at TEXT NOT NULL,
 
     FOREIGN KEY (session_id) REFERENCES chat_sessions(session_id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+    FOREIGN KEY (user_id) REFERENCES users(username)
 );
 CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(session_id);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id);
@@ -417,8 +417,8 @@ CREATE TABLE IF NOT EXISTS collaboration_invitations (
     expires_at TEXT NOT NULL,
     accepted_at TEXT,
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE,
-    FOREIGN KEY (inviter_id) REFERENCES users_v2(username)
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
+    FOREIGN KEY (inviter_id) REFERENCES users(username)
 );
 CREATE INDEX IF NOT EXISTS idx_invitations_project ON collaboration_invitations(project_id);
 CREATE INDEX IF NOT EXISTS idx_invitations_email ON collaboration_invitations(invitee_email);
@@ -435,8 +435,8 @@ CREATE TABLE IF NOT EXISTS collaboration_activities (
     activity_data TEXT,  -- JSON for extensibility
     created_at TEXT NOT NULL,
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(username)
 );
 CREATE INDEX IF NOT EXISTS idx_activities_project ON collaboration_activities(project_id);
 CREATE INDEX IF NOT EXISTS idx_activities_created ON collaboration_activities(created_at DESC);
@@ -451,8 +451,8 @@ CREATE TABLE IF NOT EXISTS knowledge_analytics (
     event_type TEXT NOT NULL,  -- viewed, searched, exported, downloaded
     created_at TEXT NOT NULL,
 
-    FOREIGN KEY (document_id) REFERENCES knowledge_documents_v2(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users_v2(username)
+    FOREIGN KEY (document_id) REFERENCES knowledge_documents(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(username)
 );
 CREATE INDEX IF NOT EXISTS idx_analytics_document ON knowledge_analytics(document_id);
 CREATE INDEX IF NOT EXISTS idx_analytics_created ON knowledge_analytics(created_at DESC);

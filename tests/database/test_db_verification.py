@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from socratic_system.database.project_db_v2 import ProjectDatabaseV2
+from socratic_system.database.project_db_v2 import ProjectDatabase
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.user import User
 
@@ -32,7 +32,7 @@ class TestDatabaseInitialization:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
 
-        db_instance = ProjectDatabaseV2(db_path)
+        db_instance = ProjectDatabase(db_path)
         yield db_instance
 
         # Cleanup
@@ -46,24 +46,24 @@ class TestDatabaseInitialization:
     def test_all_tables_exist(self, db):
         """Verify all required tables are created"""
         required_tables = [
-            "users_v2",
-            "projects_v2",
+            "users",
+            "projects",
             "project_requirements",
             "project_tech_stack",
             "project_constraints",
             "team_members",
             "conversation_history",
             "refresh_tokens",
-            "api_keys_v2",
+            "api_keys",
             "phase_maturity_scores",
             "category_scores",
             "analytics_metrics",
-            "knowledge_documents_v2",
-            "llm_provider_configs_v2",
-            "question_effectiveness_v2",
-            "behavior_patterns_v2",
-            "llm_usage_v2",
-            "project_notes_v2",
+            "knowledge_documents",
+            "llm_provider_configs",
+            "question_effectiveness",
+            "behavior_patterns",
+            "llm_usage",
+            "project_notes",
         ]
 
         conn = sqlite3.connect(db.db_path)
@@ -109,7 +109,7 @@ class TestUserOperations:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
 
-        db_instance = ProjectDatabaseV2(db_path)
+        db_instance = ProjectDatabase(db_path)
         yield db_instance
 
         if os.path.exists(db_path):
@@ -176,7 +176,7 @@ class TestProjectOperations:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
 
-        db_instance = ProjectDatabaseV2(db_path)
+        db_instance = ProjectDatabase(db_path)
         yield db_instance
 
         if os.path.exists(db_path):
@@ -308,7 +308,7 @@ class TestConversationHistory:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
 
-        db_instance = ProjectDatabaseV2(db_path)
+        db_instance = ProjectDatabase(db_path)
         yield db_instance
 
         if os.path.exists(db_path):
@@ -382,7 +382,7 @@ class TestPhaseMaturityScores:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
 
-        db_instance = ProjectDatabaseV2(db_path)
+        db_instance = ProjectDatabase(db_path)
         yield db_instance
 
         if os.path.exists(db_path):
@@ -437,7 +437,7 @@ class TestDatabaseIntegrity:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
 
-        db_instance = ProjectDatabaseV2(db_path)
+        db_instance = ProjectDatabase(db_path)
         yield db_instance
 
         if os.path.exists(db_path):

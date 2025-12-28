@@ -28,7 +28,7 @@ class TestRateLimitConfig:
 
         assert config.AUTH_LIMIT == "5/minute"
         assert config.CHAT_LIMIT == "30/minute"
-        assert config.PRESESSION_LIMIT == "20/minute"
+        assert config.free-session_LIMIT == "20/minute"
         assert config.PRO_LIMIT == "100/minute"
         assert config.ENTERPRISE_LIMIT == "500/minute"
 
@@ -41,7 +41,7 @@ class TestRateLimitConfig:
 
         assert config.AUTH_LIMIT == "10/minute"
         assert config.CHAT_LIMIT == "50/minute"
-        assert config.PRESESSION_LIMIT == "20/minute"  # Unchanged
+        assert config.free-session_LIMIT == "20/minute"  # Unchanged
 
 
 @pytest.mark.unit
@@ -173,7 +173,7 @@ class TestRateLimitTiers:
 
         # Free tier should have stricter limits
         assert "5" in config.AUTH_LIMIT  # 5 per minute
-        assert "20" in config.PRESESSION_LIMIT
+        assert "20" in config.free-session_LIMIT
 
     def test_pro_tier_limits(self):
         """Test rate limits for pro subscription tier"""

@@ -16,7 +16,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from socratic_system.database.project_db_v2 import ProjectDatabaseV2
+from socratic_system.database.project_db_v2 import ProjectDatabase
 from socratic_system.models.project import ProjectContext
 
 
@@ -29,7 +29,7 @@ class TestWebSocketDatabaseIntegration:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
 
-        db_instance = ProjectDatabaseV2(db_path)
+        db_instance = ProjectDatabase(db_path)
         yield db_instance
 
         if os.path.exists(db_path):
@@ -408,7 +408,7 @@ class TestWebSocketPerformance:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
 
-        db_instance = ProjectDatabaseV2(db_path)
+        db_instance = ProjectDatabase(db_path)
         yield db_instance
 
         if os.path.exists(db_path):

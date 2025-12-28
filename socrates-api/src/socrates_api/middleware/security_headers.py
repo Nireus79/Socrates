@@ -139,8 +139,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         )
 
         # Remove potentially revealing headers
-        response.headers.pop("Server", None)  # Don't reveal server type
-        response.headers.pop("X-Powered-By", None)  # Don't reveal framework
+        if "Server" in response.headers:
+            del response.headers["Server"]
+        if "X-Powered-By" in response.headers:
+            del response.headers["X-Powered-By"]
 
         # Add custom headers
         response.headers["X-Content-Type-Options"] = "nosniff"

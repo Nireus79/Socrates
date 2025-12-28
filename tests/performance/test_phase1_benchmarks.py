@@ -14,7 +14,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from socratic_system.database.project_db_v2 import ProjectDatabaseV2
+from socratic_system.database.project_db_v2 import ProjectDatabase
 from socratic_system.models.project import ProjectContext
 
 
@@ -31,7 +31,7 @@ class TestPhase1DatabasePerformance:
     @pytest.fixture
     def db(self, temp_db_path):
         """Initialize database"""
-        return ProjectDatabaseV2(temp_db_path)
+        return ProjectDatabase(temp_db_path)
 
     @pytest.fixture
     def sample_project(self):
@@ -314,9 +314,9 @@ class TestPhase1MigrationValidation:
         assert schema_path.exists(), f"Schema file not found: {schema_path}"
 
     def test_project_db_v2_exists(self):
-        """Verify ProjectDatabaseV2 class exists"""
-        from socratic_system.database.project_db_v2 import ProjectDatabaseV2
-        assert ProjectDatabaseV2 is not None
+        """Verify ProjectDatabase class exists"""
+        from socratic_system.database.project_db_v2 import ProjectDatabase
+        assert ProjectDatabase is not None
 
 
 if __name__ == "__main__":

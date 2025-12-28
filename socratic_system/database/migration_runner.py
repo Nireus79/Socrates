@@ -152,8 +152,8 @@ class MigrationRunner:
             self.table_exists("code_validation_results")
         )
 
-        # Check for claude_auth_method column in users_v2 table
-        users_column_exists = self._column_exists("users_v2", "claude_auth_method")
+        # Check for claude_auth_method column in users table
+        users_column_exists = self._column_exists("users", "claude_auth_method")
 
         status = {
             "github_import_tables": github_tables_exist,
@@ -196,7 +196,7 @@ class MigrationRunner:
 
         Applies migrations in order:
         1. GitHub import tables (project_files, repository_metadata, code_validation_results)
-        2. Claude auth method column (users_v2.claude_auth_method)
+        2. Claude auth method column (users.claude_auth_method)
 
         Returns:
             Tuple of (success: bool, message: str)

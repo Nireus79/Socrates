@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS project_files (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE,
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
     UNIQUE (project_id, file_path)     -- One entry per file per project
 );
 
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS repository_metadata (
     imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_synced_at TIMESTAMP,
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_repo_metadata_url
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS code_validation_results (
     validation_data TEXT,              -- JSON with full validation results
     recommendations TEXT,              -- JSON array of recommendations
 
-    FOREIGN KEY (project_id) REFERENCES projects_v2(project_id) ON DELETE CASCADE
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_validation_project
@@ -101,19 +101,19 @@ CREATE INDEX IF NOT EXISTS idx_validation_status
     ON code_validation_results(overall_status);
 
 -- ============================================================================
--- Add new fields to projects_v2 table (for repository context)
+-- Add new fields to projects table (for repository context)
 -- ============================================================================
-ALTER TABLE projects_v2 ADD COLUMN repository_url TEXT;
-ALTER TABLE projects_v2 ADD COLUMN repository_imported_at TIMESTAMP;
+ALTER TABLE projects ADD COLUMN repository_url TEXT;
+ALTER TABLE projects ADD COLUMN repository_imported_at TIMESTAMP;
 
 -- ============================================================================
 -- Create indexes on new columns
 -- ============================================================================
 CREATE INDEX IF NOT EXISTS idx_projects_repository_url
-    ON projects_v2(repository_url);
+    ON projects(repository_url);
 
 CREATE INDEX IF NOT EXISTS idx_projects_repository_imported_at
-    ON projects_v2(repository_imported_at);
+    ON projects(repository_imported_at);
 
 -- ============================================================================
 -- Migration completed successfully

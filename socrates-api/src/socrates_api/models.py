@@ -625,13 +625,15 @@ class ChatMessageRequest(BaseModel):
 
     message: str = Field(..., min_length=1, description="Message content")
     role: str = Field(default="user", description="Message role (user or assistant)")
+    mode: str = Field(default="socratic", description="Chat mode (socratic or direct)")
 
     class Config:
         extra = "forbid"
         json_schema_extra = {
             "example": {
                 "message": "What should I focus on next?",
-                "role": "user"
+                "role": "user",
+                "mode": "socratic"
             }
         }
 
