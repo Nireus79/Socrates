@@ -64,7 +64,7 @@ jobs:
 
       - name: Build and push API image
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.api
@@ -147,7 +147,7 @@ jobs:
 
       - name: Build and push frontend image
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./socrates-frontend
           file: ./socrates-frontend/Dockerfile
