@@ -339,7 +339,7 @@ jobs:
 
     steps:
       - name: Send Slack notification
-        uses: slackapi/slack-github-action@v1
+        uses: slackapi/slack-github-action@v2
         if: secrets.SLACK_WEBHOOK_URL
         with:
           payload: |
