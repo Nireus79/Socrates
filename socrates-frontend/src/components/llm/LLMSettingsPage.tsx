@@ -1,17 +1,16 @@
 /**
- * LLM Settings Page - Configure LLM providers and models
+ * LLM Settings Page - Complete Multi-Provider Management
  *
- * Features:
- * - Multi-LLM provider management
- * - Provider grid with subscription vs API designation
- * - Enable/disable providers
- * - Model selection per provider
- * - Pricing comparison
- * - API key management
- * - Usage statistics
+ * Full-featured interface for managing multiple language model providers:
+ * - 4 providers (Claude, OpenAI, Gemini, Ollama)
+ * - API key management (add/update/remove)
+ * - Model selection for each provider
+ * - Set default provider
+ * - Usage & cost tracking
+ * - Provider comparison
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Settings,
   Key,
@@ -23,19 +22,17 @@ import {
   EyeOff,
   CreditCard,
   Plug,
-  ToggleLeft,
-  ToggleRight,
+  Plus,
+  Trash2,
+  Save,
+  X,
   DollarSign,
-  Cpu,
 } from 'lucide-react';
 import { useLLMStore } from '../../stores';
 import { Button } from '../common';
-import { Input } from '../common';
 import { Card } from '../common';
 import { Alert } from '../common';
 import { Badge } from '../common';
-import { LLMProviderCard } from './LLMProviderCard';
-import { APIKeyManager } from './APIKeyManager';
 import { LLMUsageChart } from './LLMUsageChart';
 
 export const LLMSettingsPage: React.FC = () => {
@@ -48,8 +45,19 @@ export const LLMSettingsPage: React.FC = () => {
     listProviders,
     getConfig,
     getUsageStats,
+    setDefaultProvider,
+    setProviderModel,
+    addAPIKey,
+    removeAPIKey,
     clearError,
   } = useLLMStore();
+
+  const [expandedProvider, setExpandedProvider] = useState<string | null>(null);
+  const [apiKeyInput, setApiKeyInput] = useState<{ [key: string]: string }>({});
+  const [showApiKey, setShowApiKey] = useState<{ [key: string]: boolean }>({});
+  const [selectedModels, setSelectedModels] = useState<{ [key: string]: string }>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [savingProvider, setSavingProvider] = useState<string | null>(null);
 
   // Load data on mount
   React.useEffect(() => {
@@ -62,6 +70,47 @@ export const LLMSettingsPage: React.FC = () => {
 
   const providersList = Array.from(providers.values());
 
+  const handleAddApiKey = async (providerName: string) => {
+    const key = apiKeyInput[providerName]?.trim();
+    if (!key) {
+      alert('Please enter an API key');
+      return;
+    }
+    setSavingProvider(providerName);
+    try {
+      await addAPIKey(providerName, key);
+      setApiKeyInput({ ...apiKeyInput, [providerName]: '' });
+    } catch (err) {
+      console.error('Error adding API key:', err);
+    } finally {
+      setSavingProvider(null);
+    }
+  };
+
+  const handleRemoveApiKey = async (providerName: string) => {
+    if (!window.confirm(`Remove API key for ${providerName}?`)) return;
+    setSavingProvider(providerName);
+    try {
+      await removeAPIKey(providerName);
+    } catch (err) {
+      console.error('Error removing API key:', err);
+    } finally {
+      setSavingProvider(null);
+    }
+  };
+
+  const handleSetAsDefault = async (providerName: string, model: string) => {
+    setSavingProvider(providerName);
+    try {
+      await setDefaultProvider(providerName);
+      await setProviderModel(providerName, model);
+    } catch (err) {
+      console.error('Error setting default:', err);
+    } finally {
+      setSavingProvider(null);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -73,7 +122,7 @@ export const LLMSettingsPage: React.FC = () => {
           </h1>
         </div>
         <p className="text-gray-600 dark:text-gray-400">
-          Manage multiple LLM providers, select models, and configure your preferred options
+          Manage 4 LLM providers, add API keys, select models, and configure your preferences
         </p>
       </div>
 
@@ -92,292 +141,280 @@ export const LLMSettingsPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Current Configuration Summary */}
+      {/* Current Configuration */}
       {config && !isLoading && (
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Current Configuration
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">
-                  Default Provider
-                </p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white">
-                  {config.default_provider}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">
-                  Default Model
-                </p>
-                <p className="text-sm text-gray-900 dark:text-white font-mono truncate">
-                  {config.default_model}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">
-                  Temperature
-                </p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white">
-                  {config.temperature}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">
-                  Max Tokens
-                </p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white">
-                  {config.max_tokens ? config.max_tokens.toLocaleString() : 'N/A'}
-                </p>
-              </div>
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Current Configuration
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Default Provider</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">{config.default_provider}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Default Model</p>
+              <p className="text-sm text-gray-900 dark:text-white font-mono">{config.default_model.split('-').slice(-1)[0]}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Temperature</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">{config.temperature}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Max Tokens</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">{config.max_tokens?.toLocaleString() || 'N/A'}</p>
             </div>
           </div>
         </Card>
       )}
 
-      {/* Usage Statistics */}
+      {/* Usage & Costs */}
       {usageStats && !isLoading && (
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Usage & Costs
-          </h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Usage & Costs</h2>
           <LLMUsageChart stats={usageStats} />
         </div>
       )}
 
-      {/* Charge Type Legend */}
+      {/* Provider Type Legend */}
       <Card className="bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800">
-        <div className="flex flex-wrap gap-6">
-          <div className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-            <span className="text-sm text-amber-800 dark:text-amber-200">
-              <span className="font-semibold">API-Based:</span> Requires API key to use
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Plug className="h-5 w-5 text-green-600 dark:text-green-400" />
-            <span className="text-sm text-green-800 dark:text-green-200">
-              <span className="font-semibold">Subscription:</span> Built-in, no API key needed
-            </span>
+        <div className="space-y-3">
+          <p className="font-semibold text-amber-900 dark:text-amber-100">Provider Types:</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-start gap-3">
+              <CreditCard className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-1" />
+              <div>
+                <p className="font-medium text-amber-900 dark:text-amber-100">API-Based</p>
+                <p className="text-sm text-amber-800 dark:text-amber-200">Requires your own API key (OpenAI, Gemini)</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Plug className="h-5 w-5 text-green-600 dark:text-green-400 mt-1" />
+              <div>
+                <p className="font-medium text-green-900 dark:text-green-100">Built-in</p>
+                <p className="text-sm text-green-800 dark:text-green-200">No API key needed (Claude, Ollama)</p>
+              </div>
+            </div>
           </div>
         </div>
       </Card>
 
-      {/* Multi-LLM Provider Grid */}
+      {/* Providers Grid */}
       {!isLoading && providersList.length > 0 && (
         <div className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-              Available Providers
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Choose which LLMs you want to use and configure their models
-            </p>
-          </div>
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">All Providers (4)</h2>
 
-          {/* Provider Cards */}
-          <div className="grid gap-4">
+          <div className="grid gap-6">
             {providersList.map((provider) => {
               const isApiRequired = provider.requires_api_key;
-              const isConfigured =
-                provider.is_configured ||
-                (!isApiRequired && provider.models && provider.models.length > 0);
+              const isConfigured = provider.is_configured || (!isApiRequired && provider.models?.length > 0);
               const isDefault = config?.default_provider === provider.name;
+              const selectedModel = selectedModels[provider.name] || provider.models?.[0] || '';
+              const isExpanded = expandedProvider === provider.name;
 
               return (
                 <Card
                   key={provider.name}
                   className={`transition-all ${
-                    isConfigured
-                      ? 'border-green-300 dark:border-green-700 bg-green-50/30 dark:bg-green-900/10'
-                      : 'border-gray-200 dark:border-gray-700'
+                    isDefault
+                      ? 'border-green-400 dark:border-green-600 bg-green-50/40 dark:bg-green-900/15'
+                      : 'border-gray-300 dark:border-gray-600'
                   }`}
                 >
                   <div className="space-y-4">
-                    {/* Provider Header with Controls */}
+                    {/* Header */}
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                             {provider.label}
                           </h3>
-
                           {isDefault && (
                             <Badge variant="success">
-                              <Check className="h-3 w-3 mr-1" />
-                              Default
+                              <Check className="h-3 w-3 mr-1" /> Default
                             </Badge>
                           )}
-
-                          {provider.is_configured && !isApiRequired && (
+                          {isConfigured && (
                             <Badge variant="success">
-                              <Check className="h-3 w-3 mr-1" />
-                              Ready
+                              <Check className="h-3 w-3 mr-1" /> Active
                             </Badge>
                           )}
-
-                          {provider.is_configured && isApiRequired && (
-                            <Badge variant="success">
-                              <Check className="h-3 w-3 mr-1" />
-                              Configured
-                            </Badge>
-                          )}
-
-                          {!provider.is_configured && isApiRequired && (
-                            <Badge variant="warning">
-                              Needs Setup
-                            </Badge>
-                          )}
-
-                          <Badge
-                            variant={isApiRequired ? 'info' : 'secondary'}
-                          >
+                          <Badge variant={isApiRequired ? 'info' : 'secondary'}>
                             {isApiRequired ? (
                               <>
-                                <CreditCard className="h-3 w-3 mr-1" />
-                                API-Based
+                                <CreditCard className="h-3 w-3 mr-1" /> API-Based
                               </>
                             ) : (
                               <>
-                                <Plug className="h-3 w-3 mr-1" />
-                                Built-in
+                                <Plug className="h-3 w-3 mr-1" /> Built-in
                               </>
                             )}
                           </Badge>
                         </div>
-
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           {provider.description || 'Language model provider'}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                          {provider.models && provider.models.length > 0
-                            ? `${provider.models.length} model${
-                                provider.models.length !== 1 ? 's' : ''
-                              } available • ${provider.context_window?.toLocaleString()} token context`
-                            : 'No models available'}
-                        </p>
+                        {provider.context_window && (
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                            {provider.models?.length || 0} models • {provider.context_window.toLocaleString()} token context
+                          </p>
+                        )}
                       </div>
+                      <button
+                        onClick={() => setExpandedProvider(isExpanded ? null : provider.name)}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+                      >
+                        {isExpanded ? (
+                          <X className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                        ) : (
+                          <Plus className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                        )}
+                      </button>
                     </div>
 
-                    {/* API Key Management (only for API-based providers) */}
-                    {isApiRequired && (
-                      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                          API Key Configuration
-                        </h4>
-                        <APIKeyManager provider={provider.name} />
-                      </div>
-                    )}
-
-                    {/* Model Selection and Provider Controls (always show) */}
-                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                        Model & Settings
-                      </h4>
-
-                      {isConfigured ? (
-                        <div className="space-y-3">
-                          {/* Model Selection Dropdown */}
-                          {provider.models && provider.models.length > 0 && (
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Select Model
-                              </label>
-                              <div className="relative">
-                                <select
-                                  defaultValue={provider.models[0]}
-                                  onChange={(e) => {
-                                    if (provider.name !== config?.default_provider) {
-                                      // Automatically set as default when selecting model
-                                      // This will be handled by clicking "Use This Provider" button
+                    {/* Expanded Details */}
+                    {isExpanded && (
+                      <>
+                        {/* API Key Section (for API-based providers) */}
+                        {isApiRequired && (
+                          <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">API Key</h4>
+                            {!isConfigured ? (
+                              <div className="space-y-2">
+                                <div className="relative">
+                                  <input
+                                    type={showApiKey[provider.name] ? 'text' : 'password'}
+                                    placeholder="Paste your API key here"
+                                    value={apiKeyInput[provider.name] || ''}
+                                    onChange={(e) =>
+                                      setApiKeyInput({
+                                        ...apiKeyInput,
+                                        [provider.name]: e.target.value,
+                                      })
                                     }
-                                  }}
-                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                                  />
+                                  <button
+                                    onClick={() =>
+                                      setShowApiKey({
+                                        ...showApiKey,
+                                        [provider.name]: !showApiKey[provider.name],
+                                      })
+                                    }
+                                    className="absolute right-3 top-2.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                                  >
+                                    {showApiKey[provider.name] ? (
+                                      <EyeOff className="h-4 w-4" />
+                                    ) : (
+                                      <Eye className="h-4 w-4" />
+                                    )}
+                                  </button>
+                                </div>
+                                <Button
+                                  variant="primary"
+                                  fullWidth
+                                  onClick={() => handleAddApiKey(provider.name)}
+                                  disabled={savingProvider === provider.name}
+                                  icon={<Save className="h-4 w-4" />}
                                 >
-                                  {provider.models.map((model) => (
-                                    <option key={model} value={model}>
-                                      {model}
-                                    </option>
-                                  ))}
-                                </select>
+                                  {savingProvider === provider.name ? 'Saving...' : 'Save API Key'}
+                                </Button>
                               </div>
-                            </div>
-                          )}
-
-                          {/* Action Buttons */}
-                          <div className="flex gap-2 pt-2">
-                            {!isDefault && (
-                              <Button
-                                variant="primary"
-                                fullWidth
-                                onClick={() => {
-                                  const select = document.querySelector(
-                                    `[name="model-${provider.name}"]`
-                                  ) as HTMLSelectElement;
-                                  const selectedModel = select?.value || provider.models?.[0];
-                                  if (selectedModel) {
-                                    // Call both setDefaultProvider and setProviderModel
-                                    config?.default_provider &&
-                                      config.default_provider !==
-                                        provider.name &&
-                                      (async () => {
-                                        const { setDefaultProvider, setProviderModel } =
-                                          useLLMStore.getState();
-                                        await setDefaultProvider(provider.name).catch(
-                                          console.error
-                                        );
-                                        await setProviderModel(
-                                          provider.name,
-                                          selectedModel
-                                        ).catch(console.error);
-                                      })();
-                                  }
-                                }}
-                              >
-                                Use This Provider
-                              </Button>
+                            ) : (
+                              <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                <span className="text-sm text-green-700 dark:text-green-300">
+                                  <Check className="h-4 w-4 inline mr-2" />
+                                  API Key Configured
+                                </span>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleRemoveApiKey(provider.name)}
+                                  disabled={savingProvider === provider.name}
+                                  icon={<Trash2 className="h-4 w-4" />}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  Remove
+                                </Button>
+                              </div>
                             )}
+                          </div>
+                        )}
 
-                            {isDefault && (
-                              <div className="flex-1 text-center py-2 bg-green-50 dark:bg-green-900/20 rounded-md">
-                                <p className="text-sm font-semibold text-green-700 dark:text-green-300">
-                                  ✓ Currently Active
+                        {/* Model Selection */}
+                        {isConfigured && provider.models && provider.models.length > 0 && (
+                          <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Select Model</h4>
+                            <select
+                              value={selectedModel}
+                              onChange={(e) =>
+                                setSelectedModels({
+                                  ...selectedModels,
+                                  [provider.name]: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              {provider.models.map((model) => (
+                                <option key={model} value={model}>
+                                  {model}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {/* Pricing */}
+                        {provider.cost_per_1k_input_tokens !== undefined && (
+                          <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                              <DollarSign className="h-4 w-4" />
+                              Pricing
+                            </h4>
+                            {provider.cost_per_1k_input_tokens === 0 ? (
+                              <p className="text-sm text-green-700 dark:text-green-300 font-medium">FREE (Local)</p>
+                            ) : (
+                              <div className="space-y-1 text-sm">
+                                <p className="text-gray-600 dark:text-gray-400">
+                                  Input: ${(provider.cost_per_1k_input_tokens * 1000).toFixed(4)}/1M tokens
+                                </p>
+                                <p className="text-gray-600 dark:text-gray-400">
+                                  Output: ${(provider.cost_per_1k_output_tokens * 1000).toFixed(4)}/1M tokens
                                 </p>
                               </div>
                             )}
                           </div>
-                        </div>
-                      ) : (
-                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-3">
-                          <p className="text-sm text-amber-800 dark:text-amber-200">
-                            <AlertCircle className="h-4 w-4 inline mr-2" />
-                            {isApiRequired
-                              ? 'Add an API key above to enable this provider'
-                              : 'This provider requires setup'}
-                          </p>
-                          {isApiRequired && (
-                            <div className="text-xs text-amber-700 dark:text-amber-300">
-                              Once you add your API key, you'll be able to select models
-                              and set this as your default provider.
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="border-t border-gray-200 dark:border-gray-700 pt-4 flex gap-2">
+                          {isConfigured && selectedModel && !isDefault && (
+                            <Button
+                              variant="primary"
+                              fullWidth
+                              onClick={() => handleSetAsDefault(provider.name, selectedModel)}
+                              disabled={savingProvider === provider.name}
+                            >
+                              {savingProvider === provider.name ? 'Setting...' : 'Set as Default'}
+                            </Button>
+                          )}
+                          {isDefault && (
+                            <div className="flex-1 text-center py-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                              <p className="text-sm font-semibold text-green-700 dark:text-green-300">
+                                ✓ Currently Using
+                              </p>
+                            </div>
+                          )}
+                          {!isConfigured && isApiRequired && (
+                            <div className="flex-1 text-center py-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                              <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+                                Add API Key Above
+                              </p>
                             </div>
                           )}
                         </div>
-                      )}
-                    </div>
-
-                    {/* Provider Info */}
-                    {provider.cost_per_1k_input_tokens && (
-                      <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          <span className="font-medium">Estimated Cost:</span> $
-                          {(provider.cost_per_1k_input_tokens * 1000).toFixed(4)}/1M input tokens
-                          • ${(provider.cost_per_1k_output_tokens * 1000).toFixed(4)}/1M output tokens
-                        </p>
-                      </div>
+                      </>
                     )}
                   </div>
                 </Card>
@@ -387,31 +424,29 @@ export const LLMSettingsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Tips and Information */}
+      {/* Help Section */}
       <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-        <div className="space-y-3">
-          <h3 className="font-semibold text-blue-900 dark:text-blue-200 flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            Quick Guide
-          </h3>
-          <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-2 ml-7">
-            <li>
-              <span className="font-medium">API-Based Providers:</span> You need to provide your own API key (OpenAI, Google Gemini, etc.)
-            </li>
-            <li>
-              <span className="font-medium">Subscription Providers:</span> These providers are managed through your account (Claude, Ollama)
-            </li>
-            <li>
-              <span className="font-medium">Default Provider:</span> The primary provider used when generating code
-            </li>
-            <li>
-              <span className="font-medium">Model Selection:</span> Choose which model variant to use for each provider
-            </li>
-            <li>
-              <span className="font-medium">Cost Tracking:</span> Monitor your usage and costs above
-            </li>
-          </ul>
-        </div>
+        <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-3 flex items-center gap-2">
+          <AlertCircle className="h-5 w-5" />
+          How to Use
+        </h3>
+        <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-300">
+          <li>
+            <strong>Claude:</strong> Built-in, click expand to see models and set as default
+          </li>
+          <li>
+            <strong>OpenAI:</strong> Expand, paste your API key, select model, set as default
+          </li>
+          <li>
+            <strong>Gemini:</strong> Expand, paste your API key, select model, set as default
+          </li>
+          <li>
+            <strong>Ollama:</strong> Built-in (requires Ollama running on localhost:11434), select model and set as default
+          </li>
+          <li>
+            <strong>Usage:</strong> Track your costs by provider in the Usage & Costs section above
+          </li>
+        </ul>
       </Card>
     </div>
   );
