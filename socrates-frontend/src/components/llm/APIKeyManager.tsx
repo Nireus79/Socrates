@@ -20,13 +20,21 @@ interface APIKeyManagerProps {
 }
 
 export const APIKeyManager: React.FC<APIKeyManagerProps> = ({ provider }) => {
-  const { addAPIKey, removeAPIKey, isSaving, error } = useLLMStore();
+  const { addAPIKey, removeAPIKey, isSaving, error, providers } = useLLMStore();
 
   const [apiKey, setApiKey] = React.useState('');
   const [showKey, setShowKey] = React.useState(false);
   const [hasKey, setHasKey] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [validationError, setValidationError] = React.useState<string | null>(null);
+
+  // Sync hasKey with provider's is_configured status from store
+  React.useEffect(() => {
+    const providerData = providers.get(provider);
+    if (providerData) {
+      setHasKey(providerData.is_configured);
+    }
+  }, [provider, providers]);
 
   const handleAddKey = async () => {
     setValidationError(null);
