@@ -131,7 +131,9 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       if (response?.data?.current_tier) {
         const newTier = response.data.current_tier as 'free' | 'pro' | 'enterprise';
         const newStatus = response.data.status || 'active' as 'active' | 'inactive' | 'suspended';
+        const testingModeEnabled = response.data.testing_mode || false;
         get().setTier(newTier, newStatus);
+        get().setTestingMode(testingModeEnabled);
       }
     } catch (error) {
       console.error('Failed to refresh subscription status:', error);
@@ -154,6 +156,11 @@ export const useFeatureGate = (feature: string): boolean => {
 
     const featureKey = mapping[feature];
     if (!featureKey) return false;
+
+    // Testing mode bypasses all restrictions
+    if (state.testingMode) {
+      return true;
+    }
 
     if (state.status !== 'active') return false;
 
