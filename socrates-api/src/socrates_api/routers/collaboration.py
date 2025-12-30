@@ -220,37 +220,42 @@ async def add_collaborator_new(
         # CRITICAL: Validate subscription before adding collaborators
         logger.info(f"Validating subscription for adding collaborator for user {current_user}")
         try:
-            # Check if user has active subscription
-            if user_object.subscription_status != "active":
-                logger.warning(f"User {current_user} attempted to add collaborator without active subscription (status: {user_object.subscription_status})")
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Active subscription required to add collaborators"
-                )
-
-            # Check subscription tier - only Professional and Enterprise can add collaborators
             subscription_tier = user_object.subscription_tier.lower()
-            if subscription_tier == "free":
-                logger.warning(f"Free-tier user {current_user} attempted to add collaborators")
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Collaboration feature requires 'pro' or 'enterprise' subscription"
-                )
 
-            # Check team member limit for subscription tier
-            current_team_size = len(project.team_members) if project.team_members else 0
-            can_add, error_msg = SubscriptionChecker.can_add_team_member(
-                subscription_tier,
-                current_team_size
-            )
-            if not can_add:
-                logger.warning(f"User {current_user} exceeded team member limit: {error_msg}")
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=error_msg
-                )
+            # Check if testing mode is enabled - if so, bypass subscription checks
+            if user_object.testing_mode:
+                logger.info(f"User {current_user} has testing mode enabled - bypassing subscription checks for collaboration")
+            else:
+                # Check if user has active subscription
+                if user_object.subscription_status != "active":
+                    logger.warning(f"User {current_user} attempted to add collaborator without active subscription (status: {user_object.subscription_status})")
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Active subscription required to add collaborators"
+                    )
 
-            logger.info(f"Subscription validation passed for {current_user} (tier: {subscription_tier})")
+                # Check subscription tier - only Professional and Enterprise can add collaborators
+                if subscription_tier == "free":
+                    logger.warning(f"Free-tier user {current_user} attempted to add collaborators")
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Collaboration feature requires 'pro' or 'enterprise' subscription"
+                    )
+
+                # Check team member limit for subscription tier
+                current_team_size = len(project.team_members) if project.team_members else 0
+                can_add, error_msg = SubscriptionChecker.can_add_team_member(
+                    subscription_tier,
+                    current_team_size
+                )
+                if not can_add:
+                    logger.warning(f"User {current_user} exceeded team member limit: {error_msg}")
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail=error_msg
+                    )
+
+            logger.info(f"Subscription validation passed for {current_user} (tier: {subscription_tier}, testing_mode: {user_object.testing_mode})")
         except HTTPException:
             raise
         except Exception as e:
