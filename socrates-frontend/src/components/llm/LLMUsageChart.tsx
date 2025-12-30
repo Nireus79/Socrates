@@ -21,31 +21,35 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
 export const LLMUsageChart: React.FC<LLMUsageChartProps> = ({ stats }) => {
   // Prepare data for provider pie chart
-  const providerData = Object.entries(stats.by_provider).map(([name, data]) => ({
-    name: name.charAt(0).toUpperCase() + name.slice(1),
-    value: data.requests,
-  }));
+  const providerData = stats && stats.by_provider
+    ? Object.entries(stats.by_provider).map(([name, data]) => ({
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        value: data?.requests || 0,
+      }))
+    : [];
 
   // Prepare summary cards data
   const summaryCards = [
     {
       label: 'Total Requests',
-      value: stats.total_requests.toLocaleString(),
+      value: stats?.total_requests ? stats.total_requests.toLocaleString() : '0',
       color: 'blue',
     },
     {
       label: 'Total Tokens',
-      value: `${(stats.total_tokens.input + stats.total_tokens.output).toLocaleString()}`,
+      value: stats?.total_tokens
+        ? `${(stats.total_tokens.input + stats.total_tokens.output).toLocaleString()}`
+        : '0',
       color: 'green',
     },
     {
       label: 'Input Tokens',
-      value: stats.total_tokens.input.toLocaleString(),
+      value: stats?.total_tokens?.input ? stats.total_tokens.input.toLocaleString() : '0',
       color: 'indigo',
     },
     {
       label: 'Output Tokens',
-      value: stats.total_tokens.output.toLocaleString(),
+      value: stats?.total_tokens?.output ? stats.total_tokens.output.toLocaleString() : '0',
       color: 'purple',
     },
   ];
@@ -81,7 +85,7 @@ export const LLMUsageChart: React.FC<LLMUsageChartProps> = ({ stats }) => {
                 Estimated Cost
               </p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                ${stats.cost_summary.estimated.toFixed(2)}
+                ${stats?.cost_summary?.estimated ? stats.cost_summary.estimated.toFixed(2) : '0.00'}
               </p>
             </div>
             <div>
@@ -89,7 +93,7 @@ export const LLMUsageChart: React.FC<LLMUsageChartProps> = ({ stats }) => {
                 Period
               </p>
               <Badge variant="secondary">
-                {stats.cost_summary.period}
+                {stats?.cost_summary?.period || 'N/A'}
               </Badge>
             </div>
           </div>
@@ -126,16 +130,16 @@ export const LLMUsageChart: React.FC<LLMUsageChartProps> = ({ stats }) => {
 
             {/* Provider Details */}
             <div className="grid grid-cols-2 gap-4">
-              {Object.entries(stats.by_provider).map(([provider, data]) => (
+              {stats?.by_provider && Object.entries(stats.by_provider).map(([provider, data]) => (
                 <Card key={provider} className="bg-gray-50 dark:bg-gray-800">
                   <div className="space-y-2">
                     <h4 className="font-semibold text-gray-900 dark:text-white capitalize">
                       {provider}
                     </h4>
                     <div className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-                      <p>Requests: <span className="font-medium">{data.requests}</span></p>
-                      <p>Tokens: <span className="font-medium">{data.tokens.toLocaleString()}</span></p>
-                      <p>Cost: <span className="font-medium">${data.cost.toFixed(2)}</span></p>
+                      <p>Requests: <span className="font-medium">{data?.requests || 0}</span></p>
+                      <p>Tokens: <span className="font-medium">{data?.tokens ? data.tokens.toLocaleString() : '0'}</span></p>
+                      <p>Cost: <span className="font-medium">${data?.cost ? data.cost.toFixed(2) : '0.00'}</span></p>
                     </div>
                   </div>
                 </Card>
