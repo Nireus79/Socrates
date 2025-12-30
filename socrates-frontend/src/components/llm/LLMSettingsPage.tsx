@@ -210,17 +210,9 @@ export const LLMSettingsPage: React.FC = () => {
                           </Badge>
                         )}
                         <Badge
-                          variant={
-                            provider.models && provider.models[0]?.includes('api')
-                              ? 'info'
-                              : 'secondary'
-                          }
+                          variant={provider.requires_api_key ? 'info' : 'secondary'}
                         >
-                          {provider.is_configured === undefined ||
-                          (Array.isArray(provider.models) &&
-                            provider.models[0]?.includes('openai')) ||
-                          provider.name === 'openai' ||
-                          provider.name === 'gemini' ? (
+                          {provider.requires_api_key ? (
                             <>
                               <CreditCard className="h-3 w-3 mr-1" />
                               API-Based

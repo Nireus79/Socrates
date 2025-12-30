@@ -108,7 +108,20 @@ class MultiLLMAgent(Agent):
             provider_dicts = []
 
             for provider in providers:
-                provider_dict = provider.to_dict()
+                # Transform backend provider metadata to frontend format
+                provider_dict = {
+                    "name": provider.provider,  # Frontend expects 'name', not 'provider'
+                    "label": provider.display_name,  # Frontend expects 'label', not 'display_name'
+                    "models": provider.models,
+                    "requires_api_key": provider.requires_api_key,
+                    "description": provider.description,
+                    "cost_per_1k_input_tokens": provider.cost_per_1k_input_tokens,
+                    "cost_per_1k_output_tokens": provider.cost_per_1k_output_tokens,
+                    "context_window": provider.context_window,
+                    "supports_streaming": provider.supports_streaming,
+                    "supports_vision": provider.supports_vision,
+                    "available": provider.available,
+                }
 
                 # Check if user has configured this provider (has API key)
                 if user_id:

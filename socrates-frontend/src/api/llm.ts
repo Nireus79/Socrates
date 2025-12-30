@@ -17,6 +17,14 @@ export interface LLMProvider {
   label: string;
   models: string[];
   is_configured: boolean;
+  requires_api_key: boolean;
+  description?: string;
+  cost_per_1k_input_tokens?: number;
+  cost_per_1k_output_tokens?: number;
+  context_window?: number;
+  supports_streaming?: boolean;
+  supports_vision?: boolean;
+  available?: boolean;
 }
 
 export interface LLMModel {
