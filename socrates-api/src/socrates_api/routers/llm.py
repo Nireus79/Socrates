@@ -12,7 +12,7 @@ async def list_providers(current_user: str = Depends(get_current_user)):
     try:
         from socrates_api.main import get_orchestrator
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request("multi_llm", {"action": "list_providers"})
+        result = orchestrator.process_request("multi_llm", {"action": "list_providers", "user_id": current_user})
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
         return SuccessResponse(success=True, message="Providers", data=result.get("data", result))

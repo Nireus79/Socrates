@@ -77,7 +77,10 @@ class MultiLLMAgent(Agent):
 
     def _list_providers(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        List all available LLM providers.
+        List all available LLM providers with configuration status.
+
+        Args:
+            data: {'user_id': str (optional)}
 
         Returns:
             {
@@ -88,6 +91,7 @@ class MultiLLMAgent(Agent):
                         'display_name': 'Anthropic Claude',
                         'models': [...],
                         'requires_api_key': False,
+                        'is_configured': bool,
                         'cost_per_1k_input_tokens': 0.003,
                         'available': True,
                         ...
@@ -97,12 +101,30 @@ class MultiLLMAgent(Agent):
             }
         """
         self.logger.debug("Listing available LLM providers")
+        user_id = data.get("user_id")
 
         try:
             providers = list_available_providers()
-            provider_dicts = [p.to_dict() for p in providers]
+            provider_dicts = []
 
-            self.logger.info(f"Listed {len(providers)} LLM providers")
+            for provider in providers:
+                provider_dict = provider.to_dict()
+
+                # Check if user has configured this provider (has API key)
+                if user_id:
+                    try:
+                        api_key = self.orchestrator.database.get_api_key(user_id, provider.provider)
+                        provider_dict["is_configured"] = api_key is not None
+                    except Exception as e:
+                        self.logger.debug(f"Error checking API key for {provider.provider}: {e}")
+                        provider_dict["is_configured"] = False
+                else:
+                    # If no user_id provided, assume not configured
+                    provider_dict["is_configured"] = False
+
+                provider_dicts.append(provider_dict)
+
+            self.logger.info(f"Listed {len(providers)} LLM providers for user {user_id}")
 
             return {"status": "success", "providers": provider_dicts, "count": len(providers)}
 
