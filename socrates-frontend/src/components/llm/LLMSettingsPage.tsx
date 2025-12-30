@@ -121,7 +121,7 @@ export const LLMSettingsPage: React.FC = () => {
                   Max Tokens
                 </label>
                 <div className="px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md text-sm">
-                  {config.max_tokens.toLocaleString()}
+                  {config.max_tokens ? config.max_tokens.toLocaleString() : 'N/A'}
                 </div>
               </div>
             </div>

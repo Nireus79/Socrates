@@ -58,9 +58,11 @@ export const useLLMStore = create<LLMState>((set, get) => ({
       const response = await llmAPI.listProviders();
       const providersMap = new Map<string, LLMProvider>();
 
-      response.providers.forEach((provider) => {
-        providersMap.set(provider.name, provider);
-      });
+      if (response && response.providers && Array.isArray(response.providers)) {
+        response.providers.forEach((provider) => {
+          providersMap.set(provider.name, provider);
+        });
+      }
 
       set({ providers: providersMap, isLoading: false });
     } catch (err) {
