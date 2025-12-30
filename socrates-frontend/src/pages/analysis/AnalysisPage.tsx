@@ -10,14 +10,61 @@
  * - View analysis results and recommendations
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useProjectStore } from '../../stores/projectStore';
+import { MainLayout, PageHeader } from '../../components/layout';
+import { Card } from '../../components/common';
 
 export const AnalysisPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
+  const { currentProject, projects, getProject, listProjects } = useProjectStore();
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId || '');
+
+  useEffect(() => {
+    listProjects();
+  }, [listProjects]);
+
+  useEffect(() => {
+    if (selectedProjectId) {
+      getProject(selectedProjectId);
+    }
+  }, [selectedProjectId, getProject]);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <MainLayout>
+      {/* Project Selector */}
+      {projects.length > 0 && (
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 dark:from-blue-900 dark:to-indigo-900 dark:border-blue-800">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                Select Project:
+              </label>
+              <select
+                value={selectedProjectId}
+                onChange={(e) => setSelectedProjectId(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="">-- Choose a Project --</option>
+                {projects.map((project) => (
+                  <option key={project.project_id} value={project.project_id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Page Header */}
+      <PageHeader
+        title="Code Analysis & Testing"
+        description="Validate, analyze, test, and improve your project code"
+      />
+
+      <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-8 text-center">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
           🔍 Code Analysis & Testing
@@ -39,7 +86,8 @@ export const AnalysisPage: React.FC = () => {
           <p>The analysis and testing tools will be available soon.</p>
         </div>
       </div>
-    </div>
+      </div>
+    </MainLayout>
   );
 };
 

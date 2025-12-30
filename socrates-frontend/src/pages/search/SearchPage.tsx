@@ -4,19 +4,25 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchStore } from '../../stores/searchStore';
+import { useProjectStore } from '../../stores/projectStore';
 import { SearchBar, SearchResultsGrid, SearchFilters } from '../../components/search';
-import { PageHeader } from '../../components/layout';
+import { MainLayout, PageHeader } from '../../components/layout';
+import { Card } from '../../components/common';
 import type { SearchFilterType, DateFilter } from '../../components/search/SearchFilters';
 
 export const SearchPage: React.FC = () => {
   const searchStore = useSearchStore();
+  const { projects, listProjects } = useProjectStore();
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [typeFilter, setTypeFilter] = useState<SearchFilterType>('all');
   const [dateFilter, setDateFilter] = useState<DateFilter>('any');
 
   useEffect(() => {
+    // Load projects on mount
+    listProjects();
     // Clear search on page load
     searchStore.clear();
-  }, []);
+  }, [listProjects, searchStore]);
 
   const handleSearch = async (query: string, searchType: 'all' | 'conversations' | 'knowledge' | 'notes') => {
     // Convert search type to filter type if needed
@@ -38,12 +44,37 @@ export const SearchPage: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <MainLayout>
       {/* Header */}
       <PageHeader
         title="Search"
         description="Find projects, conversations, knowledge, and notes"
       />
+
+      {/* Project Selector */}
+      {projects.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 dark:from-blue-900 dark:to-indigo-900 dark:border-blue-800">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                Select Project:
+              </label>
+              <select
+                value={selectedProjectId}
+                onChange={(e) => setSelectedProjectId(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="">-- Choose a Project --</option>
+                {projects.map((project) => (
+                  <option key={project.project_id} value={project.project_id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -102,6 +133,6 @@ export const SearchPage: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </MainLayout>
   );
 };

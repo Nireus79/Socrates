@@ -102,9 +102,12 @@ export const ChatPage: React.FC = () => {
   React.useEffect(() => {
     if (selectedProjectId) {
       getProject(selectedProjectId);
-      // Load the first question if no messages exist (before loading history)
-      loadInitialQuestion(selectedProjectId);
       loadHistory(selectedProjectId);
+      // Load initial question after a brief delay to ensure state is updated
+      const timer = setTimeout(() => {
+        loadInitialQuestion(selectedProjectId);
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [selectedProjectId, getProject, loadHistory]);
 
@@ -112,14 +115,16 @@ export const ChatPage: React.FC = () => {
   const loadInitialQuestion = React.useCallback(
     async (id: string) => {
       try {
-        if (messages.length === 0 && mode === 'socratic') {
+        // Check current state from store directly to avoid stale closure
+        const { messages: currentMessages, mode: currentMode } = useChatStore.getState();
+        if (currentMessages.length === 0 && currentMode === 'socratic') {
           await getQuestion(id);
         }
       } catch (error) {
         console.error('Failed to load initial question:', error);
       }
     },
-    [messages.length, getQuestion, mode]
+    [getQuestion]
   );
 
   // Auto-scroll to bottom when messages change

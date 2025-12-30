@@ -53,7 +53,7 @@ interface CollaborationState {
 
   // Actions - Existing
   loadCollaborators: (projectId: string) => Promise<void>;
-  addCollaborator: (projectId: string, username: string, role: CollaboratorRole) => Promise<void>;
+  addCollaborator: (projectId: string, email: string, role: CollaboratorRole) => Promise<void>;
   updateCollaboratorRole: (projectId: string, username: string, role: CollaboratorRole) => Promise<void>;
   removeCollaborator: (projectId: string, username: string) => Promise<void>;
   fetchPresence: (projectId: string) => Promise<void>;
@@ -124,10 +124,10 @@ export const useCollaborationStore = create<CollaborationState>((set, get) => ({
   },
 
   // Add collaborator
-  addCollaborator: async (projectId: string, username: string, role: CollaboratorRole) => {
+  addCollaborator: async (projectId: string, email: string, role: CollaboratorRole) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await collaborationAPI.addCollaborator(projectId, username, role);
+      const response = await collaborationAPI.addCollaborator(projectId, email, role);
       set((state) => ({
         collaborators: [...state.collaborators, response.collaborator],
         isLoading: false,

@@ -21,15 +21,12 @@ export const collaborationAPI = {
    */
   async addCollaborator(
     projectId: string,
-    username: string,
+    email: string,
     role: CollaboratorRole = 'editor'
   ): Promise<{ collaborator: Collaborator }> {
     return apiClient.post<{ collaborator: Collaborator }>(
       `/projects/${projectId}/collaborators`,
-      {},
-      {
-        params: { username, role },
-      }
+      { email, role }
     );
   },
 

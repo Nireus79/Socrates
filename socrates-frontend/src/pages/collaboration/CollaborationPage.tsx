@@ -132,7 +132,7 @@ export const CollaborationPage: React.FC = () => {
   const handleAddCollaborator = async (email: string, role: string) => {
     if (!selectedProjectId) return;
     try {
-      await addCollaborator(selectedProjectId, email.split('@')[0], role as any);
+      await addCollaborator(selectedProjectId, email, role as any);
       setShowAddModal(false);
       // Refresh activities from backend
       await fetchActivities(selectedProjectId);
