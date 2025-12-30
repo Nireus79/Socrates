@@ -58,8 +58,11 @@ export const useLLMStore = create<LLMState>((set, get) => ({
       const response = await llmAPI.listProviders();
       const providersMap = new Map<string, LLMProvider>();
 
-      if (response && response.providers && Array.isArray(response.providers)) {
-        response.providers.forEach((provider) => {
+      // Handle both nested (SuccessResponse) and direct responses
+      const providersData = (response as any).data?.providers || (response as any).providers;
+
+      if (providersData && Array.isArray(providersData)) {
+        providersData.forEach((provider: any) => {
           providersMap.set(provider.name, provider);
         });
       }
@@ -79,7 +82,9 @@ export const useLLMStore = create<LLMState>((set, get) => ({
   getConfig: async () => {
     set({ isLoading: true, error: null });
     try {
-      const config = await llmAPI.getConfig();
+      const response = await llmAPI.getConfig();
+      // Handle both nested (SuccessResponse) and direct responses
+      const config = (response as any).data || response;
       set({ config, isLoading: false });
     } catch (err) {
       const message =
@@ -215,7 +220,9 @@ export const useLLMStore = create<LLMState>((set, get) => ({
   getUsageStats: async (timePeriod: string = 'month') => {
     set({ isLoading: true, error: null });
     try {
-      const stats = await llmAPI.getUsageStats(timePeriod);
+      const response = await llmAPI.getUsageStats(timePeriod);
+      // Handle both nested (SuccessResponse) and direct responses
+      const stats = (response as any).data || response;
       set({ usageStats: stats, isLoading: false });
     } catch (err) {
       const message =
