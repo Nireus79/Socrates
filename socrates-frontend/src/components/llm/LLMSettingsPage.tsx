@@ -181,82 +181,208 @@ export const LLMSettingsPage: React.FC = () => {
 
           {/* Provider Cards */}
           <div className="grid gap-4">
-            {providersList.map((provider) => (
-              <Card
-                key={provider.name}
-                className={`transition-all ${
-                  provider.is_configured
-                    ? 'border-green-300 dark:border-green-700'
-                    : 'border-gray-200 dark:border-gray-700'
-                }`}
-              >
-                <div className="space-y-4">
-                  {/* Provider Header */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                          {provider.label}
-                        </h3>
-                        {provider.is_configured && (
-                          <Badge variant="success">
-                            <Check className="h-3 w-3 mr-1" />
-                            Configured
-                          </Badge>
-                        )}
-                        {!provider.is_configured && (
-                          <Badge variant="warning">
-                            Not Configured
-                          </Badge>
-                        )}
-                        <Badge
-                          variant={provider.requires_api_key ? 'info' : 'secondary'}
-                        >
-                          {provider.requires_api_key ? (
-                            <>
-                              <CreditCard className="h-3 w-3 mr-1" />
-                              API-Based
-                            </>
-                          ) : (
-                            <>
-                              <Plug className="h-3 w-3 mr-1" />
-                              Subscription
-                            </>
+            {providersList.map((provider) => {
+              const isApiRequired = provider.requires_api_key;
+              const isConfigured =
+                provider.is_configured ||
+                (!isApiRequired && provider.models && provider.models.length > 0);
+              const isDefault = config?.default_provider === provider.name;
+
+              return (
+                <Card
+                  key={provider.name}
+                  className={`transition-all ${
+                    isConfigured
+                      ? 'border-green-300 dark:border-green-700 bg-green-50/30 dark:bg-green-900/10'
+                      : 'border-gray-200 dark:border-gray-700'
+                  }`}
+                >
+                  <div className="space-y-4">
+                    {/* Provider Header with Controls */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                            {provider.label}
+                          </h3>
+
+                          {isDefault && (
+                            <Badge variant="success">
+                              <Check className="h-3 w-3 mr-1" />
+                              Default
+                            </Badge>
                           )}
-                        </Badge>
+
+                          {provider.is_configured && !isApiRequired && (
+                            <Badge variant="success">
+                              <Check className="h-3 w-3 mr-1" />
+                              Ready
+                            </Badge>
+                          )}
+
+                          {provider.is_configured && isApiRequired && (
+                            <Badge variant="success">
+                              <Check className="h-3 w-3 mr-1" />
+                              Configured
+                            </Badge>
+                          )}
+
+                          {!provider.is_configured && isApiRequired && (
+                            <Badge variant="warning">
+                              Needs Setup
+                            </Badge>
+                          )}
+
+                          <Badge
+                            variant={isApiRequired ? 'info' : 'secondary'}
+                          >
+                            {isApiRequired ? (
+                              <>
+                                <CreditCard className="h-3 w-3 mr-1" />
+                                API-Based
+                              </>
+                            ) : (
+                              <>
+                                <Plug className="h-3 w-3 mr-1" />
+                                Built-in
+                              </>
+                            )}
+                          </Badge>
+                        </div>
+
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {provider.description || 'Language model provider'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                          {provider.models && provider.models.length > 0
+                            ? `${provider.models.length} model${
+                                provider.models.length !== 1 ? 's' : ''
+                              } available • ${provider.context_window?.toLocaleString()} token context`
+                            : 'No models available'}
+                        </p>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                        {provider.models && provider.models.length > 0
-                          ? `${provider.models.length} model${
-                              provider.models.length !== 1 ? 's' : ''
-                            } available`
-                          : 'No models available'}
-                      </p>
                     </div>
-                  </div>
 
-                  {/* API Key Management Section */}
-                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                    <APIKeyManager provider={provider.name} />
-                  </div>
+                    {/* API Key Management (only for API-based providers) */}
+                    {isApiRequired && (
+                      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                          API Key Configuration
+                        </h4>
+                        <APIKeyManager provider={provider.name} />
+                      </div>
+                    )}
 
-                  {/* Provider Details and Model Selection */}
-                  {provider.is_configured && (
+                    {/* Model Selection and Provider Controls (always show) */}
                     <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                      <LLMProviderCard provider={provider} />
-                    </div>
-                  )}
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                        Model & Settings
+                      </h4>
 
-                  {/* Not Configured Message */}
-                  {!provider.is_configured && (
-                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm text-amber-800 dark:text-amber-200">
-                      <AlertCircle className="h-4 w-4 inline mr-2" />
-                      Add an API key above to enable this provider and select models
+                      {isConfigured ? (
+                        <div className="space-y-3">
+                          {/* Model Selection Dropdown */}
+                          {provider.models && provider.models.length > 0 && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Select Model
+                              </label>
+                              <div className="relative">
+                                <select
+                                  defaultValue={provider.models[0]}
+                                  onChange={(e) => {
+                                    if (provider.name !== config?.default_provider) {
+                                      // Automatically set as default when selecting model
+                                      // This will be handled by clicking "Use This Provider" button
+                                    }
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                  {provider.models.map((model) => (
+                                    <option key={model} value={model}>
+                                      {model}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Action Buttons */}
+                          <div className="flex gap-2 pt-2">
+                            {!isDefault && (
+                              <Button
+                                variant="primary"
+                                fullWidth
+                                onClick={() => {
+                                  const select = document.querySelector(
+                                    `[name="model-${provider.name}"]`
+                                  ) as HTMLSelectElement;
+                                  const selectedModel = select?.value || provider.models?.[0];
+                                  if (selectedModel) {
+                                    // Call both setDefaultProvider and setProviderModel
+                                    config?.default_provider &&
+                                      config.default_provider !==
+                                        provider.name &&
+                                      (async () => {
+                                        const { setDefaultProvider, setProviderModel } =
+                                          useLLMStore.getState();
+                                        await setDefaultProvider(provider.name).catch(
+                                          console.error
+                                        );
+                                        await setProviderModel(
+                                          provider.name,
+                                          selectedModel
+                                        ).catch(console.error);
+                                      })();
+                                  }
+                                }}
+                              >
+                                Use This Provider
+                              </Button>
+                            )}
+
+                            {isDefault && (
+                              <div className="flex-1 text-center py-2 bg-green-50 dark:bg-green-900/20 rounded-md">
+                                <p className="text-sm font-semibold text-green-700 dark:text-green-300">
+                                  ✓ Currently Active
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-3">
+                          <p className="text-sm text-amber-800 dark:text-amber-200">
+                            <AlertCircle className="h-4 w-4 inline mr-2" />
+                            {isApiRequired
+                              ? 'Add an API key above to enable this provider'
+                              : 'This provider requires setup'}
+                          </p>
+                          {isApiRequired && (
+                            <div className="text-xs text-amber-700 dark:text-amber-300">
+                              Once you add your API key, you'll be able to select models
+                              and set this as your default provider.
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </Card>
-            ))}
+
+                    {/* Provider Info */}
+                    {provider.cost_per_1k_input_tokens && (
+                      <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                          <span className="font-medium">Estimated Cost:</span> $
+                          {(provider.cost_per_1k_input_tokens * 1000).toFixed(4)}/1M input tokens
+                          • ${(provider.cost_per_1k_output_tokens * 1000).toFixed(4)}/1M output tokens
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}
