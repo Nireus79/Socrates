@@ -155,7 +155,7 @@ export const LLMSettingsPage: React.FC = () => {
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Default Model</p>
-              <p className="text-sm text-gray-900 dark:text-white font-mono">{config.default_model.split('-').slice(-1)[0]}</p>
+              <p className="text-sm text-gray-900 dark:text-white font-mono">{config.default_model ? config.default_model.split('-').slice(-1)[0] : 'N/A'}</p>
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-1">Temperature</p>
@@ -230,27 +230,29 @@ export const LLMSettingsPage: React.FC = () => {
                           <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                             {provider.label}
                           </h3>
-                          {isDefault && (
-                            <Badge variant="success">
-                              <Check className="h-3 w-3 mr-1" /> Default
+                          {[
+                            isDefault && (
+                              <Badge key="default" variant="success">
+                                <Check className="h-3 w-3 mr-1" /> Default
+                              </Badge>
+                            ),
+                            isConfigured && (
+                              <Badge key="active" variant="success">
+                                <Check className="h-3 w-3 mr-1" /> Active
+                              </Badge>
+                            ),
+                            <Badge key="type" variant={isApiRequired ? 'info' : 'secondary'}>
+                              {isApiRequired ? (
+                                <>
+                                  <CreditCard className="h-3 w-3 mr-1" /> API-Based
+                                </>
+                              ) : (
+                                <>
+                                  <Plug className="h-3 w-3 mr-1" /> Built-in
+                                </>
+                              )}
                             </Badge>
-                          )}
-                          {isConfigured && (
-                            <Badge variant="success">
-                              <Check className="h-3 w-3 mr-1" /> Active
-                            </Badge>
-                          )}
-                          <Badge variant={isApiRequired ? 'info' : 'secondary'}>
-                            {isApiRequired ? (
-                              <>
-                                <CreditCard className="h-3 w-3 mr-1" /> API-Based
-                              </>
-                            ) : (
-                              <>
-                                <Plug className="h-3 w-3 mr-1" /> Built-in
-                              </>
-                            )}
-                          </Badge>
+                          ].filter(Boolean)}
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           {provider.description || 'Language model provider'}
