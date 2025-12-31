@@ -50,14 +50,20 @@ class TestProjectMaturityAnalytics:
 
     @patch("requests.post")
     @patch("requests.get")
-    def test_01_get_project_maturity(self, mock_get, mock_post, mock_user_data, mock_project_data):
+    def test_01_get_project_maturity(
+        self, mock_get, mock_post, mock_user_data, mock_project_data
+    ):
         """Test: Get project maturity metrics"""
         # Mock registration
         mock_post.return_value.status_code = 200
-        mock_post.return_value.json.return_value = {"access_token": mock_user_data["access_token"]}
+        mock_post.return_value.json.return_value = {
+            "access_token": mock_user_data["access_token"]
+        }
 
         # Mock project creation
-        mock_post.return_value.json.return_value = {"project_id": mock_project_data["project_id"]}
+        mock_post.return_value.json.return_value = {
+            "project_id": mock_project_data["project_id"]
+        }
 
         # Mock maturity metrics response
         mock_get.return_value.status_code = 200
@@ -80,7 +86,9 @@ class TestProjectMaturityAnalytics:
 
     @patch("requests.put")
     @patch("requests.get")
-    def test_02_phase_transition_analytics(self, mock_get, mock_put, mock_project_data):
+    def test_02_phase_transition_analytics(
+        self, mock_get, mock_put, mock_project_data
+    ):
         """Test: Track project phase transitions"""
         phases = ["discovery", "analysis", "design", "implementation"]
 
@@ -94,15 +102,14 @@ class TestProjectMaturityAnalytics:
         # Mock phase history response
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = {
-            "phase_history": [{"phase": p, "timestamp": datetime.now().isoformat()} for p in phases]
+            "phase_history": [
+                {"phase": p, "timestamp": datetime.now().isoformat()}
+                for p in phases
+            ]
         }
 
         # Test transitions
         for phase in phases:
-            mock_put.return_value.json.return_value = {
-                **mock_project_data,
-                "phase": phase,
-            }
             response = mock_put.return_value
             assert response.status_code == 200
 
@@ -271,7 +278,10 @@ class TestAnalyticsDataIntegrity:
         response = mock_get.return_value
         assert response.status_code == 200
         data = response.json()
-        assert data["correct_responses"] + data["incorrect_responses"] == data["total_responses"]
+        assert (
+            data["correct_responses"] + data["incorrect_responses"]
+            == data["total_responses"]
+        )
 
     @patch("requests.get")
     def test_error_handling(self, mock_get):
