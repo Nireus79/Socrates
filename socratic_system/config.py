@@ -163,25 +163,25 @@ class SocratesConfig:
         Raises:
             ValueError: If required API key is not found
         """
-        api_key = os.getenv("ANTHROPIC_API_KEY", os.getenv("API_KEY_CLAUDE"))
-        if not api_key:
+        config_dict = {
+            "api_key": overrides.get("api_key") or os.getenv("ANTHROPIC_API_KEY", os.getenv("API_KEY_CLAUDE")),
+            "claude_model": overrides.get("claude_model") or os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001"),
+            "data_dir": overrides.get("data_dir") or Path(os.getenv("SOCRATES_DATA_DIR", Path.home() / ".socrates")),
+            "log_level": overrides.get("log_level") or os.getenv("SOCRATES_LOG_LEVEL", "INFO"),
+        }
+
+        # Check api_key after considering overrides
+        if not config_dict["api_key"]:
             raise ValueError(
                 "API key required. Set ANTHROPIC_API_KEY or API_KEY_CLAUDE environment variable"
             )
 
-        config_dict = {
-            "api_key": api_key,
-            "claude_model": os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001"),
-            "data_dir": Path(os.getenv("SOCRATES_DATA_DIR", Path.home() / ".socrates")),
-            "log_level": os.getenv("SOCRATES_LOG_LEVEL", "INFO"),
-        }
-
         # Optional subscription token (alternative auth method)
-        subscription_token = os.getenv("ANTHROPIC_SUBSCRIPTION_TOKEN")
+        subscription_token = overrides.get("subscription_token") or os.getenv("ANTHROPIC_SUBSCRIPTION_TOKEN")
         if subscription_token:
             config_dict["subscription_token"] = subscription_token
 
-        log_file = os.getenv("SOCRATES_LOG_FILE")
+        log_file = overrides.get("log_file") or os.getenv("SOCRATES_LOG_FILE")
         if log_file:
             config_dict["log_file"] = Path(log_file)
 
