@@ -620,7 +620,11 @@ Return only the question, no additional text or explanation."""
         if not question_msg:
             return
 
-        question_id = question_msg.get("id", phase_messages[-2].get("content", "")[:50])
+        # Get fallback content from second-to-last message if available
+        fallback_content = ""
+        if len(phase_messages) >= 2:
+            fallback_content = phase_messages[-2].get("content", "")[:50]
+        question_id = question_msg.get("id", fallback_content)
         specs_extracted = self._count_extracted_specs(insights)
 
         logger.debug(f"Tracking question effectiveness: {question_id}")

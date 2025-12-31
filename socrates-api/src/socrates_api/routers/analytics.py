@@ -103,8 +103,9 @@ async def get_analytics_summary(
             total_answers = len([m for m in conversation if m.get("type") == "assistant"])
             code_generation_count = len([m for m in conversation if "```" in m.get("content", "")])
             code_lines_generated = sum(
-                len(m.get("content", "").split("```")[1].splitlines() or [])
+                len(parts[1].splitlines()) if len(parts) > 1 else 0
                 for m in conversation if "```" in m.get("content", "")
+                for parts in [m.get("content", "").split("```")]
             )
 
             # Calculate confidence based on maturity
@@ -654,9 +655,10 @@ async def export_analytics(
         total_answers = len([m for m in conversation if m.get("type") == "assistant"])
         code_generation_count = len([m for m in conversation if "```" in m.get("content", "")])
         code_lines_generated = sum(
-            len(m.get("content", "").split("```")[1].splitlines() or [])
+            len(parts[1].splitlines()) if len(parts) > 1 else 0
             for m in conversation
             if "```" in m.get("content", "")
+            for parts in [m.get("content", "").split("```")]
         )
 
         confidence_score = min(100, 40 + (project.overall_maturity or 0) * 0.75)
