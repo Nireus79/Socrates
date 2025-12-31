@@ -8,11 +8,10 @@ Tests all project CRUD operations, lifecycle, and tier-based features:
 - Project state transitions
 """
 
-import requests
-import json
-import time
 from datetime import datetime
+
 import pytest
+import requests
 
 BASE_URL = "http://localhost:8000"
 HEADERS = {"Content-Type": "application/json"}

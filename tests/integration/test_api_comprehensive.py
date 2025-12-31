@@ -3,10 +3,10 @@ Comprehensive API Testing Suite
 Tests all major workflows through the API endpoints
 """
 
-import requests
-import json
-from datetime import datetime
 import time
+from datetime import datetime
+
+import requests
 
 BASE_URL = "http://localhost:8000"
 HEADERS = {"Content-Type": "application/json"}

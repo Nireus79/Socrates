@@ -10,11 +10,8 @@ Tests authentication endpoints including:
 - MFA/TOTP
 """
 
+
 import pytest
-from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, patch, MagicMock
-from fastapi import FastAPI, HTTPException
-from starlette.testclient import TestClient
 
 
 @pytest.mark.unit

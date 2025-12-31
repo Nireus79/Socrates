@@ -124,8 +124,8 @@ class TestUserAuthenticationWorkflow:
     def test_user_login_command(self, app):
         """Test user login"""
         # First create a user with unique username
-        import sys
         import os
+        import sys
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../socrates-api/src'))
         try:
             from socrates_api.auth.password import hash_password

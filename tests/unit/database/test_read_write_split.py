@@ -11,21 +11,21 @@ Tests cover:
 - Module-level router functions
 """
 
-import pytest
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
-from contextvars import copy_context
+
+import pytest
 
 from socratic_system.database.read_write_split import (
     DatabaseRole,
     DatabaseRouter,
+    _db_role,
+    get_db_role,
+    get_router,
+    initialize_router,
+    set_db_role,
     use_primary,
     use_replica,
-    initialize_router,
-    get_router,
-    set_db_role,
-    get_db_role,
-    _db_role,
 )
 
 

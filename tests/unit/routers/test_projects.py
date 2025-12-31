@@ -10,8 +10,8 @@ Tests project management endpoints including:
 - Archive/unarchive project
 """
 
+
 import pytest
-from uuid import uuid4
 
 
 @pytest.mark.unit

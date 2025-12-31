@@ -10,10 +10,9 @@ Tests complete authentication journeys:
 - Token refresh and expiration
 """
 
+
 import pytest
-from datetime import datetime, timedelta
 from httpx import AsyncClient
-from fastapi import FastAPI
 
 
 @pytest.mark.integration

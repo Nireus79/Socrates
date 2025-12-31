@@ -9,11 +9,11 @@ Tests metrics collection including:
 - Slow request detection
 """
 
+
 import pytest
-from unittest.mock import MagicMock, patch
-from fastapi import FastAPI, Request
-from starlette.testclient import TestClient
+from fastapi import FastAPI
 from socrates_api.middleware.metrics import MetricsMiddleware
+from starlette.testclient import TestClient
 
 
 @pytest.mark.unit

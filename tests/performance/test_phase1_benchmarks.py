@@ -7,12 +7,13 @@ Tests that verify:
 3. Query accuracy maintained
 """
 
-import pytest
-import time
-import tempfile
 import os
+import tempfile
+import time
 from datetime import datetime
 from pathlib import Path
+
+import pytest
 
 from socratic_system.database.project_db_v2 import ProjectDatabase
 from socratic_system.models.project import ProjectContext

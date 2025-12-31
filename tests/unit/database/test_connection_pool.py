@@ -8,14 +8,14 @@ Tests cover:
 - Resource cleanup
 """
 
-import pytest
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from socratic_system.database.connection_pool import (
     DatabaseConnectionPool,
-    initialize_pool,
     get_pool,
+    initialize_pool,
 )
 
 

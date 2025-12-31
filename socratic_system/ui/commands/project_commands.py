@@ -1050,7 +1050,6 @@ class ProjectFixCommand(BaseCommand):
 
     def _apply_fixes(self, issues: List[tuple], temp_path: str) -> int:
         """Apply fixes to identified issues"""
-        from pathlib import Path
 
         fixes_applied = 0
         for itype, issue in issues:

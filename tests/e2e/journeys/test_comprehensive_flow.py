@@ -12,11 +12,10 @@ Tests complete user workflows and feature integration:
 7. Error handling and edge cases
 """
 
-import requests
-import json
 import time
 from datetime import datetime
-from typing import Dict, Optional, Tuple
+
+import requests
 
 BASE_URL = "http://localhost:8000"
 
@@ -155,7 +154,7 @@ class E2ETestSuite:
                 self.passed += 1
                 return True
             else:
-                self.log(f"  Could not extract project_id from response", "WARN")
+                self.log("  Could not extract project_id from response", "WARN")
                 return False
         else:
             self.log(f"[FAIL] Project Creation: Expected 200/201, got {response.status_code}", "FAIL")

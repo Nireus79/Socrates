@@ -8,14 +8,15 @@ Tests rate limiting functionality including:
 - Different limit tiers
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
-from starlette.testclient import TestClient
 from socrates_api.middleware.rate_limit import RateLimitConfig, get_limiter
+from starlette.testclient import TestClient
 
 
 @pytest.mark.unit

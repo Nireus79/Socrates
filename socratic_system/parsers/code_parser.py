@@ -128,7 +128,7 @@ class CodeParser:
         imports = self._extract_python_imports(tree)
 
         # Calculate metrics
-        loc = len([l for l in lines if l.strip() and not l.strip().startswith("#")])
+        loc = len([line for line in lines if line.strip() and not line.strip().startswith("#")])
 
         return {
             "language": "python",
@@ -209,7 +209,7 @@ class CodeParser:
         imports = self._extract_js_imports(lines)
 
         # Calculate metrics
-        loc = len([l for l in lines if l.strip() and not l.strip().startswith("//")])
+        loc = len([line for line in lines if line.strip() and not line.strip().startswith("//")])
 
         return {
             "language": "javascript",
@@ -355,7 +355,7 @@ class CodeParser:
                     })
                     seen_methods.add(method_name)
 
-        loc = len([l for l in lines if l.strip() and not l.strip().startswith("//")])
+        loc = len([line for line in lines if line.strip() and not line.strip().startswith("//")])
 
         return {
             "language": "java",
@@ -430,7 +430,7 @@ class CodeParser:
                     })
                     seen_functions.add(func_name)
 
-        loc = len([l for l in lines if l.strip() and not l.strip().startswith("//")])
+        loc = len([line for line in lines if line.strip() and not line.strip().startswith("//")])
 
         return {
             "language": "cpp",
@@ -485,7 +485,7 @@ class CodeParser:
                     })
                     seen_functions.add(func_name)
 
-        loc = len([l for l in lines if l.strip() and not l.strip().startswith("//")])
+        loc = len([line for line in lines if line.strip() and not line.strip().startswith("//")])
 
         return {
             "language": "c",

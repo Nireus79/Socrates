@@ -9,8 +9,8 @@ Tests complete chat functionality:
 - Message export
 """
 
+
 import pytest
-import json
 from httpx import AsyncClient
 
 

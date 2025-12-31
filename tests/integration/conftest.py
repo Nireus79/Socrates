@@ -4,10 +4,11 @@ Pytest configuration for integration tests.
 Initializes the API orchestrator before running tests.
 """
 
+import os
+import time
+
 import pytest
 import requests
-import time
-import os
 
 BASE_URL = "http://localhost:8000"
 

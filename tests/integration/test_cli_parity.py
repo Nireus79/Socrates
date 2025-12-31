@@ -10,12 +10,11 @@ Tests that CLI and API implementations produce consistent results:
 - Same database state
 """
 
-import requests
-import json
-import subprocess
 import os
 from datetime import datetime
+
 import pytest
+import requests
 
 BASE_URL = "http://localhost:8000"
 HEADERS = {"Content-Type": "application/json"}

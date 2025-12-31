@@ -8,9 +8,10 @@ Tests cover:
 - Admin endpoints for stats management
 """
 
+from unittest.mock import patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock, AsyncMock, patch
 
 
 # Mock FastAPI app for testing

@@ -10,11 +10,11 @@ Tests comprehensive database functionality:
 - Joins and aggregations
 """
 
-import pytest
-from datetime import datetime
-from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import uuid4
+
+import pytest
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @pytest.mark.unit

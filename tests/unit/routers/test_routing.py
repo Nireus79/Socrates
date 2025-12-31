@@ -8,9 +8,8 @@ Tests specifically the endpoints that were fixed to verify they:
 3. Handle authentication properly
 """
 
+
 import requests
-import json
-from typing import Dict
 
 BASE_URL = "http://localhost:8000"
 TEST_USER = "test_router_verification"
@@ -24,7 +23,7 @@ def print_result(name: str, path: str, method: str, status: int, expected: int):
     symbol = "PASS" if passed else "FAIL"
     print(f"{symbol}: {method:6} {path:50} -> {status}")
     if not passed and status == 404:
-        print(f"       ERROR: Endpoint not found (malformed path?)")
+        print("       ERROR: Endpoint not found (malformed path?)")
     return passed
 
 def test_auth_endpoints():
@@ -54,7 +53,7 @@ def test_auth_endpoints():
         if print_result("Update user profile", "/auth/me", "PUT", response.status_code, 200):
             passed += 1
             if response.status_code == 200:
-                print(f"       VERIFIED: PUT /auth/me is working and returning user profile")
+                print("       VERIFIED: PUT /auth/me is working and returning user profile")
     except Exception as e:
         print(f"FAIL: PUT /auth/me -> ERROR: {e}")
 
@@ -92,7 +91,7 @@ def test_projects_endpoints():
             if print_result("Get project analytics", f"/projects/{PROJECT_ID}/analytics", "GET", response.status_code, 200):
                 passed += 1
                 if response.status_code in [200, 403]:  # 403 is OK if project not found due to access control
-                    print(f"       VERIFIED: GET /projects/{{id}}/analytics endpoint exists and is properly routed")
+                    print("       VERIFIED: GET /projects/{id}/analytics endpoint exists and is properly routed")
         else:
             print(f"FAIL: GET /projects/{PROJECT_ID}/analytics -> 404")
     except Exception as e:

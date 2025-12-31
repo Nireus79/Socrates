@@ -24,7 +24,6 @@ from socratic_system.ui.commands.doc_commands import (
     DocImportUrlCommand,
     DocListCommand,
     DocPasteCommand,
-    DocsCommand,
 )
 from socratic_system.ui.commands.finalize_commands import (
     FinalizeDocsCommand,

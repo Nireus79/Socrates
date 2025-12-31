@@ -11,10 +11,10 @@ Tests GitHub repository import and integration capabilities:
 - Dependency extraction (requirements.txt, package.json, etc.)
 """
 
-import requests
-import json
 from datetime import datetime
+
 import pytest
+import requests
 
 BASE_URL = "http://localhost:8000"
 HEADERS = {"Content-Type": "application/json"}

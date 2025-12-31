@@ -9,12 +9,10 @@ Tests:
 5. Interconnection between API and database
 """
 
-import json
 import os
 import sqlite3
 import tempfile
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import pytest
 

@@ -11,10 +11,10 @@ Tests code generation capabilities available to Pro+ tier:
 - Multi-LLM support (Pro+ feature)
 """
 
-import requests
-import json
 from datetime import datetime
+
 import pytest
+import requests
 
 BASE_URL = "http://localhost:8000"
 HEADERS = {"Content-Type": "application/json"}

@@ -10,10 +10,10 @@ This script validates:
 4. Authentication and access control working
 """
 
-import requests
-import json
 import sys
-from typing import Dict, List, Tuple
+from typing import Dict
+
+import requests
 
 # Configuration
 BASE_URL = "http://localhost:8000"
@@ -464,7 +464,7 @@ def main():
     try:
         response = requests.post(f"{BASE_URL}/initialize")
         if response.status_code == 200:
-            print(f"PASS API initialization successful")
+            print("PASS API initialization successful")
         else:
             print(f"FAIL API initialization failed: {response.status_code}")
             print(f"  Response: {response.text[:200]}")

@@ -8,10 +8,10 @@ Verifies that subscription tiers properly enforce:
 - Feature access (code generation, collaboration, analytics, etc.)
 """
 
-import requests
-import json
 from datetime import datetime
+
 import pytest
+import requests
 
 BASE_URL = "http://localhost:8000"
 HEADERS = {"Content-Type": "application/json"}

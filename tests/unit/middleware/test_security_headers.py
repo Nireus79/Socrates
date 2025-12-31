@@ -10,8 +10,8 @@ Tests security header enforcement including:
 
 import pytest
 from fastapi import FastAPI
-from starlette.testclient import TestClient
 from socrates_api.middleware.security_headers import SecurityHeadersMiddleware
+from starlette.testclient import TestClient
 
 
 @pytest.mark.unit

@@ -8,11 +8,9 @@ Tests real-time chat features:
 4. Multi-user chat isolation
 """
 
-import json
 import os
 import tempfile
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 

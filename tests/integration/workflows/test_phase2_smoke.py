@@ -7,8 +7,9 @@ These are lightweight integration tests that verify:
 3. Basic error handling works
 """
 
-import pytest
 from datetime import timedelta
+
+import pytest
 from fastapi.testclient import TestClient
 from socrates_api.auth.jwt_handler import JWTHandler
 
@@ -67,7 +68,7 @@ def test_collaboration_invitations_list_endpoint_exists(client):
     )
 
     assert response.status_code in [404, 403], f"Got {response.status_code}"
-    print(f"✓ GET /projects/{{project_id}}/invitations exists")
+    print("✓ GET /projects/{project_id}/invitations exists")
 
 
 def test_collaboration_activities_record_endpoint_exists(client):
@@ -82,7 +83,7 @@ def test_collaboration_activities_record_endpoint_exists(client):
 
     # Should return 404 or 403, not route not found
     assert response.status_code in [404, 403, 422], f"Got {response.status_code}: {response.text}"
-    print(f"✓ POST /projects/{{project_id}}/activities exists")
+    print("✓ POST /projects/{project_id}/activities exists")
 
 
 def test_collaboration_activities_list_endpoint_exists(client):
@@ -95,7 +96,7 @@ def test_collaboration_activities_list_endpoint_exists(client):
     )
 
     assert response.status_code in [404, 403], f"Got {response.status_code}"
-    print(f"✓ GET /projects/{{project_id}}/activities exists")
+    print("✓ GET /projects/{project_id}/activities exists")
 
 
 def test_collaboration_presence_endpoint_exists(client):
@@ -108,7 +109,7 @@ def test_collaboration_presence_endpoint_exists(client):
     )
 
     assert response.status_code in [404, 403], f"Got {response.status_code}"
-    print(f"✓ GET /projects/{{project_id}}/presence exists")
+    print("✓ GET /projects/{project_id}/presence exists")
 
 
 # ============================================================================
@@ -144,7 +145,7 @@ def test_knowledge_get_document_details_endpoint_exists(client):
 
     # Should return 404 for non-existent doc, not route not found
     assert response.status_code in [404, 400], f"Got {response.status_code}"
-    print(f"✓ GET /knowledge/documents/{{doc_id}} exists")
+    print("✓ GET /knowledge/documents/{doc_id} exists")
 
 
 def test_knowledge_bulk_delete_endpoint_exists(client):
@@ -193,7 +194,7 @@ def test_knowledge_document_analytics_endpoint_exists(client):
 
     # Should return 404, not route not found
     assert response.status_code in [404, 400], f"Got {response.status_code}"
-    print(f"✓ GET /knowledge/documents/{{doc_id}}/analytics exists")
+    print("✓ GET /knowledge/documents/{doc_id}/analytics exists")
 
 
 # ============================================================================

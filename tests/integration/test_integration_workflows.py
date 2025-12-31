@@ -4,7 +4,6 @@ Tests the complete workflow paths through direct code execution
 """
 
 import sys
-import os
 from datetime import datetime
 
 sys.path.insert(0, ".")
@@ -17,12 +16,12 @@ def test_project_creation_workflow():
     print("="*70 + "\n")
 
     try:
-        from socratic_system.models import User
-        from socratic_system.database import ProjectDatabase
-        from socratic_system.utils.id_generator import ProjectIDGenerator
-        from socratic_system.subscription.checker import SubscriptionChecker
-        from socrates_api.database import DatabaseSingleton
         from socrates_api.auth.password import hash_password, verify_password
+        from socrates_api.database import DatabaseSingleton
+
+        from socratic_system.models import User
+        from socratic_system.subscription.checker import SubscriptionChecker
+        from socratic_system.utils.id_generator import ProjectIDGenerator
 
         # Step 1: Initialize database singleton
         print("[1/7] Initializing DatabaseSingleton...")
@@ -96,7 +95,7 @@ def test_project_creation_workflow():
         print("[7/7] Verifying project retrieval...")
         retrieved_project = db.load_project(project_id)
         if retrieved_project and retrieved_project.name == "Integration Test Project":
-            print(f"      [OK] Project retrieved successfully")
+            print("      [OK] Project retrieved successfully")
             print(f"      [OK] Project owner: {retrieved_project.owner}")
             print(f"      [OK] Project phase: {retrieved_project.phase}")
         else:
@@ -122,16 +121,17 @@ def test_orchestrator_integration():
     print("="*70 + "\n")
 
     try:
-        from socratic_system.orchestration.orchestrator import AgentOrchestrator
-        from socratic_system.config import SocratesConfig
+
         from socrates_api.database import DatabaseSingleton
-        import os
+
+        from socratic_system.config import SocratesConfig
+        from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
         # Initialize config from environment
         print("[1/4] Initializing orchestrator...")
         config = SocratesConfig.from_env()
         orchestrator = AgentOrchestrator(config)
-        print(f"      [OK] Orchestrator created")
+        print("      [OK] Orchestrator created")
 
         # Step 2: Verify database is singleton
         print("[2/4] Verifying database is shared singleton...")
@@ -149,8 +149,9 @@ def test_orchestrator_integration():
         test_user = f"orch_test_{int(datetime.now().timestamp() * 1000)}"
 
         # Create test user first
-        from socratic_system.models import User
         from socrates_api.auth.password import hash_password
+
+        from socratic_system.models import User
 
         user = User(
             username=test_user,
@@ -183,7 +184,7 @@ def test_orchestrator_integration():
         print("[4/4] Verifying project persistence...")
         retrieved = orchestrator.database.load_project(project.project_id)
         if retrieved and retrieved.name == "Orchestrator Test Project":
-            print(f"      [OK] Project persisted and retrievable")
+            print("      [OK] Project persisted and retrievable")
         else:
             print("      [FAIL] Project not found after creation!")
             return False

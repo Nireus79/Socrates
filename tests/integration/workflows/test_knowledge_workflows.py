@@ -9,13 +9,13 @@ Tests verify:
 5. Tester role is available in the system
 """
 
+from unittest.mock import Mock
+
 import pytest
-from datetime import datetime
-from unittest.mock import Mock, patch, MagicMock
 
 from socratic_system.agents.knowledge_analysis import KnowledgeAnalysisAgent
-from socratic_system.events import EventType, EventEmitter
-from socratic_system.models.role import VALID_ROLES, ROLE_FOCUS_AREAS, ROLE_EXAMPLES
+from socratic_system.events import EventEmitter, EventType
+from socratic_system.models.role import ROLE_EXAMPLES, ROLE_FOCUS_AREAS, VALID_ROLES
 
 
 class TestKnowledgeAnalysisAgent:

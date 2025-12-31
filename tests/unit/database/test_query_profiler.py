@@ -8,14 +8,14 @@ Tests cover:
 - Performance metrics and reporting
 """
 
-import pytest
 import asyncio
 import time
-from unittest.mock import MagicMock
+
+import pytest
 
 from socratic_system.database.query_profiler import (
-    QueryStats,
     QueryProfiler,
+    QueryStats,
     get_profiler,
     profile_query,
 )

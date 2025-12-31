@@ -1,8 +1,9 @@
 """Unit tests for parser utility module."""
 
-import pytest
 import json
 from datetime import datetime
+
+import pytest
 
 
 @pytest.mark.unit

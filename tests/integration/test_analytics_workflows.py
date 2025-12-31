@@ -12,10 +12,10 @@ Tests analytics capabilities for learning progress tracking:
 - Advanced analytics (Pro+ tier only)
 """
 
-import requests
-import json
 from datetime import datetime
+
 import pytest
+import requests
 
 BASE_URL = "http://localhost:8000"
 HEADERS = {"Content-Type": "application/json"}

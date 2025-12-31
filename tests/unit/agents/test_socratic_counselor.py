@@ -9,8 +9,8 @@ Tests socratic questioning agent including:
 - Detecting knowledge gaps
 """
 
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 
 
 @pytest.mark.unit

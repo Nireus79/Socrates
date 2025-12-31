@@ -9,15 +9,11 @@ Tests the complete flow:
 5. Collaboration API → Database (team members)
 """
 
-import json
 import os
-import sqlite3
 import tempfile
 from datetime import datetime
-from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi.testclient import TestClient
 
 # Mock the FastAPI app since we're testing integration concepts
 from socratic_system.database.project_db_v2 import ProjectDatabase

@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Full integration test: Auth -> Create Project -> Chat -> Summary -> Delete
 """
 
-import requests
 import json
-import sys
 import os
-from datetime import datetime, timezone
+import sys
 import uuid
+
+import requests
 
 # Fix unicode encoding for Windows
 if os.name == 'nt':
@@ -46,7 +45,7 @@ def test_full_flow():
             print("  [FAIL] Could not register user")
             return False
     else:
-        print(f"  [OK] User registered successfully")
+        print("  [OK] User registered successfully")
 
     # Step 2: Login
     print("\n[STEP 2] Login user...")
@@ -102,7 +101,7 @@ def test_full_flow():
     print(f"  [OK] Project created with ID: {project_id}")
 
     # Step 4: Get question
-    print(f"\n[STEP 4] Get initial question...")
+    print("\n[STEP 4] Get initial question...")
     q_response = requests.get(
         f"{BASE_URL}/projects/{project_id}/chat/question",
         headers=headers,
@@ -112,10 +111,10 @@ def test_full_flow():
     if q_response.status_code == 200:
         q_data = q_response.json()
         if 'question' in q_data and 'phase' in q_data:
-            print(f"  [OK] Got question (correct format)")
+            print("  [OK] Got question (correct format)")
             print(f"    Phase: {q_data.get('phase')}")
         elif 'data' in q_data:
-            print(f"  [WARN] Question wrapped in response envelope")
+            print("  [WARN] Question wrapped in response envelope")
         else:
             print(f"  [WARN] Unexpected response: {list(q_data.keys())}")
     else:
@@ -123,7 +122,7 @@ def test_full_flow():
         print("  [WARN] Could not get question")
 
     # Step 5: Send message
-    print(f"\n[STEP 5] Send chat message...")
+    print("\n[STEP 5] Send chat message...")
     message_data = {
         "message": "This is a test message to verify the chat works",
         "mode": "socratic"
@@ -141,12 +140,12 @@ def test_full_flow():
         if 'message' in msg_data:
             msg = msg_data['message']
             if isinstance(msg, dict) and 'content' in msg:
-                print(f"  [OK] Message sent and response received (correct format)")
+                print("  [OK] Message sent and response received (correct format)")
                 print(f"    Response: {msg.get('content', '')[:100]}...")
             else:
                 print(f"  [WARN] Message format unexpected: {type(msg)}")
         elif 'data' in msg_data:
-            print(f"  [WARN] Message still wrapped in response envelope")
+            print("  [WARN] Message still wrapped in response envelope")
         else:
             print(f"  Response: {json.dumps(msg_data, indent=2)[:300]}")
     else:
@@ -154,7 +153,7 @@ def test_full_flow():
         print("  [WARN] Could not send message")
 
     # Step 6: Get history
-    print(f"\n[STEP 6] Get chat history...")
+    print("\n[STEP 6] Get chat history...")
     hist_response = requests.get(
         f"{BASE_URL}/projects/{project_id}/chat/history",
         headers=headers,
@@ -164,10 +163,10 @@ def test_full_flow():
     if hist_response.status_code == 200:
         hist_data = hist_response.json()
         if 'messages' in hist_data:
-            print(f"  [OK] Got history (correct format)")
+            print("  [OK] Got history (correct format)")
             print(f"    Message count: {len(hist_data.get('messages', []))}")
         elif 'data' in hist_data:
-            print(f"  [WARN] History wrapped in response envelope")
+            print("  [WARN] History wrapped in response envelope")
         else:
             print(f"  Response: {json.dumps(hist_data, indent=2)[:300]}")
     else:
@@ -175,7 +174,7 @@ def test_full_flow():
         print("  [WARN] Could not get history")
 
     # Step 7: Get summary
-    print(f"\n[STEP 7] Get conversation summary...")
+    print("\n[STEP 7] Get conversation summary...")
     sum_response = requests.get(
         f"{BASE_URL}/projects/{project_id}/chat/summary",
         headers=headers,
@@ -185,10 +184,10 @@ def test_full_flow():
     if sum_response.status_code == 200:
         sum_data = sum_response.json()
         if 'summary' in sum_data and 'key_points' in sum_data:
-            print(f"  [OK] Got summary (correct format)")
+            print("  [OK] Got summary (correct format)")
             print(f"    Summary: {sum_data.get('summary', '')[:80]}...")
         elif 'data' in sum_data:
-            print(f"  [WARN] Summary wrapped in response envelope")
+            print("  [WARN] Summary wrapped in response envelope")
         else:
             print(f"  Response: {json.dumps(sum_data, indent=2)[:300]}")
     else:
@@ -196,7 +195,7 @@ def test_full_flow():
         print("  [WARN] Could not get summary")
 
     # Step 8: Delete project
-    print(f"\n[STEP 8] Delete project...")
+    print("\n[STEP 8] Delete project...")
     del_response = requests.delete(
         f"{BASE_URL}/projects/{project_id}",
         headers=headers,
@@ -204,10 +203,10 @@ def test_full_flow():
     print(f"  Status: {del_response.status_code}")
 
     if del_response.status_code in [200, 204]:
-        print(f"  [OK] Delete request succeeded")
+        print("  [OK] Delete request succeeded")
 
         # Verify project is actually deleted
-        print(f"\n[STEP 9] Verify project is deleted...")
+        print("\n[STEP 9] Verify project is deleted...")
         verify_response = requests.get(
             f"{BASE_URL}/projects/{project_id}",
             headers=headers,
@@ -215,13 +214,13 @@ def test_full_flow():
         print(f"  Status: {verify_response.status_code}")
 
         if verify_response.status_code == 404:
-            print(f"  [OK] Project confirmed deleted (404 response)")
+            print("  [OK] Project confirmed deleted (404 response)")
             print(f"\n{'=' * 70}")
             print("RESULT: ALL TESTS PASSED - System working correctly!")
             print(f"{'=' * 70}")
             return True
         else:
-            print(f"  [FAIL] Project still exists after delete!")
+            print("  [FAIL] Project still exists after delete!")
             print(f"  Response: {verify_response.text[:300]}")
             return False
     else:

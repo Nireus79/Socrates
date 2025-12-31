@@ -155,7 +155,7 @@ class GithubPullCommand(BaseCommand):
             git_manager = GitRepositoryManager()
             clone_result = self._clone_repository(git_manager, project.repository_url)
             if not clone_result:
-                return self.error(f"Failed to clone repository")
+                return self.error("Failed to clone repository")
 
             temp_path = clone_result["path"]
             try:
@@ -230,7 +230,6 @@ class GithubPullCommand(BaseCommand):
         """Detect and sync file changes"""
         print(f"\n{Fore.CYAN}Detecting file changes...{Style.RESET_ALL}")
         try:
-            from pathlib import Path
 
             from socratic_system.database.project_file_manager import ProjectFileManager
             from socratic_system.utils.file_change_tracker import FileChangeTracker
