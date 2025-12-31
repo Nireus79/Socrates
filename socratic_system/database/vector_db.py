@@ -111,73 +111,79 @@ class VectorDatabase:
 
     def add_knowledge(self, entry: KnowledgeEntry):
         """Add knowledge entry to vector database"""
-        # FIX: Check if entry already exists before adding
+        # Check if entry already exists
+        if self._entry_exists(entry.id):
+            return
+
+        # Generate or get cached embedding
+        self._generate_or_cache_embedding(entry)
+
+        # Add to collection with metadata
+        self._add_entry_to_collection(entry)
+
+    def _entry_exists(self, entry_id: str) -> bool:
+        """Check if entry already exists"""
         try:
-            existing = self.collection.get(ids=[entry.id])
+            existing = self.collection.get(ids=[entry_id])
             if existing["ids"]:
-                self.logger.debug(f"Knowledge entry '{entry.id}' already exists, skipping...")
-                return
+                self.logger.debug(f"Knowledge entry '{entry_id}' already exists, skipping...")
+                return True
         except (KeyError, ValueError) as e:
             # Entry doesn't exist or invalid query, proceed with adding
-            self.logger.debug(f"Entry '{entry.id}' not found or invalid query, will proceed: {e}")
+            self.logger.debug(f"Entry '{entry_id}' not found or invalid query, will proceed: {e}")
+        return False
 
-        if not entry.embedding:
-            try:
-                # Phase 3: Check embedding cache first
-                cached_embedding = self.embedding_cache.get(entry.content)
-                if cached_embedding:
-                    entry.embedding = cached_embedding
-                    self.logger.debug(f"Using cached embedding for knowledge entry: {entry.id}")
-                else:
-                    # Not in cache, encode and cache
-                    embedding_result = self.embedding_model.encode(entry.content)
-                    entry.embedding = (
-                        embedding_result.tolist()
-                        if hasattr(embedding_result, "tolist")
-                        else embedding_result
-                    )
-                    self.embedding_cache.put(entry.content, entry.embedding)
-                    self.logger.debug(f"Cached new embedding for knowledge entry: {entry.id}")
-            except (ValueError, RuntimeError, OSError) as e:
-                # Handle file handle issues with embedding model
-                # This can happen when the model has stale file handles from test isolation issues
-                if "closed file" in str(e) or "I/O operation" in str(e):
-                    self.logger.warning(
-                        f"Embedding model has stale file handles, attempting recovery: {e}"
-                    )
-                    try:
-                        # Force garbage collection to release any held file handles
-                        gc.collect()
-
-                        # Clear the old model reference and force reload
-                        self._embedding_model_instance = None
-                        self.logger.debug("Reloading embedding model after garbage collection")
-
-                        # Accessing the property will trigger lazy reload
-                        embedding_result = self.embedding_model.encode(entry.content)
-                        entry.embedding = (
-                            embedding_result.tolist()
-                            if hasattr(embedding_result, "tolist")
-                            else embedding_result
-                        )
-                        self.embedding_cache.put(entry.content, entry.embedding)
-                        self.logger.info(
-                            "Successfully recovered embedding model and encoded content"
-                        )
-                    except Exception as retry_error:
-                        self.logger.error(f"Failed to recover embedding model: {retry_error}")
-                        raise
-                else:
-                    raise
+    def _generate_or_cache_embedding(self, entry: KnowledgeEntry) -> None:
+        """Generate embedding or retrieve from cache"""
+        if entry.embedding:
+            return
 
         try:
-            # Ensure metadata has scope field for proper filtering
-            if entry.metadata is None:
-                entry.metadata = {}
-            # If no scope is set and no project_id, mark as global knowledge
-            if "scope" not in entry.metadata and "project_id" not in entry.metadata:
-                entry.metadata["scope"] = "global"
+            # Check embedding cache first
+            cached_embedding = self.embedding_cache.get(entry.content)
+            if cached_embedding:
+                entry.embedding = cached_embedding
+                self.logger.debug(f"Using cached embedding for knowledge entry: {entry.id}")
+            else:
+                # Not in cache, encode and cache
+                embedding_result = self.embedding_model.encode(entry.content)
+                entry.embedding = (
+                    embedding_result.tolist()
+                    if hasattr(embedding_result, "tolist")
+                    else embedding_result
+                )
+                self.embedding_cache.put(entry.content, entry.embedding)
+                self.logger.debug(f"Cached new embedding for knowledge entry: {entry.id}")
+        except (ValueError, RuntimeError, OSError) as e:
+            self._handle_embedding_error(e, entry)
 
+    def _handle_embedding_error(self, error: Exception, entry: KnowledgeEntry) -> None:
+        """Handle embedding generation errors with recovery"""
+        if "closed file" not in str(error) and "I/O operation" not in str(error):
+            raise
+
+        self.logger.warning(f"Embedding model has stale file handles, attempting recovery: {error}")
+        try:
+            gc.collect()
+            self._embedding_model_instance = None
+            self.logger.debug("Reloading embedding model after garbage collection")
+
+            embedding_result = self.embedding_model.encode(entry.content)
+            entry.embedding = (
+                embedding_result.tolist()
+                if hasattr(embedding_result, "tolist")
+                else embedding_result
+            )
+            self.embedding_cache.put(entry.content, entry.embedding)
+            self.logger.info("Successfully recovered embedding model and encoded content")
+        except Exception as retry_error:
+            self.logger.error(f"Failed to recover embedding model: {retry_error}")
+            raise
+
+    def _add_entry_to_collection(self, entry: KnowledgeEntry) -> None:
+        """Add entry to collection and invalidate caches"""
+        try:
+            self._prepare_and_add_metadata(entry)
             formatted_metadata = self._format_metadata_for_chromadb(entry.metadata)
             self.collection.add(
                 documents=[entry.content],
@@ -186,16 +192,25 @@ class VectorDatabase:
                 embeddings=[entry.embedding],
             )
             self.logger.debug(f"Added knowledge entry: {entry.id}")
-
-            # Invalidate search caches since new knowledge was added
-            # Invalidate global searches (project_id=None)
-            count = self.search_cache.invalidate_global_searches()
-            if count > 0:
-                self.logger.debug(
-                    f"Invalidated {count} global search cache entries after adding knowledge"
-                )
+            self._invalidate_search_caches_after_add()
         except Exception as e:
             self.logger.warning(f"Could not add knowledge entry {entry.id}: {e}")
+
+    def _prepare_and_add_metadata(self, entry: KnowledgeEntry) -> None:
+        """Prepare metadata for entry"""
+        if entry.metadata is None:
+            entry.metadata = {}
+        # If no scope is set and no project_id, mark as global knowledge
+        if "scope" not in entry.metadata and "project_id" not in entry.metadata:
+            entry.metadata["scope"] = "global"
+
+    def _invalidate_search_caches_after_add(self) -> None:
+        """Invalidate search caches after adding knowledge"""
+        count = self.search_cache.invalidate_global_searches()
+        if count > 0:
+            self.logger.debug(
+                f"Invalidated {count} global search cache entries after adding knowledge"
+            )
 
     def search_similar(
         self, query: str, top_k: int = 5, project_id: Optional[str] = None
@@ -610,29 +625,33 @@ class VectorDatabase:
         This method should be called before deleting temporary directories
         to ensure all ChromaDB file handles are released on Windows.
         """
-        import sys
-        import time
+        self._clear_embedding_model()
+        self._close_chromadb_client()
+        self._clear_caches()
+        self._trigger_garbage_collection()
+        self._handle_windows_delay()
 
+    def _clear_embedding_model(self) -> None:
+        """Clear the embedding model to release memory and file handles"""
         try:
-            # Clear the embedding model to release memory and file handles
             if self._embedding_model_instance is not None:
                 self._embedding_model_instance = None
                 self._safe_log("debug", "Cleared embedding model instance")
         except Exception as e:
             self._safe_log("warning", f"Error clearing embedding model: {e}")
 
+    def _close_chromadb_client(self) -> None:
+        """Close ChromaDB client reference for garbage collection"""
         try:
-            # Close ChromaDB client if it exists
             if hasattr(self, 'client') and self.client is not None:
-                # ChromaDB PersistentClient doesn't have a close() method,
-                # but we can remove the reference to help with garbage collection
                 self.client = None
                 self._safe_log("debug", "Closed ChromaDB client reference")
         except Exception as e:
             self._safe_log("warning", f"Error closing ChromaDB client: {e}")
 
+    def _clear_caches(self) -> None:
+        """Clear embedding and search caches"""
         try:
-            # Clear caches
             if hasattr(self, 'embedding_cache'):
                 self.embedding_cache.clear()
             if hasattr(self, 'search_cache'):
@@ -641,14 +660,19 @@ class VectorDatabase:
         except Exception as e:
             self._safe_log("warning", f"Error clearing caches: {e}")
 
+    def _trigger_garbage_collection(self) -> None:
+        """Force garbage collection to release file handles"""
         try:
-            # Force garbage collection to release file handles
             gc.collect()
             self._safe_log("debug", "Garbage collection triggered")
         except Exception as e:
             self._safe_log("warning", f"Error during garbage collection: {e}")
 
-        # On Windows, add small delay to allow SQLite to fully release locks
+    def _handle_windows_delay(self) -> None:
+        """Add delay on Windows for SQLite file handle release"""
+        import sys
+        import time
+
         if sys.platform == 'win32':
             try:
                 time.sleep(0.1)  # 100ms delay for Windows file handle release

@@ -541,57 +541,67 @@ class DocumentProcessorAgent(Agent):
         Returns:
             Formatted text describing the code structure
         """
-        language = structure.get("language", "unknown")
-        metrics = structure.get("metrics", {})
-        functions = structure.get("functions", [])
-        classes = structure.get("classes", [])
-        imports = structure.get("imports", [])
-        summary = structure.get("structure_summary", "")
-
-        parts = [f"Code File: {file_name} ({language})"]
-        parts.append(f"Structure Summary: {summary}")
+        parts = []
+        parts.append(f"Code File: {file_name} ({structure.get('language', 'unknown')})")
+        parts.append(f"Structure Summary: {structure.get('structure_summary', '')}")
         parts.append("")
 
-        # Add metrics
-        parts.append("Metrics:")
+        parts.extend(self._format_metrics(structure.get("metrics", {})))
+        parts.extend(self._format_functions(structure.get("functions", [])))
+        parts.extend(self._format_classes(structure.get("classes", [])))
+        parts.extend(self._format_imports(structure.get("imports", [])))
+
+        return "\n".join(parts)
+
+    def _format_metrics(self, metrics: Dict) -> List[str]:
+        """Format code metrics section"""
+        parts = ["Metrics:"]
         parts.append(f"  - Lines of Code: {metrics.get('lines_of_code', 0)}")
         parts.append(f"  - Functions: {metrics.get('function_count', 0)}")
         parts.append(f"  - Classes: {metrics.get('class_count', 0)}")
         parts.append(f"  - Imports: {metrics.get('import_count', 0)}")
         parts.append("")
+        return parts
 
-        # Add functions
-        if functions:
-            parts.append("Functions:")
-            for func in functions[:10]:  # Limit to first 10
-                params_str = ", ".join(func.get("params", []))
-                parts.append(f"  - {func.get('name', 'unknown')}({params_str})")
-            if len(functions) > 10:
-                parts.append(f"  ... and {len(functions) - 10} more")
-            parts.append("")
+    def _format_functions(self, functions: List) -> List[str]:
+        """Format functions section"""
+        if not functions:
+            return []
+        parts = ["Functions:"]
+        for func in functions[:10]:
+            params_str = ", ".join(func.get("params", []))
+            parts.append(f"  - {func.get('name', 'unknown')}({params_str})")
+        if len(functions) > 10:
+            parts.append(f"  ... and {len(functions) - 10} more")
+        parts.append("")
+        return parts
 
-        # Add classes
-        if classes:
-            parts.append("Classes:")
-            for cls in classes[:10]:  # Limit to first 10
-                parent_info = f" extends {cls.get('parent')}" if cls.get("parent") else ""
-                parts.append(f"  - {cls.get('name', 'unknown')}{parent_info}")
-                methods = cls.get("methods", [])
-                for method in methods[:5]:  # Limit methods per class
-                    params_str = ", ".join(method.get("params", []))
-                    parts.append(f"      - {method.get('name', 'unknown')}({params_str})")
-                if len(methods) > 5:
-                    parts.append(f"      ... and {len(methods) - 5} more methods")
-            if len(classes) > 10:
-                parts.append(f"  ... and {len(classes) - 10} more")
-            parts.append("")
+    def _format_classes(self, classes: List) -> List[str]:
+        """Format classes section"""
+        if not classes:
+            return []
+        parts = ["Classes:"]
+        for cls in classes[:10]:
+            parent_info = f" extends {cls.get('parent')}" if cls.get("parent") else ""
+            parts.append(f"  - {cls.get('name', 'unknown')}{parent_info}")
+            methods = cls.get("methods", [])
+            for method in methods[:5]:
+                params_str = ", ".join(method.get("params", []))
+                parts.append(f"      - {method.get('name', 'unknown')}({params_str})")
+            if len(methods) > 5:
+                parts.append(f"      ... and {len(methods) - 5} more methods")
+        if len(classes) > 10:
+            parts.append(f"  ... and {len(classes) - 10} more")
+        parts.append("")
+        return parts
 
-        # Add imports
-        if imports:
-            parts.append("Imports/Dependencies:")
-            for imp in imports[:15]:  # Limit to first 15
-                parts.append(f"  - {imp}")
-            if len(imports) > 15:
-                parts.append(f"  ... and {len(imports) - 15} more")
-
-        return "\n".join(parts)
+    def _format_imports(self, imports: List) -> List[str]:
+        """Format imports section"""
+        if not imports:
+            return []
+        parts = ["Imports/Dependencies:"]
+        for imp in imports[:15]:
+            parts.append(f"  - {imp}")
+        if len(imports) > 15:
+            parts.append(f"  ... and {len(imports) - 15} more")
+        return parts

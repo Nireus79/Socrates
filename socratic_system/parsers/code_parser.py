@@ -122,60 +122,10 @@ class CodeParser:
             self.logger.warning(f"Syntax error in Python file {file_path}: {e}")
             return self._create_error_response(file_path, f"Syntax error: {e}")
 
-        functions = []
-        classes = []
-        imports = []
         lines = content.split("\n")
-
-        for node in ast.walk(tree):
-            # Extract functions
-            if isinstance(node, ast.FunctionDef):
-                # Only get top-level functions (line will be checked)
-                if node.col_offset == 0:
-                    func_info = {
-                        "name": node.name,
-                        "params": self._extract_python_params(node),
-                        "line": node.lineno,
-                        "docstring": ast.get_docstring(node) or ""
-                    }
-                    functions.append(func_info)
-
-            # Extract classes
-            elif isinstance(node, ast.ClassDef):
-                if node.col_offset == 0:
-                    methods = []
-                    for item in node.body:
-                        if isinstance(item, ast.FunctionDef):
-                            methods.append({
-                                "name": item.name,
-                                "params": self._extract_python_params(item),
-                                "line": item.lineno
-                            })
-
-                    parent_class = None
-                    if node.bases:
-                        parent_class = self._get_node_name(node.bases[0])
-
-                    class_info = {
-                        "name": node.name,
-                        "line": node.lineno,
-                        "methods": methods,
-                        "docstring": ast.get_docstring(node) or "",
-                        "parent": parent_class
-                    }
-                    classes.append(class_info)
-
-            # Extract imports
-            elif isinstance(node, ast.Import):
-                for alias in node.names:
-                    imports.append(alias.name)
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    imports.append(node.module)
-                for alias in node.names:
-                    imports.append(f"{node.module}.{alias.name}" if node.module else alias.name)
-
-        imports = list(set(imports))  # Remove duplicates
+        functions = self._extract_python_functions(tree)
+        classes = self._extract_python_classes(tree)
+        imports = self._extract_python_imports(tree)
 
         # Calculate metrics
         loc = len([l for l in lines if l.strip() and not l.strip().startswith("#")])
@@ -195,15 +145,90 @@ class CodeParser:
             }
         }
 
+    def _extract_python_functions(self, tree: ast.AST) -> List[Dict]:
+        """Extract top-level functions from Python AST."""
+        functions = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef) and node.col_offset == 0:
+                func_info = {
+                    "name": node.name,
+                    "params": self._extract_python_params(node),
+                    "line": node.lineno,
+                    "docstring": ast.get_docstring(node) or ""
+                }
+                functions.append(func_info)
+        return functions
+
+    def _extract_python_classes(self, tree: ast.AST) -> List[Dict]:
+        """Extract classes from Python AST."""
+        classes = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and node.col_offset == 0:
+                methods = []
+                for item in node.body:
+                    if isinstance(item, ast.FunctionDef):
+                        methods.append({
+                            "name": item.name,
+                            "params": self._extract_python_params(item),
+                            "line": item.lineno
+                        })
+
+                parent_class = None
+                if node.bases:
+                    parent_class = self._get_node_name(node.bases[0])
+
+                class_info = {
+                    "name": node.name,
+                    "line": node.lineno,
+                    "methods": methods,
+                    "docstring": ast.get_docstring(node) or "",
+                    "parent": parent_class
+                }
+                classes.append(class_info)
+        return classes
+
+    def _extract_python_imports(self, tree: ast.AST) -> List[str]:
+        """Extract imports from Python AST."""
+        imports = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imports.append(alias.name)
+            elif isinstance(node, ast.ImportFrom):
+                if node.module:
+                    imports.append(node.module)
+                for alias in node.names:
+                    imports.append(f"{node.module}.{alias.name}" if node.module else alias.name)
+        return list(set(imports))  # Remove duplicates
+
     def _parse_javascript(self, file_path: str, content: str) -> Dict[str, Any]:
         """Parse JavaScript code using regex-based extraction."""
-        functions = []
-        classes = []
-        imports = []
-
         lines = content.split("\n")
+        functions = self._extract_js_functions(lines)
+        classes = self._extract_js_classes(content, lines)
+        imports = self._extract_js_imports(lines)
 
-        # Extract function declarations: function name() or const name = () =>
+        # Calculate metrics
+        loc = len([l for l in lines if l.strip() and not l.strip().startswith("//")])
+
+        return {
+            "language": "javascript",
+            "file_path": file_path,
+            "functions": functions,
+            "classes": classes,
+            "imports": imports,
+            "structure_summary": self._generate_structure_summary("javascript", functions, classes, imports),
+            "metrics": {
+                "lines_of_code": loc,
+                "function_count": len(functions),
+                "class_count": len(classes),
+                "import_count": len(imports)
+            }
+        }
+
+    def _extract_js_functions(self, lines: List[str]) -> List[Dict]:
+        """Extract function declarations from JavaScript."""
+        functions = []
         func_patterns = [
             r"function\s+(\w+)\s*\(([^)]*)\)",
             r"const\s+(\w+)\s*=\s*(?:async\s+)?\(([^)]*)\)\s*=>",
@@ -228,8 +253,11 @@ class CodeParser:
                             "docstring": ""
                         })
                         seen_functions.add(func_name)
+        return functions
 
-        # Extract class declarations: class Name
+    def _extract_js_classes(self, content: str, lines: List[str]) -> List[Dict]:
+        """Extract class declarations from JavaScript."""
+        classes = []
         class_pattern = r"class\s+(\w+)(?:\s+extends\s+(\w+))?"
         seen_classes = set()
 
@@ -240,7 +268,6 @@ class CodeParser:
                 parent = match.group(2) if match.lastindex and match.lastindex >= 2 else None
 
                 if class_name not in seen_classes:
-                    # Try to extract methods from the class
                     methods = self._extract_js_methods(content, class_name)
                     classes.append({
                         "name": class_name,
@@ -250,8 +277,11 @@ class CodeParser:
                         "parent": parent
                     })
                     seen_classes.add(class_name)
+        return classes
 
-        # Extract imports: import ... from '...' or require(...)
+    def _extract_js_imports(self, lines: List[str]) -> List[str]:
+        """Extract imports from JavaScript."""
+        imports = []
         import_patterns = [
             r"import\s+(?:{[^}]*}|[\w\s,]+)\s+from\s+['\"]([^'\"]+)['\"]",
             r"const\s+(?:{[^}]*}|[\w\s]+)\s+=\s+require\(['\"]([^'\"]+)['\"]\)"
@@ -264,24 +294,7 @@ class CodeParser:
                     module = match.group(1)
                     if module not in imports:
                         imports.append(module)
-
-        # Calculate metrics
-        loc = len([l for l in lines if l.strip() and not l.strip().startswith("//")])
-
-        return {
-            "language": "javascript",
-            "file_path": file_path,
-            "functions": functions,
-            "classes": classes,
-            "imports": imports,
-            "structure_summary": self._generate_structure_summary("javascript", functions, classes, imports),
-            "metrics": {
-                "lines_of_code": loc,
-                "function_count": len(functions),
-                "class_count": len(classes),
-                "import_count": len(imports)
-            }
-        }
+        return imports
 
     def _parse_java(self, file_path: str, content: str) -> Dict[str, Any]:
         """Parse Java code using regex-based extraction."""

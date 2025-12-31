@@ -232,156 +232,12 @@ class ProjectDatabase:
 
         try:
             now = datetime.now()
-
-            # Insert or replace main project record
-            cursor.execute(
-                """
-                INSERT OR REPLACE INTO projects (
-                    project_id, name, owner, phase, project_type,
-                    team_structure, language_preferences, deployment_target,
-                    code_style, chat_mode, goals, status, progress,
-                    is_archived, created_at, updated_at, archived_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-                (
-                    project.project_id,
-                    project.name,
-                    project.owner,
-                    project.phase,
-                    project.project_type,
-                    # These are already strings in the model, but handle dict case for compatibility
-                    (json.dumps(project.team_structure) if isinstance(project.team_structure, dict) else project.team_structure) if project.team_structure else None,
-                    (json.dumps(project.language_preferences) if isinstance(project.language_preferences, dict) else project.language_preferences) if project.language_preferences else None,
-                    project.deployment_target,
-                    (json.dumps(project.code_style) if isinstance(project.code_style, dict) else project.code_style) if project.code_style else None,
-                    project.chat_mode,
-                    (
-                        json.dumps(project.goals)
-                        if isinstance(project.goals, (list, dict))
-                        else project.goals
-                    ),
-                    project.status,
-                    project.progress,
-                    project.is_archived,
-                    serialize_datetime(project.created_at),
-                    serialize_datetime(now),
-                    serialize_datetime(project.archived_at) if project.archived_at else None,  # type: ignore
-                ),
-            )
-
-            # Clear and repopulate related tables
-            cursor.execute(
-                "DELETE FROM project_requirements WHERE project_id = ?", (project.project_id,)
-            )
-            cursor.execute(
-                "DELETE FROM project_tech_stack WHERE project_id = ?", (project.project_id,)
-            )
-            cursor.execute(
-                "DELETE FROM project_constraints WHERE project_id = ?", (project.project_id,)
-            )
-            cursor.execute("DELETE FROM team_members WHERE project_id = ?", (project.project_id,))
-            cursor.execute(
-                "DELETE FROM phase_maturity_scores WHERE project_id = ?", (project.project_id,)
-            )
-            cursor.execute(
-                "DELETE FROM category_scores WHERE project_id = ?", (project.project_id,)
-            )
-
-            # Save requirements
-            for i, req in enumerate(project.requirements or []):
-                cursor.execute(
-                    """
-                    INSERT INTO project_requirements (project_id, requirement, sort_order)
-                    VALUES (?, ?, ?)
-                """,
-                    (project.project_id, req, i),
-                )
-
-            # Save tech stack
-            for i, tech in enumerate(project.tech_stack or []):
-                cursor.execute(
-                    """
-                    INSERT INTO project_tech_stack (project_id, technology, sort_order)
-                    VALUES (?, ?, ?)
-                """,
-                    (project.project_id, tech, i),
-                )
-
-            # Save constraints
-            for i, constraint in enumerate(project.constraints or []):
-                cursor.execute(
-                    """
-                    INSERT INTO project_constraints (project_id, constraint_text, sort_order)
-                    VALUES (?, ?, ?)
-                """,
-                    (project.project_id, constraint, i),
-                )
-
-            # Save team members
-            if project.team_members:
-                for member in project.team_members:
-                    skills_json = json.dumps(getattr(member, "skills", {}))
-                    cursor.execute(
-                        """
-                        INSERT OR IGNORE INTO team_members (project_id, username, role, skills, joined_at)
-                        VALUES (?, ?, ?, ?, ?)
-                    """,
-                        (
-                            project.project_id,
-                            member.username,
-                            member.role,
-                            skills_json,
-                            serialize_datetime(getattr(member, "joined_at", now)),
-                        ),
-                    )
-
-            # Save phase maturity scores
-            if project.phase_maturity_scores:
-                for phase, score in project.phase_maturity_scores.items():
-                    # Ensure score is a number, not a dict
-                    score_val = score if isinstance(score, (int, float)) else 0.0
-                    cursor.execute(
-                        """
-                        INSERT OR REPLACE INTO phase_maturity_scores (project_id, phase, score)
-                        VALUES (?, ?, ?)
-                    """,
-                        (project.project_id, phase, score_val),
-                    )
-
-            # Save category scores
-            if project.category_scores:
-                for phase, categories in project.category_scores.items():
-                    if isinstance(categories, dict):
-                        for category, score in categories.items():
-                            # Ensure score is a number, not a dict
-                            score_val = score if isinstance(score, (int, float)) else 0.0
-                            cursor.execute(
-                                """
-                                INSERT OR REPLACE INTO category_scores (project_id, phase, category, score)
-                                VALUES (?, ?, ?, ?)
-                            """,
-                                (project.project_id, phase, category, score_val),
-                            )
-
-            # Save analytics metrics
-            if project.analytics_metrics:
-                cursor.execute(
-                    """
-                    INSERT OR REPLACE INTO analytics_metrics (
-                        project_id, velocity, total_qa_sessions, avg_confidence,
-                        weak_categories, strong_categories
-                    ) VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        project.project_id,
-                        float(project.analytics_metrics.get("velocity", 0.0)) if not isinstance(project.analytics_metrics.get("velocity"), dict) else 0.0,
-                        int(project.analytics_metrics.get("total_qa_sessions", 0)) if not isinstance(project.analytics_metrics.get("total_qa_sessions"), dict) else 0,
-                        float(project.analytics_metrics.get("avg_confidence", 0.0)) if not isinstance(project.analytics_metrics.get("avg_confidence"), dict) else 0.0,
-                        json.dumps(project.analytics_metrics.get("weak_categories", [])),
-                        json.dumps(project.analytics_metrics.get("strong_categories", [])),
-                    ),
-                )
-
+            self._save_main_project_record(cursor, project, now)
+            self._delete_project_related_records(cursor, project.project_id)
+            self._save_project_lists(cursor, project)
+            self._save_project_team_members(cursor, project, now)
+            self._save_project_scores(cursor, project)
+            self._save_project_analytics(cursor, project)
             conn.commit()
             self.logger.debug(f"Saved project {project.project_id}")
 
@@ -391,6 +247,120 @@ class ProjectDatabase:
             raise
         finally:
             conn.close()
+
+    def _save_main_project_record(self, cursor, project: ProjectContext, now: datetime) -> None:
+        """Save main project record"""
+        cursor.execute(
+            """
+            INSERT OR REPLACE INTO projects (
+                project_id, name, owner, phase, project_type,
+                team_structure, language_preferences, deployment_target,
+                code_style, chat_mode, goals, status, progress,
+                is_archived, created_at, updated_at, archived_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+            (
+                project.project_id,
+                project.name,
+                project.owner,
+                project.phase,
+                project.project_type,
+                (json.dumps(project.team_structure) if isinstance(project.team_structure, dict) else project.team_structure) if project.team_structure else None,
+                (json.dumps(project.language_preferences) if isinstance(project.language_preferences, dict) else project.language_preferences) if project.language_preferences else None,
+                project.deployment_target,
+                (json.dumps(project.code_style) if isinstance(project.code_style, dict) else project.code_style) if project.code_style else None,
+                project.chat_mode,
+                (json.dumps(project.goals) if isinstance(project.goals, (list, dict)) else project.goals),
+                project.status,
+                project.progress,
+                project.is_archived,
+                serialize_datetime(project.created_at),
+                serialize_datetime(now),
+                serialize_datetime(project.archived_at) if project.archived_at else None,  # type: ignore
+            ),
+        )
+
+    def _delete_project_related_records(self, cursor, project_id: str) -> None:
+        """Delete all related project records"""
+        cursor.execute("DELETE FROM project_requirements WHERE project_id = ?", (project_id,))
+        cursor.execute("DELETE FROM project_tech_stack WHERE project_id = ?", (project_id,))
+        cursor.execute("DELETE FROM project_constraints WHERE project_id = ?", (project_id,))
+        cursor.execute("DELETE FROM team_members WHERE project_id = ?", (project_id,))
+        cursor.execute("DELETE FROM phase_maturity_scores WHERE project_id = ?", (project_id,))
+        cursor.execute("DELETE FROM category_scores WHERE project_id = ?", (project_id,))
+
+    def _save_project_lists(self, cursor, project: ProjectContext) -> None:
+        """Save project requirements, tech stack, and constraints"""
+        for i, req in enumerate(project.requirements or []):
+            cursor.execute(
+                "INSERT INTO project_requirements (project_id, requirement, sort_order) VALUES (?, ?, ?)",
+                (project.project_id, req, i),
+            )
+
+        for i, tech in enumerate(project.tech_stack or []):
+            cursor.execute(
+                "INSERT INTO project_tech_stack (project_id, technology, sort_order) VALUES (?, ?, ?)",
+                (project.project_id, tech, i),
+            )
+
+        for i, constraint in enumerate(project.constraints or []):
+            cursor.execute(
+                "INSERT INTO project_constraints (project_id, constraint_text, sort_order) VALUES (?, ?, ?)",
+                (project.project_id, constraint, i),
+            )
+
+    def _save_project_team_members(self, cursor, project: ProjectContext, now: datetime) -> None:
+        """Save project team members"""
+        if not project.team_members:
+            return
+        for member in project.team_members:
+            skills_json = json.dumps(getattr(member, "skills", {}))
+            cursor.execute(
+                "INSERT OR IGNORE INTO team_members (project_id, username, role, skills, joined_at) VALUES (?, ?, ?, ?, ?)",
+                (
+                    project.project_id,
+                    member.username,
+                    member.role,
+                    skills_json,
+                    serialize_datetime(getattr(member, "joined_at", now)),
+                ),
+            )
+
+    def _save_project_scores(self, cursor, project: ProjectContext) -> None:
+        """Save phase maturity scores and category scores"""
+        if project.phase_maturity_scores:
+            for phase, score in project.phase_maturity_scores.items():
+                score_val = score if isinstance(score, (int, float)) else 0.0
+                cursor.execute(
+                    "INSERT OR REPLACE INTO phase_maturity_scores (project_id, phase, score) VALUES (?, ?, ?)",
+                    (project.project_id, phase, score_val),
+                )
+
+        if project.category_scores:
+            for phase, categories in project.category_scores.items():
+                if isinstance(categories, dict):
+                    for category, score in categories.items():
+                        score_val = score if isinstance(score, (int, float)) else 0.0
+                        cursor.execute(
+                            "INSERT OR REPLACE INTO category_scores (project_id, phase, category, score) VALUES (?, ?, ?, ?)",
+                            (project.project_id, phase, category, score_val),
+                        )
+
+    def _save_project_analytics(self, cursor, project: ProjectContext) -> None:
+        """Save project analytics metrics"""
+        if not project.analytics_metrics:
+            return
+        cursor.execute(
+            "INSERT OR REPLACE INTO analytics_metrics (project_id, velocity, total_qa_sessions, avg_confidence, weak_categories, strong_categories) VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                project.project_id,
+                float(project.analytics_metrics.get("velocity", 0.0)) if not isinstance(project.analytics_metrics.get("velocity"), dict) else 0.0,
+                int(project.analytics_metrics.get("total_qa_sessions", 0)) if not isinstance(project.analytics_metrics.get("total_qa_sessions"), dict) else 0,
+                float(project.analytics_metrics.get("avg_confidence", 0.0)) if not isinstance(project.analytics_metrics.get("avg_confidence"), dict) else 0.0,
+                json.dumps(project.analytics_metrics.get("weak_categories", [])),
+                json.dumps(project.analytics_metrics.get("strong_categories", [])),
+            ),
+        )
 
     def load_project(self, project_id: str) -> ProjectContext | None:
         """

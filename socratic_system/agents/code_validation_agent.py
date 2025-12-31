@@ -298,46 +298,57 @@ class CodeValidationAgent(Agent):
     ) -> List[str]:
         """Generate actionable recommendations based on validation results"""
         recommendations = []
+        recommendations.extend(self._syntax_recommendations(syntax_result))
+        recommendations.extend(self._dependency_recommendations(dependency_result))
+        recommendations.extend(self._test_recommendations(test_result))
+        recommendations.extend(self._general_recommendations(syntax_result, dependency_result))
+        recommendations.extend(self._codebase_recommendations(syntax_result))
+        return recommendations[:5]  # Limit to 5 recommendations
 
-        # Syntax recommendations
+    def _syntax_recommendations(self, syntax_result: Dict) -> List[str]:
+        """Generate syntax-related recommendations"""
         if not syntax_result.get("valid"):
             issues = syntax_result.get("issues", [])
             if issues:
-                recommendations.append(
-                    f"Fix {len(issues)} syntax error(s) before proceeding"
-                )
+                return [f"Fix {len(issues)} syntax error(s) before proceeding"]
+        return []
 
-        # Dependency recommendations
+    def _dependency_recommendations(self, dependency_result: Dict) -> List[str]:
+        """Generate dependency-related recommendations"""
+        recommendations = []
         if not dependency_result.get("valid"):
             issues = dependency_result.get("issues", [])
-            if issues:
-                for issue in issues:
-                    if "missing" in issue.get("message", "").lower():
-                        missing = issue.get("missing_modules", [])
-                        if missing:
-                            recommendations.append(
-                                f"Install missing dependencies: {', '.join(missing)}"
-                            )
+            for issue in issues:
+                if "missing" in issue.get("message", "").lower():
+                    missing = issue.get("missing_modules", [])
+                    if missing:
+                        recommendations.append(
+                            f"Install missing dependencies: {', '.join(missing)}"
+                        )
+        return recommendations
 
-        # Test recommendations
-        if test_result:
-            if test_result.get("tests_found", False):
-                if test_result.get("tests_failed", 0) > 0:
-                    recommendations.append(
-                        f"Fix {test_result.get('tests_failed', 0)} failing test(s)"
-                    )
-            else:
-                recommendations.append("Consider adding unit tests to improve code quality")
+    def _test_recommendations(self, test_result: Dict) -> List[str]:
+        """Generate test-related recommendations"""
+        if not test_result:
+            return []
+        if test_result.get("tests_found", False):
+            if test_result.get("tests_failed", 0) > 0:
+                return [f"Fix {test_result.get('tests_failed', 0)} failing test(s)"]
+        else:
+            return ["Consider adding unit tests to improve code quality"]
+        return []
 
-        # General recommendations
+    def _general_recommendations(self, syntax_result: Dict, dependency_result: Dict) -> List[str]:
+        """Generate general recommendations"""
         if not syntax_result.get("issues") and not dependency_result.get("issues"):
-            recommendations.append("Code structure looks good")
+            return ["Code structure looks good"]
+        return []
 
-        # Add specific patterns
+    def _codebase_recommendations(self, syntax_result: Dict) -> List[str]:
+        """Generate codebase-specific recommendations"""
         if syntax_result.get("metadata", {}).get("files_checked", 0) > 100:
-            recommendations.append("Large codebase detected - consider code organization review")
-
-        return recommendations[:5]  # Limit to 5 recommendations
+            return ["Large codebase detected - consider code organization review"]
+        return []
 
     def _format_summary_details(
         self, syntax_result: Dict, dependency_result: Dict, test_result: Dict

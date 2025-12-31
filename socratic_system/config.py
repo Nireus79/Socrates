@@ -71,18 +71,27 @@ class SocratesConfig:
 
     def __post_init__(self) -> None:
         """Initialize derived paths and create directories"""
-        # Validate required API key
+        self._validate_api_key()
+        self._ensure_data_dir_is_path()
+        self._initialize_derived_paths()
+        self._validate_all_paths()
+        self._setup_knowledge_base_path()
+        self._create_directories()
+
+    def _validate_api_key(self) -> None:
+        """Validate that API key is provided and non-empty"""
         if not self.api_key or not self.api_key.strip():
             raise ValueError("api_key is required and cannot be empty")
 
-        # Ensure data_dir is a Path object
+    def _ensure_data_dir_is_path(self) -> None:
+        """Ensure data_dir is a Path object"""
         if isinstance(self.data_dir, str):
             self.data_dir = Path(self.data_dir)
         elif not isinstance(self.data_dir, Path):
             raise TypeError(f"data_dir must be str or Path, got {type(self.data_dir)}")
 
-        # Initialize derived paths if not explicitly set
-        # Convert path value to Path object (inline _ensure_path logic)
+    def _initialize_derived_paths(self) -> None:
+        """Initialize derived paths if not explicitly set"""
         if self.projects_db_path is None:
             self.projects_db_path = self.data_dir / "projects.db"
         elif isinstance(self.projects_db_path, str):
@@ -98,7 +107,8 @@ class SocratesConfig:
         elif isinstance(self.log_file, str):
             self.log_file = Path(self.log_file)
 
-        # Validate all paths are now Path objects
+    def _validate_all_paths(self) -> None:
+        """Validate all paths are now Path objects"""
         if not isinstance(self.projects_db_path, Path):
             raise TypeError(f"projects_db_path must be Path, got {type(self.projects_db_path)}")
         if not isinstance(self.vector_db_path, Path):
@@ -106,7 +116,8 @@ class SocratesConfig:
         if not isinstance(self.log_file, Path):
             raise TypeError(f"log_file must be Path, got {type(self.log_file)}")
 
-        # Set knowledge_base_path if not explicitly set (inline _setup_knowledge_base_path logic)
+    def _setup_knowledge_base_path(self) -> None:
+        """Set knowledge_base_path if not explicitly set"""
         if self.knowledge_base_path is None:
             current_dir = Path(__file__).parent
             config_dir = current_dir.parent / "config"
@@ -115,7 +126,8 @@ class SocratesConfig:
                 if kb_path.exists():
                     self.knowledge_base_path = kb_path
 
-        # Create required directories (inline _create_directories logic)
+    def _create_directories(self) -> None:
+        """Create required directories"""
         if not isinstance(self.data_dir, Path):
             raise TypeError(f"data_dir must be a Path object, got {type(self.data_dir)}")
 
