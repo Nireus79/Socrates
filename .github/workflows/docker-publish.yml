@@ -97,9 +97,10 @@ jobs:
         continue-on-error: true
 
       - name: Sign the image (Optional)
-        if: github.event_name != 'pull_request' && secrets.COSIGN_KEY
+        if: github.event_name != 'pull_request'
         env:
           COSIGN_YES: true
+          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
         run: |
           # Install cosign
           wget https://github.com/sigstore/cosign/releases/download/v2.0.0/cosign-linux-amd64
@@ -375,7 +376,7 @@ jobs:
     steps:
       - name: Send Slack notification
         uses: slackapi/slack-github-action@v1
-        if: secrets.SLACK_WEBHOOK_URL
+        if: env.SLACK_WEBHOOK_URL != ''
         with:
           payload: |
             {
@@ -421,9 +422,11 @@ jobs:
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
       - name: Send Discord notification
-        if: secrets.DISCORD_WEBHOOK_URL
+        if: env.DISCORD_WEBHOOK_URL != ''
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          curl -X POST ${{ secrets.DISCORD_WEBHOOK_URL }} \
+          curl -X POST ${{ env.DISCORD_WEBHOOK_URL }} \
             -H "Content-Type: application/json" \
             -d '{
               "embeds": [{
