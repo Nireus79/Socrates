@@ -983,21 +983,11 @@ class ProjectValidateCommand(BaseCommand):
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute project validate command"""
-        if not self.require_user(context):
-            return self.error("Must be logged in")
+        if not self._validate_cmd_context(context):
+            return self.error("Context validation failed")
 
         orchestrator = context.get("orchestrator")
         project = context.get("project")
-
-        if not orchestrator:
-            return self.error("Orchestrator not available")
-
-        if not project:
-            return self.error("No project loaded. Use /project load to load a project")
-
-        # Check if project has repository URL (GitHub imported)
-        if not project.repository_url:
-            return self.error("Project is not linked to a GitHub repository. Cannot validate projects without source code.")
 
         print(f"{Fore.YELLOW}Validating project...{Style.RESET_ALL}")
 
@@ -1005,83 +995,22 @@ class ProjectValidateCommand(BaseCommand):
             from socratic_system.utils.git_repository_manager import GitRepositoryManager
 
             git_manager = GitRepositoryManager()
-
-            # Clone repository to temp directory
-            print(f"{Fore.CYAN}Cloning repository...{Style.RESET_ALL}")
-            clone_result = git_manager.clone_repository(project.repository_url)
-            if not clone_result.get("success"):
-                return self.error(f"Failed to clone repository: {clone_result.get('error')}")
+            clone_result = self._clone_validate_repo(git_manager, project.repository_url)
+            if not clone_result:
+                return self.error("Failed to clone repository")
 
             temp_path = clone_result["path"]
-
             try:
-                # Run full validation pipeline
-                validation_result = orchestrator.process_request(
-                    "code_validation",
-                    {
-                        "action": "validate_project",
-                        "project_path": temp_path,
-                        "timeout": 300,
-                    },
+                validation_result = self._run_validation(orchestrator, temp_path)
+                if validation_result["status"] != "success":
+                    return self.error(
+                        f"Validation failed: {validation_result.get('message', 'Unknown error')}"
+                    )
+
+                self._display_validation_results(validation_result)
+                return self.success(
+                    data={"validation": validation_result.get("validation_summary", {})}
                 )
-
-                if validation_result["status"] == "success":
-                    summary = validation_result.get("validation_summary", {})
-                    results = validation_result.get("validation_results", {})
-                    recommendations = validation_result.get("recommendations", [])
-
-                    # Display overall status
-                    overall = summary.get("overall_status", "unknown").upper()
-                    if overall == "PASS":
-                        color = Fore.GREEN
-                    elif overall == "WARNING":
-                        color = Fore.YELLOW
-                    else:
-                        color = Fore.RED
-
-                    self.print_success("Validation complete!")
-                    print(f"\n{Fore.CYAN}Validation Summary:{Style.RESET_ALL}")
-                    print(f"  Overall Status: {color}{overall}{Style.RESET_ALL}")
-                    print(f"  Issues: {summary.get('issues_count', 0)}")
-                    print(f"  Warnings: {summary.get('warnings_count', 0)}")
-
-                    # Detailed results
-                    syntax = results.get("syntax", {})
-                    deps = results.get("dependencies", {})
-                    tests = results.get("tests", {})
-
-                    print(f"\n{Fore.CYAN}Syntax Validation:{Style.RESET_ALL}")
-                    print(f"  Status: {'PASS' if syntax.get('valid') else 'FAIL'}")
-                    if not syntax.get('valid'):
-                        issues = syntax.get('issues', [])
-                        print(f"  Issues: {len(issues)}")
-
-                    print(f"\n{Fore.CYAN}Dependency Validation:{Style.RESET_ALL}")
-                    print(f"  Status: {'PASS' if deps.get('valid') else 'FAIL'}")
-                    meta = deps.get('metadata', {})
-                    if meta.get('total_dependencies'):
-                        print(f"  Total Dependencies: {meta.get('total_dependencies')}")
-                    if meta.get('missing_imports'):
-                        print(f"  Missing: {len(meta.get('missing_imports', []))}")
-                    if meta.get('unused_dependencies'):
-                        print(f"  Unused: {len(meta.get('unused_dependencies', []))}")
-
-                    print(f"\n{Fore.CYAN}Tests:{Style.RESET_ALL}")
-                    if tests.get('tests_found'):
-                        print(f"  Passed: {tests.get('tests_passed', 0)}")
-                        print(f"  Failed: {tests.get('tests_failed', 0)}")
-                    else:
-                        print("  No tests found")
-
-                    # Show recommendations
-                    if recommendations:
-                        print(f"\n{Fore.YELLOW}Recommendations:{Style.RESET_ALL}")
-                        for i, rec in enumerate(recommendations[:5], 1):
-                            print(f"  {i}. {rec}")
-
-                    return self.success(data={"validation": summary})
-                else:
-                    return self.error(f"Validation failed: {validation_result.get('message', 'Unknown error')}")
 
             finally:
                 git_manager.cleanup(temp_path)
@@ -1089,6 +1018,127 @@ class ProjectValidateCommand(BaseCommand):
         except Exception as e:
             self.print_error(f"Validation error: {str(e)}")
             return self.error(f"Validation error: {str(e)}")
+
+    def _validate_cmd_context(self, context: Dict[str, Any]) -> bool:
+        """Validate context for validate command"""
+        if not self.require_user(context):
+            return False
+
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
+
+        if not orchestrator:
+            self.error("Orchestrator not available")
+            return False
+
+        if not project:
+            self.error("No project loaded. Use /project load to load a project")
+            return False
+
+        if not project.repository_url:
+            self.error(
+                "Project is not linked to a GitHub repository. "
+                "Cannot validate projects without source code."
+            )
+            return False
+
+        return True
+
+    def _clone_validate_repo(self, git_manager: Any, repo_url: str) -> Any:
+        """Clone repository for validation"""
+        print(f"{Fore.CYAN}Cloning repository...{Style.RESET_ALL}")
+        clone_result = git_manager.clone_repository(repo_url)
+        if not clone_result.get("success"):
+            return None
+        return clone_result
+
+    def _run_validation(self, orchestrator: Any, project_path: str) -> Dict[str, Any]:
+        """Run validation pipeline"""
+        return orchestrator.process_request(
+            "code_validation",
+            {
+                "action": "validate_project",
+                "project_path": project_path,
+                "timeout": 300,
+            },
+        )
+
+    def _display_validation_results(self, validation_result: Dict[str, Any]) -> None:
+        """Display all validation results"""
+        summary = validation_result.get("validation_summary", {})
+        results = validation_result.get("validation_results", {})
+        recommendations = validation_result.get("recommendations", [])
+
+        self.print_success("Validation complete!")
+        self._display_summary(summary)
+        self._display_detailed_results(results)
+        self._display_recommendations(recommendations)
+
+    def _display_summary(self, summary: Dict[str, Any]) -> None:
+        """Display validation summary"""
+        overall = summary.get("overall_status", "unknown").upper()
+        color = self._get_status_color(overall)
+
+        print(f"\n{Fore.CYAN}Validation Summary:{Style.RESET_ALL}")
+        print(f"  Overall Status: {color}{overall}{Style.RESET_ALL}")
+        print(f"  Issues: {summary.get('issues_count', 0)}")
+        print(f"  Warnings: {summary.get('warnings_count', 0)}")
+
+    def _get_status_color(self, status: str) -> str:
+        """Get color for status"""
+        if status == "PASS":
+            return Fore.GREEN
+        elif status == "WARNING":
+            return Fore.YELLOW
+        return Fore.RED
+
+    def _display_detailed_results(self, results: Dict[str, Any]) -> None:
+        """Display detailed validation results"""
+        syntax = results.get("syntax", {})
+        deps = results.get("dependencies", {})
+        tests = results.get("tests", {})
+
+        self._display_syntax_results(syntax)
+        self._display_dependency_results(deps)
+        self._display_test_results(tests)
+
+    def _display_syntax_results(self, syntax: Dict[str, Any]) -> None:
+        """Display syntax validation results"""
+        print(f"\n{Fore.CYAN}Syntax Validation:{Style.RESET_ALL}")
+        print(f"  Status: {'PASS' if syntax.get('valid') else 'FAIL'}")
+        if not syntax.get("valid"):
+            issues = syntax.get("issues", [])
+            print(f"  Issues: {len(issues)}")
+
+    def _display_dependency_results(self, deps: Dict[str, Any]) -> None:
+        """Display dependency validation results"""
+        print(f"\n{Fore.CYAN}Dependency Validation:{Style.RESET_ALL}")
+        print(f"  Status: {'PASS' if deps.get('valid') else 'FAIL'}")
+        meta = deps.get("metadata", {})
+        if meta.get("total_dependencies"):
+            print(f"  Total Dependencies: {meta.get('total_dependencies')}")
+        if meta.get("missing_imports"):
+            print(f"  Missing: {len(meta.get('missing_imports', []))}")
+        if meta.get("unused_dependencies"):
+            print(f"  Unused: {len(meta.get('unused_dependencies', []))}")
+
+    def _display_test_results(self, tests: Dict[str, Any]) -> None:
+        """Display test validation results"""
+        print(f"\n{Fore.CYAN}Tests:{Style.RESET_ALL}")
+        if tests.get("tests_found"):
+            print(f"  Passed: {tests.get('tests_passed', 0)}")
+            print(f"  Failed: {tests.get('tests_failed', 0)}")
+        else:
+            print("  No tests found")
+
+    def _display_recommendations(self, recommendations: List[str]) -> None:
+        """Display recommendations"""
+        if not recommendations:
+            return
+
+        print(f"\n{Fore.YELLOW}Recommendations:{Style.RESET_ALL}")
+        for i, rec in enumerate(recommendations[:5], 1):
+            print(f"  {i}. {rec}")
 
 
 class ProjectReviewCommand(BaseCommand):
