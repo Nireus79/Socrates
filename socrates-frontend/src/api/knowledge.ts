@@ -18,7 +18,15 @@ import type {
   BulkImportResponse,
   DocumentListFilters,
   DocumentListResponse as TypesDocumentListResponse,
+  DocumentAnalytics,
 } from '../types/models';
+
+// Re-export types for use in stores and components
+export type {
+  DocumentDetails,
+  DocumentListFilters,
+  DocumentAnalytics,
+};
 
 // Type definitions for Knowledge Base API
 

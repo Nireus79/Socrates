@@ -290,8 +290,6 @@ export interface LanguageInfo {
 // Collaboration - Invitations
 // ============================================================================
 
-export type CollaboratorRole = 'owner' | 'editor' | 'viewer';
-
 export interface Invitation {
   id: string;
   project_id: string;
@@ -454,6 +452,8 @@ export interface DocumentListFilters {
   searchQuery?: string;
   sortBy?: 'uploaded_at' | 'title' | 'document_type';
   sortOrder?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
 }
 
 export interface PaginationInfo {

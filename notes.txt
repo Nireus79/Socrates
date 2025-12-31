@@ -1,3 +1,0 @@
-python socrates.py --full
-
-/subscription testing-mode on/off
