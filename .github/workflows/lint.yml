@@ -111,7 +111,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e . -e socrates-cli -e socrates-api
+          pip install -e . -e ./socrates-cli -e ./socrates-api
 
       - name: Check for outdated packages
         run: |
@@ -157,7 +157,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e . -e socrates-cli -e socrates-api
+          pip install -e . -e ./socrates-cli -e ./socrates-api
           pip install -e ".[dev]" pytest-cov
 
       - name: Run tests with coverage
