@@ -621,8 +621,8 @@ class VectorDatabase:
                 self.logger.warning(message)
             elif level == "error":
                 self.logger.error(message)
-        except Exception:
-            # Silently ignore logging errors during shutdown
+        except Exception as e:
+            # Silently ignore logging errors during shutdown - this is expected during cleanup
             pass
 
     def close(self):
@@ -682,13 +682,14 @@ class VectorDatabase:
         if sys.platform == "win32":
             try:
                 time.sleep(0.1)  # 100ms delay for Windows file handle release
-            except Exception:
-                pass
+            except (InterruptedError, SystemExit):
+                # Re-raise system-level exceptions
+                raise
 
     def __del__(self):
         """Destructor to ensure cleanup when object is garbage collected."""
         try:
             self.close()
-        except Exception:
-            # Silently ignore errors in destructor
+        except Exception as e:
+            # Silently ignore errors in destructor - logging may not be available
             pass

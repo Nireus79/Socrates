@@ -10,6 +10,7 @@ Provides:
 
 import logging
 import os
+import subprocess
 from pathlib import Path
 from typing import Optional
 
@@ -344,8 +345,9 @@ async def validate_code(
                                 errors.append(line.strip())
                             elif 'warning' in line.lower():
                                 warnings.append(line.strip())
-                except:
-                    pass  # pylint not installed, skip
+                except (FileNotFoundError, subprocess.CalledProcessError) as e:
+                    # pylint not installed or execution failed, skip
+                    logger.debug(f"Pylint validation skipped: {str(e)}")
 
             elif language in ["javascript", "typescript"]:
                 # JavaScript/TypeScript basic validation
@@ -365,8 +367,8 @@ async def validate_code(
             import os
             try:
                 os.unlink(temp_file)
-            except:
-                pass
+            except OSError as e:
+                logger.warning(f"Failed to clean up temporary file {temp_file}: {str(e)}")
 
         # Calculate scores
         line_count = len(code.splitlines())

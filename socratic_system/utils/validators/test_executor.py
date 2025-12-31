@@ -240,7 +240,9 @@ class TestExecutor:
                         "failures": [],
                         "output": "Test execution timed out",
                     }
-                except Exception:
+                except (FileNotFoundError, OSError) as e:
+                    # Test runner not found or execution failed, try next command
+                    logger.debug(f"Test command failed, trying next: {str(e)}")
                     continue
 
             # No tests found

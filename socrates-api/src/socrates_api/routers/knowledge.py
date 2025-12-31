@@ -928,8 +928,8 @@ async def bulk_import_documents(
                     # Clean up temp file
                     try:
                         Path(temp_path).unlink()
-                    except:
-                        pass
+                    except OSError as e:
+                        logger.warning(f"Failed to clean up temporary file {temp_path}: {str(e)}")
 
             except Exception as e:
                 results.append({

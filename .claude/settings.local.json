@@ -172,7 +172,8 @@
       "Bash(\".venv\\\\Scripts\\\\python.exe\" -c \"import json; data = json.load\\(open\\(''bandit_output.json''\\)\\); issues = data.get\\(''results'', []\\); print\\(f''Total issues found: {len\\(issues\\)}''\\); [print\\(f''{i+1}. {r[\"\"test\"\"]} at {r[\"\"filename\"\"]}:{r[\"\"line_number\"\"]}''\\) for i, r in enumerate\\(issues\\)]\")",
       "Bash(\".venv\\\\Scripts\\\\python.exe\" -m bandit -r socratic_system tests socrates-api/src --exclude \".venv\" -f csv)",
       "Bash(\".venv\\\\Scripts\\\\python.exe\" -m bandit socratic_system/database/project_db_async.py:632 socrates-api/src/socrates_api/caching/redis_cache.py:273 -f csv)",
-      "Bash(\".venv\\\\Scripts\\\\python.exe\" -m bandit -r socratic_system socrates-api/src --exclude \".venv\" -f csv)"
+      "Bash(\".venv\\\\Scripts\\\\python.exe\" -m bandit -r socratic_system socrates-api/src --exclude \".venv\" -f csv)",
+      "Bash(\".venv\\\\Scripts\\\\python.exe\" -c \"\nimport subprocess\nimport json\n\n# Get repo info\nresult = subprocess.run\\([''git'', ''remote'', ''get-url'', ''origin''], capture_output=True, text=True\\)\nrepo_url = result.stdout.strip\\(\\)\n# Extract owner/repo from URL\nparts = repo_url.split\\(''/''\\)\nowner = parts[-2]\nrepo = parts[-1].replace\\(''.git'', ''''\\)\n\nprint\\(f''Repository: {owner}/{repo}''\\)\nprint\\(''\\\\nRecent workflow runs:''\\)\n\n# Use curl to get workflow runs \\(this won''t work without auth token\\)\n# For now, just check if we can see the info\nprint\\(f''GitHub: https://github.com/{owner}/{repo}/actions''\\)\n\")"
     ],
     "deny": [],
     "ask": []
