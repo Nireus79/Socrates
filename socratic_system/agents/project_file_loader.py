@@ -60,110 +60,28 @@ class ProjectFileLoader:
         max_files: int = 50,
         show_progress: bool = True,
     ) -> Dict[str, Any]:
-        """
-        Load project files into vector DB based on strategy
-
-        Args:
-            project: Project context
-            strategy: Loading strategy - "priority" (top 50), "sample" (10%), "all"
-            max_files: Maximum number of files to load
-            show_progress: Whether to show progress messages
-
-        Returns:
-            Dict with status, files_loaded, total_chunks, strategy_used
-        """
+        """Load project files into vector DB based on strategy"""
         try:
             from socratic_system.database.project_file_manager import ProjectFileManager
 
             file_manager = ProjectFileManager(self.orchestrator.database.db_path)
 
-            # Get all files for the project
-            total_files = file_manager.get_file_count(project.project_id)
-            self.logger.info(f"Loading {total_files} files for project {project.project_id}")
-
-            # Get files in batches
-            all_files = []
-            offset = 0
-            batch_size = 100
-
-            while True:
-                batch = file_manager.get_project_files(
-                    project.project_id, offset=offset, limit=batch_size
-                )
-                if not batch:
-                    break
-                all_files.extend(batch)
-                offset += batch_size
-
+            # Load all project files
+            all_files = self._load_all_project_files(file_manager, project.project_id)
             if not all_files:
-                return {
-                    "status": "success",
-                    "files_loaded": 0,
-                    "total_chunks": 0,
-                    "strategy_used": strategy,
-                    "message": "No files found to load",
-                }
+                return self._empty_files_response(strategy)
 
-            # Apply loading strategy
+            # Apply strategy and filter duplicates
             selected_files = self._apply_strategy(all_files, strategy, max_files)
-
-            # Filter duplicates (check if already in vector DB)
             new_files = self._filter_duplicates(selected_files, project.project_id)
 
             if not new_files:
-                self.logger.info("All files already loaded in vector DB")
-                return {
-                    "status": "success",
-                    "files_loaded": 0,
-                    "total_chunks": 0,
-                    "strategy_used": strategy,
-                    "message": "All files already loaded",
-                }
+                return self._already_loaded_response(strategy)
 
-            # Process files through DocumentProcessor
-            loaded_count = 0
-            total_chunks = 0
-
-            for idx, file_info in enumerate(new_files):
-                if show_progress:
-                    self.logger.info(
-                        f"Loading files... [{idx + 1}/{len(new_files)}] {file_info['file_path']}"
-                    )
-
-                try:
-                    # Use orchestrator to access DocumentProcessor
-                    doc_processor = self.orchestrator.get_agent("document_processor")
-
-                    if doc_processor:
-                        # Process code file
-                        result = doc_processor.process(
-                            {
-                                "action": "process_code_file",
-                                "content": file_info["content"],
-                                "filename": file_info["file_path"],
-                                "language": file_info.get("language", "Unknown"),
-                                "project_id": project.project_id,
-                            }
-                        )
-
-                        if result.get("status") == "success":
-                            loaded_count += 1
-                            chunks = result.get("chunks_created", 0)
-                            total_chunks += chunks
-                        else:
-                            self.logger.warning(
-                                f"Failed to process file {file_info['file_path']}: "
-                                f"{result.get('message', 'Unknown error')}"
-                            )
-                    else:
-                        self.logger.warning("DocumentProcessor agent not available")
-                        break
-
-                except Exception as e:
-                    self.logger.error(
-                        f"Error processing file {file_info['file_path']}: {str(e)}"
-                    )
-                    continue
+            # Process files and return results
+            loaded_count, total_chunks = self._process_project_files(
+                new_files, project.project_id, show_progress
+            )
 
             self.logger.info(
                 f"Successfully loaded {loaded_count} files "
@@ -186,6 +104,96 @@ class ProjectFileLoader:
                 "status": "error",
                 "message": f"Failed to load project files: {str(e)}",
             }
+
+    def _load_all_project_files(
+        self, file_manager: Any, project_id: str
+    ) -> List[Dict]:
+        """Load all project files in batches"""
+        total_files = file_manager.get_file_count(project_id)
+        self.logger.info(f"Loading {total_files} files for project {project_id}")
+
+        all_files = []
+        offset = 0
+        batch_size = 100
+
+        while True:
+            batch = file_manager.get_project_files(
+                project_id, offset=offset, limit=batch_size
+            )
+            if not batch:
+                break
+            all_files.extend(batch)
+            offset += batch_size
+
+        return all_files
+
+    def _empty_files_response(self, strategy: str) -> Dict[str, Any]:
+        """Return response when no files found"""
+        return {
+            "status": "success",
+            "files_loaded": 0,
+            "total_chunks": 0,
+            "strategy_used": strategy,
+            "message": "No files found to load",
+        }
+
+    def _already_loaded_response(self, strategy: str) -> Dict[str, Any]:
+        """Return response when all files already loaded"""
+        self.logger.info("All files already loaded in vector DB")
+        return {
+            "status": "success",
+            "files_loaded": 0,
+            "total_chunks": 0,
+            "strategy_used": strategy,
+            "message": "All files already loaded",
+        }
+
+    def _process_project_files(
+        self,
+        files: List[Dict],
+        project_id: str,
+        show_progress: bool,
+    ) -> tuple[int, int]:
+        """Process files through DocumentProcessor and return counts"""
+        loaded_count = 0
+        total_chunks = 0
+
+        for idx, file_info in enumerate(files):
+            if show_progress:
+                self.logger.info(
+                    f"Loading files... [{idx + 1}/{len(files)}] {file_info['file_path']}"
+                )
+
+            doc_processor = self.orchestrator.get_agent("document_processor")
+            if not doc_processor:
+                self.logger.warning("DocumentProcessor agent not available")
+                break
+
+            try:
+                result = doc_processor.process(
+                    {
+                        "action": "process_code_file",
+                        "content": file_info["content"],
+                        "filename": file_info["file_path"],
+                        "language": file_info.get("language", "Unknown"),
+                        "project_id": project_id,
+                    }
+                )
+
+                if result.get("status") == "success":
+                    loaded_count += 1
+                    total_chunks += result.get("chunks_created", 0)
+                else:
+                    self.logger.warning(
+                        f"Failed to process file {file_info['file_path']}: "
+                        f"{result.get('message', 'Unknown error')}"
+                    )
+            except Exception as e:
+                self.logger.error(
+                    f"Error processing file {file_info['file_path']}: {str(e)}"
+                )
+
+        return loaded_count, total_chunks
 
     def _apply_strategy(
         self, files: List[Dict], strategy: str, max_files: int
@@ -212,77 +220,71 @@ class ProjectFileLoader:
             return self._priority_strategy(files, max_files)
 
     def _priority_strategy(self, files: List[Dict], max_files: int) -> List[Dict]:
-        """
-        Priority strategy: Select most important files based on type and name
-
-        Ranking:
-        1. README files (high priority)
-        2. Main entry points (main.py, index.js, app.py, etc.)
-        3. Core source files (src/, lib/)
-        4. Test files (tests/, __tests__/)
-        5. Configuration files
-        6. Other files
-
-        Args:
-            files: All available files
-            max_files: Maximum files to select
-
-        Returns:
-            Selected files ranked by priority
-        """
-        # Rank files by priority
+        """Priority strategy: Select most important files based on type and name"""
         ranked_files = []
 
-        # Priority 1: README files
-        for file in files:
-            if "readme" in file["file_path"].lower():
-                ranked_files.append((file, 1))
-
-        # Priority 2: Main entry points
-        main_files = {
-            "main.py",
-            "index.js",
-            "app.py",
-            "index.py",
-            "app.js",
-            "server.js",
-            "index.ts",
-            "main.go",
-            "main.rs",
-            "main.java",
-        }
-        for file in files:
-            filename = Path(file["file_path"]).name
-            if filename in main_files:
-                ranked_files.append((file, 2))
-
-        # Priority 3: Core source files (src/, lib/)
-        for file in files:
-            path_str = file["file_path"]
-            if "/src/" in path_str or "/lib/" in path_str or path_str.startswith("src/"):
-                ranked_files.append((file, 3))
-
-        # Priority 4: Test files
-        for file in files:
-            path_str = file["file_path"]
-            if "/test" in path_str or path_str.startswith("test"):
-                ranked_files.append((file, 4))
-
-        # Priority 5: Config files
-        config_exts = {".json", ".yaml", ".yml", ".toml", ".ini", ".cfg"}
-        for file in files:
-            if Path(file["file_path"]).suffix in config_exts:
-                ranked_files.append((file, 5))
-
-        # Priority 6: Everything else
-        ranked_set = {f["file_path"] for f, _ in ranked_files}
-        for file in files:
-            if file["file_path"] not in ranked_set:
-                ranked_files.append((file, 6))
+        # Rank files by priority level
+        ranked_files.extend(self._rank_readme_files(files, 1))
+        ranked_files.extend(self._rank_main_entry_points(files, 2))
+        ranked_files.extend(self._rank_source_files(files, 3))
+        ranked_files.extend(self._rank_test_files(files, 4))
+        ranked_files.extend(self._rank_config_files(files, 5))
+        ranked_files.extend(self._rank_other_files(files, ranked_files, 6))
 
         # Sort by priority and return top max_files
         ranked_files.sort(key=lambda x: x[1])
         return [f for f, _ in ranked_files[:max_files]]
+
+    def _rank_readme_files(self, files: List[Dict], priority: int) -> List[tuple]:
+        """Rank README files"""
+        return [(f, priority) for f in files if "readme" in f["file_path"].lower()]
+
+    def _rank_main_entry_points(self, files: List[Dict], priority: int) -> List[tuple]:
+        """Rank main entry point files"""
+        main_files = {
+            "main.py", "index.js", "app.py", "index.py", "app.js",
+            "server.js", "index.ts", "main.go", "main.rs", "main.java",
+        }
+        return [
+            (f, priority)
+            for f in files
+            if Path(f["file_path"]).name in main_files
+        ]
+
+    def _rank_source_files(self, files: List[Dict], priority: int) -> List[tuple]:
+        """Rank core source files"""
+        return [
+            (f, priority)
+            for f in files
+            if any(
+                x in f["file_path"]
+                for x in ["/src/", "/lib/", "src/"]
+            )
+        ]
+
+    def _rank_test_files(self, files: List[Dict], priority: int) -> List[tuple]:
+        """Rank test files"""
+        return [
+            (f, priority)
+            for f in files
+            if any(x in f["file_path"] for x in ["/test", "test/"])
+        ]
+
+    def _rank_config_files(self, files: List[Dict], priority: int) -> List[tuple]:
+        """Rank configuration files"""
+        config_exts = {".json", ".yaml", ".yml", ".toml", ".ini", ".cfg"}
+        return [
+            (f, priority)
+            for f in files
+            if Path(f["file_path"]).suffix in config_exts
+        ]
+
+    def _rank_other_files(
+        self, files: List[Dict], ranked_files: List[tuple], priority: int
+    ) -> List[tuple]:
+        """Rank remaining files"""
+        ranked_set = {f["file_path"] for f, _ in ranked_files}
+        return [(f, priority) for f in files if f["file_path"] not in ranked_set]
 
     def _sample_strategy(self, files: List[Dict], max_files: int) -> List[Dict]:
         """
