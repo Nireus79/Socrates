@@ -257,17 +257,25 @@ jobs:
 
       - name: Test frontend image
         run: |
-          docker run --rm --name frontend-test \
+          docker run -d --rm --name frontend-test \
             -p 3000:80 \
-            socrates-frontend:test &
+            socrates-frontend:test
 
-          sleep 3
+          # Wait for container to be healthy (up to 15 seconds)
+          for i in {1..15}; do
+            if curl -f http://localhost:3000/ > /dev/null 2>&1; then
+              echo "✓ Frontend loads successfully"
+              break
+            fi
+            if [ $i -eq 15 ]; then
+              echo "✗ Frontend failed to respond"
+              docker logs frontend-test
+              exit 1
+            fi
+            sleep 1
+          done
 
-          # Test that frontend serves content
-          curl -f http://localhost:3000/ || exit 1
-          echo "✓ Frontend loads successfully"
-
-          pkill -f "docker run"
+          docker stop frontend-test
 
       - name: Check image sizes
         run: |
