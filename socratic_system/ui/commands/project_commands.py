@@ -843,29 +843,15 @@ class ProjectFixCommand(BaseCommand):
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute project fix command"""
-        if not self.require_user(context):
-            return self.error("Must be logged in")
+        if not self._validate_fix_context(context):
+            return self.error("Context validation failed")
 
         orchestrator = context.get("orchestrator")
         project = context.get("project")
+        issue_type = self._get_and_validate_issue_type(args)
 
-        if not orchestrator:
-            return self.error("Orchestrator not available")
-
-        if not project:
-            return self.error("No project loaded. Use /project load to load a project")
-
-        # Get issue type (syntax, style, dependencies, all)
-        issue_type = args[0] if args else "all"
-
-        # Validate issue type
-        valid_types = {"syntax", "style", "dependencies", "all"}
-        if issue_type not in valid_types:
-            return self.error(f"Invalid issue type. Choose from: {', '.join(valid_types)}")
-
-        # Check if project has repository URL (GitHub imported)
-        if not project.repository_url:
-            return self.error("Project is not linked to a GitHub repository. Cannot fix projects without source code.")
+        if not issue_type:
+            return self.error("Invalid issue type")
 
         print(f"{Fore.YELLOW}Applying fixes (type: {issue_type})...{Style.RESET_ALL}")
 
@@ -873,17 +859,12 @@ class ProjectFixCommand(BaseCommand):
             from socratic_system.utils.git_repository_manager import GitRepositoryManager
 
             git_manager = GitRepositoryManager()
-
-            # Clone repository to temp directory
-            print(f"{Fore.CYAN}Cloning repository...{Style.RESET_ALL}")
-            clone_result = git_manager.clone_repository(project.repository_url)
-            if not clone_result.get("success"):
-                return self.error(f"Failed to clone repository: {clone_result.get('error')}")
+            clone_result = self._clone_fix_repo(git_manager, project.repository_url)
+            if not clone_result:
+                return self.error("Failed to clone repository")
 
             temp_path = clone_result["path"]
-
             try:
-                # Run validation to identify issues
                 print(f"{Fore.CYAN}Identifying issues...{Style.RESET_ALL}")
                 validation_result = orchestrator.process_request(
                     "code_validation",
@@ -898,69 +879,21 @@ class ProjectFixCommand(BaseCommand):
                     return self.error("Validation failed before fixes")
 
                 validation_data = validation_result.get("validation_results", {})
-                validation_result.get("validation_summary", {})
-
-                # Gather fixable issues
-                issues = []
-
-                if issue_type in {"syntax", "all"}:
-                    syntax_issues = validation_data.get("syntax", {}).get("issues", [])
-                    issues.extend([("syntax", issue) for issue in syntax_issues[:3]])
-
-                if issue_type in {"dependencies", "all"}:
-                    deps_issues = validation_data.get("dependencies", {}).get("issues", [])
-                    issues.extend([("dependency", issue) for issue in deps_issues[:3]])
+                issues = self._gather_fixable_issues(validation_data, issue_type)
 
                 if not issues:
                     self.print_info("No issues found to fix")
                     return self.success()
 
-                # Display found issues
-                print(f"\n{Fore.YELLOW}Issues Found:{Style.RESET_ALL}")
-                for i, (itype, issue) in enumerate(issues, 1):
-                    msg = issue.get("message", str(issue)) if isinstance(issue, dict) else str(issue)
-                    print(f"  {i}. [{itype.upper()}] {msg[:80]}")
+                self._display_issues(issues)
 
-                # Ask for confirmation
-                confirm = input(f"\n{Fore.CYAN}Apply fixes? (y/n): ").lower()
-                if confirm != "y":
-                    self.print_info("Fix cancelled")
+                if not self._confirm_fixes():
                     return self.success()
 
-                # Generate and apply fixes
                 print(f"{Fore.CYAN}Generating fixes with Claude...{Style.RESET_ALL}")
+                fixes_applied = self._apply_fixes(issues, temp_path)
 
-                fixes_applied = 0
-                for itype, issue in issues:
-                    if itype == "dependency":
-                        # Auto-fix missing dependencies
-                        msg = issue.get("message", "") if isinstance(issue, dict) else str(issue)
-                        missing = issue.get("missing_modules", []) if isinstance(issue, dict) else []
-
-                        if missing:
-                            try:
-                                from pathlib import Path
-                                req_file = Path(temp_path) / "requirements.txt"
-
-                                # Append to requirements.txt
-                                with open(req_file, "a") as f:
-                                    for module in missing:
-                                        f.write(f"{module}\n")
-
-                                fixes_applied += 1
-                                print(f"{Fore.GREEN}[OK] Added missing dependencies to requirements.txt{Style.RESET_ALL}")
-                            except Exception as e:
-                                print(f"{Fore.YELLOW}[SKIP] Could not add dependencies: {e}{Style.RESET_ALL}")
-
-                # Display results
-                print(f"\n{Fore.CYAN}Fix Summary:{Style.RESET_ALL}")
-                print(f"  Issues processed: {len(issues)}")
-                print(f"  Fixes applied: {fixes_applied}")
-
-                if fixes_applied > 0:
-                    print(f"\n{Fore.YELLOW}Note: Fixed files are in the cloned repository.")
-                    print(f"Use /github push to commit and push changes back to GitHub.{Style.RESET_ALL}")
-
+                self._display_fix_summary(issues, fixes_applied)
                 return self.success(data={"fixes_applied": fixes_applied})
 
             finally:
@@ -969,6 +902,137 @@ class ProjectFixCommand(BaseCommand):
         except Exception as e:
             self.print_error(f"Fix error: {str(e)}")
             return self.error(f"Fix error: {str(e)}")
+
+    def _validate_fix_context(self, context: Dict[str, Any]) -> bool:
+        """Validate context for fix command"""
+        if not self.require_user(context):
+            return False
+
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
+
+        if not orchestrator:
+            self.error("Orchestrator not available")
+            return False
+
+        if not project:
+            self.error("No project loaded. Use /project load to load a project")
+            return False
+
+        if not project.repository_url:
+            self.error(
+                "Project is not linked to a GitHub repository. "
+                "Cannot fix projects without source code."
+            )
+            return False
+
+        return True
+
+    def _get_and_validate_issue_type(self, args: List[str]) -> str:
+        """Get and validate issue type"""
+        issue_type = args[0] if args else "all"
+        valid_types = {"syntax", "style", "dependencies", "all"}
+
+        if issue_type not in valid_types:
+            self.error(f"Invalid issue type. Choose from: {', '.join(valid_types)}")
+            return None
+
+        return issue_type
+
+    def _clone_fix_repo(self, git_manager: Any, repo_url: str) -> Any:
+        """Clone repository for fix operation"""
+        print(f"{Fore.CYAN}Cloning repository...{Style.RESET_ALL}")
+        clone_result = git_manager.clone_repository(repo_url)
+        if not clone_result.get("success"):
+            return None
+        return clone_result
+
+    def _gather_fixable_issues(
+        self, validation_data: Dict[str, Any], issue_type: str
+    ) -> List[tuple]:
+        """Gather fixable issues from validation data"""
+        issues = []
+
+        if issue_type in {"syntax", "all"}:
+            syntax_issues = validation_data.get("syntax", {}).get("issues", [])
+            issues.extend([("syntax", issue) for issue in syntax_issues[:3]])
+
+        if issue_type in {"dependencies", "all"}:
+            deps_issues = validation_data.get("dependencies", {}).get("issues", [])
+            issues.extend([("dependency", issue) for issue in deps_issues[:3]])
+
+        return issues
+
+    def _display_issues(self, issues: List[tuple]) -> None:
+        """Display found issues"""
+        print(f"\n{Fore.YELLOW}Issues Found:{Style.RESET_ALL}")
+        for i, (itype, issue) in enumerate(issues, 1):
+            msg = (
+                issue.get("message", str(issue))
+                if isinstance(issue, dict)
+                else str(issue)
+            )
+            print(f"  {i}. [{itype.upper()}] {msg[:80]}")
+
+    def _confirm_fixes(self) -> bool:
+        """Ask for fix confirmation"""
+        confirm = input(f"\n{Fore.CYAN}Apply fixes? (y/n): ").lower()
+        if confirm != "y":
+            self.print_info("Fix cancelled")
+            return False
+        return True
+
+    def _apply_fixes(self, issues: List[tuple], temp_path: str) -> int:
+        """Apply fixes to identified issues"""
+        from pathlib import Path
+
+        fixes_applied = 0
+        for itype, issue in issues:
+            if itype == "dependency":
+                fixes_applied += self._apply_dependency_fix(issue, temp_path)
+
+        return fixes_applied
+
+    def _apply_dependency_fix(self, issue: Any, temp_path: str) -> int:
+        """Apply fix for dependency issue"""
+        missing = (
+            issue.get("missing_modules", [])
+            if isinstance(issue, dict)
+            else []
+        )
+
+        if not missing:
+            return 0
+
+        try:
+            from pathlib import Path
+
+            req_file = Path(temp_path) / "requirements.txt"
+            with open(req_file, "a") as f:
+                for module in missing:
+                    f.write(f"{module}\n")
+
+            print(
+                f"{Fore.GREEN}[OK] Added missing dependencies "
+                f"to requirements.txt{Style.RESET_ALL}"
+            )
+            return 1
+        except Exception as e:
+            print(f"{Fore.YELLOW}[SKIP] Could not add dependencies: {e}{Style.RESET_ALL}")
+            return 0
+
+    def _display_fix_summary(self, issues: List[tuple], fixes_applied: int) -> None:
+        """Display fix summary"""
+        print(f"\n{Fore.CYAN}Fix Summary:{Style.RESET_ALL}")
+        print(f"  Issues processed: {len(issues)}")
+        print(f"  Fixes applied: {fixes_applied}")
+
+        if fixes_applied > 0:
+            print(f"\n{Fore.YELLOW}Note: Fixed files are in the cloned repository.")
+            print(
+                f"Use /github push to commit and push changes back to GitHub."
+                f"{Style.RESET_ALL}"
+            )
 
 
 class ProjectValidateCommand(BaseCommand):
