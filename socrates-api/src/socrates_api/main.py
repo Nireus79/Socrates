@@ -19,6 +19,7 @@ import uvicorn
 
 from socratic_system.orchestration.orchestrator import AgentOrchestrator
 from socratic_system.events import EventType
+from socratic_system.exceptions import SocratesError
 from socrates_api.middleware.rate_limit import (
     initialize_limiter,
     RateLimitConfig,
@@ -765,26 +766,24 @@ async def generate_code(request: GenerateCodeRequest):
 
     except HTTPException:
         raise
-    # except socrates.ProjectNotFoundError:
-    #     raise HTTPException(status_code=404, detail=f"Project not found: {request.project_id}")
     except Exception as e:
         logger.error(f"Error generating code: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# TODO: Import SocratesError from socratic_system and re-enable this handler
-# @app.exception_handler(socrates.SocratesError)
-# async def socrates_error_handler(request, exc: socrates.SocratesError):
-#     """Handle Socrates library errors"""
-#     return JSONResponse(
-#         status_code=400,
-#         content=ErrorResponse(
-#             error=exc.__class__.__name__,
-#             message=str(exc),
-#             error_code=getattr(exc, "error_code", None),
-#             details=getattr(exc, "context", None),
-#         ).model_dump(),
-#     )
+@app.exception_handler(SocratesError)
+async def socrates_error_handler(request: Request, exc: SocratesError):
+    """Handle Socrates library errors"""
+    logger.warning(f"SocratesError in {request.url.path}: {str(exc)}")
+    return JSONResponse(
+        status_code=400,
+        content=ErrorResponse(
+            error=exc.__class__.__name__,
+            message=str(exc),
+            error_code=getattr(exc, "error_code", None),
+            details=getattr(exc, "context", None),
+        ).model_dump(),
+    )
 
 
 @app.exception_handler(RateLimitExceeded)

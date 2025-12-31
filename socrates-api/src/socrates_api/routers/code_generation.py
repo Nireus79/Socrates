@@ -437,17 +437,25 @@ async def get_code_history(
                 detail="Access denied",
             )
 
-        # TODO: Load code history from database
+        # Load code history from database
+        # Note: Requires schema for code_generations table with fields:
+        # id, project_id, code, language, timestamp, status, feedback
+        # Current implementation returns empty list as schema is not yet implemented
+        generations = []
+        total = 0
 
-        logger.debug(f"Code history retrieved for project {project_id}")
+        # TODO for future: Query database for code generations
+        # Example: generations = db.query_code_generations(project_id, limit, offset)
+
+        logger.debug(f"Code history retrieved for project {project_id}: {total} generations")
 
         return {
             "status": "success",
             "project_id": project_id,
-            "total": 0,
+            "total": total,
             "limit": limit,
             "offset": offset,
-            "generations": [],
+            "generations": generations,
         }
 
     except HTTPException:
