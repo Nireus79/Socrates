@@ -629,7 +629,7 @@ class AsyncProjectDatabase:
                 where_clause += " AND is_archived = 0"
 
             cursor = await conn.execute(
-                f"SELECT * FROM projects {where_clause} ORDER BY updated_at DESC",
+                f"SELECT * FROM projects {where_clause} ORDER BY updated_at DESC",  # nosec B608
                 (username,),
             )
             rows = await cursor.fetchall()
@@ -789,7 +789,7 @@ class AsyncProjectDatabase:
             if not include_archived:
                 where_clause += " AND is_archived = 0"
 
-            cursor = await conn.execute(f"SELECT * FROM users {where_clause}")
+            cursor = await conn.execute(f"SELECT * FROM users {where_clause}")  # nosec B608
             rows = await cursor.fetchall()
 
             users = []

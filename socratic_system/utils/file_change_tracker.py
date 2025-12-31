@@ -35,7 +35,7 @@ class FileChangeTracker:
         Returns:
             MD5 hash of content
         """
-        return hashlib.md5(content.encode("utf-8")).hexdigest()
+        return hashlib.md5(content.encode("utf-8"), usedforsecurity=False).hexdigest()
 
     def detect_changes(
         self, project_id: str, current_files: list[dict], stored_files: list[dict]

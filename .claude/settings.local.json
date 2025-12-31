@@ -165,7 +165,14 @@
       "Bash(then sleep 10)",
       "Bash(fi)",
       "Bash(done)",
-      "Bash(.venvScriptspython.exe -m ruff check socratic_system tests --config pyproject.toml)"
+      "Bash(.venvScriptspython.exe -m ruff check socratic_system tests --config pyproject.toml)",
+      "Bash(\".venv\\\\Scripts\\\\python.exe\" -m bandit -r socratic_system tests socrates-api/src --exclude \".venv\" -f json)",
+      "Bash(\".venv\\\\Scripts\\\\python.exe\" -m bandit -r socratic_system tests socrates-api/src --exclude \".venv\")",
+      "Bash(\".venv\\\\Scripts\\\\python.exe\" -m json.tool)",
+      "Bash(\".venv\\\\Scripts\\\\python.exe\" -c \"import json; data = json.load\\(open\\(''bandit_output.json''\\)\\); issues = data.get\\(''results'', []\\); print\\(f''Total issues found: {len\\(issues\\)}''\\); [print\\(f''{i+1}. {r[\"\"test\"\"]} at {r[\"\"filename\"\"]}:{r[\"\"line_number\"\"]}''\\) for i, r in enumerate\\(issues\\)]\")",
+      "Bash(\".venv\\\\Scripts\\\\python.exe\" -m bandit -r socratic_system tests socrates-api/src --exclude \".venv\" -f csv)",
+      "Bash(\".venv\\\\Scripts\\\\python.exe\" -m bandit socratic_system/database/project_db_async.py:632 socrates-api/src/socrates_api/caching/redis_cache.py:273 -f csv)",
+      "Bash(\".venv\\\\Scripts\\\\python.exe\" -m bandit -r socratic_system socrates-api/src --exclude \".venv\" -f csv)"
     ],
     "deny": [],
     "ask": []

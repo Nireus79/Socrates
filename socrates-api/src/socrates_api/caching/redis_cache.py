@@ -270,7 +270,7 @@ def cache_key_project_list(username: str) -> str:
 
 def cache_key_search(query: str, limit: int = 10) -> str:
     """Build cache key for search results."""
-    query_hash = hashlib.md5(query.encode()).hexdigest()
+    query_hash = hashlib.md5(query.encode(), usedforsecurity=False).hexdigest()
     return f"search:{query_hash}:{limit}"
 
 

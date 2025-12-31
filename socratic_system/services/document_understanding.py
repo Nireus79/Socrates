@@ -475,7 +475,7 @@ Topics: {', '.join(s.get('topics', []))}
         """Generate cache key for document summary."""
         # Use file name and chunk count as key
         key_text = f"{file_name}:{len(chunks)}:{len(''.join(chunks))}"
-        return hashlib.md5(key_text.encode()).hexdigest()
+        return hashlib.md5(key_text.encode(), usedforsecurity=False).hexdigest()
 
     def clear_cache(self) -> None:
         """Clear the summary cache."""

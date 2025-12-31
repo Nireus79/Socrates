@@ -330,14 +330,20 @@ class DocumentProcessorAgent(Agent):
         """Fetch and extract text content from a URL"""
         try:
             import urllib.error
+            import urllib.parse
             import urllib.request
+
+            # Validate URL scheme to prevent file:// or other unsafe schemes
+            parsed_url = urllib.parse.urlparse(url)
+            if parsed_url.scheme not in ("http", "https"):
+                raise ValueError(f"Unsupported URL scheme: {parsed_url.scheme}")
 
             # Set a user agent to avoid being blocked
             headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
             req = urllib.request.Request(url, headers=headers)
 
             # Fetch the URL with timeout
-            with urllib.request.urlopen(req, timeout=10) as response:
+            with urllib.request.urlopen(req, timeout=10) as response:  # nosec B310
                 html_content = response.read().decode("utf-8", errors="ignore")
 
             # Extract text from HTML

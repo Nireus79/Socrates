@@ -5,7 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.6.6">
+      <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/document_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/document_processor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/database/project_db_async.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/project_db_async.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/database/project_db_v2.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/project_db_v2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/database/project_file_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/project_file_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/services/document_understanding.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/services/document_understanding.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/utils/file_change_tracker.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/utils/file_change_tracker.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

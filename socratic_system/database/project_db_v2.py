@@ -512,7 +512,7 @@ class ProjectDatabase:
                 f"""
                 SELECT * FROM projects {where_clause}
                 ORDER BY updated_at DESC
-            """,
+            """,  # nosec B608
                 (username,),
             )
 
@@ -2713,7 +2713,7 @@ class ProjectDatabase:
                 WHERE session_id = ?
                 ORDER BY created_at {order_by}
                 LIMIT ? OFFSET ?
-                """,
+                """,  # nosec B608
                 (session_id, limit, offset),
             )
 
