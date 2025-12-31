@@ -1,8 +1,7 @@
 """
 Pytest configuration for integration tests.
 
-Note: Integration tests use mocks instead of requiring a live API server.
-This allows tests to run in CI/CD environments without external dependencies.
+Integration tests use real HTTP calls to a live API server and are excluded
+from CI/CD runs with -m "not integration" because CI/CD environments don't
+have a running API server. These tests are designed for local testing only.
 """
-
-import pytest
