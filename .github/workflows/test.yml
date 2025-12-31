@@ -38,12 +38,12 @@ jobs:
       - name: Lint with ruff
         run: |
           pip install ruff
-          ruff check socratic_system socrates_cli socrates_api || true
+          ruff check socratic_system socrates-cli/src/socrates_cli socrates-api/src/socrates_api || true
 
       - name: Format check with black
         run: |
           pip install black
-          black --check socratic_system socrates_cli socrates_api || true
+          black --check socratic_system socrates-cli/src/socrates_cli socrates-api/src/socrates_api || true
 
       - name: Type check with mypy
         run: |
