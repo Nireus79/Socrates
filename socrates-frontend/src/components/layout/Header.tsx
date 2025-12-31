@@ -8,6 +8,9 @@ import { useAuthStore } from '../../stores';
 import { LogOut, Settings, Search } from 'lucide-react';
 import { Button } from '../common';
 
+// Cache bust version - increment this when logo.png is updated
+const LOGO_VERSION = '1.1';
+
 export const Header: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
@@ -25,7 +28,7 @@ export const Header: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center gap-2">
             <img
-              src="/images/logo.png"
+              src={`/images/logo.png?v=${LOGO_VERSION}`}
               alt="Socrates Logo"
               className="w-8 h-8 object-contain rounded-md"
             />

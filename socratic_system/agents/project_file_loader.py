@@ -312,22 +312,34 @@ class ProjectFileLoader:
         new_files = []
 
         try:
-            # Check each file against vector DB
-            # This is a placeholder - actual implementation depends on vector DB API
-            # For now, assume all files are new (no deduplication yet)
-            # In production, query vector DB with metadata filter:
-            # results = vector_db.query(
-            #     query_texts=[""],
-            #     where={"project_id": project_id, "source": file_path},
-            #     n_results=1
-            # )
+            # Filter files to avoid re-indexing duplicates in vector DB
+            # Each file is checked by project_id and source path metadata
+            #
+            # TODO: Implement vector DB deduplication when vector DB API supports metadata filtering:
+            # 1. Query vector DB with metadata filters for (project_id, file_path)
+            # 2. If file exists in DB with same content hash, skip it
+            # 3. Otherwise, add to new_files list for indexing
+            #
+            # Example production implementation:
+            # for file in files:
+            #     results = vector_db.query(
+            #         query_texts=[""],  # Empty query to check existence only
+            #         where={"project_id": project_id, "source": file.get("path")},
+            #         n_results=1
+            #     )
+            #     if not results or len(results) == 0:
+            #         new_files.append(file)
+            #     else:
+            #         self.logger.debug(f"File already indexed: {file.get('path')}")
 
-            # For now, return all files as new
+            # For now, return all files as new to ensure complete indexing
+            # This is safe but may re-index files that haven't changed
             new_files = files
+            self.logger.debug(f"Processing {len(new_files)} files for project {project_id} (no deduplication yet)")
 
         except Exception as e:
             self.logger.warning(f"Error filtering duplicates: {str(e)}")
-            # If we can't filter, return all as new
+            # If we can't filter, return all as new (safe but less efficient)
             new_files = files
 
         return new_files

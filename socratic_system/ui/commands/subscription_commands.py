@@ -127,30 +127,22 @@ class SubscriptionUpgradeCommand(BaseCommand):
 
         user.subscription_end = datetime.now() + timedelta(days=30)
 
-        # In production, integrate with Stripe:
-        try:
-            # import stripe
-            # stripe.api_key = os.getenv("STRIPE_API_KEY")
-            #
-            # # Create or retrieve customer
-            # customer = stripe.Customer.create_or_retrieve(
-            #     email=user.email,
-            #     metadata={"user_id": user.username}
-            # )
-            #
-            # # Create subscription
-            # subscription = stripe.Subscription.create(
-            #     customer=customer.id,
-            #     items=[{"price": get_stripe_price_id(new_tier)}],
-            #     billing_cycle_anchor=int(user.subscription_start.timestamp())
-            # )
-            #
-            # user.stripe_customer_id = customer.id
-            # user.stripe_subscription_id = subscription.id
-            pass
-        except Exception:
-            # If Stripe fails, log but don't fail the upgrade
-            pass
+        # TODO: In production, integrate with Stripe payment processing:
+        # 1. Import stripe library
+        # 2. Set stripe.api_key from environment variable
+        # 3. Create or retrieve customer using customer email
+        # 4. Create subscription with billing cycle anchor
+        # 5. Store stripe_customer_id and stripe_subscription_id
+        # See commented code below for reference implementation
+        #
+        # import stripe
+        # stripe.api_key = os.getenv("STRIPE_API_KEY")
+        # customer = stripe.Customer.create_or_retrieve(email=user.email, metadata={"user_id": user.username})
+        # subscription = stripe.Subscription.create(customer=customer.id, items=[{"price": get_stripe_price_id(new_tier)}])
+        # user.stripe_customer_id = customer.id
+        # user.stripe_subscription_id = subscription.id
+
+        logger.info(f"Subscription tier changed to {new_tier} for user {current_user} (Stripe integration pending)")
 
         orchestrator.database.save_user(user)
 
