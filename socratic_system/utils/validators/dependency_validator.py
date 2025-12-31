@@ -123,9 +123,35 @@ class DependencyValidator:
         issues = []
         warnings = []
 
-        # Read requirements.txt
-        requirements_file = project_path / "requirements.txt"
+        # Step 1: Read declared dependencies
+        declared_deps, req_issues, req_warnings = self._read_python_requirements(
+            project_path
+        )
+        issues.extend(req_issues)
+        warnings.extend(req_warnings)
+
+        # Step 2: Extract imported modules
+        imported_modules = self._extract_python_imports(project_path)
+
+        # Step 3: Find dependency issues
+        missing_imports = self._find_missing_imports(
+            imported_modules, declared_deps, project_path
+        )
+        unused_deps = self._find_unused_dependencies(imported_modules, declared_deps)
+
+        # Step 4: Build result
+        return self._build_validation_result(
+            issues, warnings, declared_deps, missing_imports, unused_deps
+        )
+
+    def _read_python_requirements(
+        self, project_path: Path
+    ) -> tuple[set, list, list]:
+        """Read requirements.txt and extract declared dependencies"""
         declared_deps = set()
+        issues = []
+        warnings = []
+        requirements_file = project_path / "requirements.txt"
 
         if requirements_file.exists():
             try:
@@ -134,7 +160,6 @@ class DependencyValidator:
                         line = line.strip()
                         if not line or line.startswith("#"):
                             continue
-                        # Extract package name
                         package = re.split(r"[<>=!~\[]", line)[0].strip().lower()
                         if package:
                             declared_deps.add(package)
@@ -155,60 +180,81 @@ class DependencyValidator:
                 }
             )
 
-        # Extract imports from Python files
+        return declared_deps, issues, warnings
+
+    def _extract_python_imports(self, project_path: Path) -> set:
+        """Extract all imported modules from Python files"""
         imported_modules = set()
 
         try:
             for py_file in project_path.rglob("*.py"):
-                # Skip common directories
-                if any(skip in py_file.parts for skip in {".git", ".venv", "venv", "__pycache__"}):
+                if any(
+                    skip in py_file.parts
+                    for skip in {".git", ".venv", "venv", "__pycache__"}
+                ):
                     continue
 
                 try:
                     with open(py_file, encoding="utf-8", errors="ignore") as f:
                         content = f.read()
 
-                    # Parse AST to extract imports
                     tree = ast.parse(content)
-
                     for node in ast.walk(tree):
                         if isinstance(node, ast.Import):
                             for alias in node.names:
                                 module = alias.name.split(".")[0].lower()
                                 imported_modules.add(module)
-                        elif isinstance(node, ast.ImportFrom):
-                            if node.module:
-                                module = node.module.split(".")[0].lower()
-                                imported_modules.add(module)
+                        elif isinstance(node, ast.ImportFrom) and node.module:
+                            module = node.module.split(".")[0].lower()
+                            imported_modules.add(module)
                 except Exception:
                     pass
         except Exception as e:
             logger.debug(f"Error scanning Python files: {e}")
 
-        # Find missing imports (not in requirements, not built-in)
-        missing_imports = []
-        for module in imported_modules:
-            # Skip built-ins and local modules
-            if module not in self.PYTHON_BUILTINS and module not in declared_deps:
-                # Check if it's a local module (same as package name patterns)
-                is_local = False
-                for py_file in project_path.glob("*.py"):
-                    if py_file.stem == module:
-                        is_local = True
-                        break
+        return imported_modules
 
+    def _find_missing_imports(
+        self, imported_modules: set, declared_deps: set, project_path: Path
+    ) -> list:
+        """Find modules that are imported but not declared"""
+        missing_imports = []
+
+        for module in imported_modules:
+            if module not in self.PYTHON_BUILTINS and module not in declared_deps:
+                is_local = any(
+                    py_file.stem == module for py_file in project_path.glob("*.py")
+                )
                 if not is_local:
                     missing_imports.append(module)
 
-        # Find unused dependencies
+        return missing_imports
+
+    def _find_unused_dependencies(
+        self, imported_modules: set, declared_deps: set
+    ) -> list:
+        """Find dependencies that are declared but not imported"""
         unused_deps = []
+
         for dep in declared_deps:
-            # Normalize dependency name for comparison
             dep_normalized = dep.replace("-", "_")
-            if dep_normalized not in imported_modules and dep not in imported_modules:
+            if (
+                dep_normalized not in imported_modules
+                and dep not in imported_modules
+            ):
                 unused_deps.append(dep)
 
-        # Create issues for missing dependencies
+        return unused_deps
+
+    def _build_validation_result(
+        self,
+        issues: list,
+        warnings: list,
+        declared_deps: set,
+        missing_imports: list,
+        unused_deps: list,
+    ) -> Dict[str, Any]:
+        """Build validation result dictionary"""
         if missing_imports:
             issues.append(
                 {
@@ -220,7 +266,6 @@ class DependencyValidator:
                 }
             )
 
-        # Create warnings for unused dependencies
         if unused_deps:
             warnings.append(
                 {

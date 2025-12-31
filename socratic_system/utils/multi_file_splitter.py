@@ -53,107 +53,153 @@ class MultiFileCodeSplitter:
             logger.error(f"Syntax error splitting code: {e}")
             return {"main.py": self.code}
 
-        # Organize code by category
-        models_code = []
-        controllers_code = []
-        services_code = []
-        utils_code = []
-        tests_code = []
-        config_code = []
-        main_code = []
-
-        # Extract and categorize top-level items
+        # Categorize code into different modules
+        categorized_code = self._categorize_code_blocks(tree)
         imports = self._extract_imports()
+
+        # Build organized file structure
+        self._build_organized_files(categorized_code, imports)
+
+        # Add supporting files
+        self._add_supporting_files(categorized_code)
+
+        return self.files
+
+    def _categorize_code_blocks(self, tree: ast.AST) -> Dict[str, list]:
+        """Categorize code blocks from AST"""
+        categorized = {
+            "models": [],
+            "controllers": [],
+            "services": [],
+            "utils": [],
+            "tests": [],
+            "config": [],
+            "main": [],
+        }
 
         for node in tree.body:
             if isinstance(node, (ast.Import, ast.ImportFrom)):
-                continue  # Handle separately
-            elif isinstance(node, ast.ClassDef):
-                class_code = ast.unparse(node)
-                category = self._categorize_class(node.name)
+                continue
 
-                if category == "model":
-                    models_code.append(class_code)
-                elif category == "controller":
-                    controllers_code.append(class_code)
-                elif category == "service":
-                    services_code.append(class_code)
-                else:
-                    utils_code.append(class_code)
-
+            if isinstance(node, ast.ClassDef):
+                self._categorize_and_add_class(node, categorized)
             elif isinstance(node, ast.FunctionDef):
-                func_code = ast.unparse(node)
-
-                if node.name.startswith("test_"):
-                    tests_code.append(func_code)
-                elif node.name in ["main", "run", "start"]:
-                    main_code.append(func_code)
-                elif "config" in node.name.lower():
-                    config_code.append(func_code)
-                else:
-                    utils_code.append(func_code)
-
+                self._categorize_and_add_function(node, categorized)
             else:
-                # Other statements (assignments, etc.)
-                other_code = ast.unparse(node)
-                if "test" in other_code.lower():
-                    tests_code.append(other_code)
-                elif "config" in other_code.lower():
-                    config_code.append(other_code)
-                else:
-                    utils_code.append(other_code)
+                self._categorize_and_add_other(node, categorized)
 
-        # Build file contents
+        return categorized
+
+    def _categorize_and_add_class(
+        self, node: ast.ClassDef, categorized: Dict[str, list]
+    ) -> None:
+        """Categorize and add class definition to appropriate category"""
+        class_code = ast.unparse(node)
+        category = self._categorize_class(node.name)
+
+        if category == "model":
+            categorized["models"].append(class_code)
+        elif category == "controller":
+            categorized["controllers"].append(class_code)
+        elif category == "service":
+            categorized["services"].append(class_code)
+        else:
+            categorized["utils"].append(class_code)
+
+    def _categorize_and_add_function(
+        self, node: ast.FunctionDef, categorized: Dict[str, list]
+    ) -> None:
+        """Categorize and add function definition to appropriate category"""
+        func_code = ast.unparse(node)
+
+        if node.name.startswith("test_"):
+            categorized["tests"].append(func_code)
+        elif node.name in ["main", "run", "start"]:
+            categorized["main"].append(func_code)
+        elif "config" in node.name.lower():
+            categorized["config"].append(func_code)
+        else:
+            categorized["utils"].append(func_code)
+
+    def _categorize_and_add_other(
+        self, node: ast.stmt, categorized: Dict[str, list]
+    ) -> None:
+        """Categorize and add other statements to appropriate category"""
+        other_code = ast.unparse(node)
+
+        if "test" in other_code.lower():
+            categorized["tests"].append(other_code)
+        elif "config" in other_code.lower():
+            categorized["config"].append(other_code)
+        else:
+            categorized["utils"].append(other_code)
+
+    def _build_organized_files(
+        self, categorized: Dict[str, list], imports: str
+    ) -> None:
+        """Build organized files from categorized code"""
         self.files = {}
 
-        # Add imports to each file that needs them
-        if models_code:
-            self.files["src/models.py"] = imports + "\n\n" + "\n\n".join(models_code)
+        if categorized["models"]:
+            self.files["src/models.py"] = imports + "\n\n" + "\n\n".join(
+                categorized["models"]
+            )
 
-        if controllers_code:
+        if categorized["controllers"]:
             self.files["src/controllers.py"] = (
-                imports + "\nfrom .models import *\n\n" + "\n\n".join(controllers_code)
+                imports
+                + "\nfrom .models import *\n\n"
+                + "\n\n".join(categorized["controllers"])
             )
 
-        if services_code:
+        if categorized["services"]:
             self.files["src/services.py"] = (
-                imports + "\nfrom .models import *\n\n" + "\n\n".join(services_code)
+                imports
+                + "\nfrom .models import *\n\n"
+                + "\n\n".join(categorized["services"])
             )
 
-        if utils_code:
-            self.files["src/utils.py"] = imports + "\n\n" + "\n\n".join(utils_code)
+        if categorized["utils"]:
+            self.files["src/utils.py"] = imports + "\n\n" + "\n\n".join(
+                categorized["utils"]
+            )
 
-        if config_code:
+        if categorized["config"]:
             self.files["config/settings.py"] = imports + "\n\n" + "\n\n".join(
-                config_code
+                categorized["config"]
             )
 
-        if tests_code:
+        if categorized["tests"]:
             self.files["tests/test_main.py"] = (
-                imports + "\nimport pytest\n\n" + "\n\n".join(tests_code)
+                imports + "\nimport pytest\n\n" + "\n\n".join(categorized["tests"])
             )
 
-        # Create main entry point
-        if main_code:
-            self.files["main.py"] = imports + "\n\n" + "\n\n".join(main_code)
-        else:
-            # Create a simple main.py if none exists
-            if models_code or services_code or controllers_code:
-                self.files["main.py"] = self._create_main_entry_point()
+        self._add_main_entry_point(categorized, imports)
 
-        # Add package init files
+    def _add_main_entry_point(
+        self, categorized: Dict[str, list], imports: str
+    ) -> None:
+        """Add main entry point file"""
+        if categorized["main"]:
+            self.files["main.py"] = imports + "\n\n" + "\n\n".join(
+                categorized["main"]
+            )
+        elif (
+            categorized["models"]
+            or categorized["services"]
+            or categorized["controllers"]
+        ):
+            self.files["main.py"] = self._create_main_entry_point()
+
+    def _add_supporting_files(self, categorized: Dict[str, list]) -> None:
+        """Add supporting files (init files, requirements, readme)"""
         self.files["src/__init__.py"] = self._create_init_file("src")
         self.files["config/__init__.py"] = self._create_init_file("config")
-        if tests_code:
+        if categorized["tests"]:
             self.files["tests/__init__.py"] = ""
 
-        # Add requirements.txt
         self.files["requirements.txt"] = self._extract_requirements()
-
-        # Add README
         self.files["README.md"] = self._create_readme()
-
-        return self.files
 
     def _categorize_class(self, class_name: str) -> str:
         """Categorize class by name"""
