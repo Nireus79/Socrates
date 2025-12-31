@@ -13,12 +13,15 @@ import requests
 BASE_URL = "http://localhost:8000"
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session", autouse=False)
 def initialize_api():
     """
-    Initialize the API orchestrator before running any tests.
+    Initialize the API orchestrator before running integration tests.
 
     This ensures the orchestrator is ready to process requests.
+
+    This fixture is NOT autouse to prevent it from running when only unit tests
+    are being executed (e.g., with -m "not integration" marker).
     """
     # Wait for API to be responsive
     max_retries = 30
