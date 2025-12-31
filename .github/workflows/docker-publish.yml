@@ -246,11 +246,21 @@ jobs:
             -p 8000:8000 \
             socrates-api:test
 
-          sleep 5
-
-          # Test health endpoint
-          curl -f http://localhost:8000/health || exit 1
-          echo "✓ API health check passed"
+          # Wait for API to be healthy (up to 45 seconds for start-period + buffer)
+          for i in {1..45}; do
+            if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+              echo "✓ API health check passed"
+              break
+            fi
+            if [ $i -eq 45 ]; then
+              echo "✗ API failed to respond"
+              docker logs api-test
+              docker stop api-test
+              docker rm api-test
+              exit 1
+            fi
+            sleep 1
+          done
 
           docker stop api-test
           docker rm api-test
