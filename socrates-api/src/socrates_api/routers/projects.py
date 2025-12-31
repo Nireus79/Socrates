@@ -264,6 +264,26 @@ async def create_project(
 
         db.save_project(project)
         logger.info(f"Saved project to database")
+
+        # If knowledge_base_content was provided, add it to the project's knowledge base
+        if request.knowledge_base_content:
+            try:
+                logger.info(f"Adding initial knowledge base content to project {project_id}")
+                # Save knowledge base content as a knowledge document
+                # Using the description or content as the source for the knowledge base
+                db.save_knowledge(
+                    project_id=project_id,
+                    title="Initial Knowledge Base",
+                    content=request.knowledge_base_content,
+                    source="initial_upload",
+                    content_type="text",
+                )
+                logger.info(f"Successfully added initial knowledge base content to project {project_id}")
+            except Exception as e:
+                logger.warning(f"Failed to add initial knowledge base content: {str(e)}")
+                # Don't fail the project creation if knowledge base save fails
+                # The project is already created successfully
+
         logger.info(f"Project {project_id} created by {current_user} (direct database)")
         return _project_to_response(project)
 

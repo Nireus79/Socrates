@@ -28,6 +28,7 @@ export interface RefreshTokenRequest {
 export interface CreateProjectRequest {
   name: string;
   description?: string;
+  knowledge_base_content?: string;
   owner?: string;
 }
 

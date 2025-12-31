@@ -131,7 +131,11 @@ export const ProjectsPage: React.FC = () => {
 
   const handleCreateProject = async (formData: any) => {
     try {
-      await useProjectStore.getState().createProject(formData.name, formData.description);
+      await useProjectStore.getState().createProject(
+        formData.name,
+        formData.description,
+        formData.knowledgeBase  // Pass initial knowledge base content
+      );
       setShowCreateModal(false);
     } catch (error) {
       console.error('Failed to create project:', error);

@@ -24,7 +24,7 @@ interface ProjectState {
   listProjects: (owner?: string) => Promise<void>;
   getProject: (projectId: string) => Promise<void>;
   setCurrentProject: (project: Project | null) => void;
-  createProject: (name: string, description?: string) => Promise<Project>;
+  createProject: (name: string, description?: string, knowledgeBase?: string) => Promise<Project>;
   updateProject: (projectId: string, name?: string, phase?: ProjectPhase) => Promise<Project>;
   deleteProject: (projectId: string) => Promise<void>;
   restoreProject: (projectId: string) => Promise<Project>;
@@ -85,10 +85,14 @@ export const useProjectStore = create<ProjectState>((set) => ({
   },
 
   // Create project
-  createProject: async (name: string, description?: string) => {
+  createProject: async (name: string, description?: string, knowledgeBase?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const newProject = await projectsAPI.createProject({ name, description });
+      const newProject = await projectsAPI.createProject({
+        name,
+        description,
+        knowledge_base_content: knowledgeBase,
+      });
       set((state) => ({
     projects: [...state.projects, newProject],
     currentProject: newProject,
