@@ -1,6 +1,8 @@
 # Socrates AI - Collaborative Development Platform
 
-A comprehensive AI-powered platform for collaborative software project development, powered by Claude AI with real-time collaboration, multi-agent orchestration, and production-grade infrastructure.
+A complete project management and vibe coding RAG system.
+Comprehensive AI-powered platform for collaborative software project development, with real-time collaboration,
+multi-agent orchestration, and production-grade infrastructure.
 
 > **Status**: Production Ready (v1.0.0)
 > **License**: MIT
@@ -148,12 +150,12 @@ See [API_REFERENCE.md](docs/API_REFERENCE.md) for complete endpoint documentatio
 - [📖 QUICK_START_GUIDE.md](docs/QUICK_START_GUIDE.md) - Get started quickly
 - [🏗️ ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture deep-dive
 - [📚 API_REFERENCE.md](docs/API_REFERENCE.md) - Complete API documentation
-- [🚀 DEPLOYMENT.md](docs/DEPLOYMENT.md) - Production deployment guide
-- [🔐 SECURITY_HARDENING.md](docs/SECURITY_HARDENING.md) - Security best practices
+- [🚀 DEPLOYMENT.md](docs/DEPLOYMENT.md) - Production deployment & Docker guide
 - [⚙️ CONFIGURATION.md](docs/CONFIGURATION.md) - Environment configuration
 - [👨‍💻 DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) - Development setup & patterns
-- [📊 MONITORING_SETUP.md](docs/MONITORING_SETUP.md) - Metrics & monitoring
+- [🔄 CI_CD.md](docs/CI_CD.md) - GitHub Actions workflows & testing
 - [🐛 TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) - Problem solving guide
+- [📋 INSTALLATION.md](docs/INSTALLATION.md) - Setup and installation instructions
 
 ## Production Features
 

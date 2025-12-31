@@ -4,12 +4,13 @@ Socrates uses GitHub Actions for continuous integration, continuous deployment, 
 
 ## Overview
 
-The CI/CD pipeline consists of four main workflows:
+The CI/CD pipeline consists of five main workflows:
 
 1. **Tests** (`test.yml`) - Automated testing on every push and PR
 2. **Code Quality** (`lint.yml`) - Linting, formatting, and type checking
-3. **Publishing** (`publish.yml`) - Publishing to PyPI on releases
-4. **Release Management** (`release.yml`) - Version bumping and release creation
+3. **Docker Build & Publish** (`docker-publish.yml`) - Docker image build, test, and publish
+4. **Publishing** (`publish.yml`) - Publishing to PyPI on releases
+5. **Release Management** (`release.yml`) - Version bumping and release creation
 
 ## Workflows
 
@@ -73,7 +74,65 @@ The CI/CD pipeline consists of four main workflows:
 - GitHub annotations for issues found
 - Pass/fail status for PR checks
 
-### 3. Publishing Workflow (publish.yml)
+### 3. Docker Build & Publish Workflow (docker-publish.yml)
+
+**Triggers:**
+- Push to `master` branch
+- When a release is published
+- Manual workflow dispatch
+
+**Jobs:**
+- `build-api` - Builds multi-arch API Docker image (linux/amd64, linux/arm64)
+- `build-frontend` - Builds multi-arch frontend Docker image
+- `scan-images` - Scans images with Trivy vulnerability scanner
+- `test-images` - Tests built images for functionality
+- `publish-release` - Creates release notes with SBOM and signed images
+- `notify-deployment` - Sends Slack/Discord notifications
+
+**What it does:**
+1. Builds API image from `Dockerfile.api` with Python 3.11
+2. Builds frontend image from `socrates-frontend/Dockerfile` with Node 20 + Nginx
+3. Extracts metadata and tags for registry (ghcr.io)
+4. Scans images for security vulnerabilities with Trivy
+5. Tests API health checks and frontend responsiveness
+6. Generates Software Bill of Materials (SBOM)
+7. Signs images with Cosign for integrity verification
+8. Publishes to GitHub Container Registry (ghcr.io)
+
+**Multi-Architecture Support:**
+- Builds for both `linux/amd64` and `linux/arm64` (Apple Silicon support)
+- Uses Docker Buildx for cross-platform compilation
+- Caches layers using GitHub Actions cache
+
+**Security Features:**
+- Alpine-based minimal images for reduced attack surface
+- Non-root user in API container
+- Health checks for container liveness verification
+- Vulnerability scanning with Trivy
+- Image signing with Cosign
+- SBOM generation for supply chain transparency
+
+**Artifacts Generated:**
+- Multi-platform Docker images in GHCR
+- SBOM files (SPDX JSON format)
+- Image signatures for verification
+- Release artifacts with deployment instructions
+
+**Secrets Required:**
+- GitHub token (auto-provided for registry authentication)
+- Optional: Slack/Discord webhooks for notifications
+
+**Frontend Dockerfile Features:**
+- Multi-stage build (Node builder → Nginx runtime)
+- Alpine Linux for minimal image size
+- Nginx reverse proxy with:
+  - SPA routing (serves index.html for client-side routing)
+  - Gzip compression
+  - Security headers (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection)
+  - Asset caching (1 year for static files)
+  - Health check endpoint at `/health`
+
+### 4. Publishing Workflow (publish.yml)
 
 **Triggers:**
 - When a release is created

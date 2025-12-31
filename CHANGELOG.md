@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Docker Workflow** - Fixed Docker build and publish pipeline
+  - Fixed Alpine-incompatible healthcheck in frontend Dockerfile (wget → shell-based check)
+  - Improved frontend container testing with proper wait times and error diagnostics
+  - Improved API health check test robustness with 45-second wait for startup completion
+  - Frontend Dockerfile now uses Node 20 Alpine + Nginx Alpine multi-stage build
+  - All health checks use Alpine-compatible shell commands
+
+- **Code Quality** - Reduced C901 cyclomatic complexity violations (4 critical functions)
+  - `dependency_validator.py`: `_validate_python_dependencies` (24 → 7 complexity)
+    - Extracted 5 helper methods for requirements reading, import extraction, analysis
+  - `multi_file_splitter.py`: `_split_python` (23 → 6 complexity)
+    - Extracted 7 helper methods for code categorization and file building
+  - `file_change_tracker.py`: `update_vector_db` (12 → 6) and `update_database` (11 → 6)
+    - Extracted 6 helper methods for processing deleted/modified/added files
+  - Total: 4 violations fixed, 17 remaining
+
 ## [0.6.1] - 2025-12-05
 
 ### Fixed
