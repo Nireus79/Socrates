@@ -150,7 +150,9 @@ class ClearCommand(BaseCommand):
         # Use subprocess instead of os.system for better security and cross-platform compatibility
         try:
             if os.name == "nt":
-                subprocess.run(["cls"], shell=True, check=False)  # nosec B602 - cls is shell builtin on Windows
+                subprocess.run(
+                    ["cls"], shell=True, check=False
+                )  # nosec B602 - cls is shell builtin on Windows
             else:
                 subprocess.run(["clear"], check=False)  # nosec B607 - clear is in standard PATH
         except Exception:

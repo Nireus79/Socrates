@@ -335,7 +335,9 @@ class ProjectFileLoader:
             # For now, return all files as new to ensure complete indexing
             # This is safe but may re-index files that haven't changed
             new_files = files
-            self.logger.debug(f"Processing {len(new_files)} files for project {project_id} (no deduplication yet)")
+            self.logger.debug(
+                f"Processing {len(new_files)} files for project {project_id} (no deduplication yet)"
+            )
 
         except Exception as e:
             self.logger.warning(f"Error filtering duplicates: {str(e)}")
