@@ -5,7 +5,9 @@ Provides GitHub repository import, pull, push, and sync functionality.
 """
 
 import logging
+import os
 from typing import Optional
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, status, Depends
 
@@ -23,8 +25,6 @@ router = APIRouter(prefix="/github", tags=["github"])
 
 def get_database() -> ProjectDatabase:
     """Get database instance."""
-    import os
-    from pathlib import Path
     data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
     db_path = os.path.join(data_dir, "projects.db")
     return ProjectDatabase(db_path)
@@ -79,7 +79,8 @@ async def import_repository(
 
         # Extract repository information from URL
         import re
-        url_pattern = r'github\.com[:/](.+?)/(.+?)(?:\.git)?$'
+
+        url_pattern = r"github\.com[:/](.+?)/(.+?)(?:\.git)?$"
         match = re.search(url_pattern, request.url)
 
         if not match:
@@ -102,6 +103,7 @@ async def import_repository(
 
         try:
             from github import Github
+
             github_token = os.getenv("GITHUB_TOKEN")
             if github_token:
                 g = Github(github_token)
@@ -109,9 +111,13 @@ async def import_repository(
                     repo = g.get_repo(f"{repo_owner}/{repo_name}")
                     repo_metadata = {
                         "description": repo.description or "",
-                        "languages": list(repo.get_languages().keys()) if repo.get_languages() else [],
+                        "languages": (
+                            list(repo.get_languages().keys()) if repo.get_languages() else []
+                        ),
                         "has_tests": any("test" in f.path for f in repo.get_contents("")),
-                        "has_readme": any("readme" in f.name.lower() for f in repo.get_contents("")),
+                        "has_readme": any(
+                            "readme" in f.name.lower() for f in repo.get_contents("")
+                        ),
                     }
                 except Exception as e:
                     logger.warning(f"Could not fetch repo metadata: {e}")
@@ -142,11 +148,16 @@ async def import_repository(
         db.save_project(project)
 
         from socrates_api.routers.events import record_event
-        record_event("github_repository_imported", {
-            "repository": f"{repo_owner}/{repo_name}",
-            "project_id": project.project_id,
-            "user": current_user,
-        }, user_id=current_user)
+
+        record_event(
+            "github_repository_imported",
+            {
+                "repository": f"{repo_owner}/{repo_name}",
+                "project_id": project.project_id,
+                "user": current_user,
+            },
+            user_id=current_user,
+        )
 
         return SuccessResponse(
             success=True,
@@ -213,7 +224,7 @@ async def pull_changes(
             )
 
         # Check if project is linked to GitHub
-        if not hasattr(project, 'repository_url') or not project.repository_url:
+        if not hasattr(project, "repository_url") or not project.repository_url:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Project is not linked to a GitHub repository",
@@ -285,7 +296,7 @@ async def push_changes(
             )
 
         # Check if project is linked to GitHub
-        if not hasattr(project, 'repository_url') or not project.repository_url:
+        if not hasattr(project, "repository_url") or not project.repository_url:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Project is not linked to a GitHub repository",
@@ -361,7 +372,7 @@ async def sync_project(
             )
 
         # Check if project is linked to GitHub
-        if not hasattr(project, 'repository_url') or not project.repository_url:
+        if not hasattr(project, "repository_url") or not project.repository_url:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Project is not linked to a GitHub repository",
@@ -453,9 +464,11 @@ async def get_sync_status(
                 "project_id": project_id,
                 "is_linked": is_linked,
                 "repository_url": project.repository_url,
-                "repository_imported_at": project.repository_imported_at.isoformat()
-                if project.repository_imported_at
-                else None,
+                "repository_imported_at": (
+                    project.repository_imported_at.isoformat()
+                    if project.repository_imported_at
+                    else None
+                ),
             },
         )
 
@@ -548,7 +561,7 @@ async def push_github_changes(
     try:
         # Use default commit message if not provided
         if not commit_message:
-            commit_message = f"Updates from Socratic RAG"
+            commit_message = "Updates from Socratic RAG"
 
         logger.info(f"Pushing changes to GitHub for user {current_user}")
 

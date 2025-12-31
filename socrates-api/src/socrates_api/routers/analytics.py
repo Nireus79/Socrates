@@ -15,7 +15,6 @@ from fastapi.responses import FileResponse
 
 from socratic_system.database import ProjectDatabase
 from socrates_api.models import SuccessResponse, ErrorResponse
-from socrates_api.middleware.subscription import SubscriptionChecker
 from socrates_api.auth import get_current_user, get_current_user_object
 from socrates_api.database import get_database
 from socrates_api.services.report_generator import get_report_generator
@@ -57,10 +56,12 @@ async def get_analytics_summary(
 
             # Check if user has active subscription
             if not user_object.subscription.is_active:
-                logger.warning(f"User {current_user} attempted to access analytics without active subscription")
+                logger.warning(
+                    f"User {current_user} attempted to access analytics without active subscription"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Active subscription required to access analytics"
+                    detail="Active subscription required to access analytics",
                 )
 
             # Check subscription tier - only Professional and Enterprise can access analytics
@@ -69,7 +70,7 @@ async def get_analytics_summary(
                 logger.warning(f"Free-tier user {current_user} attempted to access analytics")
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Analytics feature requires Professional or Enterprise subscription"
+                    detail="Analytics feature requires Professional or Enterprise subscription",
                 )
 
             logger.info(f"Subscription validation passed for analytics access by {current_user}")
@@ -79,7 +80,7 @@ async def get_analytics_summary(
             logger.error(f"Error validating subscription for analytics: {type(e).__name__}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}"
+                detail=f"Error validating subscription: {str(e)[:100]}",
             )
 
         if project_id:
@@ -104,7 +105,8 @@ async def get_analytics_summary(
             code_generation_count = len([m for m in conversation if "```" in m.get("content", "")])
             code_lines_generated = sum(
                 len(parts[1].splitlines()) if len(parts) > 1 else 0
-                for m in conversation if "```" in m.get("content", "")
+                for m in conversation
+                if "```" in m.get("content", "")
                 for parts in [m.get("content", "").split("```")]
             )
 
@@ -154,10 +156,14 @@ async def get_analytics_summary(
             project_count = len(all_projects) or 1
             summary = {
                 "total_projects": project_count,
-                "total_code_quality_score": round(total_code_quality / project_count, 1) if all_projects else 0,
+                "total_code_quality_score": (
+                    round(total_code_quality / project_count, 1) if all_projects else 0
+                ),
                 "average_maturity": round(total_maturity / project_count, 1) if all_projects else 0,
                 "total_tests_run": total_tests,
-                "test_pass_rate": round((test_passes / total_tests * 100) if total_tests > 0 else 0, 1),
+                "test_pass_rate": round(
+                    (test_passes / total_tests * 100) if total_tests > 0 else 0, 1
+                ),
                 "total_issues_found": issues_found,
                 "total_issues_resolved": issues_resolved,
             }
@@ -386,10 +392,12 @@ async def get_trends(
 
             # Check if user has active subscription
             if not user_object.subscription.is_active:
-                logger.warning(f"User {current_user} attempted to access trends without active subscription")
+                logger.warning(
+                    f"User {current_user} attempted to access trends without active subscription"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Active subscription required to access trends"
+                    detail="Active subscription required to access trends",
                 )
 
             # Check subscription tier - only Professional and Enterprise can access trends
@@ -398,7 +406,7 @@ async def get_trends(
                 logger.warning(f"Free-tier user {current_user} attempted to access trends")
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Trends feature requires Professional or Enterprise subscription"
+                    detail="Trends feature requires Professional or Enterprise subscription",
                 )
 
             logger.info(f"Subscription validation passed for trends access by {current_user}")
@@ -408,7 +416,7 @@ async def get_trends(
             logger.error(f"Error validating subscription for trends: {type(e).__name__}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}"
+                detail=f"Error validating subscription: {str(e)[:100]}",
             )
 
         from socrates_api.main import get_orchestrator
@@ -430,15 +438,19 @@ async def get_trends(
                 "action": "get_trends",
                 "project": project,
                 "time_period": time_period,
-            }
+            },
         )
 
         trends_response = result.get("data", {})
 
-        record_event("trends_retrieved", {
-            "project_id": project_id,
-            "time_period": time_period,
-        }, user_id=current_user)
+        record_event(
+            "trends_retrieved",
+            {
+                "project_id": project_id,
+                "time_period": time_period,
+            },
+            user_id=current_user,
+        )
 
         return SuccessResponse(
             success=True,
@@ -488,10 +500,12 @@ async def get_recommendations(
 
             # Check if user has active subscription
             if not user_object.subscription.is_active:
-                logger.warning(f"User {current_user} attempted to access recommendations without active subscription")
+                logger.warning(
+                    f"User {current_user} attempted to access recommendations without active subscription"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Active subscription required to access recommendations"
+                    detail="Active subscription required to access recommendations",
                 )
 
             # Check subscription tier - only Professional and Enterprise can access recommendations
@@ -500,17 +514,21 @@ async def get_recommendations(
                 logger.warning(f"Free-tier user {current_user} attempted to access recommendations")
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Recommendations feature requires Professional or Enterprise subscription"
+                    detail="Recommendations feature requires Professional or Enterprise subscription",
                 )
 
-            logger.info(f"Subscription validation passed for recommendations access by {current_user}")
+            logger.info(
+                f"Subscription validation passed for recommendations access by {current_user}"
+            )
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error validating subscription for recommendations: {type(e).__name__}: {e}")
+            logger.error(
+                f"Error validating subscription for recommendations: {type(e).__name__}: {e}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}"
+                detail=f"Error validating subscription: {str(e)[:100]}",
             )
 
         from socrates_api.main import get_orchestrator
@@ -538,14 +556,18 @@ async def get_recommendations(
             {
                 "action": "get_recommendations",
                 "project": project,
-            }
+            },
         )
 
         recommendations_response = result.get("data", {})
 
-        record_event("recommendations_retrieved", {
-            "project_id": project_id,
-        }, user_id=current_user)
+        record_event(
+            "recommendations_retrieved",
+            {
+                "project_id": project_id,
+            },
+            user_id=current_user,
+        )
 
         return SuccessResponse(
             success=True,
@@ -703,7 +725,7 @@ async def export_analytics(
 
         # Create download metadata
         filename = Path(filepath).name
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        datetime.now().strftime("%Y%m%d_%H%M%S")
 
         logger.info(f"Successfully generated {format_type} report: {filepath}")
 
@@ -723,7 +745,10 @@ async def export_analytics(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error exporting analytics for project {request_data.get('project_id')}: {e}", exc_info=True)
+        logger.error(
+            f"Error exporting analytics for project {request_data.get('project_id')}: {e}",
+            exc_info=True,
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Report generation failed: {str(e)}",
@@ -811,7 +836,9 @@ async def download_analytics_report(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error downloading report {report_filename} for {current_user}: {e}", exc_info=True)
+        logger.error(
+            f"Error downloading report {report_filename} for {current_user}: {e}", exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error downloading report",
@@ -1084,15 +1111,12 @@ async def get_dashboard_analytics(
         # Load project to compile analytics
         project = db.load_project(project_id)
         if project is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Project not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
         # Compile all analytics into dashboard view
         # Calculate maturity score from phase maturity scores
         maturity_scores = project.phase_maturity_scores or {}
-        avg_maturity = sum(maturity_scores.values()) / len(maturity_scores) if maturity_scores else 0
+        (sum(maturity_scores.values()) / len(maturity_scores) if maturity_scores else 0)
 
         # Get overall maturity from project
         overall_maturity = project.overall_maturity or 0
@@ -1115,7 +1139,11 @@ async def get_dashboard_analytics(
                 "documentation": round(documentation, 1),
             },
             "recent_changes": {
-                "maturity_change": f"+{round(overall_maturity - 50, 1)}%" if overall_maturity > 50 else f"{round(overall_maturity - 50, 1)}%",
+                "maturity_change": (
+                    f"+{round(overall_maturity - 50, 1)}%"
+                    if overall_maturity > 50
+                    else f"{round(overall_maturity - 50, 1)}%"
+                ),
                 "tests_added": 0,  # Would require historical tracking
                 "issues_resolved": 0,  # Would require issue tracking
             },
@@ -1130,7 +1158,7 @@ async def get_dashboard_analytics(
                 "phase": project.current_phase,
                 "files_count": len(project.files or []),
                 "notes_count": len(project.notes or []),
-            }
+            },
         }
 
         return SuccessResponse(
@@ -1231,9 +1259,7 @@ async def get_analytics_breakdown(
 
         # Filter by category if specified
         if category and category in breakdown["categories"]:
-            breakdown["categories"] = {
-                category: breakdown["categories"][category]
-            }
+            breakdown["categories"] = {category: breakdown["categories"][category]}
 
         return SuccessResponse(
             success=True,

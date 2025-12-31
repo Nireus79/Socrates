@@ -174,7 +174,8 @@
       "Bash(\".venv\\\\Scripts\\\\python.exe\" -m bandit socratic_system/database/project_db_async.py:632 socrates-api/src/socrates_api/caching/redis_cache.py:273 -f csv)",
       "Bash(\".venv\\\\Scripts\\\\python.exe\" -m bandit -r socratic_system socrates-api/src --exclude \".venv\" -f csv)",
       "Bash(\".venv\\\\Scripts\\\\python.exe\" -c \"\nimport subprocess\nimport json\n\n# Get repo info\nresult = subprocess.run\\([''git'', ''remote'', ''get-url'', ''origin''], capture_output=True, text=True\\)\nrepo_url = result.stdout.strip\\(\\)\n# Extract owner/repo from URL\nparts = repo_url.split\\(''/''\\)\nowner = parts[-2]\nrepo = parts[-1].replace\\(''.git'', ''''\\)\n\nprint\\(f''Repository: {owner}/{repo}''\\)\nprint\\(''\\\\nRecent workflow runs:''\\)\n\n# Use curl to get workflow runs \\(this won''t work without auth token\\)\n# For now, just check if we can see the info\nprint\\(f''GitHub: https://github.com/{owner}/{repo}/actions''\\)\n\")",
-      "Bash(.venvScriptspython.exe -m ruff check socratic_system socrates-api/src tests --config pyproject.toml)"
+      "Bash(.venvScriptspython.exe -m ruff check socratic_system socrates-api/src tests --config pyproject.toml)",
+      "Bash(.venvScriptspython -m ruff check socratic_system socrates_cli socrates_api --select E,W,F)"
     ],
     "deny": [],
     "ask": []

@@ -7,8 +7,8 @@ Provides password management, 2FA setup, and session management.
 import logging
 import os
 from pathlib import Path
-from typing import Optional, List
-from datetime import datetime, timedelta
+from typing import Optional
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, status, Depends
 import bcrypt
@@ -91,7 +91,11 @@ async def change_password(
         # Verify current password
         if not bcrypt.checkpw(
             current_password.encode(),
-            user.password_hash.encode() if isinstance(user.password_hash, str) else user.password_hash
+            (
+                user.password_hash.encode()
+                if isinstance(user.password_hash, str)
+                else user.password_hash
+            ),
         ):
             logger.warning(f"Invalid password attempt for user {current_user}")
             raise HTTPException(
@@ -107,10 +111,14 @@ async def change_password(
         db.save_user(user)
 
         from socrates_api.routers.events import record_event
-        record_event("password_changed", {
-            "user": current_user,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+
+        record_event(
+            "password_changed",
+            {
+                "user": current_user,
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
 
         return SuccessResponse(
             success=True,
@@ -189,7 +197,7 @@ async def setup_2fa(
             img = qr.make_image(fill_color="black", back_color="white")
 
             img_bytes = BytesIO()
-            img.save(img_bytes, format='PNG')
+            img.save(img_bytes, format="PNG")
             qr_code = base64.b64encode(img_bytes.getvalue()).decode()
             qr_code_url = f"data:image/png;base64,{qr_code}"
         except Exception as e:
@@ -198,6 +206,7 @@ async def setup_2fa(
 
         # Generate backup codes (10 random codes)
         import secrets
+
         backup_codes = [secrets.token_hex(3).upper() for _ in range(10)]
 
         setup_data = {
@@ -208,10 +217,14 @@ async def setup_2fa(
         }
 
         from socrates_api.routers.events import record_event
-        record_event("2fa_setup_initiated", {
-            "user": current_user,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+
+        record_event(
+            "2fa_setup_initiated",
+            {
+                "user": current_user,
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
 
         return SuccessResponse(
             success=True,
@@ -302,10 +315,14 @@ async def verify_2fa(
         logger.info(f"2FA enabled for user {current_user}")
 
         from socrates_api.routers.events import record_event
-        record_event("2fa_enabled", {
-            "user": current_user,
-            "enabled_at": datetime.utcnow().isoformat(),
-        })
+
+        record_event(
+            "2fa_enabled",
+            {
+                "user": current_user,
+                "enabled_at": datetime.utcnow().isoformat(),
+            },
+        )
 
         return SuccessResponse(
             success=True,
@@ -368,7 +385,11 @@ async def disable_2fa(
         # Verify password using bcrypt
         if not bcrypt.checkpw(
             password.encode(),
-            user.password_hash.encode() if isinstance(user.password_hash, str) else user.password_hash
+            (
+                user.password_hash.encode()
+                if isinstance(user.password_hash, str)
+                else user.password_hash
+            ),
         ):
             logger.warning(f"Invalid password attempt to disable 2FA for user {current_user}")
             raise HTTPException(
@@ -389,10 +410,14 @@ async def disable_2fa(
         logger.info(f"2FA disabled for user {current_user}")
 
         from socrates_api.routers.events import record_event
-        record_event("2fa_disabled", {
-            "user": current_user,
-            "disabled_at": datetime.utcnow().isoformat(),
-        })
+
+        record_event(
+            "2fa_disabled",
+            {
+                "user": current_user,
+                "disabled_at": datetime.utcnow().isoformat(),
+            },
+        )
 
         return SuccessResponse(
             success=True,
@@ -440,14 +465,16 @@ async def list_sessions(
         # Validate each session and format for response
         formatted_sessions = []
         for session in sessions:
-            formatted_sessions.append({
-                "id": session.get("session_id") or session.get("id"),
-                "device": session.get("device", "Unknown device"),
-                "ip_address": session.get("ip_address", "Unknown"),
-                "last_activity": session.get("last_activity", datetime.utcnow().isoformat()),
-                "created_at": session.get("created_at", datetime.utcnow().isoformat()),
-                "is_current": session.get("is_current", False),
-            })
+            formatted_sessions.append(
+                {
+                    "id": session.get("session_id") or session.get("id"),
+                    "device": session.get("device", "Unknown device"),
+                    "ip_address": session.get("ip_address", "Unknown"),
+                    "last_activity": session.get("last_activity", datetime.utcnow().isoformat()),
+                    "created_at": session.get("created_at", datetime.utcnow().isoformat()),
+                    "is_current": session.get("is_current", False),
+                }
+            )
 
         logger.info(f"Retrieved {len(formatted_sessions)} sessions for user {current_user}")
 
@@ -514,11 +541,15 @@ async def revoke_session(
         logger.info(f"Session {session_id} revoked for user {current_user}")
 
         from socrates_api.routers.events import record_event
-        record_event("session_revoked", {
-            "user": current_user,
-            "session_id": session_id,
-            "revoked_at": datetime.utcnow().isoformat(),
-        })
+
+        record_event(
+            "session_revoked",
+            {
+                "user": current_user,
+                "session_id": session_id,
+                "revoked_at": datetime.utcnow().isoformat(),
+            },
+        )
 
         return SuccessResponse(
             success=True,
@@ -585,11 +616,15 @@ async def revoke_all_sessions(
         logger.info(f"Revoked {revoked_count} sessions for user {current_user}")
 
         from socrates_api.routers.events import record_event
-        record_event("all_sessions_revoked", {
-            "user": current_user,
-            "revoked_count": revoked_count,
-            "revoked_at": datetime.utcnow().isoformat(),
-        })
+
+        record_event(
+            "all_sessions_revoked",
+            {
+                "user": current_user,
+                "revoked_count": revoked_count,
+                "revoked_at": datetime.utcnow().isoformat(),
+            },
+        )
 
         return SuccessResponse(
             success=True,

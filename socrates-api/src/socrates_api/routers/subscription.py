@@ -9,8 +9,6 @@ Provides REST endpoints for subscription management including:
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, status, Depends, Query
 from pydantic import BaseModel
@@ -22,6 +20,7 @@ from socrates_api.models import SuccessResponse
 
 class SubscriptionPlan(BaseModel):
     """Subscription plan details"""
+
     tier: str
     price: float
     projects_limit: int
@@ -115,7 +114,7 @@ async def get_subscription_status(
     try:
         logger.info(f"Getting subscription status for user: {current_user}")
 
-        db = get_database()
+        get_database()
 
         # Get user's current tier (default to free)
         # In production, would load from user database
@@ -182,16 +181,18 @@ async def list_subscription_plans(
 
         plans = []
         for tier_key, tier_info in SUBSCRIPTION_TIERS.items():
-            plans.append({
-                "tier": tier_info["tier"],
-                "display_name": tier_info["display_name"],
-                "price": tier_info["price"],
-                "projects_limit": tier_info["projects_limit"],
-                "team_members_limit": tier_info["team_members_limit"],
-                "storage_gb": tier_info["storage_gb"],
-                "features": tier_info["features"],
-                "description": tier_info["description"],
-            })
+            plans.append(
+                {
+                    "tier": tier_info["tier"],
+                    "display_name": tier_info["display_name"],
+                    "price": tier_info["price"],
+                    "projects_limit": tier_info["projects_limit"],
+                    "team_members_limit": tier_info["team_members_limit"],
+                    "storage_gb": tier_info["storage_gb"],
+                    "features": tier_info["features"],
+                    "description": tier_info["description"],
+                }
+            )
 
         return SuccessResponse(
             success=True,
@@ -368,13 +369,21 @@ async def toggle_testing_mode(
             data={
                 "testing_mode": enabled,
                 "effective_immediately": True,
-                "restrictions_bypassed": [
-                    "Project limits",
-                    "Team member limits",
-                    "Feature flags",
-                    "Cost tracking",
-                ] if enabled else [],
-                "warning": "Testing mode enabled - all subscription restrictions bypassed" if enabled else None,
+                "restrictions_bypassed": (
+                    [
+                        "Project limits",
+                        "Team member limits",
+                        "Feature flags",
+                        "Cost tracking",
+                    ]
+                    if enabled
+                    else []
+                ),
+                "warning": (
+                    "Testing mode enabled - all subscription restrictions bypassed"
+                    if enabled
+                    else None
+                ),
             },
         )
 

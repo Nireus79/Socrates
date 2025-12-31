@@ -6,15 +6,12 @@ using JWT-based authentication.
 """
 
 import logging
-import os
 import sqlite3
 import uuid
-import hashlib
 import jwt
 from datetime import datetime, timezone, timedelta
-from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, status, Depends, Header, Query
+from fastapi import APIRouter, HTTPException, status, Depends, Query
 
 from socratic_system.database import ProjectDatabase
 from socratic_system.models import User
@@ -49,6 +46,19 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
 
+def _get_rate_limit_decorator(limit_str: str):
+    """Get rate limit decorator - handles both available and unavailable limiter."""
+    if limiter:
+        return limiter.limit(limit_str)
+    else:
+        # No-op decorator
+        return lambda f: f
+
+
+# Create rate limit decorators for auth endpoints
+_auth_limit = _get_rate_limit_decorator("5/minute")  # AUTH_LIMIT: 5 per minute
+
+
 def _user_to_response(user: User) -> UserResponse:
     """Convert User model to UserResponse."""
     return UserResponse(
@@ -72,7 +82,7 @@ def _user_to_response(user: User) -> UserResponse:
         500: {"description": "Server error during registration", "model": ErrorResponse},
     },
 )
-@(limiter.limit("5/minute") if limiter else lambda f: f)  # AUTH_LIMIT: 5 per minute
+@_auth_limit
 async def register(request: RegisterRequest, db: ProjectDatabase = Depends(get_database)):
     """
     Register a new user account.
@@ -101,7 +111,7 @@ async def register(request: RegisterRequest, db: ProjectDatabase = Depends(get_d
         # Generate email if not provided (use UUID to ensure uniqueness)
         if request.email:
             # Basic email format validation if email was provided
-            if '@' not in request.email or '.' not in request.email:
+            if "@" not in request.email or "." not in request.email:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid email format",
@@ -184,7 +194,7 @@ async def register(request: RegisterRequest, db: ProjectDatabase = Depends(get_d
         500: {"description": "Server error during login", "model": ErrorResponse},
     },
 )
-@(limiter.limit("5/minute") if limiter else lambda f: f)  # AUTH_LIMIT: 5 per minute
+@_auth_limit
 async def login(request: LoginRequest, db: ProjectDatabase = Depends(get_database)):
     """
     Login with username and password.
@@ -342,7 +352,10 @@ async def refresh(request: RefreshTokenRequest, db: ProjectDatabase = Depends(ge
     summary="Change user password",
     responses={
         200: {"description": "Password changed successfully"},
-        400: {"description": "Invalid request or password doesn't meet requirements", "model": ErrorResponse},
+        400: {
+            "description": "Invalid request or password doesn't meet requirements",
+            "model": ErrorResponse,
+        },
         401: {"description": "Old password incorrect or not authenticated", "model": ErrorResponse},
         500: {"description": "Server error during password change", "model": ErrorResponse},
     },
@@ -573,9 +586,14 @@ async def update_me(
             db.save_user(user)
 
         from socrates_api.routers.events import record_event
-        record_event("profile_updated", {
-            "username": current_user,
-        }, user_id=current_user)
+
+        record_event(
+            "profile_updated",
+            {
+                "username": current_user,
+            },
+            user_id=current_user,
+        )
 
         logger.info(f"User profile updated: {current_user}")
         return _user_to_response(user)
@@ -654,10 +672,7 @@ async def delete_account(
         # Call helper function to perform deletion
         await _delete_user_helper(current_user, db)
 
-        return SuccessResponse(
-            success=True,
-            message="Account deleted successfully"
-        )
+        return SuccessResponse(success=True, message="Account deleted successfully")
 
     except HTTPException:
         raise
@@ -665,7 +680,7 @@ async def delete_account(
         logger.error(f"Error deleting account: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete account: {str(e)}"
+            detail=f"Failed to delete account: {str(e)}",
         )
 
 
@@ -732,10 +747,11 @@ async def set_testing_mode(
         user.testing_mode = enabled
         db.save_user(user)
 
-        logger.info(f"Testing mode {'enabled' if enabled else 'disabled'} for user: {current_user} by {current_user}")
+        logger.info(
+            f"Testing mode {'enabled' if enabled else 'disabled'} for user: {current_user} by {current_user}"
+        )
         return SuccessResponse(
-            success=True,
-            message=f"Testing mode {'enabled' if enabled else 'disabled'}"
+            success=True, message=f"Testing mode {'enabled' if enabled else 'disabled'}"
         )
 
     except HTTPException:
@@ -744,7 +760,7 @@ async def set_testing_mode(
         logger.error(f"Error updating testing mode: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update testing mode: {str(e)}"
+            detail=f"Failed to update testing mode: {str(e)}",
         )
 
 
@@ -833,7 +849,7 @@ async def restore_account(
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        if not getattr(user, 'archived', False):
+        if not getattr(user, "archived", False):
             raise HTTPException(status_code=400, detail="Account is not archived")
 
         # Restore user
@@ -886,15 +902,14 @@ def _store_refresh_token(db: ProjectDatabase, username: str, token: str) -> None
     try:
         # Decode token to extract expiration time (without verification, just decode)
         try:
-            payload = jwt.decode(
-                token,
-                options={"verify_signature": False}
-            )
+            payload = jwt.decode(token, options={"verify_signature": False})
             expires_at = datetime.fromtimestamp(payload.get("exp", 0), tz=timezone.utc)
         except (jwt.InvalidTokenError, ValueError, KeyError):
             # If token decoding fails, set expiry to 7 days from now as default
             expires_at = datetime.now(timezone.utc) + timedelta(days=7)
-            logger.warning(f"Could not decode token expiration for user {username}, using default 7-day expiry")
+            logger.warning(
+                f"Could not decode token expiration for user {username}, using default 7-day expiry"
+            )
 
         # Hash the token using bcrypt for secure storage
         token_hash = hash_password(token)
@@ -915,7 +930,7 @@ def _store_refresh_token(db: ProjectDatabase, username: str, token: str) -> None
                 DELETE FROM refresh_tokens
                 WHERE user_id = ? AND revoked_at IS NULL
                 """,
-                (username,)
+                (username,),
             )
 
             # Insert new refresh token
@@ -924,11 +939,19 @@ def _store_refresh_token(db: ProjectDatabase, username: str, token: str) -> None
                 INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, created_at)
                 VALUES (?, ?, ?, ?, ?)
                 """,
-                (token_id, username, token_hash, expires_at.isoformat(), datetime.now(timezone.utc).isoformat())
+                (
+                    token_id,
+                    username,
+                    token_hash,
+                    expires_at.isoformat(),
+                    datetime.now(timezone.utc).isoformat(),
+                ),
             )
 
             conn.commit()
-            logger.debug(f"Refresh token stored for user {username} (expires: {expires_at.isoformat()})")
+            logger.debug(
+                f"Refresh token stored for user {username} (expires: {expires_at.isoformat()})"
+            )
 
         finally:
             cursor.close()
@@ -960,7 +983,7 @@ def _validate_refresh_token(db: ProjectDatabase, username: str, token: str) -> b
     """
     try:
         # Hash the provided token for comparison
-        token_hash = hash_password(token)
+        hash_password(token)
 
         # Get database connection
         conn = sqlite3.connect(db.db_path)
@@ -975,7 +998,7 @@ def _validate_refresh_token(db: ProjectDatabase, username: str, token: str) -> b
                 WHERE user_id = ? AND revoked_at IS NULL
                 LIMIT 1
                 """,
-                (username,)
+                (username,),
             )
 
             row = cursor.fetchone()
@@ -992,7 +1015,7 @@ def _validate_refresh_token(db: ProjectDatabase, username: str, token: str) -> b
                 # Mark as revoked to clean up
                 cursor.execute(
                     "UPDATE refresh_tokens SET revoked_at = ? WHERE id = ?",
-                    (datetime.now(timezone.utc).isoformat(), token_id)
+                    (datetime.now(timezone.utc).isoformat(), token_id),
                 )
                 conn.commit()
                 return False
@@ -1030,7 +1053,7 @@ def _revoke_refresh_token(db: ProjectDatabase, username: str) -> None:
                 SET revoked_at = ?
                 WHERE user_id = ? AND revoked_at IS NULL
                 """,
-                (datetime.now(timezone.utc).isoformat(), username)
+                (datetime.now(timezone.utc).isoformat(), username),
             )
 
             conn.commit()

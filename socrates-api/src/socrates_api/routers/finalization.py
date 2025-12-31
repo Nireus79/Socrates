@@ -76,12 +76,14 @@ async def generate_final_artifacts(
             code_files = []
             if project.code_history:
                 for code_item in project.code_history:
-                    code_files.append({
-                        "filename": f"code_{code_item.get('id', 'unknown')}.{code_item.get('language', 'txt')}",
-                        "language": code_item.get("language", "text"),
-                        "lines": code_item.get("lines", 0),
-                        "generated_at": code_item.get("timestamp"),
-                    })
+                    code_files.append(
+                        {
+                            "filename": f"code_{code_item.get('id', 'unknown')}.{code_item.get('language', 'txt')}",
+                            "language": code_item.get("language", "text"),
+                            "lines": code_item.get("lines", 0),
+                            "generated_at": code_item.get("timestamp"),
+                        }
+                    )
             artifacts["code"] = code_files
             artifacts["includes"].append("code")
 
@@ -89,19 +91,23 @@ async def generate_final_artifacts(
         if include_docs:
             doc_files = []
             # Include project documentation
-            doc_files.append({
-                "filename": f"{project.name}_README.md",
-                "format": "markdown",
-                "type": "project overview",
-            })
+            doc_files.append(
+                {
+                    "filename": f"{project.name}_README.md",
+                    "format": "markdown",
+                    "type": "project overview",
+                }
+            )
             # Include conversation summary
             if project.conversation_history:
-                doc_files.append({
-                    "filename": f"{project.name}_CONVERSATIONS.md",
-                    "format": "markdown",
-                    "type": "conversation summary",
-                    "conversation_count": len(project.conversation_history),
-                })
+                doc_files.append(
+                    {
+                        "filename": f"{project.name}_CONVERSATIONS.md",
+                        "format": "markdown",
+                        "type": "conversation summary",
+                        "conversation_count": len(project.conversation_history),
+                    }
+                )
             artifacts["documentation"] = doc_files
             artifacts["includes"].append("documentation")
 
@@ -128,23 +134,30 @@ async def generate_final_artifacts(
         if not hasattr(project, "finalization_history"):
             project.finalization_history = []
         project.finalization_history = getattr(project, "finalization_history", [])
-        project.finalization_history.append({
-            "id": finalization_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "artifact_count": len(artifacts["includes"]),
-            "status": "completed",
-        })
+        project.finalization_history.append(
+            {
+                "id": finalization_id,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "artifact_count": len(artifacts["includes"]),
+                "status": "completed",
+            }
+        )
 
         # Mark project as finalized
         project.status = "completed"
         db.save_project(project)
 
         from socrates_api.routers.events import record_event
-        record_event("project_finalized", {
-            "project_id": project_id,
-            "artifact_count": len(artifacts["includes"]),
-            "includes": artifacts["includes"],
-        }, user_id=current_user)
+
+        record_event(
+            "project_finalized",
+            {
+                "project_id": project_id,
+                "artifact_count": len(artifacts["includes"]),
+                "includes": artifacts["includes"],
+            },
+            user_id=current_user,
+        )
 
         return SuccessResponse(
             success=True,
@@ -234,11 +247,13 @@ async def generate_final_documentation(
         for phase, score in (project.phase_maturity_scores or {}).items():
             readme_content += f"- {phase.capitalize()}: {int(score)}%\n"
 
-        doc_package["sections"].append({
-            "name": "README.md",
-            "content": readme_content,
-            "type": "overview",
-        })
+        doc_package["sections"].append(
+            {
+                "name": "README.md",
+                "content": readme_content,
+                "type": "overview",
+            }
+        )
 
         # API Documentation
         if include_api_docs:
@@ -254,11 +269,13 @@ All API endpoints require Bearer token authentication.
 
 For full API reference, see API docs endpoint.
 """
-            doc_package["sections"].append({
-                "name": "API.md",
-                "content": api_doc_content,
-                "type": "api",
-            })
+            doc_package["sections"].append(
+                {
+                    "name": "API.md",
+                    "content": api_doc_content,
+                    "type": "api",
+                }
+            )
 
         # Code Documentation
         if include_code_docs and project.code_history:
@@ -271,11 +288,13 @@ For full API reference, see API docs endpoint.
                 code_doc_content += f"Language: {code_item.get('language', 'Unknown')}\n"
                 code_doc_content += f"Lines: {code_item.get('lines', 0)}\n"
 
-            doc_package["sections"].append({
-                "name": "IMPLEMENTATION.md",
-                "content": code_doc_content,
-                "type": "implementation",
-            })
+            doc_package["sections"].append(
+                {
+                    "name": "IMPLEMENTATION.md",
+                    "content": code_doc_content,
+                    "type": "implementation",
+                }
+            )
 
         # Deployment Guide
         if include_deployment_guide:
@@ -300,32 +319,41 @@ For full API reference, see API docs endpoint.
 ### Support
 For issues or questions, refer to the main README and API documentation.
 """
-            doc_package["sections"].append({
-                "name": "DEPLOYMENT.md",
-                "content": deployment_content,
-                "type": "deployment",
-            })
+            doc_package["sections"].append(
+                {
+                    "name": "DEPLOYMENT.md",
+                    "content": deployment_content,
+                    "type": "deployment",
+                }
+            )
 
         # Create documentation record
         doc_id = f"finaldoc_{int(datetime.now(timezone.utc).timestamp() * 1000)}"
         if not hasattr(project, "final_documentation_history"):
             project.final_documentation_history = []
         project.final_documentation_history = getattr(project, "final_documentation_history", [])
-        project.final_documentation_history.append({
-            "id": doc_id,
-            "format": format,
-            "sections": len(doc_package["sections"]),
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-        })
+        project.final_documentation_history.append(
+            {
+                "id": doc_id,
+                "format": format,
+                "sections": len(doc_package["sections"]),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
 
         db.save_project(project)
 
         from socrates_api.routers.events import record_event
-        record_event("final_documentation_generated", {
-            "project_id": project_id,
-            "format": format,
-            "section_count": len(doc_package["sections"]),
-        }, user_id=current_user)
+
+        record_event(
+            "final_documentation_generated",
+            {
+                "project_id": project_id,
+                "format": format,
+                "section_count": len(doc_package["sections"]),
+            },
+            user_id=current_user,
+        )
 
         return SuccessResponse(
             success=True,

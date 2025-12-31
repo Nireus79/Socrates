@@ -63,11 +63,13 @@ async def get_next_question(
                 "action": "generate_question",
                 "project": project,
                 "current_user": current_user,
-            }
+            },
         )
 
         if result["status"] != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to generate question"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to generate question")
+            )
 
         return SuccessResponse(
             success=True,
@@ -185,11 +187,13 @@ async def get_conversation_summary(
             {
                 "action": "generate_summary",
                 "project": project,
-            }
+            },
         )
 
         if result["status"] != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to generate summary"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to generate summary")
+            )
 
         return SuccessResponse(
             success=True,

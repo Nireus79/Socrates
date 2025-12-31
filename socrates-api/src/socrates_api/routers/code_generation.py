@@ -9,9 +9,6 @@ Provides:
 """
 
 import logging
-import os
-import subprocess
-from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, status, Depends
@@ -20,7 +17,6 @@ from socratic_system.database import ProjectDatabase
 
 from socrates_api.database import get_database
 from socrates_api.auth import get_current_user, get_current_user_object
-from socrates_api.middleware.subscription import SubscriptionChecker
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["code-generation"])
@@ -86,10 +82,12 @@ async def generate_code(
 
             # Check if user has active subscription
             if not user_object.subscription.is_active:
-                logger.warning(f"User {current_user} attempted to generate code without active subscription")
+                logger.warning(
+                    f"User {current_user} attempted to generate code without active subscription"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Active subscription required to generate code"
+                    detail="Active subscription required to generate code",
                 )
 
             # Check subscription tier - only Professional and Enterprise can generate code
@@ -98,17 +96,19 @@ async def generate_code(
                 logger.warning(f"Free-tier user {current_user} attempted to generate code")
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Code generation feature requires Professional or Enterprise subscription"
+                    detail="Code generation feature requires Professional or Enterprise subscription",
                 )
 
             logger.info(f"Subscription validation passed for code generation by {current_user}")
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error validating subscription for code generation: {type(e).__name__}: {e}")
+            logger.error(
+                f"Error validating subscription for code generation: {type(e).__name__}: {e}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}"
+                detail=f"Error validating subscription: {str(e)[:100]}",
             )
 
         # Validate language
@@ -150,7 +150,7 @@ async def generate_code(
                     "requirements": specification,
                     "current_user": current_user,
                     "is_api_mode": True,
-                }
+                },
             )
 
             if result.get("status") == "success":
@@ -159,10 +159,11 @@ async def generate_code(
                 token_usage = result.get("token_usage", 0)
             else:
                 # Fallback to Claude directly
+                project_description = getattr(project, "description", "")
                 prompt = f"""Generate {language} code based on this project description:
 
 Project: {project.name}
-Description: {description}
+Description: {project_description}
 Phase: {project.phase}
 Tech Stack: {', '.join(project.tech_stack or [])}
 
@@ -174,26 +175,33 @@ Provide only the code, ready to run."""
 
             # Record event
             from datetime import datetime
+
             generation_id = f"gen_{int(__import__('time').time() * 1000)}"
 
             # Save to code history
             project.code_history = project.code_history or []
-            project.code_history.append({
-                "id": generation_id,
-                "code": generated_code,
-                "timestamp": datetime.utcnow().isoformat(),
-                "language": language,
-                "explanation": explanation,
-                "lines": len(generated_code.splitlines()),
-            })
+            project.code_history.append(
+                {
+                    "id": generation_id,
+                    "code": generated_code,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "language": language,
+                    "explanation": explanation,
+                    "lines": len(generated_code.splitlines()),
+                }
+            )
             db.save_project(project)
 
-            record_event("code_generated", {
-                "project_id": project_id,
-                "language": language,
-                "lines": len(generated_code.splitlines()),
-                "generation_id": generation_id,
-            }, user_id=current_user)
+            record_event(
+                "code_generated",
+                {
+                    "project_id": project_id,
+                    "language": language,
+                    "lines": len(generated_code.splitlines()),
+                    "generation_id": generation_id,
+                },
+                user_id=current_user,
+            )
 
             return {
                 "status": "success",
@@ -215,7 +223,7 @@ Provide only the code, ready to run."""
                 "language": language,
                 "token_usage": 0,
                 "generation_id": f"gen_{int(__import__('time').time() * 1000)}",
-                "created_at": __import__('datetime').datetime.utcnow().isoformat(),
+                "created_at": __import__("datetime").datetime.utcnow().isoformat(),
             }
 
     except HTTPException:
@@ -262,10 +270,12 @@ async def validate_code(
 
             # Check if user has active subscription
             if not user_object.subscription.is_active:
-                logger.warning(f"User {current_user} attempted to validate code without active subscription")
+                logger.warning(
+                    f"User {current_user} attempted to validate code without active subscription"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Active subscription required to validate code"
+                    detail="Active subscription required to validate code",
                 )
 
             # Check subscription tier - only Professional and Enterprise can validate code
@@ -274,17 +284,19 @@ async def validate_code(
                 logger.warning(f"Free-tier user {current_user} attempted to validate code")
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Code validation feature requires Professional or Enterprise subscription"
+                    detail="Code validation feature requires Professional or Enterprise subscription",
                 )
 
             logger.info(f"Subscription validation passed for code validation by {current_user}")
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error validating subscription for code validation: {type(e).__name__}: {e}")
+            logger.error(
+                f"Error validating subscription for code validation: {type(e).__name__}: {e}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}"
+                detail=f"Error validating subscription: {str(e)[:100]}",
             )
 
         # Validate language
@@ -311,12 +323,11 @@ async def validate_code(
         # Validate code with language-specific linters
         import subprocess
         import tempfile
-        import json as json_lib
 
         logger.info(f"Code validation requested for {language} in project {project_id}")
 
         # Create temporary file with code
-        with tempfile.NamedTemporaryFile(mode='w', suffix=f'.{language}', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=f".{language}", delete=False) as f:
             f.write(code)
             temp_file = f.name
 
@@ -327,7 +338,7 @@ async def validate_code(
             if language == "python":
                 # Run basic Python compilation check
                 try:
-                    compile(code, temp_file, 'exec')
+                    compile(code, temp_file, "exec")
                 except SyntaxError as e:
                     errors.append(f"Syntax Error at line {e.lineno}: {e.msg}")
 
@@ -337,13 +348,13 @@ async def validate_code(
                         ["python", "-m", "pylint", "--exit-zero", temp_file],
                         capture_output=True,
                         text=True,
-                        timeout=10
+                        timeout=10,
                     )
                     if result.stdout:
-                        for line in result.stdout.split('\n'):
-                            if 'error' in line.lower():
+                        for line in result.stdout.split("\n"):
+                            if "error" in line.lower():
                                 errors.append(line.strip())
-                            elif 'warning' in line.lower():
+                            elif "warning" in line.lower():
                                 warnings.append(line.strip())
                 except (FileNotFoundError, subprocess.CalledProcessError) as e:
                     # pylint not installed or execution failed, skip
@@ -365,6 +376,7 @@ async def validate_code(
         finally:
             # Clean up temp file
             import os
+
             try:
                 os.unlink(temp_file)
             except OSError as e:
@@ -526,10 +538,12 @@ async def refactor_code(
 
             # Check if user has active subscription
             if not user_object.subscription.is_active:
-                logger.warning(f"User {current_user} attempted to refactor code without active subscription")
+                logger.warning(
+                    f"User {current_user} attempted to refactor code without active subscription"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Active subscription required to refactor code"
+                    detail="Active subscription required to refactor code",
                 )
 
             # Check subscription tier - only Professional and Enterprise can refactor code
@@ -538,17 +552,19 @@ async def refactor_code(
                 logger.warning(f"Free-tier user {current_user} attempted to refactor code")
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Code refactoring feature requires Professional or Enterprise subscription"
+                    detail="Code refactoring feature requires Professional or Enterprise subscription",
                 )
 
             logger.info(f"Subscription validation passed for code refactoring by {current_user}")
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error validating subscription for code refactoring: {type(e).__name__}: {e}")
+            logger.error(
+                f"Error validating subscription for code refactoring: {type(e).__name__}: {e}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}"
+                detail=f"Error validating subscription: {str(e)[:100]}",
             )
 
         # Validate inputs
@@ -591,23 +607,30 @@ async def refactor_code(
         # Save refactored version to code history
         generation_id = f"gen_{int(__import__('time').time() * 1000)}"
         project.code_history = project.code_history or []
-        project.code_history.append({
-            "id": generation_id,
-            "code": refactored_code,
-            "timestamp": datetime.utcnow().isoformat(),
-            "language": language,
-            "explanation": explanation,
-            "refactor_type": refactor_type,
-            "lines": len(refactored_code.splitlines()),
-        })
+        project.code_history.append(
+            {
+                "id": generation_id,
+                "code": refactored_code,
+                "timestamp": datetime.utcnow().isoformat(),
+                "language": language,
+                "explanation": explanation,
+                "refactor_type": refactor_type,
+                "lines": len(refactored_code.splitlines()),
+            }
+        )
         db.save_project(project)
 
         from socrates_api.routers.events import record_event
-        record_event("code_refactored", {
-            "project_id": project_id,
-            "language": language,
-            "refactor_type": refactor_type,
-        }, user_id=current_user)
+
+        record_event(
+            "code_refactored",
+            {
+                "project_id": project_id,
+                "language": language,
+                "refactor_type": refactor_type,
+            },
+            user_id=current_user,
+        )
 
         return {
             "status": "success",
@@ -723,7 +746,9 @@ async def generate_documentation(
             for code_item in project.code_history[:3]:  # Limit to first 3
                 language = code_item.get("language", "text")
                 code = code_item.get("code", "")
-                doc_sections.append(f"\n### Example: {code_item.get('explanation', 'Generated code')}")
+                doc_sections.append(
+                    f"\n### Example: {code_item.get('explanation', 'Generated code')}"
+                )
                 doc_sections.append(f"```{language}")
                 doc_sections.append(code[:500])  # Limit code preview
                 doc_sections.append("```")
@@ -754,20 +779,27 @@ async def generate_documentation(
         if not hasattr(project, "documentation_history"):
             project.documentation_history = []
         project.documentation_history = getattr(project, "documentation_history", [])
-        project.documentation_history.append({
-            "id": generation_id,
-            "format": format,
-            "generated_at": datetime.utcnow().isoformat(),
-            "length": len(output),
-        })
+        project.documentation_history.append(
+            {
+                "id": generation_id,
+                "format": format,
+                "generated_at": datetime.utcnow().isoformat(),
+                "length": len(output),
+            }
+        )
         db.save_project(project)
 
         from socrates_api.routers.events import record_event
-        record_event("documentation_generated", {
-            "project_id": project_id,
-            "format": format,
-            "include_examples": include_examples,
-        }, user_id=current_user)
+
+        record_event(
+            "documentation_generated",
+            {
+                "project_id": project_id,
+                "format": format,
+                "include_examples": include_examples,
+            },
+            user_id=current_user,
+        )
 
         return {
             "status": "success",

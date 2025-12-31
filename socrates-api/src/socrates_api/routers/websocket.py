@@ -9,21 +9,17 @@ Provides:
 
 import json
 import logging
-import os
 import uuid
 from datetime import datetime, timezone
-from pathlib import Path
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException, status
 
 from socratic_system.database import ProjectDatabase
-from socratic_system.orchestration.orchestrator import AgentOrchestrator
 from socrates_api.database import get_database
 from socrates_api.auth import get_current_user
 from socrates_api.websocket import (
     get_connection_manager,
     get_message_handler,
-    get_event_bridge,
     MessageType,
     ResponseType,
 )
@@ -69,7 +65,7 @@ async def websocket_chat_endpoint(
     connection_id = str(uuid.uuid4())
     connection_manager = get_connection_manager()
     message_handler = get_message_handler()
-    db = get_database()
+    get_database()
 
     try:
         # Verify user (token would be extracted from query params in real implementation)
@@ -109,7 +105,9 @@ async def websocket_chat_endpoint(
             try:
                 # Parse message
                 message = await message_handler.parse_message(raw_message)
-                logger.info(f"[WebSocket {connection_id}] Parsed message type: {message.type}, content: {message.content[:50] if hasattr(message, 'content') else 'N/A'}")
+                logger.info(
+                    f"[WebSocket {connection_id}] Parsed message type: {message.type}, content: {message.content[:50] if hasattr(message, 'content') else 'N/A'}"
+                )
 
                 # Handle ping/pong
                 if message.type == MessageType.PING:
@@ -131,7 +129,11 @@ async def websocket_chat_endpoint(
                     )
 
                     if response:
-                        response_text = json.dumps(response) if isinstance(response, dict) else response.to_json()
+                        response_text = (
+                            json.dumps(response)
+                            if isinstance(response, dict)
+                            else response.to_json()
+                        )
                         await websocket.send_text(response_text)
 
                 elif message.type == MessageType.COMMAND:
@@ -144,7 +146,11 @@ async def websocket_chat_endpoint(
                     )
 
                     if response:
-                        response_text = json.dumps(response) if isinstance(response, dict) else response.to_json()
+                        response_text = (
+                            json.dumps(response)
+                            if isinstance(response, dict)
+                            else response.to_json()
+                        )
                         await websocket.send_text(response_text)
 
                 else:
@@ -178,7 +184,9 @@ async def websocket_chat_endpoint(
                 try:
                     await websocket.send_json(error_response)
                 except Exception as send_error:
-                    logger.error(f"Failed to send error response to client: {str(send_error)}", exc_info=True)
+                    logger.error(
+                        f"Failed to send error response to client: {str(send_error)}", exc_info=True
+                    )
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected: {connection_id}")
@@ -194,7 +202,10 @@ async def websocket_chat_endpoint(
             try:
                 await connection_manager.disconnect(connection_id)
             except Exception as disconnect_error:
-                logger.error(f"Error disconnecting from connection manager: {str(disconnect_error)}", exc_info=True)
+                logger.error(
+                    f"Error disconnecting from connection manager: {str(disconnect_error)}",
+                    exc_info=True,
+                )
 
 
 async def _handle_chat_message(
@@ -216,7 +227,9 @@ async def _handle_chat_message(
         WebSocketResponse or None
     """
     try:
-        logger.info(f"[_handle_chat_message] Starting to handle chat message for project {project_id}")
+        logger.info(
+            f"[_handle_chat_message] Starting to handle chat message for project {project_id}"
+        )
         # Extract metadata
         metadata = message.metadata or {}
         mode = metadata.get("mode", "socratic")
@@ -230,6 +243,7 @@ async def _handle_chat_message(
         # Get project and orchestrator for AI processing
         try:
             from socrates_api.main import get_orchestrator
+
             db = get_database()
 
             project = db.load_project(project_id)
@@ -238,7 +252,7 @@ async def _handle_chat_message(
                 return None
 
             orchestrator = get_orchestrator()
-            logger.info(f"[_handle_chat_message] Got orchestrator, calling process_request")
+            logger.info("[_handle_chat_message] Got orchestrator, calling process_request")
 
             # Process message through orchestrator using process_request (standard pattern)
             result = orchestrator.process_request(
@@ -248,7 +262,7 @@ async def _handle_chat_message(
                     "project": project,
                     "response": message.content,
                     "current_user": user_id,
-                }
+                },
             )
             logger.info(f"[_handle_chat_message] Orchestrator result: {result.get('status')}")
 
@@ -266,7 +280,11 @@ async def _handle_chat_message(
                 if insights.get("constraints"):
                     response_parts.append(f"Constraints: {', '.join(insights['constraints'])}")
 
-                ai_response = " | ".join(response_parts) if response_parts else "Thank you for sharing that information."
+                ai_response = (
+                    " | ".join(response_parts)
+                    if response_parts
+                    else "Thank you for sharing that information."
+                )
 
                 # Handle conflicts if any
                 if result.get("conflicts_pending"):
@@ -279,30 +297,33 @@ async def _handle_chat_message(
             if request_hint:
                 try:
                     hint_text = orchestrator.claude_client.generate_suggestions(
-                        f"Current question context: {message.content}",
-                        project
+                        f"Current question context: {message.content}", project
                     )
                 except Exception as e:
                     logger.warning(f"Failed to generate hint: {e}")
                     hint_text = "Try breaking this down into smaller parts."
 
             # Save message to conversation history
-            project.conversation_history.append({
-                "id": f"msg_{len(project.conversation_history)}",
-                "type": "user",
-                "content": message.content,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "mode": mode,
-            })
+            project.conversation_history.append(
+                {
+                    "id": f"msg_{len(project.conversation_history)}",
+                    "type": "user",
+                    "content": message.content,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "mode": mode,
+                }
+            )
 
             # Save assistant response
-            project.conversation_history.append({
-                "id": f"msg_{len(project.conversation_history)}",
-                "type": "assistant",
-                "content": ai_response,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "hint": hint_text if hint_text else None,
-            })
+            project.conversation_history.append(
+                {
+                    "id": f"msg_{len(project.conversation_history)}",
+                    "type": "assistant",
+                    "content": ai_response,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "hint": hint_text if hint_text else None,
+                }
+            )
 
             db.save_project(project)
 
@@ -321,7 +342,10 @@ async def _handle_chat_message(
         return response
 
     except Exception as e:
-        logger.error(f"Unhandled error in _handle_chat_message for project {project_id}, user {user_id}: {str(e)}", exc_info=True)
+        logger.error(
+            f"Unhandled error in _handle_chat_message for project {project_id}, user {user_id}: {str(e)}",
+            exc_info=True,
+        )
         raise
 
 
@@ -353,12 +377,7 @@ async def _handle_command(
         command_args = parts[1] if len(parts) > 1 else ""
 
         # Route to appropriate command handler
-        result = await _route_command(
-            command_name,
-            command_args,
-            user_id,
-            project_id
-        )
+        result = await _route_command(command_name, command_args, user_id, project_id)
 
         response = {
             "type": ResponseType.ASSISTANT_RESPONSE.value,
@@ -371,7 +390,10 @@ async def _handle_command(
         return response
 
     except Exception as e:
-        logger.error(f"Error handling command '{message.content}' for user {user_id}: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error handling command '{message.content}' for user {user_id}: {str(e)}",
+            exc_info=True,
+        )
         return {
             "type": ResponseType.ERROR.value,
             "errorCode": "COMMAND_ERROR",
@@ -401,6 +423,7 @@ async def _route_command(
     """
     try:
         from socrates_api.main import get_orchestrator
+
         db = get_database()
 
         project = db.load_project(project_id)
@@ -413,8 +436,7 @@ async def _route_command(
         if command in ["hint", "help", "suggest"]:
             # Generate hint
             hint = orchestrator.claude_client.generate_suggestions(
-                f"{command}: {args}" if args else "Help me with this task",
-                project
+                f"{command}: {args}" if args else "Help me with this task", project
             )
             return {"status": "success", "message": hint}
 
@@ -426,7 +448,7 @@ async def _route_command(
                     "action": "generate_summary",
                     "project": project,
                     "limit": 50,
-                }
+                },
             )
             summary = result.get("summary", "No summary available")
             return {"status": "success", "message": summary}
@@ -466,7 +488,7 @@ async def _route_command(
                     "project": project,
                     "current_user": user_id,
                     "is_api_mode": True,
-                }
+                },
             )
             if result.get("status") == "success":
                 db.save_project(project)
@@ -479,7 +501,9 @@ async def _route_command(
             return {"status": "error", "message": f"Unknown command: /{command}"}
 
     except Exception as e:
-        logger.error(f"Error routing command '{command}' for user {user_id}: {str(e)}", exc_info=True)
+        logger.error(
+            f"Error routing command '{command}' for user {user_id}: {str(e)}", exc_info=True
+        )
         return {"status": "error", "message": f"Failed to execute command: {str(e)}"}
 
 
@@ -516,6 +540,7 @@ async def send_chat_message(
         logger.info(f"[send_chat_message] Starting for project {project_id}")
         # Import here to avoid circular dependency
         from socrates_api.main import get_orchestrator
+
         orchestrator = get_orchestrator()
         logger.info(f"[send_chat_message] Got orchestrator: {orchestrator is not None}")
         # Extract message and mode from request body
@@ -544,16 +569,19 @@ async def send_chat_message(
             )
 
         # Store user message in conversation history
-        project.conversation_history.append({
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "type": "user",
-            "content": message,
-            "mode": mode,
-        })
+        project.conversation_history.append(
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "type": "user",
+                "content": message,
+                "mode": mode,
+            }
+        )
 
         # Check if this is the first message - if so, generate initial question first
-        assistant_messages = [msg for msg in project.conversation_history
-                            if msg.get("type") == "assistant"]
+        assistant_messages = [
+            msg for msg in project.conversation_history if msg.get("type") == "assistant"
+        ]
 
         question_response = None
         if not assistant_messages:
@@ -566,7 +594,7 @@ async def send_chat_message(
                         "project": project,
                         "current_user": current_user,
                         "is_api_mode": True,
-                    }
+                    },
                 )
                 if question_result.get("status") == "success":
                     question_response = question_result.get("question")
@@ -576,7 +604,7 @@ async def send_chat_message(
 
         # Process user response with orchestrator via routing (not direct call)
         try:
-            logger.info(f"[send_chat_message] Calling orchestrator.process_request_async")
+            logger.info("[send_chat_message] Calling orchestrator.process_request_async")
             response_result = await orchestrator.process_request_async(
                 "socratic_counselor",
                 {
@@ -585,11 +613,12 @@ async def send_chat_message(
                     "current_user": current_user,
                     "mode": mode,
                     "is_api_mode": True,
-                }
+                },
             )
             logger.info(f"[send_chat_message] Orchestrator returned: {response_result}")
-            assistant_response = response_result.get("insights", {}).get("thoughts",
-                                                    "Thank you for your response.")
+            assistant_response = response_result.get("insights", {}).get(
+                "thoughts", "Thank you for your response."
+            )
             logger.info(f"[send_chat_message] Assistant response: {assistant_response[:50]}")
         except Exception as e:
             logger.error(f"[send_chat_message] Error processing response: {e}", exc_info=True)
@@ -666,12 +695,14 @@ async def get_chat_history(
         # Transform to ChatMessage format for frontend
         messages = []
         for msg in paginated_history:
-            messages.append({
-                "id": msg.get("id", f"msg_{len(messages)}"),
-                "role": msg.get("type", "user"),  # type -> role mapping
-                "content": msg.get("content", ""),
-                "timestamp": msg.get("timestamp"),
-            })
+            messages.append(
+                {
+                    "id": msg.get("id", f"msg_{len(messages)}"),
+                    "role": msg.get("type", "user"),  # type -> role mapping
+                    "content": msg.get("content", ""),
+                    "timestamp": msg.get("timestamp"),
+                }
+            )
 
         logger.info(
             f"Retrieved {len(messages)} messages for project {project_id} "
@@ -745,10 +776,7 @@ async def switch_chat_mode(
         project.chat_mode = mode
         db.save_project(project)
 
-        logger.info(
-            f"Chat mode switched for project {project_id}: "
-            f"{old_mode} → {mode}"
-        )
+        logger.info(f"Chat mode switched for project {project_id}: " f"{old_mode} → {mode}")
 
         return {
             "status": "success",
@@ -800,8 +828,7 @@ async def request_hint(
 
         # Get the latest assistant message or generate a new question
         assistant_messages = [
-            msg for msg in (project.conversation_history or [])
-            if msg.get("type") == "assistant"
+            msg for msg in (project.conversation_history or []) if msg.get("type") == "assistant"
         ]
 
         question = None
@@ -811,6 +838,7 @@ async def request_hint(
         else:
             # Generate initial question if no conversation yet via orchestrator routing (not direct call)
             from socrates_api.main import get_orchestrator
+
             try:
                 orchestrator = get_orchestrator()
                 question_result = await orchestrator.process_request_async(
@@ -820,7 +848,7 @@ async def request_hint(
                         "project": project,
                         "current_user": current_user,
                         "is_api_mode": True,
-                    }
+                    },
                 )
                 if question_result.get("status") == "success":
                     question = question_result.get("question")
@@ -833,6 +861,7 @@ async def request_hint(
         if question:
             try:
                 from socrates_api.main import get_orchestrator
+
                 orchestrator = get_orchestrator()
                 hint = orchestrator.claude_client.generate_suggestions(question, project)
             except Exception as e:
@@ -897,8 +926,7 @@ async def clear_chat_history(
         db.save_project(project)
 
         logger.info(
-            f"Chat history cleared for project {project_id} "
-            f"({message_count} messages deleted)"
+            f"Chat history cleared for project {project_id} " f"({message_count} messages deleted)"
         )
 
         return {
@@ -967,6 +995,7 @@ async def get_chat_summary(
 
         try:
             from socrates_api.main import get_orchestrator
+
             orchestrator = get_orchestrator()
 
             # Use context_analyzer to generate summary
@@ -976,7 +1005,7 @@ async def get_chat_summary(
                     "action": "generate_summary",
                     "project": project,
                     "limit": len(conversation_history),
-                }
+                },
             )
 
             if summary_result.get("status") == "success":
@@ -989,13 +1018,16 @@ async def get_chat_summary(
             logger.warning(f"Failed to use orchestrator for summary, using Claude directly: {e}")
             try:
                 from socrates_api.main import get_orchestrator
+
                 orchestrator = get_orchestrator()
 
                 # Fallback: Use Claude directly to generate summary
-                conversation_text = "\n".join([
-                    f"{msg.get('type', 'unknown').upper()}: {msg.get('content', '')}"
-                    for msg in conversation_history[-20:]  # Last 20 messages
-                ])
+                conversation_text = "\n".join(
+                    [
+                        f"{msg.get('type', 'unknown').upper()}: {msg.get('content', '')}"
+                        for msg in conversation_history[-20:]  # Last 20 messages
+                    ]
+                )
 
                 prompt = f"""Summarize this conversation in 2-3 sentences, then list 3-5 key points and insights.
 
@@ -1013,6 +1045,7 @@ Provide response in JSON format:
 
                 # Parse response (assume JSON format)
                 import json
+
                 try:
                     parsed = json.loads(response)
                     summary_text = parsed.get("summary", summary_text)
@@ -1091,12 +1124,14 @@ async def search_conversations(
         for msg in project.conversation_history:
             content = msg.get("content", "").lower()
             if query in content:
-                results.append({
-                    "id": len(results),
-                    "role": msg.get("type"),
-                    "content": msg.get("content"),
-                    "timestamp": msg.get("timestamp"),
-                })
+                results.append(
+                    {
+                        "id": len(results),
+                        "role": msg.get("type"),
+                        "content": msg.get("content"),
+                        "timestamp": msg.get("timestamp"),
+                    }
+                )
 
         return {
             "status": "success",
@@ -1276,25 +1311,31 @@ async def websocket_collaboration_endpoint(
                 logger.warning(f"Invalid JSON received from {user_id}: {str(json_error)}")
                 # Send error response to client
                 try:
-                    await websocket.send_json({
-                        "type": "error",
-                        "errorCode": "INVALID_JSON",
-                        "errorMessage": "Invalid JSON format",
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "errorCode": "INVALID_JSON",
+                            "errorMessage": "Invalid JSON format",
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        }
+                    )
                 except Exception as send_error:
-                    logger.error(f"Failed to send JSON error response: {str(send_error)}", exc_info=True)
+                    logger.error(
+                        f"Failed to send JSON error response: {str(send_error)}", exc_info=True
+                    )
                 continue
             except Exception as e:
                 logger.error(f"Error processing collaboration message: {str(e)}", exc_info=True)
                 # Send error response to client
                 try:
-                    await websocket.send_json({
-                        "type": "error",
-                        "errorCode": "PROCESSING_ERROR",
-                        "errorMessage": f"Error processing message: {str(e)}",
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "errorCode": "PROCESSING_ERROR",
+                            "errorMessage": f"Error processing message: {str(e)}",
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        }
+                    )
                 except Exception as send_error:
                     logger.error(f"Failed to send error response: {str(send_error)}", exc_info=True)
                 continue
@@ -1314,7 +1355,9 @@ async def websocket_collaboration_endpoint(
                 },
             )
         except Exception as broadcast_error:
-            logger.warning(f"Failed to broadcast user_left event: {str(broadcast_error)}", exc_info=True)
+            logger.warning(
+                f"Failed to broadcast user_left event: {str(broadcast_error)}", exc_info=True
+            )
 
         # Remove connection
         try:
@@ -1327,4 +1370,7 @@ async def websocket_collaboration_endpoint(
         try:
             await websocket.close(code=1011, reason="Internal server error")
         except Exception as close_error:
-            logger.error(f"Failed to close WebSocket in collaboration endpoint: {str(close_error)}", exc_info=True)
+            logger.error(
+                f"Failed to close WebSocket in collaboration endpoint: {str(close_error)}",
+                exc_info=True,
+            )

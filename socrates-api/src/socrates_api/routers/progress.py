@@ -8,8 +8,6 @@ Provides REST endpoints for tracking project progress including:
 """
 
 import logging
-from typing import Optional
-from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, status, Depends
 
 from socrates_api.auth import get_current_user
@@ -69,9 +67,9 @@ async def get_progress(
         }
         if conversation_count > 0:
             last_msg = getattr(project, "conversation_history", [])[-1]
-            progress_data["conversation_progress"]["last_message_at"] = last_msg.get(
-                "timestamp"
-            ) if isinstance(last_msg, dict) else str(last_msg)
+            progress_data["conversation_progress"]["last_message_at"] = (
+                last_msg.get("timestamp") if isinstance(last_msg, dict) else str(last_msg)
+            )
 
         # Code generation progress
         generated_code_count = len(
@@ -107,9 +105,9 @@ async def get_progress(
         progress_data["category_progress"] = {
             "total_categories": len(category_scores),
             "categories": category_scores,
-            "average_category_score": sum(category_scores.values()) / len(category_scores)
-            if category_scores
-            else 0,
+            "average_category_score": (
+                sum(category_scores.values()) / len(category_scores) if category_scores else 0
+            ),
         }
 
         # Skills progress
@@ -118,7 +116,9 @@ async def get_progress(
             "total_skills": len(skills),
             "proficiency_breakdown": {
                 "beginner": len([s for s in skills if s.get("proficiency_level") == "beginner"]),
-                "intermediate": len([s for s in skills if s.get("proficiency_level") == "intermediate"]),
+                "intermediate": len(
+                    [s for s in skills if s.get("proficiency_level") == "intermediate"]
+                ),
                 "advanced": len([s for s in skills if s.get("proficiency_level") == "advanced"]),
                 "expert": len([s for s in skills if s.get("proficiency_level") == "expert"]),
             },
@@ -143,18 +143,16 @@ async def get_progress(
             completion_metrics.append(min(100, len(skills) * 5))
 
         overall_progress = (
-            sum(completion_metrics) / len(completion_metrics)
-            if completion_metrics
-            else 0
+            sum(completion_metrics) / len(completion_metrics) if completion_metrics else 0
         )
 
         progress_data["overall_progress"] = {
             "percentage": round(overall_progress, 1),
-            "status": "not_started"
-            if overall_progress == 0
-            else "in_progress"
-            if overall_progress < 100
-            else "completed",
+            "status": (
+                "not_started"
+                if overall_progress == 0
+                else "in_progress" if overall_progress < 100 else "completed"
+            ),
         }
 
         return SuccessResponse(
@@ -244,9 +242,11 @@ async def get_progress_status(
             },
             "trend": {
                 "direction": trend,
-                "recent_change": f"{round(recent_history[-1].get('score', 0) - recent_history[0].get('score', 0), 1)} points"
-                if len(recent_history) >= 2
-                else "No data",
+                "recent_change": (
+                    f"{round(recent_history[-1].get('score', 0) - recent_history[0].get('score', 0), 1)} points"
+                    if len(recent_history) >= 2
+                    else "No data"
+                ),
                 "last_update": recent_history[-1].get("timestamp") if recent_history else None,
             },
             "phase_status": {
@@ -305,9 +305,7 @@ def _generate_recommendations(project) -> list:
     if category_scores:
         low_categories = [k for k, v in category_scores.items() if v < 50]
         if low_categories:
-            recommendations.append(
-                f"Improve in areas: {', '.join(low_categories)}"
-            )
+            recommendations.append(f"Improve in areas: {', '.join(low_categories)}")
 
     if len(recommendations) == 0:
         recommendations.append("Continue making progress on your project goals")

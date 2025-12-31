@@ -10,13 +10,14 @@ Provides:
 """
 
 import logging
-from typing import Callable, Optional
+from typing import Optional
 import redis
 
 try:
-    from slowapi import Limiter, _rate_limit_exceeded_handler
+    from slowapi import Limiter, _rate_limit_exceeded_handler  # noqa: F401
     from slowapi.util import get_remote_address
-    from slowapi.errors import RateLimitExceeded
+    from slowapi.errors import RateLimitExceeded  # noqa: F401
+
     SLOWAPI_AVAILABLE = True
 except ImportError:
     SLOWAPI_AVAILABLE = False

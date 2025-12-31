@@ -10,9 +10,6 @@ Provides:
 """
 
 import logging
-import os
-import uuid
-from pathlib import Path
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
@@ -43,6 +40,7 @@ collab_router = APIRouter(prefix="/collaboration", tags=["collaboration"])
 
 class CollaboratorRole:
     """Collaboration roles."""
+
     OWNER = "owner"
     EDITOR = "editor"
     VIEWER = "viewer"
@@ -81,15 +79,19 @@ async def _get_active_collaborators(project_id: str) -> List[Dict[str, Any]]:
             for connection_id, metadata in connection_manager._metadata.items():
                 if metadata.project_id == project_id and metadata.user_id not in seen_users:
                     seen_users.add(metadata.user_id)
-                    active_collaborators.append({
-                        "username": metadata.user_id,
-                        "status": "online",
-                        "last_activity": metadata.last_message_at or metadata.connected_at,
-                        "connected_at": metadata.connected_at,
-                        "message_count": metadata.message_count,
-                    })
+                    active_collaborators.append(
+                        {
+                            "username": metadata.user_id,
+                            "status": "online",
+                            "last_activity": metadata.last_message_at or metadata.connected_at,
+                            "connected_at": metadata.connected_at,
+                            "message_count": metadata.message_count,
+                        }
+                    )
 
-        logger.debug(f"Found {len(active_collaborators)} active collaborators in project {project_id}")
+        logger.debug(
+            f"Found {len(active_collaborators)} active collaborators in project {project_id}"
+        )
         return active_collaborators
 
     except Exception as e:
@@ -200,7 +202,7 @@ async def add_collaborator_new(
         if not CollaboratorRole.is_valid(request.role):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid role. Must be one of: owner, editor, viewer",
+                detail="Invalid role. Must be one of: owner, editor, viewer",
             )
 
         # Verify project exists and user is owner
@@ -224,10 +226,12 @@ async def add_collaborator_new(
 
             # Check if user has active subscription
             if user_object.subscription_status != "active":
-                logger.warning(f"User {current_user} attempted to add collaborator without active subscription (status: {user_object.subscription_status})")
+                logger.warning(
+                    f"User {current_user} attempted to add collaborator without active subscription (status: {user_object.subscription_status})"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Active subscription required to add collaborators"
+                    detail="Active subscription required to add collaborators",
                 )
 
             # Check subscription tier - collaboration feature requires pro or enterprise tier
@@ -236,36 +240,38 @@ async def add_collaborator_new(
                 logger.warning(f"Free-tier user {current_user} attempted to add collaborators")
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Collaboration feature requires 'pro' or 'enterprise' subscription"
+                    detail="Collaboration feature requires 'pro' or 'enterprise' subscription",
                 )
 
             # Check team member limit for subscription tier
             # Testing mode can bypass quota limits but not feature restrictions
             current_team_size = len(project.team_members) if project.team_members else 0
             can_add, error_msg = SubscriptionChecker.can_add_team_member(
-                subscription_tier,
-                current_team_size
+                subscription_tier, current_team_size
             )
 
             # Allow testing mode to bypass quota limits only
             if not can_add and not user_object.testing_mode:
                 logger.warning(f"User {current_user} exceeded team member limit: {error_msg}")
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=error_msg
-                )
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=error_msg)
 
             if not can_add and user_object.testing_mode:
-                logger.info(f"User {current_user} in testing mode - bypassing quota limits for collaboration")
+                logger.info(
+                    f"User {current_user} in testing mode - bypassing quota limits for collaboration"
+                )
 
-            logger.info(f"Subscription validation passed for {current_user} (tier: {subscription_tier}, testing_mode: {user_object.testing_mode})")
+            logger.info(
+                f"Subscription validation passed for {current_user} (tier: {subscription_tier}, testing_mode: {user_object.testing_mode})"
+            )
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error validating subscription for collaboration: {type(e).__name__}: {e}")
+            logger.error(
+                f"Error validating subscription for collaboration: {type(e).__name__}: {e}"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}"
+                detail=f"Error validating subscription: {str(e)[:100]}",
             )
 
         # Initialize team_members if not present
@@ -276,7 +282,7 @@ async def add_collaborator_new(
 
         # Try to resolve username from email
         resolved_username = request.email
-        if '@' in request.email:
+        if "@" in request.email:
             # Email provided, try to look it up
             try:
                 user = db.load_user_by_email(request.email)
@@ -293,7 +299,7 @@ async def add_collaborator_new(
             except Exception as e:
                 logger.warning(f"Error looking up user by email {request.email}: {e}")
                 # Fall back to using email prefix as username
-                resolved_username = request.email.split('@')[0]
+                resolved_username = request.email.split("@")[0]
                 logger.info(f"Could not resolve email, using prefix: {resolved_username}")
         else:
             # Username provided directly
@@ -301,7 +307,9 @@ async def add_collaborator_new(
             try:
                 user_exists = db.user_exists(resolved_username)
                 if not user_exists:
-                    logger.warning(f"User '{resolved_username}' not found in users table, will add as pending collaborator")
+                    logger.warning(
+                        f"User '{resolved_username}' not found in users table, will add as pending collaborator"
+                    )
             except Exception as e:
                 logger.warning(f"Could not verify user {resolved_username} exists: {e}")
 
@@ -334,13 +342,20 @@ async def add_collaborator_new(
 
         # Record event
         from socrates_api.routers.events import record_event
-        record_event("collaborator_added", {
-            "project_id": project_id,
-            "username": resolved_username,
-            "role": request.role,
-        }, user_id=current_user)
 
-        logger.info(f"Collaborator {resolved_username} added to project {project_id} by {current_user}")
+        record_event(
+            "collaborator_added",
+            {
+                "project_id": project_id,
+                "username": resolved_username,
+                "role": request.role,
+            },
+            user_id=current_user,
+        )
+
+        logger.info(
+            f"Collaborator {resolved_username} added to project {project_id} by {current_user}"
+        )
 
         return {
             "status": "success",
@@ -415,12 +430,16 @@ async def list_collaborators(
                 # Skip if this member is the owner (avoid duplicates)
                 if member.username == project.owner:
                     continue
-                collaborators.append({
-                    "username": member.username,
-                    "role": member.role,
-                    "status": "active",
-                    "joined_at": member.joined_at.isoformat() if hasattr(member, 'joined_at') else None,
-                })
+                collaborators.append(
+                    {
+                        "username": member.username,
+                        "role": member.role,
+                        "status": "active",
+                        "joined_at": (
+                            member.joined_at.isoformat() if hasattr(member, "joined_at") else None
+                        ),
+                    }
+                )
 
         return {
             "status": "success",
@@ -497,15 +516,23 @@ async def update_collaborator_role(
                     db.save_project(project)
 
                     from socrates_api.routers.events import record_event
-                    record_event("collaborator_role_updated", {
-                        "project_id": project_id,
-                        "username": username,
-                        "new_role": role,
-                    }, user_id=current_user)
 
-                    logger.info(f"Collaborator {username} role updated to {role} in project {project_id}")
+                    record_event(
+                        "collaborator_role_updated",
+                        {
+                            "project_id": project_id,
+                            "username": username,
+                            "new_role": role,
+                        },
+                        user_id=current_user,
+                    )
+
+                    logger.info(
+                        f"Collaborator {username} role updated to {role} in project {project_id}"
+                    )
 
                     from datetime import datetime
+
                     return {
                         "status": "success",
                         "collaborator": {
@@ -596,10 +623,15 @@ async def remove_collaborator(
             )
 
         from socrates_api.routers.events import record_event
-        record_event("collaborator_removed", {
-            "project_id": project_id,
-            "username": username,
-        }, user_id=current_user)
+
+        record_event(
+            "collaborator_removed",
+            {
+                "project_id": project_id,
+                "username": username,
+            },
+            user_id=current_user,
+        )
 
         logger.info(f"Collaborator {username} removed from project {project_id}")
 
@@ -669,7 +701,7 @@ async def get_presence(
                 "project_id": project_id,
                 "active_collaborators": active_collaborators,
                 "timestamp": datetime.utcnow().isoformat(),
-            }
+            },
         )
 
     except HTTPException:
@@ -838,7 +870,7 @@ async def get_activities(
                 "offset": offset,
                 "total": total,
                 "has_more": offset + limit < total,
-            }
+            },
         }
 
     except HTTPException:
@@ -901,7 +933,7 @@ async def create_project_invitation(
 
         # Validate email
         email = request.email.strip().lower()
-        if '@' not in email or '.' not in email:
+        if "@" not in email or "." not in email:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid email format",
@@ -1105,14 +1137,21 @@ async def accept_invitation(
 
         # Record activity
         from socrates_api.routers.events import record_event
-        record_event("collaborator_added", {
-            "project_id": invitation["project_id"],
-            "username": current_user,
-            "role": invitation["role"],
-            "via_invitation": True,
-        }, user_id=current_user)
 
-        logger.info(f"User {current_user} accepted invitation for project {invitation['project_id']}")
+        record_event(
+            "collaborator_added",
+            {
+                "project_id": invitation["project_id"],
+                "username": current_user,
+                "role": invitation["role"],
+                "via_invitation": True,
+            },
+            user_id=current_user,
+        )
+
+        logger.info(
+            f"User {current_user} accepted invitation for project {invitation['project_id']}"
+        )
 
         return {
             "status": "success",
@@ -1235,7 +1274,7 @@ async def invite_team_member(
             )
 
         # Basic email validation
-        if '@' not in email or '.' not in email:
+        if "@" not in email or "." not in email:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid email format",

@@ -74,9 +74,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             )
         else:
             # Shorter max-age for development
-            response.headers["Strict-Transport-Security"] = (
-                "max-age=3600; includeSubDomains"
-            )
+            response.headers["Strict-Transport-Security"] = "max-age=3600; includeSubDomains"
 
         # Content-Security-Policy: Restrict resource loading
         # Prevents XSS, clickjacking, and other injection attacks

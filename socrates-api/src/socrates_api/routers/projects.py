@@ -26,10 +26,8 @@ See socratic_system/models/user.py for complete authorization architecture docum
 """
 
 import logging
-import os
 from datetime import datetime, timezone
-from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, HTTPException, status, Depends, Query
 
@@ -40,8 +38,8 @@ from socratic_system.database import ProjectDatabase
 from socratic_system.models import ProjectContext
 from socratic_system.utils.id_generator import ProjectIDGenerator
 from socrates_api.database import get_database
-from socrates_api.auth import get_current_user, get_current_user_optional, get_current_user_object
-from socrates_api.middleware import SubscriptionChecker, require_subscription_feature
+from socrates_api.auth import get_current_user, get_current_user_object
+from socrates_api.middleware import SubscriptionChecker
 from socrates_api.models import (
     ProjectResponse,
     ListProjectsResponse,
@@ -63,7 +61,7 @@ def _get_orchestrator() -> "socrates.AgentOrchestrator":
     if app_state.get("orchestrator") is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Orchestrator not initialized. Please call /initialize first."
+            detail="Orchestrator not initialized. Please call /initialize first.",
         )
     return app_state["orchestrator"]
 
@@ -167,6 +165,7 @@ async def create_project(
         try:
             logger.info("Checking if orchestrator is available...")
             from socrates_api.main import app_state
+
             orchestrator = app_state.get("orchestrator")
             if orchestrator:
                 logger.info("Orchestrator available, using it...")
@@ -184,18 +183,18 @@ async def create_project(
                 # Check result status
                 if result.get("status") == "success":
                     project = result.get("project")
-                    logger.info(f"Project {project.project_id} created by {current_user} (via orchestrator)")
+                    logger.info(
+                        f"Project {project.project_id} created by {current_user} (via orchestrator)"
+                    )
                     return _project_to_response(project)
                 else:
                     error_message = result.get("message", "Failed to create project")
                     if "subscription" in error_message.lower():
                         raise HTTPException(
-                            status_code=status.HTTP_403_FORBIDDEN,
-                            detail=error_message
+                            status_code=status.HTTP_403_FORBIDDEN, detail=error_message
                         )
                     raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=error_message
+                        status_code=status.HTTP_400_BAD_REQUEST, detail=error_message
                     )
             else:
                 logger.info("Orchestrator not available, will use fallback")
@@ -203,7 +202,9 @@ async def create_project(
             logger.warning("HTTPException in orchestrator block, re-raising")
             raise
         except Exception as e:
-            logger.warning(f"Exception in orchestrator block, using fallback: {type(e).__name__}: {e}")
+            logger.warning(
+                f"Exception in orchestrator block, using fallback: {type(e).__name__}: {e}"
+            )
 
         # Fallback: create project directly in database without orchestrator
         logger.info("Using fallback database creation...")
@@ -215,24 +216,22 @@ async def create_project(
 
             # Check if user has active subscription
             if not user_object.subscription.is_active:
-                logger.warning(f"User {current_user} attempted to create project without active subscription")
+                logger.warning(
+                    f"User {current_user} attempted to create project without active subscription"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Active subscription required to create projects"
+                    detail="Active subscription required to create projects",
                 )
 
             # Check project limit for subscription tier
             active_projects = db.get_user_projects(current_user)
             can_create, error_msg = SubscriptionChecker.check_project_limit(
-                user_object,
-                len(active_projects)
+                user_object, len(active_projects)
             )
             if not can_create:
                 logger.warning(f"User {current_user} exceeded project limit: {error_msg}")
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=error_msg
-                )
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=error_msg)
 
             logger.info(f"Subscription validation passed for {current_user}")
         except HTTPException:
@@ -242,7 +241,7 @@ async def create_project(
             logger.error(f"Error validating subscription in fallback: {type(e).__name__}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error validating subscription: {str(e)[:100]}"
+                detail=f"Error validating subscription: {str(e)[:100]}",
             )
 
         project_id = ProjectIDGenerator.generate()
@@ -260,10 +259,10 @@ async def create_project(
             conversation_history=[],
             maturity=0,
         )
-        logger.info(f"Created ProjectContext object")
+        logger.info("Created ProjectContext object")
 
         db.save_project(project)
-        logger.info(f"Saved project to database")
+        logger.info("Saved project to database")
 
         # If knowledge_base_content was provided, add it to the project's knowledge base
         if request.knowledge_base_content:
@@ -278,7 +277,9 @@ async def create_project(
                     source="initial_upload",
                     content_type="text",
                 )
-                logger.info(f"Successfully added initial knowledge base content to project {project_id}")
+                logger.info(
+                    f"Successfully added initial knowledge base content to project {project_id}"
+                )
             except Exception as e:
                 logger.warning(f"Failed to add initial knowledge base content: {str(e)}")
                 # Don't fail the project creation if knowledge base save fails
@@ -694,7 +695,9 @@ async def get_project_maturity(
 )
 async def advance_phase(
     project_id: str,
-    new_phase: str = Query(..., description="New phase (discovery, analysis, design, implementation)"),
+    new_phase: str = Query(
+        ..., description="New phase (discovery, analysis, design, implementation)"
+    ),
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -836,9 +839,14 @@ async def get_project_analytics(
         }
 
         from socrates_api.routers.events import record_event
-        record_event("analytics_viewed", {
-            "project_id": project_id,
-        }, user_id=current_user)
+
+        record_event(
+            "analytics_viewed",
+            {
+                "project_id": project_id,
+            },
+            user_id=current_user,
+        )
 
         return {
             "status": "success",

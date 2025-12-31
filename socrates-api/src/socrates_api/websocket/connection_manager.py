@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ConnectionMetadata:
     """Metadata for a WebSocket connection."""
+
     connection_id: str
     user_id: str
     project_id: str
@@ -135,7 +136,7 @@ class ConnectionManager:
             if user_id in self._connections:
                 if project_id in self._connections[user_id]:
                     # Find and remove the WebSocket
-                    conns = self._connections[user_id][project_id]
+                    self._connections[user_id][project_id]
                     # Since we store the WebSocket directly, we need to search
                     # In practice, we'd store websocket with connection_id mapping
 
@@ -337,8 +338,10 @@ class ConnectionManager:
                     project_messages = sum(
                         self._metadata[cid].message_count
                         for cid in self._metadata
-                        if (self._metadata[cid].user_id == user_id and
-                            self._metadata[cid].project_id == project_id)
+                        if (
+                            self._metadata[cid].user_id == user_id
+                            and self._metadata[cid].project_id == project_id
+                        )
                     )
                     total_messages += project_messages
 
@@ -372,10 +375,7 @@ class ConnectionManager:
                 for project_connections in user_connections.values():
                     total_connections += len(project_connections)
 
-            total_messages = sum(
-                metadata.message_count
-                for metadata in self._metadata.values()
-            )
+            total_messages = sum(metadata.message_count for metadata in self._metadata.values())
 
             return {
                 "total_users": total_users,
@@ -412,8 +412,7 @@ class ConnectionManager:
 
             # Remove all metadata for user
             connection_ids_to_remove = [
-                cid for cid, metadata in self._metadata.items()
-                if metadata.user_id == user_id
+                cid for cid, metadata in self._metadata.items() if metadata.user_id == user_id
             ]
 
             for cid in connection_ids_to_remove:

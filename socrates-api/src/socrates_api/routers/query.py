@@ -156,24 +156,28 @@ async def search_knowledge(
                 if project.notes:
                     for note in project.notes:
                         if query.lower() in note.get("content", "").lower():
-                            results.append({
-                                "type": "note",
-                                "source": f"Project: {project.name}",
-                                "title": note.get("title", "Untitled"),
-                                "content": note.get("content", "")[:200],
-                                "relevance": 0.9,
-                            })
+                            results.append(
+                                {
+                                    "type": "note",
+                                    "source": f"Project: {project.name}",
+                                    "title": note.get("title", "Untitled"),
+                                    "content": note.get("content", "")[:200],
+                                    "relevance": 0.9,
+                                }
+                            )
 
                 # Search in conversation history
                 if project.conversation_history:
                     for msg in project.conversation_history:
                         if query.lower() in str(msg).lower():
-                            results.append({
-                                "type": "message",
-                                "source": f"Project: {project.name}",
-                                "content": str(msg)[:200],
-                                "relevance": 0.7,
-                            })
+                            results.append(
+                                {
+                                    "type": "message",
+                                    "source": f"Project: {project.name}",
+                                    "content": str(msg)[:200],
+                                    "relevance": 0.7,
+                                }
+                            )
         else:
             # Search across all user's projects
             # In production, would use database query

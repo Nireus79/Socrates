@@ -15,7 +15,6 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.responses import StreamingResponse
 
 from socratic_system.database import ProjectDatabase
-from socrates_api.models import SuccessResponse, ErrorResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/events", tags=["events"])
@@ -29,6 +28,7 @@ def get_database() -> ProjectDatabase:
     """Get database instance."""
     from pathlib import Path
     import os
+
     data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
     db_path = os.path.join(data_dir, "projects.db")
     return ProjectDatabase(db_path)
@@ -167,7 +167,7 @@ async def stream_events(
                         yield f"data: {json.dumps(event)}\n\n"
                     except asyncio.TimeoutError:
                         # Keep connection alive with heartbeat
-                        yield f": heartbeat\n\n"
+                        yield ": heartbeat\n\n"
                     except asyncio.CancelledError:
                         break
             finally:

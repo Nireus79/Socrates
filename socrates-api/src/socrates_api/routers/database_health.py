@@ -215,9 +215,7 @@ async def database_health_detailed(
     stats = profiler.get_stats()
     total_queries = sum(s["count"] for s in stats.values())
     slow_queries = sum(s["slow_count"] for s in stats.values())
-    slow_percentage = (
-        (slow_queries / total_queries * 100) if total_queries > 0 else 0
-    )
+    slow_percentage = (slow_queries / total_queries * 100) if total_queries > 0 else 0
 
     avg_times = [s["avg_time_ms"] for s in stats.values() if s["count"] > 0]
     max_times = [s["max_time_ms"] for s in stats.values() if s["count"] > 0]

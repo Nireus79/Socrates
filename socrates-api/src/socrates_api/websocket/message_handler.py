@@ -14,13 +14,13 @@ from enum import Enum
 from typing import Optional, Dict, Any, Callable
 from dataclasses import dataclass
 
-from fastapi import WebSocket
 
 logger = logging.getLogger(__name__)
 
 
 class MessageType(str, Enum):
     """WebSocket message types."""
+
     CHAT_MESSAGE = "chat_message"
     COMMAND = "command"
     PING = "ping"
@@ -30,6 +30,7 @@ class MessageType(str, Enum):
 
 class ResponseType(str, Enum):
     """WebSocket response types."""
+
     ASSISTANT_RESPONSE = "assistant_response"
     EVENT = "event"
     ERROR = "error"
@@ -39,6 +40,7 @@ class ResponseType(str, Enum):
 @dataclass
 class WebSocketMessage:
     """Parsed WebSocket message."""
+
     type: MessageType
     content: str
     metadata: Optional[Dict[str, Any]] = None
@@ -48,6 +50,7 @@ class WebSocketMessage:
 @dataclass
 class WebSocketResponse:
     """WebSocket response to send to client."""
+
     type: ResponseType
     content: Optional[str] = None
     event_type: Optional[str] = None

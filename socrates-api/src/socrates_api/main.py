@@ -22,7 +22,6 @@ from socratic_system.events import EventType
 from socratic_system.exceptions import SocratesError
 from socrates_api.middleware.rate_limit import (
     initialize_limiter,
-    RateLimitConfig,
 )
 from socrates_api.middleware.security_headers import add_security_headers_middleware
 from socrates_api.middleware.metrics import (
@@ -31,11 +30,7 @@ from socrates_api.middleware.metrics import (
     get_metrics_summary,
 )
 
-from .auth import get_current_user
 from .models import (
-    CreateProjectRequest,
-    ProjectResponse,
-    ListProjectsResponse,
     AskQuestionRequest,
     QuestionResponse,
     ProcessResponseRequest,
@@ -109,6 +104,7 @@ def conditional_rate_limit(limit_string: str):
     Conditional rate limit decorator that applies limit if limiter is available.
     Falls back to no limit if limiter is not initialized.
     """
+
     def decorator(func):
         async def wrapper(*args, **kwargs):
             limiter = get_rate_limiter_for_app()
@@ -119,7 +115,9 @@ def conditional_rate_limit(limit_string: str):
             else:
                 # No rate limiting
                 return await func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -171,15 +169,13 @@ add_metrics_middleware(app)
 if environment == "production":
     # Production: Only allow specific origins
     allowed_origins = os.getenv(
-        "ALLOWED_ORIGINS",
-        "https://socrates.app"  # Default production origin
+        "ALLOWED_ORIGINS", "https://socrates.app"  # Default production origin
     ).split(",")
     allowed_origins = [origin.strip() for origin in allowed_origins]
 elif environment == "staging":
     # Staging: Allow staging domains
     allowed_origins = os.getenv(
-        "ALLOWED_ORIGINS",
-        "https://staging.socrates.app,https://socrates-staging.vercel.app"
+        "ALLOWED_ORIGINS", "https://staging.socrates.app,https://socrates-staging.vercel.app"
     ).split(",")
     allowed_origins = [origin.strip() for origin in allowed_origins]
 else:
@@ -214,10 +210,7 @@ app.add_middleware(
     max_age=3600,  # Cache preflight requests for 1 hour
 )
 
-logger.info(
-    f"CORS configured for {environment} environment with origins: {allowed_origins}"
-)
-
+logger.info(f"CORS configured for {environment} environment with origins: {allowed_origins}")
 
 
 # Include API routers
@@ -268,7 +261,9 @@ async def startup_event():
     try:
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
-            logger.warning("ANTHROPIC_API_KEY not set. Orchestrator will be unavailable until /initialize is called with valid key.")
+            logger.warning(
+                "ANTHROPIC_API_KEY not set. Orchestrator will be unavailable until /initialize is called with valid key."
+            )
             return
 
         logger.info(f"ANTHROPIC_API_KEY is set ({api_key[:10]}...)")
@@ -284,8 +279,12 @@ async def startup_event():
             orchestrator.claude_client.test_connection()
             logger.info("Orchestrator initialized successfully with valid API key")
         except Exception as e:
-            logger.warning(f"API key connection test failed (this is normal for test keys): {type(e).__name__}: {str(e)[:100]}")
-            logger.info("Orchestrator initialized with provided API key (operations will fail if key is invalid)")
+            logger.warning(
+                f"API key connection test failed (this is normal for test keys): {type(e).__name__}: {str(e)[:100]}"
+            )
+            logger.info(
+                "Orchestrator initialized with provided API key (operations will fail if key is invalid)"
+            )
 
         # Setup event listeners
         logger.info("Setting up event listeners...")
@@ -303,6 +302,7 @@ async def startup_event():
     except Exception as e:
         logger.error(f"Failed to auto-initialize orchestrator on startup: {type(e).__name__}: {e}")
         import traceback
+
         logger.error(f"Traceback: {traceback.format_exc()}")
 
 
@@ -312,6 +312,7 @@ async def shutdown_event():
     logger.info("Shutting down Socrates API server...")
     # Close database connection
     from socrates_api.database import close_database
+
     close_database()
 
 
@@ -358,7 +359,7 @@ async def detailed_health_check():
         profiler = get_profiler()
         profiler_stats = profiler.get_stats()
         slow_queries = profiler.get_slow_queries(min_slow_count=1)
-    except Exception as e:
+    except Exception:
         profiler_stats = {}
         slow_queries = []
 
@@ -520,7 +521,7 @@ async def initialize(request: Optional[InitializeRequest] = Body(None)):
         if not api_key:
             raise HTTPException(
                 status_code=400,
-                detail="API key is required. Provide api_key in request body or set ANTHROPIC_API_KEY environment variable."
+                detail="API key is required. Provide api_key in request body or set ANTHROPIC_API_KEY environment variable.",
             )
 
         # Create configuration
@@ -560,8 +561,7 @@ async def get_info():
     # Check if orchestrator is initialized
     if app_state.get("orchestrator") is None:
         raise HTTPException(
-            status_code=503,
-            detail="System not initialized. Call /initialize first."
+            status_code=503, detail="System not initialized. Call /initialize first."
         )
 
     uptime = time.time() - app_state["start_time"]
@@ -590,10 +590,7 @@ async def improve_code(request: dict = None):
     """Improve code with AI suggestions"""
     try:
         if not request or "code" not in request:
-            raise HTTPException(
-                status_code=400,
-                detail="Request must include 'code' field"
-            )
+            raise HTTPException(status_code=400, detail="Request must include 'code' field")
 
         code = request.get("code")
         logger.info(f"Improving code: {code[:50]}...")
@@ -605,9 +602,9 @@ async def improve_code(request: dict = None):
             "suggestions": [
                 "Add type hints to function parameters",
                 "Add docstring explaining the function",
-                "Consider using list comprehension if applicable"
+                "Consider using list comprehension if applicable",
             ],
-            "status": "success"
+            "status": "success",
         }
     except HTTPException:
         raise
@@ -631,7 +628,7 @@ async def ask_question(project_id: str, request: AskQuestionRequest):
     except RuntimeError:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="System not initialized. Call /initialize first."
+            detail="System not initialized. Call /initialize first.",
         )
 
     try:
@@ -679,7 +676,7 @@ async def process_response(project_id: str, request: ProcessResponseRequest):
     except RuntimeError:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="System not initialized. Call /initialize first."
+            detail="System not initialized. Call /initialize first.",
         )
 
     try:
@@ -727,7 +724,7 @@ async def generate_code(request: GenerateCodeRequest):
     except RuntimeError:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="System not initialized. Call /initialize first."
+            detail="System not initialized. Call /initialize first.",
         )
 
     try:

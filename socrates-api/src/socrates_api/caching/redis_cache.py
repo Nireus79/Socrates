@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import redis
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False

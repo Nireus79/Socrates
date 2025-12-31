@@ -5,11 +5,10 @@ Provides REST endpoints for managing LLM providers and configurations.
 """
 
 import logging
-from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException, status, Depends, Body
 
-from socrates_api.models import SuccessResponse, ErrorResponse
+from socrates_api.models import SuccessResponse
 from socrates_api.auth import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -40,13 +39,12 @@ async def list_providers(
         logger.info(f"Listing LLM providers for user: {current_user}")
 
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
-            "multi_llm",
-            {"action": "list_providers"}
-        )
+        result = orchestrator.process_request("multi_llm", {"action": "list_providers"})
 
         if result["status"] != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to list providers"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to list providers")
+            )
 
         return SuccessResponse(
             success=True,
@@ -89,12 +87,13 @@ async def get_config(
 
         orchestrator = get_orchestrator()
         result = orchestrator.process_request(
-            "multi_llm",
-            {"action": "get_config", "user_id": current_user}
+            "multi_llm", {"action": "get_config", "user_id": current_user}
         )
 
         if result["status"] != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to get config"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to get config")
+            )
 
         return SuccessResponse(
             success=True,
@@ -140,15 +139,13 @@ async def set_default_provider(
         orchestrator = get_orchestrator()
         result = orchestrator.process_request(
             "multi_llm",
-            {
-                "action": "set_default_provider",
-                "user_id": current_user,
-                "provider": provider
-            }
+            {"action": "set_default_provider", "user_id": current_user, "provider": provider},
         )
 
         if result["status"] != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to set provider"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to set provider")
+            )
 
         return SuccessResponse(
             success=True,
@@ -200,12 +197,14 @@ async def set_api_key(
                 "action": "add_api_key",
                 "user_id": current_user,
                 "provider": provider,
-                "api_key": api_key
-            }
+                "api_key": api_key,
+            },
         )
 
         if result["status"] != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to set API key"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to set API key")
+            )
 
         return SuccessResponse(
             success=True,
@@ -250,16 +249,13 @@ async def get_usage_stats(
 
         orchestrator = get_orchestrator()
         result = orchestrator.process_request(
-            "multi_llm",
-            {
-                "action": "get_usage_stats",
-                "user_id": current_user,
-                "days": days
-            }
+            "multi_llm", {"action": "get_usage_stats", "user_id": current_user, "days": days}
         )
 
         if result["status"] != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to get stats"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to get stats")
+            )
 
         return SuccessResponse(
             success=True,

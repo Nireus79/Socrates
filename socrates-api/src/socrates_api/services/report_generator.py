@@ -8,22 +8,28 @@ Provides PDF and CSV report generation for project analytics, using:
 
 import logging
 import csv
-import io
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any, Tuple, Optional
+from typing import Dict, Any, Tuple, Optional
 
 logger = logging.getLogger(__name__)
 
 # Try to import optional dependencies for report generation
 try:
-    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.lib.pagesizes import letter, A4  # noqa: F401
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import inch
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+    from reportlab.platypus import (
+        SimpleDocTemplate,
+        Paragraph,
+        Spacer,
+        Table,
+        TableStyle,
+        PageBreak,  # noqa: F401
+    )
     from reportlab.lib import colors
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT  # noqa: F401
+
     REPORTLAB_AVAILABLE = True
 except ImportError:
     REPORTLAB_AVAILABLE = False
@@ -31,6 +37,7 @@ except ImportError:
 
 try:
     import pandas as pd
+
     PANDAS_AVAILABLE = True
 except ImportError:
     PANDAS_AVAILABLE = False
@@ -139,7 +146,7 @@ class ReportGenerator:
             )
 
             # Add title
-            elements.append(Paragraph(f"Project Analytics Report", title_style))
+            elements.append(Paragraph("Project Analytics Report", title_style))
             elements.append(Spacer(1, 0.3 * inch))
 
             # Add project information section
@@ -213,7 +220,12 @@ class ReportGenerator:
                         ("FONTSIZE", (0, 0), (-1, -1), 10),
                         ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
                         ("GRID", (0, 0), (-1, -1), 1, colors.grey),
-                        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f0f0f0")]),
+                        (
+                            "ROWBACKGROUNDS",
+                            (0, 1),
+                            (-1, -1),
+                            [colors.white, colors.HexColor("#f0f0f0")],
+                        ),
                     ]
                 )
             )
@@ -239,7 +251,12 @@ class ReportGenerator:
                             ("FONTSIZE", (0, 0), (-1, -1), 10),
                             ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
                             ("GRID", (0, 0), (-1, -1), 1, colors.grey),
-                            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f0f0f0")]),
+                            (
+                                "ROWBACKGROUNDS",
+                                (0, 1),
+                                (-1, -1),
+                                [colors.white, colors.HexColor("#f0f0f0")],
+                            ),
                         ]
                     )
                 )
@@ -247,7 +264,9 @@ class ReportGenerator:
                 elements.append(Spacer(1, 0.3 * inch))
 
             # Add footer
-            footer_text = f"<i>Report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</i>"
+            footer_text = (
+                f"<i>Report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</i>"
+            )
             elements.append(Spacer(1, 0.2 * inch))
             elements.append(Paragraph(footer_text, styles["Normal"]))
 
@@ -301,8 +320,12 @@ class ReportGenerator:
                 f.write("-" * 60 + "\n")
                 f.write(f"Total Questions:        {analytics_data.get('total_questions', 0)}\n")
                 f.write(f"Total Answers:          {analytics_data.get('total_answers', 0)}\n")
-                f.write(f"Code Generation Count:  {analytics_data.get('code_generation_count', 0)}\n")
-                f.write(f"Code Lines Generated:   {analytics_data.get('code_lines_generated', 0)}\n")
+                f.write(
+                    f"Code Generation Count:  {analytics_data.get('code_generation_count', 0)}\n"
+                )
+                f.write(
+                    f"Code Lines Generated:   {analytics_data.get('code_lines_generated', 0)}\n"
+                )
                 f.write(f"Confidence Score:       {analytics_data.get('confidence_score', 0)}%\n")
                 f.write(f"Learning Velocity:      {analytics_data.get('learning_velocity', 0)}%\n")
                 f.write(
@@ -317,9 +340,7 @@ class ReportGenerator:
                     f.write("\n")
 
                 f.write("=" * 60 + "\n")
-                f.write(
-                    f"Report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-                )
+                f.write(f"Report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
             logger.info(f"Fallback text report generated: {filepath}")
             return True, str(filepath), ""
@@ -353,7 +374,9 @@ class ReportGenerator:
             if PANDAS_AVAILABLE:
                 return self._generate_csv_pandas(filepath, project_id, project_data, analytics_data)
             else:
-                return self._generate_csv_standard(filepath, project_id, project_data, analytics_data)
+                return self._generate_csv_standard(
+                    filepath, project_id, project_data, analytics_data
+                )
 
         except Exception as e:
             logger.error(f"Error generating CSV report: {e}")
@@ -398,19 +421,36 @@ class ReportGenerator:
             analytics_list = [
                 {"Metric": "Total Questions", "Value": analytics_data.get("total_questions", 0)},
                 {"Metric": "Total Answers", "Value": analytics_data.get("total_answers", 0)},
-                {"Metric": "Code Generation Count", "Value": analytics_data.get("code_generation_count", 0)},
-                {"Metric": "Code Lines Generated", "Value": analytics_data.get("code_lines_generated", 0)},
-                {"Metric": "Confidence Score (%)", "Value": analytics_data.get("confidence_score", 0)},
-                {"Metric": "Learning Velocity (%)", "Value": analytics_data.get("learning_velocity", 0)},
-                {"Metric": "Average Response Time (s)", "Value": analytics_data.get("average_response_time", 0)},
+                {
+                    "Metric": "Code Generation Count",
+                    "Value": analytics_data.get("code_generation_count", 0),
+                },
+                {
+                    "Metric": "Code Lines Generated",
+                    "Value": analytics_data.get("code_lines_generated", 0),
+                },
+                {
+                    "Metric": "Confidence Score (%)",
+                    "Value": analytics_data.get("confidence_score", 0),
+                },
+                {
+                    "Metric": "Learning Velocity (%)",
+                    "Value": analytics_data.get("learning_velocity", 0),
+                },
+                {
+                    "Metric": "Average Response Time (s)",
+                    "Value": analytics_data.get("average_response_time", 0),
+                },
             ]
 
             if "categories" in analytics_data:
                 for category, count in analytics_data["categories"].items():
-                    analytics_list.append({
-                        "Metric": f"{category.title()} Count",
-                        "Value": count,
-                    })
+                    analytics_list.append(
+                        {
+                            "Metric": f"{category.title()} Count",
+                            "Value": count,
+                        }
+                    )
 
             analytics_df = pd.DataFrame(analytics_list)
 
@@ -470,11 +510,19 @@ class ReportGenerator:
                 writer.writerow(["Metric", "Value"])
                 writer.writerow(["Total Questions", analytics_data.get("total_questions", 0)])
                 writer.writerow(["Total Answers", analytics_data.get("total_answers", 0)])
-                writer.writerow(["Code Generation Count", analytics_data.get("code_generation_count", 0)])
-                writer.writerow(["Code Lines Generated", analytics_data.get("code_lines_generated", 0)])
+                writer.writerow(
+                    ["Code Generation Count", analytics_data.get("code_generation_count", 0)]
+                )
+                writer.writerow(
+                    ["Code Lines Generated", analytics_data.get("code_lines_generated", 0)]
+                )
                 writer.writerow(["Confidence Score (%)", analytics_data.get("confidence_score", 0)])
-                writer.writerow(["Learning Velocity (%)", analytics_data.get("learning_velocity", 0)])
-                writer.writerow(["Average Response Time (s)", analytics_data.get("average_response_time", 0)])
+                writer.writerow(
+                    ["Learning Velocity (%)", analytics_data.get("learning_velocity", 0)]
+                )
+                writer.writerow(
+                    ["Average Response Time (s)", analytics_data.get("average_response_time", 0)]
+                )
 
                 # Categories if available
                 if "categories" in analytics_data:

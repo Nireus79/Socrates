@@ -42,13 +42,27 @@ def _get_orchestrator():
     if app_state.get("orchestrator") is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="System not initialized. Call /initialize first."
+            detail="System not initialized. Call /initialize first.",
         )
     return app_state["orchestrator"]
 
 
+def _get_rate_limit_decorator(limit_str: str):
+    """Get rate limit decorator - handles both available and unavailable limiter."""
+    if limiter:
+        return limiter.limit(limit_str)
+    else:
+        # No-op decorator
+        return lambda f: f
+
+
+# Create rate limit decorators for free_session endpoints
+_free_session_limit = _get_rate_limit_decorator("20/minute")  # FREE_SESSION_LIMIT: 20 per minute
+
+
 class FreeSessionQuestion(BaseModel):
     """Pre-session Q&A request"""
+
     question: str
     session_id: Optional[str] = None  # Optional session ID for continuing conversation
     context: Optional[dict] = None
@@ -56,6 +70,7 @@ class FreeSessionQuestion(BaseModel):
 
 class FreeSessionAnswer(BaseModel):
     """Pre-session Q&A response"""
+
     answer: str
     has_context: bool
     session_id: str
@@ -65,6 +80,7 @@ class FreeSessionAnswer(BaseModel):
 
 class FreeSessionSession(BaseModel):
     """free-session session information"""
+
     session_id: str
     started_at: str
     last_activity: str
@@ -75,6 +91,7 @@ class FreeSessionSession(BaseModel):
 
 class ProjectRecommendation(BaseModel):
     """Recommended project based on conversation"""
+
     name: str
     description: str
     suggested_phase: str
@@ -98,8 +115,10 @@ async def _extract_conversation_topics(conversation_history: List[Dict]) -> List
 
         # Build conversation text
         conversation_text = "\n".join(
-            [f"{msg.get('role', 'unknown')}: {msg.get('content', '')}"
-             for msg in conversation_history[-10:]]  # Last 10 messages for context
+            [
+                f"{msg.get('role', 'unknown')}: {msg.get('content', '')}"
+                for msg in conversation_history[-10:]
+            ]  # Last 10 messages for context
         )
 
         orchestrator = _get_orchestrator()
@@ -117,6 +136,7 @@ Return ONLY a JSON array of topics (strings), like: ["web development", "python"
 
         # Parse JSON response
         import json
+
         try:
             topics = json.loads(response)
             return topics if isinstance(topics, list) else []
@@ -176,7 +196,7 @@ async def _generate_command_suggestions(
     status_code=status.HTTP_200_OK,
     summary="Ask a question during pre-session chat with conversation history",
 )
-@(limiter.limit("20/minute") if limiter else lambda f: f)  # FREE_SESSION_LIMIT: 20 per minute
+@_free_session_limit
 async def ask_question(
     request: FreeSessionQuestion,
     current_user: str = Depends(get_current_user),
@@ -226,8 +246,8 @@ async def ask_question(
                     "has_context": False,
                     "session_id": str(uuid.uuid4()),
                     "suggested_commands": [],
-                    "topics_detected": []
-                }
+                    "topics_detected": [],
+                },
             )
 
         question = request.question.strip()
@@ -239,9 +259,11 @@ async def ask_question(
         )
 
         # Get orchestrator (database is already injected as parameter)
-        logger.info(f"[free-session] Getting orchestrator...")
+        logger.info("[free-session] Getting orchestrator...")
         orchestrator = _get_orchestrator()
-        logger.info(f"[free-session] Orchestrator status: claude_client={orchestrator.claude_client is not None}")
+        logger.info(
+            f"[free-session] Orchestrator status: claude_client={orchestrator.claude_client is not None}"
+        )
 
         # Load conversation history for context
         logger.info(f"[free-session] Loading conversation history for {current_user}...")
@@ -261,14 +283,16 @@ async def ask_question(
             logger.warning(f"Could not search knowledge base: {e}")
 
         # Build prompt with conversation history context
-        logger.info(f"[free-session] Building prompt...")
+        logger.info("[free-session] Building prompt...")
         prompt = _build_answer_prompt(question, relevant_context, conversation_history)
         logger.info(f"[free-session] Prompt built, length={len(prompt)}")
 
         # Get answer from Claude
-        logger.info(f"[free-session] Calling Claude API...")
+        logger.info("[free-session] Calling Claude API...")
         answer = orchestrator.claude_client.generate_response(prompt)
-        logger.info(f"[free-session] Claude response received, length={len(answer) if answer else 0}")
+        logger.info(
+            f"[free-session] Claude response received, length={len(answer) if answer else 0}"
+        )
 
         # Save user question to conversation history
         db.save_free_session_message(
@@ -289,13 +313,12 @@ async def ask_question(
         )
 
         # Extract topics and generate command suggestions
-        topics = await _extract_conversation_topics(conversation_history + [
-            {"role": "user", "content": question},
-            {"role": "assistant", "content": answer}
-        ])
+        topics = await _extract_conversation_topics(
+            conversation_history
+            + [{"role": "user", "content": question}, {"role": "assistant", "content": answer}]
+        )
         suggested_commands = await _generate_command_suggestions(
-            conversation_history + [{"role": "user", "content": question}],
-            topics
+            conversation_history + [{"role": "user", "content": question}], topics
         )
 
         logger.info(
@@ -311,12 +334,15 @@ async def ask_question(
                 "session_id": session_id,
                 "suggested_commands": suggested_commands,
                 "topics_detected": topics,
-            }
+            },
         )
 
     except Exception as e:
-        logger.error(f"[free-session] ERROR in ask_question: {type(e).__name__}: {e}", exc_info=True)
+        logger.error(
+            f"[free-session] ERROR in ask_question: {type(e).__name__}: {e}", exc_info=True
+        )
         import traceback
+
         logger.error(f"[free-session] Traceback: {traceback.format_exc()}")
         return SuccessResponse(
             message="Error generating answer",
@@ -326,7 +352,7 @@ async def ask_question(
                 "session_id": request.session_id or str(uuid.uuid4()),
                 "suggested_commands": [],
                 "topics_detected": [],
-            }
+            },
         )
 
 
@@ -356,8 +382,10 @@ Relevant Knowledge:
         # Include last 5 messages for context
         recent_messages = conversation_history[-5:]
         conversation_text = "\n".join(
-            [f"{msg.get('role', 'unknown').title()}: {msg.get('content', '')}"
-             for msg in recent_messages]
+            [
+                f"{msg.get('role', 'unknown').title()}: {msg.get('content', '')}"
+                for msg in recent_messages
+            ]
         )
         conversation_context = f"""
 Previous conversation context:
@@ -514,6 +542,7 @@ async def get_free_session_session(
 async def delete_free_session_session(
     session_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ) -> SuccessResponse:
     """
     Delete a free_session conversation session and all its messages.
@@ -569,6 +598,7 @@ async def delete_free_session_session(
 async def get_project_recommendations(
     session_id: Optional[str] = None,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ) -> SuccessResponse:
     """
     Get project recommendations based on analyzed free_session conversation topics.
@@ -620,9 +650,7 @@ async def get_project_recommendations(
         # Generate recommendations based on topics
         recommendations = _generate_project_recommendations(topics)
 
-        logger.info(
-            f"Generated {len(recommendations)} project recommendations for {current_user}"
-        )
+        logger.info(f"Generated {len(recommendations)} project recommendations for {current_user}")
 
         return SuccessResponse(
             message="Recommendations generated successfully",

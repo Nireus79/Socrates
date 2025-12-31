@@ -9,7 +9,7 @@ Provides REST endpoints for chat operations on projects including:
 """
 
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Optional
 from datetime import datetime, timezone
 import uuid
 
@@ -17,9 +17,12 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 
 from socrates_api.models import (
-    SuccessResponse, ErrorResponse,
-    CreateChatSessionRequest, ChatSessionResponse, ListChatSessionsResponse,
-    ChatMessageRequest, ChatMessage, GetChatMessagesResponse
+    CreateChatSessionRequest,
+    ChatSessionResponse,
+    ListChatSessionsResponse,
+    ChatMessageRequest,
+    ChatMessage,
+    GetChatMessagesResponse,
 )
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
@@ -27,12 +30,15 @@ from socrates_api.database import get_database
 
 class ChatModeRequest(BaseModel):
     """Request body for switching chat mode"""
+
     mode: str
 
 
 class SearchRequest(BaseModel):
     """Request body for searching conversations"""
+
     query: str
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["chat"])
@@ -41,6 +47,7 @@ router = APIRouter(prefix="/projects", tags=["chat"])
 # ============================================================================
 # Chat Sessions Endpoints (Phase 2)
 # ============================================================================
+
 
 @router.post(
     "/{project_id}/chat/sessions",
@@ -74,7 +81,7 @@ async def create_chat_session(
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Initialize sessions storage if needed
-        if not hasattr(project, 'chat_sessions'):
+        if not hasattr(project, "chat_sessions"):
             project.chat_sessions = {}
 
         # Create new session
@@ -89,7 +96,7 @@ async def create_chat_session(
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),
             "archived": False,
-            "messages": []
+            "messages": [],
         }
 
         project.chat_sessions[session_id] = session
@@ -103,7 +110,7 @@ async def create_chat_session(
             created_at=now,
             updated_at=now,
             archived=False,
-            message_count=0
+            message_count=0,
         )
 
     except HTTPException:
@@ -146,28 +153,31 @@ async def list_chat_sessions(
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Get sessions
-        sessions_dict = getattr(project, 'chat_sessions', {})
+        sessions_dict = getattr(project, "chat_sessions", {})
         sessions_list = []
 
         for session_id, session in sessions_dict.items():
-            created_at = datetime.fromisoformat(session.get('created_at', datetime.now(timezone.utc).isoformat()))
-            updated_at = datetime.fromisoformat(session.get('updated_at', datetime.now(timezone.utc).isoformat()))
+            created_at = datetime.fromisoformat(
+                session.get("created_at", datetime.now(timezone.utc).isoformat())
+            )
+            updated_at = datetime.fromisoformat(
+                session.get("updated_at", datetime.now(timezone.utc).isoformat())
+            )
 
-            sessions_list.append(ChatSessionResponse(
-                session_id=session.get('session_id'),
-                project_id=session.get('project_id'),
-                user_id=session.get('user_id'),
-                title=session.get('title'),
-                created_at=created_at,
-                updated_at=updated_at,
-                archived=session.get('archived', False),
-                message_count=len(session.get('messages', []))
-            ))
+            sessions_list.append(
+                ChatSessionResponse(
+                    session_id=session.get("session_id"),
+                    project_id=session.get("project_id"),
+                    user_id=session.get("user_id"),
+                    title=session.get("title"),
+                    created_at=created_at,
+                    updated_at=updated_at,
+                    archived=session.get("archived", False),
+                    message_count=len(session.get("messages", [])),
+                )
+            )
 
-        return ListChatSessionsResponse(
-            sessions=sessions_list,
-            total=len(sessions_list)
-        )
+        return ListChatSessionsResponse(sessions=sessions_list, total=len(sessions_list))
 
     except HTTPException:
         raise
@@ -211,23 +221,27 @@ async def get_chat_session(
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Get session
-        sessions_dict = getattr(project, 'chat_sessions', {})
+        sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Chat session not found")
 
-        created_at = datetime.fromisoformat(session.get('created_at', datetime.now(timezone.utc).isoformat()))
-        updated_at = datetime.fromisoformat(session.get('updated_at', datetime.now(timezone.utc).isoformat()))
+        created_at = datetime.fromisoformat(
+            session.get("created_at", datetime.now(timezone.utc).isoformat())
+        )
+        updated_at = datetime.fromisoformat(
+            session.get("updated_at", datetime.now(timezone.utc).isoformat())
+        )
 
         return ChatSessionResponse(
-            session_id=session.get('session_id'),
-            project_id=session.get('project_id'),
-            user_id=session.get('user_id'),
-            title=session.get('title'),
+            session_id=session.get("session_id"),
+            project_id=session.get("project_id"),
+            user_id=session.get("user_id"),
+            title=session.get("title"),
             created_at=created_at,
             updated_at=updated_at,
-            archived=session.get('archived', False),
-            message_count=len(session.get('messages', []))
+            archived=session.get("archived", False),
+            message_count=len(session.get("messages", [])),
         )
 
     except HTTPException:
@@ -271,7 +285,7 @@ async def delete_chat_session(
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Delete session
-        sessions_dict = getattr(project, 'chat_sessions', {})
+        sessions_dict = getattr(project, "chat_sessions", {})
         if session_id not in sessions_dict:
             raise HTTPException(status_code=404, detail="Chat session not found")
 
@@ -324,7 +338,7 @@ async def send_chat_message(
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Get session
-        sessions_dict = getattr(project, 'chat_sessions', {})
+        sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Chat session not found")
@@ -341,7 +355,7 @@ async def send_chat_message(
             "role": request.role,
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),
-            "metadata": None
+            "metadata": None,
         }
 
         session["messages"].append(message)
@@ -356,7 +370,7 @@ async def send_chat_message(
             role=request.role,
             created_at=now,
             updated_at=now,
-            metadata=None
+            metadata=None,
         )
 
     except HTTPException:
@@ -403,38 +417,42 @@ async def get_chat_messages(
             raise HTTPException(status_code=404, detail="Project not found")
 
         # Get session
-        sessions_dict = getattr(project, 'chat_sessions', {})
+        sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Chat session not found")
 
         # Get messages
         messages_list = []
-        messages = session.get('messages', [])
+        messages = session.get("messages", [])
 
         # Apply limit if specified
         if limit and limit > 0:
             messages = messages[-limit:]
 
         for msg in messages:
-            created_at = datetime.fromisoformat(msg.get('created_at', datetime.now(timezone.utc).isoformat()))
-            updated_at = datetime.fromisoformat(msg.get('updated_at', datetime.now(timezone.utc).isoformat()))
+            created_at = datetime.fromisoformat(
+                msg.get("created_at", datetime.now(timezone.utc).isoformat())
+            )
+            updated_at = datetime.fromisoformat(
+                msg.get("updated_at", datetime.now(timezone.utc).isoformat())
+            )
 
-            messages_list.append(ChatMessage(
-                message_id=msg.get('message_id'),
-                session_id=msg.get('session_id'),
-                user_id=msg.get('user_id'),
-                content=msg.get('content'),
-                role=msg.get('role'),
-                created_at=created_at,
-                updated_at=updated_at,
-                metadata=msg.get('metadata')
-            ))
+            messages_list.append(
+                ChatMessage(
+                    message_id=msg.get("message_id"),
+                    session_id=msg.get("session_id"),
+                    user_id=msg.get("user_id"),
+                    content=msg.get("content"),
+                    role=msg.get("role"),
+                    created_at=created_at,
+                    updated_at=updated_at,
+                    metadata=msg.get("metadata"),
+                )
+            )
 
         return GetChatMessagesResponse(
-            messages=messages_list,
-            total=len(session.get('messages', [])),
-            session_id=session_id
+            messages=messages_list, total=len(session.get("messages", [])), session_id=session_id
         )
 
     except HTTPException:
@@ -485,11 +503,13 @@ async def get_question(
                 "action": "generate_question",
                 "project": project,
                 "current_user": current_user,
-            }
+            },
         )
 
         if result.get("status") != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to generate question"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to generate question")
+            )
 
         # Persist any project state changes
         db.save_project(project)
@@ -553,11 +573,13 @@ async def send_message(
                 "response": request.message,
                 "current_user": current_user,
                 "is_api_mode": True,  # Indicate API mode to handle conflicts differently
-            }
+            },
         )
 
         if result.get("status") != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to process message"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to process message")
+            )
 
         # Persist project changes to database (conversation history, maturity, etc.)
         db.save_project(project)
@@ -573,7 +595,7 @@ async def send_message(
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 },
                 "conflicts_pending": True,
-                "conflicts": result.get("conflicts", [])
+                "conflicts": result.get("conflicts", []),
             }
 
         # Format insights for response
@@ -761,7 +783,7 @@ async def get_hint(
             {
                 "action": "generate_hint",
                 "project": project,
-            }
+            },
         )
 
         if result.get("status") != "success":
@@ -867,11 +889,13 @@ async def get_summary(
             {
                 "action": "generate_summary",
                 "project": project,
-            }
+            },
         )
 
         if result.get("status") != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to generate summary"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to generate summary")
+            )
 
         # Return unwrapped data (frontend expects this format)
         return {
@@ -922,10 +946,7 @@ async def search_conversations(
 
         # Search in conversation history
         history = project.conversation_history or []
-        results = [
-            msg for msg in history
-            if request.query.lower() in str(msg).lower()
-        ]
+        results = [msg for msg in history if request.query.lower() in str(msg).lower()]
 
         # Return unwrapped data (frontend expects this format)
         return {"results": results}
@@ -1101,9 +1122,13 @@ async def get_maturity_status(
             for phase, categories in project.category_scores.items():
                 for category, score in categories.items():
                     if score >= 75:
-                        strong_categories.append({"phase": phase, "category": category, "score": score})
+                        strong_categories.append(
+                            {"phase": phase, "category": category, "score": score}
+                        )
                     elif score < 25:
-                        weak_categories.append({"phase": phase, "category": category, "score": score})
+                        weak_categories.append(
+                            {"phase": phase, "category": category, "score": score}
+                        )
 
         return {
             "project_id": project_id,

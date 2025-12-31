@@ -50,9 +50,7 @@ class PasswordManager:
         """
         try:
             # Encode password and hash for comparison
-            return bcrypt.checkpw(
-                password.encode("utf-8"), password_hash.encode("utf-8")
-            )
+            return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
         except (ValueError, TypeError):
             # Hash is invalid or corrupted
             return False

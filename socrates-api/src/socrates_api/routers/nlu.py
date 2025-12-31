@@ -27,6 +27,7 @@ router = APIRouter(prefix="/nlu", tags=["nlu"])
 
 class CommandSuggestionResponse(BaseModel):
     """Single command suggestion from NLU interpreter"""
+
     command: str
     confidence: float
     reasoning: str
@@ -35,12 +36,14 @@ class CommandSuggestionResponse(BaseModel):
 
 class NLUInterpretRequest(BaseModel):
     """Request to interpret natural language input"""
+
     input: str
     context: Optional[dict] = None
 
 
 class NLUInterpretResponse(BaseModel):
     """Response from NLU interpretation"""
+
     status: str  # "success", "suggestions", "no_match", or "error"
     command: Optional[str] = None
     suggestions: Optional[List[CommandSuggestionResponse]] = None
@@ -62,6 +65,7 @@ async def _extract_entities(text: str, context: Optional[dict] = None) -> Dict[s
     """
     try:
         from socrates_api.main import get_orchestrator
+
         orchestrator = get_orchestrator()
 
         prompt = f"""Analyze this user input and extract structured entities.
@@ -92,7 +96,7 @@ Respond ONLY with valid JSON."""
                 "object": None,
                 "parameters": [],
                 "intent_category": "query",
-                "confidence": 0.0
+                "confidence": 0.0,
             }
     except Exception as e:
         logger.warning(f"Error extracting entities: {str(e)}")
@@ -101,11 +105,13 @@ Respond ONLY with valid JSON."""
             "object": None,
             "parameters": [],
             "intent_category": "query",
-            "confidence": 0.0
+            "confidence": 0.0,
         }
 
 
-async def _get_ai_command_suggestions(text: str, context: Optional[dict] = None) -> List[Dict[str, Any]]:
+async def _get_ai_command_suggestions(
+    text: str, context: Optional[dict] = None
+) -> List[Dict[str, Any]]:
     """
     Get AI-powered command suggestions using Claude.
 
@@ -118,6 +124,7 @@ async def _get_ai_command_suggestions(text: str, context: Optional[dict] = None)
     """
     try:
         from socrates_api.main import get_orchestrator
+
         orchestrator = get_orchestrator()
 
         # Build context string for better suggestions
@@ -213,7 +220,7 @@ async def interpret_input(
                     "message": "Please enter a command or question.",
                     "entities": None,
                     "intent": None,
-                }
+                },
             )
 
         user_input = request.input.strip()
@@ -221,7 +228,7 @@ async def interpret_input(
         logger.info(f"NLU interpretation request from user {current_user}: '{request.input}'")
 
         # Check if input is a direct command (starts with /)
-        if user_input.startswith('/'):
+        if user_input.startswith("/"):
             # Direct command - return as-is
             logger.debug(f"Direct command detected: {user_input}")
             return SuccessResponse(
@@ -232,7 +239,7 @@ async def interpret_input(
                     "message": f"Understood! Executing: {user_input}",
                     "entities": None,
                     "intent": "direct_command",
-                }
+                },
             )
 
         # Try AI-powered interpretation first
@@ -259,7 +266,7 @@ async def interpret_input(
                         "message": "I found some relevant commands:",
                         "entities": entities,
                         "intent": intent,
-                    }
+                    },
                 )
 
         # Fall back to keyword-based matching if AI confidence is low
@@ -305,18 +312,22 @@ async def interpret_input(
         for phrase, command in command_map.items():
             if phrase in user_input_lower:
                 confidence = 0.9 if phrase in user_input_lower else 0.5
-                if phrase in user_input_lower and len(phrase.split()) == len(user_input_lower.split()):
+                if phrase in user_input_lower and len(phrase.split()) == len(
+                    user_input_lower.split()
+                ):
                     # Exact match
                     matched_command = command
                     confidence = 0.95
                 else:
                     # Partial match
-                    suggestions.append({
-                        "command": command,
-                        "confidence": confidence,
-                        "reasoning": f"Matched keyword: {phrase}",
-                        "args": []
-                    })
+                    suggestions.append(
+                        {
+                            "command": command,
+                            "confidence": confidence,
+                            "reasoning": f"Matched keyword: {phrase}",
+                            "args": [],
+                        }
+                    )
 
         # If exact match found, return it
         if matched_command:
@@ -329,7 +340,7 @@ async def interpret_input(
                     "message": f"Understood! Executing: {matched_command}",
                     "entities": entities,
                     "intent": intent,
-                }
+                },
             )
 
         # If suggestions found, return them
@@ -345,7 +356,7 @@ async def interpret_input(
                     "message": "Did you mean one of these?",
                     "entities": entities,
                     "intent": intent,
-                }
+                },
             )
 
         # No match found
@@ -357,7 +368,7 @@ async def interpret_input(
                 "message": "I didn't understand that. Try:\n• Describing what you want (analyze, test, fix, etc.)\n• Typing a command like /help\n• Selecting a project from the dropdown",
                 "entities": entities,
                 "intent": intent,
-            }
+            },
         )
 
     except Exception as e:
@@ -366,10 +377,10 @@ async def interpret_input(
             message="Error processing your request. Please try again.",
             data={
                 "status": "error",
-                "message": f"Error processing your request. Please try again.",
+                "message": "Error processing your request. Please try again.",
                 "entities": None,
                 "intent": None,
-            }
+            },
         )
 
 
@@ -429,55 +440,175 @@ async def get_available_commands(
         # Static list of available commands organized by category
         commands_by_category = {
             "system": [
-                {"name": "help", "usage": "/help", "description": "Show help and available commands", "aliases": ["h", "?"]},
-                {"name": "status", "usage": "/status", "description": "Show current status", "aliases": []},
-                {"name": "info", "usage": "/info", "description": "Show system information", "aliases": []},
+                {
+                    "name": "help",
+                    "usage": "/help",
+                    "description": "Show help and available commands",
+                    "aliases": ["h", "?"],
+                },
+                {
+                    "name": "status",
+                    "usage": "/status",
+                    "description": "Show current status",
+                    "aliases": [],
+                },
+                {
+                    "name": "info",
+                    "usage": "/info",
+                    "description": "Show system information",
+                    "aliases": [],
+                },
             ],
             "project": [
-                {"name": "project analyze", "usage": "/project analyze", "description": "Analyze project structure", "aliases": []},
-                {"name": "project test", "usage": "/project test", "description": "Run tests", "aliases": []},
-                {"name": "project fix", "usage": "/project fix", "description": "Apply fixes", "aliases": []},
-                {"name": "project validate", "usage": "/project validate", "description": "Validate project", "aliases": []},
-                {"name": "project review", "usage": "/project review", "description": "Code review", "aliases": []},
+                {
+                    "name": "project analyze",
+                    "usage": "/project analyze",
+                    "description": "Analyze project structure",
+                    "aliases": [],
+                },
+                {
+                    "name": "project test",
+                    "usage": "/project test",
+                    "description": "Run tests",
+                    "aliases": [],
+                },
+                {
+                    "name": "project fix",
+                    "usage": "/project fix",
+                    "description": "Apply fixes",
+                    "aliases": [],
+                },
+                {
+                    "name": "project validate",
+                    "usage": "/project validate",
+                    "description": "Validate project",
+                    "aliases": [],
+                },
+                {
+                    "name": "project review",
+                    "usage": "/project review",
+                    "description": "Code review",
+                    "aliases": [],
+                },
             ],
             "chat": [
-                {"name": "advance", "usage": "/advance", "description": "Advance to next phase", "aliases": []},
+                {
+                    "name": "advance",
+                    "usage": "/advance",
+                    "description": "Advance to next phase",
+                    "aliases": [],
+                },
                 {"name": "done", "usage": "/done", "description": "Finish session", "aliases": []},
-                {"name": "ask", "usage": "/ask <question>", "description": "Ask a question", "aliases": []},
+                {
+                    "name": "ask",
+                    "usage": "/ask <question>",
+                    "description": "Ask a question",
+                    "aliases": [],
+                },
                 {"name": "hint", "usage": "/hint", "description": "Get a hint", "aliases": []},
-                {"name": "explain", "usage": "/explain <topic>", "description": "Explain a concept", "aliases": []},
+                {
+                    "name": "explain",
+                    "usage": "/explain <topic>",
+                    "description": "Explain a concept",
+                    "aliases": [],
+                },
             ],
             "docs": [
-                {"name": "docs import", "usage": "/docs import", "description": "Import file", "aliases": []},
-                {"name": "docs import-url", "usage": "/docs import-url <url>", "description": "Import from URL", "aliases": []},
-                {"name": "docs list", "usage": "/docs list", "description": "List documents", "aliases": []},
-                {"name": "code generate", "usage": "/code generate", "description": "Generate code", "aliases": []},
-                {"name": "code docs", "usage": "/code docs", "description": "Generate documentation", "aliases": []},
+                {
+                    "name": "docs import",
+                    "usage": "/docs import",
+                    "description": "Import file",
+                    "aliases": [],
+                },
+                {
+                    "name": "docs import-url",
+                    "usage": "/docs import-url <url>",
+                    "description": "Import from URL",
+                    "aliases": [],
+                },
+                {
+                    "name": "docs list",
+                    "usage": "/docs list",
+                    "description": "List documents",
+                    "aliases": [],
+                },
+                {
+                    "name": "code generate",
+                    "usage": "/code generate",
+                    "description": "Generate code",
+                    "aliases": [],
+                },
+                {
+                    "name": "code docs",
+                    "usage": "/code docs",
+                    "description": "Generate documentation",
+                    "aliases": [],
+                },
             ],
             "collaboration": [
-                {"name": "collab add", "usage": "/collab add <username>", "description": "Add collaborator", "aliases": []},
-                {"name": "collab list", "usage": "/collab list", "description": "List collaborators", "aliases": []},
-                {"name": "collab remove", "usage": "/collab remove <username>", "description": "Remove collaborator", "aliases": []},
-                {"name": "skills list", "usage": "/skills list", "description": "List skills", "aliases": []},
-                {"name": "note list", "usage": "/note list", "description": "List notes", "aliases": []},
+                {
+                    "name": "collab add",
+                    "usage": "/collab add <username>",
+                    "description": "Add collaborator",
+                    "aliases": [],
+                },
+                {
+                    "name": "collab list",
+                    "usage": "/collab list",
+                    "description": "List collaborators",
+                    "aliases": [],
+                },
+                {
+                    "name": "collab remove",
+                    "usage": "/collab remove <username>",
+                    "description": "Remove collaborator",
+                    "aliases": [],
+                },
+                {
+                    "name": "skills list",
+                    "usage": "/skills list",
+                    "description": "List skills",
+                    "aliases": [],
+                },
+                {
+                    "name": "note list",
+                    "usage": "/note list",
+                    "description": "List notes",
+                    "aliases": [],
+                },
             ],
             "subscription": [
-                {"name": "subscription status", "usage": "/subscription status", "description": "Show subscription status", "aliases": []},
-                {"name": "subscription upgrade", "usage": "/subscription upgrade <plan>", "description": "Upgrade subscription", "aliases": []},
-                {"name": "subscription compare", "usage": "/subscription compare", "description": "Compare plans", "aliases": []},
+                {
+                    "name": "subscription status",
+                    "usage": "/subscription status",
+                    "description": "Show subscription status",
+                    "aliases": [],
+                },
+                {
+                    "name": "subscription upgrade",
+                    "usage": "/subscription upgrade <plan>",
+                    "description": "Upgrade subscription",
+                    "aliases": [],
+                },
+                {
+                    "name": "subscription compare",
+                    "usage": "/subscription compare",
+                    "description": "Compare plans",
+                    "aliases": [],
+                },
             ],
         }
 
         return SuccessResponse(
             message="Available commands retrieved successfully",
-            data={"commands": commands_by_category}
+            data={"commands": commands_by_category},
         )
 
     except Exception as e:
         logger.error(f"Error retrieving commands: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve available commands"
+            detail="Failed to retrieve available commands",
         )
 
 
@@ -542,124 +673,111 @@ async def get_context_aware_suggestions(
                 {
                     "command": "/hint",
                     "reasoning": "Get guidance on project specification",
-                    "priority": "high"
+                    "priority": "high",
                 },
                 {
                     "command": "/help",
                     "reasoning": "Learn about available features",
-                    "priority": "medium"
+                    "priority": "medium",
                 },
                 {
                     "command": "/advance",
                     "reasoning": "Move to next phase when ready",
-                    "priority": "medium"
+                    "priority": "medium",
                 },
             ],
             "analysis": [
                 {
                     "command": "/project analyze",
                     "reasoning": "Analyze project requirements and structure",
-                    "priority": "high"
+                    "priority": "high",
                 },
                 {
                     "command": "/code generate",
                     "reasoning": "Generate code templates based on analysis",
-                    "priority": "medium"
+                    "priority": "medium",
                 },
                 {
                     "command": "/summary",
                     "reasoning": "Review conversation summary",
-                    "priority": "low"
+                    "priority": "low",
                 },
             ],
             "design": [
                 {
                     "command": "/code generate",
                     "reasoning": "Generate design documentation",
-                    "priority": "high"
+                    "priority": "high",
                 },
                 {
                     "command": "/code docs",
                     "reasoning": "Create API documentation",
-                    "priority": "high"
+                    "priority": "high",
                 },
                 {
                     "command": "/project review",
                     "reasoning": "Get design review feedback",
-                    "priority": "medium"
+                    "priority": "medium",
                 },
             ],
             "implementation": [
                 {
                     "command": "/project test",
                     "reasoning": "Run tests and validate implementation",
-                    "priority": "high"
+                    "priority": "high",
                 },
                 {
                     "command": "/project fix",
                     "reasoning": "Apply fixes for issues",
-                    "priority": "high"
+                    "priority": "high",
                 },
                 {
                     "command": "/code generate",
                     "reasoning": "Generate additional code sections",
-                    "priority": "medium"
+                    "priority": "medium",
                 },
             ],
             "review": [
                 {
                     "command": "/project review",
                     "reasoning": "Conduct code review",
-                    "priority": "high"
+                    "priority": "high",
                 },
                 {
                     "command": "/project test",
                     "reasoning": "Verify all tests pass",
-                    "priority": "high"
+                    "priority": "high",
                 },
                 {
                     "command": "/advance",
                     "reasoning": "Move to next phase after review",
-                    "priority": "medium"
+                    "priority": "medium",
                 },
             ],
             "deployment": [
                 {
                     "command": "/project validate",
                     "reasoning": "Validate deployment readiness",
-                    "priority": "high"
+                    "priority": "high",
                 },
                 {
                     "command": "/status",
                     "reasoning": "Check deployment status",
-                    "priority": "medium"
+                    "priority": "medium",
                 },
-                {
-                    "command": "/done",
-                    "reasoning": "Complete the project",
-                    "priority": "medium"
-                },
+                {"command": "/done", "reasoning": "Complete the project", "priority": "medium"},
             ],
         }
 
         # Get suggestions for current phase
         suggestions = phase_command_map.get(
-            current_phase.lower() if current_phase else "specification",
-            []
+            current_phase.lower() if current_phase else "specification", []
         )
 
         # Always include general commands
         general_commands = [
-            {
-                "command": "/help",
-                "reasoning": "View all available commands",
-                "priority": "low"
-            },
-            {
-                "command": "/status",
-                "reasoning": "Check current project status",
-                "priority": "low"
-            },
+            {"command": "/help", "reasoning": "View all available commands", "priority": "low"},
+            {"command": "/status", "reasoning": "Check current project status", "priority": "low"},
         ]
 
         # Combine phase-specific and general commands
@@ -673,12 +791,12 @@ async def get_context_aware_suggestions(
                 "suggestions": all_suggestions,
                 "phase": current_phase or "specification",
                 "project_id": project_id,
-            }
+            },
         )
 
     except Exception as e:
         logger.error(f"Error getting context-aware suggestions: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get context-aware suggestions"
+            detail="Failed to get context-aware suggestions",
         )

@@ -15,13 +15,14 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 
-from socrates_api.models import SuccessResponse, ErrorResponse
+from socrates_api.models import SuccessResponse
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
 
 
 class NoteRequest(BaseModel):
     """Request body for creating/updating a note"""
+
     content: str
     title: Optional[str] = None
     tags: Optional[list] = None
@@ -196,8 +197,10 @@ async def search_notes(
         notes = project.notes or []
         query_lower = query.lower()
         results = [
-            n for n in notes
-            if query_lower in n.get("title", "").lower() or query_lower in n.get("content", "").lower()
+            n
+            for n in notes
+            if query_lower in n.get("title", "").lower()
+            or query_lower in n.get("content", "").lower()
         ]
 
         return SuccessResponse(

@@ -15,8 +15,13 @@ import uuid
 from fastapi import APIRouter, HTTPException, status, Depends, Body
 
 from socrates_api.models import (
-    CreateChatSessionRequest, ChatSessionResponse, ListChatSessionsResponse,
-    ChatMessageRequest, ChatMessage, GetChatMessagesResponse, UpdateMessageRequest
+    CreateChatSessionRequest,
+    ChatSessionResponse,
+    ListChatSessionsResponse,
+    ChatMessageRequest,
+    ChatMessage,
+    GetChatMessagesResponse,
+    UpdateMessageRequest,
 )
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
@@ -44,7 +49,7 @@ async def create_chat_session(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        if not hasattr(project, 'chat_sessions'):
+        if not hasattr(project, "chat_sessions"):
             project.chat_sessions = {}
 
         session_id = f"sess_{uuid.uuid4().hex[:12]}"
@@ -58,7 +63,7 @@ async def create_chat_session(
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),
             "archived": False,
-            "messages": []
+            "messages": [],
         }
 
         project.chat_sessions[session_id] = session
@@ -72,7 +77,7 @@ async def create_chat_session(
             created_at=now,
             updated_at=now,
             archived=False,
-            message_count=0
+            message_count=0,
         )
 
     except HTTPException:
@@ -113,33 +118,39 @@ async def list_chat_sessions(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        sessions_dict = getattr(project, 'chat_sessions', {})
+        sessions_dict = getattr(project, "chat_sessions", {})
         sessions_list = []
 
         for session_id, session in sessions_dict.items():
             # Apply archive filter
-            if archived is not None and session.get('archived', False) != archived:
+            if archived is not None and session.get("archived", False) != archived:
                 continue
 
             # Apply search filter
             if search is not None:
-                title = session.get('title', '').lower()
+                title = session.get("title", "").lower()
                 if search.lower() not in title:
                     continue
 
-            created_at = datetime.fromisoformat(session.get('created_at', datetime.now(timezone.utc).isoformat()))
-            updated_at = datetime.fromisoformat(session.get('updated_at', datetime.now(timezone.utc).isoformat()))
+            created_at = datetime.fromisoformat(
+                session.get("created_at", datetime.now(timezone.utc).isoformat())
+            )
+            updated_at = datetime.fromisoformat(
+                session.get("updated_at", datetime.now(timezone.utc).isoformat())
+            )
 
-            sessions_list.append(ChatSessionResponse(
-                session_id=session.get('session_id'),
-                project_id=session.get('project_id'),
-                user_id=session.get('user_id'),
-                title=session.get('title'),
-                created_at=created_at,
-                updated_at=updated_at,
-                archived=session.get('archived', False),
-                message_count=len(session.get('messages', []))
-            ))
+            sessions_list.append(
+                ChatSessionResponse(
+                    session_id=session.get("session_id"),
+                    project_id=session.get("project_id"),
+                    user_id=session.get("user_id"),
+                    title=session.get("title"),
+                    created_at=created_at,
+                    updated_at=updated_at,
+                    archived=session.get("archived", False),
+                    message_count=len(session.get("messages", [])),
+                )
+            )
 
         # Sort by created_at descending
         sessions_list.sort(key=lambda s: s.created_at, reverse=True)
@@ -150,10 +161,7 @@ async def list_chat_sessions(
         end = start + (limit if limit else 50)
         paginated = sessions_list[start:end]
 
-        return ListChatSessionsResponse(
-            sessions=paginated,
-            total=total
-        )
+        return ListChatSessionsResponse(sessions=paginated, total=total)
 
     except HTTPException:
         raise
@@ -183,23 +191,27 @@ async def get_chat_session(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        sessions_dict = getattr(project, 'chat_sessions', {})
+        sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Chat session not found")
 
-        created_at = datetime.fromisoformat(session.get('created_at', datetime.now(timezone.utc).isoformat()))
-        updated_at = datetime.fromisoformat(session.get('updated_at', datetime.now(timezone.utc).isoformat()))
+        created_at = datetime.fromisoformat(
+            session.get("created_at", datetime.now(timezone.utc).isoformat())
+        )
+        updated_at = datetime.fromisoformat(
+            session.get("updated_at", datetime.now(timezone.utc).isoformat())
+        )
 
         return ChatSessionResponse(
-            session_id=session.get('session_id'),
-            project_id=session.get('project_id'),
-            user_id=session.get('user_id'),
-            title=session.get('title'),
+            session_id=session.get("session_id"),
+            project_id=session.get("project_id"),
+            user_id=session.get("user_id"),
+            title=session.get("title"),
             created_at=created_at,
             updated_at=updated_at,
-            archived=session.get('archived', False),
-            message_count=len(session.get('messages', []))
+            archived=session.get("archived", False),
+            message_count=len(session.get("messages", [])),
         )
 
     except HTTPException:
@@ -231,7 +243,7 @@ async def send_chat_message(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        sessions_dict = getattr(project, 'chat_sessions', {})
+        sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Chat session not found")
@@ -247,7 +259,7 @@ async def send_chat_message(
             "role": request.role,
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),
-            "metadata": None
+            "metadata": None,
         }
 
         session["messages"].append(message)
@@ -262,7 +274,7 @@ async def send_chat_message(
             role=request.role,
             created_at=now,
             updated_at=now,
-            metadata=None
+            metadata=None,
         )
 
     except HTTPException:
@@ -302,12 +314,12 @@ async def get_chat_messages(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        sessions_dict = getattr(project, 'chat_sessions', {})
+        sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Chat session not found")
 
-        all_messages = session.get('messages', [])
+        all_messages = session.get("messages", [])
         total_count = len(all_messages)
 
         # Apply ordering
@@ -321,24 +333,28 @@ async def get_chat_messages(
 
         messages_list = []
         for msg in paginated_messages:
-            created_at = datetime.fromisoformat(msg.get('created_at', datetime.now(timezone.utc).isoformat()))
-            updated_at = datetime.fromisoformat(msg.get('updated_at', datetime.now(timezone.utc).isoformat()))
+            created_at = datetime.fromisoformat(
+                msg.get("created_at", datetime.now(timezone.utc).isoformat())
+            )
+            updated_at = datetime.fromisoformat(
+                msg.get("updated_at", datetime.now(timezone.utc).isoformat())
+            )
 
-            messages_list.append(ChatMessage(
-                message_id=msg.get('message_id'),
-                session_id=msg.get('session_id'),
-                user_id=msg.get('user_id'),
-                content=msg.get('content'),
-                role=msg.get('role'),
-                created_at=created_at,
-                updated_at=updated_at,
-                metadata=msg.get('metadata')
-            ))
+            messages_list.append(
+                ChatMessage(
+                    message_id=msg.get("message_id"),
+                    session_id=msg.get("session_id"),
+                    user_id=msg.get("user_id"),
+                    content=msg.get("content"),
+                    role=msg.get("role"),
+                    created_at=created_at,
+                    updated_at=updated_at,
+                    metadata=msg.get("metadata"),
+                )
+            )
 
         return GetChatMessagesResponse(
-            messages=messages_list,
-            total=total_count,
-            session_id=session_id
+            messages=messages_list, total=total_count, session_id=session_id
         )
 
     except HTTPException:
@@ -371,17 +387,17 @@ async def update_chat_message(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        sessions_dict = getattr(project, 'chat_sessions', {})
+        sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Chat session not found")
 
-        messages = session.get('messages', [])
+        messages = session.get("messages", [])
         message_idx = None
         target_message = None
 
         for idx, msg in enumerate(messages):
-            if msg.get('message_id') == message_id:
+            if msg.get("message_id") == message_id:
                 message_idx = idx
                 target_message = msg
                 break
@@ -390,28 +406,28 @@ async def update_chat_message(
             raise HTTPException(status_code=404, detail="Message not found")
 
         # Verify ownership
-        if target_message.get('user_id') != current_user:
+        if target_message.get("user_id") != current_user:
             raise HTTPException(status_code=403, detail="Cannot update message of another user")
 
         # Update message
         now = datetime.now(timezone.utc)
-        target_message['content'] = request.content
-        target_message['metadata'] = request.metadata
-        target_message['updated_at'] = now.isoformat()
-        session['updated_at'] = now.isoformat()
+        target_message["content"] = request.content
+        target_message["metadata"] = request.metadata
+        target_message["updated_at"] = now.isoformat()
+        session["updated_at"] = now.isoformat()
 
         db.save_project(project)
 
-        created_at = datetime.fromisoformat(target_message.get('created_at'))
+        created_at = datetime.fromisoformat(target_message.get("created_at"))
         return ChatMessage(
-            message_id=target_message.get('message_id'),
+            message_id=target_message.get("message_id"),
             session_id=session_id,
-            user_id=target_message.get('user_id'),
-            content=target_message.get('content'),
-            role=target_message.get('role'),
+            user_id=target_message.get("user_id"),
+            content=target_message.get("content"),
+            role=target_message.get("role"),
             created_at=created_at,
             updated_at=now,
-            metadata=target_message.get('metadata')
+            metadata=target_message.get("metadata"),
         )
 
     except HTTPException:
@@ -442,16 +458,16 @@ async def delete_chat_message(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        sessions_dict = getattr(project, 'chat_sessions', {})
+        sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Chat session not found")
 
-        messages = session.get('messages', [])
+        messages = session.get("messages", [])
         message_idx = None
 
         for idx, msg in enumerate(messages):
-            if msg.get('message_id') == message_id:
+            if msg.get("message_id") == message_id:
                 message_idx = idx
                 break
 
@@ -459,12 +475,12 @@ async def delete_chat_message(
             raise HTTPException(status_code=404, detail="Message not found")
 
         # Verify ownership
-        if messages[message_idx].get('user_id') != current_user:
+        if messages[message_idx].get("user_id") != current_user:
             raise HTTPException(status_code=403, detail="Cannot delete message of another user")
 
         # Remove message
         messages.pop(message_idx)
-        session['updated_at'] = datetime.now(timezone.utc).isoformat()
+        session["updated_at"] = datetime.now(timezone.utc).isoformat()
         db.save_project(project)
 
     except HTTPException:
@@ -495,28 +511,28 @@ async def archive_chat_session(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        sessions_dict = getattr(project, 'chat_sessions', {})
+        sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Chat session not found")
 
         now = datetime.now(timezone.utc)
-        session['archived'] = True
-        session['updated_at'] = now.isoformat()
+        session["archived"] = True
+        session["updated_at"] = now.isoformat()
         db.save_project(project)
 
-        created_at = datetime.fromisoformat(session.get('created_at'))
-        updated_at = datetime.fromisoformat(session.get('updated_at'))
+        created_at = datetime.fromisoformat(session.get("created_at"))
+        updated_at = datetime.fromisoformat(session.get("updated_at"))
 
         return ChatSessionResponse(
-            session_id=session.get('session_id'),
-            project_id=session.get('project_id'),
-            user_id=session.get('user_id'),
-            title=session.get('title'),
+            session_id=session.get("session_id"),
+            project_id=session.get("project_id"),
+            user_id=session.get("user_id"),
+            title=session.get("title"),
             created_at=created_at,
             updated_at=updated_at,
             archived=True,
-            message_count=len(session.get('messages', []))
+            message_count=len(session.get("messages", [])),
         )
 
     except HTTPException:
@@ -547,28 +563,28 @@ async def restore_chat_session(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        sessions_dict = getattr(project, 'chat_sessions', {})
+        sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Chat session not found")
 
         now = datetime.now(timezone.utc)
-        session['archived'] = False
-        session['updated_at'] = now.isoformat()
+        session["archived"] = False
+        session["updated_at"] = now.isoformat()
         db.save_project(project)
 
-        created_at = datetime.fromisoformat(session.get('created_at'))
-        updated_at = datetime.fromisoformat(session.get('updated_at'))
+        created_at = datetime.fromisoformat(session.get("created_at"))
+        updated_at = datetime.fromisoformat(session.get("updated_at"))
 
         return ChatSessionResponse(
-            session_id=session.get('session_id'),
-            project_id=session.get('project_id'),
-            user_id=session.get('user_id'),
-            title=session.get('title'),
+            session_id=session.get("session_id"),
+            project_id=session.get("project_id"),
+            user_id=session.get("user_id"),
+            title=session.get("title"),
             created_at=created_at,
             updated_at=updated_at,
             archived=False,
-            message_count=len(session.get('messages', []))
+            message_count=len(session.get("messages", [])),
         )
 
     except HTTPException:

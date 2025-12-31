@@ -440,9 +440,7 @@ class SetDefaultProviderRequest(BaseModel):
 
     class Config:
         extra = "forbid"
-        json_schema_extra = {
-            "example": {"provider": "anthropic"}
-        }
+        json_schema_extra = {"example": {"provider": "anthropic"}}
 
 
 class SetLLMModelRequest(BaseModel):
@@ -453,12 +451,7 @@ class SetLLMModelRequest(BaseModel):
 
     class Config:
         extra = "forbid"
-        json_schema_extra = {
-            "example": {
-                "provider": "anthropic",
-                "model": "claude-3-sonnet"
-            }
-        }
+        json_schema_extra = {"example": {"provider": "anthropic", "model": "claude-3-sonnet"}}
 
 
 class AddAPIKeyRequest(BaseModel):
@@ -469,12 +462,7 @@ class AddAPIKeyRequest(BaseModel):
 
     class Config:
         extra = "forbid"
-        json_schema_extra = {
-            "example": {
-                "provider": "anthropic",
-                "api_key": "sk-ant-..."
-            }
-        }
+        json_schema_extra = {"example": {"provider": "anthropic", "api_key": "sk-ant-..."}}
 
 
 class CollaborationInviteRequest(BaseModel):
@@ -485,12 +473,7 @@ class CollaborationInviteRequest(BaseModel):
 
     class Config:
         extra = "forbid"
-        json_schema_extra = {
-            "example": {
-                "email": "user@example.com",
-                "role": "editor"
-            }
-        }
+        json_schema_extra = {"example": {"email": "user@example.com", "role": "editor"}}
 
 
 class CollaborationInvitationResponse(BaseModel):
@@ -502,7 +485,9 @@ class CollaborationInvitationResponse(BaseModel):
     invitee_email: str = Field(..., description="Email of invitee")
     role: str = Field(..., description="Assigned role")
     token: str = Field(..., description="Unique invitation token")
-    status: str = Field(..., description="Invitation status (pending, accepted, expired, cancelled)")
+    status: str = Field(
+        ..., description="Invitation status (pending, accepted, expired, cancelled)"
+    )
     created_at: str = Field(..., description="Creation timestamp")
     expires_at: str = Field(..., description="Expiration timestamp")
     accepted_at: Optional[str] = Field(None, description="Acceptance timestamp")
@@ -519,7 +504,7 @@ class CollaborationInvitationResponse(BaseModel):
                 "status": "pending",
                 "created_at": "2024-01-01T00:00:00Z",
                 "expires_at": "2024-01-08T00:00:00Z",
-                "accepted_at": None
+                "accepted_at": None,
             }
         }
 
@@ -531,9 +516,7 @@ class DeleteDocumentRequest(BaseModel):
 
     class Config:
         extra = "forbid"
-        json_schema_extra = {
-            "example": {"document_id": "doc_123"}
-        }
+        json_schema_extra = {"example": {"document_id": "doc_123"}}
 
 
 class InitializeRequest(BaseModel):
@@ -543,9 +526,7 @@ class InitializeRequest(BaseModel):
 
     class Config:
         extra = "forbid"
-        json_schema_extra = {
-            "example": {"api_key": "sk-ant-..."}
-        }
+        json_schema_extra = {"example": {"api_key": "sk-ant-..."}}
 
 
 # ============================================================================
@@ -560,11 +541,7 @@ class CreateChatSessionRequest(BaseModel):
 
     class Config:
         extra = "forbid"
-        json_schema_extra = {
-            "example": {
-                "title": "Initial Design Discussion"
-            }
-        }
+        json_schema_extra = {"example": {"title": "Initial Design Discussion"}}
 
 
 class ChatSessionResponse(BaseModel):
@@ -633,7 +610,7 @@ class ChatMessageRequest(BaseModel):
             "example": {
                 "message": "What should I focus on next?",
                 "role": "user",
-                "mode": "socratic"
+                "mode": "socratic",
             }
         }
 
@@ -697,13 +674,10 @@ class UpdateMessageRequest(BaseModel):
     """Request body for updating a chat message"""
 
     content: str = Field(..., min_length=1, description="Updated message content")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Optional metadata for the message")
+    metadata: Optional[Dict[str, Any]] = Field(
+        None, description="Optional metadata for the message"
+    )
 
     class Config:
         extra = "forbid"
-        json_schema_extra = {
-            "example": {
-                "content": "Updated message content",
-                "metadata": None
-            }
-        }
+        json_schema_extra = {"example": {"content": "Updated message content", "metadata": None}}

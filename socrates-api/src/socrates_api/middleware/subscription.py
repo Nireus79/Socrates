@@ -193,7 +193,7 @@ def require_subscription_feature(feature: str) -> Callable:
             # Check feature access
             has_access = SubscriptionChecker.has_feature(user.subscription_tier, feature)
             if not has_access:
-                tier_limits = SubscriptionChecker.get_tier_limits(user.subscription_tier)
+                SubscriptionChecker.get_tier_limits(user.subscription_tier)
                 logger.warning(
                     f"User {current_user} ({user.subscription_tier}) attempted to access "
                     f"restricted feature: {feature}"

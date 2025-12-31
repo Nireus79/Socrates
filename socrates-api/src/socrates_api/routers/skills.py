@@ -8,7 +8,7 @@ Provides REST endpoints for tracking and managing project skills including:
 """
 
 import logging
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, status, Depends, Body
 
@@ -220,10 +220,18 @@ async def list_skills(
                     "level_distribution": level_distribution,
                     "average_confidence": round(avg_confidence, 2),
                     "proficiency_levels": {
-                        "beginner": len([s for s in skills if s.get("proficiency_level") == "beginner"]),
-                        "intermediate": len([s for s in skills if s.get("proficiency_level") == "intermediate"]),
-                        "advanced": len([s for s in skills if s.get("proficiency_level") == "advanced"]),
-                        "expert": len([s for s in skills if s.get("proficiency_level") == "expert"]),
+                        "beginner": len(
+                            [s for s in skills if s.get("proficiency_level") == "beginner"]
+                        ),
+                        "intermediate": len(
+                            [s for s in skills if s.get("proficiency_level") == "intermediate"]
+                        ),
+                        "advanced": len(
+                            [s for s in skills if s.get("proficiency_level") == "advanced"]
+                        ),
+                        "expert": len(
+                            [s for s in skills if s.get("proficiency_level") == "expert"]
+                        ),
                     },
                 },
             },

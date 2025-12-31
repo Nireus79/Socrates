@@ -5,7 +5,6 @@ Provides document import, search, and knowledge management functionality.
 """
 
 import logging
-import os
 import tempfile
 import uuid
 from pathlib import Path
@@ -29,7 +28,7 @@ def _get_orchestrator():
     if app_state.get("orchestrator") is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Orchestrator not initialized. Please call /initialize first."
+            detail="Orchestrator not initialized. Please call /initialize first.",
         )
     return app_state["orchestrator"]
 
@@ -78,8 +77,7 @@ async def list_documents(
             project = db.load_project(project_id)
             if not project or project.owner != current_user:
                 raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied to this project"
+                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
                 )
             documents = db.get_project_knowledge_documents(project_id)
         else:
@@ -106,36 +104,29 @@ async def list_documents(
         # Apply sorting
         sort_reverse = sort_order.lower() == "desc"
         if sort_by == "uploaded_at":
-            filtered_docs.sort(
-                key=lambda d: d.get("uploaded_at", ""),
-                reverse=sort_reverse
-            )
+            filtered_docs.sort(key=lambda d: d.get("uploaded_at", ""), reverse=sort_reverse)
         elif sort_by == "title":
-            filtered_docs.sort(
-                key=lambda d: (d.get("title") or "").lower(),
-                reverse=sort_reverse
-            )
+            filtered_docs.sort(key=lambda d: (d.get("title") or "").lower(), reverse=sort_reverse)
         elif sort_by == "document_type":
-            filtered_docs.sort(
-                key=lambda d: d.get("document_type", ""),
-                reverse=sort_reverse
-            )
+            filtered_docs.sort(key=lambda d: d.get("document_type", ""), reverse=sort_reverse)
 
         # Apply pagination
         total = len(filtered_docs)
-        paginated_docs = filtered_docs[offset:offset + limit]
+        paginated_docs = filtered_docs[offset : offset + limit]
 
         # Transform to frontend format
         doc_list = []
         for doc in paginated_docs:
-            doc_list.append({
-                "id": doc["id"],
-                "title": doc["title"],
-                "source_type": doc["document_type"],
-                "source": doc.get("source"),
-                "created_at": doc["uploaded_at"],
-                "chunk_count": 0,
-            })
+            doc_list.append(
+                {
+                    "id": doc["id"],
+                    "title": doc["title"],
+                    "source_type": doc["document_type"],
+                    "source": doc.get("source"),
+                    "created_at": doc["uploaded_at"],
+                    "chunk_count": 0,
+                }
+            )
 
         return {
             "status": "success",
@@ -146,8 +137,8 @@ async def list_documents(
                     "limit": limit,
                     "offset": offset,
                     "has_more": offset + limit < total,
-                }
-            }
+                },
+            },
         }
 
     except HTTPException:
@@ -188,16 +179,12 @@ async def get_document_details(
         # Load document
         document = db.get_knowledge_document(document_id)
         if not document:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Document not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 
         # Verify ownership
         if document["user_id"] != current_user:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this document"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this document"
             )
 
         # Prepare response
@@ -215,7 +202,7 @@ async def get_document_details(
                 "uploaded_at": document["uploaded_at"],
                 "word_count": word_count,
                 "preview": preview,
-            }
+            },
         }
 
         # Include full content if requested
@@ -229,8 +216,7 @@ async def get_document_details(
     except Exception as e:
         logger.error(f"Error getting document details: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error retrieving document"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error retrieving document"
         )
 
 
@@ -249,7 +235,7 @@ async def import_file(
     file: UploadFile = File(...),
     project_id: Optional[str] = Form(None),
     current_user: str = Depends(get_current_user),
-    orchestrator = Depends(_get_orchestrator),
+    orchestrator=Depends(_get_orchestrator),
     db: ProjectDatabase = Depends(get_database),
 ):
     """
@@ -279,8 +265,7 @@ async def import_file(
             project = db.load_project(project_id)
             if not project or project.owner != current_user:
                 raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied to this project"
+                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
                 )
 
         # Save uploaded file temporarily
@@ -302,7 +287,7 @@ async def import_file(
                     "action": "import_file",
                     "file_path": str(temp_file),
                     "project_id": project_id,
-                }
+                },
             )
 
             logger.debug(f"DocumentProcessor result: {result}")
@@ -316,7 +301,7 @@ async def import_file(
                 title=file.filename,
                 content="",
                 source=file.filename,
-                document_type="file"
+                document_type="file",
             )
 
             logger.info(f"File imported successfully: {file.filename}")
@@ -324,6 +309,7 @@ async def import_file(
             # Emit DOCUMENT_IMPORTED event to trigger knowledge analysis and question regeneration
             try:
                 from socratic_system.events import EventType
+
                 orchestrator.event_emitter.emit(
                     EventType.DOCUMENT_IMPORTED,
                     {
@@ -333,7 +319,7 @@ async def import_file(
                         "words_extracted": result.get("words_extracted", 0),
                         "chunks_created": result.get("chunks_added", 0),
                         "user_id": current_user,
-                    }
+                    },
                 )
                 logger.debug(f"Emitted DOCUMENT_IMPORTED event for {file.filename}")
             except Exception as e:
@@ -382,7 +368,7 @@ async def import_file(
 async def import_url(
     body: dict = Body(...),
     current_user: str = Depends(get_current_user),
-    orchestrator = Depends(_get_orchestrator),
+    orchestrator=Depends(_get_orchestrator),
     db: ProjectDatabase = Depends(get_database),
 ):
     """
@@ -398,8 +384,8 @@ async def import_url(
         SuccessResponse with import details
     """
     try:
-        url = body.get('url')
-        project_id = body.get('projectId')
+        url = body.get("url")
+        project_id = body.get("projectId")
 
         if not url:
             raise HTTPException(
@@ -414,8 +400,7 @@ async def import_url(
             project = db.load_project(project_id)
             if not project or project.owner != current_user:
                 raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied to this project"
+                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
                 )
 
         # Process via DocumentProcessorAgent
@@ -425,7 +410,7 @@ async def import_url(
                 "action": "import_url",
                 "url": url,
                 "project_id": project_id,
-            }
+            },
         )
 
         logger.debug(f"DocumentProcessor result: {result}")
@@ -438,7 +423,7 @@ async def import_url(
             doc_id=doc_id,
             title=url,
             source=url,
-            document_type="url"
+            document_type="url",
         )
 
         logger.info(f"URL imported successfully: {url}")
@@ -446,6 +431,7 @@ async def import_url(
         # Emit DOCUMENT_IMPORTED event to trigger knowledge analysis and question regeneration
         try:
             from socratic_system.events import EventType
+
             orchestrator.event_emitter.emit(
                 EventType.DOCUMENT_IMPORTED,
                 {
@@ -455,7 +441,7 @@ async def import_url(
                     "words_extracted": result.get("words_extracted", 0),
                     "chunks_created": result.get("chunks_added", 0),
                     "user_id": current_user,
-                }
+                },
             )
             logger.debug(f"Emitted DOCUMENT_IMPORTED event for {url}")
         except Exception as e:
@@ -496,7 +482,7 @@ async def import_url(
 async def import_text(
     body: dict = Body(...),
     current_user: str = Depends(get_current_user),
-    orchestrator = Depends(_get_orchestrator),
+    orchestrator=Depends(_get_orchestrator),
     db: ProjectDatabase = Depends(get_database),
 ):
     """
@@ -512,9 +498,9 @@ async def import_text(
         SuccessResponse with import details
     """
     try:
-        title = body.get('title')
-        content = body.get('content')
-        project_id = body.get('projectId')
+        title = body.get("title")
+        content = body.get("content")
+        project_id = body.get("projectId")
 
         if not content:
             raise HTTPException(
@@ -529,8 +515,7 @@ async def import_text(
             project = db.load_project(project_id)
             if not project or project.owner != current_user:
                 raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied to this project"
+                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
                 )
 
         # Process via DocumentProcessorAgent
@@ -541,7 +526,7 @@ async def import_text(
                 "content": content,
                 "title": title or "Untitled",
                 "project_id": project_id,
-            }
+            },
         )
 
         logger.debug(f"DocumentProcessor result: {result}")
@@ -555,7 +540,7 @@ async def import_text(
             title=title or "Untitled",
             content=content[:1000],
             source="pasted_text",
-            document_type="text"
+            document_type="text",
         )
 
         logger.info(f"Text document imported successfully: {title}")
@@ -564,6 +549,7 @@ async def import_text(
         word_count = len(content.split())
         try:
             from socratic_system.events import EventType
+
             orchestrator.event_emitter.emit(
                 EventType.DOCUMENT_IMPORTED,
                 {
@@ -573,7 +559,7 @@ async def import_text(
                     "words_extracted": word_count,
                     "chunks_created": result.get("chunks_added", 0),
                     "user_id": current_user,
-                }
+                },
             )
             logger.debug(f"Emitted DOCUMENT_IMPORTED event for {title}")
         except Exception as e:
@@ -617,7 +603,7 @@ async def search_knowledge(
     project_id: Optional[str] = None,
     top_k: int = 10,
     current_user: str = Depends(get_current_user),
-    orchestrator = Depends(_get_orchestrator),
+    orchestrator=Depends(_get_orchestrator),
     db: ProjectDatabase = Depends(get_database),
 ):
     """
@@ -650,8 +636,7 @@ async def search_knowledge(
             project = db.load_project(project_id)
             if not project or project.owner != current_user:
                 raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied to this project"
+                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
                 )
 
         # Use VectorDatabase via orchestrator
@@ -659,15 +644,11 @@ async def search_knowledge(
         if not vector_db:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Vector database not initialized"
+                detail="Vector database not initialized",
             )
 
         # Perform semantic search
-        results = vector_db.search_similar(
-            query=search_query,
-            top_k=top_k,
-            project_id=project_id
-        )
+        results = vector_db.search_similar(query=search_query, top_k=top_k, project_id=project_id)
 
         logger.debug(f"Found {len(results)} search results")
 
@@ -675,24 +656,22 @@ async def search_knowledge(
         search_results = []
         for result in results:
             metadata = result.get("metadata", {})
-            search_results.append({
-                "document_id": metadata.get("source", "unknown"),
-                "title": metadata.get("source", "Unknown"),
-                "excerpt": result.get("content", "")[:200],
-                "relevance_score": max(0, min(1, 1 - result.get("distance", 1))),
-                "source": metadata.get("source_type", "unknown")
-            })
+            search_results.append(
+                {
+                    "document_id": metadata.get("source", "unknown"),
+                    "title": metadata.get("source", "Unknown"),
+                    "excerpt": result.get("content", "")[:200],
+                    "relevance_score": max(0, min(1, 1 - result.get("distance", 1))),
+                    "source": metadata.get("source_type", "unknown"),
+                }
+            )
 
         logger.info(f"Search completed: found {len(search_results)} results")
 
         return SuccessResponse(
             success=True,
             message=f"Search completed for '{search_query}'",
-            data={
-                "query": search_query,
-                "results": search_results,
-                "total": len(search_results)
-            }
+            data={"query": search_query, "results": search_results, "total": len(search_results)},
         )
 
     except HTTPException:
@@ -826,7 +805,7 @@ async def bulk_delete_documents(
                 "total_requested": len(document_ids),
                 "deleted_count": len(deleted),
                 "failed_count": len(failed),
-            }
+            },
         }
 
     except HTTPException:
@@ -834,8 +813,7 @@ async def bulk_delete_documents(
     except Exception as e:
         logger.error(f"Error in bulk delete: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error performing bulk delete"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error performing bulk delete"
         )
 
 
@@ -849,7 +827,7 @@ async def bulk_import_documents(
     files: list = File(..., description="Files to import"),
     project_id: Optional[str] = Form(None),
     current_user: str = Depends(get_current_user),
-    orchestrator = Depends(_get_orchestrator),
+    orchestrator=Depends(_get_orchestrator),
     db: ProjectDatabase = Depends(get_database),
 ):
     """
@@ -871,8 +849,7 @@ async def bulk_import_documents(
             project = db.load_project(project_id)
             if not project or project.owner != current_user:
                 raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied to this project"
+                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
                 )
 
         results = []
@@ -899,7 +876,7 @@ async def bulk_import_documents(
                             "file_name": file.filename,
                             "user_id": current_user,
                             "project_id": project_id,
-                        }
+                        },
                     )
 
                     if result.get("status") == "success":
@@ -911,19 +888,19 @@ async def bulk_import_documents(
                             title=file.filename,
                             content=result.get("content", ""),
                             source=file.filename,
-                            document_type="file"
+                            document_type="file",
                         )
-                        results.append({
-                            "file": file.filename,
-                            "status": "success",
-                            "document_id": doc_id
-                        })
+                        results.append(
+                            {"file": file.filename, "status": "success", "document_id": doc_id}
+                        )
                     else:
-                        results.append({
-                            "file": file.filename,
-                            "status": "failed",
-                            "reason": result.get("message", "Processing failed")
-                        })
+                        results.append(
+                            {
+                                "file": file.filename,
+                                "status": "failed",
+                                "reason": result.get("message", "Processing failed"),
+                            }
+                        )
                 finally:
                     # Clean up temp file
                     try:
@@ -932,11 +909,13 @@ async def bulk_import_documents(
                         logger.warning(f"Failed to clean up temporary file {temp_path}: {str(e)}")
 
             except Exception as e:
-                results.append({
-                    "file": file.filename if hasattr(file, 'filename') else "unknown",
-                    "status": "failed",
-                    "reason": str(e)
-                })
+                results.append(
+                    {
+                        "file": file.filename if hasattr(file, "filename") else "unknown",
+                        "status": "failed",
+                        "reason": str(e),
+                    }
+                )
 
         success_count = len([r for r in results if r["status"] == "success"])
         failed_count = len([r for r in results if r["status"] == "failed"])
@@ -950,7 +929,7 @@ async def bulk_import_documents(
                 "total_files": len(files),
                 "imported_count": success_count,
                 "failed_count": failed_count,
-            }
+            },
         }
 
     except HTTPException:
@@ -958,8 +937,7 @@ async def bulk_import_documents(
     except Exception as e:
         logger.error(f"Error in bulk import: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error performing bulk import"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error performing bulk import"
         )
 
 
@@ -989,16 +967,12 @@ async def get_document_analytics(
         # Load document
         document = db.get_knowledge_document(document_id)
         if not document:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Document not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 
         # Verify ownership
         if document["user_id"] != current_user:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this document"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this document"
             )
 
         # Calculate analytics
@@ -1017,7 +991,7 @@ async def get_document_analytics(
                 "char_count": char_count,
                 "estimated_reading_time_minutes": max(1, word_count // 200),
                 "source": document["source"],
-            }
+            },
         }
 
         return analytics
@@ -1027,8 +1001,7 @@ async def get_document_analytics(
     except Exception as e:
         logger.error(f"Error getting document analytics: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error retrieving analytics"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error retrieving analytics"
         )
 
 
@@ -1045,7 +1018,7 @@ async def get_document_analytics(
 async def add_knowledge_entry(
     body: dict = Body(...),
     current_user: str = Depends(get_current_user),
-    orchestrator = Depends(_get_orchestrator),
+    orchestrator=Depends(_get_orchestrator),
     db: ProjectDatabase = Depends(get_database),
 ):
     """
@@ -1061,9 +1034,9 @@ async def add_knowledge_entry(
         SuccessResponse with entry details
     """
     try:
-        content = body.get('content')
-        category = body.get('category')
-        project_id = body.get('projectId')
+        content = body.get("content")
+        category = body.get("category")
+        project_id = body.get("projectId")
 
         if not content:
             raise HTTPException(
@@ -1078,8 +1051,7 @@ async def add_knowledge_entry(
             project = db.load_project(project_id)
             if not project or project.owner != current_user:
                 raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied to this project"
+                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
                 )
 
         # Process as text import with category metadata
@@ -1090,7 +1062,7 @@ async def add_knowledge_entry(
                 "content": content,
                 "title": f"{category} entry",
                 "project_id": project_id,
-            }
+            },
         )
 
         logger.debug(f"DocumentProcessor result: {result}")
@@ -1104,7 +1076,7 @@ async def add_knowledge_entry(
             title=f"{category} entry",
             content=content[:1000],
             source="manual_entry",
-            document_type=category
+            document_type=category,
         )
 
         logger.info(f"Knowledge entry added successfully: {category}")

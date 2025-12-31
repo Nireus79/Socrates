@@ -25,6 +25,7 @@ router = APIRouter(prefix="/projects", tags=["knowledge"])
 # Request models
 class KnowledgeDocumentRequest(BaseModel):
     """Request body for adding a knowledge document"""
+
     title: str
     content: str
     type: Optional[str] = "text"

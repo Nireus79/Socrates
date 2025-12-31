@@ -125,8 +125,7 @@ async def get_current_user_object(
         user = db.load_user(username)
         if user is None:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User {username} not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"User {username} not found"
             )
         return user
     except HTTPException:
@@ -135,7 +134,7 @@ async def get_current_user_object(
         logger.error(f"Error loading user information: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error loading user information"
+            detail="Error loading user information",
         )
 
 
@@ -207,10 +206,7 @@ def require_project_role(required_role: str):
         # Load project
         project = db.load_project(project_id)
         if project is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Project not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
         # Owner always has access
         if project.owner == current_user:
@@ -227,8 +223,7 @@ def require_project_role(required_role: str):
         # User must be team member
         if user_role is None:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="User is not a project member"
+                status_code=status.HTTP_403_FORBIDDEN, detail="User is not a project member"
             )
 
         # Validate role hierarchy
@@ -239,7 +234,7 @@ def require_project_role(required_role: str):
         if user_level < required_level:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Requires {required_role} role (user has {user_role})"
+                detail=f"Requires {required_role} role (user has {user_role})",
             )
 
         return current_user

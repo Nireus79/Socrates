@@ -5,26 +5,16 @@ Provides code validation, testing, review, and analysis functionality.
 """
 
 import logging
-import os
-from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException, status, Depends
 
-from socratic_system.database import ProjectDatabase
 from socrates_api.models import SuccessResponse, ErrorResponse
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analysis", tags=["analysis"])
-
-
-def get_database() -> ProjectDatabase:
-    """Get database instance."""
-    data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
-    db_path = os.path.join(data_dir, "projects.db")
-    return ProjectDatabase(db_path)
 
 
 @router.post(
@@ -80,11 +70,13 @@ async def validate_code(
                 {
                     "action": "validate_project",
                     "project": project,
-                }
+                },
             )
 
             if result["status"] != "success":
-                raise HTTPException(status_code=500, detail=result.get("message", "Failed to validate"))
+                raise HTTPException(
+                    status_code=500, detail=result.get("message", "Failed to validate")
+                )
 
             validation_results = result
 
@@ -95,10 +87,14 @@ async def validate_code(
             )
 
         # Record event for analytics
-        record_event("code_validated", {
-            "project_id": project_id,
-            "language": language,
-        }, user_id=current_user)
+        record_event(
+            "code_validated",
+            {
+                "project_id": project_id,
+                "language": language,
+            },
+            user_id=current_user,
+        )
 
         return SuccessResponse(
             success=True,
@@ -163,8 +159,7 @@ async def assess_maturity(
         valid_phases = ["discovery", "analysis", "design", "implementation"]
         if phase not in valid_phases:
             raise HTTPException(
-                status_code=400,
-                detail=f"Invalid phase. Must be one of: {', '.join(valid_phases)}"
+                status_code=400, detail=f"Invalid phase. Must be one of: {', '.join(valid_phases)}"
             )
 
         orchestrator = get_orchestrator()
@@ -176,19 +171,25 @@ async def assess_maturity(
                 "action": "calculate_maturity",
                 "project": project,
                 "phase": phase,
-            }
+            },
         )
 
         if result["status"] != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to calculate maturity"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to calculate maturity")
+            )
 
         maturity_data = result.get("maturity", {})
 
         # Record event
-        record_event("maturity_assessed", {
-            "project_id": project_id,
-            "phase": phase,
-        }, user_id=current_user)
+        record_event(
+            "maturity_assessed",
+            {
+                "project_id": project_id,
+                "phase": phase,
+            },
+            user_id=current_user,
+        )
 
         return SuccessResponse(
             success=True,
@@ -250,17 +251,23 @@ async def run_tests(
             {
                 "action": "run_tests",
                 "project": project,
-            }
+            },
         )
 
         if result["status"] != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to run tests"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to run tests")
+            )
 
         test_results = result
 
-        record_event("tests_executed", {
-            "project_id": project_id,
-        }, user_id=current_user)
+        record_event(
+            "tests_executed",
+            {
+                "project_id": project_id,
+            },
+            user_id=current_user,
+        )
 
         return SuccessResponse(
             success=True,
@@ -321,7 +328,7 @@ async def analyze_structure(
             {
                 "action": "analyze_context",
                 "project": project,
-            }
+            },
         )
 
         if result["status"] != "success":
@@ -329,9 +336,13 @@ async def analyze_structure(
 
         structure_data = result
 
-        record_event("structure_analyzed", {
-            "project_id": project_id,
-        }, user_id=current_user)
+        record_event(
+            "structure_analyzed",
+            {
+                "project_id": project_id,
+            },
+            user_id=current_user,
+        )
 
         return SuccessResponse(
             success=True,
@@ -392,17 +403,23 @@ async def review_code(
             {
                 "action": "get_statistics",
                 "project": project,
-            }
+            },
         )
 
         if result["status"] != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to get statistics"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to get statistics")
+            )
 
         stats = result
 
-        record_event("code_statistics_requested", {
-            "project_id": project_id,
-        }, user_id=current_user)
+        record_event(
+            "code_statistics_requested",
+            {
+                "project_id": project_id,
+            },
+            user_id=current_user,
+        )
 
         return SuccessResponse(
             success=True,
@@ -463,17 +480,23 @@ async def auto_fix_issues(
             {
                 "action": "generate_script",
                 "project": project,
-            }
+            },
         )
 
         if result["status"] != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to generate fixes"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to generate fixes")
+            )
 
         fix_results = result
 
-        record_event("code_generated", {
-            "project_id": project_id,
-        }, user_id=current_user)
+        record_event(
+            "code_generated",
+            {
+                "project_id": project_id,
+            },
+            user_id=current_user,
+        )
 
         return SuccessResponse(
             success=True,
@@ -534,17 +557,23 @@ async def get_analysis_report(
             {
                 "action": "generate_summary",
                 "project": project,
-            }
+            },
         )
 
         if result["status"] != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to generate report"))
+            raise HTTPException(
+                status_code=500, detail=result.get("message", "Failed to generate report")
+            )
 
         report = result
 
-        record_event("report_generated", {
-            "project_id": project_id,
-        }, user_id=current_user)
+        record_event(
+            "report_generated",
+            {
+                "project_id": project_id,
+            },
+            user_id=current_user,
+        )
 
         return SuccessResponse(
             success=True,

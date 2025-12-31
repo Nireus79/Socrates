@@ -220,7 +220,9 @@ async def get_info(
 
         # Get current user's projects
         try:
-            user_projects = db.get_user_projects(current_user) if hasattr(db, "get_user_projects") else []
+            user_projects = (
+                db.get_user_projects(current_user) if hasattr(db, "get_user_projects") else []
+            )
             user_project_count = len(user_projects) if isinstance(user_projects, list) else 0
         except Exception:
             user_project_count = 0
@@ -520,7 +522,9 @@ async def get_context(
 
         # Get user's projects
         try:
-            user_projects = db.get_user_projects(current_user) if hasattr(db, "get_user_projects") else []
+            user_projects = (
+                db.get_user_projects(current_user) if hasattr(db, "get_user_projects") else []
+            )
             project_count = len(user_projects) if isinstance(user_projects, list) else 0
         except Exception:
             project_count = 0
