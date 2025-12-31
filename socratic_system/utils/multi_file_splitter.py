@@ -65,9 +65,9 @@ class MultiFileCodeSplitter:
 
         return self.files
 
-    def _categorize_code_blocks(self, tree: ast.AST) -> Dict[str, list]:
+    def _categorize_code_blocks(self, tree: ast.Module) -> Dict[str, list]:
         """Categorize code blocks from AST"""
-        categorized = {
+        categorized: Dict[str, list] = {
             "models": [],
             "controllers": [],
             "services": [],

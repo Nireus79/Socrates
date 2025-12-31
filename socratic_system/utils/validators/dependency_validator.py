@@ -12,7 +12,7 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("socrates.utils.validators.dependency_validator")
 
@@ -326,8 +326,8 @@ class DependencyValidator:
     def _validate_javascript_dependencies(self, project_dir: str) -> Dict[str, Any]:
         """Validate JavaScript project dependencies"""
         project_path = Path(project_dir)
-        issues = []
-        warnings = []
+        issues: List[Dict[str, Any]] = []
+        warnings: List[Dict[str, Any]] = []
 
         # Read package.json
         package_json_file = project_path / "package.json"

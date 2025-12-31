@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
 from socratic_system.agents import (
     CodeGeneratorAgent,
@@ -93,7 +93,7 @@ class AgentOrchestrator:
         )
 
         # Cache for lazy-loaded agents
-        self._agents_cache = {}
+        self._agents_cache: Dict[str, Any] = {}
 
         # Start background knowledge base loading (non-blocking)
         # Skip in test mode to avoid SQLite deadlocks from multiple threads

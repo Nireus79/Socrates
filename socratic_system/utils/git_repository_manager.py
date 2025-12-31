@@ -489,22 +489,22 @@ class GitRepositoryManager:
 
         try:
             # Verify path is within temp_base_dir for safety
-            clone_path = Path(clone_path).resolve()
+            path_obj = Path(clone_path).resolve()
             temp_base = Path(self.temp_base_dir).resolve()
 
             # Check if path is within temp directory
             try:
-                clone_path.relative_to(temp_base)
+                path_obj.relative_to(temp_base)
             except ValueError:
                 self.logger.error(
-                    f"Path traversal attempt detected: {clone_path} not in {temp_base}"
+                    f"Path traversal attempt detected: {path_obj} not in {temp_base}"
                 )
                 return False
 
             # Remove directory
-            if clone_path.exists():
-                shutil.rmtree(clone_path, ignore_errors=True)
-                self.logger.debug(f"Cleaned up temporary directory: {clone_path}")
+            if path_obj.exists():
+                shutil.rmtree(path_obj, ignore_errors=True)
+                self.logger.debug(f"Cleaned up temporary directory: {path_obj}")
                 return True
 
             return True
@@ -529,8 +529,8 @@ class GitRepositoryManager:
             }
         """
         try:
-            clone_path = Path(clone_path)
-            if not clone_path.exists():
+            path_obj = Path(clone_path)
+            if not path_obj.exists():
                 return {
                     "status": "error",
                     "message": "Repository path does not exist",
@@ -538,7 +538,7 @@ class GitRepositoryManager:
                 }
 
             # Build git pull command
-            command = ["git", "-C", str(clone_path), "pull"]
+            command = ["git", "-C", str(path_obj), "pull"]
             if branch:
                 command.extend(["origin", branch])
 
@@ -591,8 +591,8 @@ class GitRepositoryManager:
             }
         """
         try:
-            clone_path = Path(clone_path)
-            if not clone_path.exists():
+            path_obj = Path(clone_path)
+            if not path_obj.exists():
                 return {"status": "error", "message": "Repository path does not exist"}
 
             # Validate commit message
@@ -601,14 +601,14 @@ class GitRepositoryManager:
 
             # Git add
             subprocess.run(
-                ["git", "-C", str(clone_path), "add", "-A"],
+                ["git", "-C", str(path_obj), "add", "-A"],
                 timeout=self.PUSH_PULL_TIMEOUT,
                 capture_output=True,
             )
 
             # Git commit
             result = subprocess.run(
-                ["git", "-C", str(clone_path), "commit", "-m", message],
+                ["git", "-C", str(path_obj), "commit", "-m", message],
                 timeout=self.PUSH_PULL_TIMEOUT,
                 capture_output=True,
                 text=True,
@@ -618,7 +618,7 @@ class GitRepositoryManager:
                 return {"status": "error", "message": result.stderr or "Commit failed"}
 
             # Git push
-            push_command = ["git", "-C", str(clone_path), "push"]
+            push_command = ["git", "-C", str(path_obj), "push"]
             if branch:
                 push_command.extend(["origin", branch])
 

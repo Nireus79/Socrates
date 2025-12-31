@@ -359,7 +359,7 @@ class DocumentUnderstandingService:
 
         # Return language with highest score
         if scores:
-            best_lang = max(scores, key=scores.get)
+            best_lang = max(scores, key=lambda lang: scores[lang])
             if scores[best_lang] > 0:
                 return best_lang
 

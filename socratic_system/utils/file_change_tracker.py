@@ -101,7 +101,7 @@ class FileChangeTracker:
         orchestrator: Any = None,
     ) -> Dict[str, Any]:
         """Update vector DB based on detected changes"""
-        results = {
+        results: Dict[str, Any] = {
             "status": "success",
             "deleted": 0,
             "modified": 0,
@@ -205,7 +205,7 @@ class FileChangeTracker:
         self, changes: Dict[str, List[Dict]], project_id: str, database: Any
     ) -> Dict[str, Any]:
         """Update project_files table in database based on changes"""
-        results = {"status": "success", "deleted": 0, "modified": 0, "added": 0}
+        results: Dict[str, Any] = {"status": "success", "deleted": 0, "modified": 0, "added": 0}
 
         if not database:
             self.logger.warning("No database provided, skipping database update")

@@ -250,7 +250,7 @@ class CodeParser:
                 matches = re.finditer(pattern, line)
                 for match in matches:
                     func_name = match.group(1)
-                    params_str = match.group(2) if match.lastindex >= 2 else ""
+                    params_str = match.group(2) if match.lastindex and match.lastindex >= 2 else ""
                     params = [
                         p.strip().split("=")[0].strip() for p in params_str.split(",") if p.strip()
                     ]
@@ -354,7 +354,7 @@ class CodeParser:
             for match in matches:
                 match.group(1)
                 method_name = match.group(2)
-                params_str = match.group(3) if match.lastindex >= 3 else ""
+                params_str = match.group(3) if match.lastindex and match.lastindex >= 3 else ""
                 params = [p.strip().split()[-1] for p in params_str.split(",") if p.strip()]
 
                 if method_name not in seen_methods and method_name not in [
@@ -386,9 +386,9 @@ class CodeParser:
 
     def _parse_cpp(self, file_path: str, content: str) -> Dict[str, Any]:
         """Parse C++ code using regex-based extraction."""
-        functions = []
-        classes = []
-        imports = []
+        functions: List[Dict[str, Any]] = []
+        classes: List[Dict[str, Any]] = []
+        imports: List[str] = []
 
         lines = content.split("\n")
 
@@ -432,7 +432,7 @@ class CodeParser:
             for match in matches:
                 match.group(1)
                 func_name = match.group(2)
-                params_str = match.group(3) if match.lastindex >= 3 else ""
+                params_str = match.group(3) if match.lastindex and match.lastindex >= 3 else ""
                 params = [
                     p.strip().split()[-1].rstrip("*&") for p in params_str.split(",") if p.strip()
                 ]
@@ -490,7 +490,7 @@ class CodeParser:
             for match in matches:
                 match.group(1)
                 func_name = match.group(2)
-                params_str = match.group(3) if match.lastindex >= 3 else ""
+                params_str = match.group(3) if match.lastindex and match.lastindex >= 3 else ""
                 params = [
                     p.strip().split()[-1].rstrip("*") for p in params_str.split(",") if p.strip()
                 ]
@@ -554,7 +554,7 @@ class CodeParser:
                 for match in matches:
                     method_name = match.group(1)
                     if method_name not in ["if", "for", "while", "switch"]:
-                        params_str = match.group(2) if match.lastindex >= 2 else ""
+                        params_str = match.group(2) if match.lastindex and match.lastindex >= 2 else ""
                         params = [p.strip() for p in params_str.split(",") if p.strip()]
                         methods.append({"name": method_name, "params": params, "line": 0})
 
@@ -573,7 +573,7 @@ class CodeParser:
             matches = re.finditer(method_pattern, line)
             for match in matches:
                 method_name = match.group(2)
-                params_str = match.group(3) if match.lastindex >= 3 else ""
+                params_str = match.group(3) if match.lastindex and match.lastindex >= 3 else ""
                 params = [p.strip().split()[-1] for p in params_str.split(",") if p.strip()]
 
                 if method_name not in seen:

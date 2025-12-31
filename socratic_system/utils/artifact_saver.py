@@ -8,7 +8,7 @@ within the project's generated content folder.
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger("socrates.utils.artifact_saver")
 
@@ -179,7 +179,7 @@ class ArtifactSaver:
         """
         save_dir = ArtifactSaver.get_generated_content_dir(project_id, data_dir)
 
-        artifacts = {}
+        artifacts: Dict[str, List[str]] = {}
         if not save_dir.exists():
             return artifacts
 

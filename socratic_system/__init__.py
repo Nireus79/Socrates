@@ -152,8 +152,9 @@ def quick_start(api_key: str, data_dir: str = None, log_level: str = "INFO") -> 
         ... })
     """
     from pathlib import Path
+    from typing import Any, Dict
 
-    config_dict = {"api_key": api_key}
+    config_dict: Dict[str, Any] = {"api_key": api_key}
 
     if data_dir:
         config_dict["data_dir"] = Path(data_dir)

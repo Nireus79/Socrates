@@ -164,7 +164,8 @@
       "Bash(if [ $i -lt 10 ])",
       "Bash(then sleep 10)",
       "Bash(fi)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(.venvScriptspython.exe -m ruff check socratic_system tests --config pyproject.toml)"
     ],
     "deny": [],
     "ask": []

@@ -9,7 +9,7 @@ Supports:
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("socrates.utils.validators.syntax_validator")
 
@@ -259,7 +259,7 @@ class SyntaxValidator:
         self, file_path: str, content: str, language: str
     ) -> Dict[str, Any]:
         """Basic JavaScript/TypeScript validation (pattern-based)"""
-        issues = []
+        issues: List[Dict[str, Any]] = []
 
         # Check for common syntax issues
         # This is basic pattern matching, not a full parser

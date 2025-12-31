@@ -93,7 +93,7 @@ class CodeStructureAnalyzer:
                     }
                 )
 
-    def _extract_functions(self, tree: ast.AST) -> None:
+    def _extract_functions(self, tree: ast.Module) -> None:
         """Extract function definitions (not in classes) from AST"""
         for node in tree.body:
             if isinstance(node, ast.FunctionDef):
@@ -193,7 +193,7 @@ class CodeStructureAnalyzer:
         Returns:
             Dictionary with suggested file organization
         """
-        organization = {
+        organization: Dict[str, list] = {
             "models.py": [],
             "controllers.py": [],
             "services.py": [],
