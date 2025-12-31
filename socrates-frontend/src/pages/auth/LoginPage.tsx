@@ -30,26 +30,29 @@ export function LoginPage() {
       showSuccess('Success', 'Logged in successfully');
       navigate('/dashboard');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed';
+      // Use the specific error message from the store (set by getErrorMessage function)
+      // The store's error has the detailed message from the API
+      const storeError = useAuthStore.getState().error;
+      const message = storeError || (err instanceof Error ? err.message : 'Login failed');
       showError('Login Failed', message);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Socrates</h1>
-          <p className="text-gray-600">AI-Powered Learning Through Socratic Dialogue</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Socrates</h1>
+          <p className="text-gray-600 dark:text-gray-400">AI-Powered Learning Through Socratic Dialogue</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Username */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Username
               </label>
               <input
@@ -59,7 +62,7 @@ export function LoginPage() {
                 value={formData.username}
                 onChange={handleChange}
                 placeholder="Enter your username"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={isLoading}
                 required
               />
@@ -67,7 +70,7 @@ export function LoginPage() {
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Password
               </label>
               <input
@@ -77,7 +80,7 @@ export function LoginPage() {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Enter your password"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={isLoading}
                 required
               />
@@ -85,8 +88,8 @@ export function LoginPage() {
 
             {/* Error Message */}
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800 text-sm">{error}</p>
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-red-800 dark:text-red-400 text-sm">{error}</p>
               </div>
             )}
 
@@ -94,16 +97,16 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? 'Logging in...' : 'Login'}
             </button>
 
             {/* Register Link */}
-            <div className="text-center pt-4 border-t">
-              <p className="text-gray-600">
+            <div className="text-center pt-4 border-t border-gray-300 dark:border-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 Don't have an account?{' '}
-                <Link to="/auth/register" className="text-blue-600 hover:text-blue-700 font-semibold">
+                <Link to="/auth/register" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold">
                   Register here
                 </Link>
               </p>
@@ -112,10 +115,10 @@ export function LoginPage() {
         </div>
 
         {/* Demo Credentials */}
-        <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-900 font-semibold mb-2">Demo Credentials:</p>
-          <p className="text-sm text-blue-800">Username: <code className="bg-white px-2 py-1 rounded">demo</code></p>
-          <p className="text-sm text-blue-800">Password: <code className="bg-white px-2 py-1 rounded">demo123</code></p>
+        <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="text-sm text-blue-900 dark:text-blue-300 font-semibold mb-2">Demo Credentials:</p>
+          <p className="text-sm text-blue-800 dark:text-blue-400">Username: <code className="bg-white dark:bg-gray-800 px-2 py-1 rounded font-mono">testuser</code></p>
+          <p className="text-sm text-blue-800 dark:text-blue-400">Password: <code className="bg-white dark:bg-gray-800 px-2 py-1 rounded font-mono">TestPassword123!</code></p>
         </div>
       </div>
     </div>
