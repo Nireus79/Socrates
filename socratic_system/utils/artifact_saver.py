@@ -5,10 +5,11 @@ Saves generated artifacts (code, docs, plans, etc.) to organized directories
 within the project's generated content folder.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger("socrates.utils.artifact_saver")
 
@@ -28,7 +29,7 @@ class ArtifactSaver:
     }
 
     @staticmethod
-    def get_generated_content_dir(project_id: str, data_dir: Optional[Path] = None) -> Path:
+    def get_generated_content_dir(project_id: str, data_dir: Path | None = None) -> Path:
         """
         Get the directory for generated content for a project.
 
@@ -50,8 +51,8 @@ class ArtifactSaver:
         file_structure: dict,
         project_id: str,
         project_name: str,
-        data_dir: Optional[Path] = None,
-    ) -> Tuple[bool, str]:
+        data_dir: Path | None = None,
+    ) -> tuple[bool, str]:
         """
         Save a multi-file project structure to disk.
 
@@ -103,9 +104,9 @@ class ArtifactSaver:
         artifact_type: str,
         project_id: str,
         project_name: str,
-        data_dir: Optional[Path] = None,
+        data_dir: Path | None = None,
         timestamp: bool = True,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         Save a generated artifact to disk.
 
@@ -166,7 +167,7 @@ class ArtifactSaver:
             return False, ""
 
     @staticmethod
-    def list_generated_artifacts(project_id: str, data_dir: Optional[Path] = None) -> dict:
+    def list_generated_artifacts(project_id: str, data_dir: Path | None = None) -> dict:
         """
         List all generated artifacts for a project.
 
@@ -179,7 +180,7 @@ class ArtifactSaver:
         """
         save_dir = ArtifactSaver.get_generated_content_dir(project_id, data_dir)
 
-        artifacts: Dict[str, List[str]] = {}
+        artifacts: dict[str, list[str]] = {}
         if not save_dir.exists():
             return artifacts
 
@@ -288,7 +289,7 @@ class ArtifactSaver:
         return "\n".join(lines)
 
     @staticmethod
-    def list_project_files(project_path: str) -> List[str]:
+    def list_project_files(project_path: str) -> list[str]:
         """
         List all files in a project.
 

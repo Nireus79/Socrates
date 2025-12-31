@@ -8,9 +8,11 @@ Handles:
 - Updating vector DB based on changes
 """
 
+from __future__ import annotations
+
 import hashlib
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
 logger = logging.getLogger("socrates.utils.file_change_tracker")
 
@@ -36,8 +38,8 @@ class FileChangeTracker:
         return hashlib.md5(content.encode("utf-8")).hexdigest()
 
     def detect_changes(
-        self, project_id: str, current_files: List[Dict], stored_files: List[Dict]
-    ) -> Dict[str, List[Dict]]:
+        self, project_id: str, current_files: list[dict], stored_files: list[dict]
+    ) -> dict[str, list[dict]]:
         """
         Detect changes between current files and stored files
 
@@ -96,12 +98,12 @@ class FileChangeTracker:
 
     def update_vector_db(
         self,
-        changes: Dict[str, List[Dict]],
+        changes: dict[str, list[dict]],
         project_id: str,
         orchestrator: Any = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Update vector DB based on detected changes"""
-        results: Dict[str, Any] = {
+        results: dict[str, Any] = {
             "status": "success",
             "deleted": 0,
             "modified": 0,
@@ -138,7 +140,7 @@ class FileChangeTracker:
 
         return results
 
-    def _process_deleted_files_vector(self, changes: Dict) -> int:
+    def _process_deleted_files_vector(self, changes: dict) -> int:
         """Process deleted files in vector DB"""
         count = 0
         for deleted_file in changes.get("deleted", []):
@@ -152,7 +154,7 @@ class FileChangeTracker:
         return count
 
     def _process_modified_files_vector(
-        self, changes: Dict, project_id: str, doc_processor: Any
+        self, changes: dict, project_id: str, doc_processor: Any
     ) -> int:
         """Process modified files in vector DB"""
         count = 0
@@ -178,7 +180,7 @@ class FileChangeTracker:
         return count
 
     def _process_added_files_vector(
-        self, changes: Dict, project_id: str, doc_processor: Any
+        self, changes: dict, project_id: str, doc_processor: Any
     ) -> int:
         """Process added files in vector DB"""
         count = 0
@@ -202,10 +204,10 @@ class FileChangeTracker:
         return count
 
     def update_database(
-        self, changes: Dict[str, List[Dict]], project_id: str, database: Any
-    ) -> Dict[str, Any]:
+        self, changes: dict[str, list[dict]], project_id: str, database: Any
+    ) -> dict[str, Any]:
         """Update project_files table in database based on changes"""
-        results: Dict[str, Any] = {"status": "success", "deleted": 0, "modified": 0, "added": 0}
+        results: dict[str, Any] = {"status": "success", "deleted": 0, "modified": 0, "added": 0}
 
         if not database:
             self.logger.warning("No database provided, skipping database update")
@@ -233,7 +235,7 @@ class FileChangeTracker:
 
         return results
 
-    def _process_deleted_files_db(self, changes: Dict, project_id: str, file_manager: Any) -> int:
+    def _process_deleted_files_db(self, changes: dict, project_id: str, file_manager: Any) -> int:
         """Process deleted files in database"""
         count = 0
         for deleted_file in changes.get("deleted", []):
@@ -246,7 +248,7 @@ class FileChangeTracker:
                 self.logger.error(f"Error deleting file: {deleted_file['file_path']}: {str(e)}")
         return count
 
-    def _process_modified_files_db(self, changes: Dict, project_id: str, file_manager: Any) -> int:
+    def _process_modified_files_db(self, changes: dict, project_id: str, file_manager: Any) -> int:
         """Process modified files in database"""
         count = 0
         for modified_file in changes.get("modified", []):
@@ -259,7 +261,7 @@ class FileChangeTracker:
                 self.logger.error(f"Error updating file: {modified_file['file_path']}: {str(e)}")
         return count
 
-    def _process_added_files_db(self, changes: Dict, project_id: str, file_manager: Any) -> int:
+    def _process_added_files_db(self, changes: dict, project_id: str, file_manager: Any) -> int:
         """Process added files in database"""
         files_to_add = changes.get("added", [])
         if not files_to_add:
@@ -276,11 +278,11 @@ class FileChangeTracker:
     def sync_changes(
         self,
         project_id: str,
-        current_files: List[Dict],
-        stored_files: List[Dict],
+        current_files: list[dict],
+        stored_files: list[dict],
         orchestrator: Any = None,
         database: Any = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Sync changes to both database and vector DB
 

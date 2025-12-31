@@ -496,9 +496,7 @@ class GitRepositoryManager:
             try:
                 path_obj.relative_to(temp_base)
             except ValueError:
-                self.logger.error(
-                    f"Path traversal attempt detected: {path_obj} not in {temp_base}"
-                )
+                self.logger.error(f"Path traversal attempt detected: {path_obj} not in {temp_base}")
                 return False
 
             # Remove directory

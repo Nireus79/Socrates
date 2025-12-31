@@ -7,9 +7,11 @@ Supports:
 - Other languages (basic checks)
 """
 
+from __future__ import annotations
+
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger("socrates.utils.validators.syntax_validator")
 
@@ -28,7 +30,7 @@ class SyntaxValidator:
         "cpp": [".cpp", ".cc", ".cxx", ".hpp", ".h"],
     }
 
-    def validate(self, target: str) -> Dict[str, Any]:
+    def validate(self, target: str) -> dict[str, Any]:
         """
         Validate syntax of file or all files in directory
 
@@ -68,7 +70,7 @@ class SyntaxValidator:
         else:
             return self._validate_directory(str(target_path))
 
-    def _validate_file(self, file_path: str) -> Dict[str, Any]:
+    def _validate_file(self, file_path: str) -> dict[str, Any]:
         """Validate single file syntax"""
         file_path_obj = Path(file_path)
         language = self._detect_language(file_path_obj)
@@ -133,7 +135,7 @@ class SyntaxValidator:
                 },
             }
 
-    def _validate_directory(self, dir_path: str) -> Dict[str, Any]:
+    def _validate_directory(self, dir_path: str) -> dict[str, Any]:
         """Validate all files in directory"""
         all_issues = []
         all_warnings = []
@@ -199,7 +201,7 @@ class SyntaxValidator:
             },
         }
 
-    def _validate_python_file(self, file_path: str, content: str) -> Dict[str, Any]:
+    def _validate_python_file(self, file_path: str, content: str) -> dict[str, Any]:
         """Validate Python syntax using compile()"""
         try:
             compile(content, file_path, "exec")
@@ -257,9 +259,9 @@ class SyntaxValidator:
 
     def _validate_javascript_file(
         self, file_path: str, content: str, language: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Basic JavaScript/TypeScript validation (pattern-based)"""
-        issues: List[Dict[str, Any]] = []
+        issues: list[dict[str, Any]] = []
 
         # Check for common syntax issues
         # This is basic pattern matching, not a full parser
@@ -321,7 +323,7 @@ class SyntaxValidator:
             },
         }
 
-    def _detect_language(self, file_path: Path) -> Optional[str]:
+    def _detect_language(self, file_path: Path) -> str | None:
         """Detect programming language from file extension"""
         suffix = file_path.suffix.lower()
 

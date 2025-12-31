@@ -554,7 +554,9 @@ class CodeParser:
                 for match in matches:
                     method_name = match.group(1)
                     if method_name not in ["if", "for", "while", "switch"]:
-                        params_str = match.group(2) if match.lastindex and match.lastindex >= 2 else ""
+                        params_str = (
+                            match.group(2) if match.lastindex and match.lastindex >= 2 else ""
+                        )
                         params = [p.strip() for p in params_str.split(",") if p.strip()]
                         methods.append({"name": method_name, "params": params, "line": 0})
 

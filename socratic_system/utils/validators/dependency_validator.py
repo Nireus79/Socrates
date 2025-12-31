@@ -7,12 +7,14 @@ Validates:
 - Identifies missing and unused dependencies
 """
 
+from __future__ import annotations
+
 import ast
 import json
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger("socrates.utils.validators.dependency_validator")
 
@@ -82,7 +84,7 @@ class DependencyValidator:
         "weakref",
     }
 
-    def validate(self, target: str) -> Dict[str, Any]:
+    def validate(self, target: str) -> dict[str, Any]:
         """
         Validate dependencies for project or file
 
@@ -145,7 +147,7 @@ class DependencyValidator:
                 },
             }
 
-    def _detect_project_type(self, project_dir: str) -> Optional[str]:
+    def _detect_project_type(self, project_dir: str) -> str | None:
         """Detect project type from key files"""
         project_path = Path(project_dir)
 
@@ -167,7 +169,7 @@ class DependencyValidator:
 
         return None
 
-    def _validate_python_dependencies(self, project_dir: str) -> Dict[str, Any]:
+    def _validate_python_dependencies(self, project_dir: str) -> dict[str, Any]:
         """Validate Python project dependencies"""
         project_path = Path(project_dir)
         issues = []
@@ -287,7 +289,7 @@ class DependencyValidator:
         declared_deps: set,
         missing_imports: list,
         unused_deps: list,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Build validation result dictionary"""
         if missing_imports:
             issues.append(
@@ -323,11 +325,11 @@ class DependencyValidator:
             },
         }
 
-    def _validate_javascript_dependencies(self, project_dir: str) -> Dict[str, Any]:
+    def _validate_javascript_dependencies(self, project_dir: str) -> dict[str, Any]:
         """Validate JavaScript project dependencies"""
         project_path = Path(project_dir)
-        issues: List[Dict[str, Any]] = []
-        warnings: List[Dict[str, Any]] = []
+        issues: list[dict[str, Any]] = []
+        warnings: list[dict[str, Any]] = []
 
         # Read package.json
         package_json_file = project_path / "package.json"
