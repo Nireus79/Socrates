@@ -659,6 +659,6 @@ class VectorDatabase:
         """Destructor to ensure cleanup when object is garbage collected."""
         try:
             self.close()
-        except Exception as e:
+        except Exception:
             # Silently ignore errors in destructor
             pass

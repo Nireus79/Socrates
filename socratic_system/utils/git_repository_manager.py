@@ -255,7 +255,7 @@ class GitRepositoryManager:
                 readme_path = clone_root / "README"
             if readme_path.exists():
                 try:
-                    with open(readme_path, "r", encoding="utf-8", errors="ignore") as f:
+                    with open(readme_path, encoding="utf-8", errors="ignore") as f:
                         # Get first paragraph as description
                         content = f.read()
                         description = content.split("\n\n")[0][:200] if content else ""
@@ -335,11 +335,11 @@ class GitRepositoryManager:
                         if suffix in extensions:
                             found_languages.add(language)
                             if len(found_languages) >= 5:  # Limit to 5 languages
-                                return sorted(list(found_languages))
+                                return sorted(found_languages)
         except Exception as e:
             self.logger.debug(f"Error detecting languages: {e}")
 
-        return sorted(list(found_languages)) if found_languages else []
+        return sorted(found_languages) if found_languages else []
 
     def _count_files_and_size(self, repo_path: Path) -> Tuple[int, int]:
         """Count total files and calculate total size (excluding .git)"""
@@ -402,7 +402,7 @@ class GitRepositoryManager:
             # Try to read .git/HEAD
             head_file = Path(repo_path) / ".git" / "HEAD"
             if head_file.exists():
-                with open(head_file, "r") as f:
+                with open(head_file) as f:
                     content = f.read().strip()
                     # Format: ref: refs/heads/main
                     if "refs/heads/" in content:
@@ -556,7 +556,7 @@ class GitRepositoryManager:
                     "changes": {},
                 }
 
-            self.logger.info(f"Successfully pulled updates from repository")
+            self.logger.info("Successfully pulled updates from repository")
             return {
                 "status": "success",
                 "message": result.stdout or "Pull successful",
@@ -632,7 +632,7 @@ class GitRepositoryManager:
             if result.returncode != 0:
                 return {"status": "error", "message": result.stderr or "Push failed"}
 
-            self.logger.info(f"Successfully pushed changes to repository")
+            self.logger.info("Successfully pushed changes to repository")
             return {"status": "success", "message": "Push successful"}
 
         except subprocess.TimeoutExpired:

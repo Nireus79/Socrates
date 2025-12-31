@@ -77,7 +77,7 @@ class GithubImportCommand(BaseCommand):
                 if metadata.get("file_count"):
                     print(f"  Files: {metadata.get('file_count')}")
                 if metadata.get("has_tests"):
-                    print(f"  Tests: Yes")
+                    print("  Tests: Yes")
                 if metadata.get("description"):
                     print(f"  Description: {metadata.get('description')[:80]}...")
 
@@ -169,8 +169,9 @@ class GithubPullCommand(BaseCommand):
                     print(f"\n{Fore.CYAN}Detecting file changes...{Style.RESET_ALL}")
                     try:
                         from pathlib import Path
-                        from socratic_system.utils.file_change_tracker import FileChangeTracker
+
                         from socratic_system.database.project_file_manager import ProjectFileManager
+                        from socratic_system.utils.file_change_tracker import FileChangeTracker
 
                         # Read current files from cloned repository
                         current_files = []
@@ -271,7 +272,6 @@ class GithubPullCommand(BaseCommand):
 
     def _should_save_file(self, file_path, repo_root: str) -> bool:
         """Filter out binaries, large files, and generated code"""
-        from pathlib import Path
 
         SKIP_EXTENSIONS = {
             ".pyc",
@@ -530,8 +530,8 @@ class GithubSyncCommand(BaseCommand):
         if push_result["status"] == "success":
             self.print_success("Sync completed successfully!")
             print(f"\n{Fore.CYAN}Summary:{Style.RESET_ALL}")
-            print(f"  • Pulled latest changes from GitHub")
-            print(f"  • Pushed local changes to GitHub")
+            print("  • Pulled latest changes from GitHub")
+            print("  • Pushed local changes to GitHub")
             return self.success(
                 data={
                     "pull_result": pull_result.get("data", {}),

@@ -11,12 +11,12 @@ Features:
 
 import logging
 import time
-from typing import AsyncGenerator, Optional, Dict, Any
+from typing import Any, AsyncGenerator, Dict, Optional
 
 from sqlalchemy import event, text
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import NullPool, QueuePool, StaticPool
+from sqlalchemy.pool import QueuePool, StaticPool
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ class DatabaseConnectionPool:
             poolclass = StaticPool  # SQLite works best with StaticPool or NullPool
             pool_pre_ping = False
             connect_args = {}
-            logger.info(f"Initializing SQLite connection pool")
+            logger.info("Initializing SQLite connection pool")
         else:
             raise ValueError(f"Unsupported database type: {database_url}")
 

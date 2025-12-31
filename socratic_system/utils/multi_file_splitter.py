@@ -10,8 +10,7 @@ Intelligently distributes code across multiple files based on:
 
 import ast
 import logging
-import re
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict
 
 logger = logging.getLogger("socrates.utils.multi_file_splitter")
 

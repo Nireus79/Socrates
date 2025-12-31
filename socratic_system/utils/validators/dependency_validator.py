@@ -12,7 +12,7 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger("socrates.utils.validators.dependency_validator")
 
@@ -28,7 +28,7 @@ class DependencyValidator:
         "socket", "ssl", "http", "urllib", "email", "csv", "configparser", "logging",
         "unittest", "pytest", "typing", "abc", "contextlib", "decorator", "io",
         "pickle", "sqlite3", "hashlib", "hmac", "secrets", "stat", "errno", "uuid",
-        "unittest", "doctest", "pdb", "traceback", "inspect", "warnings", "linecache",
+        "doctest", "pdb", "traceback", "inspect", "warnings", "linecache",
         "dis", "dataclasses", "enum", "copy", "types", "pprint", "reprlib", "weakref",
     }
 
@@ -108,11 +108,11 @@ class DependencyValidator:
             return "javascript"
 
         # Check for Python files
-        for file_path in project_path.rglob("*.py"):
+        for _file_path in project_path.rglob("*.py"):
             return "python"
 
         # Check for JavaScript files
-        for file_path in project_path.rglob("*.js"):
+        for _file_path in project_path.rglob("*.js"):
             return "javascript"
 
         return None
@@ -129,7 +129,7 @@ class DependencyValidator:
 
         if requirements_file.exists():
             try:
-                with open(requirements_file, "r") as f:
+                with open(requirements_file) as f:
                     for line in f:
                         line = line.strip()
                         if not line or line.startswith("#"):
@@ -165,7 +165,7 @@ class DependencyValidator:
                     continue
 
                 try:
-                    with open(py_file, "r", encoding="utf-8", errors="ignore") as f:
+                    with open(py_file, encoding="utf-8", errors="ignore") as f:
                         content = f.read()
 
                     # Parse AST to extract imports
@@ -273,7 +273,7 @@ class DependencyValidator:
             }
 
         try:
-            with open(package_json_file, "r") as f:
+            with open(package_json_file) as f:
                 package_data = json.load(f)
 
             # Collect dependencies from package.json

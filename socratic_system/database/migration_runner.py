@@ -8,10 +8,9 @@ Handles:
 """
 
 import logging
-import os
 import sqlite3
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 logger = logging.getLogger("socrates.database.migrations")
 
@@ -48,7 +47,7 @@ class MigrationRunner:
             return False, msg
 
         try:
-            with open(migration_path, "r") as f:
+            with open(migration_path) as f:
                 sql_script = f.read()
 
             conn = sqlite3.connect(self.db_path)

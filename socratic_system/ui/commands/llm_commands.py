@@ -341,8 +341,8 @@ class LLMCommand(BaseCommand):
             print(f"  {Fore.GREEN}subscription{Style.RESET_ALL}   - Use Claude subscription tokens")
             print(f"                    Set: {Fore.YELLOW}export ANTHROPIC_SUBSCRIPTION_TOKEN=...{Style.RESET_ALL}\n")
             print(f"{Fore.WHITE}Usage:{Style.RESET_ALL}")
-            print(f"  /llm auth-method api_key")
-            print(f"  /llm auth-method subscription\n")
+            print("  /llm auth-method api_key")
+            print("  /llm auth-method subscription\n")
             return self.success(message="Auth method information displayed")
 
         auth_method = args[0].lower()

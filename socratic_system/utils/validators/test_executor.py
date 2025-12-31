@@ -14,7 +14,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger("socrates.utils.validators.test_executor")
 
@@ -175,7 +175,7 @@ class TestExecutor:
         skipped = len(re.findall(r" SKIPPED", output))
 
         # Extract summary line
-        summary_match = re.search(
+        re.search(
             r"(\d+) passed|(\d+) failed|(\d+) skipped|(\d+) error", output
         )
 
@@ -244,7 +244,7 @@ class TestExecutor:
                         "duration_seconds": timeout,
                         "framework": "jest/mocha",
                         "failures": [],
-                        "output": f"Test execution timed out",
+                        "output": "Test execution timed out",
                     }
                 except Exception:
                     continue
@@ -352,7 +352,7 @@ class TestExecutor:
         package_json = project_path / "package.json"
         if package_json.exists():
             try:
-                with open(package_json, "r") as f:
+                with open(package_json) as f:
                     data = json.load(f)
                     if "jest" in data or "jest" in str(data.get("devDependencies", {})):
                         return "jest"

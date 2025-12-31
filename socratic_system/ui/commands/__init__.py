@@ -19,12 +19,12 @@ from socratic_system.ui.commands.collab_commands import (
 from socratic_system.ui.commands.conv_commands import ConvSearchCommand, ConvSummaryCommand
 from socratic_system.ui.commands.debug_commands import DebugCommand, LogsCommand
 from socratic_system.ui.commands.doc_commands import (
-    DocsCommand,
     DocImportCommand,
     DocImportDirCommand,
     DocImportUrlCommand,
     DocListCommand,
     DocPasteCommand,
+    DocsCommand,
 )
 from socratic_system.ui.commands.finalize_commands import (
     FinalizeDocsCommand,

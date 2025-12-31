@@ -5,9 +5,9 @@ Main application class for Socratic RAG System - Command-Based CLI Interface
 import datetime
 import getpass
 import os
-import sys
-import subprocess
 import signal
+import subprocess
+import sys
 import time
 import webbrowser
 from pathlib import Path
@@ -18,7 +18,6 @@ from colorama import Fore, Style
 from socratic_system.models import ProjectContext, User
 from socratic_system.orchestration import AgentOrchestrator
 from socratic_system.ui.command_handler import CommandHandler
-from socratic_system.utils.logger import get_logger as get_debug_logger, set_debug_mode, reset_logger
 from socratic_system.ui.commands import (  # Analytics commands; Code commands; Finalize commands; Collaboration commands; Skills commands; Session commands; Conversation commands; Debug commands; Document commands; System commands; Note commands; Project commands; Statistics commands; User commands; Subscription commands; GitHub commands
     AdvanceCommand,
     AnalyticsAnalyzeCommand,
@@ -39,12 +38,12 @@ from socratic_system.ui.commands import (  # Analytics commands; Code commands; 
     ConvSearchCommand,
     ConvSummaryCommand,
     DebugCommand,
-    DocsCommand,
     DocImportCommand,
     DocImportDirCommand,
     DocImportUrlCommand,
     DocListCommand,
     DocPasteCommand,
+    DocsCommand,
     DoneCommand,
     ExitCommand,
     ExplainCommand,
@@ -108,7 +107,8 @@ from socratic_system.ui.commands import (  # Analytics commands; Code commands; 
 from socratic_system.ui.context_display import ContextDisplay
 from socratic_system.ui.navigation import NavigationStack
 from socratic_system.ui.nlu_handler import NLUHandler, SuggestionDisplay
-
+from socratic_system.utils.logger import get_logger as get_debug_logger
+from socratic_system.utils.logger import reset_logger, set_debug_mode
 
 # ============================================================================
 # Command Registry Pattern - Consolidated command registration

@@ -55,14 +55,18 @@ Examples:
     ```
 """
 
+from __future__ import annotations
+
 import logging
-from enum import Enum
-from contextvars import ContextVar
-from functools import wraps
 from contextlib import asynccontextmanager
-from typing import Optional, List, Callable, Any, AsyncGenerator, AsyncContextManager
+from contextvars import ContextVar
+from enum import Enum
+from functools import wraps
+from typing import Any, AsyncContextManager, Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from socratic_system.database.connection_pool import DatabaseConnectionPool
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +118,7 @@ class DatabaseRouter:
     def __init__(
         self,
         primary_url: str,
-        replica_urls: Optional[List[str]] = None,
+        replica_urls: list[str] | None = None,
         read_preference: DatabaseRole = DatabaseRole.REPLICA,
     ):
         """Initialize database router with primary and replica connections.
@@ -137,7 +141,7 @@ class DatabaseRouter:
         self.read_preference = read_preference
 
         # Initialize replica pools
-        self.replica_pools: List[DatabaseConnectionPool] = []
+        self.replica_pools: list[DatabaseConnectionPool] = []
         if replica_urls:
             if not isinstance(replica_urls, list):
                 raise ValueError("replica_urls must be a list")
@@ -154,7 +158,7 @@ class DatabaseRouter:
             f"replica(s). Default read preference: {read_preference.value}"
         )
 
-    def get_session(self, role: Optional[DatabaseRole] = None) -> "AsyncContextManager[AsyncSession]":
+    def get_session(self, role: DatabaseRole | None = None) -> AsyncContextManager[AsyncSession]:
         """Get a database session from appropriate pool.
 
         Routes to primary or replica based on role parameter or context variable.
@@ -205,7 +209,7 @@ class DatabaseRouter:
 
         return _get_session_impl()
 
-    def _select_replica(self) -> "DatabaseConnectionPool":
+    def _select_replica(self) -> DatabaseConnectionPool:
         """Select next replica using round-robin strategy.
 
         Returns:
@@ -386,12 +390,12 @@ def use_replica() -> Callable:
 
 
 # Module-level global router instance
-_router: Optional[DatabaseRouter] = None
+_router: DatabaseRouter | None = None
 
 
 async def initialize_router(
     primary_url: str,
-    replica_urls: Optional[List[str]] = None,
+    replica_urls: list[str] | None = None,
     read_preference: DatabaseRole = DatabaseRole.REPLICA,
 ) -> DatabaseRouter:
     """Initialize global database router instance.

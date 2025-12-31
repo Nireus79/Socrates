@@ -358,23 +358,8 @@ class DocumentUnderstandingService:
         """Use Claude API for intelligent goal-document comparison."""
         try:
             # Format document summaries for analysis
-            doc_text = self._format_summaries_for_analysis(document_summaries)
+            self._format_summaries_for_analysis(document_summaries)
 
-            prompt = f"""Analyze the relationship between the user's goals and the provided documents.
-
-User Goals:
-{user_goals}
-
-Document Summaries:
-{doc_text}
-
-Provide analysis in JSON format with:
-1. "alignment": 2-3 sentences describing how goals and documents align
-2. "gaps": List of 2-3 gaps or mismatches
-3. "opportunities": List of 2-3 opportunities or suggestions
-4. "match_score": A float from 0.0 to 1.0 indicating alignment
-
-Focus on practical, actionable insights."""
 
             # Note: In production, this would call self.claude_client.analyze()
             # For now, return structured response format

@@ -5,7 +5,6 @@ Supports debug mode, file logging, and console output
 
 import logging
 import logging.handlers
-from datetime import datetime
 from pathlib import Path
 from typing import Optional
 

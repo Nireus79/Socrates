@@ -618,8 +618,9 @@ class ProjectAnalyzeCommand(BaseCommand):
         print(f"{Fore.YELLOW}Analyzing project code...{Style.RESET_ALL}")
 
         try:
-            from socratic_system.utils.git_repository_manager import GitRepositoryManager
             from pathlib import Path
+
+            from socratic_system.utils.git_repository_manager import GitRepositoryManager
 
             git_manager = GitRepositoryManager()
 
@@ -673,7 +674,7 @@ class ProjectAnalyzeCommand(BaseCommand):
                         # Count lines
                         try:
                             for file in files[:50]:  # Sample first 50 files
-                                with open(file, 'r', encoding='utf-8', errors='ignore') as f:
+                                with open(file, encoding='utf-8', errors='ignore') as f:
                                     analysis["total_lines"] += len(f.readlines())
                         except Exception:
                             pass
@@ -714,7 +715,7 @@ class ProjectAnalyzeCommand(BaseCommand):
                 print(f"  Warnings: {summary.get('warnings_count', 0)}")
 
                 if project.repository_has_tests:
-                    print(f"  Tests: Configured")
+                    print("  Tests: Configured")
                 else:
                     print(f"  {Fore.YELLOW}Tests: None detected{Style.RESET_ALL}")
 
@@ -897,7 +898,7 @@ class ProjectFixCommand(BaseCommand):
                     return self.error("Validation failed before fixes")
 
                 validation_data = validation_result.get("validation_results", {})
-                summary = validation_result.get("validation_summary", {})
+                validation_result.get("validation_summary", {})
 
                 # Gather fixable issues
                 issues = []
@@ -1070,7 +1071,7 @@ class ProjectValidateCommand(BaseCommand):
                         print(f"  Passed: {tests.get('tests_passed', 0)}")
                         print(f"  Failed: {tests.get('tests_failed', 0)}")
                     else:
-                        print(f"  No tests found")
+                        print("  No tests found")
 
                     # Show recommendations
                     if recommendations:
@@ -1121,8 +1122,8 @@ class ProjectReviewCommand(BaseCommand):
         print(f"{Fore.YELLOW}Generating code review...{Style.RESET_ALL}")
 
         try:
+
             from socratic_system.utils.git_repository_manager import GitRepositoryManager
-            from pathlib import Path
 
             git_manager = GitRepositoryManager()
 
@@ -1215,7 +1216,7 @@ Format your response with clear sections."""
         samples = []
         for file_path in code_files[:max_files]:
             try:
-                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                with open(file_path, encoding='utf-8', errors='ignore') as f:
                     content = f.read()[:1000]  # First 1000 chars
                     samples.append(f"File: {file_path.name}\n```\n{content}\n```")
             except Exception:
@@ -1319,7 +1320,7 @@ class ProjectDiffCommand(BaseCommand):
                     if old_status != new_status:
                         print(f"\n  Status: {old_status} → {new_status}")
                 else:
-                    print(f"\n  No previous validation data available.")
+                    print("\n  No previous validation data available.")
                     print(f"  Current Issues: {new_issues}")
                     print(f"  Current Warnings: {new_warnings}")
                     print(f"  Current Status: {new_status}")

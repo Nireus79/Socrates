@@ -11,7 +11,7 @@ import asyncio
 import functools
 import logging
 import time
-from typing import Callable, TypeVar, Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TypeVar
 
 logger = logging.getLogger(__name__)
 

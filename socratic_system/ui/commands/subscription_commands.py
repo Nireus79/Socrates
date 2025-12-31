@@ -147,7 +147,7 @@ class SubscriptionUpgradeCommand(BaseCommand):
             # user.stripe_customer_id = customer.id
             # user.stripe_subscription_id = subscription.id
             pass
-        except Exception as e:
+        except Exception:
             # If Stripe fails, log but don't fail the upgrade
             pass
 

@@ -6,11 +6,9 @@ within the project's generated content folder.
 """
 
 import logging
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-
+from typing import List, Optional, Tuple
 
 logger = logging.getLogger("socrates.utils.artifact_saver")
 

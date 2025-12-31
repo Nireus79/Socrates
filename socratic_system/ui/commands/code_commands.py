@@ -1,7 +1,7 @@
 """Code generation and documentation commands"""
 
-from typing import Any, Dict, List
 from pathlib import Path
+from typing import Any, Dict, List
 
 from colorama import Fore, Style
 

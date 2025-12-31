@@ -11,11 +11,11 @@ Handles:
 import logging
 import random
 from pathlib import Path
-from typing import Dict, List, Optional, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List
 
 if TYPE_CHECKING:
-    from socratic_system.orchestration import AgentOrchestrator
     from socratic_system.models import ProjectContext
+    from socratic_system.orchestration import AgentOrchestrator
 
 logger = logging.getLogger("socrates.agents.project_file_loader")
 

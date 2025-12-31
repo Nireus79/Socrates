@@ -7,12 +7,9 @@ Supports:
 - Other languages (basic checks)
 """
 
-import ast
-import json
 import logging
-import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger("socrates.utils.validators.syntax_validator")
 
@@ -96,7 +93,7 @@ class SyntaxValidator:
             }
 
         try:
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(file_path, encoding="utf-8", errors="ignore") as f:
                 content = f.read()
         except Exception as e:
             return {
@@ -196,7 +193,7 @@ class SyntaxValidator:
                 "files_checked": files_checked,
                 "files_valid": files_valid,
                 "files_invalid": files_invalid,
-                "languages": sorted(list(languages_found)),
+                "languages": sorted(languages_found),
             },
         }
 

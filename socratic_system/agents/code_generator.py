@@ -2,8 +2,8 @@
 Code generation agent for Socratic RAG System
 """
 
-from typing import Any, Dict
 from pathlib import Path
+from typing import Any, Dict
 
 from socratic_system.models import ProjectContext
 from socratic_system.utils.artifact_saver import ArtifactSaver
@@ -213,7 +213,7 @@ class CodeGeneratorAgent(Agent):
                 if success:
                     self.log(f"Auto-saved documentation to {save_path}")
                 else:
-                    self.log(f"WARNING: Failed to auto-save documentation")
+                    self.log("WARNING: Failed to auto-save documentation")
             except Exception as save_err:
                 self.log(f"WARNING: Error auto-saving documentation: {save_err}")
 

@@ -8,16 +8,14 @@ Orchestrates comprehensive code validation pipeline:
 4. Report generation with recommendations
 """
 
-import json
 import logging
-from typing import Any, Dict, List, Optional
-from pathlib import Path
+from typing import Any, Dict, List
 
 from socratic_system.agents.base import Agent
 from socratic_system.events import EventType
 from socratic_system.utils.validators import (
-    SyntaxValidator,
     DependencyValidator,
+    SyntaxValidator,
     TestExecutor,
 )
 

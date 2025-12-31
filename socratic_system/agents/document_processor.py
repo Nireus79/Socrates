@@ -5,9 +5,9 @@ Extracts content from PDFs, text files, code files, pasted text, and web pages
 
 import os
 import re
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
-from datetime import datetime
 
 from socratic_system.parsers import CodeParser
 from socratic_system.utils.logger import get_logger
@@ -321,9 +321,8 @@ class DocumentProcessorAgent(Agent):
     def _fetch_url_content(self, url: str) -> Optional[str]:
         """Fetch and extract text content from a URL"""
         try:
-            import urllib.request
             import urllib.error
-            from html.parser import HTMLParser
+            import urllib.request
 
             # Set a user agent to avoid being blocked
             headers = {

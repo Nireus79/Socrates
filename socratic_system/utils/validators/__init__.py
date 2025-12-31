@@ -7,8 +7,8 @@ Provides modular validators for:
 - Test execution (pytest, unittest, jest)
 """
 
-from socratic_system.utils.validators.syntax_validator import SyntaxValidator
 from socratic_system.utils.validators.dependency_validator import DependencyValidator
+from socratic_system.utils.validators.syntax_validator import SyntaxValidator
 from socratic_system.utils.validators.test_executor import TestExecutor
 
 __all__ = [

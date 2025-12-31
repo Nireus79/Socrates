@@ -5,12 +5,12 @@ from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
-from socratic_system.models import User
-from socratic_system.ui.commands.base import BaseCommand
-
 # Import password verification from API module
 # This ensures CLI and API use identical password hashing (bcrypt)
 from socrates_api.auth.password import hash_password, verify_password
+
+from socratic_system.models import User
+from socratic_system.ui.commands.base import BaseCommand
 
 
 class UserLoginCommand(BaseCommand):

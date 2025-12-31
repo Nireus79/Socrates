@@ -20,7 +20,7 @@ import logging
 import threading
 import time
 from pathlib import Path
-from typing import Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from socratic_system.config import SocratesConfig
 
@@ -39,10 +39,10 @@ class OrchestratorService:
     4. Thread-safe access from both sync and async contexts
     """
 
-    _instance: Optional["OrchestratorService"] = None
+    _instance: OrchestratorService | None = None
     _lock = threading.RLock()
 
-    def __new__(cls) -> "OrchestratorService":
+    def __new__(cls) -> OrchestratorService:
         """Implement singleton pattern with thread safety."""
         if cls._instance is None:
             with cls._lock:
@@ -56,9 +56,9 @@ class OrchestratorService:
         if self._initialized:
             return
 
-        self._orchestrators: Dict[str, AgentOrchestrator] = {}
-        self._access_times: Dict[str, float] = {}
-        self._cleanup_tasks: Dict[str, asyncio.TimerHandle] = {}
+        self._orchestrators: dict[str, AgentOrchestrator] = {}
+        self._access_times: dict[str, float] = {}
+        self._cleanup_tasks: dict[str, asyncio.TimerHandle] = {}
         self._access_lock = threading.RLock()
         self._max_orchestrators = 100
         self._idle_timeout_seconds = 30 * 60  # 30 minutes
@@ -143,7 +143,7 @@ class OrchestratorService:
                 self.logger.error(f"Failed to create orchestrator for user {user_id}: {e}")
                 raise RuntimeError(f"Failed to create orchestrator: {e}") from e
 
-    def get(self, user_id: str) -> Optional[AgentOrchestrator]:
+    def get(self, user_id: str) -> AgentOrchestrator | None:
         """
         Get an orchestrator for a user without creating one.
 
@@ -228,7 +228,7 @@ class OrchestratorService:
 
         self.cleanup(lru_user)
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """
         Get statistics about orchestrator pool.
 

@@ -10,7 +10,7 @@ Supports multiple programming languages and extracts:
 
 import ast
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
 
 class CodeParser:
@@ -328,7 +328,7 @@ class CodeParser:
         for line_num, line in enumerate(lines, 1):
             matches = re.finditer(method_pattern, line)
             for match in matches:
-                return_type = match.group(1)
+                match.group(1)
                 method_name = match.group(2)
                 params_str = match.group(3) if match.lastindex >= 3 else ""
                 params = [p.strip().split()[-1] for p in params_str.split(",") if p.strip()]
@@ -403,7 +403,7 @@ class CodeParser:
         for line_num, line in enumerate(lines, 1):
             matches = re.finditer(func_pattern, line)
             for match in matches:
-                return_type = match.group(1)
+                match.group(1)
                 func_name = match.group(2)
                 params_str = match.group(3) if match.lastindex >= 3 else ""
                 params = [p.strip().split()[-1].rstrip("*&") for p in params_str.split(",") if p.strip()]
@@ -458,7 +458,7 @@ class CodeParser:
         for line_num, line in enumerate(lines, 1):
             matches = re.finditer(func_pattern, line)
             for match in matches:
-                return_type = match.group(1)
+                match.group(1)
                 func_name = match.group(2)
                 params_str = match.group(3) if match.lastindex >= 3 else ""
                 params = [p.strip().split()[-1].rstrip("*") for p in params_str.split(",") if p.strip()]

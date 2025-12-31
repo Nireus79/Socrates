@@ -12,6 +12,8 @@ Key improvements:
 - Type safety (no pickle deserialization issues)
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import os
@@ -19,9 +21,11 @@ import sqlite3
 from dataclasses import asdict
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from socratic_system.database.migration_runner import MigrationRunner
+from socratic_system.models.learning import QuestionEffectiveness, UserBehaviorPattern
+from socratic_system.models.llm_provider import LLMUsageRecord
 from socratic_system.models.note import ProjectNote
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.user import User
@@ -136,7 +140,7 @@ class ProjectDatabase:
         except Exception as e:
             self.logger.error(f"Error enabling foreign keys: {e}")
 
-    def _get_cascade_delete_counts(self, cursor: sqlite3.Cursor, project_id: str) -> Dict[str, int]:
+    def _get_cascade_delete_counts(self, cursor: sqlite3.Cursor, project_id: str) -> dict[str, int]:
         """
         Get counts of records that will be cascade deleted when project is deleted
 
@@ -388,7 +392,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def load_project(self, project_id: str) -> Optional[ProjectContext]:
+    def load_project(self, project_id: str) -> ProjectContext | None:
         """
         Load a project by ID
 
@@ -477,7 +481,7 @@ class ProjectDatabase:
 
     def get_user_projects(
         self, username: str, include_archived: bool = False
-    ) -> List[ProjectContext]:
+    ) -> list[ProjectContext]:
         """
         Get all projects for a user (owned or collaborated)
 
@@ -675,7 +679,7 @@ class ProjectDatabase:
     # CONVERSATION HISTORY (Lazy loading support)
     # ========================================================================
 
-    def get_conversation_history(self, project_id: str) -> List[Dict]:
+    def get_conversation_history(self, project_id: str) -> list[dict]:
         """
         Load conversation history for a project
 
@@ -723,7 +727,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def save_conversation_history(self, project_id: str, history: List[Dict]) -> None:
+    def save_conversation_history(self, project_id: str, history: list[dict]) -> None:
         """
         Save conversation history for a project
 
@@ -773,7 +777,7 @@ class ProjectDatabase:
         session_id: str,
         message_type: str,
         content: str,
-        metadata: Optional[Dict] = None,
+        metadata: dict | None = None,
     ) -> None:
         """
         Save a single message to free_session conversation history.
@@ -816,7 +820,7 @@ class ProjectDatabase:
 
     def get_free_session_conversation(
         self, username: str, session_id: str, limit: int = 50
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """
         Load free_session conversation history for a specific session.
 
@@ -866,7 +870,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_free_session_sessions(self, username: str, limit: int = 20) -> List[Dict]:
+    def get_free_session_sessions(self, username: str, limit: int = 20) -> list[dict]:
         """
         Get list of free_session sessions for a user.
 
@@ -1013,7 +1017,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def load_user(self, username: str) -> Optional[User]:
+    def load_user(self, username: str) -> User | None:
         """Load a user by username"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -1050,7 +1054,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def load_user_by_email(self, email: str) -> Optional[User]:
+    def load_user_by_email(self, email: str) -> User | None:
         """Load a user by email address"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -1087,7 +1091,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_user_llm_configs(self, user_id: str) -> List[Dict[str, Any]]:
+    def get_user_llm_configs(self, user_id: str) -> list[dict[str, Any]]:
         """
         Get all LLM provider configurations for a user.
 
@@ -1142,7 +1146,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_user_llm_config(self, user_id: str, provider: str) -> Optional[Dict[str, Any]]:
+    def get_user_llm_config(self, user_id: str, provider: str) -> dict[str, Any] | None:
         """
         Get single LLM provider configuration for a user.
 
@@ -1195,7 +1199,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def save_llm_config(self, user_id: str, provider: str, config_data: Dict[str, Any]) -> bool:
+    def save_llm_config(self, user_id: str, provider: str, config_data: dict[str, Any]) -> bool:
         """
         Save or update an LLM provider configuration.
 
@@ -1289,7 +1293,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_api_key(self, user_id: str, provider: str) -> Optional[str]:
+    def get_api_key(self, user_id: str, provider: str) -> str | None:
         """
         Get encrypted API key for a provider.
 
@@ -1367,7 +1371,7 @@ class ProjectDatabase:
         doc_id: str,
         title: str = "",
         content: str = "",
-        source: Optional[str] = None,
+        source: str | None = None,
         document_type: str = "document",
     ) -> bool:
         """
@@ -1511,7 +1515,7 @@ class ProjectDatabase:
     # LEARNING METHODS - QUESTION EFFECTIVENESS
     # ========================================================================
 
-    def save_question_effectiveness(self, effectiveness: "QuestionEffectiveness") -> bool:
+    def save_question_effectiveness(self, effectiveness: QuestionEffectiveness) -> bool:
         """Save question effectiveness record"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -1572,7 +1576,7 @@ class ProjectDatabase:
 
     def get_question_effectiveness(
         self, user_id: str, question_template_id: str
-    ) -> Optional[Dict[str, any]]:
+    ) -> dict[str, any] | None:
         """Get question effectiveness record for a user-question pair"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -1618,7 +1622,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_user_effectiveness_all(self, user_id: str) -> List[Dict[str, any]]:
+    def get_user_effectiveness_all(self, user_id: str) -> list[dict[str, any]]:
         """Get all question effectiveness records for a user"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -1658,7 +1662,7 @@ class ProjectDatabase:
     # LEARNING METHODS - BEHAVIOR PATTERNS
     # ========================================================================
 
-    def save_behavior_pattern(self, pattern: "UserBehaviorPattern") -> bool:
+    def save_behavior_pattern(self, pattern: UserBehaviorPattern) -> bool:
         """Save behavior pattern record"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -1700,7 +1704,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_behavior_pattern(self, user_id: str, pattern_type: str) -> Optional[Dict[str, any]]:
+    def get_behavior_pattern(self, user_id: str, pattern_type: str) -> dict[str, any] | None:
         """Get behavior pattern for a user-pattern_type pair"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -1733,7 +1737,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_user_behavior_patterns(self, user_id: str) -> List[Dict[str, any]]:
+    def get_user_behavior_patterns(self, user_id: str) -> list[dict[str, any]]:
         """Get all behavior patterns for a user"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -1793,7 +1797,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def search_notes(self, project_id: str, query: str) -> List[ProjectNote]:
+    def search_notes(self, project_id: str, query: str) -> list[ProjectNote]:
         """Search notes for a project by content"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -1838,7 +1842,7 @@ class ProjectDatabase:
     # KNOWLEDGE DOCUMENT METHODS
     # ========================================================================
 
-    def get_knowledge_document(self, doc_id: str) -> Optional[Dict[str, any]]:
+    def get_knowledge_document(self, doc_id: str) -> dict[str, any] | None:
         """Get a single knowledge document"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -1874,7 +1878,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_project_knowledge_documents(self, project_id: str) -> List[Dict[str, any]]:
+    def get_project_knowledge_documents(self, project_id: str) -> list[dict[str, any]]:
         """Get all knowledge documents for a project"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -1972,7 +1976,7 @@ class ProjectDatabase:
     # USAGE TRACKING METHODS
     # ========================================================================
 
-    def save_usage_record(self, usage: "LLMUsageRecord") -> bool:
+    def save_usage_record(self, usage: LLMUsageRecord) -> bool:
         """Save LLM usage record"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -2011,7 +2015,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_usage_records(self, user_id: str, days: int, provider: str) -> List[Dict[str, any]]:
+    def get_usage_records(self, user_id: str, days: int, provider: str) -> list[dict[str, any]]:
         """Get usage records for a user within specified days"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -2057,7 +2061,7 @@ class ProjectDatabase:
     # ARCHIVED ITEMS & UTILITY METHODS
     # ========================================================================
 
-    def get_archived_items(self, item_type: str) -> List[Dict[str, any]]:
+    def get_archived_items(self, item_type: str) -> list[dict[str, any]]:
         """Get archived items (projects or users)"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -2146,7 +2150,7 @@ class ProjectDatabase:
     # ========================================================================
 
     def _save_llm_config_impl(
-        self, user_id: str, provider: str, config_data: Dict[str, any]
+        self, user_id: str, provider: str, config_data: dict[str, any]
     ) -> bool:
         """Internal implementation for saving LLM config"""
         conn = sqlite3.connect(self.db_path)
@@ -2225,7 +2229,7 @@ class ProjectDatabase:
     # HELPER METHODS
     # ========================================================================
 
-    def _row_to_project(self, cursor: sqlite3.Cursor, row: sqlite3.Row) -> Optional[ProjectContext]:
+    def _row_to_project(self, cursor: sqlite3.Cursor, row: sqlite3.Row) -> ProjectContext | None:
         """Convert a database row to ProjectContext"""
         try:
             requirements = self._load_project_requirements(cursor, row["project_id"])
@@ -2284,7 +2288,7 @@ class ProjectDatabase:
             self.logger.error(f"Error converting row to project: {e}")
             return None
 
-    def _load_project_requirements(self, cursor: sqlite3.Cursor, project_id: str) -> List[str]:
+    def _load_project_requirements(self, cursor: sqlite3.Cursor, project_id: str) -> list[str]:
         """Load project requirements"""
         cursor.execute(
             """
@@ -2295,7 +2299,7 @@ class ProjectDatabase:
         )
         return [row[0] for row in cursor.fetchall()]
 
-    def _load_project_tech_stack(self, cursor: sqlite3.Cursor, project_id: str) -> List[str]:
+    def _load_project_tech_stack(self, cursor: sqlite3.Cursor, project_id: str) -> list[str]:
         """Load project tech stack"""
         cursor.execute(
             """
@@ -2306,7 +2310,7 @@ class ProjectDatabase:
         )
         return [row[0] for row in cursor.fetchall()]
 
-    def _load_project_constraints(self, cursor: sqlite3.Cursor, project_id: str) -> List[str]:
+    def _load_project_constraints(self, cursor: sqlite3.Cursor, project_id: str) -> list[str]:
         """Load project constraints"""
         cursor.execute(
             """
@@ -2343,7 +2347,7 @@ class ProjectDatabase:
 
     def _load_phase_maturity(
         self, cursor: sqlite3.Cursor, project_id: str
-    ) -> Optional[Dict[str, float]]:
+    ) -> dict[str, float] | None:
         """Load phase maturity scores"""
         cursor.execute(
             """
@@ -2361,7 +2365,7 @@ class ProjectDatabase:
 
     def _load_category_scores(
         self, cursor: sqlite3.Cursor, project_id: str
-    ) -> Optional[Dict[str, Dict[str, float]]]:
+    ) -> dict[str, dict[str, float]] | None:
         """Load category scores"""
         cursor.execute(
             """
@@ -2379,7 +2383,7 @@ class ProjectDatabase:
 
         return scores if scores else None
 
-    def _load_analytics_metrics(self, cursor: sqlite3.Cursor, project_id: str) -> Optional[Dict]:
+    def _load_analytics_metrics(self, cursor: sqlite3.Cursor, project_id: str) -> dict | None:
         """Load analytics metrics"""
         cursor.execute(
             """
@@ -2438,8 +2442,8 @@ class ProjectDatabase:
             conn.close()
 
     def get_project_notes(
-        self, project_id: str, note_type: Optional[str] = None
-    ) -> List[ProjectNote]:
+        self, project_id: str, note_type: str | None = None
+    ) -> list[ProjectNote]:
         """Get notes for a project"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -2481,7 +2485,7 @@ class ProjectDatabase:
     # CHAT OPERATIONS (Phase 2 - Session-based chat)
     # ========================================================================
 
-    def save_chat_session(self, session: Dict) -> None:
+    def save_chat_session(self, session: dict) -> None:
         """
         Save or update a chat session
 
@@ -2517,7 +2521,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def load_chat_sessions(self, project_id: str, archived: Optional[bool] = None) -> List[Dict]:
+    def load_chat_sessions(self, project_id: str, archived: bool | None = None) -> list[dict]:
         """
         Load all chat sessions for a project
 
@@ -2565,7 +2569,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_chat_session(self, session_id: str) -> Optional[Dict]:
+    def get_chat_session(self, session_id: str) -> dict | None:
         """Get a single chat session by ID"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -2645,7 +2649,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def save_chat_message(self, message: Dict) -> None:
+    def save_chat_message(self, message: dict) -> None:
         """
         Save a chat message
 
@@ -2685,7 +2689,7 @@ class ProjectDatabase:
 
     def load_chat_messages(
         self, session_id: str, limit: int = 50, offset: int = 0, order: str = "asc"
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """
         Load messages for a session with pagination
 
@@ -2735,7 +2739,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_chat_message(self, message_id: str) -> Optional[Dict]:
+    def get_chat_message(self, message_id: str) -> dict | None:
         """Get a single chat message by ID"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -2764,7 +2768,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def update_chat_message(self, message_id: str, content: str, metadata: Optional[Dict] = None) -> None:
+    def update_chat_message(self, message_id: str, content: str, metadata: dict | None = None) -> None:
         """Update a chat message's content and metadata"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -2813,7 +2817,7 @@ class ProjectDatabase:
     # Collaboration Invitation Methods
     # ========================================================================
 
-    def save_invitation(self, invitation: Dict) -> None:
+    def save_invitation(self, invitation: dict) -> None:
         """Save or update a collaboration invitation"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -2847,7 +2851,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_invitation_by_token(self, token: str) -> Optional[Dict]:
+    def get_invitation_by_token(self, token: str) -> dict | None:
         """Get invitation by token"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -2878,7 +2882,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_project_invitations(self, project_id: str, status: Optional[str] = None) -> List[Dict]:
+    def get_project_invitations(self, project_id: str, status: str | None = None) -> list[dict]:
         """Get invitations for a project, optionally filtered by status"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -2918,7 +2922,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_user_invitations(self, email: str, status: Optional[str] = None) -> List[Dict]:
+    def get_user_invitations(self, email: str, status: str | None = None) -> list[dict]:
         """Get invitations for a user by email, optionally filtered by status"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -3002,7 +3006,7 @@ class ProjectDatabase:
     # Collaboration Activity Methods
     # ========================================================================
 
-    def save_activity(self, activity: Dict) -> None:
+    def save_activity(self, activity: dict) -> None:
         """Save a collaboration activity"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -3033,7 +3037,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_project_activities(self, project_id: str, limit: int = 50, offset: int = 0) -> List[Dict]:
+    def get_project_activities(self, project_id: str, limit: int = 50, offset: int = 0) -> list[dict]:
         """Get activities for a project with pagination"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row

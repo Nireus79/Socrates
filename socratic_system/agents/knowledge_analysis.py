@@ -10,7 +10,7 @@ When new knowledge is imported (PDFs, code repos, web pages, notes), this agent:
 
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict
 
 from socratic_system.agents.base import Agent
 from socratic_system.events import EventType
@@ -218,12 +218,6 @@ class KnowledgeAnalysisAgent(Agent):
             gaps_filled = knowledge_analysis.get("gaps_filled", [])
 
             # Extract insight from the newly available knowledge
-            insight_request = {
-                "project": project,
-                "new_knowledge": knowledge_analysis,
-                "focus_areas": new_focus_areas,
-                "gaps_identified": gaps_filled,
-            }
 
             # Extract insights from the knowledge to inform question generation
             insight_result = self.orchestrator.counselor.process({
@@ -366,9 +360,9 @@ class KnowledgeAnalysisAgent(Agent):
         try:
             # Check for missing areas based on project requirements
             if project.goals:
-                goal_areas = set(str(g).lower().split() for g in project.goals)
+                {str(g).lower().split() for g in project.goals}
             else:
-                goal_areas = set()
+                pass
 
             # Common knowledge areas to check
             common_areas = {
@@ -420,7 +414,7 @@ class KnowledgeAnalysisAgent(Agent):
             if search_results:
                 # Extract focus from document content
                 for result in search_results[:2]:
-                    content = result.get("content", "")
+                    result.get("content", "")
                     source = result.get("metadata", {}).get("source", "")
 
                     # Create phase-specific focus areas

@@ -5,8 +5,8 @@ Analyzes conversation context to determine whether to load full document chunks,
 medium-sized excerpts, or brief snippets when searching the knowledge base.
 """
 
-from typing import List, Dict, Optional, Tuple
 import re
+from typing import Dict, List, Optional
 
 
 class DocumentContextAnalyzer:

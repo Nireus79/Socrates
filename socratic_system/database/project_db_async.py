@@ -17,12 +17,11 @@ import logging
 import sqlite3
 from contextlib import asynccontextmanager
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import aiosqlite
 
-from socratic_system.models import KnowledgeEntry, TeamMemberRole
+from socratic_system.models import TeamMemberRole
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.user import User
 
