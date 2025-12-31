@@ -313,13 +313,19 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    """Modify collected tests to add markers based on naming."""
+    """Modify collected tests to add markers based on naming and filter based on markers."""
     for item in items:
         # Add unit marker to tests that don't require external dependencies
         if "test_" in item.nodeid and not any(
             marker in item.nodeid for marker in ["integration", "e2e", "requires_api"]
         ):
             item.add_marker(pytest.mark.unit)
+
+    # If running with -m "not integration", remove integration tests entirely from collection
+    # This prevents fixtures in integration tests from being initialized
+    if config.option.markexpr and "not integration" in str(config.option.markexpr):
+        # Remove integration tests from items list
+        items[:] = [item for item in items if "integration" not in item.nodeid]
 
 
 @pytest.fixture(scope="session", autouse=True)
