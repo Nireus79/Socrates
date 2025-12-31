@@ -240,7 +240,7 @@ def test_websocket_endpoint_exists(client):
     try:
         with client.websocket_connect(
             f"/ws/collaboration/{TEST_PROJECT_ID}?token={VALID_TOKEN}"
-        ) as websocket:
+        ):
             # If we get here, websocket is connected
             print("✓ WebSocket /ws/collaboration/{project_id} exists and accepts connections")
     except Exception as e:

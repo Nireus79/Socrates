@@ -20,12 +20,6 @@ class TestCreateProject:
 
     def test_create_project_success(self):
         """Test successful project creation"""
-        payload = {
-            "name": "My Project",
-            "description": "Project description",
-            "project_type": "software",
-            "owner": "user123"
-        }
 
         # Assert returns 201 with project details
         # Assert project has UUID
@@ -46,10 +40,6 @@ class TestCreateProject:
 
     def test_create_project_name_too_long(self):
         """Test creation fails with excessively long name"""
-        payload = {
-            "name": "x" * 1000,
-            "project_type": "software"
-        }
 
         # Assert returns 422
 
@@ -100,13 +90,11 @@ class TestUpdateProject:
 
     def test_update_project_name(self):
         """Test updating project name"""
-        payload = {"name": "Updated Name"}
 
         # Assert returns 200 with updated project
 
     def test_update_project_description(self):
         """Test updating project description"""
-        payload = {"description": "New description"}
 
         # Assert returns 200
 
@@ -182,10 +170,6 @@ class TestProjectTeamManagement:
 
     def test_add_team_member(self):
         """Test adding team member to project"""
-        payload = {
-            "user_id": "user456",
-            "role": "contributor"
-        }
 
         # Assert returns 200
         # Assert member added to team

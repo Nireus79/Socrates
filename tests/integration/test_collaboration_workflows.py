@@ -211,7 +211,7 @@ class TestProTierCollaboration:
 
         if response.status_code == 200:
             data = response.json()
-            assert data.get("success") == True or "success" in str(data).lower()
+            assert data.get("success") or "success" in str(data).lower()
 
     def test_06_collaborator_access_control(self, pro_tier_user_with_project):
         """Test: Collaborator can access shared project"""

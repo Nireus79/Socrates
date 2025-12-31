@@ -540,7 +540,7 @@ class TestCLIAndAPIDatabaseSingleton:
         )
 
         assert reg_resp.status_code == 201
-        user_id = reg_resp.json().get("user_id")
+        reg_resp.json().get("user_id")
 
         # Verify can login with same credentials
         login_resp = requests.post(

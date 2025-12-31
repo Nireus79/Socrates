@@ -21,33 +21,16 @@ class TestUserRegistration:
     def test_register_success(self):
         """Test successful user registration"""
         # Arrange
-        payload = {
-            "username": "newuser",
-            "email": "user@example.com",
-            "password": "SecurePassword123!",
-            "full_name": "New User"
-        }
 
         # Assert registration should succeed with valid input
 
     def test_register_missing_required_field(self):
         """Test registration fails with missing required fields"""
-        payload = {
-            "username": "newuser",
-            # Missing email
-            "password": "SecurePassword123!"
-        }
 
         # Assert should return 422 validation error
 
     def test_register_weak_password(self):
         """Test registration fails with weak password"""
-        payload = {
-            "username": "newuser",
-            "email": "user@example.com",
-            "password": "weak",  # Too weak
-            "full_name": "New User"
-        }
 
         # Assert should return 400 with password validation error
 
@@ -58,12 +41,6 @@ class TestUserRegistration:
 
     def test_register_invalid_email(self):
         """Test registration fails with invalid email"""
-        payload = {
-            "username": "newuser",
-            "email": "not-an-email",
-            "password": "SecurePassword123!",
-            "full_name": "New User"
-        }
 
         # Assert should return 422
 

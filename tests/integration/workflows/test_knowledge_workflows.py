@@ -43,7 +43,7 @@ class TestKnowledgeAnalysisAgent:
         mock_orchestrator.vector_db = Mock()
         mock_orchestrator.counselor = Mock()
 
-        agent = KnowledgeAnalysisAgent(mock_orchestrator)
+        KnowledgeAnalysisAgent(mock_orchestrator)
 
         # Verify listener was registered
         listener_count = mock_orchestrator.event_emitter.listener_count(EventType.DOCUMENT_IMPORTED)
@@ -143,7 +143,7 @@ class TestKnowledgeAnalysisAgent:
         ]
         mock_orchestrator.counselor.process.return_value = {"insights": []}
 
-        agent = KnowledgeAnalysisAgent(mock_orchestrator)
+        KnowledgeAnalysisAgent(mock_orchestrator)
 
         # Emit DOCUMENT_IMPORTED event
         mock_orchestrator.event_emitter.emit(
@@ -268,7 +268,7 @@ class TestKnowledgeAwareQuestionGeneration:
         mock_orchestrator.vector_db.search_similar.return_value = []
         mock_orchestrator.counselor.process.return_value = {"insights": []}
 
-        agent = KnowledgeAnalysisAgent(mock_orchestrator)
+        KnowledgeAnalysisAgent(mock_orchestrator)
 
         # Trigger document import
         event_emitter.emit(

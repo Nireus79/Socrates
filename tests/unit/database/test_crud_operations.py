@@ -16,6 +16,8 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from socratic_system.models.project import ProjectModel as Project
+
 
 @pytest.mark.unit
 class TestProjectCRUD:
@@ -23,7 +25,7 @@ class TestProjectCRUD:
 
     async def test_create_project_success(self, db_session: AsyncSession):
         """Test successful project creation."""
-        project_id = str(uuid4())
+        str(uuid4())
 
         stmt = select(func.count()).select_from(Project)
         result = await db_session.execute(stmt)

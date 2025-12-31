@@ -89,7 +89,7 @@ class TestLatencyMeasurement:
     def test_x_process_time_header_added(self, app):
         """Test X-Process-Time header is added"""
         client = TestClient(app)
-        response = client.get("/fast")
+        client.get("/fast")
 
         # Should have process time header
         # assert "X-Process-Time" in response.headers
@@ -169,7 +169,7 @@ class TestStatusCodeDistribution:
     def test_5xx_errors_counted(self, app):
         """Test 5xx status codes are counted"""
         client = TestClient(app, raise_server_exceptions=False)
-        response = client.get("/error")
+        client.get("/error")
 
         # Should track error status code
 
@@ -305,7 +305,7 @@ class TestMetricsPersistence:
         app.add_middleware(MetricsMiddleware)
         client = TestClient(app, raise_server_exceptions=False)
 
-        response = client.get("/error")
+        client.get("/error")
 
         # Metrics should still be recorded
 
@@ -325,7 +325,7 @@ class TestMetricsPerformanceOverhead:
         app.add_middleware(MetricsMiddleware)
         client = TestClient(app)
 
-        response = client.get("/")
+        client.get("/")
 
         # Metrics overhead should be <10ms
 

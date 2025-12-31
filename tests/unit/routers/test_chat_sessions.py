@@ -19,10 +19,6 @@ class TestCreateChatSession:
 
     def test_create_session_success(self):
         """Test successfully creating chat session"""
-        payload = {
-            "project_id": "proj-123",
-            "title": "Chat Session"
-        }
 
         # Assert returns 201 with session
 
@@ -37,11 +33,6 @@ class TestSendMessage:
 
     def test_send_message_success(self):
         """Test successfully sending message"""
-        payload = {
-            "session_id": "sess-123",
-            "content": "Hello",
-            "role": "user"
-        }
 
         # Assert returns 200 with message
 
@@ -51,10 +42,6 @@ class TestSendMessage:
 
     def test_send_oversized_message(self):
         """Test sending oversized message"""
-        payload = {
-            "session_id": "sess-123",
-            "content": "x" * 10000  # Too large
-        }
 
         # Assert returns 422
 

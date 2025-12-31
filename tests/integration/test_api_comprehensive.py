@@ -68,7 +68,6 @@ def test_user_registration():
             headers=HEADERS
         )
 
-        passed = response.status_code in [200, 201]
 
         if response.status_code in [200, 201]:
             data = response.json()

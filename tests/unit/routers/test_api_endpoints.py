@@ -37,7 +37,7 @@ class APITestSuite:
         self.results = []
         self.session = requests.Session()
 
-    def test(self, name: str, method: str, path: str, expected_status: int,
+    def test(self, name: str, method: str, path: str, expected_status: int,  # noqa: C901
              json_data: Dict = None, headers: Dict = None,
              check_response_structure: callable = None) -> bool:
         """

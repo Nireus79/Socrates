@@ -99,7 +99,7 @@ class TestProjectManagement:
             json={"name": "List Test Project", "description": "For listing"},
             headers=auth_headers
         )
-        project_id = create_resp.json()["project_id"]
+        create_resp.json()["project_id"]
 
         # List projects
         response = requests.get(
@@ -187,7 +187,7 @@ class TestProjectManagement:
 
         assert response.status_code == 200
         result = response.json()
-        assert result.get("success") == True or result.get("status") == "success"
+        assert result.get("success") or result.get("status") == "success"
 
     def test_07_access_denied_other_user_project(self, test_user, auth_headers):
         """Test: User cannot access another user's project"""

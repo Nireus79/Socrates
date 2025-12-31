@@ -221,7 +221,7 @@ class TestMultiFactorAuthWorkflow:
             "/auth/mfa/setup",
             headers=authenticated_headers
         )
-        secret = setup_response.json()["secret"]
+        setup_response.json()["secret"]
 
         # Generate TOTP code (mocked)
         totp_code = "123456"

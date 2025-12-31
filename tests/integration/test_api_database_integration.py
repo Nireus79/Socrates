@@ -91,7 +91,6 @@ class TestAuthDatabaseIntegration:
 
         # Simulate API login request
         login_username = "testuser"
-        login_password = "password"
 
         # API would lookup user
         found_user = db.load_user(login_username)
@@ -154,10 +153,6 @@ class TestProjectDatabaseIntegration:
         db.save_project(project)
 
         # API would return this
-        response = {
-            "id": "api-proj-001",
-            "name": "Web Application",
-            "status": "active"}
 
         # Verify in database
         saved = db.load_project("api-proj-001")

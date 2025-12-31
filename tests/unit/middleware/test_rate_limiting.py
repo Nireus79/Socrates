@@ -29,7 +29,7 @@ class TestRateLimitConfig:
 
         assert config.AUTH_LIMIT == "5/minute"
         assert config.CHAT_LIMIT == "30/minute"
-        assert config.free-session_LIMIT == "20/minute"
+        assert config.FREE_SESSION_LIMIT == "20/minute"
         assert config.PRO_LIMIT == "100/minute"
         assert config.ENTERPRISE_LIMIT == "500/minute"
 
@@ -42,7 +42,7 @@ class TestRateLimitConfig:
 
         assert config.AUTH_LIMIT == "10/minute"
         assert config.CHAT_LIMIT == "50/minute"
-        assert config.free-session_LIMIT == "20/minute"  # Unchanged
+        assert config.FREE_SESSION_LIMIT == "20/minute"  # Unchanged
 
 
 @pytest.mark.unit
@@ -51,7 +51,7 @@ class TestRateLimiterInitialization:
 
     def test_limiter_creation_with_redis(self):
         """Test creating limiter with Redis backend"""
-        with patch('redis.asyncio.from_url') as mock_redis:
+        with patch('redis.asyncio.from_url'):
             limiter = get_limiter("redis://localhost:6379")
 
             assert limiter is not None
@@ -83,7 +83,7 @@ class TestRateLimitDecorator:
         client = TestClient(app)
 
         # First 5 requests should succeed
-        for i in range(5):
+        for _i in range(5):
             response = client.post("/auth/login")
             assert response.status_code == 200
 
@@ -174,7 +174,7 @@ class TestRateLimitTiers:
 
         # Free tier should have stricter limits
         assert "5" in config.AUTH_LIMIT  # 5 per minute
-        assert "20" in config.free-session_LIMIT
+        assert "20" in config.FREE_SESSION_LIMIT
 
     def test_pro_tier_limits(self):
         """Test rate limits for pro subscription tier"""
@@ -225,14 +225,14 @@ class TestRateLimitEnvironmentConfig:
         """Test production environment uses stricter limits"""
         monkeypatch.setenv("ENVIRONMENT", "production")
 
-        config = RateLimitConfig()
+        RateLimitConfig()
         # In production, limits should be enforced more strictly
 
     def test_development_limits_permissive(self, monkeypatch):
         """Test development environment has permissive limits"""
         monkeypatch.setenv("ENVIRONMENT", "development")
 
-        config = RateLimitConfig()
+        RateLimitConfig()
         # In development, limits might be higher for testing
 
 

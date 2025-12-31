@@ -31,11 +31,11 @@ def initialize_api():
                     # Already initialized
                     return
                 break
-        except requests.exceptions.RequestException:
+        except requests.exceptions.RequestException as e:
             if attempt < max_retries - 1:
                 time.sleep(1)
                 continue
-            raise Exception(f"API not responding after {max_retries} attempts")
+            raise Exception(f"API not responding after {max_retries} attempts") from e
 
     # Initialize the orchestrator
     # First try with environment API key, then with test key
@@ -53,7 +53,7 @@ def initialize_api():
         # Still try to wait for health check
     else:
         # Wait for initialization to complete
-        for attempt in range(10):
+        for _attempt in range(10):
             try:
                 health = requests.get(f"{BASE_URL}/health")
                 if health.json().get("initialized"):

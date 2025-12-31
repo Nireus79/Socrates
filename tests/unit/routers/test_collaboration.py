@@ -19,11 +19,6 @@ class TestShareProject:
 
     def test_share_project_success(self):
         """Test successfully sharing project"""
-        payload = {
-            "project_id": "proj-123",
-            "user_id": "user456",
-            "role": "viewer"
-        }
 
         # Assert returns 200
 
@@ -42,11 +37,6 @@ class TestInvitations:
 
     def test_invite_team_member(self):
         """Test inviting team member"""
-        payload = {
-            "project_id": "proj-123",
-            "email": "user@example.com",
-            "role": "contributor"
-        }
 
         # Assert returns 201
 
@@ -73,7 +63,6 @@ class TestCollaboratorManagement:
 
     def test_update_collaborator_role(self):
         """Test updating collaborator role"""
-        payload = {"role": "editor"}
 
         # Assert returns 200
 

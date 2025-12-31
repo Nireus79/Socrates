@@ -20,7 +20,7 @@ if os.name == 'nt':
 
 BASE_URL = "http://127.0.0.1:8000"
 
-def test_full_flow():
+def test_full_flow():  # noqa: C901
     """Test complete user flow"""
 
     print("=" * 70)

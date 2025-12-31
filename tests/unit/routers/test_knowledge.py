@@ -19,12 +19,6 @@ class TestAddKnowledgeEntry:
 
     def test_add_entry_success(self):
         """Test successfully adding knowledge entry"""
-        payload = {
-            "project_id": "proj-123",
-            "content": "Key information",
-            "category": "implementation",
-            "tags": ["important", "implementation"]
-        }
 
         # Assert returns 201 with entry
 
@@ -64,7 +58,6 @@ class TestUpdateKnowledgeEntry:
 
     def test_update_entry_success(self):
         """Test successfully updating entry"""
-        payload = {"content": "Updated content"}
 
         # Assert returns 200
 

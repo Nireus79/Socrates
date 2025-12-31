@@ -116,7 +116,7 @@ class TestMessageSending:
         assert response.status_code == 201
 
         # AI response should be queued or returned
-        message_id = response.json()["message_id"]
+        response.json()["message_id"]
 
         # Get session to see if AI response added
         session_response = await client.get(

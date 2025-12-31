@@ -186,7 +186,7 @@ class TestContentSecurityPolicy:
     def test_csp_permissive_in_development(self, app_development):
         """Test CSP is permissive in development"""
         client = TestClient(app_development)
-        response = client.get("/")
+        client.get("/")
 
         # Development can be more permissive
 
@@ -196,7 +196,7 @@ class TestContentSecurityPolicy:
         response = client.get("/")
 
         if "Content-Security-Policy" in response.headers:
-            csp = response.headers["Content-Security-Policy"]
+            response.headers["Content-Security-Policy"]
             # Should not allow 'unsafe-inline'
 
 
@@ -350,7 +350,7 @@ class TestSensitiveHeaderRemoval:
     def test_server_header_removed(self, app):
         """Test Server header is removed"""
         client = TestClient(app)
-        response = client.get("/")
+        client.get("/")
 
         # Server header should not reveal server info
         # (FastAPI might not set it by default)
@@ -433,7 +433,7 @@ class TestEnvironmentSpecificHeaders:
 
         app.add_middleware(SecurityHeadersMiddleware)
         client = TestClient(app)
-        response = client.get("/")
+        client.get("/")
 
         # Production should have all security headers
 
@@ -449,7 +449,7 @@ class TestEnvironmentSpecificHeaders:
 
         app.add_middleware(SecurityHeadersMiddleware)
         client = TestClient(app)
-        response = client.get("/")
+        client.get("/")
 
         # Development can be more permissive for debugging
 
@@ -473,7 +473,7 @@ class TestHeaderCompliance:
     def test_owasp_top_10_protection(self, app):
         """Test protection against OWASP Top 10"""
         client = TestClient(app)
-        response = client.get("/")
+        client.get("/")
 
         # Should protect against:
         # - Clickjacking (X-Frame-Options)
@@ -484,6 +484,6 @@ class TestHeaderCompliance:
     def test_cwe_protection(self, app):
         """Test protection against common CWEs"""
         client = TestClient(app)
-        response = client.get("/")
+        client.get("/")
 
         # Test for Common Weakness Enumeration protections

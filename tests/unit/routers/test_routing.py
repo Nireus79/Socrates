@@ -77,7 +77,7 @@ def test_projects_endpoints():
             headers = {'Authorization': f'Bearer {token}'}
         else:
             headers = {}
-    except:
+    except Exception:
         headers = {}
 
     # Test 1: GET /projects/{id}/analytics (THIS WAS MISSING AND IS NOW FIXED)
@@ -100,7 +100,7 @@ def test_projects_endpoints():
     print(f"\nProjects Endpoints: {passed}/{total} passed")
     return passed, total
 
-def test_chat_endpoints():
+def test_chat_endpoints():  # noqa: C901
     """Test chat endpoints (routing paths fixed)"""
     print("\n=== CHAT ENDPOINTS (ROUTING PATHS FIXED) ===")
     passed = 0
@@ -117,7 +117,7 @@ def test_chat_endpoints():
             headers = {'Authorization': f'Bearer {token}'}
         else:
             headers = {}
-    except:
+    except Exception:
         headers = {}
 
     chat_endpoints = [
@@ -171,7 +171,7 @@ def test_code_endpoints():
             headers = {'Authorization': f'Bearer {token}'}
         else:
             headers = {}
-    except:
+    except Exception:
         headers = {}
 
     code_endpoints = [
@@ -202,7 +202,7 @@ def test_code_endpoints():
     print(f"\nCode Endpoints: {passed}/{total} passed")
     return passed, total
 
-def test_collaboration_endpoints():
+def test_collaboration_endpoints():  # noqa: C901
     """Test collaboration endpoints (routing paths fixed)"""
     print("\n=== COLLABORATION ENDPOINTS (ROUTING PATHS FIXED) ===")
     passed = 0
@@ -219,7 +219,7 @@ def test_collaboration_endpoints():
             headers = {'Authorization': f'Bearer {token}'}
         else:
             headers = {}
-    except:
+    except Exception:
         headers = {}
 
     collab_endpoints = [
