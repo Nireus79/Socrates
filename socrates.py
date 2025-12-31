@@ -304,8 +304,7 @@ uvicorn.run(
                 ["npm", "install"],
                 cwd=frontend_dir,
                 check=False,
-                capture_output=True,
-                shell=True
+                capture_output=True
             )
 
             # Set frontend port via environment variable
@@ -314,12 +313,11 @@ uvicorn.run(
             env["VITE_API_URL"] = f"http://localhost:{api_port}"
 
             print(f"[INFO] Starting frontend on port {frontend_port}...")
-            # Start dev server - use shell=True on Windows for better process handling
+            # Start dev server
             proc = subprocess.Popen(
                 ["npm", "run", "dev"],
                 cwd=frontend_dir,
                 env=env,
-                shell=True,
                 stdout=None,
                 stderr=None
             )

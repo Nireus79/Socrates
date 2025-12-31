@@ -1,6 +1,7 @@
 """System commands for CLI control and information"""
 
 import os
+import subprocess
 from typing import Any, Dict, List
 
 from colorama import Fore, Style
@@ -146,7 +147,15 @@ class ClearCommand(BaseCommand):
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute clear command"""
-        os.system("cls" if os.name == "nt" else "clear")  # nosec - command is hardcoded
+        # Use subprocess instead of os.system for better security and cross-platform compatibility
+        try:
+            if os.name == "nt":
+                subprocess.run(["cls"], shell=True, check=False)
+            else:
+                subprocess.run(["clear"], check=False)
+        except Exception:
+            # Fallback if subprocess fails
+            pass
         return self.success()
 
 
