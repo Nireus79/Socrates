@@ -6,12 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.6.6">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/orchestration/orchestrator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/utils/artifact_saver.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/utils/artifact_saver.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/utils/file_change_tracker.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/utils/file_change_tracker.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/utils/validators/dependency_validator.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/utils/validators/dependency_validator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/utils/validators/syntax_validator.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/utils/validators/syntax_validator.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

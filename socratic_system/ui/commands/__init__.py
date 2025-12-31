@@ -24,6 +24,7 @@ from socratic_system.ui.commands.doc_commands import (
     DocImportUrlCommand,
     DocListCommand,
     DocPasteCommand,
+    DocsCommand,
 )
 from socratic_system.ui.commands.finalize_commands import (
     FinalizeDocsCommand,
@@ -175,6 +176,7 @@ __all__ = [
     "DocImportUrlCommand",
     "DocListCommand",
     "DocPasteCommand",
+    "DocsCommand",
     "NoteAddCommand",
     "NoteListCommand",
     "NoteSearchCommand",

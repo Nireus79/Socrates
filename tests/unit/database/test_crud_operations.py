@@ -16,7 +16,7 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from socratic_system.models.project import ProjectModel as Project
+from socratic_system.models.project import ProjectContext as Project
 
 
 @pytest.mark.unit
