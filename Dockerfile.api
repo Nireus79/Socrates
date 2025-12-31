@@ -8,22 +8,21 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
-COPY socrates-api/requirements.txt .
-COPY requirements.txt ./main_requirements.txt
+# Copy requirements (single combined requirements.txt at root)
+COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir -r main_requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY socrates_system ./socrates_system
+COPY socratic_system ./socratic_system
 COPY socrates-api/src ./socrates_api
-COPY socratic_data ./socratic_data
-COPY socratic_logs ./socratic_logs
 
 # Create non-root user
-RUN useradd -m -u 1000 appuser && \
+RUN useradd -m -u 1000 appuser
+
+# Create runtime directories and set permissions
+RUN mkdir -p /app/socratic_data /app/socratic_logs && \
     chown -R appuser:appuser /app
 USER appuser
 
