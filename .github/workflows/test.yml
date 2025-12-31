@@ -32,8 +32,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install -e . -e socrates-cli -e socrates-api
-          pip install -e ".[dev]" -e socrates-cli/[dev] -e socrates-api/[dev]
+          pip install -e . -e ./socrates-cli -e ./socrates-api
+          pip install -e ".[dev]" -e ./socrates-cli/[dev] -e ./socrates-api/[dev]
 
       - name: Lint with ruff
         run: |
@@ -100,8 +100,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e . -e socrates-cli
-          pip install -e socrates-cli/[dev]
+          pip install -e . -e ./socrates-cli
+          pip install -e ./socrates-cli/[dev]
 
       - name: Test CLI installation
         run: |
@@ -129,8 +129,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e . -e socrates-api
-          pip install -e socrates-api/[dev]
+          pip install -e . -e ./socrates-api
+          pip install -e ./socrates-api/[dev]
 
       - name: Test API endpoints
         run: |
@@ -154,7 +154,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e . -e socrates-cli -e socrates-api
+          pip install -e . -e ./socrates-cli -e ./socrates-api
           pip install -e ".[dev]" pytest-cov
 
       - name: Generate coverage
