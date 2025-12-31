@@ -19,25 +19,25 @@ class TierLimits:
     maturity_tracking: bool
 
 
-# Tier definitions
+# Tier definitions - All tiers have full feature access, limited only by quotas
 TIER_LIMITS = {
     "free": TierLimits(
         name="Free",
         monthly_cost=0.0,
         max_projects=1,
         max_team_members=1,  # Solo only
-        max_questions_per_month=100,
-        multi_llm_access=False,
-        advanced_analytics=False,
-        code_generation=False,
-        maturity_tracking=False,
+        max_questions_per_month=None,  # Unlimited
+        multi_llm_access=True,  # All features available in free tier
+        advanced_analytics=True,
+        code_generation=True,
+        maturity_tracking=True,
     ),
     "pro": TierLimits(
         name="Pro",
-        monthly_cost=29.0,
+        monthly_cost=4.99,  # Reduced from $29
         max_projects=10,
         max_team_members=5,
-        max_questions_per_month=1000,
+        max_questions_per_month=None,  # Unlimited
         multi_llm_access=True,
         advanced_analytics=True,
         code_generation=True,
@@ -45,7 +45,7 @@ TIER_LIMITS = {
     ),
     "enterprise": TierLimits(
         name="Enterprise",
-        monthly_cost=99.0,
+        monthly_cost=9.99,  # Reduced from $99
         max_projects=None,  # Unlimited
         max_team_members=None,  # Unlimited
         max_questions_per_month=None,  # Unlimited

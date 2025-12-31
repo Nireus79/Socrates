@@ -14,45 +14,46 @@ from fastapi import HTTPException, status
 logger = logging.getLogger(__name__)
 
 # Subscription tier feature matrix
+# FREEMIUM MODEL: All tiers have FULL FEATURE ACCESS, limited only by quotas (projects, team members)
 TIER_FEATURES = {
     "free": {
-        "projects": 1,
-        "team_members": 1,
-        "questions_per_month": 100,
+        "projects": 1,  # Quota limit
+        "team_members": 1,  # Quota limit (solo only)
+        "questions_per_month": None,  # Unlimited
         "features": {
             "basic_chat": True,
             "socratic_mode": True,
-            "direct_mode": False,
-            "code_generation": False,
-            "collaboration": False,
-            "github_import": False,
-            "advanced_analytics": False,
-            "multi_llm": False,
-            "api_access": False,
-            "project_creation": True,  # Allow free tier to create projects (limited by quota)
+            "direct_mode": True,  # All features available in free
+            "code_generation": True,
+            "collaboration": False,  # Still restricted due to team_members=1 quota
+            "github_import": True,
+            "advanced_analytics": True,
+            "multi_llm": True,
+            "api_access": True,
+            "project_creation": True,
         },
     },
     "pro": {
-        "projects": 10,
-        "team_members": 5,
-        "questions_per_month": 1000,
+        "projects": 10,  # Quota limit
+        "team_members": 5,  # Quota limit
+        "questions_per_month": None,  # Unlimited
         "features": {
             "basic_chat": True,
             "socratic_mode": True,
             "direct_mode": True,
             "code_generation": True,
-            "collaboration": True,
+            "collaboration": True,  # Can collaborate with up to 5 members
             "github_import": True,
             "advanced_analytics": True,
             "multi_llm": True,
-            "api_access": False,
+            "api_access": True,
             "project_creation": True,
         },
     },
     "enterprise": {
         "projects": None,  # Unlimited
-        "team_members": None,
-        "questions_per_month": None,
+        "team_members": None,  # Unlimited
+        "questions_per_month": None,  # Unlimited
         "features": {
             "basic_chat": True,
             "socratic_mode": True,

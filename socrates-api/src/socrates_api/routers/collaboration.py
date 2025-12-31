@@ -222,38 +222,41 @@ async def add_collaborator_new(
         try:
             subscription_tier = user_object.subscription_tier.lower()
 
-            # Check if testing mode is enabled - if so, bypass subscription checks
-            if user_object.testing_mode:
-                logger.info(f"User {current_user} has testing mode enabled - bypassing subscription checks for collaboration")
-            else:
-                # Check if user has active subscription
-                if user_object.subscription_status != "active":
-                    logger.warning(f"User {current_user} attempted to add collaborator without active subscription (status: {user_object.subscription_status})")
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Active subscription required to add collaborators"
-                    )
-
-                # Check subscription tier - only Professional and Enterprise can add collaborators
-                if subscription_tier == "free":
-                    logger.warning(f"Free-tier user {current_user} attempted to add collaborators")
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Collaboration feature requires 'pro' or 'enterprise' subscription"
-                    )
-
-                # Check team member limit for subscription tier
-                current_team_size = len(project.team_members) if project.team_members else 0
-                can_add, error_msg = SubscriptionChecker.can_add_team_member(
-                    subscription_tier,
-                    current_team_size
+            # Check if user has active subscription
+            if user_object.subscription_status != "active":
+                logger.warning(f"User {current_user} attempted to add collaborator without active subscription (status: {user_object.subscription_status})")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Active subscription required to add collaborators"
                 )
-                if not can_add:
-                    logger.warning(f"User {current_user} exceeded team member limit: {error_msg}")
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail=error_msg
-                    )
+
+            # Check subscription tier - collaboration feature requires pro or enterprise tier
+            # NOTE: Free tier has collaboration=False in TIER_FEATURES, so free users cannot add team members
+            if subscription_tier == "free":
+                logger.warning(f"Free-tier user {current_user} attempted to add collaborators")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Collaboration feature requires 'pro' or 'enterprise' subscription"
+                )
+
+            # Check team member limit for subscription tier
+            # Testing mode can bypass quota limits but not feature restrictions
+            current_team_size = len(project.team_members) if project.team_members else 0
+            can_add, error_msg = SubscriptionChecker.can_add_team_member(
+                subscription_tier,
+                current_team_size
+            )
+
+            # Allow testing mode to bypass quota limits only
+            if not can_add and not user_object.testing_mode:
+                logger.warning(f"User {current_user} exceeded team member limit: {error_msg}")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=error_msg
+                )
+
+            if not can_add and user_object.testing_mode:
+                logger.info(f"User {current_user} in testing mode - bypassing quota limits for collaboration")
 
             logger.info(f"Subscription validation passed for {current_user} (tier: {subscription_tier}, testing_mode: {user_object.testing_mode})")
         except HTTPException:

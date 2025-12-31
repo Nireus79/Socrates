@@ -24,31 +24,31 @@ interface SubscriptionState {
   refreshSubscription: () => Promise<void>;
 }
 
-// Default feature sets for each tier
+// FREEMIUM MODEL: All tiers have FULL FEATURE ACCESS, differentiated only by quotas
 const TIER_FEATURES: Record<string, SubscriptionTier['features']> = {
   free: {
-    max_projects: 1,
-    max_team_members: 1,
-    max_questions_per_month: 50,
-    code_generation: false,
-    collaboration: false,
-    api_access: false,
-    advanced_analytics: false,
+    max_projects: 1,  // Quota limit: solo work
+    max_team_members: 1,  // Quota limit: solo only
+    max_questions_per_month: null,  // Unlimited
+    code_generation: true,  // All features in free tier
+    collaboration: false,  // Blocked by max_team_members=1 quota, not feature flag
+    api_access: true,
+    advanced_analytics: true,
   },
   pro: {
-    max_projects: 10,
-    max_team_members: 5,
-    max_questions_per_month: 500,
-    code_generation: true,
-    collaboration: true,
-    api_access: false,
+    max_projects: 10,  // Quota limit: up to 10 projects
+    max_team_members: 5,  // Quota limit: up to 5 team members
+    max_questions_per_month: null,  // Unlimited
+    code_generation: true,  // All features in pro tier
+    collaboration: true,  // Enabled with team member quota
+    api_access: true,
     advanced_analytics: true,
   },
   enterprise: {
-    max_projects: null,
-    max_team_members: null,
-    max_questions_per_month: null,
-    code_generation: true,
+    max_projects: null,  // Unlimited
+    max_team_members: null,  // Unlimited
+    max_questions_per_month: null,  // Unlimited
+    code_generation: true,  // All features in enterprise
     collaboration: true,
     api_access: true,
     advanced_analytics: true,
@@ -79,11 +79,6 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   // Check if has feature
   hasFeature: (feature: keyof SubscriptionTier['features']): boolean => {
     const state = get();
-
-    // Testing mode bypasses all restrictions
-    if (state.testingMode) {
-      return true;
-    }
 
     if (state.status !== 'active') return false;
 
@@ -156,11 +151,6 @@ export const useFeatureGate = (feature: string): boolean => {
 
     const featureKey = mapping[feature];
     if (!featureKey) return false;
-
-    // Testing mode bypasses all restrictions
-    if (state.testingMode) {
-      return true;
-    }
 
     if (state.status !== 'active') return false;
 
