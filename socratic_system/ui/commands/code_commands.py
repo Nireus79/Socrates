@@ -21,6 +21,41 @@ class CodeGenerateCommand(BaseCommand):
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute code generate command"""
+        # Validate context
+        validation_error = self._validate_code_context(context)
+        if validation_error:
+            return validation_error
+
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
+
+        print(f"\n{Fore.CYAN}Generating Code...{Style.RESET_ALL}")
+
+        # Generate code
+        result = orchestrator.process_request(
+            "code_generator", {"action": "generate_script", "project": project}
+        )
+
+        if result["status"] != "success":
+            return self.error(result.get("message", "Failed to generate code"))
+
+        script = result["script"]
+        save_path = result.get("save_path")
+        is_multi_file = result.get("is_multi_file", False)
+
+        self.print_success("Code Generated Successfully!")
+
+        # Display generated code
+        self._display_generated_code(script, save_path, is_multi_file)
+
+        # Ask if user wants documentation
+        if self._prompt_for_documentation():
+            self._generate_and_display_documentation(orchestrator, project, script, save_path)
+
+        return self.success(data={"script": script, "save_path": save_path})
+
+    def _validate_code_context(self, context: Dict[str, Any]) -> Dict:
+        """Validate required context for code generation"""
         if not self.require_project(context):
             return self.error("No project loaded")
 
@@ -30,70 +65,68 @@ class CodeGenerateCommand(BaseCommand):
         if not orchestrator or not project:
             return self.error("Required context not available")
 
-        print(f"\n{Fore.CYAN}Generating Code...{Style.RESET_ALL}")
+        return None
 
-        result = orchestrator.process_request(
-            "code_generator", {"action": "generate_script", "project": project}
+    def _display_generated_code(self, script: str, save_path: str, is_multi_file: bool) -> None:
+        """Display generated code or project structure"""
+        if is_multi_file:
+            self._display_multi_file_structure(save_path)
+        else:
+            self._display_single_file_code(script, save_path)
+
+    def _display_multi_file_structure(self, save_path: str) -> None:
+        """Display multi-file project structure"""
+        print(ArtifactSaver.get_save_location_message(save_path))
+        print(f"\n{Fore.CYAN}Project Structure:{Style.RESET_ALL}")
+        tree = ArtifactSaver.get_project_structure_tree(save_path)
+        print(tree)
+
+        files = ArtifactSaver.list_project_files(save_path)
+        print(f"\n{Fore.GREEN}Total files:{Style.RESET_ALL} {len(files)} files created")
+
+    def _display_single_file_code(self, script: str, save_path: str) -> None:
+        """Display single-file code"""
+        print(f"\n{Fore.YELLOW}{'=' * 60}")
+        print(f"{Fore.WHITE}{script}")
+        print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}")
+
+        if save_path:
+            self._display_save_location(save_path, "Save path was returned but file not found")
+
+    def _display_save_location(self, save_path: str, warning_msg: str) -> None:
+        """Display save location or warning if not found"""
+        if Path(save_path).exists():
+            print(ArtifactSaver.get_save_location_message(save_path))
+        else:
+            self.print_warning(f"{warning_msg}: {save_path}")
+
+    def _prompt_for_documentation(self) -> bool:
+        """Ask user if they want documentation"""
+        doc_choice = input(f"{Fore.CYAN}Generate documentation? (y/n): ").lower()
+        return doc_choice == "y"
+
+    def _generate_and_display_documentation(
+        self, orchestrator, project, script: str, save_path: str
+    ) -> None:
+        """Generate and display documentation"""
+        doc_result = orchestrator.process_request(
+            "code_generator",
+            {"action": "generate_documentation", "project": project, "script": script},
         )
 
-        if result["status"] == "success":
-            script = result["script"]
-            save_path = result.get("save_path")
-            is_multi_file = result.get("is_multi_file", False)
+        if doc_result["status"] != "success":
+            self.print_warning("Failed to generate documentation")
+            return
 
-            self.print_success("Code Generated Successfully!")
+        doc_save_path = doc_result.get("save_path")
 
-            if is_multi_file:
-                # For multi-file projects, show structure instead of raw code
-                print(ArtifactSaver.get_save_location_message(save_path))
-                print(f"\n{Fore.CYAN}Project Structure:{Style.RESET_ALL}")
-                tree = ArtifactSaver.get_project_structure_tree(save_path)
-                print(tree)
+        self.print_success("Documentation Generated!")
+        print(f"\n{Fore.YELLOW}{'=' * 60}")
+        print(f"{Fore.WHITE}{doc_result['documentation']}")
+        print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}")
 
-                # Show file summary
-                files = ArtifactSaver.list_project_files(save_path)
-                print(
-                    f"\n{Fore.GREEN}Total files:{Style.RESET_ALL} {len(files)} files created"
-                )
-            else:
-                # For single-file, show the code
-                print(f"\n{Fore.YELLOW}{'=' * 60}")
-                print(f"{Fore.WHITE}{script}")
-                print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}")
-
-                # Show save location if file actually exists
-                if save_path:
-                    if Path(save_path).exists():
-                        print(ArtifactSaver.get_save_location_message(save_path))
-                    else:
-                        self.print_warning(f"Save path was returned but file not found: {save_path}")
-
-            # Ask if user wants documentation
-            doc_choice = input(f"{Fore.CYAN}Generate documentation? (y/n): ").lower()
-            if doc_choice == "y":
-                doc_result = orchestrator.process_request(
-                    "code_generator",
-                    {"action": "generate_documentation", "project": project, "script": script},
-                )
-
-                if doc_result["status"] == "success":
-                    doc_save_path = doc_result.get("save_path")
-
-                    self.print_success("Documentation Generated!")
-                    print(f"\n{Fore.YELLOW}{'=' * 60}")
-                    print(f"{Fore.WHITE}{doc_result['documentation']}")
-                    print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}")
-
-                    # Show save location if file actually exists
-                    if doc_save_path:
-                        if Path(doc_save_path).exists():
-                            print(ArtifactSaver.get_save_location_message(doc_save_path))
-                        else:
-                            self.print_warning(f"Documentation save path returned but file not found: {doc_save_path}")
-
-            return self.success(data={"script": script, "save_path": save_path})
-        else:
-            return self.error(result.get("message", "Failed to generate code"))
+        if doc_save_path:
+            self._display_save_location(doc_save_path, "Documentation save path returned but file not found")
 
 
 class CodeDocsCommand(BaseCommand):

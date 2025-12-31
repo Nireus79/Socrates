@@ -54,63 +54,73 @@ class CodeStructureAnalyzer:
         try:
             tree = ast.parse(self.code)
 
-            # Extract imports
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Import):
-                    for alias in node.names:
-                        self.imports.append(alias.name)
-                elif isinstance(node, ast.ImportFrom):
-                    module = node.module or ""
-                    for alias in node.names:
-                        self.imports.append(f"{module}.{alias.name}")
-
-            # Extract classes
-            for node in ast.walk(tree):
-                if isinstance(node, ast.ClassDef):
-                    methods = [
-                        m.name for m in node.body if isinstance(m, ast.FunctionDef)
-                    ]
-                    bases = [ast.unparse(b) for b in node.bases]
-
-                    self.classes.append(
-                        {
-                            "name": node.name,
-                            "methods": methods,
-                            "bases": bases,
-                            "lineno": node.lineno,
-                        }
-                    )
-
-            # Extract functions (not in classes)
-            for node in tree.body:
-                if isinstance(node, ast.FunctionDef):
-                    self.functions.append(
-                        {
-                            "name": node.name,
-                            "lineno": node.lineno,
-                            "is_special": node.name.startswith("_"),
-                        }
-                    )
-
-            # Detect special patterns
+            # Extract code elements
+            self._extract_imports(tree)
+            self._extract_classes(tree)
+            self._extract_functions(tree)
             self._detect_patterns()
 
-            return {
-                "language": "python",
-                "classes": self.classes,
-                "functions": self.functions,
-                "imports": list(set(self.imports)),
-                "has_tests": self.has_tests,
-                "has_config": self.has_config,
-                "has_main": self.has_main,
-                "class_count": len(self.classes),
-                "function_count": len(self.functions),
-                "import_count": len(set(self.imports)),
-            }
+            return self._build_analysis_result()
 
         except SyntaxError as e:
             logger.error(f"Syntax error analyzing code: {e}")
             return self._analyze_generic()
+
+    def _extract_imports(self, tree: ast.AST) -> None:
+        """Extract import statements from AST"""
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    self.imports.append(alias.name)
+            elif isinstance(node, ast.ImportFrom):
+                module = node.module or ""
+                for alias in node.names:
+                    self.imports.append(f"{module}.{alias.name}")
+
+    def _extract_classes(self, tree: ast.AST) -> None:
+        """Extract class definitions from AST"""
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef):
+                methods = [
+                    m.name for m in node.body if isinstance(m, ast.FunctionDef)
+                ]
+                bases = [ast.unparse(b) for b in node.bases]
+
+                self.classes.append(
+                    {
+                        "name": node.name,
+                        "methods": methods,
+                        "bases": bases,
+                        "lineno": node.lineno,
+                    }
+                )
+
+    def _extract_functions(self, tree: ast.AST) -> None:
+        """Extract function definitions (not in classes) from AST"""
+        for node in tree.body:
+            if isinstance(node, ast.FunctionDef):
+                self.functions.append(
+                    {
+                        "name": node.name,
+                        "lineno": node.lineno,
+                        "is_special": node.name.startswith("_"),
+                    }
+                )
+
+    def _build_analysis_result(self) -> Dict:
+        """Build analysis result dictionary"""
+        return {
+            "language": "python",
+            "classes": self.classes,
+            "functions": self.functions,
+            "imports": list(set(self.imports)),
+            "has_tests": self.has_tests,
+            "has_config": self.has_config,
+            "has_main": self.has_main,
+            "class_count": len(self.classes),
+            "function_count": len(self.functions),
+            "import_count": len(set(self.imports)),
+        }
 
     def _detect_patterns(self) -> None:
         """Detect special code patterns"""

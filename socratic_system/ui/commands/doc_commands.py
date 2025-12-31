@@ -267,15 +267,48 @@ class DocPasteCommand(BaseCommand):
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute docs paste command"""
-        # Get optional title from args
-        title = " ".join(args) if args else "pasted_text"
+        # Get title from arguments or user input
+        title = self._get_title_from_input(args)
 
-        # Get custom title if not provided
-        if not args:
-            title_input = input(f"{Fore.CYAN}Enter a title for this content (default: pasted_text): ").strip()
-            if title_input:
-                title = title_input
+        # Get text content from user
+        text_content = self._get_text_content_from_input()
 
+        if not text_content.strip():
+            return self.error("No content provided")
+
+        # Validate context
+        validation_error = self._validate_doc_paste_context(context)
+        if validation_error:
+            return validation_error
+
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
+
+        # Determine project association
+        project_id = self._get_project_association(project)
+
+        # Process text content
+        result = self._process_text_import(orchestrator, text_content, title, project_id)
+
+        # Handle result
+        if result["status"] == "success":
+            return self._handle_import_success(result, title, project_id, context, orchestrator)
+        else:
+            return self.error(result.get("message", "Failed to import text"))
+
+    def _get_title_from_input(self, args: List[str]) -> str:
+        """Get document title from args or user input"""
+        if args:
+            return " ".join(args)
+
+        title = "pasted_text"
+        title_input = input(f"{Fore.CYAN}Enter a title for this content (default: pasted_text): ").strip()
+        if title_input:
+            title = title_input
+        return title
+
+    def _get_text_content_from_input(self) -> str:
+        """Get multi-line text content from user input"""
         print(f"{Fore.CYAN}Enter your text content (type EOF on a new line when done):{Style.RESET_ALL}")
         print(f"{Fore.YELLOW}>>> {Style.RESET_ALL}", end="")
 
@@ -287,21 +320,18 @@ class DocPasteCommand(BaseCommand):
                     break
                 lines.append(line)
         except EOFError:
-            # Handle EOF from standard input
             pass
 
-        text_content = "\n".join(lines)
+        return "\n".join(lines)
 
-        if not text_content.strip():
-            return self.error("No content provided")
-
-        orchestrator = context.get("orchestrator")
-        project = context.get("project")
-
-        if not orchestrator:
+    def _validate_doc_paste_context(self, context: Dict[str, Any]) -> Dict:
+        """Validate required context for docs paste command"""
+        if not context.get("orchestrator"):
             return self.error("Orchestrator not available")
+        return None
 
-        # Ask if they want to link to current project
+    def _get_project_association(self, project) -> str:
+        """Get project ID if user wants to link to current project"""
         project_id = None
         if project:
             link_choice = input(
@@ -309,10 +339,13 @@ class DocPasteCommand(BaseCommand):
             ).lower()
             if link_choice == "y":
                 project_id = project.project_id
+        return project_id
 
+    def _process_text_import(self, orchestrator, text_content: str, title: str, project_id: str) -> Dict:
+        """Process text import request"""
         print(f"{Fore.YELLOW}Processing text...{Style.RESET_ALL}")
 
-        result = orchestrator.process_request(
+        return orchestrator.process_request(
             "document_agent",
             {
                 "action": "import_text",
@@ -322,44 +355,55 @@ class DocPasteCommand(BaseCommand):
             },
         )
 
-        if result["status"] == "success":
-            words = result.get("words_extracted", 0)
-            chunks = result.get("chunks_created", 0)
-            entries = result.get("entries_added", 0)
+    def _handle_import_success(
+        self, result: Dict, title: str, project_id: str, context: Dict, orchestrator
+    ) -> Dict:
+        """Handle successful text import"""
+        words = result.get("words_extracted", 0)
+        chunks = result.get("chunks_created", 0)
+        entries = result.get("entries_added", 0)
 
-            self.print_success(f"Successfully imported '{title}'")
-            print(f"{Fore.WHITE}Content extracted: {words} words")
-            print(f"Chunks created: {chunks}")
-            print(f"Stored in knowledge base: {entries} entries")
+        self.print_success(f"Successfully imported '{title}'")
+        self._display_import_stats(words, chunks, entries)
 
-            # CRITICAL: Emit DOCUMENT_IMPORTED event to trigger knowledge analysis
-            try:
-                from socratic_system.events import EventType
-                orchestrator.event_emitter.emit(
-                    EventType.DOCUMENT_IMPORTED,
-                    {
-                        "project_id": project_id,
-                        "file_name": title,
-                        "source_type": "pasted_text",
-                        "words_extracted": words,
-                        "chunks_created": chunks,
-                        "user_id": context.get("user").username if context.get("user") else "unknown",
-                    }
-                )
-                print(f"{Fore.GREEN}Knowledge analysis triggered{Style.RESET_ALL}")
-            except Exception as e:
-                print(f"{Fore.YELLOW}Warning: Could not trigger knowledge analysis: {str(e)}{Style.RESET_ALL}")
+        # Emit DOCUMENT_IMPORTED event
+        self._emit_document_imported_event(orchestrator, project_id, title, words, chunks, context)
 
-            return self.success(
-                data={
-                    "title": title,
+        return self.success(
+            data={
+                "title": title,
+                "words_extracted": words,
+                "chunks_created": chunks,
+                "entries_added": entries,
+            }
+        )
+
+    def _display_import_stats(self, words: int, chunks: int, entries: int) -> None:
+        """Display import statistics"""
+        print(f"{Fore.WHITE}Content extracted: {words} words")
+        print(f"Chunks created: {chunks}")
+        print(f"Stored in knowledge base: {entries} entries")
+
+    def _emit_document_imported_event(
+        self, orchestrator, project_id: str, title: str, words: int, chunks: int, context: Dict
+    ) -> None:
+        """Emit DOCUMENT_IMPORTED event to trigger knowledge analysis"""
+        try:
+            from socratic_system.events import EventType
+            orchestrator.event_emitter.emit(
+                EventType.DOCUMENT_IMPORTED,
+                {
+                    "project_id": project_id,
+                    "file_name": title,
+                    "source_type": "pasted_text",
                     "words_extracted": words,
                     "chunks_created": chunks,
-                    "entries_added": entries,
+                    "user_id": context.get("user").username if context.get("user") else "unknown",
                 }
             )
-        else:
-            return self.error(result.get("message", "Failed to import text"))
+            print(f"{Fore.GREEN}Knowledge analysis triggered{Style.RESET_ALL}")
+        except Exception as e:
+            print(f"{Fore.YELLOW}Warning: Could not trigger knowledge analysis: {str(e)}{Style.RESET_ALL}")
 
 
 class DocImportUrlCommand(BaseCommand):

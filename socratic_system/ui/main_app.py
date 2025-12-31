@@ -539,50 +539,64 @@ class SocraticRAGSystem:
         Returns:
             True if command loop should continue, False if exit requested
         """
-        if result["status"] == "exit":
+        status = result["status"]
+
+        if status == "exit":
             return False
-        elif result["status"] == "error":
-            if result.get("message"):
-                print(result["message"])
-        elif result["status"] == "success":
-            if result.get("message"):
-                print(result["message"])
 
-            data = result.get("data", {})
+        # Display message if present
+        if result.get("message"):
+            self._display_status_message(status, result["message"])
 
-            # Handle project entry (push to navigation stack)
-            # Note: project_commands.py already sets app.current_project
-            project = data.get("project")
-            if project:
-                # Entering a project context - push to navigation stack
-                if self.nav_stack:
-                    self.nav_stack.push("project_view", {"project_id": project.project_id})
-                    self.logger.debug(f"Entered project context: {project.name} (ID: {project.project_id})")
-
-            # Handle navigation context changes (from /back, /menu commands)
-            nav_context = data.get("nav_context")
-            if nav_context:
-                # Navigation command returned, handle context change
-                if nav_context == "main_menu":
-                    self.current_project = None
-                    self.context_display.set_context(clear_project=True)
-                    self.logger.debug("Returned to main_menu context")
-                # State restoration could be added here if needed
-
-            # Check if session ended (done command, menu command, back command)
-            if data.get("session_ended"):
-                self.current_project = None
-                self.context_display.set_context(clear_project=True)
-                self.logger.debug("Session ended - cleared project and context display")
-        elif result["status"] == "info":
-            if result.get("message"):
-                print(result["message"])
-        elif result["status"] != "idle":
+        # Handle success status with data processing
+        if status == "success":
+            self._handle_success_result(result.get("data", {}))
+        elif status not in ("info", "idle", "error"):
             # Unknown status
-            print(f"{Fore.YELLOW}Command executed with status: {result['status']}{Style.RESET_ALL}")
-            if result.get("message"):
-                print(result["message"])
+            print(f"{Fore.YELLOW}Command executed with status: {status}{Style.RESET_ALL}")
+
         return True
+
+    def _display_status_message(self, status: str, message: str) -> None:
+        """Display message based on status type"""
+        if status == "unknown":
+            return  # Don't duplicate unknown messages
+        print(message)
+
+    def _handle_success_result(self, data: Dict[str, Any]) -> None:
+        """Handle success status data and navigation"""
+        # Handle project entry (push to navigation stack)
+        project = data.get("project")
+        if project:
+            self._handle_project_entry(project)
+
+        # Handle navigation context changes (from /back, /menu commands)
+        nav_context = data.get("nav_context")
+        if nav_context:
+            self._handle_nav_context(nav_context)
+
+        # Check if session ended (done command, menu command, back command)
+        if data.get("session_ended"):
+            self._clear_session()
+
+    def _handle_project_entry(self, project) -> None:
+        """Handle entering a project context"""
+        if self.nav_stack:
+            self.nav_stack.push("project_view", {"project_id": project.project_id})
+            self.logger.debug(f"Entered project context: {project.name} (ID: {project.project_id})")
+
+    def _handle_nav_context(self, nav_context: str) -> None:
+        """Handle navigation context changes"""
+        if nav_context == "main_menu":
+            self.current_project = None
+            self.context_display.set_context(clear_project=True)
+            self.logger.debug("Returned to main_menu context")
+
+    def _clear_session(self) -> None:
+        """Clear session data when session ends"""
+        self.current_project = None
+        self.context_display.set_context(clear_project=True)
+        self.logger.debug("Session ended - cleared project and context display")
 
     def _command_loop(self) -> None:
         """Main command processing loop"""

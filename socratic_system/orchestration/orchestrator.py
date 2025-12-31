@@ -294,80 +294,115 @@ class AgentOrchestrator:
         self.logger.info("Loading knowledge base...")
         self.event_emitter.emit(EventType.LOG_INFO, {"message": "Loading knowledge base..."})
 
-        # Load knowledge from JSON config file (inline _load_knowledge_config logic)
+        # Load knowledge data from config file
+        knowledge_data = self._load_knowledge_config()
+
+        if not knowledge_data:
+            self._emit_no_knowledge_warning()
+            return
+
+        # Process and add knowledge entries
+        loaded_count, error_count = self._process_knowledge_entries(knowledge_data)
+
+        # Mark knowledge base as loaded
+        self.vector_db.knowledge_loaded = True
+        self.knowledge_loaded = True
+
+        # Emit completion event
+        self._emit_knowledge_loaded_event(loaded_count, error_count)
+
+    def _load_knowledge_config(self) -> list:
+        """Load knowledge configuration from file"""
+        # Determine config path
         if self.config.knowledge_base_path:
             config_path = Path(self.config.knowledge_base_path)
             source = "configured path"
         else:
-            # Fall back to default location
             config_path = Path(__file__).parent.parent / "config" / "knowledge_base.json"
             source = "default location"
 
         self.logger.debug(f"Attempting to load knowledge base from {source}: {config_path}")
 
-        knowledge_data = []
-        try:
-            if config_path.exists():
-                self.logger.debug(f"Knowledge base file found at: {config_path}")
-                with open(config_path, encoding="utf-8") as f:
-                    config = json.load(f)
+        return self._read_knowledge_config_file(config_path, source)
 
-                knowledge_entries = config.get("default_knowledge", [])
-                if knowledge_entries:
-                    self.logger.info(
-                        f"Successfully loaded {len(knowledge_entries)} knowledge entries from {source}"
-                    )
-                    knowledge_data = knowledge_entries
-                else:
-                    self.logger.warning(f"No 'default_knowledge' entries found in config at {source}")
-            else:
+    def _read_knowledge_config_file(self, config_path: Path, source: str) -> list:
+        """Read and parse knowledge config file"""
+        try:
+            if not config_path.exists():
                 self.logger.debug(f"Knowledge config not found at {source}: {config_path}")
+                return []
+
+            self.logger.debug(f"Knowledge base file found at: {config_path}")
+            with open(config_path, encoding="utf-8") as f:
+                config = json.load(f)
+
+            knowledge_entries = config.get("default_knowledge", [])
+            if knowledge_entries:
+                self.logger.info(
+                    f"Successfully loaded {len(knowledge_entries)} knowledge entries from {source}"
+                )
+                return knowledge_entries
+            else:
+                self.logger.warning(f"No 'default_knowledge' entries found in config at {source}")
+                return []
+
         except json.JSONDecodeError as e:
             self.logger.error(f"Invalid JSON in knowledge config at {config_path}: {e}")
+            return []
         except Exception as e:
             self.logger.error(f"Failed to load knowledge config from {config_path}: {e}")
+            return []
 
-        if not knowledge_data:
-            self.logger.warning(
-                "No knowledge base config found - system will run with empty knowledge base"
-            )
-            self.event_emitter.emit(
-                EventType.LOG_WARNING, {"message": "No knowledge base config found"}
-            )
-            return
-
+    def _process_knowledge_entries(self, knowledge_data: list) -> tuple:
+        """Process and add knowledge entries to database"""
         self.logger.info(f"Found {len(knowledge_data)} knowledge entries to load")
 
         loaded_count = 0
         error_count = 0
 
         for entry_data in knowledge_data:
-            try:
-                entry = KnowledgeEntry(**entry_data)
-                self.vector_db.add_knowledge(entry)
-
-                # Also store in SQL database for persistence and querying
-                self.database.save_knowledge_document(
-                    user_id="system",
-                    project_id="default",
-                    doc_id=entry.id,
-                    title=getattr(entry, "category", "Knowledge Entry"),
-                    content=entry.content,
-                    source="hardcoded_knowledge_base",
-                    document_type="knowledge_entry",
-                )
-
+            if self._add_knowledge_entry(entry_data):
                 loaded_count += 1
-            except Exception as e:
-                self.logger.error(
-                    f"Failed to add knowledge entry '{entry_data.get('id', 'unknown')}': {e}"
-                )
+            else:
                 error_count += 1
 
-        self.vector_db.knowledge_loaded = True
-        self.knowledge_loaded = True  # Also mark orchestrator's flag as loaded
+        return loaded_count, error_count
 
-        # Log summary
+    def _add_knowledge_entry(self, entry_data: dict) -> bool:
+        """Add single knowledge entry to both vector and SQL databases"""
+        try:
+            entry = KnowledgeEntry(**entry_data)
+            self.vector_db.add_knowledge(entry)
+
+            # Also store in SQL database for persistence and querying
+            self.database.save_knowledge_document(
+                user_id="system",
+                project_id="default",
+                doc_id=entry.id,
+                title=getattr(entry, "category", "Knowledge Entry"),
+                content=entry.content,
+                source="hardcoded_knowledge_base",
+                document_type="knowledge_entry",
+            )
+            return True
+
+        except Exception as e:
+            self.logger.error(
+                f"Failed to add knowledge entry '{entry_data.get('id', 'unknown')}': {e}"
+            )
+            return False
+
+    def _emit_no_knowledge_warning(self) -> None:
+        """Emit warning when no knowledge base config found"""
+        self.logger.warning(
+            "No knowledge base config found - system will run with empty knowledge base"
+        )
+        self.event_emitter.emit(
+            EventType.LOG_WARNING, {"message": "No knowledge base config found"}
+        )
+
+    def _emit_knowledge_loaded_event(self, loaded_count: int, error_count: int) -> None:
+        """Emit knowledge loaded event with summary"""
         summary = f"Knowledge base loaded: {loaded_count} entries added"
         if error_count > 0:
             summary += f" ({error_count} failed)"
