@@ -599,132 +599,29 @@ class ProjectAnalyzeCommand(BaseCommand):
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute project analyze command"""
-        if not self.require_user(context):
-            return self.error("Must be logged in")
+        if not self._validate_analyze_context(context):
+            return self.error("Context validation failed")
 
         orchestrator = context.get("orchestrator")
         project = context.get("project")
 
-        if not orchestrator:
-            return self.error("Orchestrator not available")
-
-        if not project:
-            return self.error("No project loaded. Use /project load to load a project")
-
-        # Check if project has repository URL (GitHub imported)
-        if not project.repository_url:
-            return self.error("Project is not linked to a GitHub repository. Cannot analyze projects without source code.")
-
         print(f"{Fore.YELLOW}Analyzing project code...{Style.RESET_ALL}")
 
         try:
-            from pathlib import Path
-
             from socratic_system.utils.git_repository_manager import GitRepositoryManager
 
             git_manager = GitRepositoryManager()
-
-            # Clone repository to temp directory
-            print(f"{Fore.CYAN}Cloning repository...{Style.RESET_ALL}")
-            clone_result = git_manager.clone_repository(project.repository_url)
-            if not clone_result.get("success"):
-                return self.error(f"Failed to clone repository: {clone_result.get('error')}")
+            clone_result = self._clone_analyze_repo(git_manager, project.repository_url)
+            if not clone_result:
+                return self.error("Failed to clone repository")
 
             temp_path = clone_result["path"]
 
             try:
-                # Perform analysis
-                print(f"{Fore.CYAN}Analyzing code structure...{Style.RESET_ALL}")
+                analysis = self._perform_code_analysis(project, temp_path)
+                validation_result = self._run_analyze_validation(orchestrator, temp_path)
 
-                analysis = {
-                    "project_name": project.name,
-                    "repository": project.repository_url,
-                    "language": project.repository_language,
-                    "file_count": project.repository_file_count,
-                    "has_tests": project.repository_has_tests,
-                    "code_files": 0,
-                    "file_breakdown": {},
-                    "total_lines": 0,
-                }
-
-                # Scan for code files
-                temp_path_obj = Path(temp_path)
-                code_extensions = {
-                    ".py": "Python",
-                    ".js": "JavaScript",
-                    ".ts": "TypeScript",
-                    ".java": "Java",
-                    ".cpp": "C++",
-                    ".c": "C",
-                    ".go": "Go",
-                    ".rs": "Rust",
-                    ".rb": "Ruby",
-                    ".php": "PHP",
-                }
-
-                for suffix, lang in code_extensions.items():
-                    files = list(temp_path_obj.rglob(f"*{suffix}"))
-                    # Exclude common directories
-                    files = [f for f in files if not any(skip in f.parts for skip in {".git", "node_modules", ".venv", "venv", "__pycache__", "build", "dist"})]
-
-                    if files:
-                        analysis["file_breakdown"][lang] = len(files)
-                        analysis["code_files"] += len(files)
-
-                        # Count lines
-                        try:
-                            for file in files[:50]:  # Sample first 50 files
-                                with open(file, encoding='utf-8', errors='ignore') as f:
-                                    analysis["total_lines"] += len(f.readlines())
-                        except Exception:
-                            pass
-
-                # Run validation to get metrics
-                validation_result = orchestrator.process_request(
-                    "code_validation",
-                    {
-                        "action": "validate_project",
-                        "project_path": temp_path,
-                        "timeout": 300,
-                    },
-                )
-
-                summary = validation_result.get("validation_summary", {})
-
-                self.print_success("Analysis complete!")
-
-                # Display analysis
-                print(f"\n{Fore.CYAN}Project Analysis:{Style.RESET_ALL}")
-                print(f"  Project: {analysis['project_name']}")
-                print(f"  Repository: {analysis['repository'][:50]}..." if len(analysis['repository']) > 50 else f"  Repository: {analysis['repository']}")
-                print(f"  Language: {analysis['language']}")
-
-                print(f"\n{Fore.CYAN}Code Structure:{Style.RESET_ALL}")
-                print(f"  Total Files: {analysis['file_count']}")
-                print(f"  Code Files: {analysis['code_files']}")
-                print(f"  Total Lines: {analysis['total_lines']}")
-
-                if analysis["file_breakdown"]:
-                    print(f"\n{Fore.CYAN}Language Breakdown:{Style.RESET_ALL}")
-                    for lang, count in sorted(analysis["file_breakdown"].items(), key=lambda x: x[1], reverse=True):
-                        print(f"  {lang}: {count} files")
-
-                print(f"\n{Fore.CYAN}Code Quality:{Style.RESET_ALL}")
-                print(f"  Overall Status: {summary.get('overall_status', 'unknown').upper()}")
-                print(f"  Issues: {summary.get('issues_count', 0)}")
-                print(f"  Warnings: {summary.get('warnings_count', 0)}")
-
-                if project.repository_has_tests:
-                    print("  Tests: Configured")
-                else:
-                    print(f"  {Fore.YELLOW}Tests: None detected{Style.RESET_ALL}")
-
-                recommendations = validation_result.get("recommendations", [])
-                if recommendations:
-                    print(f"\n{Fore.YELLOW}Recommendations:{Style.RESET_ALL}")
-                    for i, rec in enumerate(recommendations[:3], 1):
-                        print(f"  {i}. {rec}")
-
+                self._display_analyze_results(analysis, validation_result, project)
                 return self.success(data={"analysis": analysis})
 
             finally:
@@ -733,6 +630,150 @@ class ProjectAnalyzeCommand(BaseCommand):
         except Exception as e:
             self.print_error(f"Analysis error: {str(e)}")
             return self.error(f"Analysis error: {str(e)}")
+
+    def _validate_analyze_context(self, context: Dict[str, Any]) -> bool:
+        """Validate context for analyze command"""
+        if not self.require_user(context):
+            return False
+
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
+
+        if not orchestrator:
+            self.error("Orchestrator not available")
+            return False
+
+        if not project:
+            self.error("No project loaded. Use /project load to load a project")
+            return False
+
+        if not project.repository_url:
+            self.error(
+                "Project is not linked to a GitHub repository. "
+                "Cannot analyze projects without source code."
+            )
+            return False
+
+        return True
+
+    def _clone_analyze_repo(self, git_manager: Any, repo_url: str) -> Any:
+        """Clone repository for analysis"""
+        print(f"{Fore.CYAN}Cloning repository...{Style.RESET_ALL}")
+        clone_result = git_manager.clone_repository(repo_url)
+        if not clone_result.get("success"):
+            return None
+        return clone_result
+
+    def _perform_code_analysis(self, project: Any, temp_path: str) -> Dict[str, Any]:
+        """Perform code structure analysis on the cloned repository"""
+        from pathlib import Path
+
+        print(f"{Fore.CYAN}Analyzing code structure...{Style.RESET_ALL}")
+
+        analysis = {
+            "project_name": project.name,
+            "repository": project.repository_url,
+            "language": project.repository_language,
+            "file_count": project.repository_file_count,
+            "has_tests": project.repository_has_tests,
+            "code_files": 0,
+            "file_breakdown": {},
+            "total_lines": 0,
+        }
+
+        # Scan for code files
+        temp_path_obj = Path(temp_path)
+        code_extensions = {
+            ".py": "Python",
+            ".js": "JavaScript",
+            ".ts": "TypeScript",
+            ".java": "Java",
+            ".cpp": "C++",
+            ".c": "C",
+            ".go": "Go",
+            ".rs": "Rust",
+            ".rb": "Ruby",
+            ".php": "PHP",
+        }
+
+        for suffix, lang in code_extensions.items():
+            files = list(temp_path_obj.rglob(f"*{suffix}"))
+            # Exclude common directories
+            files = [f for f in files if not any(skip in f.parts for skip in {".git", "node_modules", ".venv", "venv", "__pycache__", "build", "dist"})]
+
+            if files:
+                analysis["file_breakdown"][lang] = len(files)
+                analysis["code_files"] += len(files)
+
+                # Count lines
+                try:
+                    for file in files[:50]:  # Sample first 50 files
+                        with open(file, encoding='utf-8', errors='ignore') as f:
+                            analysis["total_lines"] += len(f.readlines())
+                except Exception:
+                    pass
+
+        return analysis
+
+    def _run_analyze_validation(self, orchestrator: Any, project_path: str) -> Dict[str, Any]:
+        """Run validation to get code quality metrics"""
+        return orchestrator.process_request(
+            "code_validation",
+            {
+                "action": "validate_project",
+                "project_path": project_path,
+                "timeout": 300,
+            },
+        )
+
+    def _display_analyze_results(
+        self, analysis: Dict[str, Any], validation_result: Dict[str, Any], project: Any
+    ) -> None:
+        """Display analysis and validation results"""
+        summary = validation_result.get("validation_summary", {})
+
+        self.print_success("Analysis complete!")
+
+        # Display project info
+        print(f"\n{Fore.CYAN}Project Analysis:{Style.RESET_ALL}")
+        print(f"  Project: {analysis['project_name']}")
+        repo_display = (
+            f"{analysis['repository'][:50]}..."
+            if len(analysis['repository']) > 50
+            else analysis['repository']
+        )
+        print(f"  Repository: {repo_display}")
+        print(f"  Language: {analysis['language']}")
+
+        # Display code structure
+        print(f"\n{Fore.CYAN}Code Structure:{Style.RESET_ALL}")
+        print(f"  Total Files: {analysis['file_count']}")
+        print(f"  Code Files: {analysis['code_files']}")
+        print(f"  Total Lines: {analysis['total_lines']}")
+
+        # Display language breakdown
+        if analysis["file_breakdown"]:
+            print(f"\n{Fore.CYAN}Language Breakdown:{Style.RESET_ALL}")
+            for lang, count in sorted(analysis["file_breakdown"].items(), key=lambda x: x[1], reverse=True):
+                print(f"  {lang}: {count} files")
+
+        # Display code quality
+        print(f"\n{Fore.CYAN}Code Quality:{Style.RESET_ALL}")
+        print(f"  Overall Status: {summary.get('overall_status', 'unknown').upper()}")
+        print(f"  Issues: {summary.get('issues_count', 0)}")
+        print(f"  Warnings: {summary.get('warnings_count', 0)}")
+
+        if project.repository_has_tests:
+            print("  Tests: Configured")
+        else:
+            print(f"  {Fore.YELLOW}Tests: None detected{Style.RESET_ALL}")
+
+        # Display recommendations
+        recommendations = validation_result.get("recommendations", [])
+        if recommendations:
+            print(f"\n{Fore.YELLOW}Recommendations:{Style.RESET_ALL}")
+            for i, rec in enumerate(recommendations[:3], 1):
+                print(f"  {i}. {rec}")
 
 
 class ProjectTestCommand(BaseCommand):
@@ -747,21 +788,11 @@ class ProjectTestCommand(BaseCommand):
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute project test command"""
-        if not self.require_user(context):
-            return self.error("Must be logged in")
+        if not self._validate_test_context(context):
+            return self.error("Context validation failed")
 
         orchestrator = context.get("orchestrator")
         project = context.get("project")
-
-        if not orchestrator:
-            return self.error("Orchestrator not available")
-
-        if not project:
-            return self.error("No project loaded. Use /project load to load a project")
-
-        # Check if project has repository URL (GitHub imported)
-        if not project.repository_url:
-            return self.error("Project is not linked to a GitHub repository. Cannot run tests on projects without source code.")
 
         print(f"{Fore.YELLOW}Running tests...{Style.RESET_ALL}")
 
@@ -769,59 +800,21 @@ class ProjectTestCommand(BaseCommand):
             from socratic_system.utils.git_repository_manager import GitRepositoryManager
 
             git_manager = GitRepositoryManager()
-
-            # Clone repository to temp directory
-            print(f"{Fore.CYAN}Cloning repository...{Style.RESET_ALL}")
-            clone_result = git_manager.clone_repository(project.repository_url)
-            if not clone_result.get("success"):
-                return self.error(f"Failed to clone repository: {clone_result.get('error')}")
+            clone_result = self._clone_test_repo(git_manager, project.repository_url)
+            if not clone_result:
+                return self.error("Failed to clone repository")
 
             temp_path = clone_result["path"]
 
             try:
-                # Run tests using CodeValidationAgent
-                test_result = orchestrator.process_request(
-                    "code_validation",
-                    {
-                        "action": "run_tests",
-                        "project_path": temp_path,
-                        "timeout": 300,
-                    },
-                )
+                test_result = self._run_project_tests(orchestrator, temp_path)
 
-                if test_result["status"] == "success":
-                    results = test_result.get("test_results", {})
-
-                    self.print_success("Test execution complete!")
-
-                    # Display test results
-                    print(f"\n{Fore.CYAN}Test Results:{Style.RESET_ALL}")
-                    print(f"  Framework: {results.get('framework', 'unknown')}")
-                    print(f"  Tests Found: {'Yes' if results.get('tests_found') else 'No'}")
-
-                    if results.get("tests_found"):
-                        print(f"  {Fore.GREEN}Passed: {results.get('tests_passed', 0)}{Style.RESET_ALL}")
-                        if results.get('tests_failed', 0) > 0:
-                            print(f"  {Fore.RED}Failed: {results.get('tests_failed', 0)}{Style.RESET_ALL}")
-                        if results.get('tests_skipped', 0) > 0:
-                            print(f"  {Fore.YELLOW}Skipped: {results.get('tests_skipped', 0)}{Style.RESET_ALL}")
-                        print(f"  Duration: {results.get('duration_seconds', 0):.2f}s")
-
-                        # Show failures if any
-                        failures = results.get("failures", [])
-                        if failures:
-                            print(f"\n{Fore.RED}Failures:{Style.RESET_ALL}")
-                            for failure in failures[:5]:  # Show first 5
-                                print(f"  • {failure.get('test', 'Unknown')}")
-                                if failure.get('message'):
-                                    msg = failure['message'][:100]
-                                    print(f"    {msg}...")
-                    else:
-                        print(f"  {Fore.YELLOW}No tests found in project{Style.RESET_ALL}")
-
-                    return self.success(data={"test_results": results})
-                else:
+                if test_result["status"] != "success":
                     return self.error(f"Test execution failed: {test_result.get('message', 'Unknown error')}")
+
+                results = test_result.get("test_results", {})
+                self._display_test_results(results)
+                return self.success(data={"test_results": results})
 
             finally:
                 git_manager.cleanup(temp_path)
@@ -829,6 +822,79 @@ class ProjectTestCommand(BaseCommand):
         except Exception as e:
             self.print_error(f"Test execution error: {str(e)}")
             return self.error(f"Test execution error: {str(e)}")
+
+    def _validate_test_context(self, context: Dict[str, Any]) -> bool:
+        """Validate context for test command"""
+        if not self.require_user(context):
+            return False
+
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
+
+        if not orchestrator:
+            self.error("Orchestrator not available")
+            return False
+
+        if not project:
+            self.error("No project loaded. Use /project load to load a project")
+            return False
+
+        if not project.repository_url:
+            self.error(
+                "Project is not linked to a GitHub repository. "
+                "Cannot run tests on projects without source code."
+            )
+            return False
+
+        return True
+
+    def _clone_test_repo(self, git_manager: Any, repo_url: str) -> Any:
+        """Clone repository for testing"""
+        print(f"{Fore.CYAN}Cloning repository...{Style.RESET_ALL}")
+        clone_result = git_manager.clone_repository(repo_url)
+        if not clone_result.get("success"):
+            return None
+        return clone_result
+
+    def _run_project_tests(self, orchestrator: Any, project_path: str) -> Dict[str, Any]:
+        """Run tests on the project using CodeValidationAgent"""
+        return orchestrator.process_request(
+            "code_validation",
+            {
+                "action": "run_tests",
+                "project_path": project_path,
+                "timeout": 300,
+            },
+        )
+
+    def _display_test_results(self, results: Dict[str, Any]) -> None:
+        """Display test execution results"""
+        self.print_success("Test execution complete!")
+
+        # Display test results
+        print(f"\n{Fore.CYAN}Test Results:{Style.RESET_ALL}")
+        print(f"  Framework: {results.get('framework', 'unknown')}")
+        print(f"  Tests Found: {'Yes' if results.get('tests_found') else 'No'}")
+
+        if results.get("tests_found"):
+            print(f"  {Fore.GREEN}Passed: {results.get('tests_passed', 0)}{Style.RESET_ALL}")
+            if results.get('tests_failed', 0) > 0:
+                print(f"  {Fore.RED}Failed: {results.get('tests_failed', 0)}{Style.RESET_ALL}")
+            if results.get('tests_skipped', 0) > 0:
+                print(f"  {Fore.YELLOW}Skipped: {results.get('tests_skipped', 0)}{Style.RESET_ALL}")
+            print(f"  Duration: {results.get('duration_seconds', 0):.2f}s")
+
+            # Show failures if any
+            failures = results.get("failures", [])
+            if failures:
+                print(f"\n{Fore.RED}Failures:{Style.RESET_ALL}")
+                for failure in failures[:5]:  # Show first 5
+                    print(f"  • {failure.get('test', 'Unknown')}")
+                    if failure.get('message'):
+                        msg = failure['message'][:100]
+                        print(f"    {msg}...")
+        else:
+            print(f"  {Fore.YELLOW}No tests found in project{Style.RESET_ALL}")
 
 
 class ProjectFixCommand(BaseCommand):
