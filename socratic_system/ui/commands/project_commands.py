@@ -1417,17 +1417,11 @@ class ProjectDiffCommand(BaseCommand):
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute project diff command"""
-        if not self.require_user(context):
-            return self.error("Must be logged in")
+        if not self._validate_diff_context(context):
+            return self.error("Context validation failed")
 
         orchestrator = context.get("orchestrator")
         project = context.get("project")
-
-        if not orchestrator:
-            return self.error("Orchestrator not available")
-
-        if not project:
-            return self.error("No project loaded. Use /project load to load a project")
 
         print(f"{Fore.YELLOW}Comparing validation results...{Style.RESET_ALL}")
 
@@ -1435,80 +1429,28 @@ class ProjectDiffCommand(BaseCommand):
             from socratic_system.utils.git_repository_manager import GitRepositoryManager
 
             git_manager = GitRepositoryManager()
-
-            # Clone and re-validate to get new results
-            print(f"{Fore.CYAN}Cloning repository...{Style.RESET_ALL}")
-            clone_result = git_manager.clone_repository(project.repository_url)
-            if not clone_result.get("success"):
-                return self.error(f"Failed to clone repository: {clone_result.get('error')}")
+            clone_result = self._clone_diff_repo(git_manager, project.repository_url)
+            if not clone_result:
+                return self.error("Failed to clone repository")
 
             temp_path = clone_result["path"]
 
             try:
-                # Run validation
-                validation_result = orchestrator.process_request(
-                    "code_validation",
-                    {
-                        "action": "validate_project",
-                        "project_path": temp_path,
-                        "timeout": 300,
-                    },
-                )
-
+                validation_result = self._run_diff_validation(orchestrator, temp_path)
                 if validation_result["status"] != "success":
                     return self.error("Validation failed")
 
                 new_summary = validation_result.get("validation_summary", {})
                 old_summary = getattr(project, "_cached_validation_summary", {}) or {}
 
-                # Display comparison
                 self.print_success("Validation comparison complete!")
+                self._display_validation_comparison(old_summary, new_summary)
 
-                print(f"\n{Fore.CYAN}Validation Changes:{Style.RESET_ALL}")
-
-                # Compare issue counts
-                old_issues = old_summary.get("issues_count", 0)
-                new_issues = new_summary.get("issues_count", 0)
-                issue_change = new_issues - old_issues
-
-                old_warnings = old_summary.get("warnings_count", 0)
-                new_warnings = new_summary.get("warnings_count", 0)
-                warning_change = new_warnings - old_warnings
-
-                # Show changes
-                if old_summary:
-                    print(f"\n  Issues: {old_issues} → {new_issues} ", end="")
-                    if issue_change < 0:
-                        print(f"{Fore.GREEN}[{issue_change}] Improved!{Style.RESET_ALL}")
-                    elif issue_change > 0:
-                        print(f"{Fore.RED}[+{issue_change}] Regressed{Style.RESET_ALL}")
-                    else:
-                        print(f"{Fore.YELLOW}[No change]{Style.RESET_ALL}")
-
-                    print(f"  Warnings: {old_warnings} → {new_warnings} ", end="")
-                    if warning_change < 0:
-                        print(f"{Fore.GREEN}[{warning_change}] Improved!{Style.RESET_ALL}")
-                    elif warning_change > 0:
-                        print(f"{Fore.RED}[+{warning_change}]{Style.RESET_ALL}")
-                    else:
-                        print(f"{Fore.YELLOW}[No change]{Style.RESET_ALL}")
-
-                    # Overall comparison
-                    old_status = old_summary.get("overall_status", "unknown")
-                    new_status = new_summary.get("overall_status", "unknown")
-
-                    if old_status != new_status:
-                        print(f"\n  Status: {old_status} → {new_status}")
-                else:
-                    print("\n  No previous validation data available.")
-                    print(f"  Current Issues: {new_issues}")
-                    print(f"  Current Warnings: {new_warnings}")
-                    print(f"  Current Status: {new_status}")
-
-                # Store current summary for future comparison
                 project._cached_validation_summary = new_summary
 
-                return self.success(data={"old_summary": old_summary, "new_summary": new_summary})
+                return self.success(
+                    data={"old_summary": old_summary, "new_summary": new_summary}
+                )
 
             finally:
                 git_manager.cleanup(temp_path)
@@ -1516,3 +1458,102 @@ class ProjectDiffCommand(BaseCommand):
         except Exception as e:
             self.print_error(f"Diff error: {str(e)}")
             return self.error(f"Diff error: {str(e)}")
+
+    def _validate_diff_context(self, context: Dict[str, Any]) -> bool:
+        """Validate context for diff command"""
+        if not self.require_user(context):
+            return False
+
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
+
+        if not orchestrator:
+            self.error("Orchestrator not available")
+            return False
+
+        if not project:
+            self.error("No project loaded. Use /project load to load a project")
+            return False
+
+        return True
+
+    def _clone_diff_repo(self, git_manager: Any, repo_url: str) -> Any:
+        """Clone repository for diff operation"""
+        print(f"{Fore.CYAN}Cloning repository...{Style.RESET_ALL}")
+        clone_result = git_manager.clone_repository(repo_url)
+        if not clone_result.get("success"):
+            return None
+        return clone_result
+
+    def _run_diff_validation(
+        self, orchestrator: Any, project_path: str
+    ) -> Dict[str, Any]:
+        """Run validation for diff operation"""
+        return orchestrator.process_request(
+            "code_validation",
+            {
+                "action": "validate_project",
+                "project_path": project_path,
+                "timeout": 300,
+            },
+        )
+
+    def _display_validation_comparison(
+        self, old_summary: Dict[str, Any], new_summary: Dict[str, Any]
+    ) -> None:
+        """Display validation comparison"""
+        print(f"\n{Fore.CYAN}Validation Changes:{Style.RESET_ALL}")
+
+        old_issues = old_summary.get("issues_count", 0)
+        new_issues = new_summary.get("issues_count", 0)
+        old_warnings = old_summary.get("warnings_count", 0)
+        new_warnings = new_summary.get("warnings_count", 0)
+
+        if old_summary:
+            self._display_issue_changes(old_issues, new_issues)
+            self._display_warning_changes(old_warnings, new_warnings)
+            self._display_status_change(old_summary, new_summary)
+        else:
+            self._display_first_validation(new_issues, new_warnings, new_summary)
+
+    def _display_issue_changes(self, old_issues: int, new_issues: int) -> None:
+        """Display issue count changes"""
+        issue_change = new_issues - old_issues
+        print(f"\n  Issues: {old_issues} → {new_issues} ", end="")
+        if issue_change < 0:
+            print(f"{Fore.GREEN}[{issue_change}] Improved!{Style.RESET_ALL}")
+        elif issue_change > 0:
+            print(f"{Fore.RED}[+{issue_change}] Regressed{Style.RESET_ALL}")
+        else:
+            print(f"{Fore.YELLOW}[No change]{Style.RESET_ALL}")
+
+    def _display_warning_changes(self, old_warnings: int, new_warnings: int) -> None:
+        """Display warning count changes"""
+        warning_change = new_warnings - old_warnings
+        print(f"  Warnings: {old_warnings} → {new_warnings} ", end="")
+        if warning_change < 0:
+            print(f"{Fore.GREEN}[{warning_change}] Improved!{Style.RESET_ALL}")
+        elif warning_change > 0:
+            print(f"{Fore.RED}[+{warning_change}]{Style.RESET_ALL}")
+        else:
+            print(f"{Fore.YELLOW}[No change]{Style.RESET_ALL}")
+
+    def _display_status_change(
+        self, old_summary: Dict[str, Any], new_summary: Dict[str, Any]
+    ) -> None:
+        """Display overall status change"""
+        old_status = old_summary.get("overall_status", "unknown")
+        new_status = new_summary.get("overall_status", "unknown")
+
+        if old_status != new_status:
+            print(f"\n  Status: {old_status} → {new_status}")
+
+    def _display_first_validation(
+        self, new_issues: int, new_warnings: int, new_summary: Dict[str, Any]
+    ) -> None:
+        """Display first validation data"""
+        new_status = new_summary.get("overall_status", "unknown")
+        print("\n  No previous validation data available.")
+        print(f"  Current Issues: {new_issues}")
+        print(f"  Current Warnings: {new_warnings}")
+        print(f"  Current Status: {new_status}")
