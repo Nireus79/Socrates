@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Depends, Body, status, Request
+from fastapi import FastAPI, HTTPException, Body, status, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
@@ -21,7 +21,6 @@ from socratic_system.orchestration.orchestrator import AgentOrchestrator
 from socratic_system.events import EventType
 from socrates_api.middleware.rate_limit import (
     initialize_limiter,
-    get_rate_limiter,
     RateLimitConfig,
 )
 from socrates_api.middleware.security_headers import add_security_headers_middleware

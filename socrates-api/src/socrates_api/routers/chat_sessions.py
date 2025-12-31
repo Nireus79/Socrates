@@ -37,7 +37,7 @@ async def create_chat_session(
     current_user: str = Depends(get_current_user),
 ):
     """Create a new chat session for a project."""
-    logger.warning(f"DEBUG: create_chat_session CALLED for project {project_id}")
+    logger.debug(f"Creating chat session for project {project_id}")
     try:
         db = get_database()
         project = db.load_project(project_id)
