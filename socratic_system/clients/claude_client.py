@@ -28,7 +28,9 @@ class ClaudeClient:
     token usage tracking and event emission.
     """
 
-    def __init__(self, api_key: str, orchestrator: "AgentOrchestrator", subscription_token: str = None):
+    def __init__(
+        self, api_key: str, orchestrator: "AgentOrchestrator", subscription_token: str = None
+    ):
         """
         Initialize Claude client.
 
@@ -1184,14 +1186,18 @@ class ClaudeClient:
                 messages=[{"role": "user", "content": prompt}],
             )
 
-            await self._track_token_usage_async(response.usage, "extract_tech_recommendations_async")
+            await self._track_token_usage_async(
+                response.usage, "extract_tech_recommendations_async"
+            )
             return self._parse_json_response(response.content[0].text.strip())
 
         except Exception as e:
             self.logger.error(f"Error extracting tech recommendations (async): {e}")
             return {}
 
-    async def evaluate_quality_async(self, content: str, content_type: str = "code") -> Dict[str, Any]:
+    async def evaluate_quality_async(
+        self, content: str, content_type: str = "code"
+    ) -> Dict[str, Any]:
         """
         Evaluate quality of generated content asynchronously.
 
@@ -1299,7 +1305,9 @@ class ClaudeClient:
                 messages=[{"role": "user", "content": prompt}],
             )
 
-            await self._track_token_usage_async(response.usage, "generate_conflict_resolution_async")
+            await self._track_token_usage_async(
+                response.usage, "generate_conflict_resolution_async"
+            )
             return response.content[0].text.strip()
 
         except Exception as e:

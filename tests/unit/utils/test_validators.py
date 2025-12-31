@@ -61,6 +61,7 @@ class TestUUIDValidation:
     def test_uuid_format(self):
         """Test UUID format validation"""
         from uuid import uuid4
+
         valid_uuid = str(uuid4())
         assert len(valid_uuid) == 36
         assert valid_uuid.count("-") == 4

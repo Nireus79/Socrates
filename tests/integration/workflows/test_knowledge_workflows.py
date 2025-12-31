@@ -74,13 +74,15 @@ class TestKnowledgeAnalysisAgent:
 
         agent = KnowledgeAnalysisAgent(mock_orchestrator)
 
-        result = agent.process({
-            "action": "analyze_knowledge",
-            "project_id": "test_proj_001",
-            "document_name": "calc.pdf",
-            "source_type": "pdf",
-            "words_extracted": 182,
-        })
+        result = agent.process(
+            {
+                "action": "analyze_knowledge",
+                "project_id": "test_proj_001",
+                "document_name": "calc.pdf",
+                "source_type": "pdf",
+                "words_extracted": 182,
+            }
+        )
 
         assert result["status"] == "success"
         assert "analysis" in result
@@ -114,11 +116,13 @@ class TestKnowledgeAnalysisAgent:
             ],
         }
 
-        result = agent.process({
-            "action": "regenerate_questions",
-            "project_id": "test_proj_001",
-            "knowledge_analysis": analysis,
-        })
+        result = agent.process(
+            {
+                "action": "regenerate_questions",
+                "project_id": "test_proj_001",
+                "knowledge_analysis": analysis,
+            }
+        )
 
         assert result["status"] == "success"
         assert "new_focus_areas" in result
@@ -176,10 +180,12 @@ class TestKnowledgeAnalysisAgent:
 
         agent = KnowledgeAnalysisAgent(mock_orchestrator)
 
-        result = agent.process({
-            "action": "get_knowledge_gaps",
-            "project_id": "test_proj_001",
-        })
+        result = agent.process(
+            {
+                "action": "get_knowledge_gaps",
+                "project_id": "test_proj_001",
+            }
+        )
 
         assert result["status"] == "success"
         assert "knowledge_gaps" in result
@@ -220,8 +226,12 @@ class TestTesterRole:
         project_types = ["software", "business", "creative", "research", "marketing", "educational"]
 
         for project_type in project_types:
-            assert project_type in ROLE_EXAMPLES, f"Project type {project_type} not in ROLE_EXAMPLES"
-            assert "tester" in ROLE_EXAMPLES[project_type], f"Tester role missing for {project_type}"
+            assert (
+                project_type in ROLE_EXAMPLES
+            ), f"Project type {project_type} not in ROLE_EXAMPLES"
+            assert (
+                "tester" in ROLE_EXAMPLES[project_type]
+            ), f"Tester role missing for {project_type}"
 
     def test_tester_role_examples_are_contextual(self):
         """Test that tester role examples are appropriate for their project context"""
@@ -257,7 +267,10 @@ class TestKnowledgeAwareQuestionGeneration:
         def track_event(event_type, data):
             emitted_events.append((event_type, data))
 
-        event_emitter.on(EventType.QUESTIONS_REGENERATED, lambda data: track_event(EventType.QUESTIONS_REGENERATED, data))
+        event_emitter.on(
+            EventType.QUESTIONS_REGENERATED,
+            lambda data: track_event(EventType.QUESTIONS_REGENERATED, data),
+        )
 
         mock_project = Mock()
         mock_project.name = "TestProject"

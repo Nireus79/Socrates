@@ -9,7 +9,6 @@ Tests metrics collection including:
 - Slow request detection
 """
 
-
 import pytest
 from fastapi import FastAPI
 from socrates_api.middleware.metrics import MetricsMiddleware
@@ -108,6 +107,7 @@ class TestSlowRequestDetection:
         @app.get("/slow")
         def slow_endpoint():
             import time
+
             time.sleep(0.1)  # 100ms
             return {"status": "ok"}
 
@@ -143,6 +143,7 @@ class TestStatusCodeDistribution:
         @app.get("/notfound")
         def not_found():
             from fastapi import HTTPException
+
             raise HTTPException(status_code=404)
 
         @app.get("/error")

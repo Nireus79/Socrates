@@ -105,9 +105,7 @@ class ProjectFileLoader:
                 "message": f"Failed to load project files: {str(e)}",
             }
 
-    def _load_all_project_files(
-        self, file_manager: Any, project_id: str
-    ) -> List[Dict]:
+    def _load_all_project_files(self, file_manager: Any, project_id: str) -> List[Dict]:
         """Load all project files in batches"""
         total_files = file_manager.get_file_count(project_id)
         self.logger.info(f"Loading {total_files} files for project {project_id}")
@@ -117,9 +115,7 @@ class ProjectFileLoader:
         batch_size = 100
 
         while True:
-            batch = file_manager.get_project_files(
-                project_id, offset=offset, limit=batch_size
-            )
+            batch = file_manager.get_project_files(project_id, offset=offset, limit=batch_size)
             if not batch:
                 break
             all_files.extend(batch)
@@ -189,15 +185,11 @@ class ProjectFileLoader:
                         f"{result.get('message', 'Unknown error')}"
                     )
             except Exception as e:
-                self.logger.error(
-                    f"Error processing file {file_info['file_path']}: {str(e)}"
-                )
+                self.logger.error(f"Error processing file {file_info['file_path']}: {str(e)}")
 
         return loaded_count, total_chunks
 
-    def _apply_strategy(
-        self, files: List[Dict], strategy: str, max_files: int
-    ) -> List[Dict]:
+    def _apply_strategy(self, files: List[Dict], strategy: str, max_files: int) -> List[Dict]:
         """
         Apply loading strategy to select which files to load
 
@@ -242,42 +234,37 @@ class ProjectFileLoader:
     def _rank_main_entry_points(self, files: List[Dict], priority: int) -> List[tuple]:
         """Rank main entry point files"""
         main_files = {
-            "main.py", "index.js", "app.py", "index.py", "app.js",
-            "server.js", "index.ts", "main.go", "main.rs", "main.java",
+            "main.py",
+            "index.js",
+            "app.py",
+            "index.py",
+            "app.js",
+            "server.js",
+            "index.ts",
+            "main.go",
+            "main.rs",
+            "main.java",
         }
-        return [
-            (f, priority)
-            for f in files
-            if Path(f["file_path"]).name in main_files
-        ]
+        return [(f, priority) for f in files if Path(f["file_path"]).name in main_files]
 
     def _rank_source_files(self, files: List[Dict], priority: int) -> List[tuple]:
         """Rank core source files"""
         return [
             (f, priority)
             for f in files
-            if any(
-                x in f["file_path"]
-                for x in ["/src/", "/lib/", "src/"]
-            )
+            if any(x in f["file_path"] for x in ["/src/", "/lib/", "src/"])
         ]
 
     def _rank_test_files(self, files: List[Dict], priority: int) -> List[tuple]:
         """Rank test files"""
         return [
-            (f, priority)
-            for f in files
-            if any(x in f["file_path"] for x in ["/test", "test/"])
+            (f, priority) for f in files if any(x in f["file_path"] for x in ["/test", "test/"])
         ]
 
     def _rank_config_files(self, files: List[Dict], priority: int) -> List[tuple]:
         """Rank configuration files"""
         config_exts = {".json", ".yaml", ".yml", ".toml", ".ini", ".cfg"}
-        return [
-            (f, priority)
-            for f in files
-            if Path(f["file_path"]).suffix in config_exts
-        ]
+        return [(f, priority) for f in files if Path(f["file_path"]).suffix in config_exts]
 
     def _rank_other_files(
         self, files: List[Dict], ranked_files: List[tuple], priority: int
@@ -306,9 +293,7 @@ class ProjectFileLoader:
 
         sample_count = max_files - len(important)
         if sample_count > 0 and other_files:
-            random_selection = random.sample(
-                other_files, min(sample_count, len(other_files))
-            )
+            random_selection = random.sample(other_files, min(sample_count, len(other_files)))
             return important + random_selection
 
         return important[:max_files]

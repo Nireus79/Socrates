@@ -127,12 +127,10 @@ COMMAND_REGISTRY = [
     (InfoCommand, []),
     (ModelCommand, []),
     (LLMCommand, ["llm"]),
-
     # NLU control commands
     (NLUEnableCommand, []),
     (NLUDisableCommand, []),
     (NLUStatusCommand, []),
-
     # User commands
     (UserLoginCommand, []),
     (UserCreateCommand, []),
@@ -140,14 +138,12 @@ COMMAND_REGISTRY = [
     (UserArchiveCommand, []),
     (UserDeleteCommand, []),
     (UserRestoreCommand, []),
-
     # Subscription commands
     (SubscriptionStatusCommand, []),
     (SubscriptionUpgradeCommand, []),
     (SubscriptionDowngradeCommand, []),
     (SubscriptionCompareCommand, []),
     (SubscriptionTestingModeCommand, []),
-
     # Project commands
     (ProjectCreateCommand, []),
     (ProjectLoadCommand, []),
@@ -155,7 +151,6 @@ COMMAND_REGISTRY = [
     (ProjectArchiveCommand, []),
     (ProjectRestoreCommand, []),
     (ProjectDeleteCommand, []),
-
     # Project analysis/validation commands
     (ProjectAnalyzeCommand, []),
     (ProjectTestCommand, []),
@@ -163,38 +158,31 @@ COMMAND_REGISTRY = [
     (ProjectFixCommand, []),
     (ProjectReviewCommand, []),
     (ProjectDiffCommand, []),
-
     # GitHub commands
     (GithubImportCommand, []),
     (GithubPullCommand, []),
     (GithubPushCommand, []),
     (GithubSyncCommand, []),
-
     # Session commands
     (ChatCommand, []),
     (ModeCommand, []),
     (DoneCommand, []),
     (AdvanceCommand, []),
     (HintCommand, []),
-
     # Code commands
     (CodeGenerateCommand, []),
     (CodeDocsCommand, []),
-
     # Finalize commands (project type-agnostic artifact generation)
     (FinalizeGenerateCommand, []),
     (FinalizeDocsCommand, []),
-
     # Collaboration commands
     (CollabAddCommand, []),
     (CollabRemoveCommand, []),
     (CollabListCommand, []),
     (CollabRoleCommand, []),
-
     # Skills commands
     (SkillsSetCommand, []),
     (SkillsListCommand, []),
-
     # Document commands
     (DocsCommand, []),
     (DocImportCommand, []),
@@ -202,32 +190,26 @@ COMMAND_REGISTRY = [
     (DocImportUrlCommand, []),
     (DocListCommand, []),
     (DocPasteCommand, []),
-
     # Note commands
     (NoteAddCommand, []),
     (NoteListCommand, []),
     (NoteSearchCommand, []),
     (NoteDeleteCommand, []),
-
     # Conversation commands
     (ConvSearchCommand, []),
     (ConvSummaryCommand, []),
-
     # Statistics commands
     (ProjectStatsCommand, []),
     (ProjectProgressCommand, []),
     (ProjectStatusCommand, []),
-
     # Maturity tracking commands
     (MaturityCommand, []),
     (MaturitySummaryCommand, []),
     (MaturityHistoryCommand, []),
     (MaturityStatusCommand, []),
-
     # Debug commands
     (DebugCommand, []),
     (LogsCommand, []),
-
     # Query/Answer commands
     (ExplainCommand, []),
     (SearchCommand, []),
@@ -298,7 +280,9 @@ class SocraticRAGSystem:
 
             # Check if frontend directory exists
             if not frontend_dir.exists():
-                print(f"{Fore.RED}[Frontend] Error: socrates-frontend directory not found{Style.RESET_ALL}")
+                print(
+                    f"{Fore.RED}[Frontend] Error: socrates-frontend directory not found{Style.RESET_ALL}"
+                )
                 return False
 
             # Check if node_modules exists
@@ -308,7 +292,7 @@ class SocraticRAGSystem:
                     ["npm", "install", "--legacy-peer-deps"],
                     cwd=frontend_dir,
                     capture_output=True,
-                    text=True
+                    text=True,
                 )
                 if result.returncode != 0:
                     print(f"{Fore.RED}[Frontend] Failed to install dependencies{Style.RESET_ALL}")
@@ -321,13 +305,15 @@ class SocraticRAGSystem:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
-                env={**os.environ, "VITE_API_URL": "http://localhost:8000"}
+                env={**os.environ, "VITE_API_URL": "http://localhost:8000"},
             )
 
             time.sleep(3)  # Give it a moment to start
 
             if self.frontend_process.poll() is None:
-                print(f"{Fore.GREEN}[Frontend] Dev server started (PID: {self.frontend_process.pid}){Style.RESET_ALL}")
+                print(
+                    f"{Fore.GREEN}[Frontend] Dev server started (PID: {self.frontend_process.pid}){Style.RESET_ALL}"
+                )
                 print(f"{Fore.CYAN}[Frontend] Access at: http://localhost:5173{Style.RESET_ALL}")
 
                 # Open browser automatically
@@ -336,8 +322,12 @@ class SocraticRAGSystem:
                     print(f"{Fore.CYAN}[Frontend] Opening browser...{Style.RESET_ALL}")
                     webbrowser.open("http://localhost:5173")
                 except Exception as e:
-                    print(f"{Fore.YELLOW}[Frontend] Could not open browser automatically: {e}{Style.RESET_ALL}")
-                    print(f"{Fore.YELLOW}[Frontend] Please open manually: http://localhost:5173{Style.RESET_ALL}")
+                    print(
+                        f"{Fore.YELLOW}[Frontend] Could not open browser automatically: {e}{Style.RESET_ALL}"
+                    )
+                    print(
+                        f"{Fore.YELLOW}[Frontend] Please open manually: http://localhost:5173{Style.RESET_ALL}"
+                    )
 
                 return True
             else:

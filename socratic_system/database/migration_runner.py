@@ -146,9 +146,9 @@ class MigrationRunner:
         """
         # Check for GitHub import tables
         github_tables_exist = (
-            self.table_exists("project_files") and
-            self.table_exists("repository_metadata") and
-            self.table_exists("code_validation_results")
+            self.table_exists("project_files")
+            and self.table_exists("repository_metadata")
+            and self.table_exists("code_validation_results")
         )
 
         # Check for claude_auth_method column in users table
@@ -186,7 +186,9 @@ class MigrationRunner:
             return column_name in column_names
 
         except Exception as e:
-            self.logger.error(f"Error checking if column {column_name} exists in {table_name}: {str(e)}")
+            self.logger.error(
+                f"Error checking if column {column_name} exists in {table_name}: {str(e)}"
+            )
             return False
 
     def ensure_migrations_applied(self) -> Tuple[bool, str]:
@@ -219,11 +221,15 @@ class MigrationRunner:
 
         for migration_file, migration_name in migrations_to_apply:
             # Check if this migration is already applied
-            if migration_file == "add_github_import_tables.sql" and status.get("github_import_tables"):
+            if migration_file == "add_github_import_tables.sql" and status.get(
+                "github_import_tables"
+            ):
                 self.logger.info(f"{migration_name} already applied, skipping")
                 messages.append(f"{migration_name}: already applied")
                 continue
-            elif migration_file == "add_claude_auth_method_column.sql" and status.get("users_claude_auth_method"):
+            elif migration_file == "add_claude_auth_method_column.sql" and status.get(
+                "users_claude_auth_method"
+            ):
                 self.logger.info(f"{migration_name} already applied, skipping")
                 messages.append(f"{migration_name}: already applied")
                 continue

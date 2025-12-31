@@ -258,7 +258,9 @@ class EventEmitter:
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(None, callback, data)
         except Exception as e:
-            self._logger.error(f"Error in sync event listener (async) for {event_name}: {e}", exc_info=e)
+            self._logger.error(
+                f"Error in sync event listener (async) for {event_name}: {e}", exc_info=e
+            )
 
     def on_async(self, event_type: EventType, callback: Callable) -> None:
         """

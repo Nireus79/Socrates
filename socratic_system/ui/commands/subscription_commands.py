@@ -124,6 +124,7 @@ class SubscriptionUpgradeCommand(BaseCommand):
 
         # Set subscription end date (30 days from now for monthly billing)
         from datetime import timedelta
+
         user.subscription_end = datetime.now() + timedelta(days=30)
 
         # In production, integrate with Stripe:
@@ -316,6 +317,8 @@ class SubscriptionTestingModeCommand(BaseCommand):
 
             print(f"\n{Fore.GREEN}✓ Testing mode DISABLED{Style.RESET_ALL}\n")
             print(f"{Fore.YELLOW}Monetization restrictions are now active{Style.RESET_ALL}\n")
-            print(f"Your subscription tier: {Fore.CYAN}{user.subscription_tier.upper()}{Style.RESET_ALL}\n")
+            print(
+                f"Your subscription tier: {Fore.CYAN}{user.subscription_tier.upper()}{Style.RESET_ALL}\n"
+            )
 
             return self.success("Testing mode disabled")

@@ -22,14 +22,64 @@ class DependencyValidator:
 
     # Common Python built-in modules
     PYTHON_BUILTINS = {
-        "sys", "os", "json", "re", "datetime", "time", "math", "random", "string",
-        "collections", "itertools", "functools", "operator", "pathlib", "shutil",
-        "tempfile", "glob", "subprocess", "threading", "multiprocessing", "asyncio",
-        "socket", "ssl", "http", "urllib", "email", "csv", "configparser", "logging",
-        "unittest", "pytest", "typing", "abc", "contextlib", "decorator", "io",
-        "pickle", "sqlite3", "hashlib", "hmac", "secrets", "stat", "errno", "uuid",
-        "doctest", "pdb", "traceback", "inspect", "warnings", "linecache",
-        "dis", "dataclasses", "enum", "copy", "types", "pprint", "reprlib", "weakref",
+        "sys",
+        "os",
+        "json",
+        "re",
+        "datetime",
+        "time",
+        "math",
+        "random",
+        "string",
+        "collections",
+        "itertools",
+        "functools",
+        "operator",
+        "pathlib",
+        "shutil",
+        "tempfile",
+        "glob",
+        "subprocess",
+        "threading",
+        "multiprocessing",
+        "asyncio",
+        "socket",
+        "ssl",
+        "http",
+        "urllib",
+        "email",
+        "csv",
+        "configparser",
+        "logging",
+        "unittest",
+        "pytest",
+        "typing",
+        "abc",
+        "contextlib",
+        "decorator",
+        "io",
+        "pickle",
+        "sqlite3",
+        "hashlib",
+        "hmac",
+        "secrets",
+        "stat",
+        "errno",
+        "uuid",
+        "doctest",
+        "pdb",
+        "traceback",
+        "inspect",
+        "warnings",
+        "linecache",
+        "dis",
+        "dataclasses",
+        "enum",
+        "copy",
+        "types",
+        "pprint",
+        "reprlib",
+        "weakref",
     }
 
     def validate(self, target: str) -> Dict[str, Any]:
@@ -124,9 +174,7 @@ class DependencyValidator:
         warnings = []
 
         # Step 1: Read declared dependencies
-        declared_deps, req_issues, req_warnings = self._read_python_requirements(
-            project_path
-        )
+        declared_deps, req_issues, req_warnings = self._read_python_requirements(project_path)
         issues.extend(req_issues)
         warnings.extend(req_warnings)
 
@@ -134,9 +182,7 @@ class DependencyValidator:
         imported_modules = self._extract_python_imports(project_path)
 
         # Step 3: Find dependency issues
-        missing_imports = self._find_missing_imports(
-            imported_modules, declared_deps, project_path
-        )
+        missing_imports = self._find_missing_imports(imported_modules, declared_deps, project_path)
         unused_deps = self._find_unused_dependencies(imported_modules, declared_deps)
 
         # Step 4: Build result
@@ -144,9 +190,7 @@ class DependencyValidator:
             issues, warnings, declared_deps, missing_imports, unused_deps
         )
 
-    def _read_python_requirements(
-        self, project_path: Path
-    ) -> tuple[set, list, list]:
+    def _read_python_requirements(self, project_path: Path) -> tuple[set, list, list]:
         """Read requirements.txt and extract declared dependencies"""
         declared_deps = set()
         issues = []
@@ -188,10 +232,7 @@ class DependencyValidator:
 
         try:
             for py_file in project_path.rglob("*.py"):
-                if any(
-                    skip in py_file.parts
-                    for skip in {".git", ".venv", "venv", "__pycache__"}
-                ):
+                if any(skip in py_file.parts for skip in {".git", ".venv", "venv", "__pycache__"}):
                     continue
 
                 try:
@@ -222,26 +263,19 @@ class DependencyValidator:
 
         for module in imported_modules:
             if module not in self.PYTHON_BUILTINS and module not in declared_deps:
-                is_local = any(
-                    py_file.stem == module for py_file in project_path.glob("*.py")
-                )
+                is_local = any(py_file.stem == module for py_file in project_path.glob("*.py"))
                 if not is_local:
                     missing_imports.append(module)
 
         return missing_imports
 
-    def _find_unused_dependencies(
-        self, imported_modules: set, declared_deps: set
-    ) -> list:
+    def _find_unused_dependencies(self, imported_modules: set, declared_deps: set) -> list:
         """Find dependencies that are declared but not imported"""
         unused_deps = []
 
         for dep in declared_deps:
             dep_normalized = dep.replace("-", "_")
-            if (
-                dep_normalized not in imported_modules
-                and dep not in imported_modules
-            ):
+            if dep_normalized not in imported_modules and dep not in imported_modules:
                 unused_deps.append(dep)
 
         return unused_deps

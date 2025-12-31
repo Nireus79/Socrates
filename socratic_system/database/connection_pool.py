@@ -129,9 +129,7 @@ class DatabaseConnectionPool:
             conn.info.setdefault("query_start_time", []).append(time.time())
 
         @event.listens_for(self.engine.sync_engine, "after_cursor_execute")
-        def receive_after_cursor_execute(
-            conn, cursor, statement, parameters, context, executemany
-        ):
+        def receive_after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
             """Log slow queries and track execution time."""
             total_time = time.time() - conn.info["query_start_time"].pop(-1)
 

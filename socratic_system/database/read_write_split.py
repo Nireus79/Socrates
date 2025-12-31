@@ -181,6 +181,7 @@ class DatabaseRouter:
                 result = await session.execute(query)
             ```
         """
+
         @asynccontextmanager
         async def _get_session_impl():
             # Determine which role to use

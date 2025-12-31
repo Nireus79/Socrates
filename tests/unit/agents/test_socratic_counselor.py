@@ -9,7 +9,6 @@ Tests socratic questioning agent including:
 - Detecting knowledge gaps
 """
 
-
 import pytest
 
 

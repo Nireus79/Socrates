@@ -17,6 +17,7 @@ TEST_PASSWORD = "TestPassword123!"
 ACCESS_TOKEN = None
 PROJECT_ID = "test_project_001"  # Use a dummy project ID for testing
 
+
 def print_result(name: str, path: str, method: str, status: int, expected: int):
     """Print test result"""
     passed = status == expected or (status != 404 and expected in [200, 201])
@@ -25,6 +26,7 @@ def print_result(name: str, path: str, method: str, status: int, expected: int):
     if not passed and status == 404:
         print("       ERROR: Endpoint not found (malformed path?)")
     return passed
+
 
 def test_auth_endpoints():
     """Test authentication endpoints"""
@@ -36,20 +38,16 @@ def test_auth_endpoints():
     total += 1
     try:
         # First login to get token
-        login_resp = requests.post(f"{BASE_URL}/auth/login", json={
-            "username": TEST_USER,
-            "password": TEST_PASSWORD
-        })
+        login_resp = requests.post(
+            f"{BASE_URL}/auth/login", json={"username": TEST_USER, "password": TEST_PASSWORD}
+        )
         if login_resp.status_code == 200:
-            token = login_resp.json().get('access_token')
-            headers = {'Authorization': f'Bearer {token}'}
+            token = login_resp.json().get("access_token")
+            headers = {"Authorization": f"Bearer {token}"}
         else:
             headers = {}
 
-        response = requests.put(
-            f"{BASE_URL}/auth/me",
-            headers=headers
-        )
+        response = requests.put(f"{BASE_URL}/auth/me", headers=headers)
         if print_result("Update user profile", "/auth/me", "PUT", response.status_code, 200):
             passed += 1
             if response.status_code == 200:
@@ -60,6 +58,7 @@ def test_auth_endpoints():
     print(f"\nAuth Endpoints: {passed}/{total} passed")
     return passed, total
 
+
 def test_projects_endpoints():
     """Test projects endpoints"""
     print("\n=== PROJECTS ENDPOINTS ===")
@@ -68,13 +67,12 @@ def test_projects_endpoints():
 
     # Get auth token
     try:
-        login_resp = requests.post(f"{BASE_URL}/auth/login", json={
-            "username": TEST_USER,
-            "password": TEST_PASSWORD
-        })
+        login_resp = requests.post(
+            f"{BASE_URL}/auth/login", json={"username": TEST_USER, "password": TEST_PASSWORD}
+        )
         if login_resp.status_code == 200:
-            token = login_resp.json().get('access_token')
-            headers = {'Authorization': f'Bearer {token}'}
+            token = login_resp.json().get("access_token")
+            headers = {"Authorization": f"Bearer {token}"}
         else:
             headers = {}
     except Exception:
@@ -83,15 +81,23 @@ def test_projects_endpoints():
     # Test 1: GET /projects/{id}/analytics (THIS WAS MISSING AND IS NOW FIXED)
     total += 1
     try:
-        response = requests.get(
-            f"{BASE_URL}/projects/{PROJECT_ID}/analytics",
-            headers=headers
-        )
+        response = requests.get(f"{BASE_URL}/projects/{PROJECT_ID}/analytics", headers=headers)
         if response.status_code != 404:
-            if print_result("Get project analytics", f"/projects/{PROJECT_ID}/analytics", "GET", response.status_code, 200):
+            if print_result(
+                "Get project analytics",
+                f"/projects/{PROJECT_ID}/analytics",
+                "GET",
+                response.status_code,
+                200,
+            ):
                 passed += 1
-                if response.status_code in [200, 403]:  # 403 is OK if project not found due to access control
-                    print("       VERIFIED: GET /projects/{id}/analytics endpoint exists and is properly routed")
+                if response.status_code in [
+                    200,
+                    403,
+                ]:  # 403 is OK if project not found due to access control
+                    print(
+                        "       VERIFIED: GET /projects/{id}/analytics endpoint exists and is properly routed"
+                    )
         else:
             print(f"FAIL: GET /projects/{PROJECT_ID}/analytics -> 404")
     except Exception as e:
@@ -99,6 +105,7 @@ def test_projects_endpoints():
 
     print(f"\nProjects Endpoints: {passed}/{total} passed")
     return passed, total
+
 
 def test_chat_endpoints():  # noqa: C901
     """Test chat endpoints (routing paths fixed)"""
@@ -108,13 +115,12 @@ def test_chat_endpoints():  # noqa: C901
 
     # Get auth token
     try:
-        login_resp = requests.post(f"{BASE_URL}/auth/login", json={
-            "username": TEST_USER,
-            "password": TEST_PASSWORD
-        })
+        login_resp = requests.post(
+            f"{BASE_URL}/auth/login", json={"username": TEST_USER, "password": TEST_PASSWORD}
+        )
         if login_resp.status_code == 200:
-            token = login_resp.json().get('access_token')
-            headers = {'Authorization': f'Bearer {token}'}
+            token = login_resp.json().get("access_token")
+            headers = {"Authorization": f"Bearer {token}"}
         else:
             headers = {}
     except Exception:
@@ -143,9 +149,17 @@ def test_chat_endpoints():  # noqa: C901
 
             # Check if endpoint exists (not 404)
             if response.status_code != 404:
-                if print_result(f"Chat: {method} {path_template}", actual_path, method, response.status_code, 200):
+                if print_result(
+                    f"Chat: {method} {path_template}",
+                    actual_path,
+                    method,
+                    response.status_code,
+                    200,
+                ):
                     passed += 1
-                    print(f"       VERIFIED: {method} {actual_path} - endpoint properly routed (no double slash)")
+                    print(
+                        f"       VERIFIED: {method} {actual_path} - endpoint properly routed (no double slash)"
+                    )
             else:
                 print(f"FAIL: {method} {actual_path} -> 404 (endpoint not found - routing broken)")
         except Exception as e:
@@ -153,6 +167,7 @@ def test_chat_endpoints():  # noqa: C901
 
     print(f"\nChat Endpoints: {passed}/{total} passed")
     return passed, total
+
 
 def test_code_endpoints():
     """Test code generation endpoints (routing paths fixed)"""
@@ -162,13 +177,12 @@ def test_code_endpoints():
 
     # Get auth token
     try:
-        login_resp = requests.post(f"{BASE_URL}/auth/login", json={
-            "username": TEST_USER,
-            "password": TEST_PASSWORD
-        })
+        login_resp = requests.post(
+            f"{BASE_URL}/auth/login", json={"username": TEST_USER, "password": TEST_PASSWORD}
+        )
         if login_resp.status_code == 200:
-            token = login_resp.json().get('access_token')
-            headers = {'Authorization': f'Bearer {token}'}
+            token = login_resp.json().get("access_token")
+            headers = {"Authorization": f"Bearer {token}"}
         else:
             headers = {}
     except Exception:
@@ -191,7 +205,13 @@ def test_code_endpoints():
 
             # Check if endpoint exists (not 404)
             if response.status_code != 404:
-                if print_result(f"Code: {method} {path_template}", actual_path, method, response.status_code, 200):
+                if print_result(
+                    f"Code: {method} {path_template}",
+                    actual_path,
+                    method,
+                    response.status_code,
+                    200,
+                ):
                     passed += 1
                     print(f"       VERIFIED: {method} {actual_path} - endpoint properly routed")
             else:
@@ -202,6 +222,7 @@ def test_code_endpoints():
     print(f"\nCode Endpoints: {passed}/{total} passed")
     return passed, total
 
+
 def test_collaboration_endpoints():  # noqa: C901
     """Test collaboration endpoints (routing paths fixed)"""
     print("\n=== COLLABORATION ENDPOINTS (ROUTING PATHS FIXED) ===")
@@ -210,13 +231,12 @@ def test_collaboration_endpoints():  # noqa: C901
 
     # Get auth token
     try:
-        login_resp = requests.post(f"{BASE_URL}/auth/login", json={
-            "username": TEST_USER,
-            "password": TEST_PASSWORD
-        })
+        login_resp = requests.post(
+            f"{BASE_URL}/auth/login", json={"username": TEST_USER, "password": TEST_PASSWORD}
+        )
         if login_resp.status_code == 200:
-            token = login_resp.json().get('access_token')
-            headers = {'Authorization': f'Bearer {token}'}
+            token = login_resp.json().get("access_token")
+            headers = {"Authorization": f"Bearer {token}"}
         else:
             headers = {}
     except Exception:
@@ -225,8 +245,16 @@ def test_collaboration_endpoints():  # noqa: C901
     collab_endpoints = [
         ("POST", "/projects/{id}/collaborators", f"/projects/{PROJECT_ID}/collaborators"),
         ("GET", "/projects/{id}/collaborators", f"/projects/{PROJECT_ID}/collaborators"),
-        ("PUT", "/projects/{id}/collaborators/user/role", f"/projects/{PROJECT_ID}/collaborators/testuser/role"),
-        ("DELETE", "/projects/{id}/collaborators/user", f"/projects/{PROJECT_ID}/collaborators/testuser"),
+        (
+            "PUT",
+            "/projects/{id}/collaborators/user/role",
+            f"/projects/{PROJECT_ID}/collaborators/testuser/role",
+        ),
+        (
+            "DELETE",
+            "/projects/{id}/collaborators/user",
+            f"/projects/{PROJECT_ID}/collaborators/testuser",
+        ),
         ("GET", "/projects/{id}/presence", f"/projects/{PROJECT_ID}/presence"),
         ("POST", "/projects/{id}/activity", f"/projects/{PROJECT_ID}/activity"),
     ]
@@ -245,9 +273,17 @@ def test_collaboration_endpoints():  # noqa: C901
 
             # Check if endpoint exists (not 404)
             if response.status_code != 404:
-                if print_result(f"Collab: {method} {path_template}", actual_path, method, response.status_code, 200):
+                if print_result(
+                    f"Collab: {method} {path_template}",
+                    actual_path,
+                    method,
+                    response.status_code,
+                    200,
+                ):
                     passed += 1
-                    print(f"       VERIFIED: {method} {actual_path} - endpoint properly routed (no double slash)")
+                    print(
+                        f"       VERIFIED: {method} {actual_path} - endpoint properly routed (no double slash)"
+                    )
             else:
                 print(f"FAIL: {method} {actual_path} -> 404 (endpoint not found - routing broken)")
         except Exception as e:
@@ -255,6 +291,7 @@ def test_collaboration_endpoints():  # noqa: C901
 
     print(f"\nCollaboration Endpoints: {passed}/{total} passed")
     return passed, total
+
 
 def main():
     print("=" * 60)
@@ -310,6 +347,7 @@ def main():
     else:
         print(f"\n✗ {total_tests - total_passed} test(s) failed")
         return 1
+
 
 if __name__ == "__main__":
     exit(main())

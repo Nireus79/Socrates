@@ -33,12 +33,8 @@ class TestCLIAndAPIAuthentication:
 
         api_resp = requests.post(
             f"{BASE_URL}/auth/register",
-            json={
-                "username": username,
-                "email": f"{username}@test.local",
-                "password": password
-            },
-            headers=HEADERS
+            json={"username": username, "email": f"{username}@test.local", "password": password},
+            headers=HEADERS,
         )
 
         assert api_resp.status_code == 201, f"API registration failed: {api_resp.text}"
@@ -46,8 +42,7 @@ class TestCLIAndAPIAuthentication:
 
         # Verify token works with API (check user profile endpoint)
         verify_resp = requests.get(
-            f"{BASE_URL}/auth/me",
-            headers={**HEADERS, "Authorization": f"Bearer {api_token}"}
+            f"{BASE_URL}/auth/me", headers={**HEADERS, "Authorization": f"Bearer {api_token}"}
         )
         assert verify_resp.status_code == 200, "API token verification failed"
 
@@ -62,9 +57,9 @@ class TestCLIAndAPIAuthentication:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
 
         assert resp.status_code == 201
@@ -82,9 +77,9 @@ class TestCLIAndAPIAuthentication:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
 
         assert reg_resp.status_code == 201
@@ -93,9 +88,7 @@ class TestCLIAndAPIAuthentication:
 
         # Use refresh token
         refresh_resp = requests.post(
-            f"{BASE_URL}/auth/refresh",
-            json={"refresh_token": refresh_token},
-            headers=HEADERS
+            f"{BASE_URL}/auth/refresh", json={"refresh_token": refresh_token}, headers=HEADERS
         )
 
         if refresh_resp.status_code == 200:
@@ -116,9 +109,9 @@ class TestCLIAndAPIProjectCreation:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
 
         assert reg_resp.status_code == 201
@@ -129,7 +122,7 @@ class TestCLIAndAPIProjectCreation:
         proj1_resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Project 1", "description": "First"},
-            headers=auth_headers
+            headers=auth_headers,
         )
         assert proj1_resp.status_code == 200, f"First project failed: {proj1_resp.text}"
 
@@ -137,7 +130,7 @@ class TestCLIAndAPIProjectCreation:
         proj2_resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Project 2", "description": "Second"},
-            headers=auth_headers
+            headers=auth_headers,
         )
         assert proj2_resp.status_code == 403, "Free tier should be blocked at 2nd project"
 
@@ -150,9 +143,9 @@ class TestCLIAndAPIProjectCreation:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
 
         token = reg_resp.json()["access_token"]
@@ -161,10 +154,8 @@ class TestCLIAndAPIProjectCreation:
         # Create project
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={
-                "name": "Metadata Test",
-                "description": "Testing metadata"},
-            headers=auth_headers
+            json={"name": "Metadata Test", "description": "Testing metadata"},
+            headers=auth_headers,
         )
 
         assert proj_resp.status_code == 200
@@ -172,8 +163,14 @@ class TestCLIAndAPIProjectCreation:
 
         # Verify all required fields present
         required_fields = [
-            "project_id", "name", "description", "owner",
-            "phase", "created_at", "updated_at", "is_archived"
+            "project_id",
+            "name",
+            "description",
+            "owner",
+            "phase",
+            "created_at",
+            "updated_at",
+            "is_archived",
         ]
 
         for field in required_fields:
@@ -188,9 +185,9 @@ class TestCLIAndAPIProjectCreation:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
 
         token = reg_resp.json()["access_token"]
@@ -199,7 +196,7 @@ class TestCLIAndAPIProjectCreation:
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Phase Project", "description": "Test"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         project_id = proj_resp.json()["project_id"]
@@ -209,9 +206,7 @@ class TestCLIAndAPIProjectCreation:
 
         for phase in phases:
             update_resp = requests.put(
-                f"{BASE_URL}/projects/{project_id}",
-                json={"phase": phase},
-                headers=auth_headers
+                f"{BASE_URL}/projects/{project_id}", json={"phase": phase}, headers=auth_headers
             )
             assert update_resp.status_code == 200, f"Phase update failed for {phase}"
             assert update_resp.json()["phase"] == phase
@@ -229,9 +224,9 @@ class TestCLIAndAPIQuestionGeneration:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
 
         token = reg_resp.json()["access_token"]
@@ -240,7 +235,7 @@ class TestCLIAndAPIQuestionGeneration:
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Question Test", "description": "Test"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         project_id = proj_resp.json()["project_id"]
@@ -248,11 +243,8 @@ class TestCLIAndAPIQuestionGeneration:
         # Generate question via API
         q_resp = requests.post(
             f"{BASE_URL}/projects/{project_id}/question",
-            json={
-                "topic": "Python Basics",
-                "difficulty_level": "beginner"
-            },
-            headers=auth_headers
+            json={"topic": "Python Basics", "difficulty_level": "beginner"},
+            headers=auth_headers,
         )
 
         if q_resp.status_code == 200:
@@ -269,9 +261,9 @@ class TestCLIAndAPIQuestionGeneration:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
 
         token = reg_resp.json()["access_token"]
@@ -280,7 +272,7 @@ class TestCLIAndAPIQuestionGeneration:
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Difficulty Test", "description": "Test"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         project_id = proj_resp.json()["project_id"]
@@ -291,11 +283,8 @@ class TestCLIAndAPIQuestionGeneration:
         for difficulty in difficulties:
             q_resp = requests.post(
                 f"{BASE_URL}/projects/{project_id}/question",
-                json={
-                    "topic": "Python",
-                    "difficulty_level": difficulty
-                },
-                headers=auth_headers
+                json={"topic": "Python", "difficulty_level": difficulty},
+                headers=auth_headers,
             )
 
             if q_resp.status_code == 200:
@@ -323,9 +312,9 @@ class TestCLIAndAPIQuotaEnforcement:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
 
         token = reg_resp.json()["access_token"]
@@ -335,14 +324,14 @@ class TestCLIAndAPIQuotaEnforcement:
         requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Project 1", "description": "First"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         # Try second project
         resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Project 2", "description": "Second"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         assert resp.status_code == 403
@@ -364,9 +353,9 @@ class TestCLIAndAPIDataConsistency:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
 
         token = reg_resp.json()["access_token"]
@@ -376,16 +365,13 @@ class TestCLIAndAPIDataConsistency:
         create_resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Consistency Test", "description": "Test"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         project_id = create_resp.json()["project_id"]
 
         # Retrieve and verify
-        get_resp = requests.get(
-            f"{BASE_URL}/projects/{project_id}",
-            headers=auth_headers
-        )
+        get_resp = requests.get(f"{BASE_URL}/projects/{project_id}", headers=auth_headers)
 
         assert get_resp.status_code == 200
         assert get_resp.json()["project_id"] == project_id
@@ -399,9 +385,9 @@ class TestCLIAndAPIDataConsistency:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
 
         token = reg_resp.json()["access_token"]
@@ -412,16 +398,13 @@ class TestCLIAndAPIDataConsistency:
         create_resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": project_name, "description": "Test"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         assert create_resp.status_code == 200
 
         # List projects
-        list_resp = requests.get(
-            f"{BASE_URL}/projects",
-            headers=auth_headers
-        )
+        list_resp = requests.get(f"{BASE_URL}/projects", headers=auth_headers)
 
         assert list_resp.status_code == 200
         projects = list_resp.json()["projects"]
@@ -436,10 +419,7 @@ class TestCLIAndAPIErrorConsistency:
     def test_01_unauthorized_access_error(self):
         """Test: API returns consistent unauthorized error"""
         # Try to access without token
-        resp = requests.get(
-            f"{BASE_URL}/projects",
-            headers=HEADERS
-        )
+        resp = requests.get(f"{BASE_URL}/projects", headers=HEADERS)
 
         assert resp.status_code == 401, "Should require authentication"
         data = resp.json()
@@ -453,9 +433,9 @@ class TestCLIAndAPIErrorConsistency:
             json={
                 "username": f"user1_{int(datetime.now().timestamp() * 1000)}",
                 "email": f"user1_{int(datetime.now().timestamp() * 1000)}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
 
         user1_token = user1_resp.json()["access_token"]
@@ -465,7 +445,7 @@ class TestCLIAndAPIErrorConsistency:
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "User1 Project", "description": "Test"},
-            headers=user1_headers
+            headers=user1_headers,
         )
 
         project_id = proj_resp.json()["project_id"]
@@ -476,19 +456,16 @@ class TestCLIAndAPIErrorConsistency:
             json={
                 "username": f"user2_{int(datetime.now().timestamp() * 1000)}",
                 "email": f"user2_{int(datetime.now().timestamp() * 1000)}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
 
         user2_token = user2_resp.json()["access_token"]
         user2_headers = {**HEADERS, "Authorization": f"Bearer {user2_token}"}
 
         # Access should be denied
-        access_resp = requests.get(
-            f"{BASE_URL}/projects/{project_id}",
-            headers=user2_headers
-        )
+        access_resp = requests.get(f"{BASE_URL}/projects/{project_id}", headers=user2_headers)
 
         assert access_resp.status_code == 403, "Should deny cross-user access"
 
@@ -501,19 +478,16 @@ class TestCLIAndAPIErrorConsistency:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
 
         token = reg_resp.json()["access_token"]
         auth_headers = {**HEADERS, "Authorization": f"Bearer {token}"}
 
         # Try to access nonexistent project
-        resp = requests.get(
-            f"{BASE_URL}/projects/nonexistent_id",
-            headers=auth_headers
-        )
+        resp = requests.get(f"{BASE_URL}/projects/nonexistent_id", headers=auth_headers)
 
         assert resp.status_code == 404, "Should return 404 for missing project"
         data = resp.json()
@@ -534,9 +508,9 @@ class TestCLIAndAPIDatabaseSingleton:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
 
         assert reg_resp.status_code == 201
@@ -545,11 +519,8 @@ class TestCLIAndAPIDatabaseSingleton:
         # Verify can login with same credentials
         login_resp = requests.post(
             f"{BASE_URL}/auth/login",
-            json={
-                "username": username,
-                "password": "TestPassword123!"
-            },
-            headers=HEADERS
+            json={"username": username, "password": "TestPassword123!"},
+            headers=HEADERS,
         )
 
         assert login_resp.status_code == 200, "Should be able to login with registered credentials"

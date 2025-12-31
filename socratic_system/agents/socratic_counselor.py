@@ -165,16 +165,13 @@ class SocraticCounselorAgent(Agent):
             doc_analyzer = DocumentContextAnalyzer()
 
             # Convert project context to dict format for analyzer
-            project_context_dict = {
-                "current_phase": project.phase,
-                "goals": project.goals or ""
-            }
+            project_context_dict = {"current_phase": project.phase, "goals": project.goals or ""}
 
             # Determine loading strategy based on conversation context
             strategy = doc_analyzer.analyze_question_context(
                 project_context=project_context_dict,
                 conversation_history=project.conversation_history,
-                question_count=question_count
+                question_count=question_count,
             )
 
             logger.debug(f"Using '{strategy}' document loading strategy")
@@ -184,10 +181,7 @@ class SocraticCounselorAgent(Agent):
 
             # Use adaptive search
             knowledge_results = self.orchestrator.vector_db.search_similar_adaptive(
-                query=context,
-                strategy=strategy,
-                top_k=top_k,
-                project_id=project.project_id
+                query=context, strategy=strategy, top_k=top_k, project_id=project.project_id
             )
 
             if knowledge_results:
@@ -202,15 +196,22 @@ class SocraticCounselorAgent(Agent):
                     knowledge_results, project
                 )
 
-                logger.debug(f"Found {len(knowledge_results)} relevant knowledge items with strategy '{strategy}'")
+                logger.debug(
+                    f"Found {len(knowledge_results)} relevant knowledge items with strategy '{strategy}'"
+                )
 
         logger.debug(
             f"Building question prompt for {project.phase} phase (question #{question_count + 1})"
         )
         prompt = self._build_question_prompt(
-            project, context, recent_conversation, relevant_knowledge, question_count, current_user,
+            project,
+            context,
+            recent_conversation,
+            relevant_knowledge,
+            question_count,
+            current_user,
             knowledge_results=knowledge_results if knowledge_results else [],
-            doc_understanding=doc_understanding if 'doc_understanding' in locals() else None
+            doc_understanding=doc_understanding if "doc_understanding" in locals() else None,
         )
 
         try:
@@ -281,8 +282,8 @@ Tailor your question to their role and expertise. For example:
         # NEW: Check if documents include code files
         code_context = ""
         has_code = any(
-            result.get("metadata", {}).get("type") == "code" or
-            "code_structure" in str(result.get("metadata", {})).lower()
+            result.get("metadata", {}).get("type") == "code"
+            or "code_structure" in str(result.get("metadata", {})).lower()
             for result in knowledge_results
         )
 
@@ -370,7 +371,9 @@ Return only the question, no additional text or explanation."""
 
         sections = []
         for i, result in enumerate(results, 1):
-            source = result["metadata"].get("source", "Unknown") if result.get("metadata") else "Unknown"
+            source = (
+                result["metadata"].get("source", "Unknown") if result.get("metadata") else "Unknown"
+            )
             summary = result.get("summary", "")
             content = result.get("content", "")
 
@@ -386,7 +389,9 @@ Return only the question, no additional text or explanation."""
 
         sections = []
         for result in results:
-            source = result["metadata"].get("source", "Unknown") if result.get("metadata") else "Unknown"
+            source = (
+                result["metadata"].get("source", "Unknown") if result.get("metadata") else "Unknown"
+            )
             summary = result.get("summary", "")
             content = result.get("content", "")
 
@@ -396,9 +401,7 @@ Return only the question, no additional text or explanation."""
         return "\n".join(sections)
 
     def _generate_document_understanding(
-        self,
-        knowledge_results: List[Dict],
-        project: ProjectContext
+        self, knowledge_results: List[Dict], project: ProjectContext
     ) -> Optional[Dict[str, Any]]:
         """
         Generate document understanding analysis from knowledge results.
@@ -429,17 +432,14 @@ Return only the question, no additional text or explanation."""
                     doc_type = "code"
 
                 summary = doc_service.generate_document_summary(
-                    chunk_contents,
-                    file_name=source,
-                    file_type=doc_type
+                    chunk_contents, file_name=source, file_type=doc_type
                 )
                 document_summaries.append(summary)
 
             # Compare goals with documents if goals exist
             if project.goals and document_summaries:
                 goal_comparison = doc_service.compare_goals_with_documents(
-                    project.goals,
-                    document_summaries
+                    project.goals, document_summaries
                 )
                 return goal_comparison
 
@@ -518,13 +518,15 @@ Return only the question, no additional text or explanation."""
 
         # REAL-TIME CONFLICT DETECTION
         if insights:
-            conflict_result = self._handle_conflict_detection(insights, project, current_user, logger, is_api_mode)
+            conflict_result = self._handle_conflict_detection(
+                insights, project, current_user, logger, is_api_mode
+            )
             if conflict_result.get("has_conflicts"):
                 return {
                     "status": "success",
                     "insights": insights,
                     "conflicts_pending": True,
-                    "conflicts": conflict_result.get("conflicts", [])
+                    "conflicts": conflict_result.get("conflicts", []),
                 }
 
         # Update context and maturity
@@ -535,7 +537,9 @@ Return only the question, no additional text or explanation."""
 
         return {"status": "success", "insights": insights}
 
-    def _handle_conflict_detection(self, insights, project, current_user, logger, is_api_mode=False) -> dict:
+    def _handle_conflict_detection(
+        self, insights, project, current_user, logger, is_api_mode=False
+    ) -> dict:
         """Handle conflict detection and return result dict with conflict status
 
         Args:
@@ -565,7 +569,7 @@ Return only the question, no additional text or explanation."""
         if is_api_mode:
             return {
                 "has_conflicts": True,
-                "conflicts": [self._conflict_to_dict(c) for c in conflict_result["conflicts"]]
+                "conflicts": [self._conflict_to_dict(c) for c in conflict_result["conflicts"]],
             }
 
         # CLI mode: handle interactively
@@ -790,17 +794,11 @@ Return only the question, no additional text or explanation."""
 
             # Search knowledge base
             results = self.orchestrator.vector_db.search_similar_adaptive(
-                query=query,
-                strategy="full",
-                top_k=10,
-                project_id=project.project_id
+                query=query, strategy="full", top_k=10, project_id=project.project_id
             )
 
             if not results:
-                return {
-                    "status": "error",
-                    "message": "No documents found for this project"
-                }
+                return {"status": "error", "message": "No documents found for this project"}
 
             logger.debug(f"Found {len(results)} results for document explanation")
 
@@ -818,9 +816,7 @@ Return only the question, no additional text or explanation."""
                     doc_type = "code"
 
                 summary = doc_service.generate_document_summary(
-                    chunk_contents,
-                    file_name=source,
-                    file_type=doc_type
+                    chunk_contents, file_name=source, file_type=doc_type
                 )
 
                 explanation = self._format_document_explanation(summary)
@@ -832,7 +828,7 @@ Return only the question, no additional text or explanation."""
                 "status": "success",
                 "documents_found": len(explanations),
                 "explanations": explanations,
-                "message": f"Generated explanations for {len(explanations)} document(s)"
+                "message": f"Generated explanations for {len(explanations)} document(s)",
             }
 
         except Exception as e:
@@ -1030,6 +1026,7 @@ Return only the question, no additional text or explanation."""
             insight_type: Type of insight (goals, requirements, tech_stack, constraints)
         """
         from socratic_system.utils.logger import get_logger
+
         logger = get_logger("socratic_counselor")
         logger.info(f"Conflict resolution: Rejected {insight_type} - '{value}'")
 
@@ -1047,6 +1044,7 @@ Return only the question, no additional text or explanation."""
             insight_type: Type of insight (goals, requirements, tech_stack, constraints)
         """
         from socratic_system.utils.logger import get_logger
+
         logger = get_logger("socratic_counselor")
         logger.info(
             f"Conflict resolution: Manual resolution for {insight_type} - "
@@ -1061,10 +1059,7 @@ Return only the question, no additional text or explanation."""
         project = request.get("project")
 
         if not project:
-            return {
-                "status": "error",
-                "message": "Project context is required to generate hints"
-            }
+            return {"status": "error", "message": "Project context is required to generate hints"}
 
         try:
             context = self.orchestrator.context_analyzer.get_context_summary(project)
@@ -1090,18 +1085,16 @@ Recent Conversation:
 
 Provide ONE concise, actionable hint that helps the user move forward in the {project.phase} phase. The hint should be specific to their project context and no more than 2 sentences."""
 
-            logger.info(f"Generating hint for project {project.project_id} in {project.phase} phase")
+            logger.info(
+                f"Generating hint for project {project.project_id} in {project.phase} phase"
+            )
 
             # Generate hint using Claude
             hint = self.orchestrator.claude_client.generate_text(hint_prompt)
 
             self.log(f"Generated hint for {project.phase} phase")
 
-            return {
-                "status": "success",
-                "hint": hint,
-                "context": context
-            }
+            return {"status": "success", "hint": hint, "context": context}
 
         except Exception as e:
             logger.warning(f"Failed to generate dynamic hint: {e}, returning generic hint")
@@ -1118,5 +1111,5 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
             return {
                 "status": "success",
                 "hint": phase_hints.get(project.phase, "Keep making progress on your project!"),
-                "context": ""
+                "context": "",
             }

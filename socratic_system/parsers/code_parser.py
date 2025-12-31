@@ -44,10 +44,12 @@ class CodeParser:
         """Get or create logger for this component."""
         try:
             from socratic_system.utils.logger import get_logger
+
             return get_logger("code_parser")
         except (ImportError, RuntimeError):
             # Fallback if logger not available
             import logging
+
             return logging.getLogger("code_parser")
 
     def parse_file(self, file_path: str, content: str) -> Dict[str, Any]:
@@ -136,13 +138,15 @@ class CodeParser:
             "functions": functions,
             "classes": classes,
             "imports": imports,
-            "structure_summary": self._generate_structure_summary("python", functions, classes, imports),
+            "structure_summary": self._generate_structure_summary(
+                "python", functions, classes, imports
+            ),
             "metrics": {
                 "lines_of_code": loc,
                 "function_count": len(functions),
                 "class_count": len(classes),
-                "import_count": len(imports)
-            }
+                "import_count": len(imports),
+            },
         }
 
     def _extract_python_functions(self, tree: ast.AST) -> List[Dict]:
@@ -154,7 +158,7 @@ class CodeParser:
                     "name": node.name,
                     "params": self._extract_python_params(node),
                     "line": node.lineno,
-                    "docstring": ast.get_docstring(node) or ""
+                    "docstring": ast.get_docstring(node) or "",
                 }
                 functions.append(func_info)
         return functions
@@ -167,11 +171,13 @@ class CodeParser:
                 methods = []
                 for item in node.body:
                     if isinstance(item, ast.FunctionDef):
-                        methods.append({
-                            "name": item.name,
-                            "params": self._extract_python_params(item),
-                            "line": item.lineno
-                        })
+                        methods.append(
+                            {
+                                "name": item.name,
+                                "params": self._extract_python_params(item),
+                                "line": item.lineno,
+                            }
+                        )
 
                 parent_class = None
                 if node.bases:
@@ -182,7 +188,7 @@ class CodeParser:
                     "line": node.lineno,
                     "methods": methods,
                     "docstring": ast.get_docstring(node) or "",
-                    "parent": parent_class
+                    "parent": parent_class,
                 }
                 classes.append(class_info)
         return classes
@@ -217,13 +223,15 @@ class CodeParser:
             "functions": functions,
             "classes": classes,
             "imports": imports,
-            "structure_summary": self._generate_structure_summary("javascript", functions, classes, imports),
+            "structure_summary": self._generate_structure_summary(
+                "javascript", functions, classes, imports
+            ),
             "metrics": {
                 "lines_of_code": loc,
                 "function_count": len(functions),
                 "class_count": len(classes),
-                "import_count": len(imports)
-            }
+                "import_count": len(imports),
+            },
         }
 
     def _extract_js_functions(self, lines: List[str]) -> List[Dict]:
@@ -243,15 +251,14 @@ class CodeParser:
                 for match in matches:
                     func_name = match.group(1)
                     params_str = match.group(2) if match.lastindex >= 2 else ""
-                    params = [p.strip().split("=")[0].strip() for p in params_str.split(",") if p.strip()]
+                    params = [
+                        p.strip().split("=")[0].strip() for p in params_str.split(",") if p.strip()
+                    ]
 
                     if func_name not in seen_functions:
-                        functions.append({
-                            "name": func_name,
-                            "params": params,
-                            "line": line_num,
-                            "docstring": ""
-                        })
+                        functions.append(
+                            {"name": func_name, "params": params, "line": line_num, "docstring": ""}
+                        )
                         seen_functions.add(func_name)
         return functions
 
@@ -269,13 +276,15 @@ class CodeParser:
 
                 if class_name not in seen_classes:
                     methods = self._extract_js_methods(content, class_name)
-                    classes.append({
-                        "name": class_name,
-                        "line": line_num,
-                        "methods": methods,
-                        "docstring": "",
-                        "parent": parent
-                    })
+                    classes.append(
+                        {
+                            "name": class_name,
+                            "line": line_num,
+                            "methods": methods,
+                            "docstring": "",
+                            "parent": parent,
+                        }
+                    )
                     seen_classes.add(class_name)
         return classes
 
@@ -284,7 +293,7 @@ class CodeParser:
         imports = []
         import_patterns = [
             r"import\s+(?:{[^}]*}|[\w\s,]+)\s+from\s+['\"]([^'\"]+)['\"]",
-            r"const\s+(?:{[^}]*}|[\w\s]+)\s+=\s+require\(['\"]([^'\"]+)['\"]\)"
+            r"const\s+(?:{[^}]*}|[\w\s]+)\s+=\s+require\(['\"]([^'\"]+)['\"]\)",
         ]
 
         for line in lines:
@@ -325,13 +334,15 @@ class CodeParser:
 
                 if class_name not in seen_classes:
                     methods = self._extract_java_methods(content)
-                    classes.append({
-                        "name": class_name,
-                        "line": line_num,
-                        "methods": methods,
-                        "docstring": "",
-                        "parent": parent
-                    })
+                    classes.append(
+                        {
+                            "name": class_name,
+                            "line": line_num,
+                            "methods": methods,
+                            "docstring": "",
+                            "parent": parent,
+                        }
+                    )
                     seen_classes.add(class_name)
 
         # Extract methods/functions
@@ -346,13 +357,12 @@ class CodeParser:
                 params_str = match.group(3) if match.lastindex >= 3 else ""
                 params = [p.strip().split()[-1] for p in params_str.split(",") if p.strip()]
 
-                if method_name not in seen_methods and method_name not in [c["name"] for c in classes]:
-                    functions.append({
-                        "name": method_name,
-                        "params": params,
-                        "line": line_num,
-                        "docstring": ""
-                    })
+                if method_name not in seen_methods and method_name not in [
+                    c["name"] for c in classes
+                ]:
+                    functions.append(
+                        {"name": method_name, "params": params, "line": line_num, "docstring": ""}
+                    )
                     seen_methods.add(method_name)
 
         loc = len([line for line in lines if line.strip() and not line.strip().startswith("//")])
@@ -363,13 +373,15 @@ class CodeParser:
             "functions": functions,
             "classes": classes,
             "imports": imports,
-            "structure_summary": self._generate_structure_summary("java", functions, classes, imports),
+            "structure_summary": self._generate_structure_summary(
+                "java", functions, classes, imports
+            ),
             "metrics": {
                 "lines_of_code": loc,
                 "function_count": len(functions),
                 "class_count": len(classes),
-                "import_count": len(imports)
-            }
+                "import_count": len(imports),
+            },
         }
 
     def _parse_cpp(self, file_path: str, content: str) -> Dict[str, Any]:
@@ -400,13 +412,15 @@ class CodeParser:
                 parent = match.group(2) if match.lastindex and match.lastindex >= 2 else None
 
                 if class_name not in seen_classes:
-                    classes.append({
-                        "name": class_name,
-                        "line": line_num,
-                        "methods": [],
-                        "docstring": "",
-                        "parent": parent
-                    })
+                    classes.append(
+                        {
+                            "name": class_name,
+                            "line": line_num,
+                            "methods": [],
+                            "docstring": "",
+                            "parent": parent,
+                        }
+                    )
                     seen_classes.add(class_name)
 
         # Extract function declarations
@@ -419,15 +433,16 @@ class CodeParser:
                 match.group(1)
                 func_name = match.group(2)
                 params_str = match.group(3) if match.lastindex >= 3 else ""
-                params = [p.strip().split()[-1].rstrip("*&") for p in params_str.split(",") if p.strip()]
+                params = [
+                    p.strip().split()[-1].rstrip("*&") for p in params_str.split(",") if p.strip()
+                ]
 
-                if func_name not in seen_functions and func_name not in [c["name"] for c in classes]:
-                    functions.append({
-                        "name": func_name,
-                        "params": params,
-                        "line": line_num,
-                        "docstring": ""
-                    })
+                if func_name not in seen_functions and func_name not in [
+                    c["name"] for c in classes
+                ]:
+                    functions.append(
+                        {"name": func_name, "params": params, "line": line_num, "docstring": ""}
+                    )
                     seen_functions.add(func_name)
 
         loc = len([line for line in lines if line.strip() and not line.strip().startswith("//")])
@@ -438,13 +453,15 @@ class CodeParser:
             "functions": functions,
             "classes": classes,
             "imports": imports,
-            "structure_summary": self._generate_structure_summary("cpp", functions, classes, imports),
+            "structure_summary": self._generate_structure_summary(
+                "cpp", functions, classes, imports
+            ),
             "metrics": {
                 "lines_of_code": loc,
                 "function_count": len(functions),
                 "class_count": len(classes),
-                "import_count": len(imports)
-            }
+                "import_count": len(imports),
+            },
         }
 
     def _parse_c(self, file_path: str, content: str) -> Dict[str, Any]:
@@ -474,15 +491,14 @@ class CodeParser:
                 match.group(1)
                 func_name = match.group(2)
                 params_str = match.group(3) if match.lastindex >= 3 else ""
-                params = [p.strip().split()[-1].rstrip("*") for p in params_str.split(",") if p.strip()]
+                params = [
+                    p.strip().split()[-1].rstrip("*") for p in params_str.split(",") if p.strip()
+                ]
 
                 if func_name not in seen_functions:
-                    functions.append({
-                        "name": func_name,
-                        "params": params,
-                        "line": line_num,
-                        "docstring": ""
-                    })
+                    functions.append(
+                        {"name": func_name, "params": params, "line": line_num, "docstring": ""}
+                    )
                     seen_functions.add(func_name)
 
         loc = len([line for line in lines if line.strip() and not line.strip().startswith("//")])
@@ -498,8 +514,8 @@ class CodeParser:
                 "lines_of_code": loc,
                 "function_count": len(functions),
                 "class_count": 0,
-                "import_count": len(imports)
-            }
+                "import_count": len(imports),
+            },
         }
 
     # Helper methods
@@ -540,18 +556,16 @@ class CodeParser:
                     if method_name not in ["if", "for", "while", "switch"]:
                         params_str = match.group(2) if match.lastindex >= 2 else ""
                         params = [p.strip() for p in params_str.split(",") if p.strip()]
-                        methods.append({
-                            "name": method_name,
-                            "params": params,
-                            "line": 0
-                        })
+                        methods.append({"name": method_name, "params": params, "line": 0})
 
         return methods
 
     def _extract_java_methods(self, content: str) -> List[Dict]:
         """Extract methods from Java class."""
         methods = []
-        method_pattern = r"(?:public|private|protected)?\s+(?:static\s+)?(\w+)\s+(\w+)\s*\(([^)]*)\)"
+        method_pattern = (
+            r"(?:public|private|protected)?\s+(?:static\s+)?(\w+)\s+(\w+)\s*\(([^)]*)\)"
+        )
         lines = content.split("\n")
 
         seen = set()
@@ -563,21 +577,13 @@ class CodeParser:
                 params = [p.strip().split()[-1] for p in params_str.split(",") if p.strip()]
 
                 if method_name not in seen:
-                    methods.append({
-                        "name": method_name,
-                        "params": params,
-                        "line": line_num
-                    })
+                    methods.append({"name": method_name, "params": params, "line": line_num})
                     seen.add(method_name)
 
         return methods
 
     def _generate_structure_summary(
-        self,
-        language: str,
-        functions: List[Dict],
-        classes: List[Dict],
-        imports: List[str]
+        self, language: str, functions: List[Dict], classes: List[Dict], imports: List[str]
     ) -> str:
         """Generate human-readable structure summary."""
         parts = []
@@ -624,8 +630,8 @@ class CodeParser:
                 "lines_of_code": 0,
                 "function_count": 0,
                 "class_count": 0,
-                "import_count": 0
-            }
+                "import_count": 0,
+            },
         }
 
     def _create_error_response(self, file_path: str, error_msg: str) -> Dict[str, Any]:
@@ -642,6 +648,6 @@ class CodeParser:
                 "lines_of_code": 0,
                 "function_count": 0,
                 "class_count": 0,
-                "import_count": 0
-            }
+                "import_count": 0,
+            },
         }

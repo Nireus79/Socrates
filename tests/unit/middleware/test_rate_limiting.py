@@ -35,10 +35,7 @@ class TestRateLimitConfig:
 
     def test_config_custom_limits(self):
         """Test RateLimitConfig with custom limits"""
-        config = RateLimitConfig(
-            AUTH_LIMIT="10/minute",
-            CHAT_LIMIT="50/minute"
-        )
+        config = RateLimitConfig(AUTH_LIMIT="10/minute", CHAT_LIMIT="50/minute")
 
         assert config.AUTH_LIMIT == "10/minute"
         assert config.CHAT_LIMIT == "50/minute"
@@ -51,7 +48,7 @@ class TestRateLimiterInitialization:
 
     def test_limiter_creation_with_redis(self):
         """Test creating limiter with Redis backend"""
-        with patch('redis.asyncio.from_url'):
+        with patch("redis.asyncio.from_url"):
             limiter = get_limiter("redis://localhost:6379")
 
             assert limiter is not None
@@ -59,7 +56,7 @@ class TestRateLimiterInitialization:
 
     def test_limiter_creation_with_fallback(self):
         """Test limiter creation falls back to in-memory"""
-        with patch('redis.asyncio.from_url', side_effect=ConnectionError):
+        with patch("redis.asyncio.from_url", side_effect=ConnectionError):
             limiter = get_limiter("redis://localhost:6379")
 
             assert limiter is not None
@@ -137,9 +134,7 @@ class TestRateLimitKeyFunction:
         """Test extracting rate limit key from JWT token"""
         # For authenticated endpoints
         mock_request = MagicMock()
-        mock_request.headers = {
-            "authorization": "Bearer eyJhbGc..."
-        }
+        mock_request.headers = {"authorization": "Bearer eyJhbGc..."}
 
         # Should extract user from JWT and use as key
 
@@ -151,7 +146,7 @@ class TestRateLimitGracefulDegradation:
     @pytest.mark.asyncio
     async def test_redis_failure_fallback(self):
         """Test fallback to in-memory limiter on Redis failure"""
-        with patch('redis.asyncio.from_url', side_effect=ConnectionError):
+        with patch("redis.asyncio.from_url", side_effect=ConnectionError):
             limiter = get_limiter("redis://localhost:6379")
 
             # Should still work with in-memory store
@@ -201,10 +196,7 @@ class TestRateLimitExceptionHandling:
 
         @app.exception_handler(RateLimitExceeded)
         async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-            return JSONResponse(
-                status_code=429,
-                content={"detail": "Rate limit exceeded"}
-            )
+            return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"})
 
         # Should return 429 when exceeded
 

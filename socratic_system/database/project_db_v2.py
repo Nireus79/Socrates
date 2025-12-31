@@ -80,9 +80,7 @@ class ProjectDatabase:
             self._enable_foreign_keys(cursor)
 
             # Test if V2 tables exist
-            cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='projects'"
-            )
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='projects'")
             if cursor.fetchone():
                 self.logger.info("V2 schema already exists (foreign keys enabled)")
                 # Still need to ensure migrations are applied
@@ -186,14 +184,10 @@ class ProjectDatabase:
             )
             counts["constraints"] = cursor.fetchone()[0]
 
-            cursor.execute(
-                "SELECT COUNT(*) FROM team_members WHERE project_id = ?", (project_id,)
-            )
+            cursor.execute("SELECT COUNT(*) FROM team_members WHERE project_id = ?", (project_id,))
             counts["team_members"] = cursor.fetchone()[0]
 
-            cursor.execute(
-                "SELECT COUNT(*) FROM project_notes WHERE project_id = ?", (project_id,)
-            )
+            cursor.execute("SELECT COUNT(*) FROM project_notes WHERE project_id = ?", (project_id,))
             counts["notes"] = cursor.fetchone()[0]
 
             cursor.execute(
@@ -265,12 +259,40 @@ class ProjectDatabase:
                 project.owner,
                 project.phase,
                 project.project_type,
-                (json.dumps(project.team_structure) if isinstance(project.team_structure, dict) else project.team_structure) if project.team_structure else None,
-                (json.dumps(project.language_preferences) if isinstance(project.language_preferences, dict) else project.language_preferences) if project.language_preferences else None,
+                (
+                    (
+                        json.dumps(project.team_structure)
+                        if isinstance(project.team_structure, dict)
+                        else project.team_structure
+                    )
+                    if project.team_structure
+                    else None
+                ),
+                (
+                    (
+                        json.dumps(project.language_preferences)
+                        if isinstance(project.language_preferences, dict)
+                        else project.language_preferences
+                    )
+                    if project.language_preferences
+                    else None
+                ),
                 project.deployment_target,
-                (json.dumps(project.code_style) if isinstance(project.code_style, dict) else project.code_style) if project.code_style else None,
+                (
+                    (
+                        json.dumps(project.code_style)
+                        if isinstance(project.code_style, dict)
+                        else project.code_style
+                    )
+                    if project.code_style
+                    else None
+                ),
                 project.chat_mode,
-                (json.dumps(project.goals) if isinstance(project.goals, (list, dict)) else project.goals),
+                (
+                    json.dumps(project.goals)
+                    if isinstance(project.goals, (list, dict))
+                    else project.goals
+                ),
                 project.status,
                 project.progress,
                 project.is_archived,
@@ -354,9 +376,21 @@ class ProjectDatabase:
             "INSERT OR REPLACE INTO analytics_metrics (project_id, velocity, total_qa_sessions, avg_confidence, weak_categories, strong_categories) VALUES (?, ?, ?, ?, ?, ?)",
             (
                 project.project_id,
-                float(project.analytics_metrics.get("velocity", 0.0)) if not isinstance(project.analytics_metrics.get("velocity"), dict) else 0.0,
-                int(project.analytics_metrics.get("total_qa_sessions", 0)) if not isinstance(project.analytics_metrics.get("total_qa_sessions"), dict) else 0,
-                float(project.analytics_metrics.get("avg_confidence", 0.0)) if not isinstance(project.analytics_metrics.get("avg_confidence"), dict) else 0.0,
+                (
+                    float(project.analytics_metrics.get("velocity", 0.0))
+                    if not isinstance(project.analytics_metrics.get("velocity"), dict)
+                    else 0.0
+                ),
+                (
+                    int(project.analytics_metrics.get("total_qa_sessions", 0))
+                    if not isinstance(project.analytics_metrics.get("total_qa_sessions"), dict)
+                    else 0
+                ),
+                (
+                    float(project.analytics_metrics.get("avg_confidence", 0.0))
+                    if not isinstance(project.analytics_metrics.get("avg_confidence"), dict)
+                    else 0.0
+                ),
                 json.dumps(project.analytics_metrics.get("weak_categories", [])),
                 json.dumps(project.analytics_metrics.get("strong_categories", [])),
             ),
@@ -929,9 +963,7 @@ class ProjectDatabase:
                 (username, session_id),
             )
             conn.commit()
-            self.logger.info(
-                f"Deleted free_session session {session_id} for user {username}"
-            )
+            self.logger.info(f"Deleted free_session session {session_id} for user {username}")
             return True
 
         except Exception as e:
@@ -1493,15 +1525,15 @@ class ProjectDatabase:
         try:
             # Convert Decimal to float for SQLite compatibility
             effectiveness_score = getattr(effectiveness, "effectiveness_score", 0.5)
-            if hasattr(effectiveness_score, '__float__'):
+            if hasattr(effectiveness_score, "__float__"):
                 effectiveness_score = float(effectiveness_score)
 
             times_asked = getattr(effectiveness, "times_asked", 0)
-            if hasattr(times_asked, '__int__'):
+            if hasattr(times_asked, "__int__"):
                 times_asked = int(times_asked)
 
             times_answered_well = getattr(effectiveness, "times_answered_well", 0)
-            if hasattr(times_answered_well, '__int__'):
+            if hasattr(times_answered_well, "__int__"):
                 times_answered_well = int(times_answered_well)
 
             last_asked_at = getattr(effectiveness, "last_asked_at", None)
@@ -1893,10 +1925,7 @@ class ProjectDatabase:
         cursor = conn.cursor()
 
         try:
-            cursor.execute(
-                "DELETE FROM knowledge_documents WHERE id = ?",
-                (doc_id,)
-            )
+            cursor.execute("DELETE FROM knowledge_documents WHERE id = ?", (doc_id,))
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
@@ -1919,21 +1948,23 @@ class ProjectDatabase:
                 WHERE user_id = ?
                 ORDER BY uploaded_at DESC
                 """,
-                (user_id,)
+                (user_id,),
             )
 
             documents = []
             for row in cursor.fetchall():
-                documents.append({
-                    "id": row[0],
-                    "project_id": row[1],
-                    "user_id": row[2],
-                    "title": row[3],
-                    "content": row[4],
-                    "source": row[5],
-                    "document_type": row[6],
-                    "uploaded_at": row[7],
-                })
+                documents.append(
+                    {
+                        "id": row[0],
+                        "project_id": row[1],
+                        "user_id": row[2],
+                        "title": row[3],
+                        "content": row[4],
+                        "source": row[5],
+                        "document_type": row[6],
+                        "uploaded_at": row[7],
+                    }
+                )
 
             return documents
         except Exception as e:
@@ -2411,9 +2442,7 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_project_notes(
-        self, project_id: str, note_type: str | None = None
-    ) -> list[ProjectNote]:
+    def get_project_notes(self, project_id: str, note_type: str | None = None) -> list[ProjectNote]:
         """Get notes for a project"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -2738,7 +2767,9 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def update_chat_message(self, message_id: str, content: str, metadata: dict | None = None) -> None:
+    def update_chat_message(
+        self, message_id: str, content: str, metadata: dict | None = None
+    ) -> None:
         """Update a chat message's content and metadata"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -2872,18 +2903,20 @@ class ProjectDatabase:
 
             invitations = []
             for row in cursor.fetchall():
-                invitations.append({
-                    "id": row["id"],
-                    "project_id": row["project_id"],
-                    "inviter_id": row["inviter_id"],
-                    "invitee_email": row["invitee_email"],
-                    "role": row["role"],
-                    "token": row["token"],
-                    "status": row["status"],
-                    "created_at": row["created_at"],
-                    "expires_at": row["expires_at"],
-                    "accepted_at": row["accepted_at"],
-                })
+                invitations.append(
+                    {
+                        "id": row["id"],
+                        "project_id": row["project_id"],
+                        "inviter_id": row["inviter_id"],
+                        "invitee_email": row["invitee_email"],
+                        "role": row["role"],
+                        "token": row["token"],
+                        "status": row["status"],
+                        "created_at": row["created_at"],
+                        "expires_at": row["expires_at"],
+                        "accepted_at": row["accepted_at"],
+                    }
+                )
 
             return invitations
         except Exception as e:
@@ -2912,18 +2945,20 @@ class ProjectDatabase:
 
             invitations = []
             for row in cursor.fetchall():
-                invitations.append({
-                    "id": row["id"],
-                    "project_id": row["project_id"],
-                    "inviter_id": row["inviter_id"],
-                    "invitee_email": row["invitee_email"],
-                    "role": row["role"],
-                    "token": row["token"],
-                    "status": row["status"],
-                    "created_at": row["created_at"],
-                    "expires_at": row["expires_at"],
-                    "accepted_at": row["accepted_at"],
-                })
+                invitations.append(
+                    {
+                        "id": row["id"],
+                        "project_id": row["project_id"],
+                        "inviter_id": row["inviter_id"],
+                        "invitee_email": row["invitee_email"],
+                        "role": row["role"],
+                        "token": row["token"],
+                        "status": row["status"],
+                        "created_at": row["created_at"],
+                        "expires_at": row["expires_at"],
+                        "accepted_at": row["accepted_at"],
+                    }
+                )
 
             return invitations
         except Exception as e:
@@ -2982,7 +3017,9 @@ class ProjectDatabase:
         cursor = conn.cursor()
 
         try:
-            activity_data_json = json.dumps(activity.get("activity_data")) if activity.get("activity_data") else None
+            activity_data_json = (
+                json.dumps(activity.get("activity_data")) if activity.get("activity_data") else None
+            )
             cursor.execute(
                 """
                 INSERT INTO collaboration_activities
@@ -3007,7 +3044,9 @@ class ProjectDatabase:
         finally:
             conn.close()
 
-    def get_project_activities(self, project_id: str, limit: int = 50, offset: int = 0) -> list[dict]:
+    def get_project_activities(
+        self, project_id: str, limit: int = 50, offset: int = 0
+    ) -> list[dict]:
         """Get activities for a project with pagination"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -3026,14 +3065,18 @@ class ProjectDatabase:
 
             activities = []
             for row in cursor.fetchall():
-                activities.append({
-                    "id": row["id"],
-                    "project_id": row["project_id"],
-                    "user_id": row["user_id"],
-                    "activity_type": row["activity_type"],
-                    "activity_data": json.loads(row["activity_data"]) if row["activity_data"] else None,
-                    "created_at": row["created_at"],
-                })
+                activities.append(
+                    {
+                        "id": row["id"],
+                        "project_id": row["project_id"],
+                        "user_id": row["user_id"],
+                        "activity_type": row["activity_type"],
+                        "activity_data": (
+                            json.loads(row["activity_data"]) if row["activity_data"] else None
+                        ),
+                        "created_at": row["created_at"],
+                    }
+                )
 
             return activities
         except Exception as e:
@@ -3048,7 +3091,10 @@ class ProjectDatabase:
         cursor = conn.cursor()
 
         try:
-            cursor.execute("SELECT COUNT(*) as count FROM collaboration_activities WHERE project_id = ?", (project_id,))
+            cursor.execute(
+                "SELECT COUNT(*) as count FROM collaboration_activities WHERE project_id = ?",
+                (project_id,),
+            )
             row = cursor.fetchone()
             return row[0] if row else 0
         except Exception as e:

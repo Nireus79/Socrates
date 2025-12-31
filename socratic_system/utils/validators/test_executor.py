@@ -115,9 +115,7 @@ class TestExecutor:
 
         return None
 
-    def _execute_python_tests(
-        self, project_dir: str, timeout: int
-    ) -> Dict[str, Any]:
+    def _execute_python_tests(self, project_dir: str, timeout: int) -> Dict[str, Any]:
         """Execute Python tests using pytest or unittest"""
         try:
             # Try pytest first
@@ -175,9 +173,7 @@ class TestExecutor:
         skipped = len(re.findall(r" SKIPPED", output))
 
         # Extract summary line
-        re.search(
-            r"(\d+) passed|(\d+) failed|(\d+) skipped|(\d+) error", output
-        )
+        re.search(r"(\d+) passed|(\d+) failed|(\d+) skipped|(\d+) error", output)
 
         # Parse failure details
         failures = []
@@ -206,9 +202,7 @@ class TestExecutor:
             "output": output if result.returncode != 0 else "All tests passed",
         }
 
-    def _execute_javascript_tests(
-        self, project_dir: str, timeout: int
-    ) -> Dict[str, Any]:
+    def _execute_javascript_tests(self, project_dir: str, timeout: int) -> Dict[str, Any]:
         """Execute JavaScript tests using jest or mocha"""
         try:
             # Try npm test or jest
@@ -292,7 +286,9 @@ class TestExecutor:
                 passed = json_data.get("numPassedTests", 0)
                 failed = json_data.get("numFailedTests", 0)
                 skipped = json_data.get("numPendingTests", 0)
-                duration = json_data.get("testResults", [{}])[0].get("perfStats", {}).get("start", 0)
+                duration = (
+                    json_data.get("testResults", [{}])[0].get("perfStats", {}).get("start", 0)
+                )
 
                 # Extract failure details
                 failures = []

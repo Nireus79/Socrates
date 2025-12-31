@@ -78,6 +78,7 @@ class AgentOrchestrator:
 
         # Use unified DatabaseSingleton for both CLI and API
         from socrates_api.database import DatabaseSingleton
+
         DatabaseSingleton.initialize(str(self.config.projects_db_path))
         self.database = DatabaseSingleton.get_instance()
 
@@ -105,8 +106,7 @@ class AgentOrchestrator:
         # Only start knowledge loading thread if not in test mode
         if "PYTEST_CURRENT_TEST" not in os.environ:
             self._knowledge_thread = threading.Thread(
-                target=self._load_knowledge_base_safe,
-                daemon=True
+                target=self._load_knowledge_base_safe, daemon=True
             )
             self._knowledge_thread.start()
         else:
@@ -162,6 +162,7 @@ class AgentOrchestrator:
         """Lazy-load project manager agent"""
         if "project_manager" not in self._agents_cache:
             from socratic_system.agents.project_manager import ProjectManagerAgent
+
             self._agents_cache["project_manager"] = ProjectManagerAgent(self)
         return self._agents_cache["project_manager"]
 
@@ -170,6 +171,7 @@ class AgentOrchestrator:
         """Lazy-load socratic counselor agent"""
         if "socratic_counselor" not in self._agents_cache:
             from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
+
             self._agents_cache["socratic_counselor"] = SocraticCounselorAgent(self)
         return self._agents_cache["socratic_counselor"]
 
@@ -178,6 +180,7 @@ class AgentOrchestrator:
         """Lazy-load context analyzer agent"""
         if "context_analyzer" not in self._agents_cache:
             from socratic_system.agents.context_analyzer import ContextAnalyzerAgent
+
             self._agents_cache["context_analyzer"] = ContextAnalyzerAgent(self)
         return self._agents_cache["context_analyzer"]
 
@@ -186,6 +189,7 @@ class AgentOrchestrator:
         """Lazy-load code generator agent"""
         if "code_generator" not in self._agents_cache:
             from socratic_system.agents.code_generator import CodeGeneratorAgent
+
             self._agents_cache["code_generator"] = CodeGeneratorAgent(self)
         return self._agents_cache["code_generator"]
 
@@ -194,6 +198,7 @@ class AgentOrchestrator:
         """Lazy-load system monitor agent"""
         if "system_monitor" not in self._agents_cache:
             from socratic_system.agents import SystemMonitorAgent
+
             self._agents_cache["system_monitor"] = SystemMonitorAgent(self)
         return self._agents_cache["system_monitor"]
 
@@ -202,6 +207,7 @@ class AgentOrchestrator:
         """Lazy-load conflict detector agent"""
         if "conflict_detector" not in self._agents_cache:
             from socratic_system.agents import ConflictDetectorAgent
+
             self._agents_cache["conflict_detector"] = ConflictDetectorAgent(self)
         return self._agents_cache["conflict_detector"]
 
@@ -210,6 +216,7 @@ class AgentOrchestrator:
         """Lazy-load document processor agent"""
         if "document_processor" not in self._agents_cache:
             from socratic_system.agents.document_processor import DocumentProcessorAgent
+
             self._agents_cache["document_processor"] = DocumentProcessorAgent(self)
         return self._agents_cache["document_processor"]
 
@@ -218,6 +225,7 @@ class AgentOrchestrator:
         """Lazy-load user manager agent"""
         if "user_manager" not in self._agents_cache:
             from socratic_system.agents import UserManagerAgent
+
             self._agents_cache["user_manager"] = UserManagerAgent(self)
         return self._agents_cache["user_manager"]
 
@@ -226,6 +234,7 @@ class AgentOrchestrator:
         """Lazy-load note manager agent"""
         if "note_manager" not in self._agents_cache:
             from socratic_system.agents import NoteManagerAgent
+
             self._agents_cache["note_manager"] = NoteManagerAgent(self)
         return self._agents_cache["note_manager"]
 
@@ -234,7 +243,10 @@ class AgentOrchestrator:
         """Lazy-load knowledge manager agent"""
         if "knowledge_manager" not in self._agents_cache:
             from socratic_system.agents.knowledge_manager import KnowledgeManagerAgent
-            self._agents_cache["knowledge_manager"] = KnowledgeManagerAgent("knowledge_manager", self)
+
+            self._agents_cache["knowledge_manager"] = KnowledgeManagerAgent(
+                "knowledge_manager", self
+            )
         return self._agents_cache["knowledge_manager"]
 
     @property
@@ -242,6 +254,7 @@ class AgentOrchestrator:
         """Lazy-load knowledge analysis agent"""
         if "knowledge_analysis" not in self._agents_cache:
             from socratic_system.agents.knowledge_analysis import KnowledgeAnalysisAgent
+
             self._agents_cache["knowledge_analysis"] = KnowledgeAnalysisAgent(self)
         return self._agents_cache["knowledge_analysis"]
 
@@ -250,6 +263,7 @@ class AgentOrchestrator:
         """Lazy-load quality controller agent"""
         if "quality_controller" not in self._agents_cache:
             from socratic_system.agents import QualityControllerAgent
+
             self._agents_cache["quality_controller"] = QualityControllerAgent(self)
         return self._agents_cache["quality_controller"]
 
@@ -258,6 +272,7 @@ class AgentOrchestrator:
         """Lazy-load user learning agent"""
         if "learning_agent" not in self._agents_cache:
             from socratic_system.agents import UserLearningAgent
+
             self._agents_cache["learning_agent"] = UserLearningAgent(self)
         return self._agents_cache["learning_agent"]
 
@@ -266,6 +281,7 @@ class AgentOrchestrator:
         """Lazy-load multi-LLM agent"""
         if "multi_llm_agent" not in self._agents_cache:
             from socratic_system.agents import MultiLLMAgent
+
             self._agents_cache["multi_llm_agent"] = MultiLLMAgent(self)
         return self._agents_cache["multi_llm_agent"]
 
@@ -274,6 +290,7 @@ class AgentOrchestrator:
         """Lazy-load question queue agent"""
         if "question_queue" not in self._agents_cache:
             from socratic_system.agents import QuestionQueueAgent
+
             self._agents_cache["question_queue"] = QuestionQueueAgent(self)
         return self._agents_cache["question_queue"]
 
@@ -282,6 +299,7 @@ class AgentOrchestrator:
         """Lazy-load code validation agent"""
         if "code_validation_agent" not in self._agents_cache:
             from socratic_system.agents.code_validation_agent import CodeValidationAgent
+
             self._agents_cache["code_validation_agent"] = CodeValidationAgent(self)
         return self._agents_cache["code_validation_agent"]
 
@@ -602,7 +620,7 @@ class AgentOrchestrator:
         """
         try:
             # Wait for knowledge base loading thread to complete if it exists
-            if hasattr(self, '_knowledge_thread') and self._knowledge_thread is not None:
+            if hasattr(self, "_knowledge_thread") and self._knowledge_thread is not None:
                 if self._knowledge_thread.is_alive():
                     # Give thread up to 5 seconds to finish
                     self._knowledge_thread.join(timeout=5)
@@ -612,7 +630,7 @@ class AgentOrchestrator:
 
         try:
             # Close vector database to release ChromaDB file handles
-            if hasattr(self, 'vector_db') and self.vector_db is not None:
+            if hasattr(self, "vector_db") and self.vector_db is not None:
                 self.vector_db.close()
                 self._safe_log("info", "Vector database closed")
         except Exception as e:
@@ -620,8 +638,8 @@ class AgentOrchestrator:
 
         try:
             # Close project database
-            if hasattr(self, 'database') and self.database is not None:
-                if hasattr(self.database, 'close'):
+            if hasattr(self, "database") and self.database is not None:
+                if hasattr(self.database, "close"):
                     self.database.close()
                 self._safe_log("info", "Project database closed")
         except Exception as e:

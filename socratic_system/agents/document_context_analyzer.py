@@ -21,9 +21,25 @@ class DocumentContextAnalyzer:
 
     # Keywords indicating user is discussing documents
     DOCUMENT_REFERENCE_KEYWORDS = {
-        "document", "doc", "file", "pdf", "paper", "book", "article", "spec",
-        "specification", "guide", "manual", "reference", "content", "text",
-        "imported", "uploaded", "provided", "attached", "mentioned"
+        "document",
+        "doc",
+        "file",
+        "pdf",
+        "paper",
+        "book",
+        "article",
+        "spec",
+        "specification",
+        "guide",
+        "manual",
+        "reference",
+        "content",
+        "text",
+        "imported",
+        "uploaded",
+        "provided",
+        "attached",
+        "mentioned",
     }
 
     # Phases where detailed document analysis is typically needed
@@ -31,9 +47,22 @@ class DocumentContextAnalyzer:
 
     # Keywords indicating document-specific discussion
     SPECIFIC_DETAIL_INDICATORS = {
-        "explain", "understand", "describe", "summarize", "how does", "what does",
-        "define", "mention", "chapter", "section", "part", "page", "specific",
-        "detail", "exactly", "precisely"
+        "explain",
+        "understand",
+        "describe",
+        "summarize",
+        "how does",
+        "what does",
+        "define",
+        "mention",
+        "chapter",
+        "section",
+        "part",
+        "page",
+        "specific",
+        "detail",
+        "exactly",
+        "precisely",
     }
 
     def __init__(self):
@@ -44,7 +73,7 @@ class DocumentContextAnalyzer:
         self,
         project_context: Optional[Dict],
         conversation_history: Optional[List[Dict]],
-        question_count: int
+        question_count: int,
     ) -> str:
         """
         Determine document loading strategy based on conversation context.
@@ -114,7 +143,7 @@ class DocumentContextAnalyzer:
             r"my\s+(document|doc|file|pdf|paper|book)",
             r"the\s+(document|doc|file|pdf|paper|book)\s+(?:i\s+)?(?:provided|uploaded|imported|mentioned)",
             r"(?:in|from)\s+(?:my\s+)?(document|doc|file|pdf|paper|book)",
-            r"(document|doc|file|pdf|paper|book)\s+(?:says|describes|mentions|shows|contains)"
+            r"(document|doc|file|pdf|paper|book)\s+(?:says|describes|mentions|shows|contains)",
         ]
 
         for pattern in patterns:
@@ -124,11 +153,7 @@ class DocumentContextAnalyzer:
 
         return list(set(references))  # Remove duplicates
 
-    def calculate_relevance_score(
-        self,
-        query: str,
-        document_chunk: str
-    ) -> float:
+    def calculate_relevance_score(self, query: str, document_chunk: str) -> float:
         """
         Calculate semantic relevance score for a document chunk.
 
@@ -150,11 +175,26 @@ class DocumentContextAnalyzer:
         chunk_lower = document_chunk.lower()
 
         # Normalize text (remove punctuation, extra whitespace)
-        query_words = set(re.findall(r'\b\w+\b', query_lower))
-        chunk_words = set(re.findall(r'\b\w+\b', chunk_lower))
+        query_words = set(re.findall(r"\b\w+\b", query_lower))
+        chunk_words = set(re.findall(r"\b\w+\b", chunk_lower))
 
         # Remove common stop words
-        stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'is', 'was', 'are'}
+        stop_words = {
+            "the",
+            "a",
+            "an",
+            "and",
+            "or",
+            "but",
+            "in",
+            "on",
+            "at",
+            "to",
+            "for",
+            "is",
+            "was",
+            "are",
+        }
         query_words = query_words - stop_words
         chunk_words = chunk_words - stop_words
 
@@ -168,7 +208,9 @@ class DocumentContextAnalyzer:
         jaccard_sim = intersection / union if union > 0 else 0.0
 
         # Bonus if exact phrase is found
-        phrase_bonus = 0.1 if re.search(r'\b' + re.escape(query_lower) + r'\b', chunk_lower) else 0.0
+        phrase_bonus = (
+            0.1 if re.search(r"\b" + re.escape(query_lower) + r"\b", chunk_lower) else 0.0
+        )
 
         # Bonus if chunk contains specific detail indicators
         has_details = any(indicator in chunk_lower for indicator in self.SPECIFIC_DETAIL_INDICATORS)
@@ -190,7 +232,11 @@ class DocumentContextAnalyzer:
             return ""
 
         # Get the last `window` messages
-        recent = conversation_history[-window:] if len(conversation_history) >= window else conversation_history
+        recent = (
+            conversation_history[-window:]
+            if len(conversation_history) >= window
+            else conversation_history
+        )
 
         # Combine message content
         messages = []
@@ -222,7 +268,7 @@ class DocumentContextAnalyzer:
             r"my\s+(document|doc|file|pdf|paper|book)",
             r"the\s+(document|doc|file|pdf|paper|book)",
             r"(document|doc|file|pdf|paper|book)\s+(?:i\s+)?(?:provided|uploaded|imported)",
-            r"(?:in|from|based on)\s+(?:the\s+)?(?:document|doc|file|pdf|paper|book)"
+            r"(?:in|from|based on)\s+(?:the\s+)?(?:document|doc|file|pdf|paper|book)",
         ]
 
         for pattern in patterns:

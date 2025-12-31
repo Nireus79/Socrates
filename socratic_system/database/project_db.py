@@ -299,7 +299,13 @@ class ProjectDatabase:
         if result:
             data = pickle.loads(result[0])  # nosec
             # Convert all datetime fields from strings back to datetime objects if needed
-            datetime_fields = ["created_at", "archived_at", "subscription_start", "subscription_end", "usage_reset_date"]
+            datetime_fields = [
+                "created_at",
+                "archived_at",
+                "subscription_start",
+                "subscription_end",
+                "usage_reset_date",
+            ]
             for field in datetime_fields:
                 if field in data and isinstance(data.get(field), str):
                     data[field] = deserialize_datetime(data[field])

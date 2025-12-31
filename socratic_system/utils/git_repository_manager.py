@@ -130,9 +130,7 @@ class GitRepositoryManager:
             }
 
         # Create isolated temp directory
-        temp_dir = os.path.join(
-            self.temp_base_dir, f"{self.TEMP_PREFIX}{uuid.uuid4().hex[:8]}"
-        )
+        temp_dir = os.path.join(self.temp_base_dir, f"{self.TEMP_PREFIX}{uuid.uuid4().hex[:8]}")
 
         try:
             # Create directory
@@ -515,9 +513,7 @@ class GitRepositoryManager:
             self.logger.error(f"Error cleaning up directory {clone_path}: {e}")
             return False
 
-    def pull_repository(
-        self, clone_path: str, branch: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def pull_repository(self, clone_path: str, branch: Optional[str] = None) -> Dict[str, Any]:
         """
         Pull latest changes from remote repository
 
@@ -535,7 +531,11 @@ class GitRepositoryManager:
         try:
             clone_path = Path(clone_path)
             if not clone_path.exists():
-                return {"status": "error", "message": "Repository path does not exist", "changes": {}}
+                return {
+                    "status": "error",
+                    "message": "Repository path does not exist",
+                    "changes": {},
+                }
 
             # Build git pull command
             command = ["git", "-C", str(clone_path), "pull"]

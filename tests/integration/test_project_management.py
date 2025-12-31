@@ -28,12 +28,8 @@ class TestProjectManagement:
 
         response = requests.post(
             f"{BASE_URL}/auth/register",
-            json={
-                "username": username,
-                "email": email,
-                "password": "TestPassword123!"
-            },
-            headers=HEADERS
+            json={"username": username, "email": email, "password": "TestPassword123!"},
+            headers=HEADERS,
         )
         assert response.status_code == 201, f"Failed to register user: {response.text}"
         data = response.json()
@@ -42,7 +38,7 @@ class TestProjectManagement:
             "username": username,
             "email": email,
             "access_token": data["access_token"],
-            "refresh_token": data["refresh_token"]
+            "refresh_token": data["refresh_token"],
         }
 
     @pytest.fixture
@@ -57,9 +53,9 @@ class TestProjectManagement:
             json={
                 "name": "My First Project",
                 "description": "Free tier test project",
-                "knowledge_base_content": "Test knowledge base"
+                "knowledge_base_content": "Test knowledge base",
             },
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         assert response.status_code == 200, f"Failed to create project: {response.text}"
@@ -76,20 +72,22 @@ class TestProjectManagement:
         requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Project 1", "description": "First project"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         # Try to create second project - should be blocked
         response = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Project 2", "description": "Second project"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         assert response.status_code == 403, "Free tier should be blocked from 2nd project"
         error = response.json()
-        assert "subscription" in error.get("detail", "").lower() or \
-               "limit" in error.get("detail", "").lower()
+        assert (
+            "subscription" in error.get("detail", "").lower()
+            or "limit" in error.get("detail", "").lower()
+        )
 
     def test_03_list_projects(self, test_user, auth_headers):
         """Test: List user's projects"""
@@ -97,15 +95,12 @@ class TestProjectManagement:
         create_resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "List Test Project", "description": "For listing"},
-            headers=auth_headers
+            headers=auth_headers,
         )
         create_resp.json()["project_id"]
 
         # List projects
-        response = requests.get(
-            f"{BASE_URL}/projects",
-            headers=auth_headers
-        )
+        response = requests.get(f"{BASE_URL}/projects", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -123,18 +118,13 @@ class TestProjectManagement:
         # Create a project
         create_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={
-                "name": "Detail Test Project",
-                "description": "Testing detail retrieval"},
-            headers=auth_headers
+            json={"name": "Detail Test Project", "description": "Testing detail retrieval"},
+            headers=auth_headers,
         )
         project_id = create_resp.json()["project_id"]
 
         # Get project details
-        response = requests.get(
-            f"{BASE_URL}/projects/{project_id}",
-            headers=auth_headers
-        )
+        response = requests.get(f"{BASE_URL}/projects/{project_id}", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -147,21 +137,16 @@ class TestProjectManagement:
         # Create a project
         create_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={
-                "name": "Original Name",
-                "description": "Original description"},
-            headers=auth_headers
+            json={"name": "Original Name", "description": "Original description"},
+            headers=auth_headers,
         )
         project_id = create_resp.json()["project_id"]
 
         # Update project
         response = requests.put(
             f"{BASE_URL}/projects/{project_id}",
-            json={
-                "name": "Updated Name",
-                "phase": "implementation"
-            },
-            headers=auth_headers
+            json={"name": "Updated Name", "phase": "implementation"},
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -175,15 +160,12 @@ class TestProjectManagement:
         create_resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Project to Delete", "description": "Delete test"},
-            headers=auth_headers
+            headers=auth_headers,
         )
         project_id = create_resp.json()["project_id"]
 
         # Delete/archive project
-        response = requests.delete(
-            f"{BASE_URL}/projects/{project_id}",
-            headers=auth_headers
-        )
+        response = requests.delete(f"{BASE_URL}/projects/{project_id}", headers=auth_headers)
 
         assert response.status_code == 200
         result = response.json()
@@ -195,7 +177,7 @@ class TestProjectManagement:
         create_resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Private Project", "description": "Private test"},
-            headers=auth_headers
+            headers=auth_headers,
         )
         project_id = create_resp.json()["project_id"]
 
@@ -206,18 +188,15 @@ class TestProjectManagement:
             json={
                 "username": user2_name,
                 "email": f"{user2_name}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         user2_token = reg_resp.json()["access_token"]
         user2_headers = {**HEADERS, "Authorization": f"Bearer {user2_token}"}
 
         # Try to access with second user - should fail
-        response = requests.get(
-            f"{BASE_URL}/projects/{project_id}",
-            headers=user2_headers
-        )
+        response = requests.get(f"{BASE_URL}/projects/{project_id}", headers=user2_headers)
 
         assert response.status_code == 403, "User should not access other's project"
 
@@ -227,7 +206,7 @@ class TestProjectManagement:
         create_resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Phase Test Project", "description": "Phase test"},
-            headers=auth_headers
+            headers=auth_headers,
         )
         project_id = create_resp.json()["project_id"]
 
@@ -235,9 +214,7 @@ class TestProjectManagement:
 
         for phase in phases:
             response = requests.put(
-                f"{BASE_URL}/projects/{project_id}",
-                json={"phase": phase},
-                headers=auth_headers
+                f"{BASE_URL}/projects/{project_id}", json={"phase": phase}, headers=auth_headers
             )
             assert response.status_code == 200
             assert response.json()["phase"] == phase
@@ -262,8 +239,9 @@ class TestProjectManagement:
             json={
                 "name": "Knowledge Base Project",
                 "description": "Project with knowledge base",
-                "knowledge_base_content": knowledge_content},
-            headers=auth_headers
+                "knowledge_base_content": knowledge_content,
+            },
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
@@ -274,16 +252,20 @@ class TestProjectManagement:
         """Test: Project has all required metadata"""
         response = requests.post(
             f"{BASE_URL}/projects",
-            json={
-                "name": "Metadata Test",
-                "description": "Test metadata"},
-            headers=auth_headers
+            json={"name": "Metadata Test", "description": "Test metadata"},
+            headers=auth_headers,
         )
 
         project = response.json()
         required_fields = [
-            "project_id", "name", "owner", "description",
-            "phase", "created_at", "updated_at", "is_archived"
+            "project_id",
+            "name",
+            "owner",
+            "description",
+            "phase",
+            "created_at",
+            "updated_at",
+            "is_archived",
         ]
 
         for field in required_fields:
@@ -291,10 +273,7 @@ class TestProjectManagement:
 
     def test_11_get_nonexistent_project(self, test_user, auth_headers):
         """Test: Getting nonexistent project returns 404"""
-        response = requests.get(
-            f"{BASE_URL}/projects/nonexistent_project_id",
-            headers=auth_headers
-        )
+        response = requests.get(f"{BASE_URL}/projects/nonexistent_project_id", headers=auth_headers)
 
         assert response.status_code == 404
 
@@ -303,7 +282,7 @@ class TestProjectManagement:
         response = requests.put(
             f"{BASE_URL}/projects/nonexistent_project_id",
             json={"name": "Updated"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         assert response.status_code == 404
@@ -312,9 +291,7 @@ class TestProjectManagement:
         """Test: Project creation fails with missing required fields"""
         # Missing name
         response = requests.post(
-            f"{BASE_URL}/projects",
-            json={"description": "Missing name"},
-            headers=auth_headers
+            f"{BASE_URL}/projects", json={"description": "Missing name"}, headers=auth_headers
         )
 
         assert response.status_code >= 400, "Should fail with missing name"

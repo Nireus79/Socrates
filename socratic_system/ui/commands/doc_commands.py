@@ -128,6 +128,7 @@ class DocImportCommand(BaseCommand):
             # CRITICAL: Emit DOCUMENT_IMPORTED event to trigger knowledge analysis
             try:
                 from socratic_system.events import EventType
+
                 orchestrator.event_emitter.emit(
                     EventType.DOCUMENT_IMPORTED,
                     {
@@ -136,12 +137,16 @@ class DocImportCommand(BaseCommand):
                         "source_type": "file",
                         "words_extracted": words,
                         "chunks_created": chunks,
-                        "user_id": context.get("user").username if context.get("user") else "unknown",
-                    }
+                        "user_id": (
+                            context.get("user").username if context.get("user") else "unknown"
+                        ),
+                    },
                 )
                 print(f"{Fore.GREEN}Knowledge analysis triggered{Style.RESET_ALL}")
             except Exception as e:
-                print(f"{Fore.YELLOW}Warning: Could not trigger knowledge analysis: {str(e)}{Style.RESET_ALL}")
+                print(
+                    f"{Fore.YELLOW}Warning: Could not trigger knowledge analysis: {str(e)}{Style.RESET_ALL}"
+                )
 
             return self.success(
                 data={
@@ -227,6 +232,7 @@ class DocImportDirCommand(BaseCommand):
             # CRITICAL: Emit DOCUMENT_IMPORTED event to trigger knowledge analysis
             try:
                 from socratic_system.events import EventType
+
                 orchestrator.event_emitter.emit(
                     EventType.DOCUMENT_IMPORTED,
                     {
@@ -235,12 +241,16 @@ class DocImportDirCommand(BaseCommand):
                         "source_type": "directory",
                         "words_extracted": total_words,
                         "chunks_created": total_chunks,
-                        "user_id": context.get("user").username if context.get("user") else "unknown",
-                    }
+                        "user_id": (
+                            context.get("user").username if context.get("user") else "unknown"
+                        ),
+                    },
                 )
                 print(f"{Fore.GREEN}Knowledge analysis triggered{Style.RESET_ALL}")
             except Exception as e:
-                print(f"{Fore.YELLOW}Warning: Could not trigger knowledge analysis: {str(e)}{Style.RESET_ALL}")
+                print(
+                    f"{Fore.YELLOW}Warning: Could not trigger knowledge analysis: {str(e)}{Style.RESET_ALL}"
+                )
 
             return self.success(
                 data={
@@ -302,14 +312,18 @@ class DocPasteCommand(BaseCommand):
             return " ".join(args)
 
         title = "pasted_text"
-        title_input = input(f"{Fore.CYAN}Enter a title for this content (default: pasted_text): ").strip()
+        title_input = input(
+            f"{Fore.CYAN}Enter a title for this content (default: pasted_text): "
+        ).strip()
         if title_input:
             title = title_input
         return title
 
     def _get_text_content_from_input(self) -> str:
         """Get multi-line text content from user input"""
-        print(f"{Fore.CYAN}Enter your text content (type EOF on a new line when done):{Style.RESET_ALL}")
+        print(
+            f"{Fore.CYAN}Enter your text content (type EOF on a new line when done):{Style.RESET_ALL}"
+        )
         print(f"{Fore.YELLOW}>>> {Style.RESET_ALL}", end="")
 
         lines = []
@@ -341,7 +355,9 @@ class DocPasteCommand(BaseCommand):
                 project_id = project.project_id
         return project_id
 
-    def _process_text_import(self, orchestrator, text_content: str, title: str, project_id: str) -> Dict:
+    def _process_text_import(
+        self, orchestrator, text_content: str, title: str, project_id: str
+    ) -> Dict:
         """Process text import request"""
         print(f"{Fore.YELLOW}Processing text...{Style.RESET_ALL}")
 
@@ -390,6 +406,7 @@ class DocPasteCommand(BaseCommand):
         """Emit DOCUMENT_IMPORTED event to trigger knowledge analysis"""
         try:
             from socratic_system.events import EventType
+
             orchestrator.event_emitter.emit(
                 EventType.DOCUMENT_IMPORTED,
                 {
@@ -399,11 +416,13 @@ class DocPasteCommand(BaseCommand):
                     "words_extracted": words,
                     "chunks_created": chunks,
                     "user_id": context.get("user").username if context.get("user") else "unknown",
-                }
+                },
             )
             print(f"{Fore.GREEN}Knowledge analysis triggered{Style.RESET_ALL}")
         except Exception as e:
-            print(f"{Fore.YELLOW}Warning: Could not trigger knowledge analysis: {str(e)}{Style.RESET_ALL}")
+            print(
+                f"{Fore.YELLOW}Warning: Could not trigger knowledge analysis: {str(e)}{Style.RESET_ALL}"
+            )
 
 
 class DocImportUrlCommand(BaseCommand):
@@ -470,6 +489,7 @@ class DocImportUrlCommand(BaseCommand):
             # CRITICAL: Emit DOCUMENT_IMPORTED event to trigger knowledge analysis
             try:
                 from socratic_system.events import EventType
+
                 orchestrator.event_emitter.emit(
                     EventType.DOCUMENT_IMPORTED,
                     {
@@ -479,12 +499,16 @@ class DocImportUrlCommand(BaseCommand):
                         "url": url,
                         "words_extracted": words,
                         "chunks_created": chunks,
-                        "user_id": context.get("user").username if context.get("user") else "unknown",
-                    }
+                        "user_id": (
+                            context.get("user").username if context.get("user") else "unknown"
+                        ),
+                    },
                 )
                 print(f"{Fore.GREEN}Knowledge analysis triggered{Style.RESET_ALL}")
             except Exception as e:
-                print(f"{Fore.YELLOW}Warning: Could not trigger knowledge analysis: {str(e)}{Style.RESET_ALL}")
+                print(
+                    f"{Fore.YELLOW}Warning: Could not trigger knowledge analysis: {str(e)}{Style.RESET_ALL}"
+                )
 
             return self.success(
                 data={

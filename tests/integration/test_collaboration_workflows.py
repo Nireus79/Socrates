@@ -35,9 +35,9 @@ class TestProTierCollaboration:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         access_token = reg_resp.json()["access_token"]
         auth_headers = {**HEADERS, "Authorization": f"Bearer {access_token}"}
@@ -47,8 +47,9 @@ class TestProTierCollaboration:
             f"{BASE_URL}/projects",
             json={
                 "name": "Collaboration Test Project",
-                "description": "Test project for collaboration"},
-            headers=auth_headers
+                "description": "Test project for collaboration",
+            },
+            headers=auth_headers,
         )
         project_id = proj_resp.json()["project_id"]
 
@@ -56,7 +57,7 @@ class TestProTierCollaboration:
             "username": username,
             "access_token": access_token,
             "project_id": project_id,
-            "auth_headers": auth_headers
+            "auth_headers": auth_headers,
         }
 
     def test_01_add_team_member_to_project(self, pro_tier_user_with_project):
@@ -71,20 +72,17 @@ class TestProTierCollaboration:
             json={
                 "username": user2_name,
                 "email": f"{user2_name}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         user2_username = reg_resp.json()["username"]
 
         # Add team member to project
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/team_members",
-            json={
-                "username": user2_username,
-                "role": "editor"
-            },
-            headers=auth_headers
+            json={"username": user2_username, "role": "editor"},
+            headers=auth_headers,
         )
 
         # Should succeed for pro tier (feature availability check)
@@ -104,8 +102,7 @@ class TestProTierCollaboration:
         auth_headers = pro_tier_user_with_project["auth_headers"]
 
         response = requests.get(
-            f"{BASE_URL}/projects/{project_id}/team_members",
-            headers=auth_headers
+            f"{BASE_URL}/projects/{project_id}/team_members", headers=auth_headers
         )
 
         if response.status_code == 200:
@@ -123,11 +120,8 @@ class TestProTierCollaboration:
 
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/invitations",
-            json={
-                "email": invite_email,
-                "role": "viewer"
-            },
-            headers=auth_headers
+            json={"email": invite_email, "role": "viewer"},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -148,9 +142,9 @@ class TestProTierCollaboration:
             json={
                 "username": user2_name,
                 "email": f"{user2_name}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         user2_username = reg_resp.json()["username"]
 
@@ -158,7 +152,7 @@ class TestProTierCollaboration:
         add_resp = requests.post(
             f"{BASE_URL}/projects/{project_id}/team_members",
             json={"username": user2_username, "role": "editor"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         if add_resp.status_code != 200:
@@ -168,7 +162,7 @@ class TestProTierCollaboration:
         response = requests.put(
             f"{BASE_URL}/projects/{project_id}/team_members/{user2_username}",
             json={"role": "viewer"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -187,9 +181,9 @@ class TestProTierCollaboration:
             json={
                 "username": user2_name,
                 "email": f"{user2_name}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         user2_username = reg_resp.json()["username"]
 
@@ -197,7 +191,7 @@ class TestProTierCollaboration:
         add_resp = requests.post(
             f"{BASE_URL}/projects/{project_id}/team_members",
             json={"username": user2_username, "role": "editor"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         if add_resp.status_code != 200:
@@ -205,8 +199,7 @@ class TestProTierCollaboration:
 
         # Remove member
         response = requests.delete(
-            f"{BASE_URL}/projects/{project_id}/team_members/{user2_username}",
-            headers=auth_headers
+            f"{BASE_URL}/projects/{project_id}/team_members/{user2_username}", headers=auth_headers
         )
 
         if response.status_code == 200:
@@ -225,9 +218,9 @@ class TestProTierCollaboration:
             json={
                 "username": collab_name,
                 "email": f"{collab_name}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         collab_token = reg_resp.json()["access_token"]
         collab_username = reg_resp.json()["username"]
@@ -237,17 +230,14 @@ class TestProTierCollaboration:
         add_resp = requests.post(
             f"{BASE_URL}/projects/{project_id}/team_members",
             json={"username": collab_username, "role": "editor"},
-            headers=owner_headers
+            headers=owner_headers,
         )
 
         if add_resp.status_code != 200:
             pytest.skip("Cannot add team members")
 
         # Collaborator tries to access project
-        response = requests.get(
-            f"{BASE_URL}/projects/{project_id}",
-            headers=collab_headers
-        )
+        response = requests.get(f"{BASE_URL}/projects/{project_id}", headers=collab_headers)
 
         # Should be allowed if collaboration is implemented
         if response.status_code == 200:
@@ -266,9 +256,9 @@ class TestProTierCollaboration:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         access_token = reg_resp.json()["access_token"]
         auth_headers = {**HEADERS, "Authorization": f"Bearer {access_token}"}
@@ -277,7 +267,7 @@ class TestProTierCollaboration:
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Free Project", "description": "Test"},
-            headers=auth_headers
+            headers=auth_headers,
         )
         project_id = proj_resp.json()["project_id"]
 
@@ -288,9 +278,9 @@ class TestProTierCollaboration:
             json={
                 "username": user2_name,
                 "email": f"{user2_name}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         user2_username = reg_resp2.json()["username"]
 
@@ -298,7 +288,7 @@ class TestProTierCollaboration:
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/team_members",
             json={"username": user2_username, "role": "editor"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         # Free tier should not have collaboration

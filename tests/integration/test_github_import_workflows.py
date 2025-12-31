@@ -34,9 +34,9 @@ class TestGitHubImport:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         access_token = reg_resp.json()["access_token"]
         auth_headers = {**HEADERS, "Authorization": f"Bearer {access_token}"}
@@ -46,8 +46,9 @@ class TestGitHubImport:
             f"{BASE_URL}/projects",
             json={
                 "name": "GitHub Import Test Project",
-                "description": "Test project for GitHub import"},
-            headers=auth_headers
+                "description": "Test project for GitHub import",
+            },
+            headers=auth_headers,
         )
         project_id = proj_resp.json()["project_id"]
 
@@ -55,7 +56,7 @@ class TestGitHubImport:
             "username": username,
             "access_token": access_token,
             "project_id": project_id,
-            "auth_headers": auth_headers
+            "auth_headers": auth_headers,
         }
 
     def test_01_import_public_repository(self, test_user_with_project):
@@ -65,11 +66,8 @@ class TestGitHubImport:
 
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/import_github",
-            json={
-                "repository_url": "https://github.com/torvalds/linux",
-                "branch": "master"
-            },
-            headers=auth_headers
+            json={"repository_url": "https://github.com/torvalds/linux", "branch": "master"},
+            headers=auth_headers,
         )
 
         if response.status_code == 503:
@@ -90,19 +88,25 @@ class TestGitHubImport:
 
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/github_metadata",
-            json={
-                "repository_url": "https://github.com/python/cpython"
-            },
-            headers=auth_headers
+            json={"repository_url": "https://github.com/python/cpython"},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
             data = response.json()
             # Should extract metadata like README, file structure, etc.
-            assert any(k in data for k in [
-                "readme", "description", "structure", "files",
-                "language", "stars", "contributors"
-            ])
+            assert any(
+                k in data
+                for k in [
+                    "readme",
+                    "description",
+                    "structure",
+                    "files",
+                    "language",
+                    "stars",
+                    "contributors",
+                ]
+            )
         elif response.status_code == 501:
             pytest.skip("Metadata extraction not implemented")
 
@@ -113,10 +117,8 @@ class TestGitHubImport:
 
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/extract_dependencies",
-            json={
-                "repository_url": "https://github.com/django/django"
-            },
-            headers=auth_headers
+            json={"repository_url": "https://github.com/django/django"},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -134,9 +136,9 @@ class TestGitHubImport:
             json={
                 "repository_url": "https://github.com/pallets/flask",
                 "project_name": "Flask Clone",
-                "branch": "main"
+                "branch": "main",
             },
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -154,9 +156,9 @@ class TestGitHubImport:
             f"{BASE_URL}/projects/{project_id}/clone_github",
             json={
                 "repository_url": "https://github.com/sindresorhus/awesome",
-                "depth": "shallow"  # Limit cloning depth
+                "depth": "shallow",  # Limit cloning depth
             },
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -172,10 +174,8 @@ class TestGitHubImport:
 
         response = requests.post(
             f"{BASE_URL}/auth/github/connect",
-            json={
-                "github_token": "test_token_placeholder"
-            },
-            headers=auth_headers
+            json={"github_token": "test_token_placeholder"},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -197,10 +197,8 @@ class TestGitHubImport:
         # First import
         import_resp = requests.post(
             f"{BASE_URL}/projects/{project_id}/import_github",
-            json={
-                "repository_url": "https://github.com/requests/requests"
-            },
-            headers=auth_headers
+            json={"repository_url": "https://github.com/requests/requests"},
+            headers=auth_headers,
         )
 
         if import_resp.status_code != 200:
@@ -211,10 +209,8 @@ class TestGitHubImport:
         # Then sync
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/github_sync",
-            json={
-                "import_id": import_id
-            },
-            headers=auth_headers
+            json={"import_id": import_id},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -230,9 +226,9 @@ class TestGitHubImport:
             f"{BASE_URL}/projects/{project_id}/analyze_github_code",
             json={
                 "repository_url": "https://github.com/psf/requests",
-                "analysis_type": "complexity"
+                "analysis_type": "complexity",
             },
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -248,10 +244,8 @@ class TestGitHubImport:
 
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/github_languages",
-            json={
-                "repository_url": "https://github.com/torvalds/linux"
-            },
-            headers=auth_headers
+            json={"repository_url": "https://github.com/torvalds/linux"},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -267,10 +261,8 @@ class TestGitHubImport:
 
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/extract_readme",
-            json={
-                "repository_url": "https://github.com/vuejs/vue"
-            },
-            headers=auth_headers
+            json={"repository_url": "https://github.com/vuejs/vue"},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -288,9 +280,9 @@ class TestGitHubImport:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         access_token = reg_resp.json()["access_token"]
         auth_headers = {**HEADERS, "Authorization": f"Bearer {access_token}"}
@@ -299,17 +291,15 @@ class TestGitHubImport:
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Free Project", "description": "Test"},
-            headers=auth_headers
+            headers=auth_headers,
         )
         project_id = proj_resp.json()["project_id"]
 
         # Try GitHub import
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/import_github",
-            json={
-                "repository_url": "https://github.com/example/repo"
-            },
-            headers=auth_headers
+            json={"repository_url": "https://github.com/example/repo"},
+            headers=auth_headers,
         )
 
         # Check if gated by subscription

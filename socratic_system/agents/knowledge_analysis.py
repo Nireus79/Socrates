@@ -93,21 +93,25 @@ class KnowledgeAnalysisAgent(Agent):
                 return
 
             # Trigger analysis and question regeneration
-            analysis_result = self._analyze_knowledge({
-                "action": "analyze_knowledge",
-                "project_id": project_id,
-                "document_name": document_name,
-                "source_type": source_type,
-                "words_extracted": words_extracted,
-            })
+            analysis_result = self._analyze_knowledge(
+                {
+                    "action": "analyze_knowledge",
+                    "project_id": project_id,
+                    "document_name": document_name,
+                    "source_type": source_type,
+                    "words_extracted": words_extracted,
+                }
+            )
 
             if analysis_result.get("status") == "success":
                 # Trigger question regeneration
-                regen_result = self._regenerate_questions({
-                    "action": "regenerate_questions",
-                    "project_id": project_id,
-                    "knowledge_analysis": analysis_result.get("analysis"),
-                })
+                regen_result = self._regenerate_questions(
+                    {
+                        "action": "regenerate_questions",
+                        "project_id": project_id,
+                        "knowledge_analysis": analysis_result.get("analysis"),
+                    }
+                )
 
                 if regen_result.get("status") == "success":
                     self.logger.info(
@@ -158,7 +162,7 @@ class KnowledgeAnalysisAgent(Agent):
                 query=f"{document_name} {source_type}",
                 project_id=project_id,
                 limit=1,
-                strategy="full"
+                strategy="full",
             )
 
             # Analyze the knowledge content
@@ -220,11 +224,13 @@ class KnowledgeAnalysisAgent(Agent):
             # Extract insight from the newly available knowledge
 
             # Extract insights from the knowledge to inform question generation
-            insight_result = self.orchestrator.counselor.process({
-                "action": "extract_insights_only",
-                "project": project,
-                "knowledge_context": knowledge_analysis,
-            })
+            insight_result = self.orchestrator.counselor.process(
+                {
+                    "action": "extract_insights_only",
+                    "project": project,
+                    "knowledge_context": knowledge_analysis,
+                }
+            )
 
             # Log the knowledge-aware question regeneration
             self.logger.info(

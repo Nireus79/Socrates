@@ -56,7 +56,7 @@ class TestPhase1DatabasePerformance:
             status="active",
             progress=25,
             is_archived=False,
-            project_type="software"
+            project_type="software",
         )
 
     def test_save_project_performance(self, db, sample_project):
@@ -246,11 +246,7 @@ class TestPhase1DatabasePerformance:
         # Setup: create user and projects
         from socratic_system.models.user import User
 
-        user = User(
-            username="testuser",
-            passcode_hash="hash",
-            created_at=datetime.now()
-        )
+        user = User(username="testuser", passcode_hash="hash", created_at=datetime.now())
         db.save_user(user)
 
         # Create 10 projects
@@ -306,17 +302,22 @@ class TestPhase1MigrationValidation:
 
     def test_migration_script_exists(self):
         """Verify migration script exists"""
-        migration_path = Path(__file__).parent.parent.parent / "migration_scripts" / "migrate_v1_to_v2.py"
+        migration_path = (
+            Path(__file__).parent.parent.parent / "migration_scripts" / "migrate_v1_to_v2.py"
+        )
         assert migration_path.exists(), f"Migration script not found: {migration_path}"
 
     def test_schema_v2_sql_exists(self):
         """Verify schema V2 SQL exists"""
-        schema_path = Path(__file__).parent.parent.parent / "socratic_system" / "database" / "schema_v2.sql"
+        schema_path = (
+            Path(__file__).parent.parent.parent / "socratic_system" / "database" / "schema_v2.sql"
+        )
         assert schema_path.exists(), f"Schema file not found: {schema_path}"
 
     def test_project_db_v2_exists(self):
         """Verify ProjectDatabase class exists"""
         from socratic_system.database.project_db_v2 import ProjectDatabase
+
         assert ProjectDatabase is not None
 
 

@@ -127,6 +127,7 @@ class TestTTLCacheStats:
 
     def test_cache_info_method(self):
         """cache_info() returns readable string"""
+
         @cached(ttl_minutes=5)
         def func(x):
             return x * 2
@@ -168,6 +169,7 @@ class TestTTLCacheClear:
 
     def test_reset_stats(self):
         """Stats can be reset"""
+
         @cached(ttl_minutes=5)
         def func(x):
             return x * 2
@@ -229,6 +231,7 @@ class TestTTLCacheDecoratorFeatures:
 
     def test_preserves_function_name(self):
         """Decorator preserves original function name"""
+
         @cached(ttl_minutes=5)
         def my_function():
             return "result"
@@ -237,6 +240,7 @@ class TestTTLCacheDecoratorFeatures:
 
     def test_preserves_docstring(self):
         """Decorator preserves original docstring"""
+
         @cached(ttl_minutes=5)
         def documented_function():
             """This is the docstring"""
@@ -246,6 +250,7 @@ class TestTTLCacheDecoratorFeatures:
 
     def test_cache_methods_attached(self):
         """Decorator attaches cache management methods"""
+
         @cached(ttl_minutes=5)
         def func():
             return "result"
@@ -366,6 +371,7 @@ class TestTTLCacheRealWorldScenarios:
 
     def test_cache_hit_rate_realistic_workload(self):
         """Cache hit rate improves with repeated calls"""
+
         @cached(ttl_minutes=5)
         def expensive_lookup(query):
             return f"Result for {query}"
@@ -410,6 +416,7 @@ class TestTTLCacheIntegration:
 
     def test_multiple_decorators(self):
         """Can use decorator multiple times"""
+
         @cached(ttl_minutes=5)
         def func1():
             return "result1"
@@ -433,6 +440,7 @@ class TestCleanupExpired:
 
     def test_cleanup_expired_method(self):
         """cleanup_expired() removes expired entries"""
+
         @cached(ttl_minutes=0.016)  # ~1 second
         def func(x):
             return x * 2

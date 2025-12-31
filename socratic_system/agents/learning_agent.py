@@ -431,9 +431,12 @@ class UserLearningAgent(Agent):
             embedding = None
             try:
                 from sentence_transformers import SentenceTransformer
-                model = SentenceTransformer('all-MiniLM-L6-v2')
+
+                model = SentenceTransformer("all-MiniLM-L6-v2")
                 # Generate embedding from content
-                embedding = model.encode(content[:500]).tolist()  # Use first 500 chars for embedding
+                embedding = model.encode(
+                    content[:500]
+                ).tolist()  # Use first 500 chars for embedding
             except ImportError:
                 self.logger.warning("sentence_transformers not installed. Embeddings disabled.")
             except Exception as e:

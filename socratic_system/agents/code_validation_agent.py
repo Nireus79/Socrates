@@ -230,7 +230,9 @@ class CodeValidationAgent(Agent):
                 "message": f"Dependency check failed: {str(e)}",
             }
 
-    def _generate_summary(self, syntax_result: Dict, dependency_result: Dict, test_result: Dict) -> Dict:
+    def _generate_summary(
+        self, syntax_result: Dict, dependency_result: Dict, test_result: Dict
+    ) -> Dict:
         """
         Generate validation summary from results
 
@@ -288,9 +290,7 @@ class CodeValidationAgent(Agent):
             "syntax_valid": syntax_valid,
             "dependencies_valid": dependencies_valid,
             "tests_status": tests_status,
-            "details": self._format_summary_details(
-                syntax_result, dependency_result, test_result
-            ),
+            "details": self._format_summary_details(syntax_result, dependency_result, test_result),
         }
 
     def _generate_recommendations(
@@ -377,8 +377,6 @@ class CodeValidationAgent(Agent):
                 passed = test_result.get("tests_passed", 0)
                 failed = test_result.get("tests_failed", 0)
                 skipped = test_result.get("tests_skipped", 0)
-                details.append(
-                    f"Tests: {passed} passed, {failed} failed, {skipped} skipped"
-                )
+                details.append(f"Tests: {passed} passed, {failed} failed, {skipped} skipped")
 
         return "; ".join(details) if details else "No validation details available"

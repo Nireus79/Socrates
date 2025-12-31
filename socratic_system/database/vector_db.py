@@ -57,7 +57,9 @@ class VectorDatabase:
 
         # Lazy-load embedding model on first use (saves 1-3 seconds at startup)
         self._embedding_model_instance = None
-        self.logger.info("Vector database initialized successfully (embedding model will load on first use)")
+        self.logger.info(
+            "Vector database initialized successfully (embedding model will load on first use)"
+        )
 
         # Initialize caches for Phase 3 optimization
         self.embedding_cache = EmbeddingCache(max_size=10000)
@@ -75,7 +77,9 @@ class VectorDatabase:
                 self._embedding_model_instance = SentenceTransformer(self.embedding_model_name)
                 self.logger.info("Embedding model loaded successfully")
             except Exception as e:
-                self.logger.error(f"Failed to load embedding model {self.embedding_model_name}: {e}")
+                self.logger.error(
+                    f"Failed to load embedding model {self.embedding_model_name}: {e}"
+                )
                 raise RuntimeError(
                     f"Failed to load embedding model '{self.embedding_model_name}'. "
                     f"This may be due to network issues or missing model. Error: {e}"
@@ -276,7 +280,7 @@ class VectorDatabase:
         query: str,
         strategy: str = "snippet",
         top_k: int = 5,
-        project_id: Optional[str] = None
+        project_id: Optional[str] = None,
     ) -> List[Dict]:
         """
         Enhanced search with adaptive content loading.
@@ -329,13 +333,15 @@ class VectorDatabase:
                 # Generate summary for the full content
                 summary = self._generate_chunk_summary(full_content)
 
-                enhanced_results.append({
-                    "content": content,
-                    "full_content": full_content,
-                    "metadata": result["metadata"],
-                    "score": result["score"],
-                    "summary": summary
-                })
+                enhanced_results.append(
+                    {
+                        "content": content,
+                        "full_content": full_content,
+                        "metadata": result["metadata"],
+                        "score": result["score"],
+                        "summary": summary,
+                    }
+                )
 
             self.logger.debug(
                 f"Adaptive search completed with strategy '{strategy}': "
@@ -571,7 +577,7 @@ class VectorDatabase:
         import re
 
         # Split by sentence boundaries (., !, ?, followed by space and capital letter)
-        sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', chunk)
+        sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z])", chunk)
 
         summary_parts = []
         current_length = 0
@@ -592,7 +598,7 @@ class VectorDatabase:
         if summary_parts:
             summary = " ".join(summary_parts)
             # Ensure it ends with punctuation
-            if not summary.endswith(('.', '!', '?')):
+            if not summary.endswith((".", "!", "?")):
                 summary += "..."
             return summary
         else:
@@ -643,7 +649,7 @@ class VectorDatabase:
     def _close_chromadb_client(self) -> None:
         """Close ChromaDB client reference for garbage collection"""
         try:
-            if hasattr(self, 'client') and self.client is not None:
+            if hasattr(self, "client") and self.client is not None:
                 self.client = None
                 self._safe_log("debug", "Closed ChromaDB client reference")
         except Exception as e:
@@ -652,9 +658,9 @@ class VectorDatabase:
     def _clear_caches(self) -> None:
         """Clear embedding and search caches"""
         try:
-            if hasattr(self, 'embedding_cache'):
+            if hasattr(self, "embedding_cache"):
                 self.embedding_cache.clear()
-            if hasattr(self, 'search_cache'):
+            if hasattr(self, "search_cache"):
                 self.search_cache.clear()
             self._safe_log("debug", "Cleared embedding and search caches")
         except Exception as e:
@@ -673,7 +679,7 @@ class VectorDatabase:
         import sys
         import time
 
-        if sys.platform == 'win32':
+        if sys.platform == "win32":
             try:
                 time.sleep(0.1)  # 100ms delay for Windows file handle release
             except Exception:

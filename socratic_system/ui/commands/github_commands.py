@@ -236,9 +236,7 @@ class GithubPullCommand(BaseCommand):
 
             current_files = self._read_cloned_files(temp_path)
             file_manager = ProjectFileManager(orchestrator.database.db_path)
-            stored_files = file_manager.get_project_files(
-                project.project_id, limit=1000
-            )
+            stored_files = file_manager.get_project_files(project.project_id, limit=1000)
 
             tracker = FileChangeTracker()
             sync_result = tracker.sync_changes(
@@ -481,9 +479,7 @@ class GithubPushCommand(BaseCommand):
         if len(args) > 0:
             return " ".join(args)
 
-        commit_message = input(
-            f"{Fore.WHITE}Commit message (or press Enter for default): "
-        ).strip()
+        commit_message = input(f"{Fore.WHITE}Commit message (or press Enter for default): ").strip()
         return commit_message if commit_message else f"Updates from Socratic RAG - {project.name}"
 
     def _clone_push_repo(self, git_manager: Any, repo_url: str) -> Any:

@@ -246,6 +246,7 @@ class ProjectManagerAgent(Agent):
         user = self.orchestrator.database.load_user(owner)
         if user is None:
             from socratic_system.models.user import User
+
             user = User(
                 username=owner,
                 email=self._generate_auto_user_email(owner),
@@ -281,7 +282,13 @@ class ProjectManagerAgent(Agent):
         )
 
     def _create_project_context(
-        self, github_url: str, name: str, owner: str, repo_owner: str, repo_name: str, metadata: Dict
+        self,
+        github_url: str,
+        name: str,
+        owner: str,
+        repo_owner: str,
+        repo_name: str,
+        metadata: Dict,
     ):
         """Create ProjectContext object with repository metadata"""
         project_id = str(uuid.uuid4())
@@ -479,14 +486,20 @@ class ProjectManagerAgent(Agent):
         # Convert ProjectContext objects to dictionaries for JSON serialization
         projects_dict = []
         for project in projects:
-            projects_dict.append({
-                "project_id": project.project_id,
-                "name": project.name,
-                "owner": project.owner,
-                "phase": project.phase,
-                "status": project.status,
-                "updated_at": project.updated_at.isoformat() if hasattr(project.updated_at, 'isoformat') else str(project.updated_at),
-            })
+            projects_dict.append(
+                {
+                    "project_id": project.project_id,
+                    "name": project.name,
+                    "owner": project.owner,
+                    "phase": project.phase,
+                    "status": project.status,
+                    "updated_at": (
+                        project.updated_at.isoformat()
+                        if hasattr(project.updated_at, "isoformat")
+                        else str(project.updated_at)
+                    ),
+                }
+            )
 
         return {"status": "success", "projects": projects_dict}
 

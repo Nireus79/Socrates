@@ -90,9 +90,7 @@ class MultiFileCodeSplitter:
 
         return categorized
 
-    def _categorize_and_add_class(
-        self, node: ast.ClassDef, categorized: Dict[str, list]
-    ) -> None:
+    def _categorize_and_add_class(self, node: ast.ClassDef, categorized: Dict[str, list]) -> None:
         """Categorize and add class definition to appropriate category"""
         class_code = ast.unparse(node)
         category = self._categorize_class(node.name)
@@ -121,9 +119,7 @@ class MultiFileCodeSplitter:
         else:
             categorized["utils"].append(func_code)
 
-    def _categorize_and_add_other(
-        self, node: ast.stmt, categorized: Dict[str, list]
-    ) -> None:
+    def _categorize_and_add_other(self, node: ast.stmt, categorized: Dict[str, list]) -> None:
         """Categorize and add other statements to appropriate category"""
         other_code = ast.unparse(node)
 
@@ -134,40 +130,28 @@ class MultiFileCodeSplitter:
         else:
             categorized["utils"].append(other_code)
 
-    def _build_organized_files(
-        self, categorized: Dict[str, list], imports: str
-    ) -> None:
+    def _build_organized_files(self, categorized: Dict[str, list], imports: str) -> None:
         """Build organized files from categorized code"""
         self.files = {}
 
         if categorized["models"]:
-            self.files["src/models.py"] = imports + "\n\n" + "\n\n".join(
-                categorized["models"]
-            )
+            self.files["src/models.py"] = imports + "\n\n" + "\n\n".join(categorized["models"])
 
         if categorized["controllers"]:
             self.files["src/controllers.py"] = (
-                imports
-                + "\nfrom .models import *\n\n"
-                + "\n\n".join(categorized["controllers"])
+                imports + "\nfrom .models import *\n\n" + "\n\n".join(categorized["controllers"])
             )
 
         if categorized["services"]:
             self.files["src/services.py"] = (
-                imports
-                + "\nfrom .models import *\n\n"
-                + "\n\n".join(categorized["services"])
+                imports + "\nfrom .models import *\n\n" + "\n\n".join(categorized["services"])
             )
 
         if categorized["utils"]:
-            self.files["src/utils.py"] = imports + "\n\n" + "\n\n".join(
-                categorized["utils"]
-            )
+            self.files["src/utils.py"] = imports + "\n\n" + "\n\n".join(categorized["utils"])
 
         if categorized["config"]:
-            self.files["config/settings.py"] = imports + "\n\n" + "\n\n".join(
-                categorized["config"]
-            )
+            self.files["config/settings.py"] = imports + "\n\n" + "\n\n".join(categorized["config"])
 
         if categorized["tests"]:
             self.files["tests/test_main.py"] = (
@@ -176,19 +160,11 @@ class MultiFileCodeSplitter:
 
         self._add_main_entry_point(categorized, imports)
 
-    def _add_main_entry_point(
-        self, categorized: Dict[str, list], imports: str
-    ) -> None:
+    def _add_main_entry_point(self, categorized: Dict[str, list], imports: str) -> None:
         """Add main entry point file"""
         if categorized["main"]:
-            self.files["main.py"] = imports + "\n\n" + "\n\n".join(
-                categorized["main"]
-            )
-        elif (
-            categorized["models"]
-            or categorized["services"]
-            or categorized["controllers"]
-        ):
+            self.files["main.py"] = imports + "\n\n" + "\n\n".join(categorized["main"])
+        elif categorized["models"] or categorized["services"] or categorized["controllers"]:
             self.files["main.py"] = self._create_main_entry_point()
 
     def _add_supporting_files(self, categorized: Dict[str, list]) -> None:
@@ -205,18 +181,11 @@ class MultiFileCodeSplitter:
         """Categorize class by name"""
         name_lower = class_name.lower()
 
-        if any(
-            keyword in name_lower for keyword in ["model", "entity", "schema", "dao"]
-        ):
+        if any(keyword in name_lower for keyword in ["model", "entity", "schema", "dao"]):
             return "model"
-        elif any(
-            keyword in name_lower
-            for keyword in ["controller", "handler", "router", "api"]
-        ):
+        elif any(keyword in name_lower for keyword in ["controller", "handler", "router", "api"]):
             return "controller"
-        elif any(
-            keyword in name_lower for keyword in ["service", "manager", "factory"]
-        ):
+        elif any(keyword in name_lower for keyword in ["service", "manager", "factory"]):
             return "service"
         elif any(
             keyword in name_lower
@@ -292,7 +261,7 @@ if __name__ == "__main__":
 
     def _create_readme(self) -> str:
         """Create README.md file"""
-        return '''# Project
+        return """# Project
 
 ## Overview
 
@@ -344,7 +313,7 @@ Generated project structure with organized code files.
 ## Contributing
 
 Contributions are welcome!
-'''
+"""
 
 
 class ProjectStructureGenerator:
@@ -381,7 +350,9 @@ class ProjectStructureGenerator:
             complete_structure["README.md"] = f"# {project_name}\n\nProject description.\n"
 
         if "main.py" not in complete_structure and "src/__init__.py" in complete_structure:
-            complete_structure["main.py"] = '''"""Entry point"""
+            complete_structure[
+                "main.py"
+            ] = '''"""Entry point"""
 
 if __name__ == "__main__":
     print("Starting application...")
@@ -389,7 +360,9 @@ if __name__ == "__main__":
 
         # Add .gitignore if not present
         if ".gitignore" not in complete_structure:
-            complete_structure[".gitignore"] = """# Python
+            complete_structure[
+                ".gitignore"
+            ] = """# Python
 __pycache__/
 *.py[cod]
 *$py.class

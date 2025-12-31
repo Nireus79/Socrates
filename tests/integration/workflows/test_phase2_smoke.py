@@ -19,22 +19,22 @@ TEST_USER_2 = "testuser2"
 TEST_PROJECT_ID = "test_project_id"
 
 # Create valid JWT tokens
-VALID_TOKEN = JWTHandler.create_access_token(
-    subject=TEST_USER,
-    expires_delta=timedelta(hours=1)
-)
+VALID_TOKEN = JWTHandler.create_access_token(subject=TEST_USER, expires_delta=timedelta(hours=1))
+
 
 # Fixtures
 @pytest.fixture(scope="module")
 def client():
     """Create test client."""
     from socrates_api.main import app
+
     return TestClient(app)
 
 
 # ============================================================================
 # ENDPOINT EXISTENCE TESTS
 # ============================================================================
+
 
 def test_app_loads(client):
     """Verify the FastAPI app loads successfully."""
@@ -50,7 +50,7 @@ def test_collaboration_invitations_endpoint_exists(client):
     response = client.post(
         f"/projects/{TEST_PROJECT_ID}/invitations",
         json={"email": "user@example.com", "role": "editor"},
-        headers=headers
+        headers=headers,
     )
 
     # Route should exist (status != 404 for missing route)
@@ -62,10 +62,7 @@ def test_collaboration_invitations_list_endpoint_exists(client):
     """Verify GET /projects/{project_id}/invitations exists."""
     headers = {"Authorization": f"Bearer {VALID_TOKEN}"}
 
-    response = client.get(
-        f"/projects/{TEST_PROJECT_ID}/invitations",
-        headers=headers
-    )
+    response = client.get(f"/projects/{TEST_PROJECT_ID}/invitations", headers=headers)
 
     assert response.status_code in [404, 403], f"Got {response.status_code}"
     print("✓ GET /projects/{project_id}/invitations exists")
@@ -78,7 +75,7 @@ def test_collaboration_activities_record_endpoint_exists(client):
     response = client.post(
         f"/projects/{TEST_PROJECT_ID}/activities",
         json={"activity_type": "message_sent", "activity_data": {}},
-        headers=headers
+        headers=headers,
     )
 
     # Should return 404 or 403, not route not found
@@ -91,8 +88,7 @@ def test_collaboration_activities_list_endpoint_exists(client):
     headers = {"Authorization": f"Bearer {VALID_TOKEN}"}
 
     response = client.get(
-        f"/projects/{TEST_PROJECT_ID}/activities?limit=10&offset=0",
-        headers=headers
+        f"/projects/{TEST_PROJECT_ID}/activities?limit=10&offset=0", headers=headers
     )
 
     assert response.status_code in [404, 403], f"Got {response.status_code}"
@@ -103,10 +99,7 @@ def test_collaboration_presence_endpoint_exists(client):
     """Verify GET /projects/{project_id}/presence exists."""
     headers = {"Authorization": f"Bearer {VALID_TOKEN}"}
 
-    response = client.get(
-        f"/projects/{TEST_PROJECT_ID}/presence",
-        headers=headers
-    )
+    response = client.get(f"/projects/{TEST_PROJECT_ID}/presence", headers=headers)
 
     assert response.status_code in [404, 403], f"Got {response.status_code}"
     print("✓ GET /projects/{project_id}/presence exists")
@@ -116,13 +109,14 @@ def test_collaboration_presence_endpoint_exists(client):
 # KNOWLEDGE BASE ENDPOINT TESTS
 # ============================================================================
 
+
 def test_knowledge_list_documents_with_filters_endpoint_exists(client):
     """Verify GET /knowledge/documents with filters exists."""
     headers = {"Authorization": f"Bearer {VALID_TOKEN}"}
 
     response = client.get(
         "/knowledge/documents?document_type=text&sort_by=uploaded_at&sort_order=desc&limit=10&offset=0",
-        headers=headers
+        headers=headers,
     )
 
     # Should work and return data or empty results
@@ -138,10 +132,7 @@ def test_knowledge_get_document_details_endpoint_exists(client):
     """Verify GET /knowledge/documents/{doc_id} exists."""
     headers = {"Authorization": f"Bearer {VALID_TOKEN}"}
 
-    response = client.get(
-        "/knowledge/documents/nonexistent_doc",
-        headers=headers
-    )
+    response = client.get("/knowledge/documents/nonexistent_doc", headers=headers)
 
     # Should return 404 for non-existent doc, not route not found
     assert response.status_code in [404, 400], f"Got {response.status_code}"
@@ -153,13 +144,16 @@ def test_knowledge_bulk_delete_endpoint_exists(client):
     headers = {"Authorization": f"Bearer {VALID_TOKEN}"}
 
     response = client.post(
-        "/knowledge/documents/bulk-delete",
-        json={"document_ids": ["doc1", "doc2"]},
-        headers=headers
+        "/knowledge/documents/bulk-delete", json={"document_ids": ["doc1", "doc2"]}, headers=headers
     )
 
     # Should not be 404 for missing route
-    assert response.status_code in [200, 201, 400, 422], f"Got {response.status_code}: {response.text}"
+    assert response.status_code in [
+        200,
+        201,
+        400,
+        422,
+    ], f"Got {response.status_code}: {response.text}"
     print(f"✓ POST /knowledge/documents/bulk-delete exists (status: {response.status_code})")
 
 
@@ -172,11 +166,7 @@ def test_knowledge_bulk_import_endpoint_exists(client):
         ("files", ("test.txt", b"Test content", "text/plain")),
     ]
 
-    response = client.post(
-        "/knowledge/documents/bulk-import",
-        files=files,
-        headers=headers
-    )
+    response = client.post("/knowledge/documents/bulk-import", files=files, headers=headers)
 
     # Should handle the request (not 404 for route)
     assert response.status_code in [200, 201, 400, 422, 500], f"Got {response.status_code}"
@@ -187,10 +177,7 @@ def test_knowledge_document_analytics_endpoint_exists(client):
     """Verify GET /knowledge/documents/{doc_id}/analytics exists."""
     headers = {"Authorization": f"Bearer {VALID_TOKEN}"}
 
-    response = client.get(
-        "/knowledge/documents/nonexistent_doc/analytics",
-        headers=headers
-    )
+    response = client.get("/knowledge/documents/nonexistent_doc/analytics", headers=headers)
 
     # Should return 404, not route not found
     assert response.status_code in [404, 400], f"Got {response.status_code}"
@@ -200,6 +187,7 @@ def test_knowledge_document_analytics_endpoint_exists(client):
 # ============================================================================
 # AUTHENTICATION TESTS
 # ============================================================================
+
 
 def test_missing_auth_returns_401(client):
     """Verify endpoints require authentication."""
@@ -211,10 +199,7 @@ def test_missing_auth_returns_401(client):
 def test_invalid_token_returns_401(client):
     """Verify invalid tokens are rejected."""
     headers = {"Authorization": "Bearer invalid_token"}
-    response = client.get(
-        "/knowledge/documents",
-        headers=headers
-    )
+    response = client.get("/knowledge/documents", headers=headers)
     assert response.status_code == 401
     print("✓ Invalid token returns 401")
 
@@ -222,10 +207,7 @@ def test_invalid_token_returns_401(client):
 def test_valid_token_accepted(client):
     """Verify valid tokens are accepted."""
     headers = {"Authorization": f"Bearer {VALID_TOKEN}"}
-    response = client.get(
-        "/knowledge/documents",
-        headers=headers
-    )
+    response = client.get("/knowledge/documents", headers=headers)
     # Should not be 401 (should be 200 or some other valid response)
     assert response.status_code != 401, f"Valid token rejected with {response.status_code}"
     print(f"✓ Valid token accepted (status: {response.status_code})")
@@ -235,12 +217,11 @@ def test_valid_token_accepted(client):
 # WEBSOCKET ENDPOINT TEST
 # ============================================================================
 
+
 def test_websocket_endpoint_exists(client):
     """Verify WebSocket collaboration endpoint exists."""
     try:
-        with client.websocket_connect(
-            f"/ws/collaboration/{TEST_PROJECT_ID}?token={VALID_TOKEN}"
-        ):
+        with client.websocket_connect(f"/ws/collaboration/{TEST_PROJECT_ID}?token={VALID_TOKEN}"):
             # If we get here, websocket is connected
             print("✓ WebSocket /ws/collaboration/{project_id} exists and accepts connections")
     except Exception as e:

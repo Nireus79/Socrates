@@ -43,7 +43,9 @@ class SocratesConfig:
 
     # API Configuration
     api_key: str
-    subscription_token: Optional[str] = None  # Alternative: use Claude subscription instead of API key
+    subscription_token: Optional[str] = (
+        None  # Alternative: use Claude subscription instead of API key
+    )
 
     # Model Configuration
     claude_model: str = "claude-haiku-4-5-20251001"

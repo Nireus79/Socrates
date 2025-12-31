@@ -321,8 +321,7 @@ class TestSlowestQueriesEndpoint:
             if len(data["queries"]) > 1:
                 for i in range(len(data["queries"]) - 1):
                     assert (
-                        data["queries"][i]["avg_time_ms"]
-                        >= data["queries"][i + 1]["avg_time_ms"]
+                        data["queries"][i]["avg_time_ms"] >= data["queries"][i + 1]["avg_time_ms"]
                     )
 
 

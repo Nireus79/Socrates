@@ -34,9 +34,9 @@ class TestCodeGeneration:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         access_token = reg_resp.json()["access_token"]
         auth_headers = {**HEADERS, "Authorization": f"Bearer {access_token}"}
@@ -46,8 +46,9 @@ class TestCodeGeneration:
             f"{BASE_URL}/projects",
             json={
                 "name": "Code Generation Test Project",
-                "description": "Test project for code generation"},
-            headers=auth_headers
+                "description": "Test project for code generation",
+            },
+            headers=auth_headers,
         )
         project_id = proj_resp.json()["project_id"]
 
@@ -55,7 +56,7 @@ class TestCodeGeneration:
             "username": username,
             "access_token": access_token,
             "project_id": project_id,
-            "auth_headers": auth_headers
+            "auth_headers": auth_headers,
         }
 
     def test_01_generate_code_from_spec(self, user_with_project):
@@ -68,9 +69,9 @@ class TestCodeGeneration:
             json={
                 "specification": "Create a function that calculates the factorial of a number",
                 "language": "python",
-                "complexity": "beginner"
+                "complexity": "beginner",
             },
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         # Check if endpoint exists
@@ -96,11 +97,8 @@ class TestCodeGeneration:
         for language in languages:
             response = requests.post(
                 f"{BASE_URL}/projects/{project_id}/code_generation",
-                json={
-                    "specification": "Create a hello world function",
-                    "language": language
-                },
-                headers=auth_headers
+                json={"specification": "Create a hello world function", "language": language},
+                headers=auth_headers,
             )
 
             if response.status_code == 200:
@@ -122,11 +120,8 @@ def add(a, b):
 
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/code_improvement",
-            json={
-                "code": bad_code,
-                "language": "python"
-            },
-            headers=auth_headers
+            json={"code": bad_code, "language": "python"},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -149,11 +144,8 @@ def fibonacci(n):
 
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/code_explanation",
-            json={
-                "code": code,
-                "language": "python"
-            },
-            headers=auth_headers
+            json={"code": code, "language": "python"},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -174,12 +166,8 @@ def add(a, b):
 
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/generate_tests",
-            json={
-                "code": code,
-                "language": "python",
-                "test_framework": "pytest"
-            },
-            headers=auth_headers
+            json={"code": code, "language": "python", "test_framework": "pytest"},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -202,12 +190,8 @@ def calculate_average(numbers):
 
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/generate_documentation",
-            json={
-                "code": code,
-                "language": "python",
-                "doc_format": "docstring"
-            },
-            headers=auth_headers
+            json={"code": code, "language": "python", "doc_format": "docstring"},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -230,12 +214,8 @@ if x is not None:
 
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/refactor_code",
-            json={
-                "code": code,
-                "language": "python",
-                "focus": "best_practices"
-            },
-            headers=auth_headers
+            json={"code": code, "language": "python", "focus": "best_practices"},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -253,9 +233,9 @@ if x is not None:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         access_token = reg_resp.json()["access_token"]
         auth_headers = {**HEADERS, "Authorization": f"Bearer {access_token}"}
@@ -264,18 +244,15 @@ if x is not None:
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Free Project", "description": "Test"},
-            headers=auth_headers
+            headers=auth_headers,
         )
         project_id = proj_resp.json()["project_id"]
 
         # Try to generate code
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/code_generation",
-            json={
-                "specification": "Write hello world",
-                "language": "python"
-            },
-            headers=auth_headers
+            json={"specification": "Write hello world", "language": "python"},
+            headers=auth_headers,
         )
 
         # Free tier should be blocked
@@ -296,9 +273,9 @@ if x is not None:
                 json={
                     "specification": "Write a sorting algorithm",
                     "language": "python",
-                    "complexity": complexity
+                    "complexity": complexity,
                 },
-                headers=auth_headers
+                headers=auth_headers,
             )
 
             if response.status_code == 200:
@@ -312,11 +289,8 @@ if x is not None:
 
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/code_generation",
-            json={
-                "specification": "Create a class for managing users",
-                "language": "python"
-            },
-            headers=auth_headers
+            json={"specification": "Create a class for managing users", "language": "python"},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:

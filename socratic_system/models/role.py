@@ -22,7 +22,9 @@ class TeamMemberRole:
     """
 
     username: str
-    role: str  # Universal roles: "lead", "creator", "specialist", "analyst", "coordinator", "tester"
+    role: (
+        str  # Universal roles: "lead", "creator", "specialist", "analyst", "coordinator", "tester"
+    )
     skills: List[str]  # Domain-specific skills (e.g., "python", "ui-design", "copywriting")
     joined_at: datetime
 

@@ -19,6 +19,7 @@ import requests
 
 BASE_URL = "http://localhost:8000"
 
+
 class E2ETestSuite:
     def __init__(self):
         self.passed = 0
@@ -36,14 +37,19 @@ class E2ETestSuite:
         timestamp = datetime.now().strftime("%H:%M:%S")
         print(f"[{timestamp}] {level:8} {message}")
 
-    def assert_status(self, response: requests.Response, expected_status: int, test_name: str) -> bool:
+    def assert_status(
+        self, response: requests.Response, expected_status: int, test_name: str
+    ) -> bool:
         """Assert HTTP status code"""
         if response.status_code == expected_status:
             self.log(f"[PASS] {test_name}: {response.status_code}", "PASS")
             self.passed += 1
             return True
         else:
-            self.log(f"[FAIL] {test_name}: Expected {expected_status}, got {response.status_code}", "FAIL")
+            self.log(
+                f"[FAIL] {test_name}: Expected {expected_status}, got {response.status_code}",
+                "FAIL",
+            )
             if response.text:
                 self.log(f"  Response: {response.text[:200]}", "DEBUG")
             self.failed += 1
@@ -68,7 +74,7 @@ class E2ETestSuite:
 
         response = self.session.post(
             f"{BASE_URL}/auth/register",
-            json={"username": self.test_user, "password": self.test_password}
+            json={"username": self.test_user, "password": self.test_password},
         )
 
         if self.assert_status(response, 201, "User Registration"):
@@ -84,7 +90,7 @@ class E2ETestSuite:
         """Test user login"""
         response = self.session.post(
             f"{BASE_URL}/auth/login",
-            json={"username": self.test_user, "password": self.test_password}
+            json={"username": self.test_user, "password": self.test_password},
         )
 
         if self.assert_status(response, 200, "User Login"):
@@ -117,8 +123,7 @@ class E2ETestSuite:
     def test_auth_refresh_token(self) -> bool:
         """Test token refresh"""
         response = self.session.post(
-            f"{BASE_URL}/auth/refresh",
-            json={"refresh_token": self.refresh_token}
+            f"{BASE_URL}/auth/refresh", json={"refresh_token": self.refresh_token}
         )
 
         if self.assert_status(response, 200, "Refresh Access Token"):
@@ -134,21 +139,19 @@ class E2ETestSuite:
         payload = {
             "name": f"E2E Test Project {int(time.time())}",
             "owner": self.test_user,
-            "description": "Created during E2E testing"
+            "description": "Created during E2E testing",
         }
 
-        response = self.session.post(
-            f"{BASE_URL}/projects",
-            json=payload,
-            headers=headers
-        )
+        response = self.session.post(f"{BASE_URL}/projects", json=payload, headers=headers)
 
         if response.status_code in [200, 201]:
             self.log(f"[PASS] Project Creation: {response.status_code}", "PASS")
             data = response.json()
             # Handle different response formats
             if isinstance(data, dict):
-                self.project_id = data.get("project_id") or (data.get("project", {}).get("project_id") if data.get("project") else None)
+                self.project_id = data.get("project_id") or (
+                    data.get("project", {}).get("project_id") if data.get("project") else None
+                )
             if self.project_id:
                 self.log(f"  Project ID: {self.project_id}", "DEBUG")
                 self.passed += 1
@@ -157,7 +160,9 @@ class E2ETestSuite:
                 self.log("  Could not extract project_id from response", "WARN")
                 return False
         else:
-            self.log(f"[FAIL] Project Creation: Expected 200/201, got {response.status_code}", "FAIL")
+            self.log(
+                f"[FAIL] Project Creation: Expected 200/201, got {response.status_code}", "FAIL"
+            )
             if response.text:
                 self.log(f"  Response: {response.text[:200]}", "DEBUG")
             self.failed += 1
@@ -182,10 +187,7 @@ class E2ETestSuite:
             return False
 
         headers = {"Authorization": f"Bearer {self.access_token}"}
-        response = self.session.get(
-            f"{BASE_URL}/projects/{self.project_id}",
-            headers=headers
-        )
+        response = self.session.get(f"{BASE_URL}/projects/{self.project_id}", headers=headers)
 
         if self.assert_status(response, 200, "Get Project Details"):
             data = response.json()
@@ -202,9 +204,7 @@ class E2ETestSuite:
         headers = {"Authorization": f"Bearer {self.access_token}"}
         payload = {"name": f"Updated Project {int(time.time())}"}
         response = self.session.put(
-            f"{BASE_URL}/projects/{self.project_id}",
-            json=payload,
-            headers=headers
+            f"{BASE_URL}/projects/{self.project_id}", json=payload, headers=headers
         )
 
         if self.assert_status(response, 200, "Update Project"):
@@ -218,10 +218,7 @@ class E2ETestSuite:
             return False
 
         headers = {"Authorization": f"Bearer {self.access_token}"}
-        response = self.session.get(
-            f"{BASE_URL}/projects/{self.project_id}/stats",
-            headers=headers
-        )
+        response = self.session.get(f"{BASE_URL}/projects/{self.project_id}/stats", headers=headers)
 
         if self.assert_status(response, 200, "Get Project Stats"):
             data = response.json()
@@ -237,8 +234,7 @@ class E2ETestSuite:
 
         headers = {"Authorization": f"Bearer {self.access_token}"}
         response = self.session.get(
-            f"{BASE_URL}/projects/{self.project_id}/maturity",
-            headers=headers
+            f"{BASE_URL}/projects/{self.project_id}/maturity", headers=headers
         )
 
         if self.assert_status(response, 200, "Get Project Maturity"):
@@ -255,8 +251,7 @@ class E2ETestSuite:
 
         headers = {"Authorization": f"Bearer {self.access_token}"}
         response = self.session.get(
-            f"{BASE_URL}/projects/{self.project_id}/analytics",
-            headers=headers
+            f"{BASE_URL}/projects/{self.project_id}/analytics", headers=headers
         )
 
         if self.assert_status(response, 200, "Get Project Analytics"):
@@ -273,8 +268,7 @@ class E2ETestSuite:
 
         headers = {"Authorization": f"Bearer {self.access_token}"}
         response = self.session.put(
-            f"{BASE_URL}/projects/{self.project_id}/phase?new_phase=analysis",
-            headers=headers
+            f"{BASE_URL}/projects/{self.project_id}/phase?new_phase=analysis", headers=headers
         )
 
         if self.assert_status(response, 200, "Advance Project Phase"):
@@ -292,7 +286,7 @@ class E2ETestSuite:
         headers = {"Authorization": f"Bearer {self.access_token}"}
         response = self.session.post(
             f"{BASE_URL}/projects/{self.project_id}/chat/message?message=Test%20message&mode=socratic",
-            headers=headers
+            headers=headers,
         )
 
         if response.status_code in [200, 201]:
@@ -312,8 +306,7 @@ class E2ETestSuite:
 
         headers = {"Authorization": f"Bearer {self.access_token}"}
         response = self.session.get(
-            f"{BASE_URL}/projects/{self.project_id}/chat/history",
-            headers=headers
+            f"{BASE_URL}/projects/{self.project_id}/chat/history", headers=headers
         )
 
         if self.assert_status(response, 200, "Get Chat History"):
@@ -330,8 +323,7 @@ class E2ETestSuite:
 
         headers = {"Authorization": f"Bearer {self.access_token}"}
         response = self.session.put(
-            f"{BASE_URL}/projects/{self.project_id}/chat/mode?mode=direct",
-            headers=headers
+            f"{BASE_URL}/projects/{self.project_id}/chat/mode?mode=direct", headers=headers
         )
 
         if self.assert_status(response, 200, "Switch Chat Mode"):
@@ -347,7 +339,7 @@ class E2ETestSuite:
         headers = {"Authorization": f"Bearer {self.access_token}"}
         response = self.session.post(
             f"{BASE_URL}/projects/{self.project_id}/code/generate?language=python&specification=Add%20two%20numbers",
-            headers=headers
+            headers=headers,
         )
 
         if response.status_code in [200, 201]:
@@ -368,7 +360,7 @@ class E2ETestSuite:
         headers = {"Authorization": f"Bearer {self.access_token}"}
         response = self.session.post(
             f"{BASE_URL}/projects/{self.project_id}/code/validate?language=python&code=def%20add(a,b):%20return%20a+b",
-            headers=headers
+            headers=headers,
         )
 
         if response.status_code in [200, 201]:
@@ -389,7 +381,7 @@ class E2ETestSuite:
         headers = {"Authorization": f"Bearer {self.access_token}"}
         response = self.session.post(
             f"{BASE_URL}/projects/{self.project_id}/collaborators?username=collaborator_test&role=editor",
-            headers=headers
+            headers=headers,
         )
 
         if response.status_code in [200, 201]:
@@ -409,8 +401,7 @@ class E2ETestSuite:
 
         headers = {"Authorization": f"Bearer {self.access_token}"}
         response = self.session.get(
-            f"{BASE_URL}/projects/{self.project_id}/collaborators",
-            headers=headers
+            f"{BASE_URL}/projects/{self.project_id}/collaborators", headers=headers
         )
 
         if self.assert_status(response, 200, "List Collaborators"):
@@ -428,9 +419,9 @@ class E2ETestSuite:
 
     def run_all_tests(self):
         """Run complete E2E test suite"""
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("END-TO-END COMPREHENSIVE TEST SUITE")
-        print("="*80 + "\n")
+        print("=" * 80 + "\n")
 
         # Initialize API
         self.log("Initializing API...", "INIT")
@@ -488,22 +479,24 @@ class E2ETestSuite:
         total = self.passed + self.failed
         percentage = (self.passed / total * 100) if total > 0 else 0
 
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("TEST SUMMARY")
-        print("="*80)
+        print("=" * 80)
         print(f"Total Tests: {total}")
         print(f"Passed: {self.passed} ({percentage:.1f}%)")
         print(f"Failed: {self.failed}")
-        print("="*80 + "\n")
+        print("=" * 80 + "\n")
 
         if self.failed == 0:
             print("SUCCESS: All E2E tests passed!")
         else:
             print(f"WARNING: {self.failed} test(s) failed")
 
+
 def main():
     suite = E2ETestSuite()
     suite.run_all_tests()
+
 
 if __name__ == "__main__":
     main()

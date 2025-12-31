@@ -155,6 +155,7 @@ class TestContentSecurityPolicy:
             return {"ok": True}
 
         import os
+
         os.environ["ENVIRONMENT"] = "production"
         app.add_middleware(SecurityHeadersMiddleware)
         return app
@@ -169,6 +170,7 @@ class TestContentSecurityPolicy:
             return {"ok": True}
 
         import os
+
         os.environ["ENVIRONMENT"] = "development"
         app.add_middleware(SecurityHeadersMiddleware)
         return app
@@ -276,7 +278,7 @@ class TestReferrerPolicy:
             "no-referrer",
             "strict-origin-when-cross-origin",
             "same-origin",
-            "strict-origin"
+            "strict-origin",
         ]
 
 

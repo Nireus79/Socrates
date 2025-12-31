@@ -183,7 +183,9 @@ class SyntaxValidator:
 
         except Exception as e:
             logger.error(f"Error validating directory: {e}")
-            all_issues.append({"message": f"Error scanning directory: {str(e)}", "severity": "error"})
+            all_issues.append(
+                {"message": f"Error scanning directory: {str(e)}", "severity": "error"}
+            )
 
         return {
             "valid": len(all_issues) == 0,

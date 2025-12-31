@@ -77,9 +77,13 @@ class DocumentProcessorAgent(Agent):
                     self._store_code_structure(file_name, code_structure, project_id)
 
                     # Prepend structure summary to content for better context
-                    structure_prefix = f"[Code Structure: {code_structure['structure_summary']}]\n\n"
+                    structure_prefix = (
+                        f"[Code Structure: {code_structure['structure_summary']}]\n\n"
+                    )
                     content = structure_prefix + content
-                    self.logger.info(f"Code structure parsed and stored: {code_structure['structure_summary']}")
+                    self.logger.info(
+                        f"Code structure parsed and stored: {code_structure['structure_summary']}"
+                    )
 
             # Chunk content into logical pieces
             chunks = self._chunk_content(content, chunk_size=500, overlap=50)
@@ -101,7 +105,11 @@ class DocumentProcessorAgent(Agent):
                         # Add type metadata for code files
                         if is_code:
                             metadata["type"] = "code"
-                            metadata["language"] = code_structure.get("language", "unknown") if code_structure else "unknown"
+                            metadata["language"] = (
+                                code_structure.get("language", "unknown")
+                                if code_structure
+                                else "unknown"
+                            )
 
                         self.orchestrator.vector_db.add_text(chunk, metadata=metadata)
                         entries_added += 1
@@ -325,14 +333,12 @@ class DocumentProcessorAgent(Agent):
             import urllib.request
 
             # Set a user agent to avoid being blocked
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
             req = urllib.request.Request(url, headers=headers)
 
             # Fetch the URL with timeout
             with urllib.request.urlopen(req, timeout=10) as response:
-                html_content = response.read().decode('utf-8', errors='ignore')
+                html_content = response.read().decode("utf-8", errors="ignore")
 
             # Extract text from HTML
             text_content = self._extract_text_from_html(html_content)
@@ -355,15 +361,15 @@ class DocumentProcessorAgent(Agent):
                 def __init__(self):
                     super().__init__()
                     self.text_parts = []
-                    self.skip_tags = {'script', 'style', 'nav', 'footer', 'header'}
+                    self.skip_tags = {"script", "style", "nav", "footer", "header"}
                     self.current_tag = None
 
                 def handle_starttag(self, tag, attrs):
                     self.current_tag = tag
 
                 def handle_endtag(self, tag):
-                    if tag in {'p', 'div', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'}:
-                        self.text_parts.append('\n')
+                    if tag in {"p", "div", "li", "h1", "h2", "h3", "h4", "h5", "h6"}:
+                        self.text_parts.append("\n")
                     self.current_tag = None
 
                 def handle_data(self, data):
@@ -376,15 +382,15 @@ class DocumentProcessorAgent(Agent):
             extractor.feed(html_content)
 
             # Clean up the extracted text
-            text = ' '.join(extractor.text_parts)
+            text = " ".join(extractor.text_parts)
             # Remove extra whitespace
-            text = re.sub(r'\s+', ' ', text)
+            text = re.sub(r"\s+", " ", text)
             return text
 
         except Exception as e:
             self.logger.warning(f"Error extracting text from HTML: {e}")
             # Fallback: just remove HTML tags
-            return re.sub(r'<[^>]+>', '', html_content)
+            return re.sub(r"<[^>]+>", "", html_content)
 
     def _list_documents(self, request: Dict) -> Dict:
         """List imported documents (from metadata)"""
@@ -518,7 +524,7 @@ class DocumentProcessorAgent(Agent):
                         "project_id": project_id,
                         "function_count": str(metrics.get("function_count", 0)),
                         "class_count": str(metrics.get("class_count", 0)),
-                    }
+                    },
                 )
                 self.logger.debug(f"Stored code structure for {file_name} in knowledge base")
                 return True

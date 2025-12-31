@@ -699,7 +699,22 @@ class ProjectAnalyzeCommand(BaseCommand):
         for suffix, lang in code_extensions.items():
             files = list(temp_path_obj.rglob(f"*{suffix}"))
             # Exclude common directories
-            files = [f for f in files if not any(skip in f.parts for skip in {".git", "node_modules", ".venv", "venv", "__pycache__", "build", "dist"})]
+            files = [
+                f
+                for f in files
+                if not any(
+                    skip in f.parts
+                    for skip in {
+                        ".git",
+                        "node_modules",
+                        ".venv",
+                        "venv",
+                        "__pycache__",
+                        "build",
+                        "dist",
+                    }
+                )
+            ]
 
             if files:
                 analysis["file_breakdown"][lang] = len(files)
@@ -708,7 +723,7 @@ class ProjectAnalyzeCommand(BaseCommand):
                 # Count lines
                 try:
                     for file in files[:50]:  # Sample first 50 files
-                        with open(file, encoding='utf-8', errors='ignore') as f:
+                        with open(file, encoding="utf-8", errors="ignore") as f:
                             analysis["total_lines"] += len(f.readlines())
                 except Exception:
                     pass
@@ -739,8 +754,8 @@ class ProjectAnalyzeCommand(BaseCommand):
         print(f"  Project: {analysis['project_name']}")
         repo_display = (
             f"{analysis['repository'][:50]}..."
-            if len(analysis['repository']) > 50
-            else analysis['repository']
+            if len(analysis["repository"]) > 50
+            else analysis["repository"]
         )
         print(f"  Repository: {repo_display}")
         print(f"  Language: {analysis['language']}")
@@ -754,7 +769,9 @@ class ProjectAnalyzeCommand(BaseCommand):
         # Display language breakdown
         if analysis["file_breakdown"]:
             print(f"\n{Fore.CYAN}Language Breakdown:{Style.RESET_ALL}")
-            for lang, count in sorted(analysis["file_breakdown"].items(), key=lambda x: x[1], reverse=True):
+            for lang, count in sorted(
+                analysis["file_breakdown"].items(), key=lambda x: x[1], reverse=True
+            ):
                 print(f"  {lang}: {count} files")
 
         # Display code quality
@@ -810,7 +827,9 @@ class ProjectTestCommand(BaseCommand):
                 test_result = self._run_project_tests(orchestrator, temp_path)
 
                 if test_result["status"] != "success":
-                    return self.error(f"Test execution failed: {test_result.get('message', 'Unknown error')}")
+                    return self.error(
+                        f"Test execution failed: {test_result.get('message', 'Unknown error')}"
+                    )
 
                 results = test_result.get("test_results", {})
                 self._display_test_results(results)
@@ -878,9 +897,9 @@ class ProjectTestCommand(BaseCommand):
 
         if results.get("tests_found"):
             print(f"  {Fore.GREEN}Passed: {results.get('tests_passed', 0)}{Style.RESET_ALL}")
-            if results.get('tests_failed', 0) > 0:
+            if results.get("tests_failed", 0) > 0:
                 print(f"  {Fore.RED}Failed: {results.get('tests_failed', 0)}{Style.RESET_ALL}")
-            if results.get('tests_skipped', 0) > 0:
+            if results.get("tests_skipped", 0) > 0:
                 print(f"  {Fore.YELLOW}Skipped: {results.get('tests_skipped', 0)}{Style.RESET_ALL}")
             print(f"  Duration: {results.get('duration_seconds', 0):.2f}s")
 
@@ -890,8 +909,8 @@ class ProjectTestCommand(BaseCommand):
                 print(f"\n{Fore.RED}Failures:{Style.RESET_ALL}")
                 for failure in failures[:5]:  # Show first 5
                     print(f"  • {failure.get('test', 'Unknown')}")
-                    if failure.get('message'):
-                        msg = failure['message'][:100]
+                    if failure.get("message"):
+                        msg = failure["message"][:100]
                         print(f"    {msg}...")
         else:
             print(f"  {Fore.YELLOW}No tests found in project{Style.RESET_ALL}")
@@ -1033,11 +1052,7 @@ class ProjectFixCommand(BaseCommand):
         """Display found issues"""
         print(f"\n{Fore.YELLOW}Issues Found:{Style.RESET_ALL}")
         for i, (itype, issue) in enumerate(issues, 1):
-            msg = (
-                issue.get("message", str(issue))
-                if isinstance(issue, dict)
-                else str(issue)
-            )
+            msg = issue.get("message", str(issue)) if isinstance(issue, dict) else str(issue)
             print(f"  {i}. [{itype.upper()}] {msg[:80]}")
 
     def _confirm_fixes(self) -> bool:
@@ -1060,11 +1075,7 @@ class ProjectFixCommand(BaseCommand):
 
     def _apply_dependency_fix(self, issue: Any, temp_path: str) -> int:
         """Apply fix for dependency issue"""
-        missing = (
-            issue.get("missing_modules", [])
-            if isinstance(issue, dict)
-            else []
-        )
+        missing = issue.get("missing_modules", []) if isinstance(issue, dict) else []
 
         if not missing:
             return 0
@@ -1095,8 +1106,7 @@ class ProjectFixCommand(BaseCommand):
         if fixes_applied > 0:
             print(f"\n{Fore.YELLOW}Note: Fixed files are in the cloned repository.")
             print(
-                f"Use /github push to commit and push changes back to GitHub."
-                f"{Style.RESET_ALL}"
+                f"Use /github push to commit and push changes back to GitHub." f"{Style.RESET_ALL}"
             )
 
 
@@ -1296,7 +1306,9 @@ class ProjectReviewCommand(BaseCommand):
 
         # Check if project has repository URL (GitHub imported)
         if not project.repository_url:
-            return self.error("Project is not linked to a GitHub repository. Cannot review projects without source code.")
+            return self.error(
+                "Project is not linked to a GitHub repository. Cannot review projects without source code."
+            )
 
         print(f"{Fore.YELLOW}Generating code review...{Style.RESET_ALL}")
 
@@ -1347,7 +1359,9 @@ Please provide a comprehensive code review covering:
 Format your response with clear sections."""
 
                 # Generate review
-                print(f"{Fore.CYAN}Generating Claude review (this may take a moment)...{Style.RESET_ALL}")
+                print(
+                    f"{Fore.CYAN}Generating Claude review (this may take a moment)...{Style.RESET_ALL}"
+                )
 
                 try:
                     # Use the Claude client to generate the review
@@ -1358,7 +1372,9 @@ Format your response with clear sections."""
                         max_tokens=2000,
                     )
 
-                    review_text = response.get("content", "") if isinstance(response, dict) else str(response)
+                    review_text = (
+                        response.get("content", "") if isinstance(response, dict) else str(response)
+                    )
 
                     self.print_success("Code review complete!")
                     print(f"\n{Fore.CYAN}Code Review:{Style.RESET_ALL}")
@@ -1369,7 +1385,11 @@ Format your response with clear sections."""
                 except Exception as claude_error:
                     # If Claude fails, return structured analysis
                     self.print_warning(f"Could not generate Claude review: {str(claude_error)}")
-                    return self.success(data={"review": "Claude review generation failed, but code analysis completed."})
+                    return self.success(
+                        data={
+                            "review": "Claude review generation failed, but code analysis completed."
+                        }
+                    )
 
             finally:
                 git_manager.cleanup(temp_path)
@@ -1389,13 +1409,30 @@ Format your response with clear sections."""
         for ext in code_extensions:
             files = list(repo_path_obj.rglob(f"*{ext}"))
             # Exclude common directories
-            files = [f for f in files if not any(skip in f.parts for skip in {".git", "node_modules", ".venv", "venv", "__pycache__", "build", "dist", "test", "tests"})]
+            files = [
+                f
+                for f in files
+                if not any(
+                    skip in f.parts
+                    for skip in {
+                        ".git",
+                        "node_modules",
+                        ".venv",
+                        "venv",
+                        "__pycache__",
+                        "build",
+                        "dist",
+                        "test",
+                        "tests",
+                    }
+                )
+            ]
             code_files.extend(files[:2])  # Get 2 files per extension
 
         samples = []
         for file_path in code_files[:max_files]:
             try:
-                with open(file_path, encoding='utf-8', errors='ignore') as f:
+                with open(file_path, encoding="utf-8", errors="ignore") as f:
                     content = f.read()[:1000]  # First 1000 chars
                     samples.append(f"File: {file_path.name}\n```\n{content}\n```")
             except Exception:
@@ -1447,9 +1484,7 @@ class ProjectDiffCommand(BaseCommand):
 
                 project._cached_validation_summary = new_summary
 
-                return self.success(
-                    data={"old_summary": old_summary, "new_summary": new_summary}
-                )
+                return self.success(data={"old_summary": old_summary, "new_summary": new_summary})
 
             finally:
                 git_manager.cleanup(temp_path)
@@ -1484,9 +1519,7 @@ class ProjectDiffCommand(BaseCommand):
             return None
         return clone_result
 
-    def _run_diff_validation(
-        self, orchestrator: Any, project_path: str
-    ) -> Dict[str, Any]:
+    def _run_diff_validation(self, orchestrator: Any, project_path: str) -> Dict[str, Any]:
         """Run validation for diff operation"""
         return orchestrator.process_request(
             "code_validation",

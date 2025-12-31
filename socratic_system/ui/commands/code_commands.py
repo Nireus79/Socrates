@@ -126,7 +126,9 @@ class CodeGenerateCommand(BaseCommand):
         print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}")
 
         if doc_save_path:
-            self._display_save_location(doc_save_path, "Documentation save path returned but file not found")
+            self._display_save_location(
+                doc_save_path, "Documentation save path returned but file not found"
+            )
 
 
 class CodeDocsCommand(BaseCommand):

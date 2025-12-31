@@ -586,9 +586,7 @@ class AsyncProjectDatabase:
                         int(project.is_archived),
                         serialize_datetime(project.created_at),
                         serialize_datetime(project.updated_at),
-                        serialize_datetime(
-                            getattr(project, "archived_at", None)
-                        ),
+                        serialize_datetime(getattr(project, "archived_at", None)),
                     ),
                 )
 
@@ -720,9 +718,7 @@ class AsyncProjectDatabase:
             User if found, None otherwise
         """
         async with self.pool.acquire() as conn:
-            cursor = await conn.execute(
-                "SELECT * FROM users WHERE username = ?", (username,)
-            )
+            cursor = await conn.execute("SELECT * FROM users WHERE username = ?", (username,))
             row = await cursor.fetchone()
 
             if not row:
@@ -732,7 +728,9 @@ class AsyncProjectDatabase:
                 username=row["username"],
                 passcode_hash=row["passcode_hash"],
                 subscription_tier=row["subscription_tier"] if row["subscription_tier"] else "free",
-                subscription_status=row["subscription_status"] if row["subscription_status"] else "active",
+                subscription_status=(
+                    row["subscription_status"] if row["subscription_status"] else "active"
+                ),
                 subscription_start=deserialize_datetime(row["subscription_start"]),
                 subscription_end=deserialize_datetime(row["subscription_end"]),
                 testing_mode=bool(row["testing_mode"] or 0),
@@ -1246,9 +1244,7 @@ class AsyncProjectDatabase:
                 (project.project_id, constraint, idx),
             )
 
-    async def _save_team_members(
-        self, conn: aiosqlite.Connection, project: ProjectContext
-    ) -> None:
+    async def _save_team_members(self, conn: aiosqlite.Connection, project: ProjectContext) -> None:
         """Save team members to normalized table."""
         await conn.execute(
             "DELETE FROM team_members WHERE project_id = ?",
@@ -1381,7 +1377,9 @@ class AsyncProjectDatabase:
             phase=row["phase"],
             project_type=row["project_type"] if row["project_type"] else "software",
             team_structure=row["team_structure"] if row["team_structure"] else "individual",
-            language_preferences=row["language_preferences"] if row["language_preferences"] else "python",
+            language_preferences=(
+                row["language_preferences"] if row["language_preferences"] else "python"
+            ),
             deployment_target=row["deployment_target"] if row["deployment_target"] else "local",
             code_style=row["code_style"] if row["code_style"] else "standard",
             chat_mode=row["chat_mode"] if row["chat_mode"] else "socratic",

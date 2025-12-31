@@ -11,14 +11,15 @@ import uuid
 import requests
 
 # Fix unicode encoding for Windows
-if os.name == 'nt':
+if os.name == "nt":
     try:
-        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stdout.reconfigure(encoding="utf-8")
     except ValueError:
         # stdout might be closed when running under pytest
         pass
 
 BASE_URL = "http://127.0.0.1:8000"
+
 
 def test_full_flow():  # noqa: C901
     """Test complete user flow"""
@@ -110,10 +111,10 @@ def test_full_flow():  # noqa: C901
 
     if q_response.status_code == 200:
         q_data = q_response.json()
-        if 'question' in q_data and 'phase' in q_data:
+        if "question" in q_data and "phase" in q_data:
             print("  [OK] Got question (correct format)")
             print(f"    Phase: {q_data.get('phase')}")
-        elif 'data' in q_data:
+        elif "data" in q_data:
             print("  [WARN] Question wrapped in response envelope")
         else:
             print(f"  [WARN] Unexpected response: {list(q_data.keys())}")
@@ -125,7 +126,7 @@ def test_full_flow():  # noqa: C901
     print("\n[STEP 5] Send chat message...")
     message_data = {
         "message": "This is a test message to verify the chat works",
-        "mode": "socratic"
+        "mode": "socratic",
     }
 
     msg_response = requests.post(
@@ -137,14 +138,14 @@ def test_full_flow():  # noqa: C901
 
     if msg_response.status_code == 200:
         msg_data = msg_response.json()
-        if 'message' in msg_data:
-            msg = msg_data['message']
-            if isinstance(msg, dict) and 'content' in msg:
+        if "message" in msg_data:
+            msg = msg_data["message"]
+            if isinstance(msg, dict) and "content" in msg:
                 print("  [OK] Message sent and response received (correct format)")
                 print(f"    Response: {msg.get('content', '')[:100]}...")
             else:
                 print(f"  [WARN] Message format unexpected: {type(msg)}")
-        elif 'data' in msg_data:
+        elif "data" in msg_data:
             print("  [WARN] Message still wrapped in response envelope")
         else:
             print(f"  Response: {json.dumps(msg_data, indent=2)[:300]}")
@@ -162,10 +163,10 @@ def test_full_flow():  # noqa: C901
 
     if hist_response.status_code == 200:
         hist_data = hist_response.json()
-        if 'messages' in hist_data:
+        if "messages" in hist_data:
             print("  [OK] Got history (correct format)")
             print(f"    Message count: {len(hist_data.get('messages', []))}")
-        elif 'data' in hist_data:
+        elif "data" in hist_data:
             print("  [WARN] History wrapped in response envelope")
         else:
             print(f"  Response: {json.dumps(hist_data, indent=2)[:300]}")
@@ -183,10 +184,10 @@ def test_full_flow():  # noqa: C901
 
     if sum_response.status_code == 200:
         sum_data = sum_response.json()
-        if 'summary' in sum_data and 'key_points' in sum_data:
+        if "summary" in sum_data and "key_points" in sum_data:
             print("  [OK] Got summary (correct format)")
             print(f"    Summary: {sum_data.get('summary', '')[:80]}...")
-        elif 'data' in sum_data:
+        elif "data" in sum_data:
             print("  [WARN] Summary wrapped in response envelope")
         else:
             print(f"  Response: {json.dumps(sum_data, indent=2)[:300]}")
@@ -228,6 +229,7 @@ def test_full_flow():  # noqa: C901
         print("  [FAIL] Could not delete project")
         return False
 
+
 if __name__ == "__main__":
     try:
         success = test_full_flow()
@@ -236,5 +238,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n[ERROR] Exception during testing: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

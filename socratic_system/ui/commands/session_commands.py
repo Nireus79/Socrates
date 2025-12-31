@@ -413,7 +413,9 @@ If you don't have enough information, say so."""
                 continue
 
             # Handle special responses
-            handled, should_continue = self._handle_special_response(response, orchestrator, project)
+            handled, should_continue = self._handle_special_response(
+                response, orchestrator, project
+            )
             if handled:
                 if not should_continue:
                     return False

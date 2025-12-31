@@ -70,7 +70,9 @@ class ProjectContext:
     analytics_metrics: Dict[str, any] = None  # Real-time analytics metrics
 
     # LLM Provider configuration
-    llm_configuration: Optional[Dict[str, any]] = None  # LLM provider config (provider, model, temperature, etc.)
+    llm_configuration: Optional[Dict[str, any]] = (
+        None  # LLM provider config (provider, model, temperature, etc.)
+    )
 
     # GitHub repository tracking (for imported projects)
     repository_url: Optional[str] = None  # GitHub repository URL

@@ -9,11 +9,12 @@ from datetime import datetime
 sys.path.insert(0, ".")
 sys.path.insert(0, "socrates-api/src")
 
+
 def test_project_creation_workflow():
     """Test complete project creation workflow"""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Complete Project Creation Workflow")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     try:
         from socrates_api.auth.password import hash_password, verify_password
@@ -42,7 +43,7 @@ def test_project_creation_workflow():
             subscription_tier="free",
             subscription_status="active",
             testing_mode=False,
-            created_at=datetime.now()
+            created_at=datetime.now(),
         )
         db.save_user(user)
         print(f"      [OK] User created: {username}")
@@ -86,7 +87,7 @@ def test_project_creation_workflow():
             phase="discovery",
             created_at=datetime.now(),
             updated_at=datetime.now(),
-            is_archived=False
+            is_archived=False,
         )
         db.save_project(project)
         print(f"      [OK] Project saved: {project.project_id}")
@@ -102,23 +103,24 @@ def test_project_creation_workflow():
             print("      [FAIL] Project retrieval failed!")
             return False
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("[SUCCESS] Complete workflow executed successfully!")
-        print("="*70)
+        print("=" * 70)
         return True
 
     except Exception as e:
         print(f"\n[ERROR] {str(e)}")
         import traceback
+
         traceback.print_exc()
         return False
 
 
 def test_orchestrator_integration():
     """Test orchestrator with unified patterns"""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("TEST: Orchestrator Integration with Unified Patterns")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     try:
 
@@ -160,7 +162,7 @@ def test_orchestrator_integration():
             subscription_tier="free",
             subscription_status="active",
             testing_mode=False,
-            created_at=datetime.now()
+            created_at=datetime.now(),
         )
         orchestrator.database.save_user(user)
 
@@ -170,7 +172,8 @@ def test_orchestrator_integration():
             {
                 "action": "create_project",
                 "project_name": "Orchestrator Test Project",
-                "project_type": "general"}
+                "project_type": "general",
+            },
         )
 
         if result.get("status") == "success":
@@ -189,24 +192,25 @@ def test_orchestrator_integration():
             print("      [FAIL] Project not found after creation!")
             return False
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("[SUCCESS] Orchestrator integration verified!")
-        print("="*70)
+        print("=" * 70)
         return True
 
     except Exception as e:
         print(f"\n[ERROR] {str(e)}")
         import traceback
+
         traceback.print_exc()
         return False
 
 
 def main():
     """Run all integration tests"""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("PHASE 3: INTEGRATION TESTING")
     print("Testing complete workflows with unified architectures")
-    print("="*70)
+    print("=" * 70)
 
     tests = [
         ("Project Creation Workflow", test_project_creation_workflow),
@@ -223,9 +227,9 @@ def main():
             results.append((name, False))
 
     # Print summary
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("INTEGRATION TEST SUMMARY")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     passed_count = sum(1 for _, passed in results if passed)
     total_count = len(results)
@@ -237,9 +241,9 @@ def main():
     print(f"\nResult: {passed_count}/{total_count} tests passed")
 
     if passed_count == total_count:
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("ALL INTEGRATION TESTS PASSED!")
-        print("="*70)
+        print("=" * 70)
         print("\nWorkflow Summary:")
         print("  1. Database initialized as singleton")
         print("  2. User created with bcrypt password hashing")

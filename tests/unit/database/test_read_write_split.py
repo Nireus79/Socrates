@@ -114,7 +114,10 @@ class TestDatabaseRouterSession:
         # side_effect with a function returns a new context manager each time
         mock_pool.get_session = MagicMock(side_effect=lambda: mock_get_session())
 
-        with patch("socratic_system.database.connection_pool.DatabaseConnectionPool", return_value=mock_pool):
+        with patch(
+            "socratic_system.database.connection_pool.DatabaseConnectionPool",
+            return_value=mock_pool,
+        ):
             router = DatabaseRouter("postgresql://primary/db")
 
             async with router.get_session() as session:

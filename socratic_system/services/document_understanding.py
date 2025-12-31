@@ -38,16 +38,15 @@ class DocumentUnderstandingService:
         """Get or create logger for this component."""
         try:
             from socratic_system.utils.logger import get_logger
+
             return get_logger("document_understanding")
         except (ImportError, RuntimeError):
             import logging
+
             return logging.getLogger("document_understanding")
 
     def generate_document_summary(
-        self,
-        document_chunks: List[str],
-        file_name: str,
-        file_type: str = "text"
+        self, document_chunks: List[str], file_name: str, file_type: str = "text"
     ) -> Dict[str, Any]:
         """
         Generate comprehensive document summary from chunks.
@@ -78,9 +77,7 @@ class DocumentUnderstandingService:
                 return self.summary_cache[cache_key]
 
             # Generate summary
-            summary_data = self._analyze_document(
-                document_chunks, file_name, file_type
-            )
+            summary_data = self._analyze_document(document_chunks, file_name, file_type)
 
             # Cache the result
             self.summary_cache[cache_key] = summary_data
@@ -93,9 +90,7 @@ class DocumentUnderstandingService:
             return self._create_fallback_summary(file_name, document_chunks, file_type)
 
     def compare_goals_with_documents(
-        self,
-        user_goals: str,
-        document_summaries: List[Dict[str, Any]]
+        self, user_goals: str, document_summaries: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """
         Compare user's stated goals with document content.
@@ -133,11 +128,7 @@ class DocumentUnderstandingService:
             self.logger.warning(f"Error comparing goals with documents: {e}")
             return self._create_empty_comparison()
 
-    def extract_key_concepts(
-        self,
-        document_chunks: List[str],
-        max_concepts: int = 5
-    ) -> List[str]:
+    def extract_key_concepts(self, document_chunks: List[str], max_concepts: int = 5) -> List[str]:
         """
         Extract key concepts/topics from document chunks.
 
@@ -164,9 +155,7 @@ class DocumentUnderstandingService:
             return []
 
     def determine_document_complexity(
-        self,
-        document_chunks: List[str],
-        file_type: str = "text"
+        self, document_chunks: List[str], file_type: str = "text"
     ) -> str:
         """
         Determine the complexity level of a document.
@@ -200,7 +189,9 @@ class DocumentUnderstandingService:
                     return "basic"
             else:
                 # Text document complexity
-                avg_word_length = sum(len(w) for w in full_text.split()) / max(len(full_text.split()), 1)
+                avg_word_length = sum(len(w) for w in full_text.split()) / max(
+                    len(full_text.split()), 1
+                )
                 technical_terms = len([w for w in full_text.split() if len(w) > 10])
 
                 if avg_word_length > 6 and technical_terms > word_count * 0.1:
@@ -217,10 +208,7 @@ class DocumentUnderstandingService:
     # Private helper methods
 
     def _analyze_document(
-        self,
-        document_chunks: List[str],
-        file_name: str,
-        file_type: str
+        self, document_chunks: List[str], file_name: str, file_type: str
     ) -> Dict[str, Any]:
         """Analyze document and create summary."""
         # Combine chunks for analysis
@@ -241,7 +229,7 @@ class DocumentUnderstandingService:
             "topics": topics[:5],
             "complexity": complexity,
             "length": word_count,
-            "language": self._detect_code_language(full_text) if file_type == "code" else None
+            "language": self._detect_code_language(full_text) if file_type == "code" else None,
         }
 
     def _generate_summary_text(self, text: str) -> str:
@@ -267,8 +255,20 @@ class DocumentUnderstandingService:
         points = []
 
         # Look for sentences with action words
-        action_words = ["implement", "create", "define", "design", "manage", "handle",
-                       "support", "provide", "include", "contains", "has", "uses"]
+        action_words = [
+            "implement",
+            "create",
+            "define",
+            "design",
+            "manage",
+            "handle",
+            "support",
+            "provide",
+            "include",
+            "contains",
+            "has",
+            "uses",
+        ]
 
         sentences = [s.strip() for s in text.split(".") if s.strip()]
 
@@ -312,9 +312,24 @@ class DocumentUnderstandingService:
         # Fallback: extract common domain terms
         if len(concepts) < 3:
             domain_terms = [
-                "data", "function", "class", "method", "interface", "protocol",
-                "system", "process", "module", "component", "layer", "service",
-                "API", "database", "server", "client", "request", "response"
+                "data",
+                "function",
+                "class",
+                "method",
+                "interface",
+                "protocol",
+                "system",
+                "process",
+                "module",
+                "component",
+                "layer",
+                "service",
+                "API",
+                "database",
+                "server",
+                "client",
+                "request",
+                "response",
             ]
 
             for term in domain_terms:
@@ -351,15 +366,12 @@ class DocumentUnderstandingService:
         return None
 
     def _ai_compare_goals_documents(
-        self,
-        user_goals: str,
-        document_summaries: List[Dict[str, Any]]
+        self, user_goals: str, document_summaries: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """Use Claude API for intelligent goal-document comparison."""
         try:
             # Format document summaries for analysis
             self._format_summaries_for_analysis(document_summaries)
-
 
             # Note: In production, this would call self.claude_client.analyze()
             # For now, return structured response format
@@ -370,9 +382,7 @@ class DocumentUnderstandingService:
             return self._heuristic_compare_goals_documents(user_goals, document_summaries)
 
     def _heuristic_compare_goals_documents(
-        self,
-        user_goals: str,
-        document_summaries: List[Dict[str, Any]]
+        self, user_goals: str, document_summaries: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """Use heuristic-based comparison."""
         goals_lower = user_goals.lower()
@@ -411,10 +421,12 @@ class DocumentUnderstandingService:
 
         return {
             "alignment": f"The documents provide {int(match_score * 100)}% coverage of stated goals. "
-                        f"Key topics align with {'specified requirements' if match_score > 0.5 else 'some aspects of goals'}.",
+            f"Key topics align with {'specified requirements' if match_score > 0.5 else 'some aspects of goals'}.",
             "gaps": gaps[:3] if gaps else ["Consider documenting additional design details"],
-            "opportunities": opportunities[:3] if opportunities else ["Explore document insights further"],
-            "match_score": match_score
+            "opportunities": (
+                opportunities[:3] if opportunities else ["Explore document insights further"]
+            ),
+            "match_score": match_score,
         }
 
     def _format_summaries_for_analysis(self, summaries: List[Dict[str, Any]]) -> str:
@@ -434,10 +446,7 @@ Topics: {', '.join(s.get('topics', []))}
         return "\n".join(sections)
 
     def _create_fallback_summary(
-        self,
-        file_name: str,
-        document_chunks: List[str],
-        file_type: str
+        self, file_name: str, document_chunks: List[str], file_type: str
     ) -> Dict[str, Any]:
         """Create a basic fallback summary."""
         full_text = " ".join(document_chunks)
@@ -450,7 +459,7 @@ Topics: {', '.join(s.get('topics', []))}
             "topics": [],
             "complexity": "intermediate",
             "length": len(full_text.split()),
-            "language": None
+            "language": None,
         }
 
     def _create_empty_comparison(self) -> Dict[str, Any]:
@@ -459,7 +468,7 @@ Topics: {', '.join(s.get('topics', []))}
             "alignment": "No comparison available.",
             "gaps": [],
             "opportunities": [],
-            "match_score": 0.0
+            "match_score": 0.0,
         }
 
     def _generate_cache_key(self, file_name: str, chunks: List[str]) -> str:

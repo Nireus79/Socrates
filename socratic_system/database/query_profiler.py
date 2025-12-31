@@ -40,9 +40,7 @@ class QueryStats:
         self.error_count = 0
         self.last_executed_at: Optional[float] = None
 
-    def add_execution(
-        self, duration: float, is_slow: bool = False, error: bool = False
-    ) -> None:
+    def add_execution(self, duration: float, is_slow: bool = False, error: bool = False) -> None:
         """Record a query execution.
 
         Args:
@@ -197,9 +195,7 @@ class QueryProfiler:
                                 f"(threshold: {threshold*1000:.0f}ms)"
                             )
                         else:
-                            logger.debug(
-                                f"Query: {query_name} completed in {duration*1000:.2f}ms"
-                            )
+                            logger.debug(f"Query: {query_name} completed in {duration*1000:.2f}ms")
 
                         return result
 
@@ -235,9 +231,7 @@ class QueryProfiler:
                                 f"(threshold: {threshold*1000:.0f}ms)"
                             )
                         else:
-                            logger.debug(
-                                f"Query: {query_name} completed in {duration*1000:.2f}ms"
-                            )
+                            logger.debug(f"Query: {query_name} completed in {duration*1000:.2f}ms")
 
                         return result
 
@@ -322,9 +316,7 @@ class QueryProfiler:
             ```
         """
         slow_queries = [
-            stats.to_dict()
-            for stats in self.stats.values()
-            if stats.slow_count >= min_slow_count
+            stats.to_dict() for stats in self.stats.values() if stats.slow_count >= min_slow_count
         ]
         # Sort by slow count descending
         return sorted(slow_queries, key=lambda x: x["slow_count"], reverse=True)

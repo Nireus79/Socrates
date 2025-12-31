@@ -35,9 +35,9 @@ class TestProjectMaturityAnalytics:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         access_token = reg_resp.json()["access_token"]
         auth_headers = {**HEADERS, "Authorization": f"Bearer {access_token}"}
@@ -45,10 +45,8 @@ class TestProjectMaturityAnalytics:
         # Create project
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={
-                "name": "Analytics Test Project",
-                "description": "Test project for analytics"},
-            headers=auth_headers
+            json={"name": "Analytics Test Project", "description": "Test project for analytics"},
+            headers=auth_headers,
         )
         project_id = proj_resp.json()["project_id"]
 
@@ -56,7 +54,7 @@ class TestProjectMaturityAnalytics:
             "username": username,
             "access_token": access_token,
             "project_id": project_id,
-            "auth_headers": auth_headers
+            "auth_headers": auth_headers,
         }
 
     def test_01_get_project_maturity(self, user_with_project):
@@ -65,8 +63,7 @@ class TestProjectMaturityAnalytics:
         auth_headers = user_with_project["auth_headers"]
 
         response = requests.get(
-            f"{BASE_URL}/projects/{project_id}/analytics/maturity",
-            headers=auth_headers
+            f"{BASE_URL}/projects/{project_id}/analytics/maturity", headers=auth_headers
         )
 
         if response.status_code == 503:
@@ -88,9 +85,7 @@ class TestProjectMaturityAnalytics:
         for phase in phases:
             # Update phase
             update_resp = requests.put(
-                f"{BASE_URL}/projects/{project_id}",
-                json={"phase": phase},
-                headers=auth_headers
+                f"{BASE_URL}/projects/{project_id}", json={"phase": phase}, headers=auth_headers
             )
 
             if update_resp.status_code != 200:
@@ -98,8 +93,7 @@ class TestProjectMaturityAnalytics:
 
         # Get analytics
         response = requests.get(
-            f"{BASE_URL}/projects/{project_id}/analytics/phase_history",
-            headers=auth_headers
+            f"{BASE_URL}/projects/{project_id}/analytics/phase_history", headers=auth_headers
         )
 
         if response.status_code == 200:
@@ -114,8 +108,7 @@ class TestProjectMaturityAnalytics:
         auth_headers = user_with_project["auth_headers"]
 
         response = requests.get(
-            f"{BASE_URL}/projects/{project_id}/analytics/completion",
-            headers=auth_headers
+            f"{BASE_URL}/projects/{project_id}/analytics/completion", headers=auth_headers
         )
 
         if response.status_code == 200:
@@ -141,9 +134,9 @@ class TestQuestionResponseAnalytics:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         access_token = reg_resp.json()["access_token"]
         auth_headers = {**HEADERS, "Authorization": f"Bearer {access_token}"}
@@ -151,10 +144,8 @@ class TestQuestionResponseAnalytics:
         # Create project
         proj_resp = requests.post(
             f"{BASE_URL}/projects",
-            json={
-                "name": "Question Analytics Project",
-                "description": "Test project"},
-            headers=auth_headers
+            json={"name": "Question Analytics Project", "description": "Test project"},
+            headers=auth_headers,
         )
         project_id = proj_resp.json()["project_id"]
 
@@ -162,7 +153,7 @@ class TestQuestionResponseAnalytics:
             "username": username,
             "access_token": access_token,
             "project_id": project_id,
-            "auth_headers": auth_headers
+            "auth_headers": auth_headers,
         }
 
     def test_01_response_correctness_rate(self, user_with_questions):
@@ -171,8 +162,7 @@ class TestQuestionResponseAnalytics:
         auth_headers = user_with_questions["auth_headers"]
 
         response = requests.get(
-            f"{BASE_URL}/projects/{project_id}/analytics/correctness_rate",
-            headers=auth_headers
+            f"{BASE_URL}/projects/{project_id}/analytics/correctness_rate", headers=auth_headers
         )
 
         if response.status_code == 200:
@@ -187,8 +177,7 @@ class TestQuestionResponseAnalytics:
         auth_headers = user_with_questions["auth_headers"]
 
         response = requests.get(
-            f"{BASE_URL}/projects/{project_id}/analytics/response_time",
-            headers=auth_headers
+            f"{BASE_URL}/projects/{project_id}/analytics/response_time", headers=auth_headers
         )
 
         if response.status_code == 200:
@@ -204,7 +193,7 @@ class TestQuestionResponseAnalytics:
 
         response = requests.get(
             f"{BASE_URL}/projects/{project_id}/analytics/difficulty_distribution",
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -219,8 +208,7 @@ class TestQuestionResponseAnalytics:
         auth_headers = user_with_questions["auth_headers"]
 
         response = requests.get(
-            f"{BASE_URL}/projects/{project_id}/analytics/question_types",
-            headers=auth_headers
+            f"{BASE_URL}/projects/{project_id}/analytics/question_types", headers=auth_headers
         )
 
         if response.status_code == 200:
@@ -243,27 +231,20 @@ class TestLearningProgressMetrics:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         access_token = reg_resp.json()["access_token"]
         auth_headers = {**HEADERS, "Authorization": f"Bearer {access_token}"}
 
-        return {
-            "username": username,
-            "access_token": access_token,
-            "auth_headers": auth_headers
-        }
+        return {"username": username, "access_token": access_token, "auth_headers": auth_headers}
 
     def test_01_overall_learning_score(self, user_for_progress):
         """Test: Calculate user's overall learning score"""
         auth_headers = user_for_progress["auth_headers"]
 
-        response = requests.get(
-            f"{BASE_URL}/analytics/learning_score",
-            headers=auth_headers
-        )
+        response = requests.get(f"{BASE_URL}/analytics/learning_score", headers=auth_headers)
 
         if response.status_code == 200:
             data = response.json()
@@ -275,10 +256,7 @@ class TestLearningProgressMetrics:
         """Test: Measure mastery level for each topic"""
         auth_headers = user_for_progress["auth_headers"]
 
-        response = requests.get(
-            f"{BASE_URL}/analytics/topic_mastery",
-            headers=auth_headers
-        )
+        response = requests.get(f"{BASE_URL}/analytics/topic_mastery", headers=auth_headers)
 
         if response.status_code == 200:
             data = response.json()
@@ -290,10 +268,7 @@ class TestLearningProgressMetrics:
         """Test: Measure learning velocity (progress over time)"""
         auth_headers = user_for_progress["auth_headers"]
 
-        response = requests.get(
-            f"{BASE_URL}/analytics/learning_velocity",
-            headers=auth_headers
-        )
+        response = requests.get(f"{BASE_URL}/analytics/learning_velocity", headers=auth_headers)
 
         if response.status_code == 200:
             data = response.json()
@@ -305,10 +280,7 @@ class TestLearningProgressMetrics:
         """Test: Get personalized learning recommendations"""
         auth_headers = user_for_progress["auth_headers"]
 
-        response = requests.get(
-            f"{BASE_URL}/analytics/recommendations",
-            headers=auth_headers
-        )
+        response = requests.get(f"{BASE_URL}/analytics/recommendations", headers=auth_headers)
 
         if response.status_code == 200:
             data = response.json()
@@ -346,18 +318,15 @@ class TestAdvancedAnalytics:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         access_token = reg_resp.json()["access_token"]
         auth_headers = {**HEADERS, "Authorization": f"Bearer {access_token}"}
 
         # Try to access advanced analytics
-        response = requests.get(
-            f"{BASE_URL}/analytics/comparative",
-            headers=auth_headers
-        )
+        response = requests.get(f"{BASE_URL}/analytics/comparative", headers=auth_headers)
 
         # Should be blocked for free tier
         assert response.status_code >= 400, "Advanced analytics should require Pro+"

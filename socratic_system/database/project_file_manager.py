@@ -35,9 +35,7 @@ class ProjectFileManager:
         conn.row_factory = sqlite3.Row  # Allow accessing columns by name
         return conn
 
-    def save_files_batch(
-        self, project_id: str, files: List[Dict[str, str]]
-    ) -> Tuple[int, str]:
+    def save_files_batch(self, project_id: str, files: List[Dict[str, str]]) -> Tuple[int, str]:
         """
         Save multiple files in batch (optimized for performance)
 
@@ -105,9 +103,7 @@ class ProjectFileManager:
             self.logger.error(msg)
             return 0, msg
 
-    def get_project_files(
-        self, project_id: str, offset: int = 0, limit: int = 100
-    ) -> List[Dict]:
+    def get_project_files(self, project_id: str, offset: int = 0, limit: int = 100) -> List[Dict]:
         """
         Retrieve paginated list of files for a project
 
@@ -209,9 +205,7 @@ class ProjectFileManager:
             self.logger.error(f"Error retrieving file by path: {str(e)}")
             return None
 
-    def update_file(
-        self, project_id: str, file_info: Dict[str, str]
-    ) -> Tuple[bool, str]:
+    def update_file(self, project_id: str, file_info: Dict[str, str]) -> Tuple[bool, str]:
         """
         Update an existing file
 

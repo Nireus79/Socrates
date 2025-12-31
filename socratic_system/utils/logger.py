@@ -37,7 +37,7 @@ class DebugLogger:
         log_files = sorted(
             logs_dir.glob("socratic.log*"),
             key=lambda p: p.stat().st_mtime if p.exists() else 0,
-            reverse=True
+            reverse=True,
         )
 
         # Keep only the 3 most recent log files, delete older ones
@@ -84,7 +84,7 @@ class DebugLogger:
             when="midnight",  # Rotate at midnight
             interval=1,  # Every 1 day
             backupCount=3,  # Keep 3 days of logs
-            utc=False
+            utc=False,
         )
         # Use date format for backup files: socratic.log.2024-12-16
         file_handler.suffix = "%Y-%m-%d"

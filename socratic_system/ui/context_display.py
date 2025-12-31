@@ -20,7 +20,10 @@ class ContextDisplay:
         self.current_project: Optional[ProjectContext] = None
 
     def set_context(
-        self, user: Optional[User] = None, project: Optional[ProjectContext] = None, clear_project: bool = False
+        self,
+        user: Optional[User] = None,
+        project: Optional[ProjectContext] = None,
+        clear_project: bool = False,
     ) -> None:
         """
         Update the current context to display.

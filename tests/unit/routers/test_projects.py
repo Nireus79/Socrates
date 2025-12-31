@@ -10,7 +10,6 @@ Tests project management endpoints including:
 - Archive/unarchive project
 """
 
-
 import pytest
 
 

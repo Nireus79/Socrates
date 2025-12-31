@@ -47,9 +47,7 @@ class TestAuthDatabaseIntegration:
         4. API saves to database
         """
         # Simulate API request payload
-        registration_payload = {
-            "username": "newuser",
-            "password": "secure_password_123"}
+        registration_payload = {"username": "newuser", "password": "secure_password_123"}
 
         # Simulate API processing
         user = User(
@@ -135,7 +133,8 @@ class TestProjectDatabaseIntegration:
         create_payload = {
             "name": "Web Application",
             "goals": ["Build REST API", "Deploy to AWS"],
-            "tech_stack": ["Python", "FastAPI"]}
+            "tech_stack": ["Python", "FastAPI"],
+        }
 
         # Simulate API processing
         project = ProjectContext(
@@ -191,7 +190,8 @@ class TestProjectDatabaseIntegration:
         # Simulate API response
         response = {
             "projects": [{"id": p.project_id, "name": p.name} for p in projects],
-            "count": len(projects)}
+            "count": len(projects),
+        }
 
         assert response["count"] == 3
 
@@ -219,9 +219,7 @@ class TestProjectDatabaseIntegration:
         db.save_project(original)
 
         # Simulate update request
-        update_payload = {
-            "name": "Updated Name",
-            "goals": ["Goal 1", "Goal 2"]}
+        update_payload = {"name": "Updated Name", "goals": ["Goal 1", "Goal 2"]}
 
         # API authorization check
         project = db.load_project("proj-001")
@@ -263,12 +261,7 @@ class TestProjectDatabaseIntegration:
         db.save_project(project)
 
         # Add conversation history
-        history = [
-            {
-                "role": "user",
-                "content": "Hello",
-                "timestamp": datetime.now().isoformat()}
-        ]
+        history = [{"role": "user", "content": "Hello", "timestamp": datetime.now().isoformat()}]
         db.save_conversation_history("proj-001", history)
 
         # Verify conversation exists
@@ -332,14 +325,16 @@ class TestChatDatabaseIntegration:
         user_message = {
             "role": "user",
             "content": "What is the first phase?",
-            "timestamp": datetime.now().isoformat()}
+            "timestamp": datetime.now().isoformat(),
+        }
 
         # API would process and get response from orchestrator
         assistant_response = {
             "role": "assistant",
             "content": "Phase 1 focuses on architectural design...",
             "timestamp": datetime.now().isoformat(),
-            "metadata": {"source": "orchestrator"}}
+            "metadata": {"source": "orchestrator"},
+        }
 
         # API saves both messages to database
         conversation = [user_message, assistant_response]
@@ -364,10 +359,7 @@ class TestChatDatabaseIntegration:
         """
         # Setup: Create conversation
         history = [
-            {
-                "role": "user",
-                "content": f"Message {i}",
-                "timestamp": datetime.now().isoformat()}
+            {"role": "user", "content": f"Message {i}", "timestamp": datetime.now().isoformat()}
             for i in range(5)
         ]
         db.save_conversation_history("proj-001", history)
@@ -572,12 +564,7 @@ class TestPhaseProgressDatabaseIntegration:
         db.save_project(project)
 
         # Simulate category scores from analysis
-        scores = {
-            "phase1": {
-                "architecture": 0.8,
-                "api_design": 0.6,
-                "database_design": 0.7}
-        }
+        scores = {"phase1": {"architecture": 0.8, "api_design": 0.6, "database_design": 0.7}}
 
         project = db.load_project("proj-001")
         project.category_scores = scores

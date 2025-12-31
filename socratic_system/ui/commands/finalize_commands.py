@@ -124,7 +124,9 @@ class FinalizeGenerateCommand(BaseCommand):
         doc_choice = input(f"{Fore.CYAN}Generate implementation documentation? (y/n): ").lower()
         return doc_choice == "y"
 
-    def _generate_and_display_documentation(self, orchestrator, project, artifact: str, save_path: str) -> None:
+    def _generate_and_display_documentation(
+        self, orchestrator, project, artifact: str, save_path: str
+    ) -> None:
         """Generate and display implementation documentation"""
         doc_result = orchestrator.process_request(
             "code_generator",
@@ -147,7 +149,9 @@ class FinalizeGenerateCommand(BaseCommand):
         print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}")
 
         if doc_save_path:
-            self._display_save_location(doc_save_path, "Documentation save path returned but file not found")
+            self._display_save_location(
+                doc_save_path, "Documentation save path returned but file not found"
+            )
 
 
 class FinalizeDocsCommand(BaseCommand):
@@ -213,12 +217,17 @@ class FinalizeDocsCommand(BaseCommand):
                 # Show save location if file actually exists
                 if doc_save_path:
                     from pathlib import Path
+
                     if Path(doc_save_path).exists():
                         print(ArtifactSaver.get_save_location_message(doc_save_path))
                     else:
-                        self.print_warning(f"Documentation save path returned but file not found: {doc_save_path}")
+                        self.print_warning(
+                            f"Documentation save path returned but file not found: {doc_save_path}"
+                        )
 
-                return self.success(data={"documentation": doc_result["documentation"], "save_path": doc_save_path})
+                return self.success(
+                    data={"documentation": doc_result["documentation"], "save_path": doc_save_path}
+                )
             else:
                 return self.error(doc_result.get("message", "Failed to generate documentation"))
         else:

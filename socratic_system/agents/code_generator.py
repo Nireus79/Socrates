@@ -78,7 +78,9 @@ class CodeGeneratorAgent(Agent):
                 )
 
                 # Split code into organized files
-                splitter = MultiFileCodeSplitter(artifact, language="python", project_type=project.project_type)
+                splitter = MultiFileCodeSplitter(
+                    artifact, language="python", project_type=project.project_type
+                )
                 file_structure = splitter.split()
 
                 # Create complete project structure
@@ -132,9 +134,7 @@ class CodeGeneratorAgent(Agent):
                             self.log("No files to save to database")
 
                     except Exception as e:
-                        self.log(
-                            f"WARNING: Failed to save generated files to database: {str(e)}"
-                        )
+                        self.log(f"WARNING: Failed to save generated files to database: {str(e)}")
                         # Don't fail artifact generation if database save fails
 
                 else:

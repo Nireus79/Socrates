@@ -44,12 +44,14 @@ def initialize_api():
         f"{BASE_URL}/initialize",
         json={"api_key": api_key},
         headers={"Content-Type": "application/json"},
-        timeout=10
+        timeout=10,
     )
 
     if init_response.status_code != 200:
         # If initialization fails, log it but don't fail - tests may not need full API
-        print(f"Warning: API initialization failed: {init_response.json().get('detail', 'Unknown error')}")
+        print(
+            f"Warning: API initialization failed: {init_response.json().get('detail', 'Unknown error')}"
+        )
         # Still try to wait for health check
     else:
         # Wait for initialization to complete

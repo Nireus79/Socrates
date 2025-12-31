@@ -62,6 +62,7 @@ class TestURLParser:
     def test_parse_url(self):
         """Test parsing URL components"""
         from urllib.parse import urlparse
+
         url = "https://example.com:8080/path?query=value"
         parsed = urlparse(url)
         assert parsed.scheme == "https"
@@ -71,6 +72,7 @@ class TestURLParser:
     def test_extract_query_params(self):
         """Test extracting query parameters"""
         from urllib.parse import parse_qs
+
         query = "name=John&age=30"
         params = parse_qs(query)
         assert params["name"] == ["John"]
@@ -84,6 +86,7 @@ class TestCSVParser:
     def test_parse_csv_string(self):
         """Test parsing CSV"""
         import csv
+
         csv_str = "name,age,city\nJohn,30,NYC\nJane,25,LA"
         lines = csv_str.strip().split("\n")
         reader = csv.DictReader(lines)
@@ -105,7 +108,8 @@ class TestXMLParser:
     def test_parse_simple_xml(self):
         """Test parsing simple XML"""
         import xml.etree.ElementTree as ET
-        xml_str = '<root><name>John</name><age>30</age></root>'
+
+        xml_str = "<root><name>John</name><age>30</age></root>"
         root = ET.fromstring(xml_str)
         assert root.find("name").text == "John"
         assert root.find("age").text == "30"
@@ -113,6 +117,7 @@ class TestXMLParser:
     def test_xml_attributes(self):
         """Test parsing XML attributes"""
         import xml.etree.ElementTree as ET
+
         xml_str = '<user id="123" name="John"></user>'
         root = ET.fromstring(xml_str)
         assert root.get("id") == "123"
@@ -160,8 +165,9 @@ class TestMarkdownParser:
     def test_extract_links(self):
         """Test extracting links from markdown"""
         import re
+
         md = "[Link](https://example.com) and [Another](https://test.com)"
-        links = re.findall(r'\[.*?\]\((.*?)\)', md)
+        links = re.findall(r"\[.*?\]\((.*?)\)", md)
         assert len(links) == 2
 
 

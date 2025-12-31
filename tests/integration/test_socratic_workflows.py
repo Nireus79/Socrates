@@ -32,9 +32,9 @@ class TestSocraticQuestions:
             json={
                 "username": username,
                 "email": f"{username}@test.local",
-                "password": "TestPassword123!"
+                "password": "TestPassword123!",
             },
-            headers=HEADERS
+            headers=HEADERS,
         )
         access_token = reg_resp.json()["access_token"]
         auth_headers = {**HEADERS, "Authorization": f"Bearer {access_token}"}
@@ -44,8 +44,9 @@ class TestSocraticQuestions:
             f"{BASE_URL}/projects",
             json={
                 "name": "Socratic Test Project",
-                "description": "Test project for Socratic questions"},
-            headers=auth_headers
+                "description": "Test project for Socratic questions",
+            },
+            headers=auth_headers,
         )
         project_id = proj_resp.json()["project_id"]
 
@@ -53,7 +54,7 @@ class TestSocraticQuestions:
             "username": username,
             "access_token": access_token,
             "project_id": project_id,
-            "auth_headers": auth_headers
+            "auth_headers": auth_headers,
         }
 
     def test_01_generate_socratic_question(self, test_user_with_project):
@@ -63,11 +64,8 @@ class TestSocraticQuestions:
 
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/question",
-            json={
-                "topic": "Basic Python",
-                "difficulty_level": "beginner"
-            },
-            headers=auth_headers
+            json={"topic": "Basic Python", "difficulty_level": "beginner"},
+            headers=auth_headers,
         )
 
         # Check if endpoint exists and responds
@@ -87,11 +85,8 @@ class TestSocraticQuestions:
 
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/question",
-            json={
-                "topic": "Data Structures",
-                "difficulty_level": "intermediate"
-            },
-            headers=auth_headers
+            json={"topic": "Data Structures", "difficulty_level": "intermediate"},
+            headers=auth_headers,
         )
 
         if response.status_code == 503:
@@ -111,7 +106,7 @@ class TestSocraticQuestions:
         q_resp = requests.post(
             f"{BASE_URL}/projects/{project_id}/question",
             json={"topic": "Python", "difficulty_level": "beginner"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         if q_resp.status_code == 503:
@@ -126,11 +121,8 @@ class TestSocraticQuestions:
         # Process response
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/response",
-            json={
-                "question_id": question_id,
-                "user_response": "This is my answer to the question"
-            },
-            headers=auth_headers
+            json={"question_id": question_id, "user_response": "This is my answer to the question"},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -147,11 +139,8 @@ class TestSocraticQuestions:
         for difficulty in difficulties:
             response = requests.post(
                 f"{BASE_URL}/projects/{project_id}/question",
-                json={
-                    "topic": "Programming",
-                    "difficulty_level": difficulty
-                },
-                headers=auth_headers
+                json={"topic": "Programming", "difficulty_level": difficulty},
+                headers=auth_headers,
             )
 
             if response.status_code == 503:
@@ -171,11 +160,8 @@ class TestSocraticQuestions:
         for topic in topics:
             response = requests.post(
                 f"{BASE_URL}/projects/{project_id}/question",
-                json={
-                    "topic": topic,
-                    "difficulty_level": "beginner"
-                },
-                headers=auth_headers
+                json={"topic": topic, "difficulty_level": "beginner"},
+                headers=auth_headers,
             )
 
             if response.status_code == 503:
@@ -194,7 +180,7 @@ class TestSocraticQuestions:
         q_resp = requests.post(
             f"{BASE_URL}/projects/{project_id}/question",
             json={"topic": "Python Basics", "difficulty_level": "beginner"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         if q_resp.status_code != 200:
@@ -205,11 +191,8 @@ class TestSocraticQuestions:
         # Submit response
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/response",
-            json={
-                "question_id": question_id,
-                "user_response": "An answer"
-            },
-            headers=auth_headers
+            json={"question_id": question_id, "user_response": "An answer"},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -225,7 +208,7 @@ class TestSocraticQuestions:
         q_resp = requests.post(
             f"{BASE_URL}/projects/{project_id}/question",
             json={"topic": "Python", "difficulty_level": "beginner"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         if q_resp.status_code != 200:
@@ -235,11 +218,8 @@ class TestSocraticQuestions:
 
         response = requests.post(
             f"{BASE_URL}/projects/{project_id}/response",
-            json={
-                "question_id": question_id,
-                "user_response": "The answer"
-            },
-            headers=auth_headers
+            json={"question_id": question_id, "user_response": "The answer"},
+            headers=auth_headers,
         )
 
         if response.status_code == 200:
@@ -254,7 +234,7 @@ class TestSocraticQuestions:
         response = requests.post(
             f"{BASE_URL}/projects/nonexistent_proj/question",
             json={"topic": "Python", "difficulty_level": "beginner"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         assert response.status_code >= 400
@@ -265,11 +245,8 @@ class TestSocraticQuestions:
 
         response = requests.post(
             f"{BASE_URL}/projects/nonexistent_proj/response",
-            json={
-                "question_id": "q1",
-                "user_response": "answer"
-            },
-            headers=auth_headers
+            json={"question_id": "q1", "user_response": "answer"},
+            headers=auth_headers,
         )
 
         assert response.status_code >= 400

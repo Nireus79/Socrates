@@ -166,9 +166,7 @@ class ArtifactSaver:
             return False, ""
 
     @staticmethod
-    def list_generated_artifacts(
-        project_id: str, data_dir: Optional[Path] = None
-    ) -> dict:
+    def list_generated_artifacts(project_id: str, data_dir: Optional[Path] = None) -> dict:
         """
         List all generated artifacts for a project.
 
@@ -237,9 +235,7 @@ class ArtifactSaver:
         except ValueError:
             display_path = file_path
 
-        return (
-            f"\n{Fore.GREEN}Saved to:{Style.RESET_ALL} {Fore.YELLOW}{display_path}{Style.RESET_ALL}\n"
-        )
+        return f"\n{Fore.GREEN}Saved to:{Style.RESET_ALL} {Fore.YELLOW}{display_path}{Style.RESET_ALL}\n"
 
     @staticmethod
     def get_project_structure_tree(project_path: str) -> str:

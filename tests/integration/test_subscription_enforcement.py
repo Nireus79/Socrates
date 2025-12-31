@@ -23,17 +23,10 @@ def free_tier_user():
     username = f"free_user_{int(datetime.now().timestamp() * 1000)}"
     reg_resp = requests.post(
         f"{BASE_URL}/auth/register",
-        json={
-            "username": username,
-            "email": f"{username}@test.local",
-            "password": "Password123!"
-        },
-        headers=HEADERS
+        json={"username": username, "email": f"{username}@test.local", "password": "Password123!"},
+        headers=HEADERS,
     )
-    return {
-        "username": username,
-        "access_token": reg_resp.json()["access_token"]
-    }
+    return {"username": username, "access_token": reg_resp.json()["access_token"]}
 
 
 class TestFreeTierQuotas:
@@ -41,38 +34,32 @@ class TestFreeTierQuotas:
 
     def test_01_free_tier_allows_one_project(self, free_tier_user):
         """Test: Free tier can create exactly 1 project"""
-        auth_headers = {
-            **HEADERS,
-            "Authorization": f"Bearer {free_tier_user['access_token']}"
-        }
+        auth_headers = {**HEADERS, "Authorization": f"Bearer {free_tier_user['access_token']}"}
 
         response = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Free Project", "description": "Test"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         assert response.status_code == 200, f"Free tier should create 1 project: {response.text}"
 
     def test_02_free_tier_blocks_second_project(self, free_tier_user):
         """Test: Free tier cannot create a second project"""
-        auth_headers = {
-            **HEADERS,
-            "Authorization": f"Bearer {free_tier_user['access_token']}"
-        }
+        auth_headers = {**HEADERS, "Authorization": f"Bearer {free_tier_user['access_token']}"}
 
         # Create first project
         requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Project 1", "description": "First"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         # Try second - should fail
         response = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Project 2", "description": "Second"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         assert response.status_code == 403, "Free tier should be blocked at 2nd project"
@@ -179,23 +166,20 @@ class TestQuotaMessages:
 
     def test_quota_exceeded_message_clarity(self, free_tier_user):
         """Test: Quota exceeded message is clear"""
-        auth_headers = {
-            **HEADERS,
-            "Authorization": f"Bearer {free_tier_user['access_token']}"
-        }
+        auth_headers = {**HEADERS, "Authorization": f"Bearer {free_tier_user['access_token']}"}
 
         # Create first project
         requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Project 1", "description": "First"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         # Try second
         response = requests.post(
             f"{BASE_URL}/projects",
             json={"name": "Project 2", "description": "Second"},
-            headers=auth_headers
+            headers=auth_headers,
         )
 
         data = response.json()
@@ -205,9 +189,10 @@ class TestQuotaMessages:
         # - Current tier/plan
         # - Project limit
         # - How to upgrade
-        assert any(word in error_detail for word in [
-            "project", "limit", "subscription", "free", "upgrade", "pro"
-        ]), f"Error message unclear: {data}"
+        assert any(
+            word in error_detail
+            for word in ["project", "limit", "subscription", "free", "upgrade", "pro"]
+        ), f"Error message unclear: {data}"
 
 
 if __name__ == "__main__":

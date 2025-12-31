@@ -10,7 +10,6 @@ Tests authentication endpoints including:
 - MFA/TOTP
 """
 
-
 import pytest
 
 

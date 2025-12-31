@@ -158,7 +158,9 @@ class TestWebSocketDatabaseIntegration:
             created_at=datetime.now(),
             updated_at=datetime.now(),
             team_members=[
-                TeamMemberRole(username="user2", role="editor", skills=["python"], joined_at=datetime.now())
+                TeamMemberRole(
+                    username="user2", role="editor", skills=["python"], joined_at=datetime.now()
+                )
             ],
         )
         db.save_project(shared_project)

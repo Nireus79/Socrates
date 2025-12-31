@@ -81,9 +81,7 @@ class CodeStructureAnalyzer:
         """Extract class definitions from AST"""
         for node in ast.walk(tree):
             if isinstance(node, ast.ClassDef):
-                methods = [
-                    m.name for m in node.body if isinstance(m, ast.FunctionDef)
-                ]
+                methods = [m.name for m in node.body if isinstance(m, ast.FunctionDef)]
                 bases = [ast.unparse(b) for b in node.bases]
 
                 self.classes.append(
@@ -176,20 +174,15 @@ class CodeStructureAnalyzer:
 
         pattern = func_patterns.get(self.language, r"^\s*(?:function|def)\s+(\w+)")
         analysis["functions"] = [
-            {"name": m[0]}
-            for m in re.finditer(pattern, self.code, re.MULTILINE | re.IGNORECASE)
+            {"name": m[0]} for m in re.finditer(pattern, self.code, re.MULTILINE | re.IGNORECASE)
         ]
 
         # Pattern detection
-        analysis["has_tests"] = bool(
-            re.search(r"\b(?:test|spec|should)\b", code_lower)
-        )
+        analysis["has_tests"] = bool(re.search(r"\b(?:test|spec|should)\b", code_lower))
         analysis["has_config"] = bool(
             re.search(r"\b(?:config|settings|env|configuration)\b", code_lower)
         )
-        analysis["has_main"] = bool(
-            re.search(r"\b(?:main|entry)\b", code_lower)
-        )
+        analysis["has_main"] = bool(re.search(r"\b(?:main|entry)\b", code_lower))
 
         return analysis
 
@@ -214,19 +207,13 @@ class CodeStructureAnalyzer:
         for cls in self.classes:
             name_lower = cls["name"].lower()
 
-            if any(
-                keyword in name_lower
-                for keyword in ["model", "entity", "schema", "dao"]
-            ):
+            if any(keyword in name_lower for keyword in ["model", "entity", "schema", "dao"]):
                 organization["models.py"].append(cls["name"])
             elif any(
-                keyword in name_lower
-                for keyword in ["controller", "handler", "router", "api"]
+                keyword in name_lower for keyword in ["controller", "handler", "router", "api"]
             ):
                 organization["controllers.py"].append(cls["name"])
-            elif any(
-                keyword in name_lower for keyword in ["service", "manager", "factory"]
-            ):
+            elif any(keyword in name_lower for keyword in ["service", "manager", "factory"]):
                 organization["services.py"].append(cls["name"])
             else:
                 organization["utils.py"].append(cls["name"])

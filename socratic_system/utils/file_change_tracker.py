@@ -123,13 +123,9 @@ class FileChangeTracker:
             results["modified"] = self._process_modified_files_vector(
                 changes, project_id, doc_processor
             )
-            results["added"] = self._process_added_files_vector(
-                changes, project_id, doc_processor
-            )
+            results["added"] = self._process_added_files_vector(changes, project_id, doc_processor)
 
-            results["total"] = (
-                results["added"] + results["modified"] + results["deleted"]
-            )
+            results["total"] = results["added"] + results["modified"] + results["deleted"]
             self.logger.info(
                 f"Vector DB updated: {results['added']} added, "
                 f"{results['modified']} modified, {results['deleted']} deleted"
@@ -202,9 +198,7 @@ class FileChangeTracker:
                     count += 1
                 self.logger.debug(f"Added to DB: {added_file['file_path']}")
             except Exception as e:
-                self.logger.error(
-                    f"Error adding file to DB: {added_file['file_path']}: {str(e)}"
-                )
+                self.logger.error(f"Error adding file to DB: {added_file['file_path']}: {str(e)}")
         return count
 
     def update_database(
@@ -222,19 +216,11 @@ class FileChangeTracker:
 
             file_manager = ProjectFileManager(database.db_path)
 
-            results["deleted"] = self._process_deleted_files_db(
-                changes, project_id, file_manager
-            )
-            results["modified"] = self._process_modified_files_db(
-                changes, project_id, file_manager
-            )
-            results["added"] = self._process_added_files_db(
-                changes, project_id, file_manager
-            )
+            results["deleted"] = self._process_deleted_files_db(changes, project_id, file_manager)
+            results["modified"] = self._process_modified_files_db(changes, project_id, file_manager)
+            results["added"] = self._process_added_files_db(changes, project_id, file_manager)
 
-            results["total"] = (
-                results["added"] + results["modified"] + results["deleted"]
-            )
+            results["total"] = results["added"] + results["modified"] + results["deleted"]
             self.logger.info(
                 f"Database updated: {results['added']} added, "
                 f"{results['modified']} modified, {results['deleted']} deleted"
@@ -247,28 +233,20 @@ class FileChangeTracker:
 
         return results
 
-    def _process_deleted_files_db(
-        self, changes: Dict, project_id: str, file_manager: Any
-    ) -> int:
+    def _process_deleted_files_db(self, changes: Dict, project_id: str, file_manager: Any) -> int:
         """Process deleted files in database"""
         count = 0
         for deleted_file in changes.get("deleted", []):
             try:
-                success, _ = file_manager.delete_file(
-                    project_id, deleted_file["file_path"]
-                )
+                success, _ = file_manager.delete_file(project_id, deleted_file["file_path"])
                 if success:
                     count += 1
                     self.logger.debug(f"Deleted from DB: {deleted_file['file_path']}")
             except Exception as e:
-                self.logger.error(
-                    f"Error deleting file: {deleted_file['file_path']}: {str(e)}"
-                )
+                self.logger.error(f"Error deleting file: {deleted_file['file_path']}: {str(e)}")
         return count
 
-    def _process_modified_files_db(
-        self, changes: Dict, project_id: str, file_manager: Any
-    ) -> int:
+    def _process_modified_files_db(self, changes: Dict, project_id: str, file_manager: Any) -> int:
         """Process modified files in database"""
         count = 0
         for modified_file in changes.get("modified", []):
@@ -278,14 +256,10 @@ class FileChangeTracker:
                     count += 1
                     self.logger.debug(f"Updated in DB: {modified_file['file_path']}")
             except Exception as e:
-                self.logger.error(
-                    f"Error updating file: {modified_file['file_path']}: {str(e)}"
-                )
+                self.logger.error(f"Error updating file: {modified_file['file_path']}: {str(e)}")
         return count
 
-    def _process_added_files_db(
-        self, changes: Dict, project_id: str, file_manager: Any
-    ) -> int:
+    def _process_added_files_db(self, changes: Dict, project_id: str, file_manager: Any) -> int:
         """Process added files in database"""
         files_to_add = changes.get("added", [])
         if not files_to_add:
