@@ -142,8 +142,6 @@ class SubscriptionUpgradeCommand(BaseCommand):
         # user.stripe_customer_id = customer.id
         # user.stripe_subscription_id = subscription.id
 
-        logger.info(f"Subscription tier changed to {new_tier} for user {current_user} (Stripe integration pending)")
-
         orchestrator.database.save_user(user)
 
         limits = get_tier_limits(new_tier)

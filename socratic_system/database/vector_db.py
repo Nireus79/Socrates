@@ -621,7 +621,7 @@ class VectorDatabase:
                 self.logger.warning(message)
             elif level == "error":
                 self.logger.error(message)
-        except Exception as e:
+        except Exception:
             # Silently ignore logging errors during shutdown - this is expected during cleanup
             pass
 
@@ -690,6 +690,6 @@ class VectorDatabase:
         """Destructor to ensure cleanup when object is garbage collected."""
         try:
             self.close()
-        except Exception as e:
+        except Exception:
             # Silently ignore errors in destructor - logging may not be available
             pass
