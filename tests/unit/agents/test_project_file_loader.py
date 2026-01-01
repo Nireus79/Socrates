@@ -65,7 +65,7 @@ class TestProjectFileLoaderBasic:
         self, file_loader, sample_project
     ):
         """Test should_load_files returns True when files exist"""
-        with patch("socratic_system.agents.project_file_loader.ProjectFileManager") as mock_pm:
+        with patch("socratic_system.database.project_file_manager.ProjectFileManager") as mock_pm:
             mock_manager = MagicMock()
             mock_manager.get_file_count.return_value = 5
             mock_pm.return_value = mock_manager
@@ -78,7 +78,7 @@ class TestProjectFileLoaderBasic:
         self, file_loader, sample_project
     ):
         """Test should_load_files returns False when no files exist"""
-        with patch("socratic_system.agents.project_file_loader.ProjectFileManager") as mock_pm:
+        with patch("socratic_system.database.project_file_manager.ProjectFileManager") as mock_pm:
             mock_manager = MagicMock()
             mock_manager.get_file_count.return_value = 0
             mock_pm.return_value = mock_manager
@@ -90,7 +90,7 @@ class TestProjectFileLoaderBasic:
         self, file_loader, sample_project
     ):
         """Test should_load_files handles exceptions gracefully"""
-        with patch("socratic_system.agents.project_file_loader.ProjectFileManager") as mock_pm:
+        with patch("socratic_system.database.project_file_manager.ProjectFileManager") as mock_pm:
             mock_manager = MagicMock()
             mock_manager.get_file_count.side_effect = Exception("Database error")
             mock_pm.return_value = mock_manager
@@ -247,7 +247,7 @@ class TestLoadProjectFiles:
         self, file_loader, mock_orchestrator, sample_project
     ):
         """Test loading when no files exist"""
-        with patch("socratic_system.agents.project_file_loader.ProjectFileManager") as mock_pm:
+        with patch("socratic_system.database.project_file_manager.ProjectFileManager") as mock_pm:
             mock_manager = MagicMock()
             mock_manager.get_file_count.return_value = 0
             mock_manager.get_project_files.return_value = []
@@ -261,7 +261,7 @@ class TestLoadProjectFiles:
         self, file_loader, mock_orchestrator, sample_project, sample_files
     ):
         """Test loading with actual files"""
-        with patch("socratic_system.agents.project_file_loader.ProjectFileManager") as mock_pm:
+        with patch("socratic_system.database.project_file_manager.ProjectFileManager") as mock_pm:
             mock_manager = MagicMock()
             mock_manager.get_file_count.return_value = len(sample_files)
             mock_manager.get_project_files.return_value = sample_files
@@ -286,7 +286,7 @@ class TestLoadProjectFiles:
         self, file_loader, sample_project
     ):
         """Test load_project_files handles exceptions"""
-        with patch("socratic_system.agents.project_file_loader.ProjectFileManager") as mock_pm:
+        with patch("socratic_system.database.project_file_manager.ProjectFileManager") as mock_pm:
             mock_manager = MagicMock()
             mock_manager.get_file_count.side_effect = Exception("Database error")
             mock_pm.return_value = mock_manager
@@ -299,7 +299,7 @@ class TestLoadProjectFiles:
         self, file_loader, mock_orchestrator, sample_project, sample_files
     ):
         """Test loading with different strategies"""
-        with patch("socratic_system.agents.project_file_loader.ProjectFileManager") as mock_pm:
+        with patch("socratic_system.database.project_file_manager.ProjectFileManager") as mock_pm:
             for strategy in ["priority", "sample", "all"]:
                 mock_manager = MagicMock()
                 mock_manager.get_file_count.return_value = len(sample_files)
