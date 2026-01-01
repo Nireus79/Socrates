@@ -12,17 +12,17 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
 
-from socratic_system.database import ProjectDatabase
-from socrates_api.database import get_database
 from socrates_api.auth import get_current_user
+from socrates_api.database import get_database
 from socrates_api.websocket import (
-    get_connection_manager,
-    get_message_handler,
     MessageType,
     ResponseType,
+    get_connection_manager,
+    get_message_handler,
 )
+from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="", tags=["websocket"])

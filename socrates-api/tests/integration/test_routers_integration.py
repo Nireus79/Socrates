@@ -2,7 +2,6 @@
 Integration Tests - Backend API Routers
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 

@@ -6,10 +6,10 @@ Provides REST endpoints for managing LLM providers and configurations.
 
 import logging
 
-from fastapi import APIRouter, HTTPException, status, Depends, Body
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 
-from socrates_api.models import SuccessResponse
 from socrates_api.auth import get_current_user
+from socrates_api.models import SuccessResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/llm-config", tags=["llm-config"])

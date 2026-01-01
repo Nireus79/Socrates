@@ -3,9 +3,9 @@ Comprehensive API Endpoint Tests
 Full coverage of all endpoints with various input scenarios and edge cases
 """
 
-import pytest
-from fastapi.testclient import TestClient
 import json
+
+from fastapi.testclient import TestClient
 
 
 class TestAuthEndpoints:

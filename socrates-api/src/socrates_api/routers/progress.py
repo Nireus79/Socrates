@@ -8,7 +8,8 @@ Provides REST endpoints for tracking project progress including:
 """
 
 import logging
-from fastapi import APIRouter, HTTPException, status, Depends
+
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database

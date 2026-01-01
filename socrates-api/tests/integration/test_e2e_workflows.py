@@ -3,10 +3,9 @@ End-to-End Workflow Tests
 Tests complete user workflows across multiple endpoints and features
 """
 
-import pytest
-from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
 import json
+
+from fastapi.testclient import TestClient
 
 
 class TestAuthWorkflows:
@@ -338,7 +337,7 @@ class TestCompleteUserJourney:
             try:
                 data = login_response.json()
                 token = data.get('access_token') or data.get('token')
-            except:
+            except Exception:
                 pass
 
         # Step 3: Create project
@@ -365,7 +364,7 @@ class TestCompleteUserJourney:
     def test_github_project_import_workflow(self, client: TestClient):
         """Test: User can import and work with GitHub project"""
         # Step 1: Register/Login (simplified)
-        login_response = client.post('/auth/login', json={
+        client.post('/auth/login', json={
             'username': 'github_user',
             'password': 'github_pass'
         })

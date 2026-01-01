@@ -18,12 +18,18 @@ As a CLI Application:
     python socrates.py --help          # Show help
 """
 
+import argparse
+import os
+import socket
+import sys
+from pathlib import Path
+
+from socratic_system.config import SocratesConfig
+from socratic_system.orchestration import AgentOrchestrator
+
 # ============================================================================
 # Ensure LOCAL code is used, not installed package
 # ============================================================================
-
-import sys
-from pathlib import Path
 
 # Add current directory to path FIRST (before any socratic_system imports)
 # This ensures we use the local code, not the installed package
@@ -35,28 +41,17 @@ if str(_current_dir) not in sys.path:
 # Library Exports (for programmatic use)
 # ============================================================================
 
-__version__ = "0.6.6"
-
-# Import orchestrator
-from socratic_system.orchestration import AgentOrchestrator
-
-# Import configuration
-from socratic_system.config import SocratesConfig
-
-# Import exceptions
 try:
-    from socratic_system.exceptions import SocratesError, ProjectNotFoundError
+    from socratic_system.exceptions import ProjectNotFoundError, SocratesError
 except ImportError:
     class SocratesError(Exception):
         """Base Socrates exception"""
         pass
 
-
     class ProjectNotFoundError(SocratesError):
         """Project not found exception"""
         pass
 
-# Import events
 try:
     from socratic_system.events.event_types import EventType
 except ImportError:
@@ -67,6 +62,8 @@ except ImportError:
             PROJECT_CREATED = "project_created"
             CODE_GENERATED = "code_generated"
             AGENT_ERROR = "agent_error"
+
+__version__ = "0.6.6"
 
 __all__ = [
     "__version__",
@@ -80,10 +77,6 @@ __all__ = [
 # ============================================================================
 # CLI Application (for direct execution)
 # ============================================================================
-
-import argparse
-import os
-import socket
 
 
 def _find_available_port(preferred_port: int = 8000, host: str = "0.0.0.0") -> int:
@@ -102,7 +95,7 @@ def _find_available_port(preferred_port: int = 8000, host: str = "0.0.0.0") -> i
     port = preferred_port
     max_attempts = 100
 
-    for attempt in range(max_attempts):
+    for _attempt in range(max_attempts):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.bind((host, port))
@@ -176,13 +169,14 @@ def start_api(host: str = "0.0.0.0", port: int = 8000, reload: bool = False, aut
 
 def start_full_stack() -> None:
     """Start complete Socrates stack (API + Frontend)"""
+    import json
+    import signal
     import subprocess
     import threading
     import time
-    import signal
-    import requests
-    import json
     import webbrowser
+
+    import requests
 
     project_root = Path(__file__).parent
 
@@ -274,7 +268,7 @@ uvicorn.run(
             try:
                 response = requests.get(frontend_url, timeout=2)
                 if response.status_code == 200:
-                    print(f"[INFO] Frontend is ready! Opening browser...")
+                    print("[INFO] Frontend is ready! Opening browser...")
                     webbrowser.open(frontend_url)
                     browser_opened.set()
                     return
@@ -370,7 +364,7 @@ uvicorn.run(
     print("=" * 70)
     print(f"[INFO] API server starting on http://localhost:{api_port}")
     print(f"[INFO] Frontend starting on http://localhost:{frontend_port}")
-    print(f"[INFO] Press Ctrl+C to shutdown")
+    print("[INFO] Press Ctrl+C to shutdown")
     print("=" * 70)
 
     # Start API in separate subprocess (not thread)

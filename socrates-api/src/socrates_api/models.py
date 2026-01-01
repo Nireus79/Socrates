@@ -2,9 +2,10 @@
 Pydantic models for API request/response bodies
 """
 
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class CreateProjectRequest(BaseModel):

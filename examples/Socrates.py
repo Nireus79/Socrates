@@ -21,14 +21,12 @@ Run:
     python socrates.py
 """
 
+import importlib.util
 import os
-import sys
 
-try:
-    import socrates_ai
-except ImportError:
+if importlib.util.find_spec("socrates_ai") is None:
     print("Install socrates-ai: pip install socrates-ai")
-    raise
+    raise ImportError("socrates-ai is not installed")
 
 api_key = os.environ.get("ANTHROPIC_API_KEY")
 if api_key:

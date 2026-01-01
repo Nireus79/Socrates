@@ -8,23 +8,23 @@ Provides REST endpoints for session-based chat operations including:
 """
 
 import logging
-from typing import Optional
-from datetime import datetime, timezone
 import uuid
+from datetime import datetime, timezone
+from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status, Depends, Body
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 
-from socrates_api.models import (
-    CreateChatSessionRequest,
-    ChatSessionResponse,
-    ListChatSessionsResponse,
-    ChatMessageRequest,
-    ChatMessage,
-    GetChatMessagesResponse,
-    UpdateMessageRequest,
-)
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
+from socrates_api.models import (
+    ChatMessage,
+    ChatMessageRequest,
+    ChatSessionResponse,
+    CreateChatSessionRequest,
+    GetChatMessagesResponse,
+    ListChatSessionsResponse,
+    UpdateMessageRequest,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["chat-sessions"])

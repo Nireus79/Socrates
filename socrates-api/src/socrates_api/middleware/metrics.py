@@ -13,16 +13,17 @@ Metrics are exposed at /metrics endpoint in Prometheus format.
 import logging
 import time
 from typing import Dict
+
 from fastapi import Request
+from prometheus_client import (
+    CollectorRegistry,
+    Counter,
+    Gauge,
+    Histogram,
+    generate_latest,
+)
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
-from prometheus_client import (
-    Counter,
-    Histogram,
-    Gauge,
-    generate_latest,
-    CollectorRegistry,
-)
 
 logger = logging.getLogger(__name__)
 

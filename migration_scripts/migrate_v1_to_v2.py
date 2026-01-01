@@ -12,14 +12,14 @@ Since the project is pre-launch, there's typically no data to migrate, but the s
 handles it properly for any edge cases.
 """
 
-import sqlite3
-import pickle
 import logging
 import os
+import pickle
 import shutil
+import sqlite3
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict
 
 # Configure logging
 logging.basicConfig(
@@ -135,7 +135,7 @@ class SchemaMigrator:
         cursor = conn.cursor()
 
         try:
-            with open(schema_path, 'r') as f:
+            with open(schema_path) as f:
                 schema_sql = f.read()
 
             # Execute schema creation

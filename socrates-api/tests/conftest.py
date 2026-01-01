@@ -1,17 +1,18 @@
 """Pytest configuration and fixtures for Socrates API tests."""
 
 import sys
-import pytest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-import os
+from unittest.mock import MagicMock
+
+import pytest
+
+import socratic_system
 
 # Add main project to path
 main_project_path = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(main_project_path))
 
 # Create alias for socratic_system
-import socratic_system
 sys.modules['socrates'] = socratic_system
 
 
@@ -121,7 +122,6 @@ def pytest_collection_modifyitems(config, items):
 def cleanup_test_database():
     """Clean up test database files before and after tests."""
     from pathlib import Path
-    import shutil
 
     # Clean up test database before tests
     test_data_dir = Path.home() / ".socrates"

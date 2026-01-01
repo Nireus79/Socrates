@@ -29,25 +29,25 @@ import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, HTTPException, status, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 if TYPE_CHECKING:
     import socrates
 
+from socrates_api.auth import get_current_user, get_current_user_object
+from socrates_api.database import get_database
+from socrates_api.middleware import SubscriptionChecker
+from socrates_api.models import (
+    CreateProjectRequest,
+    ErrorResponse,
+    ListProjectsResponse,
+    ProjectResponse,
+    SuccessResponse,
+    UpdateProjectRequest,
+)
 from socratic_system.database import ProjectDatabase
 from socratic_system.models import ProjectContext
 from socratic_system.utils.id_generator import ProjectIDGenerator
-from socrates_api.database import get_database
-from socrates_api.auth import get_current_user, get_current_user_object
-from socrates_api.middleware import SubscriptionChecker
-from socrates_api.models import (
-    ProjectResponse,
-    ListProjectsResponse,
-    CreateProjectRequest,
-    UpdateProjectRequest,
-    ErrorResponse,
-    SuccessResponse,
-)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["projects"])

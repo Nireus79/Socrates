@@ -15,9 +15,9 @@ GET /database/stats - Connection pool and query statistics
 import logging
 import os
 import time
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)

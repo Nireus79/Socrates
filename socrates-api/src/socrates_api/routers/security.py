@@ -6,16 +6,16 @@ Provides password management, 2FA setup, and session management.
 
 import logging
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
-from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, status, Depends
 import bcrypt
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from socratic_system.database import ProjectDatabase
 from socrates_api.auth import get_current_user
-from socrates_api.models import SuccessResponse, ErrorResponse
+from socrates_api.models import ErrorResponse, SuccessResponse
+from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/security", tags=["security"])
@@ -175,10 +175,11 @@ async def setup_2fa(
 
         # Generate TOTP secret using pyotp
         try:
+            import base64
+            from io import BytesIO
+
             import pyotp
             import qrcode
-            from io import BytesIO
-            import base64
         except ImportError:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

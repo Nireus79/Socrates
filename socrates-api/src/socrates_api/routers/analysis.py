@@ -7,11 +7,11 @@ Provides code validation, testing, review, and analysis functionality.
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from socrates_api.models import SuccessResponse, ErrorResponse
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
+from socrates_api.models import ErrorResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analysis", tags=["analysis"])

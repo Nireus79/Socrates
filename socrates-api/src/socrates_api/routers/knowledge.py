@@ -10,12 +10,12 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, status, Depends, Body, Form
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile, status
 
-from socratic_system.database import ProjectDatabase
-from socrates_api.models import SuccessResponse, ErrorResponse
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
+from socrates_api.models import ErrorResponse, SuccessResponse
+from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/knowledge", tags=["knowledge"])

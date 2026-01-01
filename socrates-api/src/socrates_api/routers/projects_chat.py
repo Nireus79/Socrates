@@ -9,23 +9,23 @@ Provides REST endpoints for chat operations on projects including:
 """
 
 import logging
-from typing import Optional
-from datetime import datetime, timezone
 import uuid
+from datetime import datetime, timezone
+from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from socrates_api.models import (
-    CreateChatSessionRequest,
-    ChatSessionResponse,
-    ListChatSessionsResponse,
-    ChatMessageRequest,
-    ChatMessage,
-    GetChatMessagesResponse,
-)
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
+from socrates_api.models import (
+    ChatMessage,
+    ChatMessageRequest,
+    ChatSessionResponse,
+    CreateChatSessionRequest,
+    GetChatMessagesResponse,
+    ListChatSessionsResponse,
+)
 
 
 class ChatModeRequest(BaseModel):

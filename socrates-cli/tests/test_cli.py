@@ -2,13 +2,13 @@
 Tests for Socrates CLI commands
 """
 
-import pytest
-from click.testing import CliRunner
-from unittest.mock import patch, Mock
-
 # Import CLI commands
 import sys
 from pathlib import Path
+from unittest.mock import Mock, patch
+
+import pytest
+from click.testing import CliRunner
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -193,7 +193,6 @@ class TestCLIDataIntegrity:
     def test_cli_handles_long_values(self, cli_runner):
         """Test CLI handling of long input values"""
         long_name = "A" * 500
-        long_description = "B" * 1000
 
         # Create a context that accepts long values
         result = cli_runner.invoke(

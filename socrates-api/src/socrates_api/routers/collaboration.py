@@ -11,22 +11,22 @@ Provides:
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, status, Depends, Body
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 
+from socrates_api.auth import get_current_user, get_current_user_object, require_project_role
+from socrates_api.database import get_database
+from socrates_api.middleware.subscription import SubscriptionChecker
+from socrates_api.models import (
+    CollaborationInvitationResponse,
+    CollaborationInviteRequest,
+    ErrorResponse,
+    SuccessResponse,
+)
+from socrates_api.websocket import get_connection_manager
 from socratic_system.database import ProjectDatabase
 from socratic_system.models import User
-from socrates_api.database import get_database
-from socrates_api.auth import get_current_user, get_current_user_object, require_project_role
-from socrates_api.models import (
-    SuccessResponse,
-    ErrorResponse,
-    CollaborationInviteRequest,
-    CollaborationInvitationResponse,
-)
-from socrates_api.middleware.subscription import SubscriptionChecker
-from socrates_api.websocket import get_connection_manager
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["collaboration"])
@@ -276,6 +276,7 @@ async def add_collaborator_new(
 
         # Initialize team_members if not present
         from datetime import datetime
+
         from socratic_system.models.role import TeamMemberRole
 
         project.team_members = project.team_members or []
@@ -745,8 +746,8 @@ async def record_activity(
         Activity recording confirmation
     """
     try:
-        from datetime import datetime
         import uuid
+        from datetime import datetime
 
         # Verify project access
         project = db.load_project(project_id)
@@ -913,9 +914,9 @@ async def create_project_invitation(
         CollaborationInvitationResponse with invitation details
     """
     try:
-        from datetime import datetime, timedelta
-        import uuid
         import secrets
+        import uuid
+        from datetime import datetime, timedelta
 
         # Verify project exists and user is owner
         project = db.load_project(project_id)

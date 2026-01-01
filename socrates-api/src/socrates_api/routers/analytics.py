@@ -6,18 +6,18 @@ Provides analytics trends, exports, and comparative analysis with PDF/CSV report
 
 import logging
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
-from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, status, Depends, Body
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 
-from socratic_system.database import ProjectDatabase
-from socrates_api.models import SuccessResponse, ErrorResponse
 from socrates_api.auth import get_current_user, get_current_user_object
 from socrates_api.database import get_database
+from socrates_api.models import ErrorResponse, SuccessResponse
 from socrates_api.services.report_generator import get_report_generator
+from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analytics", tags=["analytics"])

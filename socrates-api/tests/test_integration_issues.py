@@ -5,17 +5,17 @@ These tests verify that all documented integration issues are properly fixed.
 Each test is designed to fail if the issue exists, and pass if the issue is fixed.
 """
 
-import pytest
-from fastapi.testclient import TestClient
-import os
 import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+
+import pytest
+from fastapi.testclient import TestClient
 
 # Setup path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from socrates_api.main import app
+
 from socratic_system.database.project_db_v2 import ProjectDatabase
 
 
@@ -43,8 +43,9 @@ class TestCriticalIssue1_DeleteUser:
 
     def test_delete_user_endpoint_calls_correct_method(self):
         """Verify auth router calls the correct method name"""
-        from socrates_api.routers.auth import _delete_user_helper
         import inspect
+
+        from socrates_api.routers.auth import _delete_user_helper
 
         source = inspect.getsource(_delete_user_helper)
         # Should call the actual method, not non-existent one
@@ -58,8 +59,9 @@ class TestCriticalIssue2_RefreshToken:
 
     def test_refresh_token_stored(self, test_db):
         """Verify refresh tokens are persisted to database"""
-        from socrates_api.routers.auth import _store_refresh_token
         import inspect
+
+        from socrates_api.routers.auth import _store_refresh_token
 
         source = inspect.getsource(_store_refresh_token)
         # Should contain actual database operations, not just 'pass'
@@ -85,7 +87,6 @@ class TestCriticalIssue3_EmailDuplication:
 
     def test_registration_with_no_email_generates_unique(self, client):
         """Verify that registrations without email get unique emails"""
-        from socrates_api.routers.auth import register
 
         # First registration without email
         response1 = client.post('/auth/register', json={
@@ -106,8 +107,9 @@ class TestCriticalIssue3_EmailDuplication:
 
     def test_email_uniqueness_logic(self):
         """Verify email generation doesn't create duplicates"""
-        from socrates_api.routers.auth import register
         import inspect
+
+        from socrates_api.routers.auth import register
 
         source = inspect.getsource(register)
 
@@ -188,8 +190,6 @@ class TestHighIssue5_DatabaseConnections:
         # Check if app has shutdown event that closes database
         from socrates_api.main import app
 
-        shutdown_events = [e for e in app.router.on_shutdown]
-
         # Should have cleanup event
         # Note: May not be in this format after refactoring, but concept should exist
         assert len(app.router.on_shutdown) > 0 or \
@@ -202,8 +202,9 @@ class TestHighIssue6_SubscriptionEnforcement:
 
     def test_subscription_decorator_applied(self):
         """Verify subscription checking is applied to protected endpoints"""
-        from socrates_api.routers.projects import create_project
         import inspect
+
+        from socrates_api.routers.projects import create_project
 
         source = inspect.getsource(create_project)
 
@@ -230,8 +231,9 @@ class TestHighIssue7_HardcodedLocalhost:
 
     def test_api_host_from_environment(self):
         """Verify API host comes from environment variable"""
-        from socrates_api.main import run
         import inspect
+
+        from socrates_api.main import run
 
         source = inspect.getsource(run)
 
@@ -241,8 +243,9 @@ class TestHighIssue7_HardcodedLocalhost:
 
     def test_data_dir_from_environment(self):
         """Verify data directory uses environment variable"""
-        from socratic_system.database.project_db_v2 import ProjectDatabase
         import inspect
+
+        from socratic_system.database.project_db_v2 import ProjectDatabase
 
         source = inspect.getsource(ProjectDatabase.__init__)
 
@@ -287,8 +290,9 @@ class TestHighIssue8_OrchestratorInitialization:
 
     def test_consistent_initialization_pattern(self):
         """Verify all endpoints use consistent error handling"""
-        from socrates_api.main import get_orchestrator
         import inspect
+
+        from socrates_api.main import get_orchestrator
 
         source = inspect.getsource(get_orchestrator)
 
@@ -303,8 +307,9 @@ class TestMediumIssue9_TestingModeInsecure:
 
     def test_testing_mode_requires_admin(self):
         """Verify testing mode can only be set by admin"""
-        from socrates_api.routers.auth import set_testing_mode
         import inspect
+
+        from socrates_api.routers.auth import set_testing_mode
 
         source = inspect.getsource(set_testing_mode)
 
@@ -316,8 +321,9 @@ class TestMediumIssue9_TestingModeInsecure:
 
     def test_testing_mode_is_logged(self):
         """Verify testing mode changes are logged"""
-        from socrates_api.routers.auth import set_testing_mode
         import inspect
+
+        from socrates_api.routers.auth import set_testing_mode
 
         source = inspect.getsource(set_testing_mode)
 
@@ -344,8 +350,9 @@ class TestMediumIssue10_EnvironmentValidation:
 
     def test_startup_validates_data_directory(self):
         """Verify system validates data directory is writable"""
-        from socratic_system.database.project_db_v2 import ProjectDatabase
         import inspect
+
+        from socratic_system.database.project_db_v2 import ProjectDatabase
 
         source = inspect.getsource(ProjectDatabase.__init__)
 
@@ -357,8 +364,9 @@ class TestMediumIssue10_EnvironmentValidation:
 
     def test_port_availability_check(self):
         """Verify system checks if port is available"""
-        from socrates_api.main import run
         import inspect
+
+        from socrates_api.main import run
 
         source = inspect.getsource(run)
 

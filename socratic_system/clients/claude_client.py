@@ -101,7 +101,7 @@ class ClaudeClient:
         # Check cache first to avoid redundant Claude API calls
         cache_key = self._get_cache_key(user_response)
         if cache_key in self._insights_cache:
-            self.logger.debug(f"Cache hit for insights extraction")
+            self.logger.debug("Cache hit for insights extraction")
             return self._insights_cache[cache_key]
 
         # Build prompt
@@ -180,7 +180,7 @@ class ClaudeClient:
         # Check cache first to avoid redundant Claude API calls
         cache_key = self._get_cache_key(user_response)
         if cache_key in self._insights_cache:
-            self.logger.debug(f"Cache hit for insights extraction")
+            self.logger.debug("Cache hit for insights extraction")
             return self._insights_cache[cache_key]
 
         prompt = f"""

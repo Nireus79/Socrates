@@ -10,10 +10,9 @@ Handles:
 
 import json
 import logging
-from enum import Enum
-from typing import Optional, Dict, Any, Callable
 from dataclasses import dataclass
-
+from enum import Enum
+from typing import Any, Callable, Dict, Optional
 
 logger = logging.getLogger(__name__)
 

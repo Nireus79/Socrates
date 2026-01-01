@@ -11,11 +11,11 @@ Provides:
 Falls back to in-memory cache if Redis unavailable.
 """
 
+import hashlib
 import json
 import logging
 import os
-from typing import Any, Optional, Dict
-import hashlib
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 

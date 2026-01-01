@@ -9,10 +9,10 @@ This script:
 4. Updates foreign key relationships
 """
 
-import sqlite3
 import shutil
-from pathlib import Path
+import sqlite3
 from datetime import datetime
+from pathlib import Path
 
 DB_PATH = Path.home() / ".socrates" / "projects.db"
 
@@ -98,7 +98,7 @@ def rename_tables():
 
         # Recreate all indexes with updated names
         print("\n[INFO] Updating indexes...")
-        for old_index, new_index in INDEX_RENAMES.items():
+        for old_index, _new_index in INDEX_RENAMES.items():
             # Drop old index if it exists
             cursor.execute(f"DROP INDEX IF EXISTS {old_index}")
 
@@ -131,7 +131,7 @@ def verify_migration():
 
     # Check that new table names exist
     print("\n[INFO] Checking new table names...")
-    for old_name, new_name in TABLE_RENAMES.items():
+    for _old_name, new_name in TABLE_RENAMES.items():
         cursor.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
             (new_name,)

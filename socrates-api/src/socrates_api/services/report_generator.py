@@ -6,29 +6,29 @@ Provides PDF and CSV report generation for project analytics, using:
 - pandas for CSV generation with structured data
 """
 
-import logging
 import csv
+import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Tuple, Optional
+from typing import Any, Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 # Try to import optional dependencies for report generation
 try:
-    from reportlab.lib.pagesizes import letter, A4  # noqa: F401
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT  # noqa: F401
+    from reportlab.lib.pagesizes import A4, letter  # noqa: F401
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import inch
     from reportlab.platypus import (
-        SimpleDocTemplate,
+        PageBreak,  # noqa: F401
         Paragraph,
+        SimpleDocTemplate,
         Spacer,
         Table,
         TableStyle,
-        PageBreak,  # noqa: F401
     )
-    from reportlab.lib import colors
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT  # noqa: F401
 
     REPORTLAB_AVAILABLE = True
 except ImportError:

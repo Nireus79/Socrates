@@ -8,9 +8,10 @@ corruption from dual database access.
 All components should use DatabaseSingleton.get_instance() to access the database.
 """
 
-import os
 import logging
+import os
 from pathlib import Path
+
 from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)

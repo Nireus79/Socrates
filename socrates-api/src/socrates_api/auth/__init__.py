@@ -7,9 +7,9 @@ for API authentication.
 
 from socrates_api.auth.dependencies import (
     get_current_user,
-    get_current_user_optional,
     get_current_user_object,
     get_current_user_object_optional,
+    get_current_user_optional,
     require_project_role,
     security,
 )

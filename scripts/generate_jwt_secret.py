@@ -14,11 +14,10 @@ The secret can be used in:
     JWT_SECRET_KEY={generated_secret}
 """
 
-import os
-import sys
 import argparse
-import secrets
 import base64
+import secrets
+import sys
 from pathlib import Path
 
 
@@ -81,7 +80,7 @@ def save_to_env(secret: str, env_file: str = ".env.production") -> bool:
     # Read existing content
     content = ""
     if env_path.exists():
-        with open(env_path, "r") as f:
+        with open(env_path) as f:
             content = f.read()
 
     # Remove existing JWT_SECRET_KEY if present
@@ -146,10 +145,10 @@ def main():
 
     # Validate generated secret
     if not validate_secret(secret):
-        print(f"✗ Generated secret validation failed")
+        print("✗ Generated secret validation failed")
         return 1
 
-    print(f"✓ Secret generated successfully")
+    print("✓ Secret generated successfully")
     print(f"  Format: {args.format}")
     print(f"  Length: {len(secret)} characters")
     print()

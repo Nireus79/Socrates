@@ -2,14 +2,15 @@
 Tests for Socrates REST API endpoints
 """
 
-import pytest
-from fastapi.testclient import TestClient
-from unittest.mock import patch, Mock
 import os
 
 # Import FastAPI app
 import sys
 from pathlib import Path
+from unittest.mock import Mock
+
+import pytest
+from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 

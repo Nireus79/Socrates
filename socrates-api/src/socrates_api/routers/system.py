@@ -10,9 +10,10 @@ Provides REST endpoints for system monitoring and control including:
 
 import logging
 import time
-from typing import Optional
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException, status, Depends
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database

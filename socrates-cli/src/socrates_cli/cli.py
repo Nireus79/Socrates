@@ -5,8 +5,8 @@ Provides a user-friendly command-line interface to the Socrates AI library.
 Uses Click for command-line argument parsing and colorama for colored output.
 """
 
-import sys
 import logging
+import sys
 from pathlib import Path
 
 import click

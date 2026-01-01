@@ -7,11 +7,11 @@ Provides event history and streaming endpoints for tracking API activity.
 import asyncio
 import json
 import logging
-from typing import Optional
-from datetime import datetime
 from collections import deque
+from datetime import datetime
+from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from socratic_system.database import ProjectDatabase
@@ -26,8 +26,8 @@ _event_subscribers = []  # List of async queues for streaming clients
 
 def get_database() -> ProjectDatabase:
     """Get database instance."""
-    from pathlib import Path
     import os
+    from pathlib import Path
 
     data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
     db_path = os.path.join(data_dir, "projects.db")

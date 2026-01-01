@@ -7,11 +7,12 @@ Tests core functionality of:
 - Access control (authorization, forbidden, not found)
 """
 
+import sys
+from datetime import datetime
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
-import sys
-from pathlib import Path
-from datetime import datetime
 
 # Add the source directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))

@@ -4,68 +4,68 @@ Socrates API - FastAPI application for Socrates AI tutoring system
 Provides REST endpoints for project management, Socratic questioning, and code generation.
 """
 
-import os
 import logging
+import os
 import socket
 import time
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Body, status, Request
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from slowapi.errors import RateLimitExceeded
 import uvicorn
+from fastapi import Body, FastAPI, HTTPException, Request, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 
-from socratic_system.orchestration.orchestrator import AgentOrchestrator
-from socratic_system.events import EventType
-from socratic_system.exceptions import SocratesError
+from socrates_api.middleware.metrics import (
+    add_metrics_middleware,
+    get_metrics_summary,
+    get_metrics_text,
+)
 from socrates_api.middleware.rate_limit import (
     initialize_limiter,
 )
 from socrates_api.middleware.security_headers import add_security_headers_middleware
-from socrates_api.middleware.metrics import (
-    add_metrics_middleware,
-    get_metrics_text,
-    get_metrics_summary,
-)
+from socratic_system.events import EventType
+from socratic_system.exceptions import SocratesError
+from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
 from .models import (
     AskQuestionRequest,
-    QuestionResponse,
-    ProcessResponseRequest,
-    ProcessResponseResponse,
-    GenerateCodeRequest,
     CodeGenerationResponse,
     ErrorResponse,
-    SystemInfoResponse,
+    GenerateCodeRequest,
     InitializeRequest,
+    ProcessResponseRequest,
+    ProcessResponseResponse,
+    QuestionResponse,
+    SystemInfoResponse,
 )
 from .routers import (
+    analysis_router,
+    analytics_router,
     auth_router,
-    projects_router,
-    collaboration_router,
-    collab_router,
+    chat_sessions_router,
     code_generation_router,
+    collab_router,
+    collaboration_router,
+    events_router,
+    finalization_router,
+    free_session_router,
+    github_router,
+    knowledge_management_router,
     knowledge_router,
     llm_router,
-    projects_chat_router,
-    analysis_router,
-    security_router,
-    analytics_router,
-    github_router,
-    events_router,
-    notes_router,
-    finalization_router,
-    subscription_router,
-    query_router,
-    knowledge_management_router,
-    skills_router,
-    progress_router,
-    system_router,
     nlu_router,
-    free_session_router,
-    chat_sessions_router,
+    notes_router,
+    progress_router,
+    projects_chat_router,
+    projects_router,
+    query_router,
+    security_router,
+    skills_router,
+    subscription_router,
+    system_router,
 )
 
 # Configure logging

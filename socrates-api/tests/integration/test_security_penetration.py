@@ -3,10 +3,9 @@ Security & Penetration Testing
 Comprehensive security vulnerability and attack vector testing
 """
 
-import pytest
-from fastapi.testclient import TestClient
 import json
-import time
+
+from fastapi.testclient import TestClient
 
 
 class TestSQLInjectionProtection:
@@ -117,7 +116,7 @@ class TestCrossSteSiteScriptingProtection:
         if response.status_code in [200, 201]:
             # Retrieve and check if HTML is encoded
             data = response.json()
-            response_text = json.dumps(data)
+            json.dumps(data)
             # Should encode HTML tags or be safe
             assert response.status_code != 500
 
@@ -402,7 +401,7 @@ class TestRateLimiting:
         # May include rate limit headers
         headers = response.headers
         # Check if rate limiting is implemented
-        has_rate_limit = (
+        _has_rate_limit = (
             'X-RateLimit-Limit' in headers or
             'RateLimit-Limit' in headers or
             'X-RateLimit-Remaining' in headers
@@ -455,7 +454,7 @@ class TestSecurityHeaders:
     def test_content_security_policy(self, client: TestClient):
         """Test Content-Security-Policy header"""
         response = client.get('/')
-        headers = response.headers
+        _headers = response.headers
         # Should have CSP if returning HTML
         # API endpoints may not need it
 

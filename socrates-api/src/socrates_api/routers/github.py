@@ -6,18 +6,18 @@ Provides GitHub repository import, pull, push, and sync functionality.
 
 import logging
 import os
-from typing import Optional
 from pathlib import Path
+from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from socratic_system.database import ProjectDatabase
 from socrates_api.auth import get_current_user
 from socrates_api.models import (
-    SuccessResponse,
     ErrorResponse,
     GitHubImportRequest,
+    SuccessResponse,
 )
+from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/github", tags=["github"])
@@ -127,8 +127,9 @@ async def import_repository(
             logger.warning(f"Error fetching GitHub metadata: {e}")
 
         # Create project from GitHub import
-        from socratic_system.models.project import ProjectContext
         from datetime import datetime
+
+        from socratic_system.models.project import ProjectContext
 
         project = ProjectContext(
             project_id=f"proj_{repo_name.lower()}",

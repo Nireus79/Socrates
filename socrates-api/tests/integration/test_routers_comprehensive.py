@@ -3,9 +3,7 @@ Comprehensive Integration Tests - Backend API Routers
 Tests all critical endpoints with real assertions (replaces stub tests)
 """
 
-import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
 
 
 class TestAuthRouterComprehensive:

@@ -4,12 +4,10 @@ Focused on security-critical authentication code paths
 Target: 95%+ line coverage for all auth-related code
 """
 
-import pytest
-from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock, ANY
 import json
 import time
-from datetime import datetime, timedelta
+
+from fastapi.testclient import TestClient
 
 
 class TestAuthTokenGeneration:

@@ -8,13 +8,13 @@ Bridges:
 """
 
 import logging
-from typing import Optional, Dict, Any, Callable
 from datetime import datetime, timezone
+from typing import Any, Callable, Dict, Optional
 
 from socratic_system.events.event_emitter import EventType
 
 from .connection_manager import get_connection_manager
-from .message_handler import WebSocketResponse, ResponseType
+from .message_handler import ResponseType, WebSocketResponse
 
 logger = logging.getLogger(__name__)
 

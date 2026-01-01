@@ -10,7 +10,7 @@ Provides REST endpoints for subscription management including:
 
 import logging
 
-from fastapi import APIRouter, HTTPException, status, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user

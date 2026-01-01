@@ -9,9 +9,10 @@ Provides REST endpoints for managing project knowledge base including:
 """
 
 import logging
-from typing import Optional, List
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException, status, Depends, Body
+from typing import List, Optional
+
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user

@@ -12,9 +12,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from socrates_api.auth.jwt_handler import verify_access_token
-from socratic_system.models import User
 from socrates_api.database import get_database
 from socratic_system.database import ProjectDatabase
+from socratic_system.models import User
 
 logger = logging.getLogger(__name__)
 

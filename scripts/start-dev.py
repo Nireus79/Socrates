@@ -15,11 +15,12 @@ Stops with: Ctrl+C (graceful shutdown)
 """
 
 import os
-import sys
-import subprocess
 import signal
+import subprocess
+import sys
 import time
 from pathlib import Path
+
 
 # Color output
 class Colors:
@@ -66,7 +67,7 @@ def check_prerequisites():
                 print_status(tool, "missing")
                 all_ok = False
                 missing_tools.append(tool)
-        except Exception as e:
+        except Exception:
             print_status(tool, "missing")
             all_ok = False
             missing_tools.append(tool)
@@ -77,27 +78,27 @@ def check_prerequisites():
         if "Node.js" in missing_tools or "npm" in missing_tools:
             print(f"{Colors.YELLOW}[ERROR] Node.js & npm not found{Colors.END}")
             print(f"\n{Colors.CYAN}To install Node.js:{Colors.END}")
-            print(f"  1. Visit: https://nodejs.org/")
-            print(f"  2. Download: LTS version (14.x or higher)")
-            print(f"  3. Run the installer")
-            print(f"  4. Verify installation:")
-            print(f"     node --version")
-            print(f"     npm --version")
-            print(f"  5. Then try again:")
-            print(f"     python scripts/start-dev.py")
+            print("  1. Visit: https://nodejs.org/")
+            print("  2. Download: LTS version (14.x or higher)")
+            print("  3. Run the installer")
+            print("  4. Verify installation:")
+            print("     node --version")
+            print("     npm --version")
+            print("  5. Then try again:")
+            print("     python scripts/start-dev.py")
 
         if "Python 3.9+" in missing_tools:
             print(f"\n{Colors.YELLOW}[ERROR] Python 3.9+ not found{Colors.END}")
             print(f"\n{Colors.CYAN}To install Python:{Colors.END}")
-            print(f"  1. Visit: https://www.python.org/")
-            print(f"  2. Download: Python 3.9 or higher")
-            print(f"  3. Run the installer (check 'Add Python to PATH')")
-            print(f"  4. Verify: python --version")
+            print("  1. Visit: https://www.python.org/")
+            print("  2. Download: Python 3.9 or higher")
+            print("  3. Run the installer (check 'Add Python to PATH')")
+            print("  4. Verify: python --version")
 
         if "pip" in missing_tools:
             print(f"\n{Colors.YELLOW}[ERROR] pip not found{Colors.END}")
             print(f"\n{Colors.CYAN}pip comes with Python 3.4+{Colors.END}")
-            print(f"  Reinstall Python and ensure pip is selected during install")
+            print("  Reinstall Python and ensure pip is selected during install")
 
         print(f"\n{Colors.RED}Please install missing prerequisites and try again.{Colors.END}\n")
         return False
@@ -111,9 +112,11 @@ def install_dependencies():
 
     # Check if requirements installed
     try:
-        import fastapi
-        import uvicorn
-        print_status("Python deps", "ok", "Already installed")
+        import importlib.util
+        if importlib.util.find_spec("fastapi") and importlib.util.find_spec("uvicorn"):
+            print_status("Python deps", "ok", "Already installed")
+        else:
+            raise ImportError
     except ImportError:
         print_status("Python deps", "starting", "Installing...")
         subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", "requirements.txt"],

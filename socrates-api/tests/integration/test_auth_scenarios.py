@@ -3,11 +3,10 @@ Comprehensive Authentication Scenario Tests - Backend
 Tests complete auth workflows: token lifecycle, refresh flows, session management
 """
 
-import pytest
-from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
 import json
 import time
+
+from fastapi.testclient import TestClient
 
 
 class TestTokenLifecycle:

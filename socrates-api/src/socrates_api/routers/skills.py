@@ -8,9 +8,10 @@ Provides REST endpoints for tracking and managing project skills including:
 """
 
 import logging
-from typing import Optional
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException, status, Depends, Body
+from typing import Optional
+
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database

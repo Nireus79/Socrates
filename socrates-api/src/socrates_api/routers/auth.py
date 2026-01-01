@@ -8,33 +8,33 @@ using JWT-based authentication.
 import logging
 import sqlite3
 import uuid
+from datetime import datetime, timedelta, timezone
+
 import jwt
-from datetime import datetime, timezone, timedelta
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from fastapi import APIRouter, HTTPException, status, Depends, Query
-
-from socratic_system.database import ProjectDatabase
-from socratic_system.models import User
-from socrates_api.database import get_database
 from socrates_api.auth import (
     create_access_token,
     create_refresh_token,
+    get_current_user,
     hash_password,
     verify_password,
     verify_refresh_token,
-    get_current_user,
 )
+from socrates_api.database import get_database
 from socrates_api.models import (
-    RegisterRequest,
-    LoginRequest,
     AuthResponse,
-    UserResponse,
-    TokenResponse,
-    RefreshTokenRequest,
     ChangePasswordRequest,
-    SuccessResponse,
     ErrorResponse,
+    LoginRequest,
+    RefreshTokenRequest,
+    RegisterRequest,
+    SuccessResponse,
+    TokenResponse,
+    UserResponse,
 )
+from socratic_system.database import ProjectDatabase
+from socratic_system.models import User
 
 # Import rate limiter if available
 try:

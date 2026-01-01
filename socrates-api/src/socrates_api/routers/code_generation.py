@@ -11,12 +11,11 @@ Provides:
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from socratic_system.database import ProjectDatabase
-
-from socrates_api.database import get_database
 from socrates_api.auth import get_current_user, get_current_user_object
+from socrates_api.database import get_database
+from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["code-generation"])
