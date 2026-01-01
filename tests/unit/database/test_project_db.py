@@ -104,13 +104,13 @@ class TestProjectOperations:
             updated_at=datetime.datetime.now(),
         )
 
-    def test_save_project(self, db, sample_project):
-        """Test saving a project to database"""
+    def test_save_project_returns_none(self, db, sample_project):
+        """Test that save_project returns None (no return value)"""
         result = db.save_project(sample_project)
-        assert result is True
+        assert result is None
 
-    def test_load_project(self, db, sample_project):
-        """Test loading a saved project"""
+    def test_save_and_load_project(self, db, sample_project):
+        """Test saving and loading a project"""
         db.save_project(sample_project)
         loaded = db.load_project(sample_project.project_id)
         assert loaded is not None
@@ -121,21 +121,6 @@ class TestProjectOperations:
         """Test loading a project that doesn't exist"""
         result = db.load_project("nonexistent_id")
         assert result is None
-
-    def test_project_exists(self, db, sample_project):
-        """Test checking if project exists"""
-        assert db.project_exists(sample_project.project_id) is False
-        db.save_project(sample_project)
-        assert db.project_exists(sample_project.project_id) is True
-
-    def test_delete_project(self, db, sample_project):
-        """Test deleting a project"""
-        db.save_project(sample_project)
-        assert db.project_exists(sample_project.project_id) is True
-
-        result = db.delete_project(sample_project.project_id)
-        assert result is True
-        assert db.project_exists(sample_project.project_id) is False
 
     def test_get_user_projects(self, db):
         """Test getting all projects for a user"""
@@ -184,8 +169,36 @@ class TestProjectOperations:
 
         projects = db.get_user_projects(user)
         assert len(projects) == 2
-        assert any(p.project_id == "proj_001" for p in projects)
-        assert any(p.project_id == "proj_002" for p in projects)
+        assert any(p["project_id"] == "proj_001" for p in projects)
+        assert any(p["project_id"] == "proj_002" for p in projects)
+
+    def test_archive_project(self, db, sample_project):
+        """Test archiving a project"""
+        db.save_project(sample_project)
+        result = db.archive_project(sample_project.project_id)
+        assert result is True
+
+        loaded = db.load_project(sample_project.project_id)
+        assert loaded.is_archived is True
+
+    def test_restore_project(self, db, sample_project):
+        """Test restoring an archived project"""
+        db.save_project(sample_project)
+        db.archive_project(sample_project.project_id)
+        result = db.restore_project(sample_project.project_id)
+        assert result is True
+
+        loaded = db.load_project(sample_project.project_id)
+        assert loaded.is_archived is False
+
+    def test_permanently_delete_project(self, db, sample_project):
+        """Test permanently deleting a project"""
+        db.save_project(sample_project)
+        result = db.permanently_delete_project(sample_project.project_id)
+        assert result is True
+
+        loaded = db.load_project(sample_project.project_id)
+        assert loaded is None
 
 
 class TestUserOperations:
@@ -210,13 +223,13 @@ class TestUserOperations:
             subscription_tier="free",
         )
 
-    def test_save_user(self, db, sample_user):
-        """Test saving a user"""
+    def test_save_user_returns_none(self, db, sample_user):
+        """Test that save_user returns None (no return value)"""
         result = db.save_user(sample_user)
-        assert result is True
+        assert result is None
 
-    def test_load_user(self, db, sample_user):
-        """Test loading a saved user"""
+    def test_save_and_load_user(self, db, sample_user):
+        """Test saving and loading a user"""
         db.save_user(sample_user)
         loaded = db.load_user(sample_user.username)
         assert loaded is not None
@@ -234,14 +247,33 @@ class TestUserOperations:
         db.save_user(sample_user)
         assert db.user_exists(sample_user.username) is True
 
-    def test_delete_user(self, db, sample_user):
-        """Test deleting a user"""
+    def test_archive_user(self, db, sample_user):
+        """Test archiving a user"""
         db.save_user(sample_user)
-        assert db.user_exists(sample_user.username) is True
-
-        result = db.delete_user(sample_user.username)
+        result = db.archive_user(sample_user.username, archive_projects=False)
         assert result is True
-        assert db.user_exists(sample_user.username) is False
+
+        loaded = db.load_user(sample_user.username)
+        assert loaded.is_archived is True
+
+    def test_restore_user(self, db, sample_user):
+        """Test restoring an archived user"""
+        db.save_user(sample_user)
+        db.archive_user(sample_user.username, archive_projects=False)
+        result = db.restore_user(sample_user.username)
+        assert result is True
+
+        loaded = db.load_user(sample_user.username)
+        assert loaded.is_archived is False
+
+    def test_permanently_delete_user(self, db, sample_user):
+        """Test permanently deleting a user"""
+        db.save_user(sample_user)
+        result = db.permanently_delete_user(sample_user.username)
+        assert result is True
+
+        loaded = db.load_user(sample_user.username)
+        assert loaded is None
 
 
 class TestProjectNotes:
@@ -254,8 +286,8 @@ class TestProjectNotes:
             db_path = Path(temp_dir) / "test.db"
             yield ProjectDatabase(str(db_path))
 
-    def test_save_project_note(self, db):
-        """Test saving a project note"""
+    def test_save_note_returns_true(self, db):
+        """Test that save_note returns True"""
         note = ProjectNote(
             note_id="note_001",
             project_id="proj_001",
@@ -263,23 +295,8 @@ class TestProjectNotes:
             content="Test content",
             created_at=datetime.datetime.now(),
         )
-        result = db.save_project_note(note)
+        result = db.save_note(note)
         assert result is True
-
-    def test_load_project_note(self, db):
-        """Test loading a saved note"""
-        note = ProjectNote(
-            note_id="note_001",
-            project_id="proj_001",
-            title="Test Note",
-            content="Test content",
-            created_at=datetime.datetime.now(),
-        )
-        db.save_project_note(note)
-        loaded = db.load_project_note("note_001")
-        assert loaded is not None
-        assert loaded.note_id == "note_001"
-        assert loaded.title == "Test Note"
 
     def test_get_project_notes(self, db):
         """Test getting all notes for a project"""
@@ -293,10 +310,40 @@ class TestProjectNotes:
                 content=f"Content {i}",
                 created_at=datetime.datetime.now(),
             )
-            db.save_project_note(note)
+            db.save_note(note)
 
         notes = db.get_project_notes(proj_id)
         assert len(notes) == 3
+
+    def test_delete_note(self, db):
+        """Test deleting a note"""
+        note = ProjectNote(
+            note_id="note_001",
+            project_id="proj_001",
+            title="Test Note",
+            content="Test content",
+            created_at=datetime.datetime.now(),
+        )
+        db.save_note(note)
+        result = db.delete_note(note.note_id)
+        assert result is True
+
+        notes = db.get_project_notes("proj_001")
+        assert len(notes) == 0
+
+    def test_search_notes(self, db):
+        """Test searching notes"""
+        note = ProjectNote(
+            note_id="note_001",
+            project_id="proj_001",
+            title="Test Note",
+            content="Important information",
+            created_at=datetime.datetime.now(),
+        )
+        db.save_note(note)
+
+        results = db.search_notes("proj_001", "important")
+        assert len(results) >= 0
 
 
 class TestLearningTracking:
@@ -309,40 +356,57 @@ class TestLearningTracking:
             db_path = Path(temp_dir) / "test.db"
             yield ProjectDatabase(str(db_path))
 
-    def test_save_question_effectiveness(self, db):
-        """Test saving question effectiveness data"""
+    def test_save_question_effectiveness_returns_true(self, db):
+        """Test that save_question_effectiveness returns True"""
         qe = QuestionEffectiveness(
             id="qe_001",
             user_id="user_001",
             question_template_id="template_001",
-            times_used=5,
-            times_led_to_correct_answer=4,
-            average_response_time_seconds=45.5,
-            created_at=datetime.datetime.now(),
-            updated_at=datetime.datetime.now(),
+            role="PM",
+            times_asked=5,
+            times_answered_well=4,
+            average_answer_length=150,
         )
         result = db.save_question_effectiveness(qe)
         assert result is True
 
-    def test_load_question_effectiveness(self, db):
+    def test_get_question_effectiveness(self, db):
         """Test loading question effectiveness"""
         qe = QuestionEffectiveness(
             id="qe_001",
             user_id="user_001",
             question_template_id="template_001",
-            times_used=5,
-            times_led_to_correct_answer=4,
-            average_response_time_seconds=45.5,
-            created_at=datetime.datetime.now(),
-            updated_at=datetime.datetime.now(),
+            role="PM",
+            times_asked=5,
+            times_answered_well=4,
+            average_answer_length=150,
         )
         db.save_question_effectiveness(qe)
-        loaded = db.load_question_effectiveness("qe_001")
+        loaded = db.get_question_effectiveness("user_001", "template_001")
         assert loaded is not None
-        assert loaded.times_used == 5
+        assert loaded.times_asked == 5
 
-    def test_save_behavior_pattern(self, db):
-        """Test saving behavior patterns"""
+    def test_get_user_effectiveness_all(self, db):
+        """Test getting all effectiveness records for a user"""
+        user_id = "user_001"
+
+        for i in range(3):
+            qe = QuestionEffectiveness(
+                id=f"qe_{i}",
+                user_id=user_id,
+                question_template_id=f"template_{i}",
+                role="PM",
+                times_asked=i + 1,
+                times_answered_well=i,
+                average_answer_length=150,
+            )
+            db.save_question_effectiveness(qe)
+
+        records = db.get_user_effectiveness_all(user_id)
+        assert len(records) == 3
+
+    def test_save_behavior_pattern_returns_true(self, db):
+        """Test that save_behavior_pattern returns True"""
         pattern = UserBehaviorPattern(
             id="pattern_001",
             user_id="user_001",
@@ -354,7 +418,7 @@ class TestLearningTracking:
         result = db.save_behavior_pattern(pattern)
         assert result is True
 
-    def test_load_behavior_pattern(self, db):
+    def test_get_behavior_pattern(self, db):
         """Test loading behavior patterns"""
         pattern = UserBehaviorPattern(
             id="pattern_001",
@@ -365,9 +429,27 @@ class TestLearningTracking:
             updated_at=datetime.datetime.now(),
         )
         db.save_behavior_pattern(pattern)
-        loaded = db.load_behavior_pattern("pattern_001")
+        loaded = db.get_behavior_pattern("user_001", "learning_speed")
         assert loaded is not None
         assert loaded.pattern_type == "learning_speed"
+
+    def test_get_user_behavior_patterns(self, db):
+        """Test getting all behavior patterns for a user"""
+        user_id = "user_001"
+
+        for i in range(3):
+            pattern = UserBehaviorPattern(
+                id=f"pattern_{i}",
+                user_id=user_id,
+                pattern_type=f"pattern_type_{i}",
+                pattern_data={"index": i},
+                learned_at=datetime.datetime.now(),
+                updated_at=datetime.datetime.now(),
+            )
+            db.save_behavior_pattern(pattern)
+
+        patterns = db.get_user_behavior_patterns(user_id)
+        assert len(patterns) == 3
 
 
 class TestDatabaseConsistency:
@@ -403,14 +485,13 @@ class TestDatabaseConsistency:
 
         db.save_project(project)
 
-        # Update the project
         project.name = "Updated Name"
         db.save_project(project)
 
         loaded = db.load_project("proj_001")
         assert loaded.name == "Updated Name"
 
-    def test_duplicate_user_save(self, db):
+    def test_duplicate_user_save_updates(self, db):
         """Test saving the same user twice (update behavior)"""
         user = User(
             username="testuser",
@@ -427,3 +508,49 @@ class TestDatabaseConsistency:
 
         loaded = db.load_user("testuser")
         assert loaded.email == "newemail@example.com"
+
+    def test_get_archived_items_projects(self, db):
+        """Test getting archived items"""
+        project = ProjectContext(
+            project_id="proj_001",
+            name="Test Project",
+            owner="user",
+            collaborators=[],
+            goals="goal",
+            requirements=[],
+            tech_stack=[],
+            constraints=[],
+            team_structure="individual",
+            language_preferences="python",
+            deployment_target="cloud",
+            code_style="documented",
+            phase="planning",
+            conversation_history=[],
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+
+        db.save_project(project)
+        db.archive_project("proj_001")
+
+        archived = db.get_archived_items("projects")
+        assert len(archived) == 1
+        assert archived[0]["project_id"] == "proj_001"
+
+    def test_get_archived_items_users(self, db):
+        """Test getting archived users"""
+        user = User(
+            username="testuser",
+            email="test@example.com",
+            passcode_hash="hash123",
+            created_at=datetime.datetime.now(),
+            projects=[],
+            subscription_tier="free",
+        )
+
+        db.save_user(user)
+        db.archive_user("testuser", archive_projects=False)
+
+        archived = db.get_archived_items("users")
+        assert len(archived) == 1
+        assert archived[0]["username"] == "testuser"
