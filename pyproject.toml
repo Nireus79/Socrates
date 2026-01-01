@@ -158,6 +158,9 @@ select = [
 ]
 ignore = [
     "E501",  # line too long (handled by black)
+    "B008",  # function-call-in-default-argument (valid FastAPI pattern)
+    "B904",  # within-an-except-clause (can use raise ... from e in future)
+    "C901",  # function-is-too-complex (implementation detail)
 ]
 
 [tool.isort]
