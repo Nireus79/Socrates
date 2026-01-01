@@ -142,9 +142,7 @@ class TestDetectChanges:
         assert len(result["modified"]) == 0
         assert len(result["deleted"]) == 0
 
-    def test_detect_mixed_changes(
-        self, tracker, sample_current_files, sample_stored_files
-    ):
+    def test_detect_mixed_changes(self, tracker, sample_current_files, sample_stored_files):
         """Test detection of mixed changes"""
         result = tracker.detect_changes("proj_001", sample_current_files, sample_stored_files)
 
@@ -359,9 +357,7 @@ class TestUpdateDatabase:
 class TestSyncChanges:
     """Test full synchronization"""
 
-    def test_sync_changes_complete_flow(
-        self, tracker, sample_current_files, sample_stored_files
-    ):
+    def test_sync_changes_complete_flow(self, tracker, sample_current_files, sample_stored_files):
         """Test complete sync flow"""
         mock_database = MagicMock()
         mock_database.db_path = "/tmp/test.db"

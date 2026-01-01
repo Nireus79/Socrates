@@ -9,8 +9,7 @@ Tests cover:
 - Error handling and edge cases
 """
 
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -61,9 +60,7 @@ class TestProjectFileLoaderBasic:
         assert file_loader.orchestrator == mock_orchestrator
         assert file_loader.logger is not None
 
-    def test_should_load_files_returns_true_with_files(
-        self, file_loader, sample_project
-    ):
+    def test_should_load_files_returns_true_with_files(self, file_loader, sample_project):
         """Test should_load_files returns True when files exist"""
         with patch("socratic_system.database.project_file_manager.ProjectFileManager") as mock_pm:
             mock_manager = MagicMock()
@@ -74,9 +71,7 @@ class TestProjectFileLoaderBasic:
             assert result is True
             mock_manager.get_file_count.assert_called_once_with("proj_test_001")
 
-    def test_should_load_files_returns_false_with_no_files(
-        self, file_loader, sample_project
-    ):
+    def test_should_load_files_returns_false_with_no_files(self, file_loader, sample_project):
         """Test should_load_files returns False when no files exist"""
         with patch("socratic_system.database.project_file_manager.ProjectFileManager") as mock_pm:
             mock_manager = MagicMock()
@@ -86,9 +81,7 @@ class TestProjectFileLoaderBasic:
             result = file_loader.should_load_files(sample_project)
             assert result is False
 
-    def test_should_load_files_handles_exception(
-        self, file_loader, sample_project
-    ):
+    def test_should_load_files_handles_exception(self, file_loader, sample_project):
         """Test should_load_files handles exceptions gracefully"""
         with patch("socratic_system.database.project_file_manager.ProjectFileManager") as mock_pm:
             mock_manager = MagicMock()
@@ -193,9 +186,7 @@ class TestLoadingStrategies:
         result = file_loader._apply_strategy(sample_files, "all", max_files=999)
         assert len(result) == len(sample_files)
 
-    def test_apply_strategy_unknown_defaults_to_priority(
-        self, file_loader, sample_files
-    ):
+    def test_apply_strategy_unknown_defaults_to_priority(self, file_loader, sample_files):
         """Test that unknown strategy defaults to priority"""
         result = file_loader._apply_strategy(sample_files, "unknown", max_files=3)
         assert len(result) <= 3
@@ -243,9 +234,7 @@ class TestResponseMethods:
 class TestLoadProjectFiles:
     """Test the main load_project_files method"""
 
-    def test_load_project_files_no_files(
-        self, file_loader, mock_orchestrator, sample_project
-    ):
+    def test_load_project_files_no_files(self, file_loader, mock_orchestrator, sample_project):
         """Test loading when no files exist"""
         with patch("socratic_system.database.project_file_manager.ProjectFileManager") as mock_pm:
             mock_manager = MagicMock()
@@ -275,16 +264,12 @@ class TestLoadProjectFiles:
             }
             mock_orchestrator.get_agent.return_value = mock_doc_processor
 
-            result = file_loader.load_project_files(
-                sample_project, strategy="priority"
-            )
+            result = file_loader.load_project_files(sample_project, strategy="priority")
             assert result["status"] == "success"
             assert "files_loaded" in result
             assert "total_chunks" in result
 
-    def test_load_project_files_handles_exception(
-        self, file_loader, sample_project
-    ):
+    def test_load_project_files_handles_exception(self, file_loader, sample_project):
         """Test load_project_files handles exceptions"""
         with patch("socratic_system.database.project_file_manager.ProjectFileManager") as mock_pm:
             mock_manager = MagicMock()
@@ -313,31 +298,23 @@ class TestLoadProjectFiles:
                 }
                 mock_orchestrator.get_agent.return_value = mock_doc_processor
 
-                result = file_loader.load_project_files(
-                    sample_project, strategy=strategy
-                )
+                result = file_loader.load_project_files(sample_project, strategy=strategy)
                 assert result["strategy_used"] == strategy
 
 
 class TestLoadAllProjectFiles:
     """Test batch loading of files"""
 
-    def test_load_all_project_files_single_batch(
-        self, file_loader, sample_files
-    ):
+    def test_load_all_project_files_single_batch(self, file_loader, sample_files):
         """Test loading files in single batch"""
         mock_manager = MagicMock()
         mock_manager.get_file_count.return_value = len(sample_files)
         mock_manager.get_project_files.return_value = sample_files
 
-        result = file_loader._load_all_project_files(
-            mock_manager, "proj_001"
-        )
+        result = file_loader._load_all_project_files(mock_manager, "proj_001")
         assert len(result) == len(sample_files)
 
-    def test_load_all_project_files_multiple_batches(
-        self, file_loader
-    ):
+    def test_load_all_project_files_multiple_batches(self, file_loader):
         """Test loading files across multiple batches"""
         # Create files for multiple batches
         batch1 = [{"file_path": f"file_{i}.py"} for i in range(100)]
@@ -347,9 +324,7 @@ class TestLoadAllProjectFiles:
         mock_manager.get_file_count.return_value = 150
         mock_manager.get_project_files.side_effect = [batch1, batch2, []]
 
-        result = file_loader._load_all_project_files(
-            mock_manager, "proj_001"
-        )
+        result = file_loader._load_all_project_files(mock_manager, "proj_001")
         assert len(result) == 150
 
     def test_load_all_project_files_empty(self, file_loader):
@@ -358,18 +333,14 @@ class TestLoadAllProjectFiles:
         mock_manager.get_file_count.return_value = 0
         mock_manager.get_project_files.return_value = []
 
-        result = file_loader._load_all_project_files(
-            mock_manager, "proj_001"
-        )
+        result = file_loader._load_all_project_files(mock_manager, "proj_001")
         assert len(result) == 0
 
 
 class TestProcessProjectFiles:
     """Test file processing"""
 
-    def test_process_project_files_success(
-        self, file_loader, mock_orchestrator, sample_files
-    ):
+    def test_process_project_files_success(self, file_loader, mock_orchestrator, sample_files):
         """Test successful file processing"""
         mock_doc_processor = MagicMock()
         mock_doc_processor.process.return_value = {
@@ -385,9 +356,7 @@ class TestProcessProjectFiles:
         assert loaded_count > 0
         assert total_chunks > 0
 
-    def test_process_project_files_no_processor(
-        self, file_loader, mock_orchestrator, sample_files
-    ):
+    def test_process_project_files_no_processor(self, file_loader, mock_orchestrator, sample_files):
         """Test processing when document processor is unavailable"""
         mock_orchestrator.get_agent.return_value = None
 
