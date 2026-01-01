@@ -8,7 +8,6 @@ from unittest.mock import patch
 import pytest
 
 from socratic_system.config import ConfigBuilder, SocratesConfig
-from socratic_system.exceptions import ConfigurationError
 
 
 @pytest.mark.unit
