@@ -63,7 +63,7 @@ except ImportError:
             CODE_GENERATED = "code_generated"
             AGENT_ERROR = "agent_error"
 
-__version__ = "0.6.6"
+__version__ = "1.0.0"
 
 __all__ = [
     "__version__",

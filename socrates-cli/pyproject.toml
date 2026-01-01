@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socrates-cli"
-version = "0.5.0"
+version = "1.0.0"
 description = "Command-line interface for Socrates AI tutoring system"
 readme = "README.md"
 license = {text = "MIT"}
