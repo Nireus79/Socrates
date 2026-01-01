@@ -2,6 +2,7 @@
 Conflict detection and resolution agent for Socratic RAG System
 """
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict
 
 from socratic_system.conflict_resolution import (
@@ -42,7 +43,7 @@ class ConflictDetectorAgent(Agent):
         return {"status": "error", "message": "Unknown action"}
 
     def _detect_conflicts(self, request: Dict) -> Dict:
-        """Detect conflicts in new insights using pluggable checkers"""
+        """Detect conflicts in new insights using pluggable checkers in parallel"""
         project = request.get("project")
         new_insights = request.get("new_insights")
         current_user = request.get("current_user")
@@ -52,13 +53,25 @@ class ConflictDetectorAgent(Agent):
 
         all_conflicts = []
 
-        # Use each checker to detect conflicts
-        for checker in self.checkers:
-            try:
-                conflicts = checker.check_conflicts(project, new_insights, current_user)
-                all_conflicts.extend(conflicts)
-            except Exception as e:
-                self.log(f"Error in checker {checker.__class__.__name__}: {e}", "ERROR")
+        # Run checkers in parallel using ThreadPoolExecutor for I/O-bound operations
+        # This significantly speeds up conflict detection for large insight payloads
+        with ThreadPoolExecutor(max_workers=len(self.checkers)) as executor:
+            # Submit all checker tasks
+            futures = {
+                executor.submit(
+                    checker.check_conflicts, project, new_insights, current_user
+                ): checker
+                for checker in self.checkers
+            }
+
+            # Collect results as they complete
+            for future in as_completed(futures):
+                checker = futures[future]
+                try:
+                    conflicts = future.result()
+                    all_conflicts.extend(conflicts)
+                except Exception as e:
+                    self.log(f"Error in checker {checker.__class__.__name__}: {e}", "ERROR")
 
         return {"status": "success", "conflicts": all_conflicts}
 

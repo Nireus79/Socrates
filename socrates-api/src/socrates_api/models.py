@@ -600,7 +600,7 @@ class ListChatSessionsResponse(BaseModel):
 class ChatMessageRequest(BaseModel):
     """Request body for sending a chat message"""
 
-    message: str = Field(..., min_length=1, description="Message content")
+    message: str = Field(..., min_length=1, max_length=5000, description="Message content (max 5000 characters)")
     role: str = Field(default="user", description="Message role (user or assistant)")
     mode: str = Field(default="socratic", description="Chat mode (socratic or direct)")
 

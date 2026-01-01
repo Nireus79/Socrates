@@ -563,9 +563,18 @@ async def send_message(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Call socratic_counselor to process response
+        # Extract insights asynchronously BEFORE orchestrator processing
+        # This moves the Claude API call outside the orchestrator request path
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        logger.debug(f"Pre-extracting insights for message ({len(request.message)} chars)...")
+        pre_extracted_insights = await orchestrator.claude_client.extract_insights_async(
+            request.message, project
+        )
+        logger.debug(f"Pre-extracted {len(pre_extracted_insights)} insight fields")
+
+        # Call socratic_counselor to process response with pre-extracted insights
+        # This skips the blocking Claude call inside the agent
+        result = await orchestrator.process_request_async(
             "socratic_counselor",
             {
                 "action": "process_response",
@@ -573,6 +582,7 @@ async def send_message(
                 "response": request.message,
                 "current_user": current_user,
                 "is_api_mode": True,  # Indicate API mode to handle conflicts differently
+                "pre_extracted_insights": pre_extracted_insights,  # Pass pre-extracted to skip Claude call in agent
             },
         )
 

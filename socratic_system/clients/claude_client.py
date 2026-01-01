@@ -6,6 +6,7 @@ with automatic token tracking and structured error handling.
 """
 
 import asyncio
+import hashlib
 import json
 import logging
 from typing import TYPE_CHECKING, Any, Dict
@@ -50,6 +51,10 @@ class ClaudeClient:
         self.client = anthropic.Anthropic(api_key=api_key)
         self.async_client = anthropic.AsyncAnthropic(api_key=api_key)
 
+        # Cache for insights extraction to avoid redundant Claude API calls
+        # Maps message hash -> extracted insights
+        self._insights_cache: Dict[str, Dict[str, Any]] = {}
+
     def get_auth_credential(self, user_auth_method: str = "api_key") -> str:
         """
         Get the appropriate credential based on user's preferred auth method.
@@ -79,7 +84,7 @@ class ClaudeClient:
             return self.api_key
 
     def extract_insights(self, user_response: str, project: ProjectContext) -> Dict:
-        """Extract insights from user response using Claude (synchronous)"""
+        """Extract insights from user response using Claude (synchronous) with caching"""
         # Handle empty or non-informative responses
         if not user_response or len(user_response.strip()) < 3:
             return {}
@@ -88,6 +93,12 @@ class ClaudeClient:
         non_informative = ["i don't know", "idk", "not sure", "no idea", "dunno", "unsure"]
         if user_response.lower().strip() in non_informative:
             return {"note": "User expressed uncertainty - may need more guidance"}
+
+        # Check cache first to avoid redundant Claude API calls
+        cache_key = self._get_cache_key(user_response)
+        if cache_key in self._insights_cache:
+            self.logger.debug(f"Cache hit for insights extraction")
+            return self._insights_cache[cache_key]
 
         # Build prompt
         prompt = f"""
@@ -132,7 +143,12 @@ class ClaudeClient:
             self._track_token_usage(response.usage, "extract_insights")
 
             # Try to parse JSON response
-            return self._parse_json_response(response.content[0].text.strip())
+            insights = self._parse_json_response(response.content[0].text.strip())
+
+            # Cache the result for future identical messages
+            self._insights_cache[cache_key] = insights
+
+            return insights
 
         except Exception as e:
             self.logger.error(f"Error extracting insights: {e}")
@@ -142,7 +158,7 @@ class ClaudeClient:
             return {}
 
     async def extract_insights_async(self, user_response: str, project: ProjectContext) -> Dict:
-        """Extract insights from user response asynchronously"""
+        """Extract insights from user response asynchronously with caching"""
         # Handle empty or non-informative responses
         if not user_response or len(user_response.strip()) < 3:
             return {}
@@ -156,6 +172,12 @@ class ClaudeClient:
             "unsure",
         ]:
             return {"note": "User expressed uncertainty - may need more guidance"}
+
+        # Check cache first to avoid redundant Claude API calls
+        cache_key = self._get_cache_key(user_response)
+        if cache_key in self._insights_cache:
+            self.logger.debug(f"Cache hit for insights extraction")
+            return self._insights_cache[cache_key]
 
         prompt = f"""
         Analyze this user response in the context of their project and extract structured insights:
@@ -188,7 +210,12 @@ class ClaudeClient:
             # Track token usage asynchronously
             await self._track_token_usage_async(response.usage, "extract_insights_async")
 
-            return self._parse_json_response(response.content[0].text.strip())
+            insights = self._parse_json_response(response.content[0].text.strip())
+
+            # Cache the result for future identical messages
+            self._insights_cache[cache_key] = insights
+
+            return insights
 
         except Exception as e:
             self.logger.error(f"Error extracting insights (async): {e}")
@@ -645,6 +672,10 @@ class ClaudeClient:
             ) from e
 
     # Helper Methods
+
+    def _get_cache_key(self, message: str) -> str:
+        """Generate cache key for a message using SHA256 hash"""
+        return hashlib.sha256(message.encode()).hexdigest()
 
     def _track_token_usage(self, usage: Any, operation: str) -> None:
         """Track token usage and emit event"""
