@@ -174,9 +174,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -e . -e ./socrates-cli
-          pip install -e ./socrates-cli/[dev]
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e . -e ./socrates-cli -e ./socrates-api
+          pip install -e ".[dev]" -e ./socrates-cli/[dev] -e ./socrates-api/[dev]
 
       - name: Test CLI installation
         run: |
@@ -184,7 +184,7 @@ jobs:
 
       - name: Test CLI commands
         run: |
-          pytest socrates-cli/tests/test_cli.py -v
+          pytest socrates-cli/tests/test_cli.py -v --tb=short --strict-markers
 
   test-api:
     name: Test REST API
@@ -203,13 +203,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -e . -e ./socrates-api
-          pip install -e ./socrates-api/[dev]
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e . -e ./socrates-cli -e ./socrates-api
+          pip install -e ".[dev]" -e ./socrates-cli/[dev] -e ./socrates-api/[dev]
 
       - name: Test API endpoints
         run: |
-          pytest socrates-api/tests/test_api.py -v
+          pytest socrates-api/tests/test_api.py -v --tb=short --strict-markers
 
   coverage-badge:
     name: Update Coverage Badge
