@@ -301,10 +301,11 @@ uvicorn.run(
             # Ensure dependencies are installed
             print("[INFO] Installing frontend dependencies...")
             subprocess.run(
-                ["npm", "install"],
+                "npm install",
                 cwd=frontend_dir,
                 check=False,
-                capture_output=True
+                capture_output=True,
+                shell=True
             )
 
             # Set frontend port via environment variable
@@ -313,13 +314,12 @@ uvicorn.run(
             env["VITE_API_URL"] = f"http://localhost:{api_port}"
 
             print(f"[INFO] Starting frontend on port {frontend_port}...")
-            # Start dev server
+            # Start dev server (show output for debugging)
             proc = subprocess.Popen(
-                ["npm", "run", "dev"],
+                "npm run dev",
                 cwd=frontend_dir,
                 env=env,
-                stdout=None,
-                stderr=None
+                shell=True
             )
             processes.append(proc)
 
