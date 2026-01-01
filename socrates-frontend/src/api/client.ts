@@ -62,7 +62,7 @@ class APIClient {
   constructor(config: APIClientConfig = {}) {
     this.client = axios.create({
       baseURL: config.baseURL || API_BASE_URL,
-      timeout: config.timeout || 30000,
+      timeout: config.timeout || 60000,  // 60 seconds to accommodate slow operations (Claude API, large data loads)
       headers: {
         'Content-Type': 'application/json',
       },
