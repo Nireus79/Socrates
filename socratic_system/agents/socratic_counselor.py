@@ -216,7 +216,14 @@ class SocraticCounselorAgent(Agent):
 
         try:
             logger.info(f"Generating dynamic question for {project.phase} phase")
-            question = self.orchestrator.claude_client.generate_socratic_question(prompt)
+
+            # Generate cache key based on project context to avoid redundant Claude calls
+            # Cache key includes project ID, phase, and question number to ensure variety
+            cache_key = f"{project.project_id}:{project.phase}:{question_count}"
+
+            question = self.orchestrator.claude_client.generate_socratic_question(
+                prompt, cache_key=cache_key
+            )
             logger.debug(f"Question generated successfully: {question[:100]}...")
             self.log(f"Generated dynamic question for {project.phase} phase")
             return question

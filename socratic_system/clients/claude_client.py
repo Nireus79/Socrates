@@ -55,6 +55,10 @@ class ClaudeClient:
         # Maps message hash -> extracted insights
         self._insights_cache: Dict[str, Dict[str, Any]] = {}
 
+        # Cache for question generation to avoid redundant Claude API calls
+        # Maps question_cache_key (project_id:phase:question_count) -> generated question
+        self._question_cache: Dict[str, str] = {}
+
     def get_auth_credential(self, user_auth_method: str = "api_key") -> str:
         """
         Get the appropriate credential based on user's preferred auth method.
@@ -765,8 +769,13 @@ class ClaudeClient:
             )
             return {}
 
-    def generate_socratic_question(self, prompt: str) -> str:
-        """Generate a Socratic question using Claude"""
+    def generate_socratic_question(self, prompt: str, cache_key: str = None) -> str:
+        """Generate a Socratic question using Claude with optional caching"""
+        # Check cache if key provided
+        if cache_key and cache_key in self._question_cache:
+            self.logger.debug(f"Cache hit for question generation: {cache_key}")
+            return self._question_cache[cache_key]
+
         try:
             response = self.client.messages.create(
                 model=self.model,
@@ -778,7 +787,13 @@ class ClaudeClient:
             # Track token usage
             self._track_token_usage(response.usage, "generate_socratic_question")
 
-            return response.content[0].text.strip()
+            question = response.content[0].text.strip()
+
+            # Cache the result if key provided
+            if cache_key:
+                self._question_cache[cache_key] = question
+
+            return question
 
         except Exception as e:
             self.logger.error(f"Error generating Socratic question: {e}")
@@ -1001,13 +1016,18 @@ class ClaudeClient:
             self.logger.error(f"Error generating code (async): {e}")
             return f"Error generating code: {e}"
 
-    async def generate_socratic_question_async(self, prompt: str) -> str:
+    async def generate_socratic_question_async(self, prompt: str, cache_key: str = None) -> str:
         """
-        Generate socratic question asynchronously (high-frequency operation).
+        Generate socratic question asynchronously (high-frequency operation) with caching.
 
         This is called very frequently by socratic_counselor agent.
         Async implementation enables concurrent question generation.
         """
+        # Check cache if key provided
+        if cache_key and cache_key in self._question_cache:
+            self.logger.debug(f"Cache hit for async question generation: {cache_key}")
+            return self._question_cache[cache_key]
+
         try:
             response = await self.async_client.messages.create(
                 model=self.model,
@@ -1017,7 +1037,13 @@ class ClaudeClient:
             )
 
             await self._track_token_usage_async(response.usage, "generate_socratic_question_async")
-            return response.content[0].text.strip()
+            question = response.content[0].text.strip()
+
+            # Cache the result if key provided
+            if cache_key:
+                self._question_cache[cache_key] = question
+
+            return question
 
         except Exception as e:
             self.logger.error(f"Error generating socratic question (async): {e}")

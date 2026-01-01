@@ -495,9 +495,10 @@ async def get_question(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Call socratic_counselor to generate question
+        # Call socratic_counselor to generate question asynchronously
+        # This allows Claude API call to be interleaved with other requests
         orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
+        result = await orchestrator.process_request_async(
             "socratic_counselor",
             {
                 "action": "generate_question",
