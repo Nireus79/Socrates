@@ -210,11 +210,25 @@ async def get_progress_status(
         recent_history = maturity_history[-5:] if len(maturity_history) > 5 else maturity_history
         trend = "stable"
         if len(recent_history) >= 2:
-            recent_scores = [h.get("score", 0) for h in recent_history]
-            if recent_scores[-1] > recent_scores[0]:
-                trend = "improving"
-            elif recent_scores[-1] < recent_scores[0]:
-                trend = "declining"
+            # Extract scores safely, handling various data types
+            recent_scores = []
+            for h in recent_history:
+                if isinstance(h, dict):
+                    score = h.get("score", 0)
+                else:
+                    score = getattr(h, "score", 0)
+                # Ensure score is numeric
+                try:
+                    score = float(score) if score else 0.0
+                except (TypeError, ValueError):
+                    score = 0.0
+                recent_scores.append(score)
+
+            if len(recent_scores) >= 2:
+                if recent_scores[-1] > recent_scores[0]:
+                    trend = "improving"
+                elif recent_scores[-1] < recent_scores[0]:
+                    trend = "declining"
 
         # Identify milestones
         milestones = []
@@ -243,11 +257,11 @@ async def get_progress_status(
             "trend": {
                 "direction": trend,
                 "recent_change": (
-                    f"{round(recent_history[-1].get('score', 0) - recent_history[0].get('score', 0), 1)} points"
-                    if len(recent_history) >= 2
+                    f"{round(float(recent_scores[-1] if isinstance(recent_scores[-1], (int, float)) else 0) - float(recent_scores[0] if isinstance(recent_scores[0], (int, float)) else 0), 1)} points"
+                    if len(recent_scores) >= 2
                     else "No data"
                 ),
-                "last_update": recent_history[-1].get("timestamp") if recent_history else None,
+                "last_update": recent_history[-1].get("timestamp") if recent_history and isinstance(recent_history[-1], dict) else (getattr(recent_history[-1], "timestamp", None) if recent_history else None),
             },
             "phase_status": {
                 "current": getattr(project, "current_phase", "planning"),
