@@ -315,8 +315,7 @@ class TestTTLCacheMultiple:
 
         # Both should have different TTL values
         assert (
-            short_ttl_func._cache._ttl.total_seconds()
-            < long_ttl_func._cache._ttl.total_seconds()
+            short_ttl_func._cache._ttl.total_seconds() < long_ttl_func._cache._ttl.total_seconds()
         )
 
 
