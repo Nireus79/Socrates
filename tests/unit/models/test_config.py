@@ -236,6 +236,10 @@ class TestConfigEnvironmentVariables:
 
     def test_missing_api_key_env_var(self):
         """Test that missing API key is handled"""
-        with patch.dict(os.environ, {}, clear=True):
-            with pytest.raises((ConfigurationError, ValueError)):
+        # Remove ANTHROPIC_API_KEY and API_KEY_CLAUDE from environment
+        env_vars_to_remove = ["ANTHROPIC_API_KEY", "API_KEY_CLAUDE", "ANTHROPIC_SUBSCRIPTION_TOKEN"]
+        with patch.dict(os.environ, {}, clear=False):
+            for var in env_vars_to_remove:
+                os.environ.pop(var, None)
+            with pytest.raises(ValueError):
                 SocratesConfig.from_env()

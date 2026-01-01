@@ -207,7 +207,7 @@ class TestTTLCacheStatistics:
         def test_func(x):
             return x * 2
 
-        cache = test_func.__self__
+        cache = test_func._cache
         test_func(5)
         test_func(5)
         test_func(5)
@@ -221,7 +221,7 @@ class TestTTLCacheStatistics:
         def test_func(x):
             return x * 2
 
-        cache = test_func.__self__
+        cache = test_func._cache
         test_func(5)
         test_func(10)
 
@@ -234,7 +234,7 @@ class TestTTLCacheStatistics:
         def test_func(x):
             return x * 2
 
-        cache = test_func.__self__
+        cache = test_func._cache
         test_func(5)  # miss
         test_func(5)  # hit
         test_func(5)  # hit
@@ -315,8 +315,8 @@ class TestTTLCacheMultiple:
 
         # Both should have different TTL values
         assert (
-            short_ttl_func.__self__._ttl.total_seconds()
-            < long_ttl_func.__self__._ttl.total_seconds()
+            short_ttl_func._cache._ttl.total_seconds()
+            < long_ttl_func._cache._ttl.total_seconds()
         )
 
 
