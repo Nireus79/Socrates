@@ -9,8 +9,8 @@ Tests cover:
 - Unhashable arguments handling
 """
 
-import time
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -28,6 +28,7 @@ class TestTTLCacheBasic:
 
     def test_cached_function_is_wrapped(self):
         """Test that decorated function is properly wrapped"""
+
         @TTLCache()
         def test_func(x):
             return x * 2
@@ -37,6 +38,7 @@ class TestTTLCacheBasic:
 
     def test_function_executes_correctly(self):
         """Test that cached function executes and returns correct value"""
+
         @TTLCache()
         def add(a, b):
             return a + b
@@ -91,8 +93,8 @@ class TestTTLCacheExpiration:
             call_count += 1
             return x * 2
 
-        result1 = test_func(5)
-        result2 = test_func(5)
+        test_func(5)
+        test_func(5)
 
         assert call_count == 1  # Function only called once (cache still valid)
 
@@ -200,6 +202,7 @@ class TestTTLCacheStatistics:
 
     def test_cache_tracks_hits(self):
         """Test that cache tracks hit count"""
+
         @TTLCache()
         def test_func(x):
             return x * 2
@@ -213,6 +216,7 @@ class TestTTLCacheStatistics:
 
     def test_cache_tracks_misses(self):
         """Test that cache tracks miss count"""
+
         @TTLCache()
         def test_func(x):
             return x * 2
@@ -225,6 +229,7 @@ class TestTTLCacheStatistics:
 
     def test_cache_hit_miss_ratio(self):
         """Test cache statistics"""
+
         @TTLCache()
         def test_func(x):
             return x * 2
@@ -299,6 +304,7 @@ class TestTTLCacheMultiple:
 
     def test_different_ttl_values(self):
         """Test that different TTL values work correctly"""
+
         @TTLCache(ttl_minutes=0.001)  # Short TTL
         def short_ttl_func(x):
             return x * 2
@@ -308,7 +314,10 @@ class TestTTLCacheMultiple:
             return x * 2
 
         # Both should have different TTL values
-        assert short_ttl_func.__self__._ttl.total_seconds() < long_ttl_func.__self__._ttl.total_seconds()
+        assert (
+            short_ttl_func.__self__._ttl.total_seconds()
+            < long_ttl_func.__self__._ttl.total_seconds()
+        )
 
 
 class TestTTLCacheEdgeCases:

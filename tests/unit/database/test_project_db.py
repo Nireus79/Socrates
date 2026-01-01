@@ -19,12 +19,10 @@ import pytest
 from socratic_system.database.project_db import ProjectDatabase
 from socratic_system.models import (
     ProjectContext,
-    User,
     ProjectNote,
     QuestionEffectiveness,
+    User,
     UserBehaviorPattern,
-    APIKeyRecord,
-    LLMUsageRecord,
 )
 
 
@@ -46,7 +44,7 @@ class TestProjectDatabaseInitialization:
 
     def test_database_schema_creation(self, db_path):
         """Test that all required tables are created"""
-        db = ProjectDatabase(db_path)
+        ProjectDatabase(db_path)
 
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
@@ -57,8 +55,11 @@ class TestProjectDatabaseInitialization:
         tables = {row[0] for row in cursor.fetchall()}
 
         required_tables = {
-            'projects', 'users', 'project_notes',
-            'question_effectiveness', 'behavior_patterns'
+            "projects",
+            "users",
+            "project_notes",
+            "question_effectiveness",
+            "behavior_patterns",
         }
         assert required_tables.issubset(tables)
         conn.close()
@@ -67,7 +68,7 @@ class TestProjectDatabaseInitialization:
         """Test that database directory is created if it doesn't exist"""
         with tempfile.TemporaryDirectory() as temp_dir:
             nested_path = Path(temp_dir) / "nested" / "dir" / "test.db"
-            db = ProjectDatabase(str(nested_path))
+            ProjectDatabase(str(nested_path))
             assert nested_path.exists()
 
 
