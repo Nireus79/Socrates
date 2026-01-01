@@ -76,7 +76,7 @@ async def _get_active_collaborators(project_id: str) -> List[Dict[str, Any]]:
         # Access the metadata directly (this is a workaround since get_project_connections
         # requires both user_id and project_id)
         async with connection_manager._lock:
-            for connection_id, metadata in connection_manager._metadata.items():
+            for _connection_id, metadata in connection_manager._metadata.items():
                 if metadata.project_id == project_id and metadata.user_id not in seen_users:
                     seen_users.add(metadata.user_id)
                     active_collaborators.append(

@@ -156,7 +156,7 @@ async def list_chat_sessions(
         sessions_dict = getattr(project, "chat_sessions", {})
         sessions_list = []
 
-        for session_id, session in sessions_dict.items():
+        for _session_id, session in sessions_dict.items():
             created_at = datetime.fromisoformat(
                 session.get("created_at", datetime.now(timezone.utc).isoformat())
             )

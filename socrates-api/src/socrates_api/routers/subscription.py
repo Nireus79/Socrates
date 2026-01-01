@@ -180,7 +180,7 @@ async def list_subscription_plans(
         logger.info(f"Listing subscription plans for user: {current_user}")
 
         plans = []
-        for tier_key, tier_info in SUBSCRIPTION_TIERS.items():
+        for _tier_key, tier_info in SUBSCRIPTION_TIERS.items():
             plans.append(
                 {
                     "tier": tier_info["tier"],

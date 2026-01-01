@@ -89,7 +89,7 @@ class TestConcurrentAuthOperations:
         responses = []
 
         # Make two login requests
-        for i in range(2):
+        for _i in range(2):
             response = client.post('/auth/login', json={
                 'username': 'testuser',
                 'password': 'testpass'
@@ -125,7 +125,7 @@ class TestConcurrentAuthOperations:
         refresh_token = 'test_refresh_token'
 
         responses = []
-        for i in range(3):
+        for _i in range(3):
             response = client.post('/auth/refresh', json={
                 'refresh_token': refresh_token
             })

@@ -544,7 +544,7 @@ async def export_knowledge(
                 "knowledge_items": items,
                 "statistics": {
                     "total_items": len(items),
-                    "categories": len(set(k.get("category") for k in items)),
+                    "categories": len({k.get("category") for k in items}),
                 },
             }
         elif format.lower() == "markdown":

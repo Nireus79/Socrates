@@ -309,7 +309,7 @@ class ConnectionManager:
         """
         async with self._lock:
             connections = []
-            for cid, metadata in self._metadata.items():
+            for _cid, metadata in self._metadata.items():
                 if metadata.user_id == user_id and metadata.project_id == project_id:
                     connections.append(asdict(metadata))
             return connections

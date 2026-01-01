@@ -121,7 +121,7 @@ async def list_chat_sessions(
         sessions_dict = getattr(project, "chat_sessions", {})
         sessions_list = []
 
-        for session_id, session in sessions_dict.items():
+        for _session_id, session in sessions_dict.items():
             # Apply archive filter
             if archived is not None and session.get("archived", False) != archived:
                 continue
