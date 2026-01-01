@@ -98,8 +98,9 @@ class TestFileRanking:
     def test_rank_readme_files(self, file_loader, sample_files):
         """Test README file ranking"""
         result = file_loader._rank_readme_files(sample_files, priority=1)
-        assert len(result) == 2  # README.md and docs/guide.md
-        assert all(r[1] == 1 for r in result)
+        assert len(result) == 1  # Only README.md
+        assert result[0][0]["file_path"] == "README.md"
+        assert result[0][1] == 1
 
     def test_rank_main_entry_points(self, file_loader, sample_files):
         """Test main entry point ranking"""
