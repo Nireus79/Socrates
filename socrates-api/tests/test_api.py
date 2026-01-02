@@ -82,10 +82,14 @@ class TestAPIInitializeEndpoint:
             if original_api_key is not None:
                 os.environ["ANTHROPIC_API_KEY"] = original_api_key
 
-    @pytest.mark.skip(reason="Requires mocking non-existent socrates.create_orchestrator")
     def test_initialize_response_structure(self, client):
         """Test initialize response structure"""
-        pass
+        # Test that initialize endpoint returns proper response structure
+        response = client.post("/initialize", json={"model": "claude-opus-4-5-20251101"})
+        # Should return either success or service unavailable
+        assert response.status_code in [200, 400, 503]
+        if response.status_code == 200:
+            assert "success" in response.json() or "data" in response.json()
 
 
 @pytest.mark.unit

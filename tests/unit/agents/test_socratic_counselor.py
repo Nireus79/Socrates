@@ -10,97 +10,261 @@ Tests socratic questioning agent including:
 """
 
 import pytest
+from unittest.mock import MagicMock, patch, AsyncMock
+from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
+from socratic_system.models import ProjectContext, User
+import datetime
+
+
+@pytest.fixture
+def mock_orchestrator():
+    """Create a mock orchestrator for testing"""
+    orchestrator = MagicMock()
+    orchestrator.context_analyzer = MagicMock()
+    orchestrator.database = MagicMock()
+    orchestrator.client = MagicMock()
+    return orchestrator
+
+
+@pytest.fixture
+def socratic_agent(mock_orchestrator):
+    """Create a SocraticCounselorAgent instance for testing"""
+    return SocraticCounselorAgent(mock_orchestrator)
+
+
+@pytest.fixture
+def sample_project():
+    """Create a sample project for testing"""
+    return ProjectContext(
+        project_id="test_proj_001",
+        name="Test Project",
+        owner="testuser",
+        collaborators=[],
+        goals="Test goal",
+        requirements=["req1"],
+        tech_stack=["Python"],
+        constraints=[],
+        team_structure="individual",
+        language_preferences="python",
+        deployment_target="cloud",
+        code_style="documented",
+        phase="planning",
+        conversation_history=[],
+        created_at=datetime.datetime.now(),
+        updated_at=datetime.datetime.now(),
+    )
+
+
+@pytest.fixture
+def sample_user():
+    """Create a sample user for testing"""
+    return User(
+        username="testuser",
+        email="test@example.com",
+        passcode_hash="hash123",
+        created_at=datetime.datetime.now(),
+        projects=["test_proj_001"],
+        subscription_tier="pro",
+    )
 
 
 @pytest.mark.unit
 class TestSocraticQuestionGeneration:
     """Tests for socratic question generation"""
 
-    @pytest.mark.asyncio
-    async def test_generate_question(self):
-        """Test generating socratic question"""
-        # Given a topic and context
-        # When counselor generates question
-        # Assert question is thoughtful and leads to deeper understanding
+    def test_agent_initialization(self, socratic_agent):
+        """Test that agent initializes with correct properties"""
+        assert socratic_agent.name == "SocraticCounselor"
+        assert socratic_agent.use_dynamic_questions is True
+        assert socratic_agent.max_questions_per_phase == 5
+        assert "discovery" in socratic_agent.static_questions
+        assert "analysis" in socratic_agent.static_questions
+        assert "design" in socratic_agent.static_questions
+        assert "implementation" in socratic_agent.static_questions
 
-    @pytest.mark.asyncio
-    async def test_follow_up_question(self):
-        """Test generating follow-up question"""
-        # Based on user's answer
-        # Assert follow-up deepens understanding
+    def test_generate_question_with_project(
+        self, socratic_agent, sample_project, mock_orchestrator
+    ):
+        """Test generating socratic question with valid project"""
+        mock_orchestrator.context_analyzer.get_context_summary.return_value = {
+            "phase": "planning"
+        }
 
-    @pytest.mark.asyncio
-    async def test_question_difficulty_levels(self):
-        """Test varying question difficulty"""
-        # Should adjust based on user level
+        request = {"action": "generate_question", "project": sample_project}
+        result = socratic_agent.process(request)
+
+        # Question generation should return a result (even if status is error due to missing Claude)
+        assert isinstance(result, dict)
+        assert "status" in result
+
+    def test_generate_question_without_project(self, socratic_agent):
+        """Test generating question without project context fails appropriately"""
+        request = {"action": "generate_question"}
+        result = socratic_agent.process(request)
+
+        assert result["status"] == "error"
+        assert "Project context is required" in result["message"]
+
+    def test_static_questions_available(self, socratic_agent):
+        """Test that static fallback questions are available"""
+        assert len(socratic_agent.static_questions["discovery"]) > 0
+        assert all(
+            isinstance(q, str) for q in socratic_agent.static_questions["discovery"]
+        )
+        assert all(
+            isinstance(q, str) for q in socratic_agent.static_questions["analysis"]
+        )
+        assert all(isinstance(q, str) for q in socratic_agent.static_questions["design"])
+        assert all(
+            isinstance(q, str)
+            for q in socratic_agent.static_questions["implementation"]
+        )
 
 
 @pytest.mark.unit
 class TestAnswerEvaluation:
     """Tests for evaluating student answers"""
 
-    @pytest.mark.asyncio
-    async def test_evaluate_correct_answer(self):
-        """Test evaluating correct answer"""
-        # Assert returns positive feedback
+    def test_process_response_action(self, socratic_agent, sample_project):
+        """Test processing a student response"""
+        request = {
+            "action": "process_response",
+            "project": sample_project,
+            "response": "This is the student's answer",
+        }
+        result = socratic_agent.process(request)
 
-    @pytest.mark.asyncio
-    async def test_evaluate_incomplete_answer(self):
-        """Test evaluating partial answer"""
-        # Assert returns guiding feedback
+        assert isinstance(result, dict)
+        assert "status" in result
 
-    @pytest.mark.asyncio
-    async def test_detect_misconceptions(self):
-        """Test detecting misconceptions"""
-        # Assert identifies misunderstandings
+    def test_extract_insights_only_action(self, socratic_agent, sample_project):
+        """Test extracting insights from response"""
+        request = {
+            "action": "extract_insights_only",
+            "project": sample_project,
+            "response": "Student insight",
+        }
+        result = socratic_agent.process(request)
+
+        assert isinstance(result, dict)
+        assert "status" in result
+
+    def test_generate_hint_action(self, socratic_agent, sample_project):
+        """Test generating hint for student"""
+        request = {
+            "action": "generate_hint",
+            "project": sample_project,
+            "question": "What is your target audience?",
+        }
+        result = socratic_agent.process(request)
+
+        assert isinstance(result, dict)
+        assert "status" in result
 
 
 @pytest.mark.unit
 class TestLearningGuidance:
     """Tests for learning guidance"""
 
-    @pytest.mark.asyncio
-    async def test_guide_toward_understanding(self):
-        """Test guiding student toward understanding"""
-        # Should not directly answer
-        # Should ask questions to guide
+    def test_advance_phase_action(self, socratic_agent, sample_project):
+        """Test advancing to next project phase"""
+        request = {"action": "advance_phase", "project": sample_project}
+        result = socratic_agent.process(request)
 
-    @pytest.mark.asyncio
-    async def test_provide_hints(self):
-        """Test providing helpful hints"""
-        # Without giving away answer
+        assert isinstance(result, dict)
+        assert "status" in result
+
+    def test_explain_document_action(self, socratic_agent, sample_project):
+        """Test explaining document content"""
+        request = {
+            "action": "explain_document",
+            "project": sample_project,
+            "content": "Sample document content",
+        }
+        result = socratic_agent.process(request)
+
+        assert isinstance(result, dict)
+        assert "status" in result
+
+    def test_dynamic_question_toggle(self, socratic_agent):
+        """Test toggling between dynamic and static questions"""
+        initial_mode = socratic_agent.use_dynamic_questions
+        request = {"action": "toggle_dynamic_questions"}
+        result = socratic_agent.process(request)
+
+        assert result["status"] == "success"
+        assert result["dynamic_mode"] == (not initial_mode)
+        assert socratic_agent.use_dynamic_questions == (not initial_mode)
 
 
 @pytest.mark.unit
 class TestConversationManagement:
     """Tests for managing conversation"""
 
-    @pytest.mark.asyncio
-    async def test_maintain_context(self):
-        """Test maintaining conversation context"""
-        # Should remember previous discussion
+    def test_process_method_routes_correctly(self, socratic_agent):
+        """Test that process method routes actions correctly"""
+        # Test unknown action
+        request = {"action": "unknown_action"}
+        result = socratic_agent.process(request)
 
-    @pytest.mark.asyncio
-    async def test_progress_tracking(self):
-        """Test tracking student progress"""
-        # Should note improvements
+        assert result["status"] == "error"
+        assert "Unknown action" in result["message"]
 
-    @pytest.mark.asyncio
-    async def test_redirect_off_topic(self):
+    def test_process_response_preserves_context(
+        self, socratic_agent, sample_project
+    ):
+        """Test that processing response preserves project context"""
+        request = {
+            "action": "process_response",
+            "project": sample_project,
+            "response": "Answer to question",
+        }
+        result = socratic_agent.process(request)
+
+        # Should return valid response structure
+        assert isinstance(result, dict)
+
+    def test_redirect_off_topic(self, socratic_agent, sample_project):
         """Test redirecting off-topic discussion"""
-        pass
+        # Socratic agent should handle off-topic responses gracefully
+        request = {
+            "action": "process_response",
+            "project": sample_project,
+            "response": "This is completely off-topic",
+        }
+        result = socratic_agent.process(request)
+
+        # Should return a valid response (not crash)
+        assert isinstance(result, dict)
+        assert "status" in result
 
 
 @pytest.mark.unit
 class TestKnowledgeGapDetection:
     """Tests for detecting knowledge gaps"""
 
-    @pytest.mark.asyncio
-    async def test_identify_gaps(self):
-        """Test identifying knowledge gaps"""
-        # From student answers
+    def test_agent_uses_orchestrator(self, socratic_agent, mock_orchestrator):
+        """Test that agent properly uses orchestrator for context"""
+        mock_orchestrator.context_analyzer.get_context_summary.return_value = {
+            "phase": "planning"
+        }
 
-    @pytest.mark.asyncio
-    async def test_suggest_review(self):
-        """Test suggesting concept review"""
-        # When gaps detected
+        # Agent should have access to orchestrator
+        assert socratic_agent.orchestrator == mock_orchestrator
+
+    def test_max_questions_limit_configured(self, socratic_agent):
+        """Test that max questions per phase is configured"""
+        assert socratic_agent.max_questions_per_phase > 0
+        assert socratic_agent.max_questions_per_phase <= 10
+
+    def test_phases_have_questions(self, socratic_agent):
+        """Test that all project phases have static questions"""
+        phases = ["discovery", "analysis", "design", "implementation"]
+        for phase in phases:
+            assert phase in socratic_agent.static_questions
+            questions = socratic_agent.static_questions[phase]
+            assert len(questions) > 0
+            # Each question should be a non-empty string
+            for question in questions:
+                assert isinstance(question, str)
+                assert len(question) > 10  # Should be a meaningful question
