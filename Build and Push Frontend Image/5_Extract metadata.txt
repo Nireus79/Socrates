@@ -1,0 +1,156 @@
+﻿2025-12-31T22:17:46.6376096Z ##[group]Run docker/metadata-action@v5
+2025-12-31T22:17:46.6376507Z with:
+2025-12-31T22:17:46.6376769Z   images: ghcr.io/Nireus79/Socrates/frontend
+
+2025-12-31T22:17:46.6377606Z   tags: type=ref,event=branch
+type=semver,pattern={{version}}
+type=semver,pattern={{major}}.{{minor}}
+type=sha,prefix={{branch}}-
+type=raw,value=latest,enable={{is_default_branch}}
+
+2025-12-31T22:17:46.6378643Z   context: workflow
+2025-12-31T22:17:46.6379084Z   github-token: ***
+2025-12-31T22:17:46.6379412Z ##[endgroup]
+2025-12-31T22:17:47.3334716Z ##[group]Context info
+2025-12-31T22:17:47.3335131Z eventName: push
+2025-12-31T22:17:47.3335488Z sha: 3a5c55dc376d28862c1eed57a6531b53ac8c3430
+2025-12-31T22:17:47.3335918Z ref: refs/heads/master
+2025-12-31T22:17:47.3336269Z workflow: Docker Build and Publish
+2025-12-31T22:17:47.3336652Z action: meta
+2025-12-31T22:17:47.3336930Z actor: Nireus79
+2025-12-31T22:17:47.3337218Z runNumber: 73
+2025-12-31T22:17:47.3337505Z runId: 20628163618
+2025-12-31T22:17:47.3337958Z commitDate: Wed Dec 31 2025 22:17:14 GMT+0000 (Coordinated Universal Time)
+2025-12-31T22:17:47.3340261Z ##[endgroup]
+2025-12-31T22:17:47.3345987Z ##[group]Processing images input
+2025-12-31T22:17:47.3346485Z name=ghcr.io/Nireus79/Socrates/frontend,enable=true
+2025-12-31T22:17:47.3347192Z ##[endgroup]
+2025-12-31T22:17:47.3360790Z ##[group]Processing tags input
+2025-12-31T22:17:47.3361983Z type=semver,pattern={{version}},value=,match=,enable=true,priority=900
+2025-12-31T22:17:47.3362807Z type=semver,pattern={{major}}.{{minor}},value=,match=,enable=true,priority=900
+2025-12-31T22:17:47.3363478Z type=ref,event=branch,enable=true,priority=600
+2025-12-31T22:17:47.3364101Z type=raw,value=latest,enable={{is_default_branch}},priority=200
+2025-12-31T22:17:47.3364780Z type=sha,prefix={{branch}}-,format=short,enable=true,priority=100
+2025-12-31T22:17:47.3365523Z ##[endgroup]
+2025-12-31T22:17:47.3366553Z ##[group]Processing flavor input
+2025-12-31T22:17:47.3366979Z latest=auto
+2025-12-31T22:17:47.3367256Z prefix=
+2025-12-31T22:17:47.3367550Z prefixLatest=false
+2025-12-31T22:17:47.3367864Z suffix=
+2025-12-31T22:17:47.3368133Z suffixLatest=false
+2025-12-31T22:17:47.3368801Z ##[endgroup]
+2025-12-31T22:17:47.3442396Z ##[group]Docker image version
+2025-12-31T22:17:47.3442753Z master
+2025-12-31T22:17:47.3443227Z ##[endgroup]
+2025-12-31T22:17:47.3448513Z ##[group]Docker tags
+2025-12-31T22:17:47.3448934Z ghcr.io/nireus79/socrates/frontend:master
+2025-12-31T22:17:47.3450908Z ghcr.io/nireus79/socrates/frontend:latest
+2025-12-31T22:17:47.3451621Z ghcr.io/nireus79/socrates/frontend:master-3a5c55d
+2025-12-31T22:17:47.3452298Z ##[endgroup]
+2025-12-31T22:17:47.3527832Z ##[group]Docker labels
+2025-12-31T22:17:47.3528445Z org.opencontainers.image.created=2025-12-31T22:17:47.336Z
+2025-12-31T22:17:47.3529004Z org.opencontainers.image.description=
+2025-12-31T22:17:47.3529446Z org.opencontainers.image.licenses=MIT
+2025-12-31T22:17:47.3530025Z org.opencontainers.image.revision=3a5c55dc376d28862c1eed57a6531b53ac8c3430
+2025-12-31T22:17:47.3530797Z org.opencontainers.image.source=https://github.com/Nireus79/Socrates
+2025-12-31T22:17:47.3531412Z org.opencontainers.image.title=Socrates
+2025-12-31T22:17:47.3531987Z org.opencontainers.image.url=https://github.com/Nireus79/Socrates
+2025-12-31T22:17:47.3532566Z org.opencontainers.image.version=master
+2025-12-31T22:17:47.3533207Z ##[endgroup]
+2025-12-31T22:17:47.3533698Z ##[group]Annotations
+2025-12-31T22:17:47.3534172Z manifest:org.opencontainers.image.created=2025-12-31T22:17:47.336Z
+2025-12-31T22:17:47.3534791Z manifest:org.opencontainers.image.description=
+2025-12-31T22:17:47.3535292Z manifest:org.opencontainers.image.licenses=MIT
+2025-12-31T22:17:47.3535988Z manifest:org.opencontainers.image.revision=3a5c55dc376d28862c1eed57a6531b53ac8c3430
+2025-12-31T22:17:47.3536847Z manifest:org.opencontainers.image.source=https://github.com/Nireus79/Socrates
+2025-12-31T22:17:47.3537542Z manifest:org.opencontainers.image.title=Socrates
+2025-12-31T22:17:47.3538212Z manifest:org.opencontainers.image.url=https://github.com/Nireus79/Socrates
+2025-12-31T22:17:47.3539387Z manifest:org.opencontainers.image.version=master
+2025-12-31T22:17:47.3540128Z ##[endgroup]
+2025-12-31T22:17:47.3540614Z ##[group]JSON output
+2025-12-31T22:17:47.3540920Z {
+2025-12-31T22:17:47.3541152Z   "tags": [
+2025-12-31T22:17:47.3541483Z     "ghcr.io/nireus79/socrates/frontend:master",
+2025-12-31T22:17:47.3541952Z     "ghcr.io/nireus79/socrates/frontend:latest",
+2025-12-31T22:17:47.3542474Z     "ghcr.io/nireus79/socrates/frontend:master-3a5c55d"
+2025-12-31T22:17:47.3542907Z   ],
+2025-12-31T22:17:47.3543153Z   "tag-names": [
+2025-12-31T22:17:47.3543435Z     "master",
+2025-12-31T22:17:47.3543714Z     "latest",
+2025-12-31T22:17:47.3543981Z     "master-3a5c55d"
+2025-12-31T22:17:47.3544264Z   ],
+2025-12-31T22:17:47.3544529Z   "labels": {
+2025-12-31T22:17:47.3544933Z     "org.opencontainers.image.created": "2025-12-31T22:17:47.336Z",
+2025-12-31T22:17:47.3545517Z     "org.opencontainers.image.description": "",
+2025-12-31T22:17:47.3546010Z     "org.opencontainers.image.licenses": "MIT",
+2025-12-31T22:17:47.3546883Z     "org.opencontainers.image.revision": "3a5c55dc376d28862c1eed57a6531b53ac8c3430",
+2025-12-31T22:17:47.3547731Z     "org.opencontainers.image.source": "https://github.com/Nireus79/Socrates",
+2025-12-31T22:17:47.3548552Z     "org.opencontainers.image.title": "Socrates",
+2025-12-31T22:17:47.3549168Z     "org.opencontainers.image.url": "https://github.com/Nireus79/Socrates",
+2025-12-31T22:17:47.3549774Z     "org.opencontainers.image.version": "master"
+2025-12-31T22:17:47.3550190Z   },
+2025-12-31T22:17:47.3550434Z   "annotations": [
+2025-12-31T22:17:47.3550905Z     "manifest:org.opencontainers.image.created=2025-12-31T22:17:47.336Z",
+2025-12-31T22:17:47.3551552Z     "manifest:org.opencontainers.image.description=",
+2025-12-31T22:17:47.3552088Z     "manifest:org.opencontainers.image.licenses=MIT",
+2025-12-31T22:17:47.3552813Z     "manifest:org.opencontainers.image.revision=3a5c55dc376d28862c1eed57a6531b53ac8c3430",
+2025-12-31T22:17:47.3553709Z     "manifest:org.opencontainers.image.source=https://github.com/Nireus79/Socrates",
+2025-12-31T22:17:47.3554452Z     "manifest:org.opencontainers.image.title=Socrates",
+2025-12-31T22:17:47.3555152Z     "manifest:org.opencontainers.image.url=https://github.com/Nireus79/Socrates",
+2025-12-31T22:17:47.3555832Z     "manifest:org.opencontainers.image.version=master"
+2025-12-31T22:17:47.3556305Z   ]
+2025-12-31T22:17:47.3556543Z }
+2025-12-31T22:17:47.3557015Z ##[endgroup]
+2025-12-31T22:17:47.3557500Z ##[group]Bake file definition (tags)
+2025-12-31T22:17:47.3557858Z {
+2025-12-31T22:17:47.3558090Z   "target": {
+2025-12-31T22:17:47.3558539Z     "docker-metadata-action": {
+2025-12-31T22:17:47.3558876Z       "tags": [
+2025-12-31T22:17:47.3559208Z         "ghcr.io/nireus79/socrates/frontend:master",
+2025-12-31T22:17:47.3559658Z         "ghcr.io/nireus79/socrates/frontend:latest",
+2025-12-31T22:17:47.3560146Z         "ghcr.io/nireus79/socrates/frontend:master-3a5c55d"
+2025-12-31T22:17:47.3560575Z       ],
+2025-12-31T22:17:47.3560825Z       "args": {
+2025-12-31T22:17:47.3561206Z         "DOCKER_META_IMAGES": "ghcr.io/nireus79/socrates/frontend",
+2025-12-31T22:17:47.3561711Z         "DOCKER_META_VERSION": "master"
+2025-12-31T22:17:47.3562089Z       }
+2025-12-31T22:17:47.3562342Z     }
+2025-12-31T22:17:47.3562582Z   }
+2025-12-31T22:17:47.3562822Z }
+2025-12-31T22:17:47.3563286Z ##[endgroup]
+2025-12-31T22:17:47.3563807Z ##[group]Bake file definition (labels)
+2025-12-31T22:17:47.3564186Z {
+2025-12-31T22:17:47.3564438Z   "target": {
+2025-12-31T22:17:47.3564739Z     "docker-metadata-action": {
+2025-12-31T22:17:47.3565096Z       "labels": {
+2025-12-31T22:17:47.3565513Z         "org.opencontainers.image.created": "2025-12-31T22:17:47.336Z",
+2025-12-31T22:17:47.3566123Z         "org.opencontainers.image.description": "",
+2025-12-31T22:17:47.3566567Z         "org.opencontainers.image.licenses": "MIT",
+2025-12-31T22:17:47.3567169Z         "org.opencontainers.image.revision": "3a5c55dc376d28862c1eed57a6531b53ac8c3430",
+2025-12-31T22:17:47.3567952Z         "org.opencontainers.image.source": "https://github.com/Nireus79/Socrates",
+2025-12-31T22:17:47.3569024Z         "org.opencontainers.image.title": "Socrates",
+2025-12-31T22:17:47.3569617Z         "org.opencontainers.image.url": "https://github.com/Nireus79/Socrates",
+2025-12-31T22:17:47.3570199Z         "org.opencontainers.image.version": "master"
+2025-12-31T22:17:47.3570619Z       }
+2025-12-31T22:17:47.3570865Z     }
+2025-12-31T22:17:47.3571103Z   }
+2025-12-31T22:17:47.3571314Z }
+2025-12-31T22:17:47.3571722Z ##[endgroup]
+2025-12-31T22:17:47.3572238Z ##[group]Bake file definition (annotations)
+2025-12-31T22:17:47.3572613Z {
+2025-12-31T22:17:47.3572860Z   "target": {
+2025-12-31T22:17:47.3573155Z     "docker-metadata-action": {
+2025-12-31T22:17:47.3573517Z       "annotations": [
+2025-12-31T22:17:47.3573994Z         "manifest:org.opencontainers.image.created=2025-12-31T22:17:47.336Z",
+2025-12-31T22:17:47.3574704Z         "manifest:org.opencontainers.image.description=",
+2025-12-31T22:17:47.3575235Z         "manifest:org.opencontainers.image.licenses=MIT",
+2025-12-31T22:17:47.3576169Z         "manifest:org.opencontainers.image.revision=3a5c55dc376d28862c1eed57a6531b53ac8c3430",
+2025-12-31T22:17:47.3577070Z         "manifest:org.opencontainers.image.source=https://github.com/Nireus79/Socrates",
+2025-12-31T22:17:47.3577798Z         "manifest:org.opencontainers.image.title=Socrates",
+2025-12-31T22:17:47.3578644Z         "manifest:org.opencontainers.image.url=https://github.com/Nireus79/Socrates",
+2025-12-31T22:17:47.3579336Z         "manifest:org.opencontainers.image.version=master"
+2025-12-31T22:17:47.3579774Z       ]
+2025-12-31T22:17:47.3580019Z     }
+2025-12-31T22:17:47.3580244Z   }
+2025-12-31T22:17:47.3580473Z }
+2025-12-31T22:17:47.3580933Z ##[endgroup]

@@ -988,14 +988,16 @@ class ProjectDatabase:
         try:
             sub_start = getattr(user, "subscription_start", None)
             sub_end = getattr(user, "subscription_end", None)
+            is_archived = getattr(user, "is_archived", False)
+            archived_at = getattr(user, "archived_at", None)
 
             cursor.execute(
                 """
                 INSERT OR REPLACE INTO users (
                     username, email, passcode_hash, subscription_tier, subscription_status,
                     subscription_start, subscription_end, testing_mode, created_at,
-                    claude_auth_method
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    claude_auth_method, is_archived, archived_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     user.username,
@@ -1008,6 +1010,8 @@ class ProjectDatabase:
                     getattr(user, "testing_mode", False),
                     serialize_datetime(user.created_at),
                     getattr(user, "claude_auth_method", "api_key"),
+                    is_archived,
+                    serialize_datetime(archived_at) if archived_at else None,
                 ),
             )
 
@@ -1049,6 +1053,14 @@ class ProjectDatabase:
             except (IndexError, KeyError):
                 user.claude_auth_method = "api_key"
 
+            # Set archive fields
+            try:
+                user.is_archived = bool(row["is_archived"])
+                user.archived_at = deserialize_datetime(row["archived_at"]) if row["archived_at"] else None
+            except (IndexError, KeyError):
+                user.is_archived = False
+                user.archived_at = None
+
             return user
 
         except Exception as e:
@@ -1085,6 +1097,14 @@ class ProjectDatabase:
                 user.claude_auth_method = row["claude_auth_method"] or "api_key"
             except (IndexError, KeyError):
                 user.claude_auth_method = "api_key"
+
+            # Set archive fields
+            try:
+                user.is_archived = bool(row["is_archived"])
+                user.archived_at = deserialize_datetime(row["archived_at"]) if row["archived_at"] else None
+            except (IndexError, KeyError):
+                user.is_archived = False
+                user.archived_at = None
 
             return user
 
@@ -1597,22 +1617,17 @@ class ProjectDatabase:
             result = cursor.fetchone()
 
             if result:
-                effectiveness_dict = json.loads(result[0])
-                # Deserialize datetimes
-                if isinstance(effectiveness_dict.get("created_at"), str):
-                    effectiveness_dict["created_at"] = deserialize_datetime(
-                        effectiveness_dict["created_at"]
-                    )
-                if isinstance(effectiveness_dict.get("updated_at"), str):
-                    effectiveness_dict["updated_at"] = deserialize_datetime(
-                        effectiveness_dict["updated_at"]
-                    )
-                if effectiveness_dict.get("last_asked_at") and isinstance(
-                    effectiveness_dict["last_asked_at"], str
-                ):
-                    effectiveness_dict["last_asked_at"] = deserialize_datetime(
-                        effectiveness_dict["last_asked_at"]
-                    )
+                effectiveness_dict = {
+                    "id": result[0],
+                    "user_id": result[1],
+                    "question_template_id": result[2],
+                    "effectiveness_score": result[3],
+                    "times_asked": result[4],
+                    "times_answered_well": result[5],
+                    "last_asked_at": deserialize_datetime(result[6]) if result[6] else None,
+                    "created_at": deserialize_datetime(result[7]) if result[7] else None,
+                    "updated_at": deserialize_datetime(result[8]) if result[8] else None,
+                }
                 return effectiveness_dict
 
             return None
@@ -1632,23 +1647,30 @@ class ProjectDatabase:
 
         try:
             cursor.execute(
-                "SELECT effectiveness_json FROM question_effectiveness WHERE user_id = ?",
+                """
+                SELECT id, user_id, question_template_id, effectiveness_score, times_asked,
+                       times_answered_well, last_asked_at, created_at, updated_at
+                FROM question_effectiveness
+                WHERE user_id = ?
+            """,
                 (user_id,),
             )
             results = cursor.fetchall()
 
             effectiveness_records = []
-            for (effectiveness_json,) in results:
+            for result in results:
                 try:
-                    eff_data = json.loads(effectiveness_json)
-                    # Deserialize datetimes
-                    if isinstance(eff_data.get("created_at"), str):
-                        eff_data["created_at"] = deserialize_datetime(eff_data["created_at"])
-                    if isinstance(eff_data.get("updated_at"), str):
-                        eff_data["updated_at"] = deserialize_datetime(eff_data["updated_at"])
-                    if eff_data.get("last_asked_at") and isinstance(eff_data["last_asked_at"], str):
-                        eff_data["last_asked_at"] = deserialize_datetime(eff_data["last_asked_at"])
-
+                    eff_data = {
+                        "id": result[0],
+                        "user_id": result[1],
+                        "question_template_id": result[2],
+                        "effectiveness_score": result[3],
+                        "times_asked": result[4],
+                        "times_answered_well": result[5],
+                        "last_asked_at": deserialize_datetime(result[6]) if result[6] else None,
+                        "created_at": deserialize_datetime(result[7]) if result[7] else None,
+                        "updated_at": deserialize_datetime(result[8]) if result[8] else None,
+                    }
                     effectiveness_records.append(eff_data)
                 except Exception as e:
                     self.logger.warning(f"Could not load effectiveness record: {e}")
@@ -1715,7 +1737,8 @@ class ProjectDatabase:
         try:
             cursor.execute(
                 """
-                SELECT pattern_json FROM behavior_patterns
+                SELECT id, user_id, pattern_type, pattern_data, frequency, learned_at, updated_at
+                FROM behavior_patterns
                 WHERE user_id = ? AND pattern_type = ?
             """,
                 (user_id, pattern_type),
@@ -1723,12 +1746,15 @@ class ProjectDatabase:
             result = cursor.fetchone()
 
             if result:
-                pattern_dict = json.loads(result[0])
-                # Deserialize datetimes
-                if isinstance(pattern_dict.get("learned_at"), str):
-                    pattern_dict["learned_at"] = deserialize_datetime(pattern_dict["learned_at"])
-                if isinstance(pattern_dict.get("updated_at"), str):
-                    pattern_dict["updated_at"] = deserialize_datetime(pattern_dict["updated_at"])
+                pattern_data_json = result[3]
+                pattern_dict = json.loads(pattern_data_json) if pattern_data_json else {}
+                # Add metadata fields
+                pattern_dict["id"] = result[0]
+                pattern_dict["user_id"] = result[1]
+                pattern_dict["pattern_type"] = result[2]
+                pattern_dict["frequency"] = result[4]
+                pattern_dict["learned_at"] = deserialize_datetime(result[5]) if result[5] else None
+                pattern_dict["updated_at"] = deserialize_datetime(result[6]) if result[6] else None
 
                 return pattern_dict
 
@@ -1747,24 +1773,27 @@ class ProjectDatabase:
 
         try:
             cursor.execute(
-                "SELECT pattern_json FROM behavior_patterns WHERE user_id = ?",
+                """
+                SELECT id, user_id, pattern_type, pattern_data, frequency, learned_at, updated_at
+                FROM behavior_patterns
+                WHERE user_id = ?
+            """,
                 (user_id,),
             )
             results = cursor.fetchall()
 
             patterns = []
-            for (pattern_json,) in results:
+            for result in results:
                 try:
-                    pattern_dict = json.loads(pattern_json)
-                    # Deserialize datetimes
-                    if isinstance(pattern_dict.get("learned_at"), str):
-                        pattern_dict["learned_at"] = deserialize_datetime(
-                            pattern_dict["learned_at"]
-                        )
-                    if isinstance(pattern_dict.get("updated_at"), str):
-                        pattern_dict["updated_at"] = deserialize_datetime(
-                            pattern_dict["updated_at"]
-                        )
+                    pattern_data_json = result[3]
+                    pattern_dict = json.loads(pattern_data_json) if pattern_data_json else {}
+                    # Add metadata fields
+                    pattern_dict["id"] = result[0]
+                    pattern_dict["user_id"] = result[1]
+                    pattern_dict["pattern_type"] = result[2]
+                    pattern_dict["frequency"] = result[4]
+                    pattern_dict["learned_at"] = deserialize_datetime(result[5]) if result[5] else None
+                    pattern_dict["updated_at"] = deserialize_datetime(result[6]) if result[6] else None
 
                     patterns.append(pattern_dict)
                 except Exception as e:

@@ -1,0 +1,544 @@
+﻿2025-12-31T22:17:47.4142417Z ##[group]Run docker/build-push-action@v5
+2025-12-31T22:17:47.4142705Z with:
+2025-12-31T22:17:47.4142878Z   context: ./socrates-frontend
+2025-12-31T22:17:47.4143118Z   file: ./socrates-frontend/Dockerfile
+2025-12-31T22:17:47.4143353Z   push: true
+2025-12-31T22:17:47.4143876Z   tags: ghcr.io/nireus79/socrates/frontend:master
+ghcr.io/nireus79/socrates/frontend:latest
+ghcr.io/nireus79/socrates/frontend:master-3a5c55d
+2025-12-31T22:17:47.4145792Z   labels: org.opencontainers.image.created=2025-12-31T22:17:47.336Z
+org.opencontainers.image.description=
+org.opencontainers.image.licenses=MIT
+org.opencontainers.image.revision=3a5c55dc376d28862c1eed57a6531b53ac8c3430
+org.opencontainers.image.source=https://github.com/Nireus79/Socrates
+org.opencontainers.image.title=Socrates
+org.opencontainers.image.url=https://github.com/Nireus79/Socrates
+org.opencontainers.image.version=master
+2025-12-31T22:17:47.4147371Z   platforms: linux/amd64,linux/arm64
+2025-12-31T22:17:47.4147603Z   cache-from: type=gha
+2025-12-31T22:17:47.4147835Z   cache-to: type=gha,mode=max
+2025-12-31T22:17:47.4148548Z   build-args: VERSION=master
+BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+VCS_REF=3a5c55dc376d28862c1eed57a6531b53ac8c3430
+VITE_API_URL=https://api.socrates.app
+
+2025-12-31T22:17:47.4149110Z   load: false
+2025-12-31T22:17:47.4149275Z   no-cache: false
+2025-12-31T22:17:47.4149441Z   pull: false
+2025-12-31T22:17:47.4149734Z   github-token: ***
+2025-12-31T22:17:47.4149915Z env:
+2025-12-31T22:17:47.4150086Z   DOCKER_METADATA_OUTPUT_VERSION: master
+2025-12-31T22:17:47.4150733Z   DOCKER_METADATA_OUTPUT_TAGS: ghcr.io/nireus79/socrates/frontend:master
+ghcr.io/nireus79/socrates/frontend:latest
+ghcr.io/nireus79/socrates/frontend:master-3a5c55d
+2025-12-31T22:17:47.4151441Z   DOCKER_METADATA_OUTPUT_TAG_NAMES: master
+latest
+master-3a5c55d
+2025-12-31T22:17:47.4153148Z   DOCKER_METADATA_OUTPUT_LABELS: org.opencontainers.image.created=2025-12-31T22:17:47.336Z
+org.opencontainers.image.description=
+org.opencontainers.image.licenses=MIT
+org.opencontainers.image.revision=3a5c55dc376d28862c1eed57a6531b53ac8c3430
+org.opencontainers.image.source=https://github.com/Nireus79/Socrates
+org.opencontainers.image.title=Socrates
+org.opencontainers.image.url=https://github.com/Nireus79/Socrates
+org.opencontainers.image.version=master
+2025-12-31T22:17:47.4156389Z   DOCKER_METADATA_OUTPUT_ANNOTATIONS: manifest:org.opencontainers.image.created=2025-12-31T22:17:47.336Z
+manifest:org.opencontainers.image.description=
+manifest:org.opencontainers.image.licenses=MIT
+manifest:org.opencontainers.image.revision=3a5c55dc376d28862c1eed57a6531b53ac8c3430
+manifest:org.opencontainers.image.source=https://github.com/Nireus79/Socrates
+manifest:org.opencontainers.image.title=Socrates
+manifest:org.opencontainers.image.url=https://github.com/Nireus79/Socrates
+manifest:org.opencontainers.image.version=master
+2025-12-31T22:17:47.4162125Z   DOCKER_METADATA_OUTPUT_JSON: {"tags":["ghcr.io/nireus79/socrates/frontend:master","ghcr.io/nireus79/socrates/frontend:latest","ghcr.io/nireus79/socrates/frontend:master-3a5c55d"],"tag-names":["master","latest","master-3a5c55d"],"labels":{"org.opencontainers.image.created":"2025-12-31T22:17:47.336Z","org.opencontainers.image.description":"","org.opencontainers.image.licenses":"MIT","org.opencontainers.image.revision":"3a5c55dc376d28862c1eed57a6531b53ac8c3430","org.opencontainers.image.source":"https://github.com/Nireus79/Socrates","org.opencontainers.image.title":"Socrates","org.opencontainers.image.url":"https://github.com/Nireus79/Socrates","org.opencontainers.image.version":"master"},"annotations":["manifest:org.opencontainers.image.created=2025-12-31T22:17:47.336Z","manifest:org.opencontainers.image.description=","manifest:org.opencontainers.image.licenses=MIT","manifest:org.opencontainers.image.revision=3a5c55dc376d28862c1eed57a6531b53ac8c3430","manifest:org.opencontainers.image.source=https://github.com/Nireus79/Socrates","manifest:org.opencontainers.image.title=Socrates","manifest:org.opencontainers.image.url=https://github.com/Nireus79/Socrates","manifest:org.opencontainers.image.version=master"]}
+2025-12-31T22:17:47.4166883Z   DOCKER_METADATA_OUTPUT_BAKE_FILE_TAGS: /home/runner/work/_temp/docker-actions-toolkit-jlIEIW/docker-metadata-action-bake-tags.json
+2025-12-31T22:17:47.4167731Z   DOCKER_METADATA_OUTPUT_BAKE_FILE_LABELS: /home/runner/work/_temp/docker-actions-toolkit-jlIEIW/docker-metadata-action-bake-labels.json
+2025-12-31T22:17:47.4168735Z   DOCKER_METADATA_OUTPUT_BAKE_FILE_ANNOTATIONS: /home/runner/work/_temp/docker-actions-toolkit-jlIEIW/docker-metadata-action-bake-annotations.json
+2025-12-31T22:17:47.4169578Z   DOCKER_METADATA_OUTPUT_BAKE_FILE: /home/runner/work/_temp/docker-actions-toolkit-jlIEIW/docker-metadata-action-bake.json
+2025-12-31T22:17:47.4170065Z ##[endgroup]
+2025-12-31T22:17:47.6478582Z ##[group]GitHub Actions runtime token ACs
+2025-12-31T22:17:47.6494779Z refs/heads/master: read/write
+2025-12-31T22:17:47.6495797Z ##[endgroup]
+2025-12-31T22:17:47.6496820Z ##[group]Docker info
+2025-12-31T22:17:47.6540836Z [command]/usr/bin/docker version
+2025-12-31T22:17:47.6762504Z Client: Docker Engine - Community
+2025-12-31T22:17:47.6766699Z  Version:           28.0.4
+2025-12-31T22:17:47.6767388Z  API version:       1.48
+2025-12-31T22:17:47.6767792Z  Go version:        go1.23.7
+2025-12-31T22:17:47.6768211Z  Git commit:        b8034c0
+2025-12-31T22:17:47.6768888Z  Built:             Tue Mar 25 15:07:16 2025
+2025-12-31T22:17:47.6769311Z  OS/Arch:           linux/amd64
+2025-12-31T22:17:47.6769663Z  Context:           default
+2025-12-31T22:17:47.6769897Z 
+2025-12-31T22:17:47.6770050Z Server: Docker Engine - Community
+2025-12-31T22:17:47.6770436Z  Engine:
+2025-12-31T22:17:47.6770711Z   Version:          28.0.4
+2025-12-31T22:17:47.6771112Z   API version:      1.48 (minimum version 1.24)
+2025-12-31T22:17:47.6771577Z   Go version:       go1.23.7
+2025-12-31T22:17:47.6771953Z   Git commit:       6430e49
+2025-12-31T22:17:47.6772324Z   Built:            Tue Mar 25 15:07:16 2025
+2025-12-31T22:17:47.6772766Z   OS/Arch:          linux/amd64
+2025-12-31T22:17:47.6773140Z   Experimental:     false
+2025-12-31T22:17:47.6773512Z  containerd:
+2025-12-31T22:17:47.6773815Z   Version:          v2.2.0
+2025-12-31T22:17:47.6774258Z   GitCommit:        1c4457e00facac03ce1d75f7b6777a7a851e5c41
+2025-12-31T22:17:47.6774755Z  runc:
+2025-12-31T22:17:47.6775043Z   Version:          1.3.4
+2025-12-31T22:17:47.6775416Z   GitCommit:        v1.3.4-0-gd6d73eb8
+2025-12-31T22:17:47.6775827Z  docker-init:
+2025-12-31T22:17:47.6776142Z   Version:          0.19.0
+2025-12-31T22:17:47.6776494Z   GitCommit:        de40ad0
+2025-12-31T22:17:47.6817507Z [command]/usr/bin/docker info
+2025-12-31T22:17:47.7395773Z Client: Docker Engine - Community
+2025-12-31T22:17:47.7397945Z  Version:    28.0.4
+2025-12-31T22:17:47.7398437Z  Context:    default
+2025-12-31T22:17:47.7398766Z  Debug Mode: false
+2025-12-31T22:17:47.7399054Z  Plugins:
+2025-12-31T22:17:47.7399343Z   buildx: Docker Buildx (Docker Inc.)
+2025-12-31T22:17:47.7399696Z     Version:  v0.30.1
+2025-12-31T22:17:47.7399969Z     Path:     /usr/libexec/docker/cli-plugins/docker-buildx
+2025-12-31T22:17:47.7400302Z   compose: Docker Compose (Docker Inc.)
+2025-12-31T22:17:47.7400535Z     Version:  v2.38.2
+2025-12-31T22:17:47.7400773Z     Path:     /usr/libexec/docker/cli-plugins/docker-compose
+2025-12-31T22:17:47.7400987Z 
+2025-12-31T22:17:47.7401447Z Server:
+2025-12-31T22:17:47.7401605Z  Containers: 1
+2025-12-31T22:17:47.7401773Z   Running: 1
+2025-12-31T22:17:47.7401926Z   Paused: 0
+2025-12-31T22:17:47.7402086Z   Stopped: 0
+2025-12-31T22:17:47.7402240Z  Images: 1
+2025-12-31T22:17:47.7402407Z  Server Version: 28.0.4
+2025-12-31T22:17:47.7402606Z  Storage Driver: overlay2
+2025-12-31T22:17:47.7402811Z   Backing Filesystem: extfs
+2025-12-31T22:17:47.7403027Z   Supports d_type: true
+2025-12-31T22:17:47.7403218Z   Using metacopy: false
+2025-12-31T22:17:47.7403414Z   Native Overlay Diff: false
+2025-12-31T22:17:47.7403613Z   userxattr: false
+2025-12-31T22:17:47.7403801Z  Logging Driver: json-file
+2025-12-31T22:17:47.7403998Z  Cgroup Driver: systemd
+2025-12-31T22:17:47.7404177Z  Cgroup Version: 2
+2025-12-31T22:17:47.7404485Z  Plugins:
+2025-12-31T22:17:47.7404639Z   Volume: local
+2025-12-31T22:17:47.7404837Z   Network: bridge host ipvlan macvlan null overlay
+2025-12-31T22:17:47.7405200Z   Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+2025-12-31T22:17:47.7405534Z  Swarm: inactive
+2025-12-31T22:17:47.7405722Z  Runtimes: io.containerd.runc.v2 runc
+2025-12-31T22:17:47.7405962Z  Default Runtime: runc
+2025-12-31T22:17:47.7406153Z  Init Binary: docker-init
+2025-12-31T22:17:47.7406427Z  containerd version: 1c4457e00facac03ce1d75f7b6777a7a851e5c41
+2025-12-31T22:17:47.7406730Z  runc version: v1.3.4-0-gd6d73eb8
+2025-12-31T22:17:47.7406949Z  init version: de40ad0
+2025-12-31T22:17:47.7407127Z  Security Options:
+2025-12-31T22:17:47.7407299Z   apparmor
+2025-12-31T22:17:47.7407445Z   seccomp
+2025-12-31T22:17:47.7407605Z    Profile: builtin
+2025-12-31T22:17:47.7407773Z   cgroupns
+2025-12-31T22:17:47.7407932Z  Kernel Version: 6.11.0-1018-azure
+2025-12-31T22:17:47.7408162Z  Operating System: Ubuntu 24.04.3 LTS
+2025-12-31T22:17:47.7408939Z  OSType: linux
+2025-12-31T22:17:47.7409213Z  Architecture: x86_64
+2025-12-31T22:17:47.7409525Z  CPUs: 4
+2025-12-31T22:17:47.7409814Z  Total Memory: 15.62GiB
+2025-12-31T22:17:47.7410138Z  Name: runnervmh13bl
+2025-12-31T22:17:47.7410491Z  ID: 0a695d56-123a-42a8-a772-617b83954cb8
+2025-12-31T22:17:47.7410913Z  Docker Root Dir: /var/lib/docker
+2025-12-31T22:17:47.7411318Z  Debug Mode: false
+2025-12-31T22:17:47.7411642Z  Username: githubactions
+2025-12-31T22:17:47.7412012Z  Experimental: false
+2025-12-31T22:17:47.7412340Z  Insecure Registries:
+2025-12-31T22:17:47.7412673Z   ::1/128
+2025-12-31T22:17:47.7412919Z   127.0.0.0/8
+2025-12-31T22:17:47.7413215Z  Live Restore Enabled: false
+2025-12-31T22:17:47.7413431Z 
+2025-12-31T22:17:47.7414399Z ##[endgroup]
+2025-12-31T22:17:47.7414920Z ##[group]Proxy configuration
+2025-12-31T22:17:47.7418876Z No proxy configuration found
+2025-12-31T22:17:47.7419532Z ##[endgroup]
+2025-12-31T22:17:47.8013053Z ##[group]Buildx version
+2025-12-31T22:17:47.8041627Z [command]/usr/bin/docker buildx version
+2025-12-31T22:17:47.8584778Z github.com/docker/buildx v0.30.1 9e66234aa13328a5e75b75aa5574e1ca6d6d9c01
+2025-12-31T22:17:47.8617620Z ##[endgroup]
+2025-12-31T22:17:47.8617986Z ##[group]Builder info
+2025-12-31T22:17:47.9468239Z {
+2025-12-31T22:17:47.9469115Z   "nodes": [
+2025-12-31T22:17:47.9469438Z     {
+2025-12-31T22:17:47.9469841Z       "name": "builder-5a84375a-ab67-4e8a-96f4-bc163e458fc60",
+2025-12-31T22:17:47.9470408Z       "endpoint": "unix:///var/run/docker.sock",
+2025-12-31T22:17:47.9470696Z       "status": "running",
+2025-12-31T22:17:47.9471187Z       "buildkitd-flags": "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host",
+2025-12-31T22:17:47.9471666Z       "buildkit": "v0.26.2",
+2025-12-31T22:17:47.9471902Z       "platforms": "linux/amd64,linux/arm64",
+2025-12-31T22:17:47.9472136Z       "features": {
+2025-12-31T22:17:47.9472411Z         "Automatically load images to the Docker Engine image store": true,
+2025-12-31T22:17:47.9472763Z         "Cache export": true,
+2025-12-31T22:17:47.9472987Z         "Direct push": true,
+2025-12-31T22:17:47.9473201Z         "Docker exporter": true,
+2025-12-31T22:17:47.9473431Z         "Multi-platform build": true,
+2025-12-31T22:17:47.9473926Z         "OCI exporter": true
+2025-12-31T22:17:47.9474114Z       },
+2025-12-31T22:17:47.9474268Z       "labels": {
+2025-12-31T22:17:47.9474498Z         "org.mobyproject.buildkit.worker.executor": "oci",
+2025-12-31T22:17:47.9474860Z         "org.mobyproject.buildkit.worker.hostname": "a899a9b0d978",
+2025-12-31T22:17:47.9475207Z         "org.mobyproject.buildkit.worker.network": "host",
+2025-12-31T22:17:47.9475640Z         "org.mobyproject.buildkit.worker.oci.process-mode": "sandbox",
+2025-12-31T22:17:47.9476048Z         "org.mobyproject.buildkit.worker.selinux.enabled": "false",
+2025-12-31T22:17:47.9476431Z         "org.mobyproject.buildkit.worker.snapshotter": "overlayfs"
+2025-12-31T22:17:47.9476728Z       },
+2025-12-31T22:17:47.9476877Z       "gcPolicy": [
+2025-12-31T22:17:47.9477202Z         {
+2025-12-31T22:17:47.9477351Z           "all": false,
+2025-12-31T22:17:47.9477533Z           "filter": [
+2025-12-31T22:17:47.9477715Z             "type==source.local",
+2025-12-31T22:17:47.9477941Z             "type==exec.cachemount",
+2025-12-31T22:17:47.9478186Z             "type==source.git.checkout"
+2025-12-31T22:17:47.9478708Z           ],
+2025-12-31T22:17:47.9478910Z           "keepDuration": "48h0m0s"
+2025-12-31T22:17:47.9479123Z         },
+2025-12-31T22:17:47.9479274Z         {
+2025-12-31T22:17:47.9479421Z           "all": false,
+2025-12-31T22:17:47.9479616Z           "keepDuration": "1440h0m0s"
+2025-12-31T22:17:47.9479823Z         },
+2025-12-31T22:17:47.9479977Z         {
+2025-12-31T22:17:47.9480122Z           "all": false
+2025-12-31T22:17:47.9480295Z         },
+2025-12-31T22:17:47.9480435Z         {
+2025-12-31T22:17:47.9480587Z           "all": true
+2025-12-31T22:17:47.9480755Z         }
+2025-12-31T22:17:47.9480894Z       ]
+2025-12-31T22:17:47.9481045Z     }
+2025-12-31T22:17:47.9481180Z   ],
+2025-12-31T22:17:47.9481396Z   "name": "builder-5a84375a-ab67-4e8a-96f4-bc163e458fc6",
+2025-12-31T22:17:47.9481681Z   "driver": "docker-container",
+2025-12-31T22:17:47.9481915Z   "lastActivity": "2025-12-31T22:17:40.000Z"
+2025-12-31T22:17:47.9482135Z }
+2025-12-31T22:17:47.9482521Z ##[endgroup]
+2025-12-31T22:17:48.1035164Z [command]/usr/bin/docker buildx build --build-arg VERSION=master --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') --build-arg VCS_REF=3a5c55dc376d28862c1eed57a6531b53ac8c3430 --build-arg VITE_API_URL=https://api.socrates.app --cache-from type=gha --cache-to type=gha,mode=max --file ./socrates-frontend/Dockerfile --iidfile /home/runner/work/_temp/docker-actions-toolkit-ctZRKk/build-iidfile-1dbeb4c69e.txt --label org.opencontainers.image.created=2025-12-31T22:17:47.336Z --label org.opencontainers.image.description= --label org.opencontainers.image.licenses=MIT --label org.opencontainers.image.revision=3a5c55dc376d28862c1eed57a6531b53ac8c3430 --label org.opencontainers.image.source=https://github.com/Nireus79/Socrates --label org.opencontainers.image.title=Socrates --label org.opencontainers.image.url=https://github.com/Nireus79/Socrates --label org.opencontainers.image.version=master --platform linux/amd64,linux/arm64 --attest type=provenance,mode=max,builder-id=https://github.com/Nireus79/Socrates/actions/runs/20628163618 --tag ghcr.io/nireus79/socrates/frontend:master --tag ghcr.io/nireus79/socrates/frontend:latest --tag ghcr.io/nireus79/socrates/frontend:master-3a5c55d --metadata-file /home/runner/work/_temp/docker-actions-toolkit-ctZRKk/build-metadata-1d8e1a904d.json --push ./socrates-frontend
+2025-12-31T22:17:48.3492664Z #0 building with "builder-5a84375a-ab67-4e8a-96f4-bc163e458fc6" instance using docker-container driver
+2025-12-31T22:17:48.3493183Z 
+2025-12-31T22:17:48.3493324Z #1 [internal] load build definition from Dockerfile
+2025-12-31T22:17:48.3493633Z #1 transferring dockerfile: 761B done
+2025-12-31T22:17:48.3493857Z #1 DONE 0.0s
+2025-12-31T22:17:48.3493984Z 
+2025-12-31T22:17:48.3494130Z #2 [auth] library/node:pull token for registry-1.docker.io
+2025-12-31T22:17:48.4993354Z #2 DONE 0.0s
+2025-12-31T22:17:48.4993620Z 
+2025-12-31T22:17:48.4993937Z #3 [auth] library/nginx:pull token for registry-1.docker.io
+2025-12-31T22:17:48.4994854Z #3 DONE 0.0s
+2025-12-31T22:17:48.4995019Z 
+2025-12-31T22:17:48.4995270Z #4 [linux/amd64 internal] load metadata for docker.io/library/node:20-alpine
+2025-12-31T22:17:48.7152552Z #4 ...
+2025-12-31T22:17:48.7152781Z 
+2025-12-31T22:17:48.7153125Z #5 [linux/arm64 internal] load metadata for docker.io/library/node:20-alpine
+2025-12-31T22:17:48.7153719Z #5 DONE 0.5s
+2025-12-31T22:17:48.8416193Z 
+2025-12-31T22:17:48.8417458Z #4 [linux/amd64 internal] load metadata for docker.io/library/node:20-alpine
+2025-12-31T22:17:48.8418512Z #4 DONE 0.5s
+2025-12-31T22:17:48.8418745Z 
+2025-12-31T22:17:48.8419153Z #6 [linux/arm64 internal] load metadata for docker.io/library/nginx:alpine
+2025-12-31T22:17:48.8419839Z #6 DONE 0.5s
+2025-12-31T22:17:48.8420323Z 
+2025-12-31T22:17:48.8420480Z #7 [internal] load .dockerignore
+2025-12-31T22:17:48.8420867Z #7 transferring context: 2B done
+2025-12-31T22:17:48.8421220Z #7 DONE 0.0s
+2025-12-31T22:17:48.8421369Z 
+2025-12-31T22:17:48.8421708Z #8 [linux/amd64 internal] load metadata for docker.io/library/nginx:alpine
+2025-12-31T22:17:48.8422329Z #8 DONE 0.6s
+2025-12-31T22:17:49.0133749Z 
+2025-12-31T22:17:49.0134007Z #9 [internal] load build context
+2025-12-31T22:17:49.0134457Z #9 DONE 0.0s
+2025-12-31T22:17:49.0134662Z 
+2025-12-31T22:17:49.0135453Z #10 [linux/arm64 builder 1/6] FROM docker.io/library/node:20-alpine@sha256:658d0f63e501824d6c23e06d4bb95c71e7d704537c9d9272f488ac03a370d448
+2025-12-31T22:17:49.0137122Z #10 resolve docker.io/library/node:20-alpine@sha256:658d0f63e501824d6c23e06d4bb95c71e7d704537c9d9272f488ac03a370d448 done
+2025-12-31T22:17:49.0138137Z #10 DONE 0.0s
+2025-12-31T22:17:49.0138506Z 
+2025-12-31T22:17:49.0139015Z #11 [linux/arm64 stage-1 1/3] FROM docker.io/library/nginx:alpine@sha256:8491795299c8e739b7fcc6285d531d9812ce2666e07bd3dd8db00020ad132295
+2025-12-31T22:17:49.0140097Z #11 resolve docker.io/library/nginx:alpine@sha256:8491795299c8e739b7fcc6285d531d9812ce2666e07bd3dd8db00020ad132295 done
+2025-12-31T22:17:49.0140736Z #11 DONE 0.0s
+2025-12-31T22:17:49.0140873Z 
+2025-12-31T22:17:49.0141037Z #12 importing cache manifest from gha:2439017519456483483
+2025-12-31T22:17:49.0309043Z #12 DONE 0.2s
+2025-12-31T22:17:49.1574566Z 
+2025-12-31T22:17:49.1575296Z #9 [internal] load build context
+2025-12-31T22:17:49.1576297Z #9 transferring context: 1.47MB 0.1s done
+2025-12-31T22:17:49.1576735Z #9 DONE 0.1s
+2025-12-31T22:17:49.1576999Z 
+2025-12-31T22:17:49.1577668Z #11 [linux/arm64 stage-1 1/3] FROM docker.io/library/nginx:alpine@sha256:8491795299c8e739b7fcc6285d531d9812ce2666e07bd3dd8db00020ad132295
+2025-12-31T22:17:49.1578846Z #11 DONE 0.1s
+2025-12-31T22:17:49.1579042Z 
+2025-12-31T22:17:49.1579846Z #13 [linux/amd64 builder 1/6] FROM docker.io/library/node:20-alpine@sha256:658d0f63e501824d6c23e06d4bb95c71e7d704537c9d9272f488ac03a370d448
+2025-12-31T22:17:49.1581165Z #13 resolve docker.io/library/node:20-alpine@sha256:658d0f63e501824d6c23e06d4bb95c71e7d704537c9d9272f488ac03a370d448 0.0s done
+2025-12-31T22:17:49.2594194Z #13 sha256:fd1849a5c548bc65ee47a64498951bda5d40e87d08efe9dca69b5c8cdedc7a52 443B / 443B 0.1s done
+2025-12-31T22:17:49.2596160Z #13 sha256:cb3325e64457574e24f92246e3da3376946e473d636209e1390eac47b50b26a3 1.26MB / 1.26MB 0.1s done
+2025-12-31T22:17:49.3824892Z #13 sha256:1074353eec0db2c1d81d5af2671e56e00cf5738486f5762609ea33d606f88612 3.86MB / 3.86MB 0.1s done
+2025-12-31T22:17:49.3826209Z #13 extracting sha256:1074353eec0db2c1d81d5af2671e56e00cf5738486f5762609ea33d606f88612
+2025-12-31T22:17:49.3827535Z #13 sha256:8d06ba6946d1f299d8f962e37906c77006df33d47050430a57f7893ec35af697 11.53MB / 42.78MB 0.2s
+2025-12-31T22:17:49.5265639Z #13 extracting sha256:1074353eec0db2c1d81d5af2671e56e00cf5738486f5762609ea33d606f88612 0.1s done
+2025-12-31T22:17:49.6513126Z #13 sha256:8d06ba6946d1f299d8f962e37906c77006df33d47050430a57f7893ec35af697 42.78MB / 42.78MB 0.4s done
+2025-12-31T22:17:49.6514644Z #13 extracting sha256:8d06ba6946d1f299d8f962e37906c77006df33d47050430a57f7893ec35af697
+2025-12-31T22:17:50.0418257Z #13 ...
+2025-12-31T22:17:50.0419783Z 
+2025-12-31T22:17:50.0420887Z #14 [linux/amd64 stage-1 1/3] FROM docker.io/library/nginx:alpine@sha256:8491795299c8e739b7fcc6285d531d9812ce2666e07bd3dd8db00020ad132295
+2025-12-31T22:17:50.0422748Z #14 resolve docker.io/library/nginx:alpine@sha256:8491795299c8e739b7fcc6285d531d9812ce2666e07bd3dd8db00020ad132295 0.0s done
+2025-12-31T22:17:50.0424327Z #14 sha256:33f95a0f3229b49e777082e801b882b13fcc5b4e389410ce8eb066f4d58c71b9 403B / 403B 0.1s done
+2025-12-31T22:17:50.0425607Z #14 sha256:0abf9e5672665202e79f26f23ef5dbd12558e2ea51ac32807922ab76fdb24ab0 1.40kB / 1.40kB 0.1s done
+2025-12-31T22:17:50.0426727Z #14 sha256:085c5e5aaa8eb4b957ecf253c74f16a6a5551231de3fb7c3ac74814a6bf17e06 1.21kB / 1.21kB 0.1s done
+2025-12-31T22:17:50.0427818Z #14 sha256:567f84da6fbd4287d40a5837485469435c40a81f9a94e98395b6385d3600643a 626B / 626B 0.0s done
+2025-12-31T22:17:50.0429253Z #14 sha256:da7c973d8b92a1555060972c8849a332c93bfe2608c11faeee2098c4cfbe8c3d 953B / 953B 0.1s done
+2025-12-31T22:17:50.0430512Z #14 sha256:de54cb821236c86af111bf7a17c40e42b3a5ad0e08c1a5ec76fb654d35f58df8 17.26MB / 17.26MB 0.2s done
+2025-12-31T22:17:50.0431675Z #14 sha256:25f453064fd3e8a9754b6e51b86c637e13203cbfc748fcf73f3c8b2d10816ae3 1.86MB / 1.86MB 0.1s done
+2025-12-31T22:17:50.0435075Z #14 extracting sha256:25f453064fd3e8a9754b6e51b86c637e13203cbfc748fcf73f3c8b2d10816ae3 0.2s done
+2025-12-31T22:17:50.0435847Z #14 DONE 1.0s
+2025-12-31T22:17:50.2291072Z 
+2025-12-31T22:17:50.2292040Z #14 [linux/amd64 stage-1 1/3] FROM docker.io/library/nginx:alpine@sha256:8491795299c8e739b7fcc6285d531d9812ce2666e07bd3dd8db00020ad132295
+2025-12-31T22:17:50.2293234Z #14 extracting sha256:567f84da6fbd4287d40a5837485469435c40a81f9a94e98395b6385d3600643a done
+2025-12-31T22:17:50.2294200Z #14 extracting sha256:da7c973d8b92a1555060972c8849a332c93bfe2608c11faeee2098c4cfbe8c3d done
+2025-12-31T22:17:50.2295168Z #14 extracting sha256:33f95a0f3229b49e777082e801b882b13fcc5b4e389410ce8eb066f4d58c71b9 done
+2025-12-31T22:17:50.2296132Z #14 extracting sha256:085c5e5aaa8eb4b957ecf253c74f16a6a5551231de3fb7c3ac74814a6bf17e06 done
+2025-12-31T22:17:50.2297092Z #14 extracting sha256:0abf9e5672665202e79f26f23ef5dbd12558e2ea51ac32807922ab76fdb24ab0 done
+2025-12-31T22:17:50.2298017Z #14 extracting sha256:de54cb821236c86af111bf7a17c40e42b3a5ad0e08c1a5ec76fb654d35f58df8
+2025-12-31T22:17:50.3944374Z #14 ...
+2025-12-31T22:17:50.3946303Z 
+2025-12-31T22:17:50.3947477Z #11 [linux/arm64 stage-1 1/3] FROM docker.io/library/nginx:alpine@sha256:8491795299c8e739b7fcc6285d531d9812ce2666e07bd3dd8db00020ad132295
+2025-12-31T22:17:50.3949482Z #11 sha256:f4f04eae8d5eb8a0220a0d542da10f9c55b57a585dea1875cfbb1ee99d4c5a4a 1.40kB / 1.40kB 0.1s done
+2025-12-31T22:17:50.3950724Z #11 sha256:93d794db9311bcbaf17ea4e5e554128cc39598e57c8d573585e86d55f9fe336f 16.90MB / 16.90MB 0.4s done
+2025-12-31T22:17:50.3951937Z #11 sha256:ceb87b8ac279a84fc99bdc30e7406cf21bf5d5841819fd0e3c8e0c06d867533c 1.21kB / 1.21kB 0.1s done
+2025-12-31T22:17:50.3953063Z #11 sha256:6628835d87d286d4d03f10b2c7f51d00f4556c49b5874947ce02609379069575 403B / 403B 0.1s done
+2025-12-31T22:17:50.3957268Z #11 sha256:9076aaa4fd77085ce5562e9aca2b51ca88baf3fb8e41f8c777d0df14a1ce1085 628B / 628B 0.1s done
+2025-12-31T22:17:50.3958475Z #11 sha256:c0de4eea5b769c1703c4428a21cf0cce5b0a1668738391f1443979bb32cc9bc1 954B / 954B 0.1s done
+2025-12-31T22:17:50.3959570Z #11 sha256:a0ef6d8231d0e512c7a0c0f7029bcfb8c77f0848b9cb8ec5373b28991c83415b 1.87MB / 1.87MB 0.1s done
+2025-12-31T22:17:50.3960645Z #11 extracting sha256:a0ef6d8231d0e512c7a0c0f7029bcfb8c77f0848b9cb8ec5373b28991c83415b 0.1s done
+2025-12-31T22:17:50.3961707Z #11 extracting sha256:9076aaa4fd77085ce5562e9aca2b51ca88baf3fb8e41f8c777d0df14a1ce1085 done
+2025-12-31T22:17:50.3963479Z #11 extracting sha256:c0de4eea5b769c1703c4428a21cf0cce5b0a1668738391f1443979bb32cc9bc1 done
+2025-12-31T22:17:50.3964518Z #11 extracting sha256:6628835d87d286d4d03f10b2c7f51d00f4556c49b5874947ce02609379069575 done
+2025-12-31T22:17:50.3965501Z #11 extracting sha256:ceb87b8ac279a84fc99bdc30e7406cf21bf5d5841819fd0e3c8e0c06d867533c done
+2025-12-31T22:17:50.3966504Z #11 extracting sha256:f4f04eae8d5eb8a0220a0d542da10f9c55b57a585dea1875cfbb1ee99d4c5a4a done
+2025-12-31T22:17:50.3967903Z #11 extracting sha256:93d794db9311bcbaf17ea4e5e554128cc39598e57c8d573585e86d55f9fe336f 0.6s done
+2025-12-31T22:17:50.3968789Z #11 DONE 1.4s
+2025-12-31T22:17:50.5452741Z 
+2025-12-31T22:17:50.5453673Z #10 [linux/arm64 builder 1/6] FROM docker.io/library/node:20-alpine@sha256:658d0f63e501824d6c23e06d4bb95c71e7d704537c9d9272f488ac03a370d448
+2025-12-31T22:17:50.5455215Z #10 sha256:70268380327fbc2d9c066979d554cdff4c22f752e9be70bde123ec5ccb64c292 443B / 443B 0.1s done
+2025-12-31T22:17:50.5456708Z #10 sha256:bb9f6f8b202047f37f5d51a1f2e731b60925a601fe4c9c1495e6c000ddd25944 1.26MB / 1.26MB 0.1s done
+2025-12-31T22:17:50.5458221Z #10 sha256:f6b4fb9446345fcad2db26eac181fef6c0a919c8a4fcccd3bea5deb7f6dff67e 4.20MB / 4.20MB 0.1s done
+2025-12-31T22:17:50.5461876Z #10 extracting sha256:f6b4fb9446345fcad2db26eac181fef6c0a919c8a4fcccd3bea5deb7f6dff67e 0.1s done
+2025-12-31T22:17:50.5463482Z #10 sha256:eb9824d7990580162dd96cf3c8e08c9e966ed8d819adbb6e065c3c5ab73d74b4 43.12MB / 43.12MB 0.9s done
+2025-12-31T22:17:50.5466437Z #10 extracting sha256:eb9824d7990580162dd96cf3c8e08c9e966ed8d819adbb6e065c3c5ab73d74b4
+2025-12-31T22:17:50.5746811Z #10 ...
+2025-12-31T22:17:50.5750561Z 
+2025-12-31T22:17:50.5751667Z #14 [linux/amd64 stage-1 1/3] FROM docker.io/library/nginx:alpine@sha256:8491795299c8e739b7fcc6285d531d9812ce2666e07bd3dd8db00020ad132295
+2025-12-31T22:17:50.5753045Z #14 extracting sha256:de54cb821236c86af111bf7a17c40e42b3a5ad0e08c1a5ec76fb654d35f58df8 0.5s done
+2025-12-31T22:17:50.5753848Z #14 DONE 1.5s
+2025-12-31T22:17:50.7255376Z 
+2025-12-31T22:17:50.7256334Z #10 [linux/arm64 builder 1/6] FROM docker.io/library/node:20-alpine@sha256:658d0f63e501824d6c23e06d4bb95c71e7d704537c9d9272f488ac03a370d448
+2025-12-31T22:17:50.9647187Z #10 ...
+2025-12-31T22:17:50.9647431Z 
+2025-12-31T22:17:50.9648108Z #13 [linux/amd64 builder 1/6] FROM docker.io/library/node:20-alpine@sha256:658d0f63e501824d6c23e06d4bb95c71e7d704537c9d9272f488ac03a370d448
+2025-12-31T22:17:50.9649548Z #13 extracting sha256:8d06ba6946d1f299d8f962e37906c77006df33d47050430a57f7893ec35af697 1.4s done
+2025-12-31T22:17:50.9650248Z #13 DONE 1.9s
+2025-12-31T22:17:51.1481670Z 
+2025-12-31T22:17:51.1482575Z #13 [linux/amd64 builder 1/6] FROM docker.io/library/node:20-alpine@sha256:658d0f63e501824d6c23e06d4bb95c71e7d704537c9d9272f488ac03a370d448
+2025-12-31T22:17:51.1483611Z #13 extracting sha256:cb3325e64457574e24f92246e3da3376946e473d636209e1390eac47b50b26a3 0.0s done
+2025-12-31T22:17:51.1484304Z #13 extracting sha256:fd1849a5c548bc65ee47a64498951bda5d40e87d08efe9dca69b5c8cdedc7a52 done
+2025-12-31T22:17:51.1484845Z #13 DONE 2.0s
+2025-12-31T22:17:51.1484952Z 
+2025-12-31T22:17:51.1485044Z #15 [linux/amd64 builder 2/6] WORKDIR /app
+2025-12-31T22:17:51.5026595Z #15 ...
+2025-12-31T22:17:51.5028003Z 
+2025-12-31T22:17:51.5029653Z #10 [linux/arm64 builder 1/6] FROM docker.io/library/node:20-alpine@sha256:658d0f63e501824d6c23e06d4bb95c71e7d704537c9d9272f488ac03a370d448
+2025-12-31T22:17:51.5031041Z #10 extracting sha256:eb9824d7990580162dd96cf3c8e08c9e966ed8d819adbb6e065c3c5ab73d74b4 1.5s done
+2025-12-31T22:17:51.5031747Z #10 DONE 2.5s
+2025-12-31T22:17:51.6970360Z 
+2025-12-31T22:17:51.6976256Z #10 [linux/arm64 builder 1/6] FROM docker.io/library/node:20-alpine@sha256:658d0f63e501824d6c23e06d4bb95c71e7d704537c9d9272f488ac03a370d448
+2025-12-31T22:17:51.6978087Z #10 extracting sha256:bb9f6f8b202047f37f5d51a1f2e731b60925a601fe4c9c1495e6c000ddd25944 0.0s done
+2025-12-31T22:17:51.6979251Z #10 extracting sha256:70268380327fbc2d9c066979d554cdff4c22f752e9be70bde123ec5ccb64c292 done
+2025-12-31T22:17:51.6979920Z #10 DONE 2.5s
+2025-12-31T22:17:51.6980083Z 
+2025-12-31T22:17:51.6980232Z #15 [linux/amd64 builder 2/6] WORKDIR /app
+2025-12-31T22:17:51.6980795Z #15 DONE 0.7s
+2025-12-31T22:17:51.6981007Z 
+2025-12-31T22:17:51.6981173Z #16 [linux/arm64 builder 2/6] WORKDIR /app
+2025-12-31T22:17:51.8647546Z #16 DONE 0.1s
+2025-12-31T22:17:51.8648076Z 
+2025-12-31T22:17:51.8648486Z #17 [linux/amd64 builder 3/6] COPY package*.json ./
+2025-12-31T22:17:51.8649427Z #17 DONE 0.0s
+2025-12-31T22:17:51.8649595Z 
+2025-12-31T22:17:51.8649780Z #18 [linux/arm64 builder 3/6] COPY package*.json ./
+2025-12-31T22:17:51.8650203Z #18 DONE 0.0s
+2025-12-31T22:17:51.8650375Z 
+2025-12-31T22:17:51.8650519Z #19 [linux/arm64 builder 4/6] RUN npm ci
+2025-12-31T22:17:58.8148602Z #19 ...
+2025-12-31T22:17:58.8149172Z 
+2025-12-31T22:17:58.8149421Z #20 [linux/amd64 builder 4/6] RUN npm ci
+2025-12-31T22:17:58.8149872Z #20 7.101 
+2025-12-31T22:17:58.8150263Z #20 7.101 added 319 packages, and audited 320 packages in 7s
+2025-12-31T22:17:58.8150761Z #20 7.101 
+2025-12-31T22:17:58.9691145Z #20 7.101 74 packages are looking for funding
+2025-12-31T22:17:58.9692631Z #20 7.101   run `npm fund` for details
+2025-12-31T22:17:58.9693541Z #20 7.103 
+2025-12-31T22:17:58.9693868Z #20 7.103 found 0 vulnerabilities
+2025-12-31T22:17:58.9694265Z #20 7.104 npm notice
+2025-12-31T22:17:58.9694750Z #20 7.104 npm notice New major version of npm available! 10.8.2 -> 11.7.0
+2025-12-31T22:17:58.9695541Z #20 7.104 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.7.0
+2025-12-31T22:17:58.9696256Z #20 7.104 npm notice To update run: npm install -g npm@11.7.0
+2025-12-31T22:17:58.9696734Z #20 7.104 npm notice
+2025-12-31T22:17:59.3427532Z #20 DONE 7.6s
+2025-12-31T22:17:59.3427830Z 
+2025-12-31T22:17:59.3428003Z #19 [linux/arm64 builder 4/6] RUN npm ci
+2025-12-31T22:17:59.4945126Z #19 ...
+2025-12-31T22:17:59.4945376Z 
+2025-12-31T22:17:59.4945943Z #21 [linux/amd64 builder 5/6] COPY . .
+2025-12-31T22:17:59.5516397Z #21 DONE 0.2s
+2025-12-31T22:17:59.5518119Z 
+2025-12-31T22:17:59.5518967Z #19 [linux/arm64 builder 4/6] RUN npm ci
+2025-12-31T22:17:59.7032125Z #19 ...
+2025-12-31T22:17:59.7032824Z 
+2025-12-31T22:17:59.7033168Z #22 [linux/amd64 builder 6/6] RUN npm run build
+2025-12-31T22:17:59.7621803Z #22 0.210 
+2025-12-31T22:17:59.7624741Z #22 0.210 > socrates-frontend@0.0.0 build
+2025-12-31T22:17:59.7625222Z #22 0.210 > vite build
+2025-12-31T22:17:59.7625533Z #22 0.210 
+2025-12-31T22:18:00.0719009Z #22 0.519 vite v7.3.0 building client environment for production...
+2025-12-31T22:18:00.3110892Z #22 0.758 transforming...
+2025-12-31T22:18:07.9931777Z #22 8.440 ✓ 2557 modules transformed.
+2025-12-31T22:18:08.7095429Z #22 9.157 rendering chunks...
+2025-12-31T22:18:08.8914302Z #22 9.177 computing gzip size...
+2025-12-31T22:18:08.8915219Z #22 9.206 dist/index.html                   0.50 kB │ gzip:   0.32 kB
+2025-12-31T22:18:08.8915988Z #22 9.206 dist/assets/index-DwdFNU5f.css   69.72 kB │ gzip:  10.97 kB
+2025-12-31T22:18:08.8916800Z #22 9.206 dist/assets/index-1oaYEqKn.js   952.73 kB │ gzip: 269.02 kB
+2025-12-31T22:18:08.8917333Z #22 9.206 
+2025-12-31T22:18:08.8917775Z #22 9.206 (!) Some chunks are larger than 500 kB after minification. Consider:
+2025-12-31T22:18:08.8918731Z #22 9.206 - Using dynamic import() to code-split the application
+2025-12-31T22:18:08.8919817Z #22 9.206 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+2025-12-31T22:18:08.8921023Z #22 9.206 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+2025-12-31T22:18:08.8921738Z #22 9.207 ✓ built in 8.65s
+2025-12-31T22:18:08.8922065Z #22 DONE 9.3s
+2025-12-31T22:18:08.8922232Z 
+2025-12-31T22:18:08.8922392Z #19 [linux/arm64 builder 4/6] RUN npm ci
+2025-12-31T22:18:09.2412282Z #19 ...
+2025-12-31T22:18:09.2413475Z 
+2025-12-31T22:18:09.2414354Z #23 [linux/amd64 stage-1 2/3] COPY --from=builder /app/dist /usr/share/nginx/html
+2025-12-31T22:18:09.4167792Z #23 DONE 0.0s
+2025-12-31T22:18:09.4168113Z 
+2025-12-31T22:18:09.4168641Z #24 [linux/amd64 stage-1 3/3] COPY nginx.conf /etc/nginx/conf.d/default.conf
+2025-12-31T22:18:09.4169235Z #24 DONE 0.0s
+2025-12-31T22:18:09.4169409Z 
+2025-12-31T22:18:09.4169613Z #19 [linux/arm64 builder 4/6] RUN npm ci
+2025-12-31T22:18:46.3081769Z #19 54.59 
+2025-12-31T22:18:46.3084011Z #19 54.59 added 319 packages, and audited 320 packages in 52s
+2025-12-31T22:18:46.4968986Z #19 54.60 
+2025-12-31T22:18:46.4969513Z #19 54.60 74 packages are looking for funding
+2025-12-31T22:18:46.4970539Z #19 54.60   run `npm fund` for details
+2025-12-31T22:18:46.4970945Z #19 54.61 
+2025-12-31T22:18:46.4971239Z #19 54.61 found 0 vulnerabilities
+2025-12-31T22:18:46.4971655Z #19 54.63 npm notice
+2025-12-31T22:18:46.4972129Z #19 54.63 npm notice New major version of npm available! 10.8.2 -> 11.7.0
+2025-12-31T22:18:46.4972899Z #19 54.63 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.7.0
+2025-12-31T22:18:46.4973586Z #19 54.63 npm notice To update run: npm install -g npm@11.7.0
+2025-12-31T22:18:46.4974066Z #19 54.63 npm notice
+2025-12-31T22:18:47.1384672Z #19 DONE 55.4s
+2025-12-31T22:18:47.2896684Z 
+2025-12-31T22:18:47.2897209Z #25 [linux/arm64 builder 5/6] COPY . .
+2025-12-31T22:18:47.3346250Z #25 DONE 0.2s
+2025-12-31T22:18:47.4858630Z 
+2025-12-31T22:18:47.4859286Z #26 [linux/arm64 builder 6/6] RUN npm run build
+2025-12-31T22:18:50.0364156Z #26 2.701 
+2025-12-31T22:18:50.0364851Z #26 2.701 > socrates-frontend@0.0.0 build
+2025-12-31T22:18:50.0365507Z #26 2.701 > vite build
+2025-12-31T22:18:50.0365817Z #26 2.701 
+2025-12-31T22:18:53.7809342Z #26 6.446 vite v7.3.0 building client environment for production...
+2025-12-31T22:18:55.4861912Z #26 8.151 transforming...
+2025-12-31T22:19:48.2483857Z #26 60.91 ✓ 2557 modules transformed.
+2025-12-31T22:19:53.3545931Z #26 66.02 rendering chunks...
+2025-12-31T22:19:53.5066922Z #26 66.17 computing gzip size...
+2025-12-31T22:19:53.6669316Z #26 66.33 dist/index.html                   0.50 kB │ gzip:   0.32 kB
+2025-12-31T22:19:53.8261167Z #26 66.33 dist/assets/index-DwdFNU5f.css   69.72 kB │ gzip:  10.97 kB
+2025-12-31T22:19:53.8261840Z #26 66.33 dist/assets/index-1oaYEqKn.js   952.73 kB │ gzip: 269.02 kB
+2025-12-31T22:19:53.8262228Z #26 66.33 
+2025-12-31T22:19:53.8262593Z #26 66.33 (!) Some chunks are larger than 500 kB after minification. Consider:
+2025-12-31T22:19:53.8263105Z #26 66.33 - Using dynamic import() to code-split the application
+2025-12-31T22:19:53.8263958Z #26 66.33 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+2025-12-31T22:19:53.8264879Z #26 66.33 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+2025-12-31T22:19:53.8265389Z #26 66.34 ✓ built in 59.67s
+2025-12-31T22:19:53.9742364Z #26 DONE 66.6s
+2025-12-31T22:19:54.2794603Z 
+2025-12-31T22:19:54.2795467Z #27 [linux/arm64 stage-1 2/3] COPY --from=builder /app/dist /usr/share/nginx/html
+2025-12-31T22:19:54.3805362Z #27 DONE 0.0s
+2025-12-31T22:19:54.3805657Z 
+2025-12-31T22:19:54.3805987Z #28 [linux/arm64 stage-1 3/3] COPY nginx.conf /etc/nginx/conf.d/default.conf
+2025-12-31T22:19:54.3806589Z #28 DONE 0.0s
+2025-12-31T22:19:54.3806720Z 
+2025-12-31T22:19:54.3806807Z #29 exporting to image
+2025-12-31T22:19:54.3807205Z #29 exporting layers 0.1s done
+2025-12-31T22:19:54.3807882Z #29 exporting manifest sha256:6861879b0e09d90c30730b6e564943147b28b08e046603d07b21801703ba6b4d done
+2025-12-31T22:19:54.3808911Z #29 exporting config sha256:9d33cedfa30fdb47d72c6519956dbfe57cff538917ed1af71cdf3ba436cb59ac done
+2025-12-31T22:19:54.3809600Z #29 exporting attestation manifest sha256:9c2dd42961738a41865bd3c585732fabedbace6bf6b4e00bac9493dbac1b652b
+2025-12-31T22:19:54.6178635Z #29 ...
+2025-12-31T22:19:54.6178927Z 
+2025-12-31T22:19:54.6179173Z #30 [auth] nireus79/socrates/frontend:pull,push token for ghcr.io
+2025-12-31T22:19:54.6179651Z #30 DONE 0.0s
+2025-12-31T22:19:54.6179842Z 
+2025-12-31T22:19:54.6179986Z #29 exporting to image
+2025-12-31T22:19:54.6180823Z #29 exporting attestation manifest sha256:9c2dd42961738a41865bd3c585732fabedbace6bf6b4e00bac9493dbac1b652b done
+2025-12-31T22:19:54.6181756Z #29 exporting manifest sha256:0dcded4c82b2e7bc41ff3f6bc9113059283c512345f9e9f6c2d24cd576d5ece6 done
+2025-12-31T22:19:54.6182556Z #29 exporting config sha256:d7dd7235c6f42c4b8b803c09258c3f1cd49620e519f2c57d78e81dcc46a39892 done
+2025-12-31T22:19:54.6183245Z #29 exporting attestation manifest sha256:7e232255c16baa21a59bd180b9a230f7968f8639c9506f14c359f681078cc0b6 done
+2025-12-31T22:19:54.6184787Z #29 exporting manifest list sha256:df52a6005c46e7bd7461626af223ebfb24ce8089c39923daf6bec09d73854446 done
+2025-12-31T22:19:54.6185503Z #29 pushing layers
+2025-12-31T22:19:56.8132103Z #29 pushing layers 2.4s done
+2025-12-31T22:19:56.8133613Z #29 pushing manifest for ghcr.io/nireus79/socrates/frontend:master@sha256:df52a6005c46e7bd7461626af223ebfb24ce8089c39923daf6bec09d73854446
+2025-12-31T22:19:58.1497819Z #29 pushing manifest for ghcr.io/nireus79/socrates/frontend:master@sha256:df52a6005c46e7bd7461626af223ebfb24ce8089c39923daf6bec09d73854446 1.3s done
+2025-12-31T22:19:58.3341893Z #29 pushing layers 0.2s done
+2025-12-31T22:19:58.3342918Z #29 pushing manifest for ghcr.io/nireus79/socrates/frontend:latest@sha256:df52a6005c46e7bd7461626af223ebfb24ce8089c39923daf6bec09d73854446
+2025-12-31T22:19:58.7702810Z #29 pushing manifest for ghcr.io/nireus79/socrates/frontend:latest@sha256:df52a6005c46e7bd7461626af223ebfb24ce8089c39923daf6bec09d73854446 0.4s done
+2025-12-31T22:19:58.9677127Z #29 pushing layers 0.2s done
+2025-12-31T22:19:58.9678480Z #29 pushing manifest for ghcr.io/nireus79/socrates/frontend:master-3a5c55d@sha256:df52a6005c46e7bd7461626af223ebfb24ce8089c39923daf6bec09d73854446
+2025-12-31T22:19:59.3639433Z #29 pushing manifest for ghcr.io/nireus79/socrates/frontend:master-3a5c55d@sha256:df52a6005c46e7bd7461626af223ebfb24ce8089c39923daf6bec09d73854446 0.4s done
+2025-12-31T22:19:59.3640515Z #29 DONE 5.1s
+2025-12-31T22:19:59.3640676Z 
+2025-12-31T22:19:59.3640789Z #31 exporting to GitHub Actions Cache
+2025-12-31T22:19:59.3641099Z #31 preparing build cache for export
+2025-12-31T22:20:18.0103870Z #31 writing layer sha256:0415b64df6ac3109df3229136d6da8cd963528b30f8bb19149bd80d9ff4ddebb
+2025-12-31T22:20:18.2802740Z #31 writing layer sha256:0415b64df6ac3109df3229136d6da8cd963528b30f8bb19149bd80d9ff4ddebb 0.3s done
+2025-12-31T22:20:18.4812602Z #31 writing layer sha256:0abb54571a67b2f814bf22e544b9a0c2fe0a99ab26aaf8117411238b93123b75
+2025-12-31T22:20:18.5389114Z #31 writing layer sha256:0abb54571a67b2f814bf22e544b9a0c2fe0a99ab26aaf8117411238b93123b75 0.2s done
+2025-12-31T22:20:18.7751529Z #31 writing layer sha256:23a9a158d996f0d2e28458906492a269a5a6d134c0d18742aceb87d3c415bca8
+2025-12-31T22:20:24.8602579Z #31 writing layer sha256:23a9a158d996f0d2e28458906492a269a5a6d134c0d18742aceb87d3c415bca8 6.2s done
+2025-12-31T22:20:25.0765323Z #31 writing layer sha256:5483b0fd3b603752f3fd0a5db24a726bc607960ce96ecb77efe0d4c46675cf9c 0.1s done
+2025-12-31T22:20:25.2773177Z #31 writing layer sha256:617108f529d63a56694ac36db7ae96395b0bd620dcccd1e3466274502f000c38
+2025-12-31T22:20:25.3155129Z #31 writing layer sha256:617108f529d63a56694ac36db7ae96395b0bd620dcccd1e3466274502f000c38 0.2s done
+2025-12-31T22:20:25.5425012Z #31 writing layer sha256:871e6868e9a5f3944e8c0acea23f82259f22fe2cf1d70f0056cd2ae74c44a104
+2025-12-31T22:20:25.5984439Z #31 writing layer sha256:871e6868e9a5f3944e8c0acea23f82259f22fe2cf1d70f0056cd2ae74c44a104 0.2s done
+2025-12-31T22:20:25.7790567Z #31 writing layer sha256:a4bf10b9aa8f138bca70eb7f111978c4da72ad3b8af5ee035717481b571b9ab8
+2025-12-31T22:20:32.9804948Z #31 writing layer sha256:a4bf10b9aa8f138bca70eb7f111978c4da72ad3b8af5ee035717481b571b9ab8 7.2s done
+2025-12-31T22:20:33.1540820Z #31 writing layer sha256:ab694b0c601f3b72fcd8707c74c41c18dc3d8f60fa91174036b1131725c614a8
+2025-12-31T22:20:33.2969288Z #31 writing layer sha256:ab694b0c601f3b72fcd8707c74c41c18dc3d8f60fa91174036b1131725c614a8 0.3s done
+2025-12-31T22:20:33.4053290Z #31 writing layer sha256:c7185631219862bd424b98cc53ba46ff487d55fe428f7f8640bc53659517d4df
+2025-12-31T22:20:33.6889114Z #31 writing layer sha256:c7185631219862bd424b98cc53ba46ff487d55fe428f7f8640bc53659517d4df 0.3s done
+2025-12-31T22:20:33.7937151Z #31 writing layer sha256:d836773d6544017933cce4def4a9ade4384a992d7e517acb8ca61f8102d0effc
+2025-12-31T22:20:34.1052260Z #31 writing layer sha256:d836773d6544017933cce4def4a9ade4384a992d7e517acb8ca61f8102d0effc 0.3s done
+2025-12-31T22:20:34.3325682Z #31 writing layer sha256:dff49f1b5b6bdd23705045be478e8ece3ae8916524a267c5a711bc0561321085
+2025-12-31T22:20:34.4333274Z #31 writing layer sha256:dff49f1b5b6bdd23705045be478e8ece3ae8916524a267c5a711bc0561321085 0.3s done
+2025-12-31T22:20:34.6073837Z #31 writing layer sha256:e3184141b3ca91a52c1ca4f54c90dbe1d1af725009ed1c422b31292109a4738d
+2025-12-31T22:20:34.7091736Z #31 writing layer sha256:e3184141b3ca91a52c1ca4f54c90dbe1d1af725009ed1c422b31292109a4738d 0.3s done
+2025-12-31T22:20:35.0465856Z #31 preparing build cache for export 35.7s done
+2025-12-31T22:20:35.0466783Z #31 DONE 35.7s
+2025-12-31T22:20:35.0733864Z 
+2025-12-31T22:20:35.0735049Z #32 resolving provenance for metadata file
+2025-12-31T22:20:35.0735586Z #32 DONE 0.0s
+2025-12-31T22:20:35.0809303Z ##[group]ImageID
+2025-12-31T22:20:35.0809796Z sha256:df52a6005c46e7bd7461626af223ebfb24ce8089c39923daf6bec09d73854446
+2025-12-31T22:20:35.0812712Z ##[endgroup]
+2025-12-31T22:20:35.0813139Z ##[group]Digest
+2025-12-31T22:20:35.0813434Z sha256:df52a6005c46e7bd7461626af223ebfb24ce8089c39923daf6bec09d73854446
+2025-12-31T22:20:35.0814204Z ##[endgroup]
+2025-12-31T22:20:35.0814541Z ##[group]Metadata
+2025-12-31T22:20:35.0815149Z {
+2025-12-31T22:20:35.0815706Z   "buildx.build.ref": "builder-5a84375a-ab67-4e8a-96f4-bc163e458fc6/builder-5a84375a-ab67-4e8a-96f4-bc163e458fc60/7fv7ucesvlbsncfey8qv8hd8z",
+2025-12-31T22:20:35.0816421Z   "containerimage.descriptor": {
+2025-12-31T22:20:35.0816723Z     "mediaType": "application/vnd.oci.image.index.v1+json",
+2025-12-31T22:20:35.0817151Z     "digest": "sha256:df52a6005c46e7bd7461626af223ebfb24ce8089c39923daf6bec09d73854446",
+2025-12-31T22:20:35.0817524Z     "size": 1609
+2025-12-31T22:20:35.0817683Z   },
+2025-12-31T22:20:35.0818037Z   "containerimage.digest": "sha256:df52a6005c46e7bd7461626af223ebfb24ce8089c39923daf6bec09d73854446",
+2025-12-31T22:20:35.0819826Z   "image.name": "ghcr.io/nireus79/socrates/frontend:master,ghcr.io/nireus79/socrates/frontend:latest,ghcr.io/nireus79/socrates/frontend:master-3a5c55d"
+2025-12-31T22:20:35.0820449Z }
+2025-12-31T22:20:35.0820754Z ##[endgroup]

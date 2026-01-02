@@ -169,8 +169,8 @@ class TestProjectOperations:
 
         projects = db.get_user_projects(user)
         assert len(projects) == 2
-        assert any(p["project_id"] == "proj_001" for p in projects)
-        assert any(p["project_id"] == "proj_002" for p in projects)
+        assert any(p.project_id == "proj_001" for p in projects)
+        assert any(p.project_id == "proj_002" for p in projects)
 
     def test_archive_project(self, db, sample_project):
         """Test archiving a project"""
@@ -384,7 +384,7 @@ class TestLearningTracking:
         db.save_question_effectiveness(qe)
         loaded = db.get_question_effectiveness("user_001", "template_001")
         assert loaded is not None
-        assert loaded.times_asked == 5
+        assert loaded["times_asked"] == 5
 
     def test_get_user_effectiveness_all(self, db):
         """Test getting all effectiveness records for a user"""
@@ -431,7 +431,7 @@ class TestLearningTracking:
         db.save_behavior_pattern(pattern)
         loaded = db.get_behavior_pattern("user_001", "learning_speed")
         assert loaded is not None
-        assert loaded.pattern_type == "learning_speed"
+        assert loaded["pattern_type"] == "learning_speed"
 
     def test_get_user_behavior_patterns(self, db):
         """Test getting all behavior patterns for a user"""

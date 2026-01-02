@@ -1,0 +1,15 @@
+﻿2025-12-31T22:20:53.0485139Z ##[group]Run echo "## Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+2025-12-31T22:20:53.0486302Z [36;1mecho "## Docker Build Summary" >> $GITHUB_STEP_SUMMARY[0m
+2025-12-31T22:20:53.0487049Z [36;1mecho "" >> $GITHUB_STEP_SUMMARY[0m
+2025-12-31T22:20:53.0487980Z [36;1mecho "| Component | Status | Image |" >> $GITHUB_STEP_SUMMARY[0m
+2025-12-31T22:20:53.0488852Z [36;1mecho "|-----------|--------|-------|" >> $GITHUB_STEP_SUMMARY[0m
+2025-12-31T22:20:53.0490357Z [36;1mecho "| API | success | ghcr.io/Nireus79/Socrates/api |" >> $GITHUB_STEP_SUMMARY[0m
+2025-12-31T22:20:53.0491687Z [36;1mecho "| Frontend | success | ghcr.io/Nireus79/Socrates/frontend |" >> $GITHUB_STEP_SUMMARY[0m
+2025-12-31T22:20:53.0492637Z [36;1mecho "" >> $GITHUB_STEP_SUMMARY[0m
+2025-12-31T22:20:53.0493358Z [36;1mecho "**Build Details:**" >> $GITHUB_STEP_SUMMARY[0m
+2025-12-31T22:20:53.0494190Z [36;1mecho "- Trigger: push" >> $GITHUB_STEP_SUMMARY[0m
+2025-12-31T22:20:53.0494990Z [36;1mecho "- Branch: master" >> $GITHUB_STEP_SUMMARY[0m
+2025-12-31T22:20:53.0496137Z [36;1mecho "- Commit: 3a5c55dc376d28862c1eed57a6531b53ac8c3430" >> $GITHUB_STEP_SUMMARY[0m
+2025-12-31T22:20:53.0497288Z [36;1mecho "- Timestamp: $(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_STEP_SUMMARY[0m
+2025-12-31T22:20:53.3644976Z shell: /usr/bin/bash -e {0}
+2025-12-31T22:20:53.3646400Z ##[endgroup]
