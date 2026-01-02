@@ -12,7 +12,7 @@ from pathlib import Path
 import click
 from colorama import Fore, Style, init
 
-import socrates
+import socrates_ai as socrates
 
 # Initialize colorama for cross-platform colored output
 init(autoreset=True)
