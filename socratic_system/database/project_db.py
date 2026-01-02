@@ -1056,7 +1056,9 @@ class ProjectDatabase:
             # Set archive fields
             try:
                 user.is_archived = bool(row["is_archived"])
-                user.archived_at = deserialize_datetime(row["archived_at"]) if row["archived_at"] else None
+                user.archived_at = (
+                    deserialize_datetime(row["archived_at"]) if row["archived_at"] else None
+                )
             except (IndexError, KeyError):
                 user.is_archived = False
                 user.archived_at = None
@@ -1101,7 +1103,9 @@ class ProjectDatabase:
             # Set archive fields
             try:
                 user.is_archived = bool(row["is_archived"])
-                user.archived_at = deserialize_datetime(row["archived_at"]) if row["archived_at"] else None
+                user.archived_at = (
+                    deserialize_datetime(row["archived_at"]) if row["archived_at"] else None
+                )
             except (IndexError, KeyError):
                 user.is_archived = False
                 user.archived_at = None
@@ -1792,8 +1796,12 @@ class ProjectDatabase:
                     pattern_dict["user_id"] = result[1]
                     pattern_dict["pattern_type"] = result[2]
                     pattern_dict["frequency"] = result[4]
-                    pattern_dict["learned_at"] = deserialize_datetime(result[5]) if result[5] else None
-                    pattern_dict["updated_at"] = deserialize_datetime(result[6]) if result[6] else None
+                    pattern_dict["learned_at"] = (
+                        deserialize_datetime(result[5]) if result[5] else None
+                    )
+                    pattern_dict["updated_at"] = (
+                        deserialize_datetime(result[6]) if result[6] else None
+                    )
 
                     patterns.append(pattern_dict)
                 except Exception as e:

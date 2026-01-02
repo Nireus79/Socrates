@@ -9,11 +9,13 @@ Tests socratic questioning agent including:
 - Detecting knowledge gaps
 """
 
+import datetime
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+
 from socratic_system.agents.socratic_counselor import SocraticCounselorAgent
 from socratic_system.models import ProjectContext, User
-import datetime
 
 
 @pytest.fixture
@@ -86,9 +88,7 @@ class TestSocraticQuestionGeneration:
         self, socratic_agent, sample_project, mock_orchestrator
     ):
         """Test generating socratic question with valid project"""
-        mock_orchestrator.context_analyzer.get_context_summary.return_value = {
-            "phase": "planning"
-        }
+        mock_orchestrator.context_analyzer.get_context_summary.return_value = {"phase": "planning"}
 
         request = {"action": "generate_question", "project": sample_project}
         result = socratic_agent.process(request)
@@ -108,17 +108,10 @@ class TestSocraticQuestionGeneration:
     def test_static_questions_available(self, socratic_agent):
         """Test that static fallback questions are available"""
         assert len(socratic_agent.static_questions["discovery"]) > 0
-        assert all(
-            isinstance(q, str) for q in socratic_agent.static_questions["discovery"]
-        )
-        assert all(
-            isinstance(q, str) for q in socratic_agent.static_questions["analysis"]
-        )
+        assert all(isinstance(q, str) for q in socratic_agent.static_questions["discovery"])
+        assert all(isinstance(q, str) for q in socratic_agent.static_questions["analysis"])
         assert all(isinstance(q, str) for q in socratic_agent.static_questions["design"])
-        assert all(
-            isinstance(q, str)
-            for q in socratic_agent.static_questions["implementation"]
-        )
+        assert all(isinstance(q, str) for q in socratic_agent.static_questions["implementation"])
 
 
 @pytest.mark.unit
@@ -212,9 +205,7 @@ class TestConversationManagement:
         assert result["status"] == "error"
         assert "Unknown action" in result["message"]
 
-    def test_process_response_preserves_context(
-        self, socratic_agent, sample_project
-    ):
+    def test_process_response_preserves_context(self, socratic_agent, sample_project):
         """Test that processing response preserves project context"""
         request = {
             "action": "process_response",
@@ -247,9 +238,7 @@ class TestKnowledgeGapDetection:
 
     def test_agent_uses_orchestrator(self, socratic_agent, mock_orchestrator):
         """Test that agent properly uses orchestrator for context"""
-        mock_orchestrator.context_analyzer.get_context_summary.return_value = {
-            "phase": "planning"
-        }
+        mock_orchestrator.context_analyzer.get_context_summary.return_value = {"phase": "planning"}
 
         # Agent should have access to orchestrator
         assert socratic_agent.orchestrator == mock_orchestrator

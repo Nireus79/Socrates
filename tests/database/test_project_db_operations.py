@@ -19,8 +19,6 @@ import pytest
 
 from socratic_system.database.project_db import ProjectDatabase
 from socratic_system.models import (
-    APIKeyRecord,
-    LLMProviderConfig,
     LLMUsageRecord,
     ProjectContext,
     ProjectNote,
@@ -350,49 +348,46 @@ class TestProjectDatabaseLLMConfiguration:
 
     def test_save_llm_config(self, temp_db):
         """Test saving LLM provider configuration."""
-        config = LLMProviderConfig(
-            id="config-001",
-            provider="claude",
-            user_id="testuser",
-            is_default=True,
-            enabled=True,
-            settings={
-                "model": "claude-3-sonnet-20240229",
-                "temperature": 0.7,
-                "max_tokens": 2048,
-            },
-            created_at=datetime.datetime.now(),
-            updated_at=datetime.datetime.now(),
-        )
-
         try:
-            temp_db.save_llm_config("testuser", "claude", {
-                "model": "claude-3-sonnet-20240229",
-                "temperature": 0.7,
-                "max_tokens": 2048,
-            })
+            temp_db.save_llm_config(
+                "testuser",
+                "claude",
+                {
+                    "model": "claude-3-sonnet-20240229",
+                    "temperature": 0.7,
+                    "max_tokens": 2048,
+                },
+            )
             assert True
         except Exception as e:
             pytest.fail(f"Failed to save LLM config: {e}")
 
     def test_get_llm_configs(self, temp_db):
         """Test retrieving LLM configurations."""
-        temp_db.save_llm_config("testuser", "openai", {
-            "model": "gpt-4",
-            "temperature": 0.8,
-            "max_tokens": 4096,
-        })
+        temp_db.save_llm_config(
+            "testuser",
+            "openai",
+            {
+                "model": "gpt-4",
+                "temperature": 0.8,
+                "max_tokens": 4096,
+            },
+        )
         configs = temp_db.get_user_llm_configs("testuser")
 
         assert isinstance(configs, list)
 
     def test_get_default_llm_config(self, temp_db):
         """Test retrieving LLM configuration by provider."""
-        temp_db.save_llm_config("testuser", "claude", {
-            "model": "claude-haiku-4-5-20251001",
-            "temperature": 0.5,
-            "max_tokens": 1024,
-        })
+        temp_db.save_llm_config(
+            "testuser",
+            "claude",
+            {
+                "model": "claude-haiku-4-5-20251001",
+                "temperature": 0.5,
+                "max_tokens": 1024,
+            },
+        )
         retrieved = temp_db.get_user_llm_config("testuser", "claude")
 
         assert retrieved is not None
