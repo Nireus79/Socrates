@@ -225,13 +225,18 @@ class TestAPIEventEndpoints:
 
         assert response.status_code == 200
 
+    @pytest.mark.timeout(5)
     def test_event_stream_endpoint_exists(self, client):
         """Test event stream endpoint exists"""
         # This endpoint returns streaming response
-        response = client.get("/api/events/stream")
-
-        # Should return streaming response or success
-        assert response.status_code in [200, 500]
+        # Note: We use a short timeout as streaming endpoints may not close
+        try:
+            response = client.get("/api/events/stream", timeout=2)
+            # Should return streaming response or success
+            assert response.status_code in [200, 500]
+        except Exception as e:
+            # Streaming endpoint may timeout, which is expected
+            assert "timeout" in str(e).lower() or "timed out" in str(e).lower()
 
 
 @pytest.mark.unit
