@@ -190,6 +190,11 @@ def require_subscription_feature(feature: str) -> Callable:
                     detail="User not found",
                 )
 
+            # If testing mode is enabled, bypass subscription checks
+            if getattr(user, "testing_mode", False):
+                logger.debug(f"Testing mode enabled for {current_user}, bypassing subscription check for feature: {feature}")
+                return await func(*args, **kwargs)
+
             # Check feature access
             has_access = SubscriptionChecker.has_feature(user.subscription_tier, feature)
             if not has_access:
@@ -257,6 +262,11 @@ def require_subscription_tier(required_tier: str) -> Callable:
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="User not found",
                 )
+
+            # If testing mode is enabled, bypass subscription tier checks
+            if getattr(user, "testing_mode", False):
+                logger.debug(f"Testing mode enabled for {current_user}, bypassing subscription tier check for required tier: {required_tier}")
+                return await func(*args, **kwargs)
 
             # Check tier
             tier_order = ["free", "pro", "enterprise"]
