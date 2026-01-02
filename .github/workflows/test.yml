@@ -106,7 +106,7 @@ jobs:
 
       - name: Run database tests
         run: |
-          pip install pytest-cov coverage
+          pip install pytest-cov pytest-timeout coverage
           pytest tests/unit/database -v --tb=short --strict-markers --timeout=10 \
                   --cov=socratic_system --cov-report=xml --cov-report=term-missing \
                   -m "not integration"
@@ -143,7 +143,7 @@ jobs:
 
       - name: Run agent tests
         run: |
-          pip install pytest-cov coverage
+          pip install pytest-cov pytest-timeout coverage
           pytest tests/unit/agents -v --tb=short --strict-markers --timeout=10 \
                   --cov=socratic_system --cov-report=xml --cov-report=term-missing \
                   -m "not integration"
