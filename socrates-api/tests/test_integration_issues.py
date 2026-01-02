@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from socrates_api.main import app
 
-from socratic_system.database.project_db_v2 import ProjectDatabase
+from socratic_system.database import ProjectDatabase
 
 
 @pytest.fixture
@@ -245,7 +245,7 @@ class TestHighIssue7_HardcodedLocalhost:
         """Verify data directory uses environment variable"""
         import inspect
 
-        from socratic_system.database.project_db_v2 import ProjectDatabase
+        from socratic_system.database import ProjectDatabase
 
         source = inspect.getsource(ProjectDatabase.__init__)
 
@@ -352,7 +352,7 @@ class TestMediumIssue10_EnvironmentValidation:
         """Verify system validates data directory is writable"""
         import inspect
 
-        from socratic_system.database.project_db_v2 import ProjectDatabase
+        from socratic_system.database import ProjectDatabase
 
         source = inspect.getsource(ProjectDatabase.__init__)
 

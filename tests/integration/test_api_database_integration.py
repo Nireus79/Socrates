@@ -16,7 +16,7 @@ from datetime import datetime
 import pytest
 
 # Mock the FastAPI app since we're testing integration concepts
-from socratic_system.database.project_db_v2 import ProjectDatabase
+from socratic_system.database import ProjectDatabase
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.user import User
 
