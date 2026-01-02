@@ -80,6 +80,11 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   hasFeature: (feature: keyof SubscriptionTier['features']): boolean => {
     const state = get();
 
+    // If testing mode is enabled, grant all features
+    if (state.testingMode) {
+      return true;
+    }
+
     if (state.status !== 'active') return false;
 
     const featureValue = state.features[feature];
@@ -142,6 +147,11 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
  */
 export const useFeatureGate = (feature: string): boolean => {
   return useSubscriptionStore((state) => {
+    // If testing mode is enabled, grant all features
+    if (state.testingMode) {
+      return true;
+    }
+
     const mapping: Record<string, keyof SubscriptionTier['features']> = {
       'code-generation': 'code_generation',
       'collaboration': 'collaboration',

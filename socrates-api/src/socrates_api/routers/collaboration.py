@@ -236,7 +236,8 @@ async def add_collaborator_new(
 
             # Check subscription tier - collaboration feature requires pro or enterprise tier
             # NOTE: Free tier has collaboration=False in TIER_FEATURES, so free users cannot add team members
-            if subscription_tier == "free":
+            # BUT: Testing mode bypasses this restriction
+            if subscription_tier == "free" and not user_object.testing_mode:
                 logger.warning(f"Free-tier user {current_user} attempted to add collaborators")
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -244,7 +245,7 @@ async def add_collaborator_new(
                 )
 
             # Check team member limit for subscription tier
-            # Testing mode can bypass quota limits but not feature restrictions
+            # Testing mode bypasses both feature restrictions and quota limits
             current_team_size = len(project.team_members) if project.team_members else 0
             can_add, error_msg = SubscriptionChecker.can_add_team_member(
                 subscription_tier, current_team_size

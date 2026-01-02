@@ -193,6 +193,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
           : null,
         isLoading: false,
       }));
+
+      // Refresh subscription store to pick up the testing_mode flag
+      const { useSubscriptionStore } = await import('./subscriptionStore');
+      await useSubscriptionStore().refreshSubscription();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update testing mode';
       set({ error: message, isLoading: false });

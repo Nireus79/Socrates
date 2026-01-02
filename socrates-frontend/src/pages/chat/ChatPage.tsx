@@ -247,7 +247,7 @@ export const ChatPage: React.FC = () => {
 
   const handleFreeSessionSubscriptionCommand = async (command: string) => {
     // Import subscription store to update testing mode
-    const { setTestingMode } = useSubscriptionStore.getState();
+    const { setTestingMode, refreshSubscription } = useSubscriptionStore.getState();
 
     // Parse subscription command for pre-session
     const parts = command.split(/\s+/);
@@ -266,6 +266,8 @@ export const ChatPage: React.FC = () => {
 
         // Update the store to reflect testing mode change
         setTestingMode(enabled);
+        // Refresh subscription to ensure consistency
+        await refreshSubscription();
 
         setFreeSessionResponses(prev => [...prev, {
           role: 'assistant',
@@ -914,6 +916,7 @@ User: ${currentProject?.owner || 'N/A'}`;
 
   // SUBSCRIPTION COMMANDS
   const handleSubscriptionCommand = async (action: string, args: string[]) => {
+    const { refreshSubscription } = useSubscriptionStore();
     try {
       if (action === 'testing-mode') {
         const mode = args[0]?.toLowerCase();
@@ -922,6 +925,8 @@ User: ${currentProject?.owner || 'N/A'}`;
           return;
         }
         await apiClient.put(`/auth/me/testing-mode?enabled=${mode === 'on'}`);
+        // Refresh subscription store to pick up the testing_mode flag
+        await refreshSubscription();
         setTestingModeStatus({
           enabled: mode === 'on',
           message: mode === 'on'

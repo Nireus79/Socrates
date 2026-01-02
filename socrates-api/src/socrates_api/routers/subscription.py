@@ -114,11 +114,12 @@ async def get_subscription_status(
     try:
         logger.info(f"Getting subscription status for user: {current_user}")
 
-        get_database()
+        db = get_database()
 
-        # Get user's current tier (default to free)
-        # In production, would load from user database
-        current_tier = "free"  # Default tier
+        # Load user from database to get actual tier and testing_mode flag
+        user = db.load_user(current_user)
+        current_tier = user.subscription_tier if user else "free"
+        testing_mode = user.testing_mode if user else False
 
         tier_info = SUBSCRIPTION_TIERS.get(current_tier, SUBSCRIPTION_TIERS["free"])
 
@@ -132,6 +133,7 @@ async def get_subscription_status(
             message="Subscription status retrieved",
             data={
                 "current_tier": current_tier,
+                "testing_mode": testing_mode,
                 "plan": tier_info,
                 "usage": {
                     "projects_used": projects_count,
