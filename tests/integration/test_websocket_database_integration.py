@@ -14,7 +14,7 @@ from datetime import datetime
 
 import pytest
 
-from socratic_system.database.project_db_v2 import ProjectDatabase
+from socratic_system.database import ProjectDatabase
 from socratic_system.models.project import ProjectContext
 
 
