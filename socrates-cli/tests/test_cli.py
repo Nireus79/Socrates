@@ -218,10 +218,10 @@ class TestCLIConfiguration:
         import os
 
         with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-ant-test"}):
-            with patch("socrates.SocratesConfig.from_env") as mock_from_env:
-                mock_from_env.return_value = Mock(api_key="sk-ant-test")
-
-                # CLI should use environment variable
+            # CLI should respect environment variables when set
+            result = cli_runner.invoke(main, ["--help"])
+            # Should succeed with environment variable set
+            assert result.exit_code == 0
 
     def test_cli_respects_data_dir_option(self, cli_runner):
         """Test that data-dir option is respected"""
