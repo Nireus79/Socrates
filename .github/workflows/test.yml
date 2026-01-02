@@ -84,7 +84,7 @@ jobs:
             coverage.xml
 
   test-batch-2:
-    name: Test Batch 2 - Complex Units
+    name: Test Batch 2 - Database Units
     runs-on: ubuntu-latest
     needs: lint-and-type-check
 
@@ -104,10 +104,10 @@ jobs:
           pip install -e . -e ./socrates-cli -e ./socrates-api
           pip install -e ".[dev]" -e ./socrates-cli/[dev] -e ./socrates-api/[dev]
 
-      - name: Run complex unit tests
+      - name: Run database tests
         run: |
           pip install pytest-cov coverage
-          pytest tests/unit/database tests/unit/agents -v --tb=short --strict-markers \
+          pytest tests/unit/database -v --tb=short --strict-markers --timeout=10 \
                   --cov=socratic_system --cov-report=xml --cov-report=term-missing \
                   -m "not integration"
 
@@ -116,6 +116,43 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results-batch-2
+          path: |
+            .pytest_cache/
+            coverage.xml
+
+  test-batch-2b:
+    name: Test Batch 2b - Agent Units
+    runs-on: ubuntu-latest
+    needs: lint-and-type-check
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e . -e ./socrates-cli -e ./socrates-api
+          pip install -e ".[dev]" -e ./socrates-cli/[dev] -e ./socrates-api/[dev]
+
+      - name: Run agent tests
+        run: |
+          pip install pytest-cov coverage
+          pytest tests/unit/agents -v --tb=short --strict-markers --timeout=10 \
+                  --cov=socratic_system --cov-report=xml --cov-report=term-missing \
+                  -m "not integration"
+
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-batch-2b
           path: |
             .pytest_cache/
             coverage.xml
@@ -214,7 +251,7 @@ jobs:
   coverage-badge:
     name: Update Coverage Badge
     runs-on: ubuntu-latest
-    needs: [test-batch-1, test-batch-2, test-batch-3]
+    needs: [test-batch-1, test-batch-2, test-batch-2b, test-batch-3]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
 
     steps:
@@ -248,13 +285,13 @@ jobs:
   all-tests-passed:
     name: All Tests Passed
     runs-on: ubuntu-latest
-    needs: [test-batch-1, test-batch-2, test-batch-3, test-cli, test-api]
+    needs: [test-batch-1, test-batch-2, test-batch-2b, test-batch-3, test-cli, test-api]
     if: always()
 
     steps:
       - name: Decide whether all tests passed
         run: |
-          if [[ "${{ needs.test-batch-1.result }}" == "failure" || "${{ needs.test-batch-2.result }}" == "failure" || "${{ needs.test-batch-3.result }}" == "failure" || "${{ needs.test-cli.result }}" == "failure" || "${{ needs.test-api.result }}" == "failure" ]]; then
+          if [[ "${{ needs.test-batch-1.result }}" == "failure" || "${{ needs.test-batch-2.result }}" == "failure" || "${{ needs.test-batch-2b.result }}" == "failure" || "${{ needs.test-batch-3.result }}" == "failure" || "${{ needs.test-cli.result }}" == "failure" || "${{ needs.test-api.result }}" == "failure" ]]; then
             echo "One or more tests failed"
             exit 1
           else

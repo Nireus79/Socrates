@@ -143,6 +143,7 @@ jobs:
   code-coverage:
     name: Code Coverage Threshold
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
       - name: Checkout code
@@ -161,9 +162,10 @@ jobs:
           pip install -e ".[dev]" pytest-cov
 
       - name: Run tests with coverage
+        timeout-minutes: 55
         run: |
           pytest --cov=socratic_system --cov-report=term-missing:skip-covered \
-                  --cov-fail-under=70 -m "not integration"
+                  --cov-fail-under=70 -m "not integration" -x --tb=short
 
   all-quality-checks-passed:
     name: All Quality Checks Passed
