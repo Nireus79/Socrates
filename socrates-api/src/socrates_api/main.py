@@ -8,6 +8,7 @@ import logging
 import os
 import socket
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
@@ -149,13 +150,86 @@ def _setup_event_listeners(orchestrator: AgentOrchestrator):
     logger.info("Event listeners registered")
 
 
-# Create FastAPI application
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan context manager for FastAPI application.
+    Handles startup and shutdown events.
+    """
+    # Startup
+    logger.info("Starting Socrates API server...")
+
+    # Rate limiter initialized at module load time
+    if app_state.get("limiter"):
+        logger.info("Rate limiter is active")
+    else:
+        logger.warning("Rate limiting is disabled")
+
+    # Auto-initialize orchestrator on startup
+    try:
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            logger.warning(
+                "ANTHROPIC_API_KEY not set. Orchestrator will be unavailable until /initialize is called with valid key."
+            )
+        else:
+            logger.info(f"ANTHROPIC_API_KEY is set ({api_key[:10]}...)")
+
+            # Create and initialize orchestrator
+            logger.info("Creating AgentOrchestrator...")
+            orchestrator = AgentOrchestrator(api_key_or_config=api_key)
+            logger.info("AgentOrchestrator created successfully")
+
+            # Test connection to ensure API key is valid (but don't fail startup if it's not)
+            try:
+                logger.info("Testing API connection...")
+                orchestrator.claude_client.test_connection()
+                logger.info("Orchestrator initialized successfully with valid API key")
+            except Exception as e:
+                logger.warning(
+                    f"API key connection test failed (this is normal for test keys): {type(e).__name__}: {str(e)[:100]}"
+                )
+                logger.info(
+                    "Orchestrator initialized with provided API key (operations will fail if key is invalid)"
+                )
+
+            # Setup event listeners
+            logger.info("Setting up event listeners...")
+            _setup_event_listeners(orchestrator)
+            logger.info("Event listeners set up")
+
+            # Store in global state
+            logger.info("Storing orchestrator in global state...")
+            app_state["orchestrator"] = orchestrator
+            app_state["start_time"] = time.time()
+            logger.info(f"Orchestrator stored. app_state['orchestrator'] = {app_state['orchestrator']}")
+
+            logger.info("Socrates API orchestrator fully initialized and ready")
+
+    except Exception as e:
+        logger.error(f"Failed to auto-initialize orchestrator on startup: {type(e).__name__}: {e}")
+        import traceback
+
+        logger.error(f"Traceback: {traceback.format_exc()}")
+
+    yield  # App is running
+
+    # Shutdown
+    logger.info("Shutting down Socrates API server...")
+    # Close database connection
+    from socrates_api.database import close_database
+
+    close_database()
+
+
+# Create FastAPI application with lifespan handler
 app = FastAPI(
     title="Socrates API",
     description="REST API for Socrates AI tutoring system powered by Claude",
     version="8.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # Add security headers middleware
@@ -244,76 +318,6 @@ app.include_router(chat_sessions_router)
 async def root():
     """Root endpoint"""
     return {"message": "Socrates API", "version": "8.0.0"}
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize application on startup"""
-    logger.info("Starting Socrates API server...")
-
-    # Rate limiter initialized at module load time
-    if app_state.get("limiter"):
-        logger.info("Rate limiter is active")
-    else:
-        logger.warning("Rate limiting is disabled")
-
-    # Auto-initialize orchestrator on startup
-    try:
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            logger.warning(
-                "ANTHROPIC_API_KEY not set. Orchestrator will be unavailable until /initialize is called with valid key."
-            )
-            return
-
-        logger.info(f"ANTHROPIC_API_KEY is set ({api_key[:10]}...)")
-
-        # Create and initialize orchestrator
-        logger.info("Creating AgentOrchestrator...")
-        orchestrator = AgentOrchestrator(api_key_or_config=api_key)
-        logger.info("AgentOrchestrator created successfully")
-
-        # Test connection to ensure API key is valid (but don't fail startup if it's not)
-        try:
-            logger.info("Testing API connection...")
-            orchestrator.claude_client.test_connection()
-            logger.info("Orchestrator initialized successfully with valid API key")
-        except Exception as e:
-            logger.warning(
-                f"API key connection test failed (this is normal for test keys): {type(e).__name__}: {str(e)[:100]}"
-            )
-            logger.info(
-                "Orchestrator initialized with provided API key (operations will fail if key is invalid)"
-            )
-
-        # Setup event listeners
-        logger.info("Setting up event listeners...")
-        _setup_event_listeners(orchestrator)
-        logger.info("Event listeners set up")
-
-        # Store in global state
-        logger.info("Storing orchestrator in global state...")
-        app_state["orchestrator"] = orchestrator
-        app_state["start_time"] = time.time()
-        logger.info(f"Orchestrator stored. app_state['orchestrator'] = {app_state['orchestrator']}")
-
-        logger.info("Socrates API orchestrator fully initialized and ready")
-
-    except Exception as e:
-        logger.error(f"Failed to auto-initialize orchestrator on startup: {type(e).__name__}: {e}")
-        import traceback
-
-        logger.error(f"Traceback: {traceback.format_exc()}")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown"""
-    logger.info("Shutting down Socrates API server...")
-    # Close database connection
-    from socrates_api.database import close_database
-
-    close_database()
 
 
 @app.get("/health", response_model=dict)
