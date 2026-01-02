@@ -1,5 +1,5 @@
 # Socratic RAG System Requirements
-# Complete dependencies for both core system and API
+# Production dependencies only - development tools removed for faster Docker builds
 
 # Core Socrates AI System
 anthropic>=0.40.0
@@ -37,15 +37,3 @@ slowapi>=0.1.9
 
 # Monitoring & Metrics
 prometheus-client>=0.19.0
-
-# Testing & Development
-pytest>=7.0
-pytest-asyncio>=0.21.0
-pytest-cov>=4.0.0
-pytest-mock>=3.12.0
-pytest-timeout>=2.2.0
-black>=23.0
-ruff>=0.1.0
-mypy>=1.8.0
-bandit>=1.7.5
-isort>=5.13.0
