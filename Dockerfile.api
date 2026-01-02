@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY socratic_system ./socratic_system
-COPY socrates-api/src ./socrates_api
+COPY socrates-api/src/socrates_api ./socrates_api
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser
