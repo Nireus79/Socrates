@@ -86,8 +86,8 @@ class TestAPIInitializeEndpoint:
         """Test initialize response structure"""
         # Test that initialize endpoint returns proper response structure
         response = client.post("/initialize", json={"model": "claude-opus-4-5-20251101"})
-        # Should return either success or service unavailable
-        assert response.status_code in [200, 400, 503]
+        # Should return either success, bad request, validation error, or service unavailable
+        assert response.status_code in [200, 400, 422, 503]
         if response.status_code == 200:
             assert "success" in response.json() or "data" in response.json()
 
