@@ -227,6 +227,7 @@ jobs:
     name: Test REST API
     runs-on: ubuntu-latest
     needs: lint-and-type-check
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -243,10 +244,11 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install -e . -e ./socrates-cli -e ./socrates-api
           pip install -e ".[dev]" -e ./socrates-cli/[dev] -e ./socrates-api/[dev]
+          pip install pytest-timeout
 
       - name: Test API endpoints
         run: |
-          pytest socrates-api/tests/test_api.py -v --tb=short --strict-markers
+          pytest socrates-api/tests/test_api.py socrates-api/tests/unit_*.py -v --tb=short --strict-markers --timeout=10 -m "not integration"
 
   coverage-badge:
     name: Update Coverage Badge
