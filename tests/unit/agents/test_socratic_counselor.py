@@ -168,6 +168,8 @@ class TestLearningGuidance:
 
     def test_advance_phase_action(self, socratic_agent, sample_project):
         """Test advancing to next project phase"""
+        # Use a valid phase from the _advance_phase method's phase list
+        sample_project.phase = "discovery"
         request = {"action": "advance_phase", "project": sample_project}
         result = socratic_agent.process(request)
 
