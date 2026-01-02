@@ -17,9 +17,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from socrates_api.main import app
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def client():
-    """Create FastAPI test client"""
+    """Create FastAPI test client - session scoped to avoid reinitializing app for each test"""
     return TestClient(app)
 
 
