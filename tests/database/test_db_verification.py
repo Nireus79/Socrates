@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from socratic_system.database import ProjectDatabase
+from socratic_system.database.project_db_v2 import ProjectDatabase
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.user import User
 
