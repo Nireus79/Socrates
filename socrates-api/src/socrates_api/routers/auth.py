@@ -5,6 +5,7 @@ Provides user registration, login, token refresh, and logout functionality
 using JWT-based authentication.
 """
 
+import hashlib
 import logging
 import sqlite3
 import uuid
@@ -911,8 +912,11 @@ def _store_refresh_token(db: ProjectDatabase, username: str, token: str) -> None
                 f"Could not decode token expiration for user {username}, using default 7-day expiry"
             )
 
-        # Hash the token using bcrypt for secure storage
-        token_hash = hash_password(token)
+        # Hash the token using SHA256 first (bcrypt has 72-byte limit)
+        # This creates a fixed-length 64-char hash that bcrypt can handle
+        token_sha256 = hashlib.sha256(token.encode()).hexdigest()
+        # Then hash with bcrypt for additional security
+        token_hash = hash_password(token_sha256)
 
         # Generate unique ID for this token record
         token_id = str(uuid.uuid4())
@@ -982,9 +986,6 @@ def _validate_refresh_token(db: ProjectDatabase, username: str, token: str) -> b
         True if token is valid, False otherwise
     """
     try:
-        # Hash the provided token for comparison
-        hash_password(token)
-
         # Get database connection
         conn = sqlite3.connect(db.db_path)
         cursor = conn.cursor()
