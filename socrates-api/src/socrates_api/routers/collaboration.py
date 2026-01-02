@@ -410,7 +410,13 @@ async def list_collaborators(
                 detail="Project not found",
             )
 
-        if project.owner != current_user:
+        # Check if user is owner or collaborator
+        is_owner = project.owner == current_user
+        is_collaborator = False
+        if project.team_members:
+            is_collaborator = any(member.username == current_user for member in project.team_members)
+
+        if not (is_owner or is_collaborator):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied",
