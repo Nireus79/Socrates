@@ -147,12 +147,19 @@ class SocraticCounselorAgent(Agent):
 
         # Get conversation history for context
         recent_conversation = ""
+        previously_asked_questions = []
         if project.conversation_history:
             recent_messages = project.conversation_history[-4:]  # Last 4 messages
             for msg in recent_messages:
                 role = "Assistant" if msg["type"] == "assistant" else "User"
                 recent_conversation += f"{role}: {msg['content']}\n"
             logger.debug(f"Using {len(recent_messages)} recent messages for context")
+
+            # Extract ALL previously asked questions in this phase to avoid repeats
+            for msg in project.conversation_history:
+                if msg.get("type") == "assistant" and msg.get("phase") == project.phase:
+                    previously_asked_questions.append(msg.get("content", ""))
+            logger.debug(f"Found {len(previously_asked_questions)} previously asked questions in {project.phase} phase")
 
         # Get relevant knowledge from vector database with adaptive loading strategy
         relevant_knowledge = ""
@@ -212,6 +219,7 @@ class SocraticCounselorAgent(Agent):
             current_user,
             knowledge_results=knowledge_results if knowledge_results else [],
             doc_understanding=doc_understanding if "doc_understanding" in locals() else None,
+            previously_asked_questions=previously_asked_questions,
         )
 
         try:
@@ -242,12 +250,15 @@ class SocraticCounselorAgent(Agent):
         current_user: str = None,
         knowledge_results: List[Dict] = None,
         doc_understanding: Optional[Dict[str, Any]] = None,
+        previously_asked_questions: List[str] = None,
     ) -> str:
         """Build prompt for dynamic question generation with role-aware context"""
         if knowledge_results is None:
             knowledge_results = []
         if doc_understanding is None:
             doc_understanding = {}
+        if previously_asked_questions is None:
+            previously_asked_questions = []
 
         phase_descriptions = {
             "discovery": "exploring the problem space, understanding user needs, and defining project goals",
@@ -322,6 +333,15 @@ Match Score: {int(match_score * 100)}%
 Identified Gaps: {', '.join(gaps[:2]) if gaps else 'None identified'}
 Opportunities: {', '.join(opportunities[:2]) if opportunities else 'Explore documents further'}"""
 
+        # Build section listing previously asked questions to avoid repetition
+        previous_questions_section = ""
+        if previously_asked_questions:
+            previous_questions_section = "\nPreviously Asked Questions in This Phase (DO NOT REPEAT THESE):"
+            for i, q in enumerate(previously_asked_questions[-5:], 1):  # Show last 5 to avoid overwhelming
+                # Truncate long questions for readability
+                q_text = q[:120] + "..." if len(q) > 120 else q
+                previous_questions_section += f"\n{i}. {q_text}"
+
         return f"""You are a Socratic tutor helping guide someone through their {project.project_type} project.
 
 Project Details:
@@ -339,7 +359,7 @@ Recent Conversation:
 {recent_conversation}
 
 Relevant Knowledge:
-{relevant_knowledge}
+{relevant_knowledge}{previous_questions_section}
 
 This is question #{question_count + 1} in the {project.phase} phase. Focus on: {phase_focus.get(project.phase, '')}.
 
@@ -350,8 +370,10 @@ Generate ONE insightful Socratic question that:
 4. Encourages critical thinking rather than just information gathering
 5. Is relevant to their stated goals and expertise
 6. Is appropriate for a {project.project_type} project (not just software-specific)
+7. MUST be different from the previously asked questions listed above - do not repeat or rephrase existing questions
 
 The question should be thought-provoking but not overwhelming. Make it conversational and engaging.
+Push the conversation forward by exploring new aspects not yet discussed.
 
 Return only the question, no additional text or explanation."""
 
