@@ -1,4 +1,4 @@
-"""Project note model for Socratic RAG System"""
+"""Project note model for Socrates AI"""
 
 import datetime
 import uuid

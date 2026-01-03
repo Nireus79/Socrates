@@ -1,5 +1,5 @@
 """
-Knowledge entry model for Socratic RAG System
+Knowledge entry model for Socrates AI
 """
 
 from dataclasses import dataclass

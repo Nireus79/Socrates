@@ -1,5 +1,5 @@
 """
-Asynchronous Database Layer for Socratic RAG System (Phase 2)
+Asynchronous Database Layer for Socrates AI (Phase 2)
 
 Provides async/await support for all database operations using aiosqlite.
 Enables concurrent request handling and non-blocking I/O.
@@ -130,7 +130,7 @@ class AsyncConnectionPool:
 
 class AsyncProjectDatabase:
     """
-    Asynchronous database layer for Socratic RAG System.
+    Asynchronous database layer for Socrates AI.
 
     All operations are non-blocking and support concurrent access through
     connection pooling. Designed for use with async/await patterns and

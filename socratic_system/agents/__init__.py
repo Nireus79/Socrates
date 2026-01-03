@@ -1,4 +1,4 @@
-"""Agent implementations for Socratic RAG System"""
+"""Agent implementations for Socrates AI"""
 
 from .base import Agent
 from .code_generator import CodeGeneratorAgent

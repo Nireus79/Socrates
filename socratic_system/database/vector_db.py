@@ -1,5 +1,5 @@
 """
-Vector database for knowledge management in Socratic RAG System
+Vector database for knowledge management in Socrates AI
 """
 
 import gc

@@ -1,5 +1,5 @@
 """
-Base Agent class for Socratic RAG System
+Base Agent class for Socrates AI
 """
 
 import asyncio
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 class Agent(ABC):
     """
-    Abstract base class for all agents in the Socratic RAG System.
+    Abstract base class for all agents in the Socrates AI.
 
     Agents are specialized components that handle different aspects of
     the system (project management, questioning, code generation, etc.).

@@ -1,5 +1,5 @@
 """
-Claude API client for Socratic RAG System
+Claude API client for Socrates AI
 
 Provides both synchronous and asynchronous interfaces for calling Claude API,
 with automatic token tracking and structured error handling.

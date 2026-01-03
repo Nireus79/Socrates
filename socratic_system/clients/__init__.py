@@ -1,4 +1,4 @@
-"""Client integrations for Socratic RAG System"""
+"""Client integrations for Socrates AI"""
 
 from .claude_client import ClaudeClient
 

@@ -1,1 +1,1 @@
-"""Utility functions for Socratic RAG System"""
+"""Utility functions for Socrates AI"""

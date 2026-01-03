@@ -1,8 +1,10 @@
-# Quick Start Guide: GitHub Integration & Code Management
+# GitHub Integration & Code Management Guide
+
+> **Note**: For basic installation and setup instructions, see [Installation Guide](INSTALLATION.md). This guide covers GitHub repository management features.
 
 ## Overview
 
-The Socratic RAG system now supports importing GitHub repositories, analyzing code, running tests, and applying fixes - all without needing a Socratic chat session!
+Socrates AI supports importing GitHub repositories, analyzing code, running tests, and applying fixes - all without needing a Socratic chat session!
 
 ---
 

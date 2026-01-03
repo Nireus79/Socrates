@@ -1,5 +1,5 @@
 """
-Concrete conflict checker implementations for Socratic RAG System
+Concrete conflict checker implementations for Socrates AI
 """
 
 import logging

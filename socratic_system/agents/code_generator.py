@@ -1,5 +1,5 @@
 """
-Code generation agent for Socratic RAG System
+Code generation agent for Socrates AI
 """
 
 from pathlib import Path

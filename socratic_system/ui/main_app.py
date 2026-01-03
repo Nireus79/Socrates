@@ -1,5 +1,5 @@
 """
-Main application class for Socratic RAG System - Command-Based CLI Interface
+Main application class for Socrates AI - Command-Based CLI Interface
 """
 
 import datetime
@@ -227,7 +227,7 @@ ANALYTICS_COMMANDS = [
 
 
 class SocraticRAGSystem:
-    """Main application class for Socratic RAG System with command-based interface"""
+    """Main application class for Socrates AI with command-based interface"""
 
     def __init__(self, start_frontend: bool = False):
         """Initialize the application
@@ -352,7 +352,7 @@ class SocraticRAGSystem:
                 print(f"{Fore.RED}[Frontend] Error stopping frontend: {e}{Style.RESET_ALL}")
 
     def start(self) -> None:
-        """Start the Socratic RAG System"""
+        """Start the Socrates AI"""
         self._print_banner()
 
         # Start frontend if requested
@@ -485,7 +485,7 @@ class SocraticRAGSystem:
                         print(result["message"])
 
             elif choice == "3" or choice == "/exit":
-                print(f"\n{Fore.GREEN}Thank you for using Socratic RAG System")
+                print(f"\n{Fore.GREEN}Thank you for using Socrates AI")
                 print("..τω Ασκληπιώ οφείλομεν αλετρυόνα, απόδοτε και μη αμελήσετε..\n")
                 return False
 

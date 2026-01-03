@@ -361,7 +361,7 @@ class NLUHandler:
         Returns:
             Complete prompt string
         """
-        return f"""You are a command interpreter for the Socratic RAG System CLI.
+        return f"""You are a command interpreter for the Socrates AI CLI.
 
 CURRENT CONTEXT:
 {context_summary}

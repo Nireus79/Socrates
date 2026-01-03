@@ -1,6 +1,6 @@
 # Configuration Guide
 
-Comprehensive guide to configuring the Socratic RAG System for different use cases.
+Comprehensive guide to configuring Socrates AI for different use cases.
 
 ## Quick Configuration
 
@@ -31,7 +31,7 @@ All configuration via environment:
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
 | `ANTHROPIC_API_KEY` | Claude API key (required) | None | `sk-ant-...` |
-| `CLAUDE_MODEL` | Claude model to use | `claude-sonnet-4-5-20250929` | `claude-opus-4-1-20250805` |
+| `CLAUDE_MODEL` | Claude model to use | `claude-haiku-4-5-20251001` | `claude-opus-4-5-20251101` |
 | `SOCRATES_DATA_DIR` | Data storage location | `~/.socrates` | `/data/socrates` |
 | `SOCRATES_LOG_LEVEL` | Logging level | `INFO` | `DEBUG` / `WARNING` / `ERROR` |
 | `SOCRATES_LOG_FILE` | Log file path | `{DATA_DIR}/logs/socratic.log` | `/var/log/socratic.log` |
@@ -75,7 +75,7 @@ from pathlib import Path
 
 config = ConfigBuilder("sk-ant-...") \
     .with_data_dir(Path("/custom/data")) \
-    .with_model("claude-opus-4-1-20250805") \
+    .with_model("claude-opus-4-5-20251101") \
     .with_log_level("DEBUG") \
     .with_max_retries(5) \
     .with_token_warning_threshold(0.7) \
@@ -93,7 +93,7 @@ from pathlib import Path
 
 config = SocratesConfig(
     api_key="sk-ant-...",
-    claude_model="claude-opus-4-1-20250805",
+    claude_model="claude-opus-4-5-20251101",
     data_dir=Path("/data"),
     log_level="DEBUG",
     max_context_length=8000,
@@ -129,11 +129,11 @@ config = SocratesConfig.from_dict({
 - Pattern: `sk-ant-...`
 
 **claude_model**
-- Default: `claude-sonnet-4-5-20250929`
+- Default: `claude-haiku-4-5-20251001`
 - Options:
-  - `claude-opus-4-1-20250805` - Most capable, higher cost
-  - `claude-sonnet-4-5-20250929` - Balanced (default)
-  - `claude-haiku-4-5-20251001` - Fast, lower cost
+  - `claude-haiku-4-5-20251001` - Fast, lower cost (default)
+  - `claude-sonnet-4-5-20250929` - Balanced capability and cost
+  - `claude-opus-4-5-20251101` - Most capable, higher cost
 
 **embedding_model**
 - Default: `all-MiniLM-L6-v2`
@@ -284,7 +284,7 @@ config = ConfigBuilder("sk-ant-...") \
 
 ```python
 config = ConfigBuilder("sk-ant-...") \
-    .with_model("claude-opus-4-1-20250805") \
+    .with_model("claude-opus-4-5-20251101") \
     .with_max_context_length(20000) \
     .with_log_level("DEBUG") \
     .with_token_warning_threshold(1.0) \
@@ -338,7 +338,7 @@ icacls "%USERPROFILE%\.socrates" /grant:r "%USERNAME%:F" /inheritance:r
 - Reason: Good balance of capability and cost
 
 **Complex Analysis**:
-- Use: `claude-opus-4-1-20250805`
+- Use: `claude-opus-4-5-20251101`
 - Reason: Most capable, handles complex logic
 - Cost: ~2x Sonnet
 
@@ -347,9 +347,10 @@ icacls "%USERPROFILE%\.socrates" /grant:r "%USERNAME%:F" /inheritance:r
 - Reason: Faster, lower cost
 - Limitation: May miss nuances
 
-**Balanced (Default)**:
-- Use: `claude-sonnet-4-5-20250929`
-- Works well for most projects
+**Default Configuration**:
+- Use: `claude-haiku-4-5-20251001`
+- Fast, cost-effective for most projects
+- Good for interactive development and learning
 
 ### Model Capabilities Comparison
 

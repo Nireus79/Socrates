@@ -145,12 +145,42 @@ def mock_claude_client():
 
 @pytest.fixture
 def test_config(mock_api_key, tmp_path):
-    """Create a test configuration object."""
+    """
+    Create an isolated test configuration object.
+
+    This creates a temporary data directory for both:
+    - projects.db (SQLite database)
+    - vector_db (ChromaDB vector store)
+
+    Never touches production data in ~/.socrates/
+    """
     from socratic_system.config import SocratesConfig
 
     config = SocratesConfig(
         api_key=mock_api_key,
-        data_dir=tmp_path / "socrates",
+        data_dir=tmp_path / "socrates",  # Isolated temp directory
+    )
+    return config
+
+
+@pytest.fixture
+def isolated_socrates_config(mock_api_key, tmp_path):
+    """
+    Create an isolated test configuration with explicit database paths.
+
+    Ensures both projects.db and vector_db are in temp directory,
+    completely isolated from production.
+    """
+    from socratic_system.config import SocratesConfig
+
+    test_data_dir = tmp_path / "socrates"
+    test_data_dir.mkdir(parents=True, exist_ok=True)
+
+    config = SocratesConfig(
+        api_key=mock_api_key,
+        data_dir=test_data_dir,
+        projects_db_path=test_data_dir / "projects.db",
+        vector_db_path=test_data_dir / "vector_db",
     )
     return config
 
@@ -326,6 +356,28 @@ def pytest_collection_modifyitems(config, items):
             marker.name == "integration" for marker in item.iter_markers()
         ):
             item.add_marker(pytest.mark.integration)
+
+
+@pytest.fixture(autouse=True)
+def protect_production_environment(monkeypatch):
+    """
+    Protect production environment from test pollution.
+
+    Ensures tests never modify SOCRATES_DATA_DIR or other critical
+    environment variables that would affect production.
+    """
+    import os
+
+    # Save original environment variables
+    original_socrates_data_dir = os.environ.get("SOCRATES_DATA_DIR")
+
+    # Unset any test-modified environment variables
+    if "SOCRATES_DATA_DIR" in os.environ:
+        monkeypatch.delenv("SOCRATES_DATA_DIR")
+
+    yield
+
+    # Restore original environment (monkeypatch automatically reverts)
 
 
 @pytest.fixture(scope="session", autouse=True)

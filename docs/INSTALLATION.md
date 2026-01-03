@@ -1,6 +1,6 @@
 # Installation & Setup Guide
 
-This guide covers installing the Socratic RAG System and preparing it for use.
+This guide covers installing Socrates AI and preparing it for use.
 
 ## Table of Contents
 
@@ -247,6 +247,311 @@ SOCRATES_DATA_DIR=/custom/path
 
 ---
 
+## Entry Points & Startup Options
+
+After installation, you can start Socrates in different ways depending on your use case.
+
+### Running Socrates
+
+All commands are run from the project root directory where `socrates.py` is located:
+
+```bash
+cd path/to/Socrates  # Navigate to project root
+```
+
+### Available Entry Points
+
+#### 1. Interactive CLI (Default)
+
+**Command:**
+```bash
+python socrates.py
+```
+
+**What it starts:**
+- Terminal-based interactive interface
+- Command prompt for Socratic dialogue
+- Full CLI functionality
+
+**Best for:**
+- Learning and testing
+- Interactive development
+- Rapid prototyping
+- Users without web UI requirements
+
+**Output:**
+```
+╔══════════════════════════════════════════════════════╗
+║         🤔 Socrates AI                               ║
+║      Version 1.1.0 - "Know Thyself"                  ║
+╚══════════════════════════════════════════════════════╝
+
+Socrates> /help
+```
+
+---
+
+#### 2. Full Stack (API + Web Frontend)
+
+**Command:**
+```bash
+python socrates.py --full
+```
+
+**What it starts:**
+- REST API server on `http://localhost:8000`
+- React web frontend on `http://localhost:5173`
+- Automatic browser opening
+- Auto-port detection (uses next available port if primary is busy)
+
+**Best for:**
+- Full experience with visual interface
+- Web-based project management
+- Team collaboration
+- Programmatic API access + UI interaction
+- Production-like environment (local)
+
+**Services:**
+- **API Server**: `http://localhost:8000`
+  - REST endpoints for all operations
+  - WebSocket for real-time updates
+  - Health check: `GET /health`
+  - API docs: `GET /docs` (OpenAPI/Swagger)
+- **Frontend**: `http://localhost:5173`
+  - Visual dashboard
+  - Project management UI
+  - Real-time collaboration features
+
+**Shutdown:**
+- Press `Ctrl+C` to stop all services
+- Graceful shutdown of both API and frontend
+
+---
+
+#### 3. API Server Only
+
+**Command:**
+```bash
+python socrates.py --api
+```
+
+**What it starts:**
+- REST API server only (no frontend)
+- Listens on `0.0.0.0:8000` by default
+- Auto-port detection if port 8000 is busy
+
+**Best for:**
+- Integration with other applications
+- Headless/server-only deployments
+- Building custom frontends
+- Automation and scripting
+- Production deployments
+
+**API Access:**
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# API documentation
+curl http://localhost:8000/docs
+
+# Example: Create project
+curl -X POST http://localhost:8000/api/projects \
+  -H "Content-Type: application/json" \
+  -d '{"name": "My Project"}'
+```
+
+---
+
+#### 4. CLI with Web Frontend
+
+**Command:**
+```bash
+python socrates.py --frontend
+```
+
+**What it starts:**
+- Interactive CLI interface
+- React web frontend alongside CLI
+- Both services run simultaneously
+
+**Best for:**
+- Hybrid workflow
+- Visual dashboard + terminal interface
+- Development and testing
+- Power users who want both interfaces
+
+**Services:**
+- **CLI**: Terminal-based interface
+- **Frontend**: `http://localhost:5173`
+
+---
+
+### Port Configuration
+
+#### Default Ports
+
+| Service | Default Port | Environment Variable |
+|---------|--------------|----------------------|
+| API Server | 8000 | (set with --port flag) |
+| Frontend (Vite) | 5173 | PORT |
+| Health Check | 8000 | (same as API) |
+
+#### Custom Port for API
+
+**Specific port:**
+```bash
+python socrates.py --api --port 9000
+
+# API runs on http://localhost:9000
+```
+
+**Disable auto-detection (fail if port busy):**
+```bash
+python socrates.py --api --port 8000 --no-auto-port
+```
+
+**Custom host (instead of 0.0.0.0):**
+```bash
+python socrates.py --api --host 127.0.0.1
+
+# API only accessible from localhost
+```
+
+#### Frontend Port
+
+Set via environment variable:
+```bash
+PORT=3000 python socrates.py --full
+
+# Frontend runs on http://localhost:3000
+```
+
+---
+
+### Auto-Port Detection
+
+By default, Socrates automatically detects available ports:
+
+```bash
+python socrates.py --api
+
+# If port 8000 is busy:
+# [INFO] Port 8000 is in use, using port 8001 instead
+# [INFO] API server running on http://localhost:8001
+```
+
+To disable this behavior:
+```bash
+python socrates.py --api --no-auto-port
+
+# Fails if port 8000 is not available
+```
+
+---
+
+### Help & Version Information
+
+**Show all available commands:**
+```bash
+python socrates.py --help
+```
+
+**Output:**
+```
+usage: socrates [-h] [--version] [--api | --full | --frontend] [--host HOST]
+                [--port PORT] [--no-auto-port] [--reload]
+
+Socrates AI - A Socratic method tutoring system powered by Claude AI
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  --api                 Start API server only
+  --full                Start full stack (API + Frontend)
+  --frontend            Start CLI with React frontend
+  --host HOST           API server host (default: 0.0.0.0)
+  --port PORT           API server port (default: 8000)
+  --no-auto-port        Disable automatic port detection
+  --reload              Enable auto-reload for API (development only)
+
+Examples:
+  python socrates.py                    Start CLI (default)
+  python socrates.py --api              Start API server only
+  python socrates.py --full             Start full stack
+  python socrates.py --api --port 9000  Start API on custom port
+```
+
+**Show version:**
+```bash
+python socrates.py --version
+
+# Output: Socrates AI 1.1.0
+```
+
+---
+
+### Environment Variables for Startup
+
+Control startup behavior via environment variables:
+
+```bash
+# Enable debug logging
+export SOCRATES_LOG_LEVEL=DEBUG
+python socrates.py --api
+
+# Set data directory
+export SOCRATES_DATA_DIR=/data/socrates
+python socrates.py
+
+# Set API key
+export ANTHROPIC_API_KEY=sk-ant-...
+python socrates.py --full
+
+# Set frontend port
+export PORT=3000
+python socrates.py --full
+```
+
+---
+
+### Troubleshooting Startup Issues
+
+**Port already in use:**
+```bash
+# Auto-detection handles this, but you can:
+python socrates.py --api --port 9000
+
+# Or find what's using the port:
+# Linux/macOS:
+lsof -i :8000
+
+# Windows:
+netstat -ano | findstr :8000
+```
+
+**API connection error:**
+```bash
+# Verify API is running:
+curl http://localhost:8000/health
+
+# Check logs:
+tail -f ~/.socrates/logs/socratic.log
+```
+
+**Frontend not starting:**
+```bash
+# Ensure npm is installed:
+npm --version
+
+# Install frontend dependencies manually:
+cd socrates-frontend
+npm install
+npm run dev
+```
+
+---
+
 ## Configuration
 
 ### First-Time Setup
@@ -397,11 +702,11 @@ python socrates.py
 **Expected output**:
 ```
 ╔══════════════════════════════════════════════════════╗
-║         🤔 Socratic RAG System                       ║
-║      Version 7.0 - "Know Thyself"                    ║
+║         🤔 Socrates AI                               ║
+║      Version 1.1.0 - "Know Thyself"                  ║
 ╚══════════════════════════════════════════════════════╝
 
-[INFO] system: Initializing Socratic RAG System...
+[INFO] system: Initializing Socrates AI...
 [INFO] system: Loading knowledge base...
 [INFO] system: System initialized successfully
 ```
@@ -623,7 +928,7 @@ rm -rf .venv
 rm -rf ~/.socrates
 
 # Remove from system (if installed via pip)
-pip uninstall socratic-rag-system
+pip uninstall socrates-ai-cli socrates-ai-api
 
 # Remove repository
 rm -rf socrates

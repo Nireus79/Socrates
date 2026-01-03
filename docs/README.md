@@ -1,6 +1,6 @@
-# Socratic RAG System - Complete Documentation
+# Socrates AI - Complete Documentation
 
-Welcome to the **Socratic RAG System**, an AI-powered software development companion that guides you through projects using the Socratic method—asking thoughtful questions to help you clarify requirements, design systems, and write better code.
+Welcome to **Socrates AI**, an AI-powered software development companion that guides you through projects using the Socratic method—asking thoughtful questions to help you clarify requirements, design systems, and write better code.
 
 ## Table of Contents
 
@@ -19,8 +19,8 @@ Welcome to the **Socratic RAG System**, an AI-powered software development compa
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/socrates.git
-cd socrates
+git clone https://github.com/Nireus79/Socrates.git
+cd Socrates
 
 # Create virtual environment
 python -m venv .venv
@@ -35,37 +35,58 @@ export ANTHROPIC_API_KEY="sk-ant-your-key-here"  # Or your API key
 
 ### Run the System
 
-**Option 1: Full Stack (API + React Frontend)**
+**Quick Start - Choose Your Interface:**
+
+| Command | Description | Use Case |
+|---------|-------------|----------|
+| `python socrates.py` | CLI-only (default) | Interactive terminal, quick testing, learning |
+| `python socrates.py --full` | Full stack (API + Frontend) | Web UI + programmatic access, full experience |
+| `python socrates.py --api` | API server only | Integration with other tools, headless mode |
+| `python socrates.py --frontend` | CLI + React frontend | Hybrid mode, visual + terminal interface |
+| `python socrates.py --help` | Show all options | See all available commands |
+
+**Example: Full Stack (Recommended for First Time)**
 ```bash
-# Start both API server and web frontend together
 python socrates.py --full
 
 # This starts:
 # - API Server: http://localhost:8000
 # - Web Frontend: http://localhost:5173
+# - Browser opens automatically
 ```
 
-**Option 2: API Server Only**
+**Example: API Server Only**
 ```bash
 python socrates.py --api
-# API Server: http://localhost:8000
+
+# Starts API server
+# API available at http://localhost:8000
+# Auto-detects available port if 8000 is busy
 ```
 
-**Option 3: Interactive CLI (Default)**
+**Example: Interactive CLI**
 ```bash
 python socrates.py
+
+# Starts command-line interface
+# Interactive prompt for Socratic dialogue
 ```
 
-Choose the interface that works best for you:
-- **Web Frontend** (`--full`): Visual project management, collaborative features
-- **API Server** (`--api`): Programmatic access, integration with other tools
-- **CLI** (default): Terminal-based interface, quick testing
+**API Server with Custom Port:**
+```bash
+python socrates.py --api --port 9000
+
+# Start on custom port (auto-detects if busy)
+# Disable auto-detection with --no-auto-port
+```
+
+> **Note**: All startup commands are run from the project root directory where `socrates.py` is located.
 
 ---
 
 ## What is Socratic?
 
-The **Socratic RAG System** is a multi-agent AI system that:
+**Socrates AI** is a multi-agent AI system that:
 
 1. **Guides Discovery** - Asks clarifying questions to deeply understand your project goals
 2. **Ensures Consistency** - Detects conflicts between requirements, goals, and constraints
@@ -319,15 +340,15 @@ For issues, questions, or feature requests:
 If you use Socratic in your research or project, please cite:
 
 ```bibtex
-@software{socratic_rag_2025,
-  title = {Socratic RAG System},
+@software{socrates_ai_2025,
+  title = {Socrates AI},
   author = {[Author Name]},
   year = {2025},
-  url = {https://github.com/your-org/socrates}
+  url = {https://github.com/Nireus79/Socrates}
 }
 ```
 
 ---
 
-**Last Updated**: December 2025
-**Version**: 7.0
+**Last Updated**: January 2026
+**Version**: 1.1.0

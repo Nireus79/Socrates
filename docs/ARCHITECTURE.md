@@ -1,6 +1,6 @@
-# Socratic RAG System - Architecture Guide
+# Socrates AI - Architecture Guide
 
-This document provides a comprehensive technical overview of the Socratic RAG System's architecture, design patterns, and internal systems.
+This document provides a comprehensive technical overview of Socrates AI's architecture, design patterns, and internal systems.
 
 ## Table of Contents
 
@@ -18,7 +18,7 @@ This document provides a comprehensive technical overview of the Socratic RAG Sy
 
 ## System Overview
 
-The Socratic RAG System is built on these fundamental principles:
+Socrates AI is built on these fundamental principles:
 
 1. **Multi-Agent Orchestration** - Specialized agents handle distinct responsibilities
 2. **Event-Driven Communication** - Loose coupling between components
@@ -122,7 +122,7 @@ config = SocratesConfig.from_dict({
 # Method 3: Builder pattern (fluent API)
 config = ConfigBuilder("sk-ant-...") \
     .with_data_dir(Path("/data")) \
-    .with_model("claude-opus") \
+    .with_model("claude-opus-4-5-20251101") \
     .with_log_level("DEBUG") \
     .build()
 ```
@@ -137,7 +137,7 @@ config = ConfigBuilder("sk-ant-...") \
 **Environment Variables**:
 ```bash
 ANTHROPIC_API_KEY          # Required
-CLAUDE_MODEL               # Default: claude-sonnet-4-5-20250929
+CLAUDE_MODEL               # Default: claude-haiku-4-5-20251001
 SOCRATES_DATA_DIR          # Default: ~/.socrates
 SOCRATES_LOG_LEVEL         # Default: INFO
 SOCRATES_LOG_FILE          # Default: {DATA_DIR}/logs/socrates.log
@@ -149,7 +149,7 @@ SOCRATES_LOG_FILE          # Default: {DATA_DIR}/logs/socrates.log
 class SocratesConfig:
     # API & Model
     api_key: str                                    # Required
-    claude_model: str                              # Default: claude-sonnet
+    claude_model: str                              # Default: claude-haiku-4-5-20251001
     embedding_model: str                           # Default: all-MiniLM-L6-v2
 
     # Storage
@@ -848,7 +848,7 @@ Fluent API for flexible configuration creation.
 ```python
 config = ConfigBuilder("api_key") \
     .with_data_dir(path) \
-    .with_model("claude-opus") \
+    .with_model("claude-opus-4-5-20251101") \
     .with_log_level("DEBUG") \
     .build()
 ```

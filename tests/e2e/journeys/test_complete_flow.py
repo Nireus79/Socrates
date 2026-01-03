@@ -1,5 +1,5 @@
 """
-End-to-End Test Suite for Socratic RAG System
+End-to-End Test Suite for Socrates AI
 
 Tests all commands and workflows in realistic scenarios
 """
@@ -56,19 +56,33 @@ if sys.platform == "win32" and not _is_pycharm_ide:
 
 
 @pytest.fixture
-def temp_data_dir():
-    """Create temporary data directory for testing"""
-    temp_dir = tempfile.mkdtemp()
-    os.environ["SOCRATES_DATA_DIR"] = temp_dir
-    yield temp_dir
-    shutil.rmtree(temp_dir)
+def temp_data_dir(tmp_path, monkeypatch):
+    """
+    Create isolated temporary data directory for testing.
+
+    Uses pytest tmp_path which is automatically cleaned up.
+    Never modifies global os.environ - uses monkeypatch instead.
+    """
+    temp_dir = tmp_path / "socrates_test"
+    temp_dir.mkdir(parents=True, exist_ok=True)
+
+    # Use monkeypatch - automatically reverts after test
+    monkeypatch.setenv("SOCRATES_DATA_DIR", str(temp_dir))
+
+    yield str(temp_dir)
+
+    # No cleanup needed - tmp_path is automatically deleted
 
 
 @pytest.fixture
-def orchestrator(temp_data_dir):
-    """Initialize orchestrator with test database (fresh for each test)"""
+def orchestrator(temp_data_dir, monkeypatch):
+    """
+    Initialize orchestrator with test database (fresh for each test).
+
+    Uses isolated temporary directory, never affects production.
+    """
     # Mock API key for testing
-    with patch.dict(os.environ, {"API_KEY_CLAUDE": "test-key", "SOCRATES_DATA_DIR": temp_data_dir}):
+    with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-test-key", "SOCRATES_DATA_DIR": temp_data_dir}):
         with patch("socratic_system.orchestration.orchestrator.ClaudeClient"):
             with patch("socratic_system.orchestration.orchestrator.VectorDatabase"):
                 try:

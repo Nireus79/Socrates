@@ -1,5 +1,5 @@
 """
-Services module for Socratic RAG System.
+Services module for Socrates AI.
 
 Provides specialized services for document analysis, understanding, processing,
 and orchestrator management for both CLI and web API.

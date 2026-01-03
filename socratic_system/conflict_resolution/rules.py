@@ -1,5 +1,5 @@
 """
-Conflict rules and categories for Socratic RAG System
+Conflict rules and categories for Socrates AI
 """
 
 from typing import Optional

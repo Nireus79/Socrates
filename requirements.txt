@@ -1,4 +1,4 @@
-# Socratic RAG System Requirements
+# Socrates AI Requirements
 # Production dependencies only - development tools removed for faster Docker builds
 
 # Core Socrates AI System

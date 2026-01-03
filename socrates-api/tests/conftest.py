@@ -17,10 +17,32 @@ sys.modules['socrates'] = socratic_system
 
 
 @pytest.fixture
-def test_db(monkeypatch):
-    """Fixture to provide a test database."""
+def test_db(tmp_path):
+    """
+    Fixture to provide an isolated test database.
+
+    Uses a temporary directory to avoid affecting production data.
+    Each test gets its own isolated database.
+    """
     from socratic_system.database import ProjectDatabase
-    # Use in-memory database for tests
+
+    # Use temporary directory for test database (not home directory!)
+    test_db_path = tmp_path / "test_projects.db"
+    db = ProjectDatabase(str(test_db_path))
+
+    yield db
+
+    # Cleanup is automatic - tmp_path is deleted after test
+
+
+@pytest.fixture
+def test_db_inmemory():
+    """
+    Fixture for ultra-fast tests that don't need persistence.
+
+    Uses SQLite in-memory database - no disk I/O.
+    """
+    from socratic_system.database import ProjectDatabase
     db = ProjectDatabase(":memory:")
     return db
 
@@ -86,6 +108,42 @@ def mock_vector_db(monkeypatch):
     return mock_vdb
 
 
+@pytest.fixture
+def test_vector_db(tmp_path):
+    """
+    Fixture to provide an isolated test vector database.
+
+    Uses a temporary directory to avoid affecting production data.
+    Each test gets its own isolated vector database.
+    """
+    from socratic_system.database.vector_db import VectorDatabase
+
+    # Use temporary directory for test vector database (not home directory!)
+    test_vector_db_path = tmp_path / "test_vector_db"
+    vector_db = VectorDatabase(str(test_vector_db_path))
+
+    yield vector_db
+
+    # Cleanup is automatic - tmp_path is deleted after test
+    # Vector database will be cleaned up automatically
+
+
+@pytest.fixture
+def test_socrates_config(tmp_path):
+    """
+    Fixture to provide isolated test configuration.
+
+    Both projects.db and vector_db will be created in temp directory,
+    never touching production data in ~/.socrates/
+    """
+    from socratic_system.config import SocratesConfig
+
+    return SocratesConfig(
+        api_key="sk-test-key-12345",
+        data_dir=tmp_path / "socrates",  # Isolated temp directory
+    )
+
+
 @pytest.fixture(autouse=True)
 def reset_imports():
     """Reset imports between tests to avoid state leakage."""
@@ -120,25 +178,18 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.fixture(scope="session", autouse=True)
 def cleanup_test_database():
-    """Clean up test database files before and after tests."""
-    from pathlib import Path
+    """
+    Test isolation fixture - do NOT modify production databases!
 
-    # Clean up test database before tests
-    test_data_dir = Path.home() / ".socrates"
-    if test_data_dir.exists():
-        try:
-            db_file = test_data_dir / "projects.db"
-            if db_file.exists():
-                db_file.unlink()
-        except Exception:
-            pass
+    CRITICAL: This fixture used to delete ~/.socrates/projects.db which
+    caused user data loss. That code has been removed.
 
+    Tests should ONLY use temporary directories via pytest tmp_path fixture,
+    never touch the home directory or production data.
+
+    See: https://github.com/your-org/socrates/issues/XXX
+    """
+    # Don't touch production database in ~/.socrates/
+    # Tests must use isolated temporary directories only
     yield
-
-    # Clean up after tests
-    try:
-        db_file = test_data_dir / "projects.db"
-        if db_file.exists():
-            db_file.unlink()
-    except Exception:
-        pass
+    # No cleanup of home directory - tests should clean up their own temp files

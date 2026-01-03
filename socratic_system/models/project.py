@@ -1,5 +1,5 @@
 """
-Project context model for Socratic RAG System
+Project context model for Socrates AI
 """
 
 import datetime

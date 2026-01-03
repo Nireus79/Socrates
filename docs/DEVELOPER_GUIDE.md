@@ -1,6 +1,6 @@
-# Developer Guide - Contributing to Socratic
+# Developer Guide - Contributing to Socrates AI
 
-Guide for developers who want to extend, modify, or contribute to the Socratic RAG System.
+Guide for developers who want to extend, modify, or contribute to Socrates AI.
 
 ## Table of Contents
 
@@ -394,6 +394,10 @@ checkers = [
 
 ## Testing
 
+For comprehensive testing guidance, see the [Testing Guide](TESTING.md).
+
+This section covers the basics. For detailed patterns, fixtures, and best practices, refer to the dedicated testing documentation.
+
 ### Test Structure
 
 ```
@@ -408,8 +412,8 @@ tests/
 │   ├── test_agent_workflow.py
 │   ├── test_dialogue_flow.py
 │   └── ...
-└── end_to_end/
-    ├── test_complete_project.py
+└── e2e/journeys/
+    ├── test_complete_flow.py
     └── ...
 ```
 

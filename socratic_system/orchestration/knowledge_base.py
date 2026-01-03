@@ -1,5 +1,5 @@
 """
-Default knowledge base for Socratic RAG System
+Default knowledge base for Socrates AI
 """
 
 DEFAULT_KNOWLEDGE = [

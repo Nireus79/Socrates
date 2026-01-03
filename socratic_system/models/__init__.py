@@ -1,5 +1,5 @@
 """
-Data models for Socratic RAG System
+Data models for Socrates AI
 """
 
 from .conflict import ConflictInfo

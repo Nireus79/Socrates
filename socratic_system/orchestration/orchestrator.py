@@ -1,5 +1,5 @@
 """
-Agent Orchestrator for Socratic RAG System
+Agent Orchestrator for Socrates AI
 
 Coordinates all agents and manages their interactions, including:
 - Agent initialization
@@ -125,7 +125,7 @@ class AgentOrchestrator:
 
         # Log initialization summary
         self.logger.info("=" * 70)
-        self.logger.info("Socratic RAG System initialized successfully!")
+        self.logger.info("Socrates AI initialized successfully!")
         self.logger.info(f"  Configuration: {self.config}")
         self.logger.info(f"  Projects DB: {self.config.projects_db_path}")
         self.logger.info(f"  Vector DB: {self.config.vector_db_path}")

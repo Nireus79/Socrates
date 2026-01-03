@@ -1,5 +1,5 @@
 """
-System monitoring agent for Socratic RAG System
+System monitoring agent for Socrates AI
 """
 
 import datetime

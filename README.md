@@ -4,7 +4,7 @@ A complete project management and vibe coding RAG system.
 Comprehensive AI-powered platform for collaborative software project development, with real-time collaboration,
 multi-agent orchestration, and production-grade infrastructure.
 
-> **Status**: Production Ready (v1.0.0)
+> **Status**: Production Ready (v1.1.0)
 > **License**: MIT
 > **Architecture**: FastAPI Backend + React Frontend + PostgreSQL + Redis + ChromaDB
 
@@ -31,8 +31,8 @@ multi-agent orchestration, and production-grade infrastructure.
 ### Docker Compose (Local Development)
 
 ```bash
-git clone https://github.com/your-org/socrates.git
-cd socrates
+git clone https://github.com/Nireus79/Socrates.git
+cd Socrates
 
 # Create environment
 cp .env.production.example .env.local

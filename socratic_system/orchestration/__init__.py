@@ -1,4 +1,4 @@
-"""Orchestration layer for Socratic RAG System"""
+"""Orchestration layer for Socrates AI"""
 
 from .orchestrator import AgentOrchestrator
 

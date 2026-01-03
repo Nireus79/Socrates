@@ -1,5 +1,5 @@
 """
-Code Validation Agent for Socratic RAG System
+Code Validation Agent for Socrates AI
 
 Orchestrates comprehensive code validation pipeline:
 1. Syntax validation (all files)

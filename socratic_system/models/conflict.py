@@ -1,5 +1,5 @@
 """
-Conflict detection models for Socratic RAG System
+Conflict detection models for Socrates AI
 """
 
 from dataclasses import dataclass

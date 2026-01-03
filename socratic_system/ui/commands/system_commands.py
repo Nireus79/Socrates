@@ -34,11 +34,11 @@ class ExitCommand(BaseCommand):
     """Exit the application"""
 
     def __init__(self):
-        super().__init__(name="exit", description="Exit the Socratic RAG System", usage="exit")
+        super().__init__(name="exit", description="Exit the Socrates AI", usage="exit")
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute exit command"""
-        print(f"\n{Fore.GREEN}Thank you for using Socratic RAG System")
+        print(f"\n{Fore.GREEN}Thank you for using Socrates AI")
         print(f"..τω Ασκληπιώ οφείλομεν αλετρυόνα, απόδοτε και μη αμελήσετε..{Style.RESET_ALL}\n")
 
         return {"status": "exit", "message": "Exiting application"}
@@ -197,7 +197,7 @@ class InfoCommand(BaseCommand):
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute info command"""
-        self.print_header("Socratic RAG System Information")
+        self.print_header("Socrates AI Information")
 
         print("Version: 7.0")
         print("Purpose: Socratic guidance for software development")

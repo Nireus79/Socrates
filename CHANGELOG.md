@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Package Naming** - Standardized package names to follow AI naming convention
+  - `socrates-ai-cli` - Command-line interface package
+  - `socrates-ai-api` - REST API server package
+  - Previous generic naming has been deprecated
+  - This change ensures consistency with AI-focused branding
+
 ### Fixed
 
 - **Docker Workflow** - Fixed Docker build and publish pipeline
@@ -247,4 +255,4 @@ This project uses [Semantic Versioning](https://semver.org/):
 - MINOR version for backwards-compatible functionality additions
 - PATCH version for backwards-compatible bug fixes
 
-Current version: **8.0.0**
+Current version: **1.1.0**

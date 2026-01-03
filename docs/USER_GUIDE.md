@@ -1,6 +1,6 @@
-# User Guide - Socratic RAG System
+# User Guide - Socrates AI
 
-Complete guide for end users on how to use the Socratic RAG System effectively.
+Complete guide for end users on how to use Socrates AI effectively.
 
 ## Table of Contents
 
@@ -32,7 +32,7 @@ python socrates.py
 You'll see the banner and authentication prompt:
 ```
 ╔══════════════════════════════════════════════════════╗
-║         🤔 Socratic RAG System                       ║
+║         🤔 Socrates AI                       ║
 ║      Version 7.0 - "Know Thyself"                    ║
 ╚══════════════════════════════════════════════════════╝
 

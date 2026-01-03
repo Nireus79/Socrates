@@ -1,5 +1,5 @@
 """
-Datetime serialization utilities for Socratic RAG System
+Datetime serialization utilities for Socrates AI
 """
 
 import datetime

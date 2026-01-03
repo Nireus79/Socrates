@@ -1,5 +1,5 @@
 """
-User management agent for Socratic RAG System
+User management agent for Socrates AI
 """
 
 from typing import Any, Dict

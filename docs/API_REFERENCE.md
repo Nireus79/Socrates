@@ -1,4 +1,4 @@
-# API Reference - Socratic RAG System
+# API Reference - Socrates AI
 
 Complete API documentation for programmatic usage and integration.
 
@@ -38,7 +38,7 @@ orchestrator = AgentOrchestrator(config)
 # Method 3: Builder pattern
 config = ConfigBuilder("sk-ant-...") \
     .with_data_dir(Path("/data")) \
-    .with_model("claude-opus") \
+    .with_model("claude-opus-4-5-20251101") \
     .with_log_level("DEBUG") \
     .build()
 orchestrator = AgentOrchestrator(config)
@@ -645,7 +645,7 @@ from pathlib import Path
 
 config = ConfigBuilder("sk-ant-...") \
     .with_data_dir(Path("/data")) \
-    .with_model("claude-opus-4-1-20250805") \
+    .with_model("claude-opus-4-5-20251101") \
     .with_embedding_model("all-MiniLM-L6-v2") \
     .with_log_level("DEBUG") \
     .with_log_file(Path("/logs/socratic.log")) \

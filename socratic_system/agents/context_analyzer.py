@@ -1,5 +1,5 @@
 """
-Context analysis agent for Socratic RAG System
+Context analysis agent for Socrates AI
 """
 
 import datetime

@@ -1,4 +1,4 @@
-"""Conflict detection and resolution for Socratic RAG System"""
+"""Conflict detection and resolution for Socrates AI"""
 
 from .base import ConflictChecker
 from .checkers import (

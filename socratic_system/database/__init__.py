@@ -1,4 +1,4 @@
-"""Database layer for Socratic RAG System"""
+"""Database layer for Socrates AI"""
 
 from .project_db import ProjectDatabase
 from .vector_db import VectorDatabase

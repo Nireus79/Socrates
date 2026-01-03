@@ -1,5 +1,5 @@
 """
-Base class for conflict detection in Socratic RAG System
+Base class for conflict detection in Socrates AI
 """
 
 from abc import ABC, abstractmethod

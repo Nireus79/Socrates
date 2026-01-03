@@ -1,5 +1,5 @@
 """
-Centralized logging system for Socratic RAG System
+Centralized logging system for Socrates AI
 Supports debug mode, file logging, and console output
 """
 

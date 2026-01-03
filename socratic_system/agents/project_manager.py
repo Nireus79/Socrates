@@ -1,5 +1,5 @@
 """
-Project management agent for Socratic RAG System
+Project management agent for Socrates AI
 """
 
 import datetime

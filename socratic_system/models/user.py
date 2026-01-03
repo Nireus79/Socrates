@@ -1,5 +1,5 @@
 """
-User model for Socratic RAG System
+User model for Socrates AI
 """
 
 import datetime
@@ -10,7 +10,7 @@ from typing import List, Optional
 @dataclass
 class User:
     """
-    Represents a user of the Socratic RAG System.
+    Represents a user of the Socrates AI.
 
     ## Authorization Model
 

@@ -1,5 +1,5 @@
 {
-  "description": "Comprehensive multi-domain knowledge base for Socratic RAG System",
+  "description": "Comprehensive multi-domain knowledge base for Socrates AI",
   "instructions": "Knowledge entries organized by domain. Each entry supports the Socratic teaching method.",
   "default_knowledge": [
     {

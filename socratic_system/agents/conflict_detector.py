@@ -1,5 +1,5 @@
 """
-Conflict detection and resolution agent for Socratic RAG System
+Conflict detection and resolution agent for Socrates AI
 """
 
 from concurrent.futures import ThreadPoolExecutor, as_completed

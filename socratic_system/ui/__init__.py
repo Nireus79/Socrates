@@ -1,4 +1,4 @@
-"""User interface for Socratic RAG System"""
+"""User interface for Socrates AI"""
 
 from .main_app import SocraticRAGSystem
 

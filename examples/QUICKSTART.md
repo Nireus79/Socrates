@@ -243,7 +243,7 @@ Ensure you're using a valid Claude model. Default is `claude-sonnet-4-5-20250929
 socrates_ai.ConfigBuilder(api_key)
     .with_data_dir(Path)          # Custom data directory
     .with_log_level("DEBUG")      # Logging level
-    .with_claude_model("claude-opus-4-1")  # Model selection
+    .with_claude_model("claude-opus-4-5-20251101")  # Model selection
     .build()
 ```
 

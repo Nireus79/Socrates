@@ -73,7 +73,7 @@ class ContextDisplay:
 
         # Title bar
         lines.append(f"{Fore.CYAN}{'═' * 50}")
-        lines.append("Socratic RAG System")
+        lines.append("Socrates AI")
         lines.append("═" * 50)
 
         # User info

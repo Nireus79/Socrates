@@ -1,5 +1,5 @@
 """
-Monitoring and token usage models for Socratic RAG System
+Monitoring and token usage models for Socrates AI
 """
 
 import datetime
