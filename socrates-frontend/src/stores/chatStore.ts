@@ -117,13 +117,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
         mode: state.mode,
       });
 
-      // Add assistant message
-      get().addMessage({
-        id: response.message.id,
-        role: 'assistant',
-        content: response.message.content,
-        timestamp: response.message.timestamp,
-      });
+      // Add assistant message only if one was returned (null when debug off and no insights)
+      if (response.message) {
+        get().addMessage({
+          id: response.message.id,
+          role: 'assistant',
+          content: response.message.content,
+          timestamp: response.message.timestamp,
+        });
+      }
 
       // If conflicts were detected, store them and notify user
       if (response.conflicts_pending && response.conflicts) {
