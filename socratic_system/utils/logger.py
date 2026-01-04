@@ -180,18 +180,21 @@ class DebugLogger:
             ):
                 handler.setLevel(new_level)
 
-        # Update all existing loggers that have handlers
+        # Update all existing loggers (both with and without handlers)
+        # Most loggers propagate to root logger, so they need the right level too
         for logger_name in logging.Logger.manager.loggerDict:
             logger_obj = logging.getLogger(logger_name)
-            if logger_obj and hasattr(logger_obj, "handlers"):
+            if logger_obj:
                 # Set logger level to DEBUG when debug enabled, WARNING otherwise
                 logger_obj.setLevel(logging.DEBUG if enabled else logging.WARNING)
 
-                for handler in logger_obj.handlers[:]:
-                    if isinstance(handler, logging.StreamHandler) and not isinstance(
-                        handler, logging.FileHandler
-                    ):
-                        handler.setLevel(new_level)
+                # Update handlers if they exist
+                if hasattr(logger_obj, "handlers"):
+                    for handler in logger_obj.handlers[:]:
+                        if isinstance(handler, logging.StreamHandler) and not isinstance(
+                            handler, logging.FileHandler
+                        ):
+                            handler.setLevel(new_level)
 
         # Also update the main socratic_rag logger level
         if cls._logger:
