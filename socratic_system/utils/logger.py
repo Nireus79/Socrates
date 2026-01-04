@@ -132,7 +132,12 @@ class DebugLogger:
     @classmethod
     def set_debug_mode(cls, enabled: bool) -> None:
         """Toggle debug mode on/off"""
+        import os
+
         cls._debug_mode = enabled
+
+        # Also set environment variable so CLI and API processes share state
+        os.environ["SOCRATES_DEBUG_MODE"] = "1" if enabled else "0"
 
         # Ensure logger is fully initialized
         if cls._instance is None or cls._console_handler is None:
@@ -155,6 +160,14 @@ class DebugLogger:
     @classmethod
     def is_debug_mode(cls) -> bool:
         """Check if debug mode is enabled"""
+        import os
+
+        # Check environment variable for shared state between processes
+        env_debug = os.getenv("SOCRATES_DEBUG_MODE", "0")
+        if env_debug in ("1", "true", "True"):
+            cls._debug_mode = True
+            return True
+
         return cls._debug_mode
 
     @classmethod
