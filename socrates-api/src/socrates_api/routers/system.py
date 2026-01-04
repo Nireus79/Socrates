@@ -600,20 +600,28 @@ async def toggle_debug_mode(
         SuccessResponse with the new debug mode state
     """
     try:
+        import sys
+        print(f"[ENDPOINT] /debug/toggle called with enabled={enabled}", file=sys.stderr)
+
         # Ensure we're getting the right parameter type
         # FastAPI may pass string 'true'/'false' from query params
         if isinstance(enabled, str):
             enabled = enabled.lower() in ('true', '1', 'yes')
+            print(f"[ENDPOINT] Converted string to bool: {enabled}", file=sys.stderr)
 
         current_state = is_debug_mode()
+        print(f"[ENDPOINT] Current state: {current_state}", file=sys.stderr)
 
         if enabled is not None:
             new_state = enabled
         else:
             new_state = not current_state
 
+        print(f"[ENDPOINT] New state will be: {new_state}", file=sys.stderr)
+
         # Apply debug mode change to the logger
         set_debug_mode(new_state)
+        print(f"[ENDPOINT] set_debug_mode() completed", file=sys.stderr)
 
         logger.info(f"Debug mode {('ENABLED' if new_state else 'DISABLED')} by {current_user}")
 
