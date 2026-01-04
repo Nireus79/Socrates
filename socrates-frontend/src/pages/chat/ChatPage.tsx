@@ -689,10 +689,17 @@ export const ChatPage: React.FC = () => {
       }
       // If no action or 'toggle', don't add enabled param to toggle state
 
+      console.log('[FRONTEND] Calling debug endpoint:', url);
       const response = await apiClient.post<any>(url);
+      console.log('[FRONTEND] Debug response:', response);
 
       const result = response?.data || response;
+      console.log('[FRONTEND] Result object:', result);
+      console.log('[FRONTEND] result?.data:', result?.data);
+      console.log('[FRONTEND] debug_enabled value:', result?.data?.debug_enabled);
+
       const isEnabled = result?.data?.debug_enabled ?? false;
+      console.log('[FRONTEND] Final isEnabled value:', isEnabled);
 
       setDebugInfo({
         debugEnabled: isEnabled,
