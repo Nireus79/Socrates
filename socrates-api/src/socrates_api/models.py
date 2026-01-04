@@ -72,6 +72,8 @@ class ProjectResponse(BaseModel):
     created_at: datetime = Field(..., description="Project creation timestamp")
     updated_at: datetime = Field(..., description="Project last update timestamp")
     is_archived: bool = Field(default=False, description="Whether project is archived")
+    overall_maturity: float = Field(default=0.0, description="Project maturity percentage (0-100)")
+    progress: int = Field(default=0, description="Project progress percentage (0-100)")
 
 
 class ListProjectsResponse(BaseModel):

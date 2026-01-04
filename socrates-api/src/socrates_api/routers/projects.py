@@ -77,6 +77,8 @@ def _project_to_response(project: ProjectContext) -> ProjectResponse:
         created_at=project.created_at,
         updated_at=project.updated_at,
         is_archived=project.is_archived,
+        overall_maturity=getattr(project, "overall_maturity", 0.0),
+        progress=getattr(project, "progress", 0),
     )
 
 

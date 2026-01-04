@@ -14,3 +14,5 @@ export { HintDisplay } from './HintDisplay';
 export { CompactPhaseIndicator } from './CompactPhaseIndicator';
 export { ConversationHeader } from './ConversationHeader';
 export { ConflictResolutionModal } from './ConflictResolutionModal';
+export { SkippedQuestionsPanel } from './SkippedQuestionsPanel';
+export { AnswerSuggestionsModal } from './AnswerSuggestionsModal';

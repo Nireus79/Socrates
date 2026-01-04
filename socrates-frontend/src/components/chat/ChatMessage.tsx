@@ -14,6 +14,7 @@ interface ChatMessageProps {
   timestamp?: Date;
   onCopy?: () => void;
   onShare?: () => void;
+  isFaded?: boolean; // For displaying previous conversation with reduced opacity
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({
@@ -22,6 +23,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   timestamp,
   onCopy,
   onShare,
+  isFaded = false,
 }) => {
   const isUser = role === 'user';
 
@@ -45,7 +47,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
   return (
     <div
-      className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 ${isFaded ? 'opacity-60' : ''} transition-opacity`}
     >
       <div
         className={`max-w-xs lg:max-w-md xl:max-w-lg ${roleColors[role]} ${roleBorders[role]} border rounded-lg p-3`}

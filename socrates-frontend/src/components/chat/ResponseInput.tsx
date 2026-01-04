@@ -12,6 +12,7 @@ interface ResponseInputProps {
   onSubmit: () => void;
   onSkip?: () => void;
   onRequestHint?: () => void;
+  onRequestSuggestions?: () => void;
   isLoading?: boolean;
   minLength?: number;
   maxLength?: number;
@@ -24,6 +25,7 @@ export const ResponseInput: React.FC<ResponseInputProps> = ({
   onSubmit,
   onSkip,
   onRequestHint,
+  onRequestSuggestions,
   isLoading = false,
   minLength = 1,
   maxLength = 5000,
@@ -90,6 +92,18 @@ export const ResponseInput: React.FC<ResponseInputProps> = ({
             title="Request a hint for this question"
           >
             Hint
+          </Button>
+        )}
+
+        {onRequestSuggestions && (
+          <Button
+            variant="secondary"
+            icon={<Lightbulb className="h-4 w-4" />}
+            onClick={onRequestSuggestions}
+            disabled={isLoading}
+            title="Get answer suggestions for this question"
+          >
+            Suggestions
           </Button>
         )}
 

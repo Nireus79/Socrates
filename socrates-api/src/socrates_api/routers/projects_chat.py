@@ -512,8 +512,10 @@ async def get_question(
                 status_code=500, detail=result.get("message", "Failed to generate question")
             )
 
-        # Persist any project state changes
+        # Persist any project state changes (including conversation history)
         db.save_project(project)
+        if project.conversation_history:
+            db.save_conversation_history(project_id, project.conversation_history)
 
         # Return unwrapped data (frontend expects this format)
         return {
@@ -585,6 +587,8 @@ async def send_message(
 
         # Persist project changes to database (conversation history, maturity, etc.)
         db.save_project(project)
+        if project.conversation_history:
+            db.save_conversation_history(project_id, project.conversation_history)
 
         # Check if conflicts detected - if so, return them for frontend resolution
         if result.get("conflicts_pending") and result.get("conflicts"):
@@ -841,6 +845,7 @@ async def clear_history(
         # Clear history
         project.conversation_history = []
         db.save_project(project)
+        db.save_conversation_history(project_id, [])
 
         return {"success": True}
 
@@ -1000,8 +1005,10 @@ async def finish_session(
         current_maturity = project.overall_maturity
         phase_maturity = (project.phase_maturity_scores or {}).get(current_phase, 0.0)
 
-        # Save final project state
+        # Save final project state (including conversation history)
         db.save_project(project)
+        if project.conversation_history:
+            db.save_conversation_history(project_id, project.conversation_history)
 
         return {
             "session_summary": {
@@ -1154,4 +1161,188 @@ async def get_maturity_status(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get maturity status: {str(e)}",
+        )
+
+
+# ============================================================================
+# Question Management Endpoints (Hybrid Approach - Phase 2.4, 3, 5)
+# ============================================================================
+
+
+@router.get(
+    "/{project_id}/chat/questions",
+    status_code=status.HTTP_200_OK,
+    summary="Get all questions with status",
+)
+async def get_questions(
+    project_id: str,
+    status_filter: Optional[str] = None,  # unanswered, answered, skipped
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Get all questions for a project, optionally filtered by status.
+    """
+    try:
+        logger.info(f"Getting questions for project {project_id}, filter={status_filter}")
+
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        questions = project.pending_questions or []
+
+        # Filter by status if specified
+        if status_filter:
+            questions = [q for q in questions if q.get("status") == status_filter]
+
+        return {
+            "questions": questions,
+            "total": len(questions),
+            "filtered_by": status_filter or "none",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting questions: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get questions: {str(e)}",
+        )
+
+
+@router.post(
+    "/{project_id}/chat/questions/{question_id}/reopen",
+    status_code=status.HTTP_200_OK,
+    summary="Reopen a skipped question",
+)
+async def reopen_question(
+    project_id: str,
+    question_id: str,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Reopen a skipped question (mark as unanswered so user can answer it).
+    """
+    try:
+        from socrates_api.main import get_orchestrator
+
+        logger.info(f"Reopening question {question_id} for project {project_id}")
+
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        orchestrator = get_orchestrator()
+        result = orchestrator.process_request(
+            "socratic_counselor",
+            {
+                "action": "reopen_question",
+                "project": project,
+                "question_id": question_id,
+            },
+        )
+
+        if result.get("status") != "success":
+            raise HTTPException(status_code=500, detail=result.get("message", "Failed to reopen question"))
+
+        db.save_project(project)
+
+        return {
+            "success": True,
+            "message": result.get("message", "Question reopened"),
+            "question_id": question_id,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reopening question: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to reopen question: {str(e)}",
+        )
+
+
+@router.get(
+    "/{project_id}/chat/suggestions",
+    status_code=status.HTTP_200_OK,
+    summary="Get answer suggestions for current question",
+)
+async def get_answer_suggestions(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Get answer suggestions for the current question in the chat.
+    """
+    try:
+        from socrates_api.main import get_orchestrator
+
+        logger.info(f"Getting answer suggestions for project {project_id}")
+
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Find current question from pending_questions
+        current_question = None
+        if project.pending_questions:
+            unanswered = [q for q in project.pending_questions if q.get("status") == "unanswered"]
+            if unanswered:
+                current_question = unanswered[0].get("question")
+
+        if not current_question:
+            return {
+                "suggestions": [
+                    "Review your project goals and requirements",
+                    "Consider the next logical step in your plan",
+                    "Think about potential challenges and solutions",
+                    "Reflect on your target audience or users",
+                    "Consider how this relates to your tech stack"
+                ],
+                "question": "No active question",
+                "phase": project.phase,
+            }
+
+        orchestrator = get_orchestrator()
+        result = orchestrator.process_request(
+            "socratic_counselor",
+            {
+                "action": "generate_answer_suggestions",
+                "project": project,
+                "current_question": current_question,
+            },
+        )
+
+        if result.get("status") != "success":
+            # Return generic suggestions if generation failed
+            return {
+                "suggestions": [
+                    "Consider the problem from your target audience's perspective",
+                    "Think about the technical constraints you mentioned",
+                    "Review the project goals and how this relates to them",
+                    "Consider existing solutions and what makes your approach unique",
+                    "Think about potential challenges and how to address them"
+                ],
+                "question": current_question,
+                "phase": project.phase,
+            }
+
+        return {
+            "suggestions": result.get("suggestions", []),
+            "question": current_question,
+            "phase": project.phase,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting suggestions: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get suggestions: {str(e)}",
         )

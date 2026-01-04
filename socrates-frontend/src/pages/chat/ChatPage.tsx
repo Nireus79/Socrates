@@ -15,6 +15,8 @@ import {
   ChatMessage,
   ConversationHeader,
   ConflictResolutionModal,
+  SkippedQuestionsPanel,
+  AnswerSuggestionsModal,
 } from '../../components/chat';
 import { Card, LoadingSpinner, Alert, Button, Input } from '../../components/common';
 
@@ -63,6 +65,9 @@ export const ChatPage: React.FC = () => {
 
   const [response, setResponse] = React.useState('');
   const [showHint, setShowHint] = React.useState(false);
+  const [showSuggestions, setShowSuggestions] = React.useState(false);
+  const [suggestions, setSuggestions] = React.useState<string[]>([]);
+  const [suggestionsQuestion, setSuggestionsQuestion] = React.useState('');
   const [showSummary, setShowSummary] = React.useState(false);
   const [summaryData, setSummaryData] = React.useState<{ summary: string; key_points: string[] } | null>(null);
   const [showSearchModal, setShowSearchModal] = React.useState(false);
@@ -75,6 +80,7 @@ export const ChatPage: React.FC = () => {
   const [testingModeStatus, setTestingModeStatus] = React.useState<{ enabled: boolean; message: string } | null>(null);
   const [selectedProjectId, setSelectedProjectId] = React.useState(projectId || '');
   const [isSwitchingProject, setIsSwitchingProject] = React.useState(false);
+  const [sessionStartTime, setSessionStartTime] = React.useState<Date | null>(null);
 
   // Pre-session NLU chat state
   const [freeSessionInput, setFreeSessionInput] = React.useState('');
@@ -85,6 +91,10 @@ export const ChatPage: React.FC = () => {
   const messagesContainerRef = React.useRef<HTMLDivElement>(null);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const freeSessionEndRef = React.useRef<HTMLDivElement>(null);
+
+  // Track if we've already loaded initial question for this project
+  const initialQuestionLoadedRef = React.useRef<string | null>(null);
+  const isLoadingHistoryRef = React.useRef<boolean>(false);
 
   // Load projects list on mount
   React.useEffect(() => {
@@ -100,32 +110,79 @@ export const ChatPage: React.FC = () => {
 
   // Load project and chat history
   React.useEffect(() => {
-    if (selectedProjectId) {
-      getProject(selectedProjectId);
-      loadHistory(selectedProjectId);
-      // Load initial question after a brief delay to ensure state is updated
-      const timer = setTimeout(() => {
-        loadInitialQuestion(selectedProjectId);
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [selectedProjectId, getProject, loadHistory]);
+    if (!selectedProjectId) return;
 
-  // Load initial question (only for Socratic mode)
-  const loadInitialQuestion = React.useCallback(
-    async (id: string) => {
-      try {
-        // Check current state from store directly to avoid stale closure
-        const { messages: currentMessages, mode: currentMode } = useChatStore.getState();
-        if (currentMessages.length === 0 && currentMode === 'socratic') {
-          await getQuestion(id);
+    // Skip if we've already loaded initial question for this project
+    if (initialQuestionLoadedRef.current === selectedProjectId) {
+      console.log('[ChatPage] Initial question already loaded for project:', selectedProjectId);
+      return;
+    }
+
+    // Skip if already loading history (prevent race condition)
+    if (isLoadingHistoryRef.current) {
+      console.log('[ChatPage] History load already in progress for project:', selectedProjectId);
+      return;
+    }
+
+    console.log('[ChatPage] Starting to load project and history:', selectedProjectId);
+    isLoadingHistoryRef.current = true;
+
+    getProject(selectedProjectId);
+
+    // Load history and then check for initial question
+    loadHistory(selectedProjectId).then(() => {
+      // Mark that we've loaded initial question for this project FIRST
+      initialQuestionLoadedRef.current = selectedProjectId;
+      isLoadingHistoryRef.current = false;
+
+      // After history is loaded, check for unanswered questions
+      const { messages: currentMessages, mode: currentMode, getQuestion: storeGetQuestion } = useChatStore.getState();
+
+      // Mark session start time
+      setSessionStartTime(new Date());
+
+      console.log('[ChatPage] History loaded for project:', selectedProjectId, 'Messages:', currentMessages.length);
+
+      if (currentMode === 'socratic') {
+        // Check if there's an unanswered question (last assistant message with no user answer after)
+        let hasUnansweredQuestion = false;
+        if (currentMessages.length > 0) {
+          // Find the last assistant message
+          for (let i = currentMessages.length - 1; i >= 0; i--) {
+            if (currentMessages[i].role === 'assistant') {
+              // Check if there's a user message after this assistant message
+              const hasAnswerAfter = currentMessages.slice(i + 1).some(m => m.role === 'user');
+              if (!hasAnswerAfter) {
+                hasUnansweredQuestion = true;
+              }
+              break;
+            }
+          }
         }
-      } catch (error) {
-        console.error('Failed to load initial question:', error);
+
+        console.log('[ChatPage] Has unanswered question:', hasUnansweredQuestion);
+
+        // Only generate new question if there's no unanswered question
+        if (!hasUnansweredQuestion) {
+          console.log('[ChatPage] Generating new question for project:', selectedProjectId);
+          storeGetQuestion(selectedProjectId);
+        }
       }
-    },
-    [getQuestion]
-  );
+    }).catch(error => {
+      console.error('[ChatPage] Failed to load history:', error);
+      isLoadingHistoryRef.current = false;
+      // Mark that we've attempted to load for this project
+      initialQuestionLoadedRef.current = selectedProjectId;
+
+      // Still try to get initial question even if history load fails
+      setSessionStartTime(new Date());
+      const { mode: currentMode, getQuestion: storeGetQuestion } = useChatStore.getState();
+      if (currentMode === 'socratic') {
+        console.log('[ChatPage] Loading history failed, attempting to generate initial question for project:', selectedProjectId);
+        storeGetQuestion(selectedProjectId);
+      }
+    });
+  }, [selectedProjectId]);
 
   // Auto-scroll to bottom when messages change
   React.useEffect(() => {
@@ -1309,9 +1366,17 @@ User: ${currentProject?.owner || 'N/A'}`;
   const handleSkipQuestion = async () => {
     if (!selectedProjectId) return;
     try {
-      // In a real implementation, this would skip to the next question
-      // For now, we just clear the response
+      // Add a skip marker message to conversation
+      addChatMessage({
+        id: `skip_${Date.now()}`,
+        role: 'system',
+        content: '[Question skipped by user]',
+        timestamp: new Date().toISOString(),
+      });
+
+      // Clear input and generate next question
       setResponse('');
+      await getQuestion(selectedProjectId);
     } catch (error) {
       console.error('Failed to skip question:', error);
     }
@@ -1333,6 +1398,19 @@ User: ${currentProject?.owner || 'N/A'}`;
       setShowHint(true);
     } catch (error) {
       console.error('Failed to get hint:', error);
+    }
+  };
+
+  const handleRequestSuggestions = async () => {
+    if (!selectedProjectId) return;
+    try {
+      const getSuggestions = useChatStore((state) => state.getSuggestions);
+      const result = await getSuggestions(selectedProjectId);
+      setSuggestions(result || []);
+      setSuggestionsQuestion('Current question');
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error('Failed to get suggestions:', error);
     }
   };
 
@@ -1589,14 +1667,25 @@ User: ${currentProject?.owner || 'N/A'}`;
                   </div>
                 </div>
               ) : (
-                messages.map((msg) => (
-                  <ChatMessage
-                    key={msg.id || `msg-${msg.role}-${msg.timestamp}`}
-                    role={msg.role}
-                    content={msg.content}
-                    timestamp={msg.timestamp ? new Date(msg.timestamp) : new Date()}
-                  />
-                ))
+                messages.map((msg) => {
+                  const messageTime = msg.timestamp ? new Date(msg.timestamp) : new Date();
+                  const isPrevious = sessionStartTime ? messageTime < sessionStartTime : false;
+
+                  // Only show current session messages (not previous conversation)
+                  if (isPrevious) {
+                    return null;
+                  }
+
+                  return (
+                    <ChatMessage
+                      key={msg.id || `msg-${msg.role}-${msg.timestamp}`}
+                      role={msg.role}
+                      content={msg.content}
+                      timestamp={messageTime}
+                      isFaded={false}
+                    />
+                  );
+                })
               )}
               <div ref={messagesEndRef} />
             </div>
@@ -1609,6 +1698,7 @@ User: ${currentProject?.owner || 'N/A'}`;
                 onSubmit={handleSubmitResponse}
                 onSkip={mode === 'socratic' ? handleSkipQuestion : undefined}
                 onRequestHint={mode === 'socratic' ? handleRequestHint : undefined}
+                onRequestSuggestions={mode === 'socratic' ? handleRequestSuggestions : undefined}
                 isLoading={chatLoading}
                 minLength={1}
                 maxLength={5000}
@@ -1732,6 +1822,19 @@ User: ${currentProject?.owner || 'N/A'}`;
         hint="Check the project context for hints"
         questionNumber={1}
       />
+
+      {/* Answer Suggestions Modal */}
+      <AnswerSuggestionsModal
+        isOpen={showSuggestions}
+        onClose={() => setShowSuggestions(false)}
+        suggestions={suggestions}
+        question={suggestionsQuestion}
+        phase={selectedProjectId ? 'current' : 'discovery'}
+        onSelectSuggestion={(suggestion) => setResponse(suggestion)}
+      />
+
+      {/* Skipped Questions Panel */}
+      {selectedProjectId && <SkippedQuestionsPanel projectId={selectedProjectId} />}
 
       {/* Debug Modal */}
       {showDebugModal && debugInfo && (

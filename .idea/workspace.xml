@@ -4,7 +4,25 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.6.6" />
+    <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="0.6.6">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects_chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects_chat.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/api/chat.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/api/chat.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/chat/ChatMessage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/chat/ChatMessage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/chat/ResponseInput.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/chat/ResponseInput.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/chat/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/chat/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/chat/ChatPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/chat/ChatPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/projects/ProjectsPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/projects/ProjectsPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/stores/chatStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/stores/chatStore.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/quality_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/quality_controller.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/clients/claude_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/clients/claude_client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/database/project_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/project_db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/database/project_db_async.py" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

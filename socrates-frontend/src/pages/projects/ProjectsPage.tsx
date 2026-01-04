@@ -240,7 +240,7 @@ export const ProjectsPage: React.FC = () => {
               <ProjectCard
                 key={project.project_id}
                 project={project}
-                maturity={0}
+                maturity={Math.round(project.overall_maturity || 0)}
                 teamCount={1}
                 onOpen={handleOpenProject}
                 onArchive={handleToggleArchive}

@@ -770,11 +770,13 @@ class ClaudeClient:
             return {}
 
     def generate_socratic_question(self, prompt: str, cache_key: str = None) -> str:
-        """Generate a Socratic question using Claude with optional caching"""
-        # Check cache if key provided
-        if cache_key and cache_key in self._question_cache:
-            self.logger.debug(f"Cache hit for question generation: {cache_key}")
-            return self._question_cache[cache_key]
+        """Generate a Socratic question using Claude with optional caching
+
+        Note: Cache is disabled for question generation to prevent repeated questions
+        when conversation history changes. Each question is generated fresh.
+        """
+        # Cache is intentionally disabled for questions to ensure variety and avoid
+        # returning stale cached questions when conversation history changes
 
         try:
             response = self.client.messages.create(
@@ -788,11 +790,6 @@ class ClaudeClient:
             self._track_token_usage(response.usage, "generate_socratic_question")
 
             question = response.content[0].text.strip()
-
-            # Cache the result if key provided
-            if cache_key:
-                self._question_cache[cache_key] = question
-
             return question
 
         except Exception as e:
@@ -1018,16 +1015,14 @@ class ClaudeClient:
 
     async def generate_socratic_question_async(self, prompt: str, cache_key: str = None) -> str:
         """
-        Generate socratic question asynchronously (high-frequency operation) with caching.
+        Generate socratic question asynchronously (high-frequency operation).
 
         This is called very frequently by socratic_counselor agent.
         Async implementation enables concurrent question generation.
-        """
-        # Check cache if key provided
-        if cache_key and cache_key in self._question_cache:
-            self.logger.debug(f"Cache hit for async question generation: {cache_key}")
-            return self._question_cache[cache_key]
 
+        Note: Cache is disabled for question generation to prevent repeated questions
+        when conversation history changes. Each question is generated fresh.
+        """
         try:
             response = await self.async_client.messages.create(
                 model=self.model,
@@ -1038,11 +1033,6 @@ class ClaudeClient:
 
             await self._track_token_usage_async(response.usage, "generate_socratic_question_async")
             question = response.content[0].text.strip()
-
-            # Cache the result if key provided
-            if cache_key:
-                self._question_cache[cache_key] = question
-
             return question
 
         except Exception as e:

@@ -243,6 +243,14 @@ class ProjectDatabase:
         finally:
             conn.close()
 
+        # Save conversation history separately (after main transaction completes)
+        if project.conversation_history:
+            self.save_conversation_history(project.project_id, project.conversation_history)
+            self.logger.debug(
+                f"Saved conversation history for project {project.project_id} "
+                f"({len(project.conversation_history)} messages)"
+            )
+
     def _save_main_project_record(self, cursor, project: ProjectContext, now: datetime) -> None:
         """Save main project record"""
         cursor.execute(
@@ -429,6 +437,7 @@ class ProjectDatabase:
             phase_maturity = self._load_phase_maturity(cursor, project_id)
             category_scores = self._load_category_scores(cursor, project_id)
             analytics = self._load_analytics_metrics(cursor, project_id)
+            conversation_history = self.get_conversation_history(project_id)
 
             # Deserialize JSON fields (only if they're actually JSON)
             def try_json_load(value):
@@ -473,6 +482,7 @@ class ProjectDatabase:
                 phase_maturity_scores=phase_maturity,
                 category_scores=category_scores,
                 analytics_metrics=analytics,
+                conversation_history=conversation_history,
             )
 
             self.logger.debug(f"Loaded project {project_id}")
@@ -715,14 +725,16 @@ class ProjectDatabase:
             messages = []
 
             for row in rows:
-                messages.append(
-                    {
-                        "role": row["message_type"],
-                        "content": row["content"],
-                        "timestamp": row["timestamp"],
-                        "metadata": json.loads(row["metadata"]) if row["metadata"] else {},
-                    }
-                )
+                metadata = json.loads(row["metadata"]) if row["metadata"] else {}
+                # Return with "type" field to match socratic_counselor expectations
+                msg = {
+                    "type": row["message_type"],  # Use "type" not "role" to match code expectations
+                    "content": row["content"],
+                    "timestamp": row["timestamp"],
+                }
+                # Add metadata fields at top level for easier access
+                msg.update(metadata)
+                messages.append(msg)
 
             return messages
 
@@ -749,6 +761,11 @@ class ProjectDatabase:
 
             # Insert new
             for msg in history:
+                # Support both "type" and "role" field names
+                message_type = msg.get("type") or msg.get("role", "user")
+                # Preserve all metadata fields except the main ones
+                metadata = {k: v for k, v in msg.items()
+                           if k not in ["type", "role", "content", "timestamp"]}
                 cursor.execute(
                     """
                     INSERT INTO conversation_history (project_id, message_type, content, timestamp, metadata)
@@ -756,10 +773,10 @@ class ProjectDatabase:
                 """,
                     (
                         project_id,
-                        msg.get("role", "user"),
+                        message_type,
                         msg.get("content", ""),
                         msg.get("timestamp", datetime.now().isoformat()),
-                        json.dumps(msg.get("metadata", {})),
+                        json.dumps(metadata) if metadata else json.dumps({}),
                     ),
                 )
 

@@ -115,8 +115,11 @@ class QualityControllerAgent(Agent):
             # Calculate and update overall maturity
             project.overall_maturity = project._calculate_overall_maturity()
 
+            # Auto-update progress to match overall maturity
+            project.progress = int(project.overall_maturity)
+
             logging.info(
-                f"Maturity calculated: {phase} = {maturity.overall_score:.1f}%, overall = {project.overall_maturity:.1f}%"
+                f"Maturity calculated: {phase} = {maturity.overall_score:.1f}%, overall = {project.overall_maturity:.1f}%, progress = {project.progress}%"
             )
 
             # Emit maturity updated event

@@ -3,6 +3,7 @@ Socratic counselor agent for guided questioning and response processing
 """
 
 import datetime
+import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from colorama import Fore
@@ -25,6 +26,7 @@ class SocraticCounselorAgent(Agent):
         super().__init__("SocraticCounselor", orchestrator)
         self.use_dynamic_questions = True  # Toggle for dynamic vs static questions
         self.max_questions_per_phase = 5
+        self.phase_docs_cache = {}  # Cache document context per phase to reduce vector DB calls
 
         # Fallback static questions if Claude is unavailable
         self.static_questions = {
@@ -77,6 +79,14 @@ class SocraticCounselorAgent(Agent):
         elif action == "toggle_dynamic_questions":
             self.use_dynamic_questions = not self.use_dynamic_questions
             return {"status": "success", "dynamic_mode": self.use_dynamic_questions}
+        elif action == "answer_question":
+            return self._answer_question(request)
+        elif action == "skip_question":
+            return self._skip_question(request)
+        elif action == "reopen_question":
+            return self._reopen_question(request)
+        elif action == "generate_answer_suggestions":
+            return self._generate_answer_suggestions(request)
 
         return {"status": "error", "message": "Unknown action"}
 
@@ -92,12 +102,37 @@ class SocraticCounselorAgent(Agent):
                 "message": "Project context is required to generate questions",
             }
 
+        import datetime
+
+        # HYBRID APPROACH: Check for existing unanswered question before generating new one
+        # This prevents double question generation
+        if project.pending_questions:
+            unanswered = [q for q in project.pending_questions if q.get("status") == "unanswered"]
+            if unanswered:
+                # Return the first unanswered question instead of generating new
+                return {"status": "success", "question": unanswered[0].get("question"), "existing": True}
+
         context = self.orchestrator.context_analyzer.get_context_summary(project)
 
         # NEW: Check question limit
         from socratic_system.subscription.checker import SubscriptionChecker
 
+        # Get or create user (auto-create for CLI/local users)
         user = self.orchestrator.database.load_user(current_user)
+        if user is None:
+            # Auto-create user with pro tier for local/CLI use
+            from socratic_system.models.user import User
+
+            user = User(
+                username=current_user,
+                email=f"{current_user}@localhost",
+                passcode_hash="",
+                created_at=datetime.datetime.now(),
+                projects=[],
+                subscription_tier="pro",  # Unlimited for local use
+            )
+            self.orchestrator.database.save_user(user)
+            logging.debug(f"Auto-created user: {current_user}")
 
         can_ask, error_message = SubscriptionChecker.check_question_limit(user)
         if not can_ask:
@@ -128,6 +163,21 @@ class SocraticCounselorAgent(Agent):
                 "content": question,
                 "phase": project.phase,
                 "question_number": len(phase_questions) + 1,
+            }
+        )
+
+        # HYBRID APPROACH: Also store in pending_questions for unified tracking
+        import uuid
+        project.pending_questions.append(
+            {
+                "id": f"q_{uuid.uuid4().hex[:8]}",
+                "question": question,
+                "phase": project.phase,
+                "status": "unanswered",
+                "created_at": datetime.datetime.now().isoformat(),
+                "answer": None,
+                "skipped_at": None,
+                "answered_at": None,
             }
         )
 
@@ -162,34 +212,51 @@ class SocraticCounselorAgent(Agent):
             logger.debug(f"Found {len(previously_asked_questions)} previously asked questions in {project.phase} phase")
 
         # Get relevant knowledge from vector database with adaptive loading strategy
+        # OPTIMIZATION: Cache document results per phase to reduce vector DB calls
         relevant_knowledge = ""
         knowledge_results = []
         doc_understanding = None
+        strategy = "snippet"  # Default strategy
         if context:
             logger.debug("Analyzing question context for adaptive document loading...")
 
-            # Use DocumentContextAnalyzer to determine loading strategy
-            doc_analyzer = DocumentContextAnalyzer()
+            # Check if we have cached results for this phase
+            phase_key = f"{project.project_id}:{project.phase}"
+            if phase_key in self.phase_docs_cache:
+                logger.debug(f"Using cached document results for {project.phase} phase")
+                cache_data = self.phase_docs_cache[phase_key]
+                knowledge_results = cache_data.get("results", [])
+                strategy = cache_data.get("strategy", "snippet")
+            else:
+                # Use DocumentContextAnalyzer to determine loading strategy
+                doc_analyzer = DocumentContextAnalyzer()
 
-            # Convert project context to dict format for analyzer
-            project_context_dict = {"current_phase": project.phase, "goals": project.goals or ""}
+                # Convert project context to dict format for analyzer
+                project_context_dict = {"current_phase": project.phase, "goals": project.goals or ""}
 
-            # Determine loading strategy based on conversation context
-            strategy = doc_analyzer.analyze_question_context(
-                project_context=project_context_dict,
-                conversation_history=project.conversation_history,
-                question_count=question_count,
-            )
+                # Determine loading strategy based on conversation context
+                strategy = doc_analyzer.analyze_question_context(
+                    project_context=project_context_dict,
+                    conversation_history=project.conversation_history,
+                    question_count=question_count,
+                )
 
-            logger.debug(f"Using '{strategy}' document loading strategy")
+                logger.debug(f"Using '{strategy}' document loading strategy")
 
-            # Get top_k based on strategy
-            top_k = 5 if strategy == "full" else 3
+                # Get top_k based on strategy
+                top_k = 5 if strategy == "full" else 3
 
-            # Use adaptive search
-            knowledge_results = self.orchestrator.vector_db.search_similar_adaptive(
-                query=context, strategy=strategy, top_k=top_k, project_id=project.project_id
-            )
+                # Use adaptive search
+                knowledge_results = self.orchestrator.vector_db.search_similar_adaptive(
+                    query=context, strategy=strategy, top_k=top_k, project_id=project.project_id
+                )
+
+                # Cache the results for this phase
+                self.phase_docs_cache[phase_key] = {
+                    "results": knowledge_results,
+                    "strategy": strategy
+                }
+                logger.debug(f"Cached document results for {project.phase} phase")
 
             if knowledge_results:
                 # Build knowledge context based on strategy
@@ -1123,7 +1190,11 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
             )
 
             # Generate hint using Claude
-            hint = self.orchestrator.claude_client.generate_text(hint_prompt)
+            hint = self.orchestrator.claude_client.generate_response(
+                prompt=hint_prompt,
+                max_tokens=500,  # Hints should be concise (1-2 sentences)
+                temperature=0.7  # Balanced creativity
+            )
 
             self.log(f"Generated hint for {project.phase} phase")
 
@@ -1145,4 +1216,139 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
                 "status": "success",
                 "hint": phase_hints.get(project.phase, "Keep making progress on your project!"),
                 "context": "",
+            }
+
+    def _answer_question(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Mark a question as answered"""
+        import datetime
+
+        project = request.get("project")
+        question_id = request.get("question_id")
+
+        if not project or not question_id:
+            return {"status": "error", "message": "Project and question_id required"}
+
+        # Find and mark the question as answered in pending_questions
+        for q in project.pending_questions or []:
+            if q.get("id") == question_id:
+                q["status"] = "answered"
+                q["answered_at"] = datetime.datetime.now().isoformat()
+                self.log(f"Marked question {question_id} as answered")
+                return {"status": "success", "message": "Question marked as answered"}
+
+        return {"status": "error", "message": "Question not found"}
+
+    def _skip_question(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Mark a question as skipped"""
+        import datetime
+
+        project = request.get("project")
+        question_id = request.get("question_id")
+
+        if not project or not question_id:
+            return {"status": "error", "message": "Project and question_id required"}
+
+        # Find and mark the question as skipped in pending_questions
+        for q in project.pending_questions or []:
+            if q.get("id") == question_id:
+                q["status"] = "skipped"
+                q["skipped_at"] = datetime.datetime.now().isoformat()
+                self.log(f"Marked question {question_id} as skipped")
+                return {"status": "success", "message": "Question marked as skipped"}
+
+        return {"status": "error", "message": "Question not found"}
+
+    def _reopen_question(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Reopen a skipped question (mark as unanswered)"""
+        import datetime
+
+        project = request.get("project")
+        question_id = request.get("question_id")
+
+        if not project or not question_id:
+            return {"status": "error", "message": "Project and question_id required"}
+
+        # Find and mark the question as unanswered in pending_questions
+        for q in project.pending_questions or []:
+            if q.get("id") == question_id:
+                q["status"] = "unanswered"
+                q["skipped_at"] = None  # Clear skip timestamp
+                self.log(f"Reopened question {question_id}")
+                return {"status": "success", "message": "Question reopened and ready to answer"}
+
+        return {"status": "error", "message": "Question not found"}
+
+    def _generate_answer_suggestions(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate answer suggestions for the current question"""
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+        project = request.get("project")
+        current_question = request.get("current_question")
+
+        if not project or not current_question:
+            return {"status": "error", "message": "Project and current_question required"}
+
+        try:
+            # Build prompt for suggestions
+            suggestions_prompt = f"""Based on this Socratic question in the {project.phase} phase:
+
+Question: {current_question}
+
+Project Context:
+- Name: {project.name}
+- Phase: {project.phase}
+- Goals: {project.goals or 'Not specified'}
+- Tech Stack: {', '.join(project.tech_stack) if project.tech_stack else 'Not specified'}
+- Requirements: {', '.join(project.requirements) if project.requirements else 'Not specified'}
+
+Provide 3-5 specific, actionable answer suggestions or starting points. Each suggestion should be a complete sentence that the user could use as a basis for their answer.
+
+Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no additional text."""
+
+            logger.info(f"Generating answer suggestions for {project.phase} phase")
+
+            # Call Claude to generate suggestions
+            response = self.orchestrator.claude_client.generate_response(
+                prompt=suggestions_prompt,
+                max_tokens=800,
+                temperature=0.7
+            )
+
+            # Parse suggestions from numbered list
+            suggestions = []
+            for line in response.split('\n'):
+                line = line.strip()
+                if line and any(line.startswith(f"{i}.") for i in range(1, 10)):
+                    # Remove numbering and clean up
+                    suggestion = line.split(".", 1)[1].strip() if "." in line else line
+                    suggestions.append(suggestion)
+
+            self.log(f"Generated {len(suggestions)} answer suggestions")
+
+            return {
+                "status": "success",
+                "suggestions": suggestions if suggestions else [
+                    "Consider the problem from your target audience's perspective",
+                    "Think about the technical constraints you mentioned",
+                    "Review the project goals and how this relates to them",
+                    "Consider existing solutions and what makes your approach unique",
+                    "Think about potential challenges and how to address them"
+                ]
+            }
+
+        except Exception as e:
+            logger.warning(f"Failed to generate answer suggestions: {e}")
+            self.log(f"Failed to generate answer suggestions: {e}", "WARN")
+
+            # Return generic suggestions as fallback
+            return {
+                "status": "success",
+                "suggestions": [
+                    "Consider the problem from your target audience's perspective",
+                    "Think about the technical constraints you mentioned",
+                    "Review the project goals and how this relates to them",
+                    "Consider existing solutions and what makes your approach unique",
+                    "Think about potential challenges and how to address them"
+                ]
             }

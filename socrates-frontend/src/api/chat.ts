@@ -107,4 +107,36 @@ export const chatAPI = {
     );
   },
 
+  /**
+   * Get answer suggestions for current question
+   */
+  async getSuggestions(projectId: string): Promise<{ suggestions: string[]; question: string; phase: string }> {
+    return apiClient.get<{ suggestions: string[]; question: string; phase: string }>(
+      `/projects/${projectId}/chat/suggestions`
+    );
+  },
+
+  /**
+   * Get all questions for a project, optionally filtered by status
+   */
+  async getQuestions(
+    projectId: string,
+    statusFilter?: string
+  ): Promise<{ questions: any[]; total: number; filtered_by: string }> {
+    return apiClient.get<{ questions: any[]; total: number; filtered_by: string }>(
+      `/projects/${projectId}/chat/questions`,
+      { params: statusFilter ? { status_filter: statusFilter } : undefined }
+    );
+  },
+
+  /**
+   * Reopen a skipped question so user can answer it
+   */
+  async reopenQuestion(projectId: string, questionId: string): Promise<{ success: boolean; message: string }> {
+    return apiClient.post<{ success: boolean; message: string }>(
+      `/projects/${projectId}/chat/questions/${questionId}/reopen`,
+      {}
+    );
+  },
+
 };

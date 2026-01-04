@@ -137,18 +137,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
         return;
       }
 
-      // Get next question only for Socratic mode (not for direct mode)
-      if (state.mode === 'socratic') {
-        try {
-          const nextQuestion = await get().getQuestion(state.currentProjectId);
-          logger.info(`Got next question: ${nextQuestion.substring(0, 50)}...`);
-        } catch (questionError) {
-          logger.warn(`Failed to get next question: ${questionError}`);
-          // Don't fail the whole send if we can't get next question
-        }
-      } else {
-        logger.info('Direct mode: waiting for next user question');
-      }
+      // NOTE: Auto-generation of next question removed
+      // Question generation now happens explicitly when user clicks Answer button or Skip
+      // This prevents double question generation and gives backend control
+      logger.info('Response processed. User will request next question when ready.');
 
       set({ isLoading: false });
     } catch (error) {
@@ -185,6 +177,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
       await chatAPI.switchMode(projectId, mode);
       set({ mode, isLoading: false });
       get().addSystemMessage(`Switched to ${mode} mode`);
+      // Refresh conversation history to ensure UI stays in sync with backend
+      try {
+        await get().loadHistory(projectId);
+      } catch (historyError) {
+        logger.warn(`Failed to refresh history after mode switch: ${historyError}`);
+      }
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to switch mode',
@@ -231,6 +229,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ isLoading: true, error: null, currentProjectId: projectId });
     try {
       const history = await chatAPI.getHistory(projectId);
+      // Set messages from API (API returns complete history)
       set({ messages: history.messages, isLoading: false });
     } catch (error) {
       set({
@@ -285,9 +284,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     set({ isLoading: true, error: null });
     try {
-      // TODO: Call conflict resolution API endpoint when implemented
-      // For now, just clear conflicts and continue
+      // Call conflict resolution API endpoint
+      if (chatAPI.resolveConflict) {
+        await chatAPI.resolveConflict(projectId, resolution);
+      }
+
       set({ conflicts: null, pendingConflicts: false, isLoading: false });
+      get().addSystemMessage('Conflict resolved. Continuing...');
 
       // Get next question to continue flow
       try {
@@ -326,5 +329,53 @@ export const useChatStore = create<ChatState>((set, get) => ({
       conflicts: null,
       pendingConflicts: false,
     });
+  },
+
+  // Get answer suggestions for current question
+  getSuggestions: async (projectId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await chatAPI.getSuggestions(projectId);
+      set({ isLoading: false });
+      return response.suggestions;
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to get suggestions',
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  // Get all questions for a project
+  getQuestions: async (projectId: string, statusFilter?: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await chatAPI.getQuestions(projectId, statusFilter);
+      set({ isLoading: false });
+      return response.questions;
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to get questions',
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  // Reopen a skipped question
+  reopenQuestion: async (projectId: string, questionId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await chatAPI.reopenQuestion(projectId, questionId);
+      set({ isLoading: false });
+      return response;
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to reopen question',
+        isLoading: false,
+      });
+      throw error;
+    }
   },
 }));
