@@ -170,7 +170,7 @@ class DebugLogger:
         if enabled:
             root_logger.setLevel(logging.DEBUG)
         else:
-            root_logger.setLevel(logging.INFO)
+            root_logger.setLevel(logging.WARNING)
 
         # Update all handlers attached to root logger
         new_level = logging.DEBUG if enabled else logging.ERROR
@@ -184,11 +184,18 @@ class DebugLogger:
         for logger_name in logging.Logger.manager.loggerDict:
             logger_obj = logging.getLogger(logger_name)
             if logger_obj and hasattr(logger_obj, "handlers"):
+                # Set logger level to DEBUG when debug enabled, WARNING otherwise
+                logger_obj.setLevel(logging.DEBUG if enabled else logging.WARNING)
+
                 for handler in logger_obj.handlers[:]:
                     if isinstance(handler, logging.StreamHandler) and not isinstance(
                         handler, logging.FileHandler
                     ):
                         handler.setLevel(new_level)
+
+        # Also update the main socratic_rag logger level
+        if cls._logger:
+            cls._logger.setLevel(logging.DEBUG if enabled else logging.WARNING)
 
     @classmethod
     def is_debug_mode(cls) -> bool:
