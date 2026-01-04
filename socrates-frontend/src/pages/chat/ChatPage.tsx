@@ -5,7 +5,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Search, MessageSquare, Send } from 'lucide-react';
-import { useChatStore, useProjectStore, useSubscriptionStore, useDebugStore } from '../../stores';
+import { useChatStore, useProjectStore, useSubscriptionStore } from '../../stores';
 import { apiClient, chatAPI, nluAPI } from '../../api';
 import type { NLUInterpretResponse } from '../../api/nlu';
 import { MainLayout, PageHeader } from '../../components/layout';
@@ -677,7 +677,6 @@ export const ChatPage: React.FC = () => {
   };
 
   const handleDebugCommand = async (action: string) => {
-    const { setDebugMode } = useDebugStore();
     try {
       // Call backend endpoint to toggle debug mode
       let url = '/system/debug/toggle';
@@ -694,9 +693,6 @@ export const ChatPage: React.FC = () => {
 
       // apiClient.post() returns response.data directly (SuccessResponse object)
       const isEnabled = response?.data?.debug_enabled ?? false;
-
-      // Update global debug store
-      setDebugMode(isEnabled);
 
       setDebugInfo({
         debugEnabled: isEnabled,

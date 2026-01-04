@@ -370,8 +370,7 @@
       "Bash(socratic_system/ui/commands/session_commands.py )",
       "Bash(socratic_system/ui/commands/__init__.py )",
       "Bash(socratic_system/ui/main_app.py)",
-      "Bash(git show:*)",
-      "Bash(git -C \"C:\\\\Users\\\\themi\\\\PycharmProjects\\\\Socrates\" log --oneline --all -20 -- \"socrates-api/src/socrates_api/routers/system.py\" \"socratic_system/utils/logger.py\")"
+      "Bash(git show:*)"
     ],
     "deny": [],
     "ask": []

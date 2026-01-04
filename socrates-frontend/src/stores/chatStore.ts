@@ -5,7 +5,6 @@
 import { create } from 'zustand';
 import type { ChatMessage, ChatMode } from '../types/models';
 import { chatAPI } from '../api';
-import { useDebugStore } from './debugStore';
 
 const logger = {
   info: (msg: string) => console.log('[ChatStore]', msg),
@@ -118,23 +117,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
         mode: state.mode,
       });
 
-      // Add assistant message only if one was returned
-      // Filter diagnostic messages based on debug mode
+      // Add assistant message only if one was returned (omitted when debug off and no insights)
       if (response && response.message) {
-        const isDiagnosticMessage = response.message.content.includes('Response recorded') ||
-                                    response.message.content.includes('No new insights detected') ||
-                                    response.message.content.includes('Insights recorded');
-        const debugEnabled = useDebugStore.getState().debugEnabled;
-
-        // Only add diagnostic messages if debug mode is enabled, always add other messages (questions, etc.)
-        if (!isDiagnosticMessage || debugEnabled) {
-          get().addMessage({
-            id: response.message.id,
-            role: 'assistant',
-            content: response.message.content,
-            timestamp: response.message.timestamp,
-          });
-        }
+        get().addMessage({
+          id: response.message.id,
+          role: 'assistant',
+          content: response.message.content,
+          timestamp: response.message.timestamp,
+        });
       }
 
       // If conflicts were detected, store them and notify user

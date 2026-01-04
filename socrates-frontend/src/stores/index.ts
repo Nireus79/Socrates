@@ -15,4 +15,3 @@ export { useNotesStore } from './notesStore';
 export { useProjectAnalysisStore } from './projectAnalysisStore';
 export { useMaturityStore } from './maturityStore';
 export { useSearchStore } from './searchStore';
-export { useDebugStore } from './debugStore';
