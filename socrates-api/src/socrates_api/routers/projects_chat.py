@@ -1297,7 +1297,9 @@ async def skip_question(
         # Find the current unanswered question and mark it as skipped
         if project.pending_questions:
             for question in project.pending_questions:
-                if question.get("status") == "unanswered":
+                # Check if question is unanswered (default to unanswered if status missing)
+                current_status = question.get("status", "unanswered")
+                if current_status == "unanswered":
                     question["status"] = "skipped"
                     question["skipped_at"] = datetime.now(timezone.utc).isoformat()
                     logger.info(f"Marked question as skipped: {question.get('id')}")
