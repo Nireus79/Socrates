@@ -1192,6 +1192,11 @@ async def get_questions(
 
         questions = project.pending_questions or []
 
+        # Ensure all questions have a status field (for backward compatibility)
+        for q in questions:
+            if "status" not in q:
+                q["status"] = "unanswered"
+
         # Filter by status if specified
         if status_filter:
             questions = [q for q in questions if q.get("status") == status_filter]
@@ -1299,7 +1304,7 @@ async def skip_question(
                     break
 
         # Save the project
-        db.save_project(project_id, project)
+        db.save_project(project)
 
         return {"success": True, "message": "Question marked as skipped"}
 
