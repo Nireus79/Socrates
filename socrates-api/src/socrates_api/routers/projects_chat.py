@@ -1200,6 +1200,9 @@ async def get_questions(
         # Filter by status if specified
         if status_filter:
             questions = [q for q in questions if q.get("status") == status_filter]
+            logger.info(f"Filtered {len(questions)} questions with status '{status_filter}' out of {len(project.pending_questions or [])} total")
+        else:
+            logger.info(f"Returning all {len(questions)} questions")
 
         return {
             "questions": questions,
@@ -1295,18 +1298,25 @@ async def skip_question(
             raise HTTPException(status_code=403, detail="Access denied")
 
         # Find the current unanswered question and mark it as skipped
+        skipped_count = 0
         if project.pending_questions:
+            logger.info(f"Total questions in project: {len(project.pending_questions)}")
             for question in project.pending_questions:
                 # Check if question is unanswered (default to unanswered if status missing)
                 current_status = question.get("status", "unanswered")
+                logger.info(f"Question {question.get('id')} status: {current_status}")
                 if current_status == "unanswered":
                     question["status"] = "skipped"
                     question["skipped_at"] = datetime.now(timezone.utc).isoformat()
                     logger.info(f"Marked question as skipped: {question.get('id')}")
+                    skipped_count += 1
                     break
+        else:
+            logger.warning(f"No pending questions found for project {project_id}")
 
         # Save the project
         db.save_project(project)
+        logger.info(f"Saved project. Skipped {skipped_count} question(s)")
 
         return {"success": True, "message": "Question marked as skipped"}
 
