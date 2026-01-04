@@ -3,8 +3,10 @@ Centralized logging system for Socrates AI
 Supports debug mode, file logging, and console output
 """
 
+import json
 import logging
 import logging.handlers
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -67,6 +69,15 @@ class DebugLogger:
         # Clean up old logs first
         cls._cleanup_old_logs()
 
+        # Check if debug mode should be enabled from file
+        try:
+            state_file = cls._get_debug_state_file()
+            if state_file.exists():
+                data = json.loads(state_file.read_text())
+                cls._debug_mode = data.get("debug_mode", False)
+        except Exception:
+            cls._debug_mode = False
+
         # Create logger
         cls._logger = logging.getLogger("socratic_rag")
         cls._logger.setLevel(logging.DEBUG)
@@ -98,7 +109,9 @@ class DebugLogger:
 
         # Console handler (shows ERROR by default, DEBUG when enabled)
         cls._console_handler = logging.StreamHandler()
-        cls._console_handler.setLevel(logging.ERROR)  # Show ERROR by default
+        # Set initial level based on debug state from file
+        initial_level = logging.DEBUG if cls._debug_mode else logging.ERROR
+        cls._console_handler.setLevel(initial_level)
 
         # Enhanced formatter with better readability
         def format_console_message(record):
@@ -130,14 +143,23 @@ class DebugLogger:
         cls._logger.addHandler(cls._console_handler)
 
     @classmethod
+    def _get_debug_state_file(cls) -> Path:
+        """Get path to debug state file"""
+        debug_dir = Path("socratic_logs")
+        debug_dir.mkdir(exist_ok=True)
+        return debug_dir / ".debug_mode"
+
+    @classmethod
     def set_debug_mode(cls, enabled: bool) -> None:
         """Toggle debug mode on/off"""
-        import os
-
         cls._debug_mode = enabled
 
-        # Also set environment variable so CLI and API processes share state
-        os.environ["SOCRATES_DEBUG_MODE"] = "1" if enabled else "0"
+        # Save to file so all processes can read it
+        try:
+            state_file = cls._get_debug_state_file()
+            state_file.write_text(json.dumps({"debug_mode": enabled}))
+        except Exception as e:
+            print(f"Warning: Could not save debug state: {e}")
 
         # Ensure logger is fully initialized
         if cls._instance is None or cls._console_handler is None:
@@ -160,13 +182,14 @@ class DebugLogger:
     @classmethod
     def is_debug_mode(cls) -> bool:
         """Check if debug mode is enabled"""
-        import os
-
-        # Check environment variable for shared state between processes
-        env_debug = os.getenv("SOCRATES_DEBUG_MODE", "0")
-        if env_debug in ("1", "true", "True"):
-            cls._debug_mode = True
-            return True
+        # Check file-based state for shared state between processes
+        try:
+            state_file = cls._get_debug_state_file()
+            if state_file.exists():
+                data = json.loads(state_file.read_text())
+                return data.get("debug_mode", cls._debug_mode)
+        except Exception:
+            pass
 
         return cls._debug_mode
 
