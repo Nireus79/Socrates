@@ -600,6 +600,9 @@ async def toggle_debug_mode(
         SuccessResponse with the new debug mode state
     """
     try:
+        import sys
+        print(f"[ENDPOINT] toggle_debug_mode called with enabled={enabled}", file=sys.stderr)
+
         current_state = is_debug_mode()
 
         if enabled is not None:
@@ -607,8 +610,10 @@ async def toggle_debug_mode(
         else:
             new_state = not current_state
 
+        print(f"[ENDPOINT] Calling set_debug_mode({new_state})", file=sys.stderr)
         # Apply debug mode change to the logger
         set_debug_mode(new_state)
+        print(f"[ENDPOINT] set_debug_mode completed", file=sys.stderr)
 
         logger.info(f"Debug mode {('ENABLED' if new_state else 'DISABLED')} by {current_user}")
 
