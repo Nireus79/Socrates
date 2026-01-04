@@ -629,8 +629,8 @@ async def send_message(
             if is_debug_mode():
                 content = "Response recorded. No new insights detected."
             else:
-                # When debug is off, don't show diagnostic messages
-                content = ""
+                # When debug is off, don't return a message at all (only show when debug is on)
+                return {"message": None}
 
         # Return unwrapped data (frontend expects this format)
         response_data = {
