@@ -153,6 +153,7 @@ Available commands:
 - /status: Show project status
 - /help: Show help
 - /hint: Get a hint
+- /skipped: View and reopen skipped questions
 - /search: Search conversations
 - /summary: Get conversation summary
 
@@ -506,6 +507,7 @@ async def get_available_commands(
                     "aliases": [],
                 },
                 {"name": "hint", "usage": "/hint", "description": "Get a hint", "aliases": []},
+                {"name": "skipped", "usage": "/skipped", "description": "View and reopen skipped questions", "aliases": []},
                 {
                     "name": "explain",
                     "usage": "/explain <topic>",
