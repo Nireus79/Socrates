@@ -681,10 +681,13 @@ export const ChatPage: React.FC = () => {
       // Call backend endpoint to toggle debug mode
       let url = '/system/debug/toggle';
 
+      // Normalize action: trim and lowercase
+      const normalizedAction = action.trim().toLowerCase();
+
       // Add enabled parameter if action is 'on' or 'off'
-      if (action === 'on') {
+      if (normalizedAction === 'on') {
         url += '?enabled=true';
-      } else if (action === 'off') {
+      } else if (normalizedAction === 'off') {
         url += '?enabled=false';
       }
       // If no action or 'toggle', don't add enabled param to toggle state
