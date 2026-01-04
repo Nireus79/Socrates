@@ -143,16 +143,24 @@ class DebugLogger:
     @classmethod
     def set_debug_mode(cls, enabled: bool) -> None:
         """Toggle debug mode on/off"""
+        import sys
         cls._debug_mode = enabled
 
         # Ensure logger is initialized
         if cls._instance is None:
             cls()
 
+        # Debug: print directly to stderr so we know this function was called
+        status = "ENABLED" if enabled else "DISABLED"
+        print(f"[LOGGER] set_debug_mode({status}) called", file=sys.stderr)
+        print(f"[LOGGER] cls._console_handler = {cls._console_handler}", file=sys.stderr)
+
         # Update console handler level IMMEDIATELY
         if cls._console_handler:
             new_level = logging.DEBUG if enabled else logging.ERROR
+            old_level = cls._console_handler.level
             cls._console_handler.setLevel(new_level)
+            print(f"[LOGGER] Console handler level changed: {logging.getLevelName(old_level)} -> {logging.getLevelName(new_level)}", file=sys.stderr)
 
             # Log the mode change at WARNING level so it's always visible
             logger = cls.get_logger("system")
