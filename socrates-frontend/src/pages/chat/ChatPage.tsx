@@ -640,6 +640,10 @@ export const ChatPage: React.FC = () => {
         if (selectedProjectId) handleHintCommand(selectedProjectId);
         else addSystemMessage('No project selected');
         break;
+      case '/skipped':
+        if (selectedProjectId) handleSkippedQuestionsCommand(selectedProjectId, subCmd, parts.slice(2));
+        else addSystemMessage('No project selected');
+        break;
       case '/project':
         if (selectedProjectId) handleProjectCommand(selectedProjectId, subCmd, parts.slice(2));
         else addSystemMessage('No project selected');
@@ -1139,6 +1143,42 @@ User: ${currentProject?.owner || 'N/A'}`;
       addSystemMessage(`💡 Hint:\n${hint}`);
     } catch (error) {
       addSystemMessage('Could not get hint');
+    }
+  };
+
+  const handleSkippedQuestionsCommand = async (id: string, action?: string, args?: string[]) => {
+    try {
+      // Get all skipped questions
+      const result = await chatAPI.getQuestions(id, 'skipped') as any;
+      const questions = result?.questions || [];
+
+      if (!questions || questions.length === 0) {
+        addSystemMessage('No skipped questions found. All questions answered!');
+        return;
+      }
+
+      if (action === 'reopen' && args && args.length > 0) {
+        // Reopen specific question by index
+        const index = parseInt(args[0]) - 1;
+        if (index >= 0 && index < questions.length) {
+          try {
+            await chatAPI.reopenQuestion(id, questions[index].id || '');
+            addSystemMessage(`Question reopened: "${questions[index].question}"\n\nYou can now answer it!`);
+          } catch (error) {
+            addSystemMessage('Failed to reopen question');
+          }
+        } else {
+          addSystemMessage('Invalid question number');
+        }
+      } else {
+        // List all skipped questions
+        const listItems = questions
+          .map((q: any, i: number) => `${i + 1}. ${q.question}\n   Phase: ${q.phase || 'unknown'}`)
+          .join('\n\n');
+        addSystemMessage(`Skipped Questions (${questions.length}):\n\n${listItems}\n\nUse "/skipped reopen [number]" to answer a specific question.`);
+      }
+    } catch (error) {
+      addSystemMessage('Could not retrieve skipped questions');
     }
   };
 
