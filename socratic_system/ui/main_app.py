@@ -91,6 +91,7 @@ from socratic_system.ui.commands import (  # Analytics commands; Code commands; 
     SearchCommand,
     SkillsListCommand,
     SkillsSetCommand,
+    SkippedCommand,
     StatusCommand,
     SubscriptionCompareCommand,
     SubscriptionDowngradeCommand,
@@ -169,6 +170,7 @@ COMMAND_REGISTRY = [
     (DoneCommand, []),
     (AdvanceCommand, []),
     (HintCommand, []),
+    (SkippedCommand, []),
     # Code commands
     (CodeGenerateCommand, []),
     (CodeDocsCommand, []),

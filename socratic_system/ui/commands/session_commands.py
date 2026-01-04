@@ -647,3 +647,91 @@ class HintCommand(BaseCommand):
         print(f"{Fore.WHITE}{suggestions}{Style.RESET_ALL}\n")
 
         return self.success(data={"hint": suggestions})
+
+
+class SkippedCommand(BaseCommand):
+    """View and manage skipped questions"""
+
+    def __init__(self):
+        super().__init__(
+            name="skipped",
+            description="View and reopen skipped questions",
+            usage="skipped [reopen <question_id>]",
+        )
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute skipped command"""
+        if not self.require_project(context):
+            return self.error("No project loaded")
+
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
+        user = context.get("user")
+
+        if not orchestrator or not project:
+            return self.error("Required context not available")
+
+        # Get skipped questions
+        try:
+            skipped_questions = [
+                q for q in (project.pending_questions or [])
+                if q.get("status") == "skipped"
+            ]
+
+            if not skipped_questions:
+                print(f"\n{Fore.GREEN}✓ No skipped questions - all questions have been answered!{Style.RESET_ALL}\n")
+                return self.success(data={"skipped_count": 0})
+
+            # Show skipped questions
+            print(f"\n{Fore.CYAN}Skipped Questions ({len(skipped_questions)} total):{Style.RESET_ALL}\n")
+            for i, q in enumerate(skipped_questions, 1):
+                question_id = q.get("id", f"Q{i}")
+                question_text = q.get("question", "[No text]")
+                print(f"  {Fore.YELLOW}[{i}] {question_id}{Style.RESET_ALL}")
+                print(f"      {question_text}")
+                if q.get("skipped_at"):
+                    print(f"      {Fore.BLUE}Skipped at: {q['skipped_at']}{Style.RESET_ALL}")
+                print()
+
+            # Handle reopen action
+            if args and args[0].lower() == "reopen":
+                if len(args) < 2:
+                    return self.error("Please specify which question to reopen: /skipped reopen <question_id_or_number>")
+
+                question_ref = args[1]
+
+                # Try to match by number or ID
+                question_to_reopen = None
+                try:
+                    # Try as number (1-based)
+                    num = int(question_ref)
+                    if 1 <= num <= len(skipped_questions):
+                        question_to_reopen = skipped_questions[num - 1]
+                except ValueError:
+                    # Try as question ID
+                    question_to_reopen = next(
+                        (q for q in skipped_questions if q.get("id") == question_ref),
+                        None
+                    )
+
+                if not question_to_reopen:
+                    return self.error(f"Question not found: {question_ref}")
+
+                # Reopen the question
+                question_to_reopen["status"] = "unanswered"
+                if "skipped_at" in question_to_reopen:
+                    del question_to_reopen["skipped_at"]
+
+                # Save the project
+                orchestrator.db.save_project(project)
+
+                question_text = question_to_reopen.get("question", "Question")
+                print(f"\n{Fore.GREEN}✓ Question reopened:{Style.RESET_ALL}")
+                print(f"  {question_text}\n")
+
+                return self.success(data={"reopened": True, "question_id": question_to_reopen.get("id")})
+
+            return self.success(data={"skipped_count": len(skipped_questions)})
+
+        except Exception as e:
+            return self.error(f"Error managing skipped questions: {str(e)}")

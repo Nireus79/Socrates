@@ -80,6 +80,7 @@ from socratic_system.ui.commands.session_commands import (
     DoneCommand,
     HintCommand,
     ModeCommand,
+    SkippedCommand,
 )
 from socratic_system.ui.commands.skills_commands import (
     SkillsListCommand,
@@ -161,6 +162,7 @@ __all__ = [
     "AdvanceCommand",
     "HintCommand",
     "ModeCommand",
+    "SkippedCommand",
     "CodeGenerateCommand",
     "CodeDocsCommand",
     "FinalizeGenerateCommand",
