@@ -600,6 +600,11 @@ async def toggle_debug_mode(
         SuccessResponse with the new debug mode state
     """
     try:
+        # Ensure we're getting the right parameter type
+        # FastAPI may pass string 'true'/'false' from query params
+        if isinstance(enabled, str):
+            enabled = enabled.lower() in ('true', '1', 'yes')
+
         current_state = is_debug_mode()
 
         if enabled is not None:
@@ -615,7 +620,10 @@ async def toggle_debug_mode(
         return SuccessResponse(
             success=True,
             message=f"Debug mode {('enabled' if new_state else 'disabled')}",
-            data={"debug_enabled": new_state},
+            data={
+                "debug_enabled": new_state,
+                "previous_state": current_state,
+            },
         )
 
     except Exception as e:

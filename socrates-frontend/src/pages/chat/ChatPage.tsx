@@ -749,6 +749,7 @@ CHAT & PHASES:
   /ask <question> - Ask direct question (not Socratic mode)
   /explain <topic> - Explain a concept
   /hint - Get hint for current question
+  /skipped - View and reopen skipped questions
 
 PROJECT ANALYSIS:
   /project analyze - Analyze code structure
