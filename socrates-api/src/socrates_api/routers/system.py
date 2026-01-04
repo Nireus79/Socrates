@@ -571,3 +571,65 @@ async def get_context(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve system context: {str(e)}",
         )
+
+
+# Debug mode tracking (global state)
+_debug_mode_enabled = False
+
+
+@router.post(
+    "/debug/toggle",
+    status_code=status.HTTP_200_OK,
+    summary="Toggle debug mode on/off",
+)
+async def toggle_debug_mode(
+    enabled: Optional[bool] = None,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Toggle debug mode on/off for the server.
+    If enabled is not provided, toggles the current state.
+    """
+    global _debug_mode_enabled
+
+    try:
+        if enabled is not None:
+            _debug_mode_enabled = enabled
+        else:
+            _debug_mode_enabled = not _debug_mode_enabled
+
+        if _debug_mode_enabled:
+            logger.info(f"DEBUG MODE ENABLED by {current_user}")
+        else:
+            logger.info(f"DEBUG MODE DISABLED by {current_user}")
+
+        return SuccessResponse(
+            success=True,
+            message=f"Debug mode {('enabled' if _debug_mode_enabled else 'disabled')}",
+            data={"debug_enabled": _debug_mode_enabled},
+        )
+
+    except Exception as e:
+        logger.error(f"Error toggling debug mode: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to toggle debug mode: {str(e)}",
+        )
+
+
+@router.get(
+    "/debug/status",
+    status_code=status.HTTP_200_OK,
+    summary="Get current debug mode status",
+)
+async def get_debug_status(
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Get the current debug mode status of the server.
+    """
+    return SuccessResponse(
+        success=True,
+        message="Debug mode status retrieved",
+        data={"debug_enabled": _debug_mode_enabled},
+    )

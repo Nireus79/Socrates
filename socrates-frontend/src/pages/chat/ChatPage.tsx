@@ -681,15 +681,34 @@ export const ChatPage: React.FC = () => {
   };
 
   const handleDebugCommand = async (action: string) => {
-    // For now, just toggle debug mode locally
-    const enabled = action === 'on' || (action !== 'off' && !(debugInfo?.debugEnabled ?? false));
-    setDebugInfo({
-      debugEnabled: enabled,
-      timestamp: new Date().toISOString(),
-    });
-    setShowDebugModal(true);
+    try {
+      // Call backend endpoint to toggle debug mode
+      let enabledParam: boolean | undefined;
+      if (action === 'on') {
+        enabledParam = true;
+      } else if (action === 'off') {
+        enabledParam = false;
+      }
+      // If no action or 'toggle', leave undefined to toggle
 
-    addSystemMessage(`Debug mode ${enabled ? 'enabled' : 'disabled'}`);
+      const response = await apiClient.post<any>(
+        `/system/debug/toggle?enabled=${enabledParam !== undefined ? enabledParam : 'toggle'}`
+      );
+
+      const result = response?.data || response;
+      const isEnabled = result?.data?.debug_enabled ?? false;
+
+      setDebugInfo({
+        debugEnabled: isEnabled,
+        timestamp: new Date().toISOString(),
+      });
+      setShowDebugModal(true);
+
+      addSystemMessage(`Debug mode ${isEnabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Failed to toggle debug mode:', error);
+      addSystemMessage('Failed to toggle debug mode');
+    }
   };
 
   const handleTestingModeCommand = async (action: string) => {
