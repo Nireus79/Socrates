@@ -27,6 +27,7 @@ class SocraticCounselorAgent(Agent):
         self.use_dynamic_questions = True  # Toggle for dynamic vs static questions
         self.max_questions_per_phase = 5
         self.phase_docs_cache = {}  # Cache document context per phase to reduce vector DB calls
+        self.database = orchestrator.database  # Database for persisting changes
 
         # Fallback static questions if Claude is unavailable
         self.static_questions = {
