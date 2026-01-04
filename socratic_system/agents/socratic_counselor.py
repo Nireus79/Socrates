@@ -1234,6 +1234,8 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
                 q["status"] = "answered"
                 q["answered_at"] = datetime.datetime.now().isoformat()
                 self.log(f"Marked question {question_id} as answered")
+                # Save project to persist the change
+                self.database.save_project(project)
                 return {"status": "success", "message": "Question marked as answered"}
 
         return {"status": "error", "message": "Question not found"}
@@ -1254,6 +1256,8 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
                 q["status"] = "skipped"
                 q["skipped_at"] = datetime.datetime.now().isoformat()
                 self.log(f"Marked question {question_id} as skipped")
+                # Save project to persist the change
+                self.database.save_project(project)
                 return {"status": "success", "message": "Question marked as skipped"}
 
         return {"status": "error", "message": "Question not found"}
@@ -1274,6 +1278,8 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
                 q["status"] = "unanswered"
                 q["skipped_at"] = None  # Clear skip timestamp
                 self.log(f"Reopened question {question_id}")
+                # Save project to persist the change
+                self.database.save_project(project)
                 return {"status": "success", "message": "Question reopened and ready to answer"}
 
         return {"status": "error", "message": "Question not found"}

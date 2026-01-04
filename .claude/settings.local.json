@@ -365,7 +365,11 @@
       "Bash(./.venv/Scripts/python.exe -m pytest tests/unit/database/test_project_db.py::TestConversationHistory -v --tb=short)",
       "Bash(./.venv/Scripts/python.exe -m pytest:*)",
       "Bash(.venvScriptspython.exe -m py_compile socratic_system/agents/socratic_counselor.py socratic_system/agents/__init__.py socratic_system/clients/claude_client.py)",
-      "Bash(.venvScriptspython.exe:*)"
+      "Bash(.venvScriptspython.exe:*)",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(socratic_system/ui/commands/session_commands.py )",
+      "Bash(socratic_system/ui/commands/__init__.py )",
+      "Bash(socratic_system/ui/main_app.py)"
     ],
     "deny": [],
     "ask": []

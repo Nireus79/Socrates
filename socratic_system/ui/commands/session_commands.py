@@ -671,6 +671,17 @@ class SkippedCommand(BaseCommand):
         if not orchestrator or not project:
             return self.error("Required context not available")
 
+        # Reload project from database to get latest changes
+        try:
+            latest_project = orchestrator.database.load_project(project.project_id)
+            if latest_project:
+                project = latest_project
+                # Update context with refreshed project
+                context["project"] = project
+        except Exception:
+            # If reload fails, continue with current project
+            pass
+
         # Get skipped questions
         try:
             skipped_questions = [

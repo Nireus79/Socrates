@@ -59,6 +59,7 @@ class DebugLogger:
         cls._instance = None
         cls._logger = None
         cls._console_handler = None
+        cls._debug_mode = False  # Reset debug mode to OFF
 
     @classmethod
     def _initialize(cls):
@@ -132,6 +133,11 @@ class DebugLogger:
     def set_debug_mode(cls, enabled: bool) -> None:
         """Toggle debug mode on/off"""
         cls._debug_mode = enabled
+
+        # Ensure logger is initialized
+        if cls._instance is None:
+            cls()
+
         if cls._console_handler:
             # In debug mode, show DEBUG and above
             # In normal mode, show ERROR only
