@@ -73,6 +73,11 @@ class DebugLogger:
         # Debug mode defaults to OFF
         cls._debug_mode = False
 
+        # Ensure root logger is at DEBUG level so it can pass messages to handlers
+        # Handlers will filter based on their own levels
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.DEBUG)
+
         # Create logger
         cls._logger = logging.getLogger("socratic_rag")
         cls._logger.setLevel(logging.DEBUG)
@@ -138,23 +143,16 @@ class DebugLogger:
     @classmethod
     def set_debug_mode(cls, enabled: bool) -> None:
         """Toggle debug mode on/off"""
-        import sys
-
         cls._debug_mode = enabled
 
         # Ensure logger is initialized
         if cls._instance is None:
             cls()
 
-        # Debug: Print to stderr directly
-        state_str = "ON" if enabled else "OFF"
-        print(f"[DEBUG TOGGLE] Setting debug mode to {state_str}", file=sys.stderr)
-
         # Update console handler level IMMEDIATELY
         if cls._console_handler:
             new_level = logging.DEBUG if enabled else logging.ERROR
             cls._console_handler.setLevel(new_level)
-            print(f"[DEBUG TOGGLE] Handler level set to {logging.getLevelName(new_level)}", file=sys.stderr)
 
             # Log the mode change at WARNING level so it's always visible
             logger = cls.get_logger("system")
@@ -162,8 +160,35 @@ class DebugLogger:
                 logger.warning(">>> DEBUG MODE ENABLED <<<")
             else:
                 logger.warning(">>> DEBUG MODE DISABLED <<<")
+
+        # CRITICAL: Also update ALL standard Python loggers
+        # This is essential because the application code uses logging.getLogger()
+        # not our DebugLogger singleton
+        root_logger = logging.getLogger()
+
+        # Set root logger level to DEBUG when enabling, so messages can pass through handlers
+        if enabled:
+            root_logger.setLevel(logging.DEBUG)
         else:
-            print(f"[DEBUG TOGGLE] ERROR: console_handler is None!", file=sys.stderr)
+            root_logger.setLevel(logging.INFO)
+
+        # Update all handlers attached to root logger
+        new_level = logging.DEBUG if enabled else logging.ERROR
+        for handler in root_logger.handlers[:]:
+            if isinstance(handler, logging.StreamHandler) and not isinstance(
+                handler, logging.FileHandler
+            ):
+                handler.setLevel(new_level)
+
+        # Update all existing loggers that have handlers
+        for logger_name in logging.Logger.manager.loggerDict:
+            logger_obj = logging.getLogger(logger_name)
+            if logger_obj and hasattr(logger_obj, "handlers"):
+                for handler in logger_obj.handlers[:]:
+                    if isinstance(handler, logging.StreamHandler) and not isinstance(
+                        handler, logging.FileHandler
+                    ):
+                        handler.setLevel(new_level)
 
     @classmethod
     def is_debug_mode(cls) -> bool:
