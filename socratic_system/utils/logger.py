@@ -20,6 +20,7 @@ class DebugLogger:
     _debug_mode: bool = False
     _logger: Optional[logging.Logger] = None
     _console_handler: Optional[logging.StreamHandler] = None
+    _file_handler: Optional[logging.handlers.TimedRotatingFileHandler] = None
 
     def __new__(cls):
         """Create or return singleton instance of logger."""
@@ -69,14 +70,8 @@ class DebugLogger:
         # Clean up old logs first
         cls._cleanup_old_logs()
 
-        # Check if debug mode should be enabled from file
-        try:
-            state_file = cls._get_debug_state_file()
-            if state_file.exists():
-                data = json.loads(state_file.read_text())
-                cls._debug_mode = data.get("debug_mode", False)
-        except Exception:
-            cls._debug_mode = False
+        # Debug mode defaults to OFF
+        cls._debug_mode = False
 
         # Create logger
         cls._logger = logging.getLogger("socratic_rag")
@@ -91,7 +86,7 @@ class DebugLogger:
         # File handler with time-based rotation (daily logs)
         # Creates new log file each day: socratic.log, socratic.log.2024-12-16, etc.
         log_file = logs_dir / "socratic.log"
-        file_handler = logging.handlers.TimedRotatingFileHandler(
+        cls._file_handler = logging.handlers.TimedRotatingFileHandler(
             log_file,
             when="midnight",  # Rotate at midnight
             interval=1,  # Every 1 day
@@ -99,19 +94,17 @@ class DebugLogger:
             utc=False,
         )
         # Use date format for backup files: socratic.log.2024-12-16
-        file_handler.suffix = "%Y-%m-%d"
-        file_handler.setLevel(logging.DEBUG)
+        cls._file_handler.suffix = "%Y-%m-%d"
+        cls._file_handler.setLevel(logging.DEBUG)
         file_formatter = logging.Formatter(
             "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
         )
-        file_handler.setFormatter(file_formatter)
-        cls._logger.addHandler(file_handler)
+        cls._file_handler.setFormatter(file_formatter)
+        cls._logger.addHandler(cls._file_handler)
 
         # Console handler (shows ERROR by default, DEBUG when enabled)
         cls._console_handler = logging.StreamHandler()
-        # Set initial level based on debug state from file
-        initial_level = logging.DEBUG if cls._debug_mode else logging.ERROR
-        cls._console_handler.setLevel(initial_level)
+        cls._console_handler.setLevel(logging.ERROR)  # Default to ERROR
 
         # Enhanced formatter with better readability
         def format_console_message(record):
@@ -143,54 +136,29 @@ class DebugLogger:
         cls._logger.addHandler(cls._console_handler)
 
     @classmethod
-    def _get_debug_state_file(cls) -> Path:
-        """Get path to debug state file"""
-        debug_dir = Path("socratic_logs")
-        debug_dir.mkdir(exist_ok=True)
-        return debug_dir / ".debug_mode"
-
-    @classmethod
     def set_debug_mode(cls, enabled: bool) -> None:
         """Toggle debug mode on/off"""
         cls._debug_mode = enabled
 
-        # Save to file so all processes can read it
-        try:
-            state_file = cls._get_debug_state_file()
-            state_file.write_text(json.dumps({"debug_mode": enabled}))
-        except Exception as e:
-            print(f"Warning: Could not save debug state: {e}")
-
-        # Ensure logger is fully initialized
-        if cls._instance is None or cls._console_handler is None:
+        # Ensure logger is initialized
+        if cls._instance is None:
             cls()
 
-        # Update console handler level
+        # Update console handler level IMMEDIATELY
         if cls._console_handler:
-            if enabled:
-                cls._console_handler.setLevel(logging.DEBUG)
-            else:
-                cls._console_handler.setLevel(logging.ERROR)
+            new_level = logging.DEBUG if enabled else logging.ERROR
+            cls._console_handler.setLevel(new_level)
 
-        # Log the mode change at INFO level so it's visible regardless of debug mode
-        logger = cls.get_logger("system")
-        if enabled:
-            logger.info("Debug mode ENABLED - DEBUG logs now visible")
-        else:
-            logger.info("Debug mode DISABLED - only INFO+ logs shown")
+            # Log the mode change at WARNING level so it's always visible
+            logger = cls.get_logger("system")
+            if enabled:
+                logger.warning(">>> DEBUG MODE ENABLED <<<")
+            else:
+                logger.warning(">>> DEBUG MODE DISABLED <<<")
 
     @classmethod
     def is_debug_mode(cls) -> bool:
         """Check if debug mode is enabled"""
-        # Check file-based state for shared state between processes
-        try:
-            state_file = cls._get_debug_state_file()
-            if state_file.exists():
-                data = json.loads(state_file.read_text())
-                return data.get("debug_mode", cls._debug_mode)
-        except Exception:
-            pass
-
         return cls._debug_mode
 
     @classmethod

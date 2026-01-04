@@ -369,7 +369,8 @@
       "Bash(.venv/Scripts/python.exe:*)",
       "Bash(socratic_system/ui/commands/session_commands.py )",
       "Bash(socratic_system/ui/commands/__init__.py )",
-      "Bash(socratic_system/ui/main_app.py)"
+      "Bash(socratic_system/ui/main_app.py)",
+      "Bash(git show:*)"
     ],
     "deny": [],
     "ask": []
