@@ -107,9 +107,9 @@ class DebugLogger:
         cls._file_handler.setFormatter(file_formatter)
         cls._logger.addHandler(cls._file_handler)
 
-        # Console handler (shows ERROR by default, DEBUG when enabled)
+        # Console handler (shows DEBUG by default, ERROR when enabled)
         cls._console_handler = logging.StreamHandler()
-        cls._console_handler.setLevel(logging.ERROR)  # Default to ERROR
+        cls._console_handler.setLevel(logging.DEBUG)  # Default to DEBUG
 
         # Enhanced formatter with better readability
         def format_console_message(record):
@@ -157,7 +157,7 @@ class DebugLogger:
 
         # Update console handler level IMMEDIATELY
         if cls._console_handler:
-            new_level = logging.DEBUG if enabled else logging.ERROR
+            new_level = logging.ERROR if enabled else logging.DEBUG
             old_level = cls._console_handler.level
             cls._console_handler.setLevel(new_level)
             print(f"[LOGGER] Console handler level changed: {logging.getLevelName(old_level)} -> {logging.getLevelName(new_level)}", file=sys.stderr)
@@ -181,7 +181,7 @@ class DebugLogger:
             root_logger.setLevel(logging.WARNING)
 
         # Update all handlers attached to root logger
-        new_level = logging.DEBUG if enabled else logging.ERROR
+        new_level = logging.ERROR if enabled else logging.DEBUG
         for handler in root_logger.handlers[:]:
             if isinstance(handler, logging.StreamHandler) and not isinstance(
                 handler, logging.FileHandler
