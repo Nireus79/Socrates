@@ -243,6 +243,13 @@ class ProjectDatabase:
         finally:
             conn.close()
 
+        # Save pending questions separately
+        if project.pending_questions:
+            self._save_pending_questions(project.project_id, project.pending_questions)
+            self.logger.debug(
+                f"Saved {len(project.pending_questions)} pending questions for project {project.project_id}"
+            )
+
         # Save conversation history separately (after main transaction completes)
         if project.conversation_history:
             self.save_conversation_history(project.project_id, project.conversation_history)
@@ -438,6 +445,7 @@ class ProjectDatabase:
             category_scores = self._load_category_scores(cursor, project_id)
             analytics = self._load_analytics_metrics(cursor, project_id)
             conversation_history = self.get_conversation_history(project_id)
+            pending_questions = self._load_pending_questions(project_id)
 
             # Deserialize JSON fields (only if they're actually JSON)
             def try_json_load(value):
@@ -483,6 +491,7 @@ class ProjectDatabase:
                 category_scores=category_scores,
                 analytics_metrics=analytics,
                 conversation_history=conversation_history,
+                pending_questions=pending_questions,
             )
 
             self.logger.debug(f"Loaded project {project_id}")
@@ -786,6 +795,83 @@ class ProjectDatabase:
             conn.rollback()
             self.logger.error(f"Error saving conversation for project {project_id}: {e}")
             raise
+        finally:
+            conn.close()
+
+    def _save_pending_questions(self, project_id: str, questions: list[dict]) -> None:
+        """
+        Save pending questions for a project
+
+        Args:
+            project_id: ID of project
+            questions: List of question dicts with fields like id, question, phase, status, etc.
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            # Clear existing pending questions
+            cursor.execute("DELETE FROM pending_questions WHERE project_id = ?", (project_id,))
+
+            # Insert new pending questions in order
+            for i, question in enumerate(questions):
+                # Ensure question data is properly serialized
+                question_data = json.dumps(question) if isinstance(question, dict) else str(question)
+                cursor.execute(
+                    """
+                    INSERT INTO pending_questions (project_id, question_data, sort_order)
+                    VALUES (?, ?, ?)
+                """,
+                    (project_id, question_data, i),
+                )
+
+            conn.commit()
+            self.logger.debug(f"Saved {len(questions)} pending questions for project {project_id}")
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error saving pending questions for project {project_id}: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def _load_pending_questions(self, project_id: str) -> list[dict]:
+        """
+        Load pending questions for a project
+
+        Args:
+            project_id: ID of project
+
+        Returns:
+            List of question dicts
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT question_data FROM pending_questions
+                WHERE project_id = ?
+                ORDER BY sort_order
+                """,
+                (project_id,),
+            )
+
+            questions = []
+            for row in cursor.fetchall():
+                try:
+                    question = json.loads(row[0])
+                    questions.append(question)
+                except json.JSONDecodeError:
+                    self.logger.warning(f"Failed to decode question data for project {project_id}")
+                    continue
+
+            return questions
+
+        except Exception as e:
+            self.logger.error(f"Error loading pending questions for project {project_id}: {e}")
+            return []
         finally:
             conn.close()
 
