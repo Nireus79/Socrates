@@ -159,10 +159,6 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting Socrates API server...")
 
-    # Enable debug mode by default for API
-    from socratic_system.utils.logger import set_debug_mode
-    set_debug_mode(True)
-
     # Rate limiter initialized at module load time
     if app_state.get("limiter"):
         logger.info("Rate limiter is active")
