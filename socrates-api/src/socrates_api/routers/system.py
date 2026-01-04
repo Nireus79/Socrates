@@ -599,34 +599,20 @@ async def toggle_debug_mode(
     Returns:
         SuccessResponse with the new debug mode state
     """
-    import sys
-
     try:
-        # Log to stderr for debugging
-        print(f"\n[DEBUG ENDPOINT] Called with enabled={enabled}, type={type(enabled)}", file=sys.stderr)
-
-        # FastAPI with Query() automatically converts query parameters to boolean
         current_state = is_debug_mode()
-        print(f"[DEBUG ENDPOINT] Current debug state: {current_state}", file=sys.stderr)
 
         if enabled is not None:
             new_state = enabled
         else:
             new_state = not current_state
 
-        print(f"[DEBUG ENDPOINT] New debug state will be: {new_state}", file=sys.stderr)
-
         # Apply debug mode change to the logger
         set_debug_mode(new_state)
-        print(f"[DEBUG ENDPOINT] set_debug_mode({new_state}) called", file=sys.stderr)
-
-        # Verify the state changed
-        verify_state = is_debug_mode()
-        print(f"[DEBUG ENDPOINT] Verified state is now: {verify_state}", file=sys.stderr)
 
         logger.info(f"Debug mode {('ENABLED' if new_state else 'DISABLED')} by {current_user}")
 
-        response = SuccessResponse(
+        return SuccessResponse(
             success=True,
             message=f"Debug mode {('enabled' if new_state else 'disabled')}",
             data={
@@ -634,13 +620,8 @@ async def toggle_debug_mode(
                 "previous_state": current_state,
             },
         )
-        print(f"[DEBUG ENDPOINT] Returning response: {response.model_dump()}", file=sys.stderr)
-        return response
 
     except Exception as e:
-        print(f"[DEBUG ENDPOINT] ERROR: {str(e)}", file=sys.stderr)
-        import traceback
-        traceback.print_exc(file=sys.stderr)
         logger.error(f"Error toggling debug mode: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
