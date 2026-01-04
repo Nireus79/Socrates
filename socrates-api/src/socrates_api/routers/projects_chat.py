@@ -624,7 +624,13 @@ async def send_message(
                 content_parts.append(f"Note: {insights.get('note')}")
             content = "\n".join(content_parts) if content_parts else "Insights recorded."
         else:
-            content = "Response recorded. No new insights detected."
+            # Only show "no insights" message when debug mode is on
+            from socratic_system.utils.logger import is_debug_mode
+            if is_debug_mode():
+                content = "Response recorded. No new insights detected."
+            else:
+                # When debug is off, don't show diagnostic messages
+                content = ""
 
         # Return unwrapped data (frontend expects this format)
         response_data = {
