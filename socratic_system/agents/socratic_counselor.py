@@ -632,6 +632,16 @@ Return only the question, no additional text or explanation."""
         # Track question effectiveness for learning
         self._track_question_effectiveness(project, insights, user_response, current_user, logger)
 
+        # Mark the last unanswered question as answered (to prevent repetition)
+        # Find the most recent unanswered question in pending_questions
+        if project.pending_questions:
+            for q in reversed(project.pending_questions):
+                if q.get("status") == "unanswered":
+                    q["status"] = "answered"
+                    q["answered_at"] = datetime.datetime.now().isoformat()
+                    logger.debug(f"Marked question '{q.get('question', '')[:50]}...' as answered")
+                    break
+
         return {"status": "success", "insights": insights}
 
     def _handle_conflict_detection(
