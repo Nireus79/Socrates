@@ -139,8 +139,11 @@ export const ChatPage: React.FC = () => {
       // After history is loaded, check for unanswered questions
       const { messages: currentMessages, mode: currentMode, getQuestion: storeGetQuestion } = useChatStore.getState();
 
-      // Mark session start time
-      setSessionStartTime(new Date());
+      // Mark session start time ONLY if not already set for this project
+      // This prevents hiding messages when switching modes
+      if (!sessionStartTime) {
+        setSessionStartTime(new Date());
+      }
 
       console.log('[ChatPage] History loaded for project:', selectedProjectId, 'Messages:', currentMessages.length);
 
@@ -176,7 +179,9 @@ export const ChatPage: React.FC = () => {
       initialQuestionLoadedRef.current = selectedProjectId;
 
       // Still try to get initial question even if history load fails
-      setSessionStartTime(new Date());
+      if (!sessionStartTime) {
+        setSessionStartTime(new Date());
+      }
       const { mode: currentMode, getQuestion: storeGetQuestion } = useChatStore.getState();
       if (currentMode === 'socratic') {
         console.log('[ChatPage] Loading history failed, attempting to generate initial question for project:', selectedProjectId);

@@ -137,10 +137,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
         return;
       }
 
-      // NOTE: Auto-generation of next question removed
-      // Question generation now happens explicitly when user clicks Answer button or Skip
-      // This prevents double question generation and gives backend control
-      logger.info('Response processed. User will request next question when ready.');
+      // Get the next question after response is processed (in Socratic mode)
+      if (state.mode === 'socratic') {
+        try {
+          logger.info('Response processed. Generating next question...');
+          await get().getQuestion(state.currentProjectId);
+        } catch (error) {
+          logger.warn(`Failed to get next question: ${error}`);
+          // Don't fail the entire response if question generation fails
+        }
+      }
 
       set({ isLoading: false });
     } catch (error) {
