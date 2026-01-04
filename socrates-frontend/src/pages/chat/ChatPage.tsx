@@ -1403,6 +1403,9 @@ User: ${currentProject?.owner || 'N/A'}`;
   const handleSkipQuestion = async () => {
     if (!selectedProjectId) return;
     try {
+      // Mark question as skipped on backend
+      await chatAPI.skipQuestion(selectedProjectId);
+
       // Add a skip marker message to conversation
       addChatMessage({
         id: `skip_${Date.now()}`,
@@ -1416,6 +1419,7 @@ User: ${currentProject?.owner || 'N/A'}`;
       await getQuestion(selectedProjectId);
     } catch (error) {
       console.error('Failed to skip question:', error);
+      addSystemMessage('Failed to skip question');
     }
   };
 

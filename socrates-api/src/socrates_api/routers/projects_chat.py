@@ -1266,6 +1266,53 @@ async def reopen_question(
         )
 
 
+@router.post(
+    "/{project_id}/chat/skip",
+    status_code=status.HTTP_200_OK,
+    summary="Mark current question as skipped",
+)
+async def skip_question(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Mark the current unanswered question as skipped.
+    """
+    try:
+        logger.info(f"Skipping question for project {project_id}")
+
+        db = get_database()
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        # Find the current unanswered question and mark it as skipped
+        if project.pending_questions:
+            for question in project.pending_questions:
+                if question.get("status") == "unanswered":
+                    question["status"] = "skipped"
+                    question["skipped_at"] = datetime.now(timezone.utc).isoformat()
+                    logger.info(f"Marked question as skipped: {question.get('id')}")
+                    break
+
+        # Save the project
+        db.save_project(project_id, project)
+
+        return {"success": True, "message": "Question marked as skipped"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error skipping question: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to skip question: {str(e)}",
+        )
+
+
 @router.get(
     "/{project_id}/chat/suggestions",
     status_code=status.HTTP_200_OK,

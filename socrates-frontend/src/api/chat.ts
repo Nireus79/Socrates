@@ -139,4 +139,14 @@ export const chatAPI = {
     );
   },
 
+  /**
+   * Mark current question as skipped
+   */
+  async skipQuestion(projectId: string): Promise<{ success: boolean; message: string }> {
+    return apiClient.post<{ success: boolean; message: string }>(
+      `/projects/${projectId}/chat/skip`,
+      {}
+    );
+  },
+
 };
