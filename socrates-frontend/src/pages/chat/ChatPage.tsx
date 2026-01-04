@@ -115,17 +115,14 @@ export const ChatPage: React.FC = () => {
 
     // Skip if we've already loaded initial question for this project
     if (initialQuestionLoadedRef.current === selectedProjectId) {
-      console.log('[ChatPage] Initial question already loaded for project:', selectedProjectId);
       return;
     }
 
     // Skip if already loading history (prevent race condition)
     if (isLoadingHistoryRef.current) {
-      console.log('[ChatPage] History load already in progress for project:', selectedProjectId);
       return;
     }
 
-    console.log('[ChatPage] Starting to load project and history:', selectedProjectId);
     isLoadingHistoryRef.current = true;
 
     getProject(selectedProjectId);
@@ -145,8 +142,6 @@ export const ChatPage: React.FC = () => {
         setSessionStartTime(new Date());
       }
 
-      console.log('[ChatPage] History loaded for project:', selectedProjectId, 'Messages:', currentMessages.length);
-
       if (currentMode === 'socratic') {
         // Check if there's an unanswered question (last assistant message with no user answer after)
         let hasUnansweredQuestion = false;
@@ -164,16 +159,13 @@ export const ChatPage: React.FC = () => {
           }
         }
 
-        console.log('[ChatPage] Has unanswered question:', hasUnansweredQuestion);
-
         // Only generate new question if there's no unanswered question
         if (!hasUnansweredQuestion) {
-          console.log('[ChatPage] Generating new question for project:', selectedProjectId);
           storeGetQuestion(selectedProjectId);
         }
       }
     }).catch(error => {
-      console.error('[ChatPage] Failed to load history:', error);
+      console.error('Failed to load history:', error);
       isLoadingHistoryRef.current = false;
       // Mark that we've attempted to load for this project
       initialQuestionLoadedRef.current = selectedProjectId;
@@ -184,7 +176,6 @@ export const ChatPage: React.FC = () => {
       }
       const { mode: currentMode, getQuestion: storeGetQuestion } = useChatStore.getState();
       if (currentMode === 'socratic') {
-        console.log('[ChatPage] Loading history failed, attempting to generate initial question for project:', selectedProjectId);
         storeGetQuestion(selectedProjectId);
       }
     });
