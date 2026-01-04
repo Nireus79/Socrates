@@ -54,6 +54,7 @@ export const ChatPage: React.FC = () => {
     clearError,
     clearSearch,
     reset: resetChat,
+    getSuggestions,
   } = useChatStore();
   const {
     projects,
@@ -1404,7 +1405,6 @@ User: ${currentProject?.owner || 'N/A'}`;
   const handleRequestSuggestions = async () => {
     if (!selectedProjectId) return;
     try {
-      const getSuggestions = useChatStore((state) => state.getSuggestions);
       const result = await getSuggestions(selectedProjectId);
       setSuggestions(result || []);
       setSuggestionsQuestion('Current question');
