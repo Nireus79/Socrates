@@ -1460,3 +1460,77 @@
 [2026-01-04 14:08:33] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #69)
 [2026-01-04 14:08:33] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
 [2026-01-04 14:08:34] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: You've said you don't care about distinguishing between users who've outgrown the app versus users w...
+[2026-01-04 14:49:03] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-01-04 14:49:03] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-01-04 14:49:03] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-01-04 14:49:03] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-01-04 14:49:03] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-01-04 14:49:03] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-01-04 14:49:03] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-01-04 14:49:03] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-01-04 14:49:03] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-01-04 14:49:03] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-01-04 14:49:03] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-01-04 14:49:03] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-01-04 14:49:03] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-01-04 14:49:05] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-01-04 14:49:13] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-01-04 14:49:13] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-01-04 14:49:13] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-01-04 14:49:13] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-01-04 14:49:13] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-01-04 14:49:13] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-01-04 14:49:13] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-01-04 14:49:13] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-01-04 14:49:13] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-01-04 14:49:13] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-01-04 14:49:13] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-01-04 14:49:13] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-01-04 14:49:13] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-01-04 14:49:14] [INFO] socratic_rag.orchestrator: Initializing database components...
+[2026-01-04 14:49:15] [INFO] socratic_rag.orchestrator: Database components initialized successfully
+[2026-01-04 14:49:15] [INFO] socratic_rag.orchestrator: Loading knowledge base...
+[2026-01-04 14:49:15] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-01-04 14:49:15] [DEBUG] socratic_rag.orchestrator: Attempting to load knowledge base from default location: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-01-04 14:49:15] [INFO] socratic_rag.orchestrator: Socrates AI initialized successfully!
+[2026-01-04 14:49:15] [INFO] socratic_rag.orchestrator:   Configuration: SocratesConfig(model=claude-haiku-4-5-20251001, data_dir=C:\Users\themi\.socrates, log_level=INFO)
+[2026-01-04 14:49:15] [INFO] socratic_rag.orchestrator:   Projects DB: C:\Users\themi\.socrates\projects.db
+[2026-01-04 14:49:15] [DEBUG] socratic_rag.orchestrator: Knowledge base file found at: C:\Users\themi\PycharmProjects\Socrates\socratic_system\config\knowledge_base.json
+[2026-01-04 14:49:15] [INFO] socratic_rag.orchestrator:   Vector DB: C:\Users\themi\.socrates\vector_db
+[2026-01-04 14:49:15] [INFO] socratic_rag.orchestrator: ======================================================================
+[2026-01-04 14:49:15] [INFO] socratic_rag.orchestrator: Successfully loaded 100 knowledge entries from default location
+[2026-01-04 14:49:15] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
+[2026-01-04 14:49:15] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-01-04 14:49:17] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-01-04 14:49:19] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2026-01-04 14:49:19] [DEBUG] socratic_rag.socratic_counselor: Found 69 previously asked questions in discovery phase
+[2026-01-04 14:49:19] [DEBUG] socratic_rag.socratic_counselor: Analyzing question context for adaptive document loading...
+[2026-01-04 14:49:19] [DEBUG] socratic_rag.socratic_counselor: Using 'snippet' document loading strategy
+[2026-01-04 14:49:19] [DEBUG] socratic_rag.orchestrator: Knowledge base loading thread stopped
+[2026-01-04 14:49:19] [INFO] socratic_rag.orchestrator: Vector database closed
+[2026-01-04 14:49:19] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-01-04 14:49:19] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-01-04 14:49:22] [DEBUG] socratic_rag.socratic_counselor: Cached document results for discovery phase
+[2026-01-04 14:49:22] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #70)
+[2026-01-04 14:49:22] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2026-01-04 14:49:24] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: If your referral mechanism needs to work without relying on users who've moved on, who exactly are t...
+[2026-01-04 14:49:33] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2026-01-04 14:49:33] [DEBUG] socratic_rag.socratic_counselor: Found 70 previously asked questions in discovery phase
+[2026-01-04 14:49:33] [DEBUG] socratic_rag.socratic_counselor: Analyzing question context for adaptive document loading...
+[2026-01-04 14:49:33] [DEBUG] socratic_rag.socratic_counselor: Using cached document results for discovery phase
+[2026-01-04 14:49:33] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #71)
+[2026-01-04 14:49:33] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2026-01-04 14:49:35] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: If users who are actively using Moly right now are still uncertain about dating conversations, what ...
+[2026-01-04 14:50:39] [DEBUG] socratic_rag.socratic_counselor: Processing user response (13 chars) from Themis
+[2026-01-04 14:50:39] [DEBUG] socratic_rag.socratic_counselor: Added response to conversation history (total: 109 messages)
+[2026-01-04 14:50:39] [INFO] socratic_rag.socratic_counselor: Extracting insights from user response...
+[2026-01-04 14:50:40] [DEBUG] socratic_rag.socratic_counselor: No insights extracted from response
+[2026-01-04 14:50:40] [INFO] socratic_rag.socratic_counselor: Updating project context with insights...
+[2026-01-04 14:50:40] [DEBUG] socratic_rag.socratic_counselor: Project context updated successfully
+[2026-01-04 14:50:40] [DEBUG] socratic_rag.socratic_counselor: Using 4 recent messages for context
+[2026-01-04 14:50:40] [DEBUG] socratic_rag.socratic_counselor: Found 71 previously asked questions in discovery phase
+[2026-01-04 14:50:40] [DEBUG] socratic_rag.socratic_counselor: Analyzing question context for adaptive document loading...
+[2026-01-04 14:50:40] [DEBUG] socratic_rag.socratic_counselor: Using cached document results for discovery phase
+[2026-01-04 14:50:40] [DEBUG] socratic_rag.socratic_counselor: Building question prompt for discovery phase (question #72)
+[2026-01-04 14:50:40] [INFO] socratic_rag.socratic_counselor: Generating dynamic question for discovery phase
+[2026-01-04 14:50:42] [DEBUG] socratic_rag.socratic_counselor: Question generated successfully: Since you're not concerned about user retention through skill-building or relationship outcomes, wha...

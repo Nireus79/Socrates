@@ -369,7 +369,6 @@ class SocraticRAGSystem:
 
         # Disable debug mode by default
         set_debug_mode(False)
-        self.logger.debug("Debug mode disabled")
 
         # Get API key or choose authentication mode
         api_key = self._get_api_key()

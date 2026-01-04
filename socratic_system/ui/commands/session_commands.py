@@ -673,14 +673,22 @@ class SkippedCommand(BaseCommand):
 
         # Reload project from database to get latest changes
         try:
-            latest_project = orchestrator.database.load_project(project.project_id)
-            if latest_project:
-                project = latest_project
-                # Update context with refreshed project
-                context["project"] = project
-        except Exception:
-            # If reload fails, continue with current project
-            pass
+            if hasattr(orchestrator, 'database'):
+                db = orchestrator.database
+            elif hasattr(orchestrator, 'db'):
+                db = orchestrator.db
+            else:
+                db = None
+
+            if db and project.project_id:
+                latest_project = db.load_project(project.project_id)
+                if latest_project:
+                    project = latest_project
+                    # Update context with refreshed project
+                    context["project"] = project
+        except Exception as e:
+            # Log error but continue with current project
+            self.print_error(f"Could not reload project: {str(e)}")
 
         # Get skipped questions
         try:
