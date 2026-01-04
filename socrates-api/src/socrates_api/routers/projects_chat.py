@@ -606,7 +606,6 @@ async def send_message(
 
         # Format insights for response
         insights = result.get("insights", {})
-        content = ""
         if insights:
             # Format insights as a readable string for the frontend
             content_parts = []
@@ -623,25 +622,20 @@ async def send_message(
             if insights.get("note"):
                 content_parts.append(f"Note: {insights.get('note')}")
             content = "\n".join(content_parts) if content_parts else "Insights recorded."
-        else:
-            # When no insights: only show message if debug mode is on
-            from socratic_system.utils.logger import is_debug_mode
-            if is_debug_mode():
-                # Debug is ON - show diagnostic message
-                content = "Response recorded. No new insights detected."
-            else:
-                # Debug is OFF - return response without message
-                return {}
 
-        # Return unwrapped data (frontend expects this format)
-        response_data = {
-            "message": {
-                "id": f"msg_{id(result)}",
-                "role": "assistant",
-                "content": content,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+            # Return insights message
+            response_data = {
+                "message": {
+                    "id": f"msg_{id(result)}",
+                    "role": "assistant",
+                    "content": content,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
             }
-        }
+        else:
+            # No insights - don't return a message, just return empty data
+            # Frontend will handle moving to next question without adding extra message
+            response_data = {}
 
         return response_data
 
