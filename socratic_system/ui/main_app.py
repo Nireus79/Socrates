@@ -367,8 +367,8 @@ class SocraticRAGSystem:
         # Reinitialize logger after reset
         self.logger = get_debug_logger("main_app")
 
-        # Disable debug mode by default
-        set_debug_mode(False)
+        # Enable debug mode by default (logs will appear in console)
+        set_debug_mode(True)
 
         # Get API key or choose authentication mode
         api_key = self._get_api_key()
