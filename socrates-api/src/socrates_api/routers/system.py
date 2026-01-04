@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
 from socrates_api.models import SuccessResponse
+from socratic_system.utils.logger import set_debug_mode, is_debug_mode
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/system", tags=["system"])
@@ -573,10 +574,6 @@ async def get_context(
         )
 
 
-# Debug mode tracking (global state)
-_debug_mode_enabled = False
-
-
 @router.post(
     "/debug/toggle",
     status_code=status.HTTP_200_OK,
@@ -588,25 +585,37 @@ async def toggle_debug_mode(
 ):
     """
     Toggle debug mode on/off for the server.
+
+    This controls the actual server logging level:
+    - When enabled: Shows DEBUG level logs and above
+    - When disabled: Shows only INFO, WARNING, ERROR, and CRITICAL level logs
+
     If enabled is not provided, toggles the current state.
+
+    Args:
+        enabled: Optional boolean to set debug mode (None = toggle)
+        current_user: Authenticated user making the request
+
+    Returns:
+        SuccessResponse with the new debug mode state
     """
-    global _debug_mode_enabled
-
     try:
-        if enabled is not None:
-            _debug_mode_enabled = enabled
-        else:
-            _debug_mode_enabled = not _debug_mode_enabled
+        current_state = is_debug_mode()
 
-        if _debug_mode_enabled:
-            logger.info(f"DEBUG MODE ENABLED by {current_user}")
+        if enabled is not None:
+            new_state = enabled
         else:
-            logger.info(f"DEBUG MODE DISABLED by {current_user}")
+            new_state = not current_state
+
+        # Apply debug mode change to the logger
+        set_debug_mode(new_state)
+
+        logger.info(f"Debug mode {('ENABLED' if new_state else 'DISABLED')} by {current_user}")
 
         return SuccessResponse(
             success=True,
-            message=f"Debug mode {('enabled' if _debug_mode_enabled else 'disabled')}",
-            data={"debug_enabled": _debug_mode_enabled},
+            message=f"Debug mode {('enabled' if new_state else 'disabled')}",
+            data={"debug_enabled": new_state},
         )
 
     except Exception as e:
@@ -627,9 +636,11 @@ async def get_debug_status(
 ):
     """
     Get the current debug mode status of the server.
+
+    Returns whether DEBUG level logging is currently enabled.
     """
     return SuccessResponse(
         success=True,
         message="Debug mode status retrieved",
-        data={"debug_enabled": _debug_mode_enabled},
+        data={"debug_enabled": is_debug_mode()},
     )

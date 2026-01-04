@@ -211,7 +211,6 @@ export const ChatPage: React.FC = () => {
 
       if (nluResult.status === 'success' && nluResult.command) {
         // High confidence command match
-        console.log('[Pre-Session] NLU matched command:', nluResult.command);
         await handleNLUCommand(nluResult.command);
       } else if (nluResult.status === 'suggestions' && nluResult.suggestions?.length) {
         // Medium confidence - show suggestions
@@ -226,7 +225,6 @@ export const ChatPage: React.FC = () => {
         }]);
       } else {
         // No command match - treat as free-form question for Claude
-        console.log('[Pre-Session] No NLU match, treating as free-form question');
         await handleFreeFormQuestion(userInput);
       }
     } catch (error) {
@@ -245,8 +243,6 @@ export const ChatPage: React.FC = () => {
    * Handle NLU-interpreted commands
    */
   const handleNLUCommand = async (command: string) => {
-    console.log('[Pre-Session] Executing NLU command:', command);
-
     // Show command being executed
     setFreeSessionResponses(prev => [...prev, {
       role: 'assistant',
@@ -683,17 +679,17 @@ export const ChatPage: React.FC = () => {
   const handleDebugCommand = async (action: string) => {
     try {
       // Call backend endpoint to toggle debug mode
-      let enabledParam: boolean | undefined;
-      if (action === 'on') {
-        enabledParam = true;
-      } else if (action === 'off') {
-        enabledParam = false;
-      }
-      // If no action or 'toggle', leave undefined to toggle
+      let url = '/system/debug/toggle';
 
-      const response = await apiClient.post<any>(
-        `/system/debug/toggle?enabled=${enabledParam !== undefined ? enabledParam : 'toggle'}`
-      );
+      // Add enabled parameter if action is 'on' or 'off'
+      if (action === 'on') {
+        url += '?enabled=true';
+      } else if (action === 'off') {
+        url += '?enabled=false';
+      }
+      // If no action or 'toggle', don't add enabled param to toggle state
+
+      const response = await apiClient.post<any>(url);
 
       const result = response?.data || response;
       const isEnabled = result?.data?.debug_enabled ?? false;
