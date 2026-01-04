@@ -175,7 +175,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       await chatAPI.switchMode(projectId, mode);
-      set({ mode, isLoading: false });
+      set({ mode, isLoading: false, conflicts: null, pendingConflicts: false });
       get().addSystemMessage(`Switched to ${mode} mode`);
       // Refresh conversation history to ensure UI stays in sync with backend
       try {
