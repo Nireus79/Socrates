@@ -210,9 +210,9 @@ async def get_progress_status(
         # Calculate trends
         recent_history = maturity_history[-5:] if len(maturity_history) > 5 else maturity_history
         trend = "stable"
+        recent_scores = []  # Initialize before the if block
         if len(recent_history) >= 2:
             # Extract scores safely, handling various data types
-            recent_scores = []
             for h in recent_history:
                 if isinstance(h, dict):
                     score = h.get("score", 0)

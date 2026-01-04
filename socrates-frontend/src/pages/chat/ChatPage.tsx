@@ -973,7 +973,7 @@ User: ${currentProject?.owner || 'N/A'}`;
 
   // SUBSCRIPTION COMMANDS
   const handleSubscriptionCommand = async (action: string, args: string[]) => {
-    const { refreshSubscription } = useSubscriptionStore();
+    const { refreshSubscription } = useSubscriptionStore.getState();
     try {
       if (action === 'testing-mode') {
         const mode = args[0]?.toLowerCase();
