@@ -13,7 +13,7 @@ import time
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
@@ -580,7 +580,7 @@ async def get_context(
     summary="Toggle debug mode on/off",
 )
 async def toggle_debug_mode(
-    enabled: Optional[bool] = None,
+    enabled: Optional[bool] = Query(None),
     current_user: str = Depends(get_current_user),
 ):
     """
@@ -600,11 +600,7 @@ async def toggle_debug_mode(
         SuccessResponse with the new debug mode state
     """
     try:
-        # Ensure we're getting the right parameter type
-        # FastAPI may pass string 'true'/'false' from query params
-        if isinstance(enabled, str):
-            enabled = enabled.lower() in ('true', '1', 'yes')
-
+        # FastAPI with Query() automatically converts query parameters to boolean
         current_state = is_debug_mode()
 
         if enabled is not None:
