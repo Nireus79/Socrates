@@ -117,8 +117,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         mode: state.mode,
       });
 
-      // Add assistant message only if one was returned (null when debug off and no insights)
-      if (response.message) {
+      // Add assistant message only if one was returned (omitted when debug off and no insights)
+      if (response && response.message) {
         get().addMessage({
           id: response.message.id,
           role: 'assistant',
