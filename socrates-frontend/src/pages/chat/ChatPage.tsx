@@ -693,13 +693,9 @@ export const ChatPage: React.FC = () => {
       const response = await apiClient.post<any>(url);
       console.log('[FRONTEND] Debug response:', response);
 
-      const result = response?.data || response;
-      console.log('[FRONTEND] Result object:', result);
-      console.log('[FRONTEND] result?.data:', result?.data);
-      console.log('[FRONTEND] debug_enabled value:', result?.data?.debug_enabled);
-
-      const isEnabled = result?.data?.debug_enabled ?? false;
-      console.log('[FRONTEND] Final isEnabled value:', isEnabled);
+      // apiClient.post() returns response.data directly (SuccessResponse object)
+      const isEnabled = response?.data?.debug_enabled ?? false;
+      console.log('[FRONTEND] Debug enabled:', isEnabled);
 
       setDebugInfo({
         debugEnabled: isEnabled,
