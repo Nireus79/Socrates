@@ -134,24 +134,23 @@ class DebugLogger:
         """Toggle debug mode on/off"""
         cls._debug_mode = enabled
 
-        # Ensure logger is initialized
-        if cls._instance is None:
+        # Ensure logger is fully initialized
+        if cls._instance is None or cls._console_handler is None:
             cls()
 
+        # Update console handler level
         if cls._console_handler:
-            # In debug mode, show DEBUG and above
-            # In normal mode, show ERROR only
             if enabled:
                 cls._console_handler.setLevel(logging.DEBUG)
             else:
                 cls._console_handler.setLevel(logging.ERROR)
 
-        # Log the mode change at DEBUG level (only visible when debug is on)
+        # Log the mode change at INFO level so it's visible regardless of debug mode
         logger = cls.get_logger("system")
         if enabled:
-            logger.debug("Debug mode ENABLED - all operations will be logged")
+            logger.info("Debug mode ENABLED - DEBUG logs now visible")
         else:
-            logger.debug("Debug mode DISABLED - only errors shown")
+            logger.info("Debug mode DISABLED - only INFO+ logs shown")
 
     @classmethod
     def is_debug_mode(cls) -> bool:
