@@ -775,15 +775,15 @@ async def generate_code(request: GenerateCodeRequest):
 @app.post("/projects/{project_id}/code/generate", response_model=CodeGenerationResponse)
 async def generate_code_for_project(
     project_id: str,
-    request: GenerateCodeRequest,
+    request: Optional[GenerateCodeRequest] = None,
 ):
     """
     Generate code for a project (frontend-compatible endpoint)
 
     Parameters:
     - project_id: Project identifier (in URL path)
-    - specification: Code specification or requirements (in body)
-    - language: Programming language (in body)
+    - specification: Code specification or requirements (in body, optional)
+    - language: Programming language (in body, optional)
     """
     try:
         orchestrator = get_orchestrator()
@@ -794,10 +794,11 @@ async def generate_code_for_project(
         )
 
     try:
-        # Use project_id from URL path, not from body
-        request.project_id = project_id
-        specification = request.specification or ""
-        language = request.language or "python"
+        # Use project_id from URL path
+        specification = request.specification if request else ""
+        specification = specification or ""
+        language = request.language if request else "python"
+        language = language or "python"
 
         # Load project
         project_result = orchestrator.process_request(
