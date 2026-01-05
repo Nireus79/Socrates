@@ -775,7 +775,7 @@ async def generate_code(request: GenerateCodeRequest):
 @app.post("/projects/{project_id}/code/generate", response_model=CodeGenerationResponse)
 async def generate_code_for_project(
     project_id: str,
-    request: Optional[GenerateCodeRequest] = None,
+    request: Optional[GenerateCodeRequest] = Body(default=None),
 ):
     """
     Generate code for a project (frontend-compatible endpoint)
