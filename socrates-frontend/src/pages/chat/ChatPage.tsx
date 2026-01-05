@@ -807,12 +807,15 @@ ANALYTICS & CONVERSATIONS:
 
   const handleStatusCommand = async (id: string) => {
     try {
-      const response = await apiClient.get(`/projects/${id}/progress/status`) as any;
-      const status = response?.status || 'unknown';
-      const progress = response?.progress || 0;
+      const response = await apiClient.get(`/projects/${id}/progress`) as any;
+      const data = response?.data || response;
+      const overall = data?.overall_progress || {};
+      const status = overall?.status || 'unknown';
+      const progress = overall?.percentage || 0;
       const phase = currentProject?.phase || 'N/A';
+      const maturity = data?.maturity_progress?.current_score || 0;
 
-      addSystemMessage(`Project Status: ${status} | Phase: ${phase} | Progress: ${progress}%`);
+      addSystemMessage(`Project Status: ${status} | Phase: ${phase} | Progress: ${progress}% | Maturity: ${maturity}`);
     } catch (error) {
       addSystemMessage('Could not fetch project status');
     }
@@ -894,9 +897,9 @@ User: ${currentProject?.owner || 'N/A'}`;
   const handleAnalyticsCommand = async (id: string, action?: string) => {
     try {
       const response = action === 'breakdown'
-        ? (await apiClient.get(`/analytics/breakdown/${id}`) as any)
+        ? (await apiClient.get(`/analytics/projects/${id}`) as any)
         : action === 'status'
-        ? (await apiClient.get(`/analytics/status/${id}`) as any)
+        ? (await apiClient.get(`/analytics/projects/${id}`) as any)
         : (await apiClient.get(`/analytics/projects/${id}`) as any);
 
       const data = response?.data || response;
@@ -1278,7 +1281,7 @@ User: ${currentProject?.owner || 'N/A'}`;
   const handleCodeCommand = async (id: string, action: string, args: string[]) => {
     try {
       if (action === 'generate') {
-        const response = await apiClient.post(`/code/${id}/generate`) as any;
+        const response = await apiClient.post(`/projects/${id}/code/generate`) as any;
         addSystemMessage(`Code generated:\n${response?.code?.substring(0, 200) || 'Code generated'}`);
       } else if (action === 'docs') {
         const response = await apiClient.post(`/projects/${id}/docs/generate`) as any;

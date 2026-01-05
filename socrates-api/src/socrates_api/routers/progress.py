@@ -84,21 +84,52 @@ async def get_progress(
             "total_code_blocks": generated_code_count,
         }
 
-        # Maturity progress
+        # Maturity progress - safely convert dict values to numbers
+        maturity_score = getattr(project, "maturity_score", 0)
+        if isinstance(maturity_score, dict):
+            maturity_score = maturity_score.get("score", 0)
+        try:
+            maturity_score = float(maturity_score) if maturity_score else 0.0
+        except (TypeError, ValueError):
+            maturity_score = 0.0
+
+        previous_maturity = getattr(project, "previous_maturity", 0)
+        if isinstance(previous_maturity, dict):
+            previous_maturity = previous_maturity.get("score", 0)
+        try:
+            previous_maturity = float(previous_maturity) if previous_maturity else 0.0
+        except (TypeError, ValueError):
+            previous_maturity = 0.0
+
         progress_data["maturity_progress"] = {
-            "current_score": getattr(project, "maturity_score", 0),
-            "previous_score": getattr(project, "previous_maturity", 0),
-            "improvement": getattr(project, "maturity_score", 0)
-            - getattr(project, "previous_maturity", 0),
+            "current_score": maturity_score,
+            "previous_score": previous_maturity,
+            "improvement": maturity_score - previous_maturity,
         }
 
         # Phase progress
         phase_scores = getattr(project, "phase_maturity_scores", {})
+        # Safely extract numeric values from phase scores (handle dict values)
+        safe_phase_scores = {}
+        completed = 0
+        for phase, score in (phase_scores.items() if isinstance(phase_scores, dict) else []):
+            if isinstance(score, dict):
+                numeric_score = score.get("score", 0) if isinstance(score, dict) else score
+            else:
+                numeric_score = score
+            try:
+                numeric_score = float(numeric_score) if numeric_score else 0.0
+            except (TypeError, ValueError):
+                numeric_score = 0.0
+            safe_phase_scores[phase] = numeric_score
+            if numeric_score >= 80:
+                completed += 1
+
         progress_data["phase_progress"] = {
             "current_phase": getattr(project, "current_phase", "planning"),
-            "phase_scores": phase_scores,
-            "total_phases": len(phase_scores),
-            "completed_phases": sum(1 for score in phase_scores.values() if score >= 80),
+            "phase_scores": safe_phase_scores,
+            "total_phases": len(safe_phase_scores),
+            "completed_phases": completed,
         }
 
         # Category progress
@@ -138,8 +169,10 @@ async def get_progress(
             completion_metrics.append(min(100, conversation_count * 10))
         if generated_code_count > 0:
             completion_metrics.append(min(100, generated_code_count * 20))
-        if getattr(project, "maturity_score", 0) > 0:
-            completion_metrics.append(getattr(project, "maturity_score", 0))
+
+        # Use already-converted maturity score from above
+        if maturity_score > 0:
+            completion_metrics.append(min(100, float(maturity_score)))
         if len(skills) > 0:
             completion_metrics.append(min(100, len(skills) * 5))
 
@@ -326,3 +359,94 @@ def _generate_recommendations(project) -> list:
         recommendations.append("Continue making progress on your project goals")
 
     return recommendations
+
+
+@router.get(
+    "/{project_id}/stats",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get project statistics",
+)
+async def get_project_stats(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Get project statistics including message count, insights, and questions.
+
+    Args:
+        project_id: Project identifier
+        current_user: Authenticated user
+
+    Returns:
+        SuccessResponse with project statistics
+    """
+    try:
+        logger.info(f"Getting stats for project {project_id}")
+
+        db = get_database()
+        project = db.load_project(project_id)
+
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        # Count conversation messages
+        conversation_history = getattr(project, "conversation_history", []) or []
+        message_count = len(conversation_history)
+
+        # Count insights (messages with type='insight')
+        insight_count = len(
+            [msg for msg in conversation_history if isinstance(msg, dict) and msg.get("type") == "insight"]
+        )
+
+        # Count questions (messages with type='question')
+        question_count = len(
+            [msg for msg in conversation_history if isinstance(msg, dict) and msg.get("type") == "question"]
+        )
+
+        # Count code blocks generated
+        code_count = len(
+            [msg for msg in conversation_history if isinstance(msg, dict) and msg.get("type") == "code"]
+        )
+
+        # Get current phase
+        current_phase = getattr(project, "phase", "discovery")
+
+        # Get maturity score
+        maturity_score = getattr(project, "maturity", 0)
+
+        # Get team info
+        team_members = getattr(project, "team_members", []) or []
+        collaborator_count = len(team_members)
+
+        stats_data = {
+            "project_id": project_id,
+            "project_name": project.name,
+            "message_count": message_count,
+            "insight_count": insight_count,
+            "question_count": question_count,
+            "code_count": code_count,
+            "current_phase": current_phase,
+            "maturity_score": maturity_score,
+            "collaborator_count": collaborator_count,
+            "created_at": getattr(project, "created_at", None),
+            "updated_at": getattr(project, "updated_at", None),
+        }
+
+        return SuccessResponse(
+            success=True,
+            message="Project statistics retrieved successfully",
+            data=stats_data,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting stats for project {project_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get project stats: {str(e)}",
+        )

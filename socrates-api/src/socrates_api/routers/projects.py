@@ -27,9 +27,9 @@ See socratic_system/models/user.py for complete authorization architecture docum
 
 import logging
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 
 if TYPE_CHECKING:
     import socrates
@@ -217,7 +217,7 @@ async def create_project(
             user_object = get_current_user_object(current_user)
 
             # Check if user has active subscription
-            if not user_object.subscription.is_active:
+            if user_object.subscription_status != "active":
                 logger.warning(
                     f"User {current_user} attempted to create project without active subscription"
                 )
@@ -697,18 +697,19 @@ async def get_project_maturity(
 )
 async def advance_phase(
     project_id: str,
-    new_phase: str = Query(
-        ..., description="New phase (discovery, analysis, design, implementation)"
-    ),
+    request: Optional[UpdateProjectRequest] = None,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
     """
     Advance project to the next phase.
 
+    If a request body with phase is provided, set the project to that phase.
+    Otherwise, auto-advance to the next phase in the sequence.
+
     Args:
         project_id: Project identifier
-        new_phase: New phase (discovery, analysis, design, implementation)
+        request: Optional update request with phase field
         current_user: Current authenticated user
         db: Database connection
 
@@ -730,15 +731,29 @@ async def advance_phase(
                 detail="Access denied to this project",
             )
 
-        # Validate phase
+        # Determine the new phase
         valid_phases = ["discovery", "analysis", "design", "implementation"]
-        if new_phase not in valid_phases:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid phase. Must be one of: {', '.join(valid_phases)}",
-            )
+        old_phase = project.phase or "discovery"
 
-        old_phase = project.phase
+        if request and request.phase:
+            # Use the provided phase
+            new_phase = request.phase
+            if new_phase not in valid_phases:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid phase. Must be one of: {', '.join(valid_phases)}",
+                )
+        else:
+            # Auto-advance to the next phase
+            try:
+                current_index = valid_phases.index(old_phase)
+                if current_index < len(valid_phases) - 1:
+                    new_phase = valid_phases[current_index + 1]
+                else:
+                    new_phase = valid_phases[-1]  # Stay at the last phase
+            except (ValueError, IndexError):
+                new_phase = "discovery"  # Default to discovery if phase is invalid
+
         project.phase = new_phase
         project.updated_at = datetime.now(timezone.utc)
 

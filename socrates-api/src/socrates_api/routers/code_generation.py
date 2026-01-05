@@ -80,7 +80,7 @@ async def generate_code(
             user_object = get_current_user_object(current_user)
 
             # Check if user has active subscription
-            if not user_object.subscription.is_active:
+            if user_object.subscription_status != "active":
                 logger.warning(
                     f"User {current_user} attempted to generate code without active subscription"
                 )
@@ -90,7 +90,7 @@ async def generate_code(
                 )
 
             # Check subscription tier - only Professional and Enterprise can generate code
-            subscription_tier = user_object.subscription.tier.lower()
+            subscription_tier = user_object.subscription_tier.lower()
             if subscription_tier == "free":
                 logger.warning(f"Free-tier user {current_user} attempted to generate code")
                 raise HTTPException(
@@ -268,7 +268,7 @@ async def validate_code(
             user_object = get_current_user_object(current_user)
 
             # Check if user has active subscription
-            if not user_object.subscription.is_active:
+            if user_object.subscription_status != "active":
                 logger.warning(
                     f"User {current_user} attempted to validate code without active subscription"
                 )
@@ -278,7 +278,7 @@ async def validate_code(
                 )
 
             # Check subscription tier - only Professional and Enterprise can validate code
-            subscription_tier = user_object.subscription.tier.lower()
+            subscription_tier = user_object.subscription_tier.lower()
             if subscription_tier == "free":
                 logger.warning(f"Free-tier user {current_user} attempted to validate code")
                 raise HTTPException(
@@ -536,7 +536,7 @@ async def refactor_code(
             user_object = get_current_user_object(current_user)
 
             # Check if user has active subscription
-            if not user_object.subscription.is_active:
+            if user_object.subscription_status != "active":
                 logger.warning(
                     f"User {current_user} attempted to refactor code without active subscription"
                 )
@@ -546,7 +546,7 @@ async def refactor_code(
                 )
 
             # Check subscription tier - only Professional and Enterprise can refactor code
-            subscription_tier = user_object.subscription.tier.lower()
+            subscription_tier = user_object.subscription_tier.lower()
             if subscription_tier == "free":
                 logger.warning(f"Free-tier user {current_user} attempted to refactor code")
                 raise HTTPException(

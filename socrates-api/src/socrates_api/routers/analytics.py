@@ -55,7 +55,7 @@ async def get_analytics_summary(
             user_object = get_current_user_object(current_user)
 
             # Check if user has active subscription
-            if not user_object.subscription.is_active:
+            if user_object.subscription_status != "active":
                 logger.warning(
                     f"User {current_user} attempted to access analytics without active subscription"
                 )
@@ -65,7 +65,7 @@ async def get_analytics_summary(
                 )
 
             # Check subscription tier - only Professional and Enterprise can access analytics
-            subscription_tier = user_object.subscription.tier.lower()
+            subscription_tier = user_object.subscription_tier.lower()
             if subscription_tier == "free":
                 logger.warning(f"Free-tier user {current_user} attempted to access analytics")
                 raise HTTPException(
@@ -391,7 +391,7 @@ async def get_trends(
             user_object = get_current_user_object(current_user)
 
             # Check if user has active subscription
-            if not user_object.subscription.is_active:
+            if user_object.subscription_status != "active":
                 logger.warning(
                     f"User {current_user} attempted to access trends without active subscription"
                 )
@@ -401,7 +401,7 @@ async def get_trends(
                 )
 
             # Check subscription tier - only Professional and Enterprise can access trends
-            subscription_tier = user_object.subscription.tier.lower()
+            subscription_tier = user_object.subscription_tier.lower()
             if subscription_tier == "free":
                 logger.warning(f"Free-tier user {current_user} attempted to access trends")
                 raise HTTPException(
@@ -499,7 +499,7 @@ async def get_recommendations(
             user_object = get_current_user_object(current_user)
 
             # Check if user has active subscription
-            if not user_object.subscription.is_active:
+            if user_object.subscription_status != "active":
                 logger.warning(
                     f"User {current_user} attempted to access recommendations without active subscription"
                 )
@@ -509,7 +509,7 @@ async def get_recommendations(
                 )
 
             # Check subscription tier - only Professional and Enterprise can access recommendations
-            subscription_tier = user_object.subscription.tier.lower()
+            subscription_tier = user_object.subscription_tier.lower()
             if subscription_tier == "free":
                 logger.warning(f"Free-tier user {current_user} attempted to access recommendations")
                 raise HTTPException(
