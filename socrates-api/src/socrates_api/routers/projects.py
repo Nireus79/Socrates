@@ -163,6 +163,41 @@ async def create_project(
     try:
         logger.info(f"Creating project: {request.name} for user {current_user}")
 
+        # CRITICAL: Check subscription limit BEFORE attempting to create project
+        # This must happen regardless of whether orchestrator is used
+        logger.info("Checking subscription limits...")
+        try:
+            user_object = get_current_user_object(current_user)
+
+            # Check if user has active subscription
+            if user_object.subscription_status != "active":
+                logger.warning(
+                    f"User {current_user} attempted to create project without active subscription"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Active subscription required to create projects",
+                )
+
+            # Check project limit for subscription tier
+            active_projects = db.get_user_projects(current_user)
+            can_create, error_msg = SubscriptionChecker.check_project_limit(
+                user_object, len(active_projects)
+            )
+            if not can_create:
+                logger.warning(f"User {current_user} exceeded project limit: {error_msg}")
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=error_msg)
+
+            logger.info(f"Subscription validation passed for {current_user}")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error validating subscription: {type(e).__name__}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error validating subscription: {str(e)[:100]}",
+            )
+
         # Try to use orchestrator if available, but don't require it
         try:
             logger.info("Checking if orchestrator is available...")

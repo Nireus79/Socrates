@@ -168,7 +168,7 @@ COMMAND_REGISTRY = [
     (ChatCommand, []),
     (ModeCommand, []),
     (DoneCommand, []),
-    (AdvanceCommand, []),
+    (AdvanceCommand, ["phase"]),
     (HintCommand, []),
     (SkippedCommand, []),
     # Code commands
