@@ -392,7 +392,8 @@
       "Bash(then if ! grep -q \"from.*APIResponse\" \"$file\")",
       "Bash(then echo \"Missing APIResponse import: $file\")",
       "Bash(fi)",
-      "Bash(export ENVIRONMENT=development)"
+      "Bash(export ENVIRONMENT=development)",
+      "Bash(ss:*)"
     ],
     "deny": [],
     "ask": []

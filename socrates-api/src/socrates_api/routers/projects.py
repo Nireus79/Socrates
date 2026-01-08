@@ -329,18 +329,12 @@ async def create_project(
                 # The project is already created successfully
 
         logger.info(f"Project {project_id} created by {current_user} (direct database)")
-        # TEMPORARY DEBUG: Return obvious test response
-        from datetime import datetime
-        return {
-            "success": True,
-            "status": "created",
-            "message": f"TEST RESPONSE FROM NEW CODE at {datetime.now().isoformat()}",
-            "data": {
-                "test": "This proves the new code is running",
-                "project_id": project.project_id,
-                "name": project.name
-            }
-        }
+        return APIResponse(
+            success=True,
+            status="created",
+            message="Project created successfully",
+            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+        )
 
     except HTTPException as e:
         logger.error(f"HTTPException in create_project: {e.detail}")
