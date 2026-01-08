@@ -733,7 +733,12 @@ async def get_project_maturity(
             "overall_maturity": getattr(project, "overall_maturity", 0.0),
         }
 
-        return maturity
+        return APIResponse(
+            success=True,
+            status="success",
+            data=maturity,
+            message="Maturity assessment retrieved successfully",
+        )
 
     except HTTPException:
         raise
