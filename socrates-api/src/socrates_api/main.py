@@ -36,6 +36,7 @@ from .models import (
     CodeGenerationResponse,
     ErrorResponse,
     GenerateCodeRequest,
+    GenerateCodeForProjectRequest,
     InitializeRequest,
     ProcessResponseRequest,
     ProcessResponseResponse,
@@ -233,7 +234,21 @@ app = FastAPI(
 )
 
 # Add security headers middleware
-environment = os.getenv("ENVIRONMENT", "production")
+# Auto-detect environment: if ENVIRONMENT is not explicitly set and running on local machine, use development
+environment = os.getenv("ENVIRONMENT")
+if not environment:
+    hostname = socket.gethostname()
+    # Development detection: common patterns for local machines
+    is_development = (
+        hostname in ["localhost", "127.0.0.1"]
+        or hostname.startswith("LAPTOP-")
+        or hostname.startswith("DESKTOP-")
+        or hostname.startswith("computer")
+    )
+    environment = "development" if is_development else "production"
+else:
+    environment = environment.lower()
+
 add_security_headers_middleware(app, environment=environment)
 
 # Add metrics middleware
@@ -769,74 +784,6 @@ async def generate_code(request: GenerateCodeRequest):
         raise
     except Exception as e:
         logger.error(f"Error generating code: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/projects/{project_id}/code/generate", response_model=CodeGenerationResponse)
-async def generate_code_for_project(
-    project_id: str,
-    request: Optional[GenerateCodeRequest] = Body(default=None),
-):
-    """
-    Generate code for a project (frontend-compatible endpoint)
-
-    Parameters:
-    - project_id: Project identifier (in URL path)
-    - specification: Code specification or requirements (in body, optional)
-    - language: Programming language (in body, optional)
-    """
-    try:
-        orchestrator = get_orchestrator()
-    except RuntimeError:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="System not initialized. Call /initialize first.",
-        )
-
-    try:
-        # Use project_id from URL path
-        specification = request.specification if request else ""
-        specification = specification or ""
-        language = request.language if request else "python"
-        language = language or "python"
-
-        # Load project
-        project_result = orchestrator.process_request(
-            "project_manager", {"action": "load_project", "project_id": project_id}
-        )
-
-        if project_result.get("status") != "success":
-            raise HTTPException(status_code=404, detail="Project not found")
-
-        project = project_result["project"]
-
-        # Generate code
-        code_result = orchestrator.process_request(
-            "code_generator",
-            {
-                "action": "generate_code",
-                "project": project,
-                "specification": specification,
-                "language": language,
-            },
-        )
-
-        if code_result.get("status") == "success":
-            return CodeGenerationResponse(
-                code=code_result.get("script", ""),
-                explanation=code_result.get("explanation"),
-                language=language,
-                token_usage=code_result.get("token_usage"),
-            )
-        else:
-            raise HTTPException(
-                status_code=400, detail=code_result.get("message", "Failed to generate code")
-            )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error generating code for project {project_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
