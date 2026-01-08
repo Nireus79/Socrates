@@ -23,6 +23,7 @@ from socrates_api.middleware.metrics import (
     get_metrics_summary,
     get_metrics_text,
 )
+from socrates_api.port_manager import find_available_port, export_port_config
 from socrates_api.middleware.rate_limit import (
     initialize_limiter,
 )
@@ -333,6 +334,35 @@ app.include_router(chat_sessions_router)
 async def root():
     """Root endpoint"""
     return {"message": "Socrates API", "version": "8.0.0"}
+
+
+@app.get("/port-config", response_class=JSONResponse)
+async def get_port_config():
+    """
+    Get port configuration for frontend discovery.
+
+    This endpoint allows clients to discover the actual port the API is running on,
+    especially useful when dynamic port allocation is used.
+
+    Returns:
+        Port configuration with API and frontend URLs
+    """
+    host = os.getenv("SOCRATES_API_HOST", "127.0.0.1")
+    api_port = os.getenv("SOCRATES_API_PORT", "8008")
+    frontend_port = os.getenv("SOCRATES_FRONTEND_PORT", "5173")
+
+    return {
+        "api": {
+            "host": host,
+            "port": int(api_port),
+            "url": f"http://{host}:{api_port}",
+        },
+        "frontend": {
+            "host": "127.0.0.1",
+            "port": int(frontend_port),
+            "url": f"http://127.0.0.1:{frontend_port}",
+        },
+    }
 
 
 @app.get("/health", response_model=dict)
@@ -831,24 +861,54 @@ async def general_error_handler(request, exc: Exception):
 
 
 def run():
-    """Run the API server"""
+    """
+    Run the API server with dynamic port allocation.
+
+    If the configured port is unavailable, automatically finds and uses the next available port.
+    Exports port configuration for frontend discovery.
+    """
     host = os.getenv("SOCRATES_API_HOST", "127.0.0.1")
-    port = int(os.getenv("SOCRATES_API_PORT", "8000"))
+    preferred_port = int(os.getenv("SOCRATES_API_PORT", "8008"))
     reload = os.getenv("SOCRATES_API_RELOAD", "False").lower() == "true"
 
-    # Check if port is available
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    result = sock.connect_ex((host, port))
-    sock.close()
+    # DYNAMIC PORT ALLOCATION - Find available port
+    logger.info(f"Looking for available port starting from {preferred_port}...")
+    try:
+        actual_port = find_available_port(preferred_port=preferred_port, host=host)
+    except RuntimeError as e:
+        logger.error(f"Failed to find available port: {e}")
+        raise
 
-    if result == 0:
-        logger.warning(f"Port {port} is already in use. Attempting to use it anyway.")
-    else:
-        logger.info(f"Port {port} is available")
+    # Log port information
+    logger.info("=" * 70)
+    logger.info("SOCRATES API SERVER CONFIGURATION")
+    logger.info("=" * 70)
+    logger.info(f"Host:           {host}")
+    logger.info(f"Preferred Port: {preferred_port}")
+    logger.info(f"Actual Port:    {actual_port}")
+    logger.info(f"API URL:        http://{host}:{actual_port}")
+    logger.info("=" * 70)
 
-    logger.info(f"Starting Socrates API on {host}:{port}")
+    # Export port configuration for frontend discovery
+    try:
+        config_file = export_port_config(
+            api_port=actual_port,
+            frontend_port=int(os.getenv("SOCRATES_FRONTEND_PORT", "5173")),
+            output_dir=Path.cwd(),
+        )
+        logger.info(f"Port config exported to: {config_file}")
+    except Exception as e:
+        logger.warning(f"Failed to export port config: {e}")
 
-    uvicorn.run("socrates_api.main:app", host=host, port=port, reload=reload, log_level="info")
+    # Start server on actual available port
+    logger.info(f"Starting Socrates API server...")
+    uvicorn.run(
+        "socrates_api.main:app",
+        host=host,
+        port=actual_port,
+        reload=reload,
+        log_level="info",
+    )
 
 
 if __name__ == "__main__":

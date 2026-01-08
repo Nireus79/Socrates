@@ -12,33 +12,113 @@ import axios from 'axios';
 import type { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 // Initialize API_BASE_URL with fallback chain:
-// 1. Try to load from server-config.json (written by full-stack startup)
-// 2. Fall back to environment variable
-// 3. Final fallback to localhost:8000
+// 1. Try to load from API's port-config endpoint (dynamic port allocation)
+// 2. Try to load from server-config.json (written by full-stack startup)
+// 3. Fall back to environment variable
+// 4. Final fallback to localhost:8000
 let API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Store callback for when config is loaded
 let onConfigLoaded: ((url: string) => void) | null = null;
 
+// Attempt to detect API on a specific port
+const tryPort = async (port: number): Promise<boolean> => {
+  try {
+    const url = `http://127.0.0.1:${port}/health`;
+    const response = await fetch(url, { method: 'GET', timeout: 2000 });
+    return response.ok;
+  } catch {
+    return false;
+  }
+};
+
 // Load server config if available
 const loadServerConfig = async () => {
+  // Strategy 1: Try to load from API's /port-config endpoint on common ports
+  console.log('[APIClient] Attempting to discover API port from /port-config endpoint...');
+  for (let port = 8008; port <= 8020; port++) {
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/port-config`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(1000),
+      });
+      if (response.ok) {
+        const config = await response.json();
+        if (config.api && config.api.url) {
+          API_BASE_URL = config.api.url;
+          console.log('[APIClient] Discovered API from /port-config endpoint:', API_BASE_URL);
+          if (onConfigLoaded) {
+            onConfigLoaded(API_BASE_URL);
+          }
+          return;
+        }
+      }
+    } catch {
+      // Continue to next port
+    }
+  }
+  console.log('[APIClient] Could not discover API from /port-config endpoint');
+
+  // Strategy 2: Try to load from port-config.json in current directory
   try {
-    const response = await fetch('/server-config.json');
+    console.log('[APIClient] Attempting to load port config from /port-config.json...');
+    const response = await fetch('/port-config.json', {
+      signal: AbortSignal.timeout(1000),
+    });
+    if (response.ok) {
+      const config = await response.json();
+      if (config.api && config.api.url) {
+        API_BASE_URL = config.api.url;
+        console.log('[APIClient] Loaded API URL from port-config.json:', API_BASE_URL);
+        if (onConfigLoaded) {
+          onConfigLoaded(API_BASE_URL);
+        }
+        return;
+      }
+    }
+  } catch (error) {
+    console.debug('[APIClient] Could not load port-config.json');
+  }
+
+  // Strategy 3: Try to load from server-config.json (legacy support)
+  try {
+    console.log('[APIClient] Attempting to load from server-config.json...');
+    const response = await fetch('/server-config.json', {
+      signal: AbortSignal.timeout(1000),
+    });
     if (response.ok) {
       const config = await response.json();
       if (config.api_url) {
         API_BASE_URL = config.api_url;
         console.log('[APIClient] Loaded API URL from server config:', API_BASE_URL);
-        // Notify any waiting listeners
         if (onConfigLoaded) {
           onConfigLoaded(API_BASE_URL);
         }
+        return;
       }
     }
   } catch (error) {
-    // Silently ignore - will use fallback
-    console.debug('[APIClient] Could not load server config, using default:', API_BASE_URL);
+    console.debug('[APIClient] Could not load server-config.json');
   }
+
+  // Strategy 4: Try common ports as health check fallback
+  console.log('[APIClient] Attempting health check on common ports...');
+  for (let port = 8008; port <= 8020; port++) {
+    try {
+      if (await tryPort(port)) {
+        API_BASE_URL = `http://127.0.0.1:${port}`;
+        console.log('[APIClient] Auto-detected API on port:', port);
+        if (onConfigLoaded) {
+          onConfigLoaded(API_BASE_URL);
+        }
+        return;
+      }
+    } catch {
+      // Continue to next port
+    }
+  }
+
+  console.log('[APIClient] Using configured/default API URL:', API_BASE_URL);
 };
 
 // Call on module load
