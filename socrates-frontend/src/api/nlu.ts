@@ -70,8 +70,8 @@ export const nluAPI = {
         } as NLUInterpretRequest
       );
 
-      // apiClient.post already unwraps APIResponse and returns just the data field
-      const nluResult = response;
+      // apiClient.post returns SuccessResponse which has data field containing NLU result
+      const nluResult = response.data;
 
       if (!nluResult || !nluResult.status) {
         console.error('Invalid NLU response structure:', response);
