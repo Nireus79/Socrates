@@ -255,6 +255,10 @@ async def send_chat_message(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
+        # Verify project ownership
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
+
         sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
         if not session:
@@ -325,6 +329,10 @@ async def get_chat_messages(
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
+
+        # Verify project ownership
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
 
         sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
@@ -399,6 +407,10 @@ async def update_chat_message(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
+        # Verify project ownership
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
+
         sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
         if not session:
@@ -470,6 +482,10 @@ async def delete_chat_message(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
+        # Verify project ownership
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
+
         sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
         if not session:
@@ -523,6 +539,10 @@ async def archive_chat_session(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
+        # Verify project ownership
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
+
         sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)
         if not session:
@@ -574,6 +594,10 @@ async def restore_chat_session(
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
+
+        # Verify project ownership
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
 
         sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)

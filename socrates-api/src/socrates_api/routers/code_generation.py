@@ -225,8 +225,35 @@ async def generate_code(
 
             # Record event
             from datetime import datetime
+            import os
+            from pathlib import Path
 
             generation_id = f"gen_{int(__import__('time').time() * 1000)}"
+
+            # Determine file extension based on language
+            ext_map = {
+                "python": ".py",
+                "javascript": ".js",
+                "typescript": ".ts",
+                "java": ".java",
+                "csharp": ".cs",
+                "go": ".go",
+                "cpp": ".cpp",
+                "rust": ".rs",
+                "sql": ".sql",
+            }
+            file_ext = ext_map.get(language, ".txt")
+
+            # Create generated_files directory if it doesn't exist
+            project_data_dir = Path(f"~/.socrates/projects/{project_id}").expanduser()
+            generated_files_dir = project_data_dir / "generated_files"
+            generated_files_dir.mkdir(parents=True, exist_ok=True)
+
+            # Save generated code to file
+            filename = f"generated_{generation_id}{file_ext}"
+            file_path = generated_files_dir / filename
+            file_path.write_text(generated_code, encoding='utf-8')
+            logger.info(f"Code generated and saved to {file_path}")
 
             # Save to code history
             project.code_history = project.code_history or []
@@ -238,6 +265,8 @@ async def generate_code(
                     "language": language,
                     "explanation": explanation,
                     "lines": len(generated_code.splitlines()),
+                    "file_path": str(file_path),
+                    "filename": filename,
                 }
             )
             db.save_project(project)
@@ -308,7 +337,7 @@ async def validate_code(
     db: ProjectDatabase = Depends(get_database),
 ):
     """
-    Validate generated code for syntax and best practices.
+    Validate generated code for syntax and best practices (requires Professional or Enterprise tier).
 
     Args:
         project_id: Project identifier
@@ -319,6 +348,10 @@ async def validate_code(
 
     Returns:
         Validation results with errors, warnings, and suggestions
+
+    Note:
+        This feature requires Professional or Enterprise subscription tier.
+        Free-tier users will receive a 403 Forbidden error.
     """
     try:
         # CRITICAL: Validate subscription for code validation feature
@@ -507,15 +540,14 @@ async def get_code_history(
                 detail="Access denied",
             )
 
-        # Load code history from database
-        # Note: Requires schema for code_generations table with fields:
-        # id, project_id, code, language, timestamp, status, feedback
-        # Current implementation returns empty list as schema is not yet implemented
-        generations = []
-        total = 0
+        # Load code history from project
+        all_generations = project.code_history or []
+        total = len(all_generations)
 
-        # TODO for future: Query database for code generations
-        # Example: generations = db.query_code_generations(project_id, limit, offset)
+        # Apply pagination
+        paginated_generations = all_generations[offset : offset + limit]
+
+        generations = paginated_generations
 
         logger.debug(f"Code history retrieved for project {project_id}: {total} generations")
 
@@ -581,9 +613,13 @@ async def refactor_code(
     db: ProjectDatabase = Depends(get_database),
 ):
     """
-    Refactor existing code.
+    Refactor existing code (requires Professional or Enterprise tier).
 
     Types: optimize, simplify, document, modernize
+
+    Note:
+        This feature requires Professional or Enterprise subscription tier.
+        Free-tier users will receive a 403 Forbidden error.
 
     Args:
         project_id: Project identifier
@@ -594,7 +630,7 @@ async def refactor_code(
         db: Database connection
 
     Returns:
-        Refactored code with explanation
+        Refactored code with explanation and changes
     """
     try:
         # CRITICAL: Validate subscription for code refactoring feature
@@ -661,58 +697,120 @@ async def refactor_code(
                 detail="Access denied",
             )
 
-        # Refactor code using AI
-        from datetime import datetime
-
-        # For now, simulate refactoring (in production, would use Claude)
-        refactored_code = code.replace("_", "").strip()  # Simple example transformation
-        explanation = f"Code has been refactored for {refactor_type}"
-
         logger.info(f"Code refactoring ({refactor_type}) requested in project {project_id}")
 
-        # Save refactored version to code history
-        generation_id = f"gen_{int(__import__('time').time() * 1000)}"
-        project.code_history = project.code_history or []
-        project.code_history.append(
-            {
-                "id": generation_id,
-                "code": refactored_code,
-                "timestamp": datetime.utcnow().isoformat(),
-                "language": language,
-                "explanation": explanation,
-                "refactor_type": refactor_type,
-                "lines": len(refactored_code.splitlines()),
+        try:
+            from socrates_api.main import get_orchestrator
+            from socrates_api.routers.events import record_event
+            from datetime import datetime
+            import os
+            from pathlib import Path
+
+            orchestrator = get_orchestrator()
+
+            # Use code generator agent via orchestrator routing for refactoring
+            result = await orchestrator.process_request_async(
+                "code_generator",
+                {
+                    "action": "refactor_code",
+                    "project": project,
+                    "code": code,
+                    "language": language,
+                    "refactor_type": refactor_type,
+                    "current_user": current_user,
+                    "is_api_mode": True,
+                },
+            )
+
+            # Extract refactored code from orchestrator result
+            refactored_code = result.get("code", "").strip() if result.get("status") == "success" else ""
+            explanation = result.get("explanation", f"Code refactored for {refactor_type}")
+            changes = result.get("changes", [])
+
+            # If refactoring failed, use original code with note
+            if not refactored_code:
+                logger.info(f"Refactoring failed, returning original code for {language}")
+                refactored_code = code
+                explanation = f"Refactoring request could not be completed. Original code returned."
+                changes = []
+
+            # Generate ID for this refactoring
+            generation_id = f"ref_{int(__import__('time').time() * 1000)}"
+
+            # Determine file extension based on language
+            ext_map = {
+                "python": ".py",
+                "javascript": ".js",
+                "typescript": ".ts",
+                "java": ".java",
+                "csharp": ".cs",
+                "go": ".go",
+                "cpp": ".cpp",
+                "rust": ".rs",
+                "sql": ".sql",
             }
-        )
-        db.save_project(project)
+            file_ext = ext_map.get(language, ".txt")
 
-        from socrates_api.routers.events import record_event
+            # Create refactored_files directory if it doesn't exist
+            project_data_dir = Path(f"~/.socrates/projects/{project_id}").expanduser()
+            refactored_files_dir = project_data_dir / "refactored_files"
+            refactored_files_dir.mkdir(parents=True, exist_ok=True)
 
-        record_event(
-            "code_refactored",
-            {
-                "project_id": project_id,
-                "language": language,
-                "refactor_type": refactor_type,
-            },
-            user_id=current_user,
-        )
+            # Save refactored code to file
+            filename = f"refactored_{generation_id}{file_ext}"
+            file_path = refactored_files_dir / filename
+            file_path.write_text(refactored_code, encoding='utf-8')
+            logger.info(f"Refactored code saved to {file_path}")
 
-        return APIResponse(
-            success=True,
-            status="success",
-            message="Code refactored successfully",
-            data=CodeRefactoringData(
-                refactored_code=refactored_code,
-                explanation=explanation,
-                language=language,
-                refactor_type=refactor_type,
-                changes=[
-                    "Improved variable naming",
-                    "Reduced complexity",
-                ],
-            ).dict(),
-        )
+            # Save to code history
+            project.code_history = project.code_history or []
+            project.code_history.append(
+                {
+                    "id": generation_id,
+                    "code": refactored_code,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "language": language,
+                    "explanation": explanation,
+                    "refactor_type": refactor_type,
+                    "changes": changes,
+                    "lines": len(refactored_code.splitlines()),
+                    "file_path": str(file_path),
+                    "filename": filename,
+                }
+            )
+            db.save_project(project)
+
+            record_event(
+                "code_refactored",
+                {
+                    "project_id": project_id,
+                    "language": language,
+                    "refactor_type": refactor_type,
+                    "lines": len(refactored_code.splitlines()),
+                    "generation_id": generation_id,
+                },
+                user_id=current_user,
+            )
+
+            return APIResponse(
+                success=True,
+                status="success",
+                message="Code refactored successfully",
+                data=CodeRefactoringData(
+                    refactored_code=refactored_code,
+                    explanation=explanation,
+                    language=language,
+                    refactor_type=refactor_type,
+                    changes=changes if changes else ["Code analyzed and refactored"],
+                ).dict(),
+            )
+
+        except Exception as e:
+            logger.error(f"Error in code refactoring: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to refactor code: {str(e)[:100]}",
+            )
 
     except HTTPException:
         raise

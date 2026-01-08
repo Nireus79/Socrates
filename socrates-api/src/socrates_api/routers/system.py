@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socrates_api.models import SuccessResponse
+from socrates_api.models import APIResponse, SuccessResponse
 from socratic_system.utils.logger import set_debug_mode, is_debug_mode
 
 logger = logging.getLogger(__name__)

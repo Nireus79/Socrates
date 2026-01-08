@@ -86,7 +86,7 @@ def _project_to_response(project: ProjectContext) -> ProjectResponse:
 
 @router.get(
     "",
-    response_model=ListProjectsResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="List user's projects",
     responses={
@@ -114,9 +114,14 @@ async def list_projects(
         # Load all projects for user
         projects = db.get_user_projects(current_user)
 
-        project_responses = [_project_to_response(p) for p in projects]
+        project_responses = [_project_to_response(p).dict() if hasattr(_project_to_response(p), 'dict') else _project_to_response(p) for p in projects]
 
-        return ListProjectsResponse(projects=project_responses, total=len(project_responses))
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Projects retrieved successfully",
+            data={"projects": project_responses, "total": len(project_responses)},
+        )
 
     except HTTPException:
         raise
@@ -130,7 +135,7 @@ async def list_projects(
 
 @router.post(
     "",
-    response_model=ProjectResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Create new project",
     responses={
@@ -219,7 +224,12 @@ async def create_project(
                     logger.info(
                         f"Project {project.project_id} created by {current_user} (via orchestrator)"
                     )
-                    return _project_to_response(project)
+                    return APIResponse(
+                        success=True,
+                        status="created",
+                        message="Project created successfully",
+                        data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+                    )
                 else:
                     error_message = result.get("message", "Failed to create project")
                     if "subscription" in error_message.lower():
@@ -319,7 +329,18 @@ async def create_project(
                 # The project is already created successfully
 
         logger.info(f"Project {project_id} created by {current_user} (direct database)")
-        return _project_to_response(project)
+        # TEMPORARY DEBUG: Return obvious test response
+        from datetime import datetime
+        return {
+            "success": True,
+            "status": "created",
+            "message": f"TEST RESPONSE FROM NEW CODE at {datetime.now().isoformat()}",
+            "data": {
+                "test": "This proves the new code is running",
+                "project_id": project.project_id,
+                "name": project.name
+            }
+        }
 
     except HTTPException as e:
         logger.error(f"HTTPException in create_project: {e.detail}")
@@ -334,7 +355,7 @@ async def create_project(
 
 @router.get(
     "/{project_id}",
-    response_model=ProjectResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get project details",
     responses={
@@ -384,7 +405,12 @@ async def get_project(
                     detail="Access denied to this project",
                 )
 
-        return _project_to_response(project)
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Project retrieved successfully",
+            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+        )
 
     except HTTPException:
         raise
@@ -398,7 +424,7 @@ async def get_project(
 
 @router.put(
     "/{project_id}",
-    response_model=ProjectResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Update project",
     responses={
@@ -452,7 +478,12 @@ async def update_project(
         db.save_project(project)
         logger.info(f"Project {project_id} updated by {current_user}")
 
-        return _project_to_response(project)
+        return APIResponse(
+            success=True,
+            status="updated",
+            message="Project updated successfully",
+            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+        )
 
     except HTTPException:
         raise
@@ -529,7 +560,7 @@ async def delete_project(
 
 @router.post(
     "/{project_id}/restore",
-    response_model=ProjectResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Restore archived project",
     responses={
@@ -577,7 +608,12 @@ async def restore_project(
 
         logger.info(f"Project {project_id} restored by {current_user}")
 
-        return _project_to_response(project)
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Project restored successfully",
+            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+        )
 
     except HTTPException:
         raise
@@ -717,7 +753,7 @@ async def get_project_maturity(
 
 @router.put(
     "/{project_id}/phase",
-    response_model=ProjectResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Advance project phase",
     responses={
@@ -793,7 +829,12 @@ async def advance_phase(
 
         logger.info(f"Project {project_id} phase advanced from {old_phase} to {new_phase}")
 
-        return _project_to_response(project)
+        return APIResponse(
+            success=True,
+            status="updated",
+            message=f"Project phase advanced to {new_phase}",
+            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+        )
 
     except HTTPException:
         raise
@@ -923,7 +964,7 @@ async def get_project_analytics(
     status_code=status.HTTP_200_OK,
     summary="Get project files",
     responses={
-        200: {"description": "Files retrieved successfully"},
+        200: {"description": "Files retrieved successfully", "model": APIResponse},
         401: {"description": "Not authenticated", "model": ErrorResponse},
         404: {"description": "Project not found", "model": ErrorResponse},
     },
@@ -959,39 +1000,64 @@ async def get_project_files(
                 detail="Access denied to this project",
             )
 
-        # Return mock file structure
-        files = [
-            {
-                "id": "file_1",
-                "name": "main.py",
-                "path": "/main.py",
-                "type": "python",
-                "size": 2048,
-                "created_at": project.created_at,
-                "updated_at": project.updated_at,
-            },
-            {
-                "id": "file_2",
-                "name": "utils.py",
-                "path": "/utils.py",
-                "type": "python",
-                "size": 1024,
-                "created_at": project.created_at,
-                "updated_at": project.updated_at,
-            },
-            {
-                "id": "file_3",
-                "name": "requirements.txt",
-                "path": "/requirements.txt",
-                "type": "text",
-                "size": 512,
-                "created_at": project.created_at,
-                "updated_at": project.updated_at,
-            },
-        ]
+        # Read actual project files from filesystem
+        from pathlib import Path
+        from datetime import datetime
 
-        return SuccessResponse(
+        files = []
+        project_data_dir = Path(f"~/.socrates/projects/{project_id}").expanduser()
+
+        if project_data_dir.exists():
+            # Scan for files in project directory and subdirectories
+            file_id_counter = 1
+            for file_path in sorted(project_data_dir.rglob("*")):
+                if file_path.is_file():
+                    # Skip certain system files
+                    if file_path.name.startswith("."):
+                        continue
+
+                    # Determine file type from extension
+                    suffix = file_path.suffix.lower()
+                    type_map = {
+                        ".py": "python",
+                        ".js": "javascript",
+                        ".ts": "typescript",
+                        ".tsx": "typescript",
+                        ".jsx": "javascript",
+                        ".java": "java",
+                        ".cs": "csharp",
+                        ".cpp": "cpp",
+                        ".go": "go",
+                        ".rs": "rust",
+                        ".sql": "sql",
+                        ".txt": "text",
+                        ".md": "markdown",
+                        ".json": "json",
+                        ".yaml": "yaml",
+                        ".yml": "yaml",
+                    }
+                    file_type = type_map.get(suffix, "file")
+
+                    # Get file stats
+                    stat = file_path.stat()
+                    rel_path = "/" + str(file_path.relative_to(project_data_dir))
+
+                    files.append(
+                        {
+                            "id": f"file_{file_id_counter}",
+                            "name": file_path.name,
+                            "path": rel_path,
+                            "type": file_type,
+                            "size": stat.st_size,
+                            "created_at": datetime.fromtimestamp(stat.st_ctime).isoformat(),
+                            "updated_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                        }
+                    )
+                    file_id_counter += 1
+
+        return APIResponse(
             success=True,
+            status="success",
             message=f"Files retrieved for project {project_id}",
             data={
                 "project_id": project_id,
