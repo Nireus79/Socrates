@@ -117,8 +117,8 @@ export const nluAPI = {
         '/nlu/commands'
       );
 
-      // apiClient.get returns SuccessResponse which has data field containing commands
-      const commandsData = response.data;
+      // apiClient.get already unwraps APIResponse and returns the data field directly
+      const commandsData = response;
       return commandsData?.commands || {};
     } catch (error) {
       console.error('Failed to fetch available commands:', error);
