@@ -85,3 +85,4 @@ socrates-frontend/node_modules/
 # API build
 socrates-api/.coverage/
 socrates-api/dist/
+.claude/settings.local.json
