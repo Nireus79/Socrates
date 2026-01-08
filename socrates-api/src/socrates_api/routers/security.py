@@ -30,7 +30,7 @@ def get_database() -> ProjectDatabase:
 
 @router.post(
     "/password/change",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Change user password",
     responses={
@@ -139,7 +139,7 @@ async def change_password(
 
 @router.post(
     "/2fa/setup",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Setup 2FA",
     responses={
@@ -247,7 +247,7 @@ async def setup_2fa(
 
 @router.post(
     "/2fa/verify",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Verify 2FA code",
     responses={
@@ -346,7 +346,7 @@ async def verify_2fa(
 
 @router.post(
     "/2fa/disable",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Disable 2FA",
     responses={
@@ -442,7 +442,7 @@ async def disable_2fa(
 
 @router.get(
     "/sessions",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="List active sessions",
     responses={
@@ -500,7 +500,7 @@ async def list_sessions(
 
 @router.delete(
     "/sessions/{session_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Revoke session",
     responses={
@@ -576,7 +576,7 @@ async def revoke_session(
 
 @router.post(
     "/sessions/revoke-all",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Revoke all sessions",
     responses={

@@ -22,7 +22,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 @router.get(
     "/question/{project_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get next Socratic question",
     responses={
@@ -90,7 +90,7 @@ async def get_next_question(
 
 @router.get(
     "/history/{project_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get conversation history",
     responses={
@@ -149,7 +149,7 @@ async def get_conversation_history(
 
 @router.get(
     "/summary/{project_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get conversation summary",
     responses={

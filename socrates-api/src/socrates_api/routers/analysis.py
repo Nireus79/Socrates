@@ -19,7 +19,7 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 
 @router.post(
     "/validate",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Validate code",
     responses={
@@ -114,8 +114,8 @@ async def validate_code(
 
 
 @router.post(
-    "/maturity",
-    response_model=SuccessResponse,
+    "/{project_id}/maturity",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Assess code maturity",
     responses={
@@ -211,7 +211,7 @@ async def assess_maturity(
 
 @router.post(
     "/test",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Run tests for project",
     responses={
@@ -290,7 +290,7 @@ async def run_tests(
 
 @router.post(
     "/structure",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Analyze project structure",
     responses={
@@ -366,7 +366,7 @@ async def analyze_structure(
 
 @router.post(
     "/review",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Perform code review",
     responses={
@@ -444,7 +444,7 @@ async def review_code(
 
 @router.post(
     "/fix",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Auto-fix code issues",
     responses={
@@ -522,7 +522,7 @@ async def auto_fix_issues(
 
 @router.get(
     "/report/{project_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get analysis report",
     responses={

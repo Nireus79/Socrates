@@ -22,7 +22,7 @@ router = APIRouter(prefix="/query", tags=["query"])
 
 @router.post(
     "/explain",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Explain a concept",
 )
@@ -116,7 +116,7 @@ async def explain_concept(
 
 @router.post(
     "/search",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Search knowledge base",
 )
@@ -217,7 +217,7 @@ async def search_knowledge(
 
 @router.get(
     "/similar/{concept}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Find similar concepts",
 )

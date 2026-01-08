@@ -466,7 +466,7 @@ async def update_project(
 
 @router.delete(
     "/{project_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Archive/delete project",
     responses={
@@ -919,7 +919,7 @@ async def get_project_analytics(
 
 @router.get(
     "/{project_id}/files",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get project files",
     responses={

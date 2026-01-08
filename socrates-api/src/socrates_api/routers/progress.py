@@ -21,7 +21,7 @@ router = APIRouter(prefix="/projects", tags=["progress"])
 
 @router.get(
     "/{project_id}/progress",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get overall project progress",
 )
@@ -223,7 +223,7 @@ async def get_progress(
 
 @router.get(
     "/{project_id}/progress/status",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get detailed progress status",
 )
@@ -380,7 +380,7 @@ def _generate_recommendations(project) -> list:
 
 @router.get(
     "/{project_id}/stats",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get project statistics",
 )

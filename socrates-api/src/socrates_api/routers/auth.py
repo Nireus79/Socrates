@@ -349,7 +349,7 @@ async def refresh(request: RefreshTokenRequest, db: ProjectDatabase = Depends(ge
 
 @router.put(
     "/change-password",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Change user password",
     responses={
@@ -448,7 +448,7 @@ async def change_password(
 
 @router.post(
     "/logout",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Logout from account",
     responses={
@@ -636,7 +636,7 @@ async def _delete_user_helper(
 
 @router.delete(
     "/me",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Delete user account",
     responses={
@@ -691,7 +691,7 @@ async def delete_account(
 
 @router.put(
     "/me/testing-mode",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Toggle testing mode (bypasses subscription checks)",
     responses={

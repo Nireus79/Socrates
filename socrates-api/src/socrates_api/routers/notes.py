@@ -34,7 +34,7 @@ router = APIRouter(prefix="/projects", tags=["notes"])
 
 @router.post(
     "/{project_id}/notes",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Add project note",
 )
@@ -62,6 +62,10 @@ async def add_note(
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
+
+        # Verify project ownership
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
 
         # Create note
         note = {
@@ -100,7 +104,7 @@ async def add_note(
 
 @router.get(
     "/{project_id}/notes",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="List project notes",
 )
@@ -130,6 +134,10 @@ async def list_notes(
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
+
+        # Verify project ownership
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
 
         # Get notes
         notes = project.notes or []
@@ -166,7 +174,7 @@ async def list_notes(
 
 @router.post(
     "/{project_id}/notes/search",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Search project notes",
 )
@@ -194,6 +202,10 @@ async def search_notes(
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
+
+        # Verify project ownership
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
 
         # Search in notes
         notes = project.notes or []
@@ -228,7 +240,7 @@ async def search_notes(
 
 @router.delete(
     "/{project_id}/notes/{note_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Delete project note",
 )
@@ -256,6 +268,10 @@ async def delete_note(
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
+
+        # Verify project ownership
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
 
         # Find and delete note
         notes = project.notes or []

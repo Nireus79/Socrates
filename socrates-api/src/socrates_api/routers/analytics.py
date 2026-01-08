@@ -25,7 +25,7 @@ router = APIRouter(prefix="/analytics", tags=["analytics"])
 
 @router.get(
     "/summary",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get analytics summary",
     responses={
@@ -187,7 +187,7 @@ async def get_analytics_summary(
 
 @router.get(
     "/projects/{project_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get project analytics",
     responses={
@@ -261,7 +261,7 @@ async def get_project_analytics(
 
 @router.get(
     "/code-metrics",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get code metrics",
     responses={
@@ -308,7 +308,7 @@ async def get_code_metrics():
 
 @router.get(
     "/usage",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get usage analytics",
     responses={
@@ -364,7 +364,7 @@ def get_database() -> ProjectDatabase:
 
 @router.get(
     "/trends",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get analytics trends",
     responses={
@@ -475,7 +475,7 @@ async def get_trends(
 
 @router.post(
     "/recommend",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get personalized learning recommendations",
     responses={
@@ -593,7 +593,7 @@ async def get_recommendations(
 
 @router.post(
     "/export",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Export analytics report as PDF or CSV",
     responses={
@@ -853,7 +853,7 @@ async def download_analytics_report(
 
 @router.post(
     "/comparative",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Compare two projects",
     responses={
@@ -935,7 +935,7 @@ async def compare_projects(
 
 @router.post(
     "/report",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Generate analytics report",
     responses={
@@ -1019,7 +1019,7 @@ async def generate_report(
 
 @router.post(
     "/analyze",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Analyze project",
     responses={
@@ -1092,7 +1092,7 @@ async def analyze_project(
 
 @router.get(
     "/dashboard/{project_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get analytics dashboard data",
     responses={
@@ -1187,7 +1187,7 @@ async def get_dashboard_analytics(
 
 @router.get(
     "/breakdown/{project_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get detailed analytics breakdown",
 )
@@ -1290,7 +1290,7 @@ async def get_analytics_breakdown(
 
 @router.get(
     "/status/{project_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get analytics status and health",
 )

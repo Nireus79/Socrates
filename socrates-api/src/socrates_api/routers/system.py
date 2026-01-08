@@ -26,7 +26,7 @@ router = APIRouter(prefix="/system", tags=["system"])
 
 @router.get(
     "/help",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get system help and documentation",
 )
@@ -184,7 +184,7 @@ async def get_help(
 
 @router.get(
     "/info",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get system information",
 )
@@ -304,7 +304,7 @@ async def get_info(
 
 @router.get(
     "/status",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get system operational status",
 )
@@ -398,7 +398,7 @@ async def get_status(
 
 @router.post(
     "/logs",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get system logs",
 )
@@ -487,7 +487,7 @@ async def get_logs(
 
 @router.post(
     "/context",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get current system context",
 )

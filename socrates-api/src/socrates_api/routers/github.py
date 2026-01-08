@@ -41,7 +41,7 @@ def get_database() -> ProjectDatabase:
 
 @router.post(
     "/import",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Import GitHub repository as project",
     responses={
@@ -195,7 +195,7 @@ async def import_repository(
 
 @router.post(
     "/projects/{project_id}/pull",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Pull latest changes from GitHub",
     responses={
@@ -384,7 +384,7 @@ async def pull_changes(
 
 @router.post(
     "/projects/{project_id}/push",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Push local changes to GitHub",
     responses={
@@ -591,7 +591,7 @@ async def push_changes(
 
 @router.post(
     "/projects/{project_id}/sync",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Sync with GitHub (pull then push)",
     responses={
@@ -835,7 +835,7 @@ async def sync_project(
 
 @router.get(
     "/projects/{project_id}/status",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get GitHub sync status",
     responses={
@@ -909,7 +909,7 @@ async def get_sync_status(
 
 @router.get(
     "/pull",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Pull changes from GitHub",
     responses={
@@ -958,7 +958,7 @@ async def pull_github_changes(
 
 @router.post(
     "/push",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Push changes to GitHub",
     responses={
@@ -1013,7 +1013,7 @@ async def push_github_changes(
 
 @router.get(
     "/status",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get GitHub sync status",
     responses={
@@ -1063,7 +1063,7 @@ async def get_github_status(
 
 @router.post(
     "/disconnect",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Disconnect from GitHub",
     responses={

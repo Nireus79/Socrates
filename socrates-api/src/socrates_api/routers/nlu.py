@@ -190,7 +190,7 @@ Respond ONLY with valid JSON."""
 
 @router.post(
     "/interpret",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Interpret natural language input with AI",
 )
@@ -402,7 +402,7 @@ async def interpret_input(
 
 @router.get(
     "/commands",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get list of available commands",
 )
@@ -634,7 +634,7 @@ async def get_available_commands(
 
 @router.get(
     "/suggestions",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get context-aware command suggestions",
 )

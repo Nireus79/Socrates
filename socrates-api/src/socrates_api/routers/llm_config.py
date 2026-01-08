@@ -17,7 +17,7 @@ router = APIRouter(prefix="/llm-config", tags=["llm-config"])
 
 @router.get(
     "/providers",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="List available LLM providers",
 )
@@ -65,7 +65,7 @@ async def list_providers(
 
 @router.get(
     "/config",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get LLM configuration",
 )
@@ -115,7 +115,7 @@ async def get_config(
 
 @router.post(
     "/default-provider",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Set default LLM provider",
 )
@@ -168,7 +168,7 @@ async def set_default_provider(
 
 @router.post(
     "/api-key",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Set API key for provider",
 )
@@ -228,7 +228,7 @@ async def set_api_key(
 
 @router.get(
     "/usage-stats",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get LLM usage statistics",
 )

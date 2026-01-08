@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/llm", tags=["llm"])
 
 
-@router.get("/providers", response_model=SuccessResponse)
+@router.get("/providers", response_model=APIResponse)
 async def list_providers(current_user: str = Depends(get_current_user)):
     try:
         from socrates_api.main import get_orchestrator
@@ -30,7 +30,7 @@ async def list_providers(current_user: str = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/config", response_model=SuccessResponse)
+@router.get("/config", response_model=APIResponse)
 async def get_config(current_user: str = Depends(get_current_user)):
     try:
         from socrates_api.main import get_orchestrator
@@ -49,7 +49,7 @@ async def get_config(current_user: str = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/default-provider", response_model=SuccessResponse)
+@router.put("/default-provider", response_model=APIResponse)
 async def set_default_provider(provider: str, current_user: str = Depends(get_current_user)):
     try:
         from socrates_api.main import get_orchestrator
@@ -71,7 +71,7 @@ async def set_default_provider(provider: str, current_user: str = Depends(get_cu
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/model", response_model=SuccessResponse)
+@router.put("/model", response_model=APIResponse)
 async def set_model(provider: str, model: str, current_user: str = Depends(get_current_user)):
     try:
         from socrates_api.main import get_orchestrator
@@ -96,7 +96,7 @@ async def set_model(provider: str, model: str, current_user: str = Depends(get_c
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/api-key", response_model=SuccessResponse)
+@router.post("/api-key", response_model=APIResponse)
 async def set_api_key(provider: str, api_key: str, current_user: str = Depends(get_current_user)):
     try:
         from socrates_api.main import get_orchestrator
@@ -125,7 +125,7 @@ async def set_api_key(provider: str, api_key: str, current_user: str = Depends(g
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.delete("/api-key/{provider}", response_model=SuccessResponse)
+@router.delete("/api-key/{provider}", response_model=APIResponse)
 async def remove_api_key(provider: str, current_user: str = Depends(get_current_user)):
     try:
         from socrates_api.main import get_orchestrator
@@ -148,7 +148,7 @@ async def remove_api_key(provider: str, current_user: str = Depends(get_current_
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/models/{provider}", response_model=SuccessResponse)
+@router.get("/models/{provider}", response_model=APIResponse)
 async def get_models(provider: str, current_user: str = Depends(get_current_user)):
     try:
         from socrates_api.main import get_orchestrator
@@ -167,7 +167,7 @@ async def get_models(provider: str, current_user: str = Depends(get_current_user
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/usage-stats", response_model=SuccessResponse)
+@router.get("/usage-stats", response_model=APIResponse)
 async def get_stats(time_period: str = "month", current_user: str = Depends(get_current_user)):
     try:
         from socrates_api.main import get_orchestrator

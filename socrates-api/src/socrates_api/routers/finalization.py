@@ -23,7 +23,7 @@ router = APIRouter(prefix="/projects", tags=["finalization"])
 
 @router.post(
     "/{project_id}/finalize/generate",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Generate final project artifacts",
 )
@@ -181,7 +181,7 @@ async def generate_final_artifacts(
 
 @router.post(
     "/{project_id}/finalize/docs",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Generate final project documentation package",
 )

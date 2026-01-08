@@ -1283,7 +1283,7 @@ async def cancel_invitation(
 
 @collab_router.post(
     "/invite",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Invite team member",
     responses={
@@ -1384,7 +1384,7 @@ async def list_team_members():
 
 @collab_router.put(
     "/members/{member_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Update team member role",
     responses={
@@ -1429,7 +1429,7 @@ async def update_member_role(
 
 @collab_router.delete(
     "/members/{member_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Remove team member",
     responses={

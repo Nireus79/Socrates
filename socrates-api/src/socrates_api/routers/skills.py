@@ -23,7 +23,7 @@ router = APIRouter(prefix="/projects", tags=["skills"])
 
 @router.post(
     "/{project_id}/skills",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Set or update project skills",
 )
@@ -140,7 +140,7 @@ async def set_skills(
 
 @router.get(
     "/{project_id}/skills",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="List project skills",
 )

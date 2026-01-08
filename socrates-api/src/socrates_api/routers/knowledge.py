@@ -224,7 +224,7 @@ async def get_document_details(
 
 @router.post(
     "/import/file",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Import file to knowledge base",
     responses={
@@ -358,7 +358,7 @@ async def import_file(
 
 @router.post(
     "/import/url",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Import URL to knowledge base",
     responses={
@@ -472,7 +472,7 @@ async def import_url(
 
 @router.post(
     "/import/text",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Import pasted text to knowledge base",
     responses={
@@ -591,7 +591,7 @@ async def import_text(
 
 @router.get(
     "/search",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Search knowledge base",
     responses={
@@ -688,7 +688,7 @@ async def search_knowledge(
 
 @router.delete(
     "/documents/{document_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Delete document",
     responses={
@@ -1014,7 +1014,7 @@ async def get_document_analytics(
 
 @router.post(
     "/entries",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Add knowledge entry",
     responses={

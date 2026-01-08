@@ -93,7 +93,7 @@ SUBSCRIPTION_TIERS = {
 
 @router.get(
     "/status",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get user subscription status",
 )
@@ -163,7 +163,7 @@ async def get_subscription_status(
 
 @router.get(
     "/plans",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="List all subscription plans",
 )
@@ -214,7 +214,7 @@ async def list_subscription_plans(
 
 @router.post(
     "/upgrade",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Upgrade subscription plan",
 )
@@ -274,7 +274,7 @@ async def upgrade_subscription(
 
 @router.post(
     "/downgrade",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Downgrade subscription plan",
 )
@@ -335,7 +335,7 @@ async def downgrade_subscription(
 
 @router.put(
     "/testing-mode",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Toggle testing mode (bypasses subscription restrictions)",
 )

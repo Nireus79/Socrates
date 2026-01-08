@@ -111,7 +111,7 @@ async def add_knowledge_document(
 
 @router.post(
     "/{project_id}/knowledge/add",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Add knowledge item to project",
 )
@@ -198,7 +198,7 @@ async def add_knowledge(
 
 @router.get(
     "/{project_id}/knowledge/list",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="List knowledge items",
 )
@@ -289,7 +289,7 @@ async def list_knowledge(
 
 @router.post(
     "/{project_id}/knowledge/search",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Search knowledge base",
 )
@@ -370,7 +370,7 @@ async def search_knowledge(
 
 @router.post(
     "/{project_id}/knowledge/remember",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Pin/remember important knowledge",
 )
@@ -440,7 +440,7 @@ async def remember_knowledge(
 
 @router.delete(
     "/{project_id}/knowledge/{knowledge_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Remove knowledge item",
 )
@@ -505,7 +505,7 @@ async def remove_knowledge(
 
 @router.post(
     "/{project_id}/knowledge/export",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Export knowledge base",
 )
@@ -600,7 +600,7 @@ async def export_knowledge(
 
 @router.post(
     "/{project_id}/knowledge/import",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Import knowledge base",
 )

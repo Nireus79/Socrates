@@ -49,6 +49,10 @@ async def create_chat_session(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
+        # Verify project ownership
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
+
         if not hasattr(project, "chat_sessions"):
             project.chat_sessions = {}
 
@@ -117,6 +121,10 @@ async def list_chat_sessions(
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
+
+        # Verify project ownership
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
 
         sessions_dict = getattr(project, "chat_sessions", {})
         sessions_list = []
@@ -190,6 +198,10 @@ async def get_chat_session(
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
+
+        # Verify project ownership
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
 
         sessions_dict = getattr(project, "chat_sessions", {})
         session = sessions_dict.get(session_id)

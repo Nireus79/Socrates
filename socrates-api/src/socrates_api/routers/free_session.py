@@ -192,7 +192,7 @@ async def _generate_command_suggestions(
 
 @router.post(
     "/ask",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Ask a question during pre-session chat with conversation history",
 )
@@ -416,7 +416,7 @@ Suggest next steps they might take in their learning journey."""
 
 @router.get(
     "/sessions",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="List user's pre-session conversation sessions",
 )
@@ -480,7 +480,7 @@ async def list_free_session_sessions(
 
 @router.get(
     "/sessions/{session_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get a specific free_session conversation session",
 )
@@ -547,7 +547,7 @@ async def get_free_session_session(
 
 @router.delete(
     "/sessions/{session_id}",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Delete a free_session conversation session",
 )
@@ -605,7 +605,7 @@ async def delete_free_session_session(
 
 @router.get(
     "/recommendations",
-    response_model=SuccessResponse,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get project recommendations based on free_session conversations",
 )
