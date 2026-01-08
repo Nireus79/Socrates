@@ -1,4 +1,5 @@
-"""System commands for CLI control and information"""
+"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.System commands for CLI control and information"""
 
 import os
 import subprocess
@@ -7,6 +8,7 @@ from typing import Any, Dict, List
 from colorama import Fore, Style
 
 from socratic_system.ui.commands.base import BaseCommand
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class HelpCommand(BaseCommand):
@@ -113,9 +115,14 @@ class StatusCommand(BaseCommand):
             return self.error("Orchestrator not available")
 
         # Get system stats
-        result = orchestrator.process_request("system_monitor", {"action": "get_stats"})
+        result = safe_orchestrator_call(
+            orchestrator,
+            "system_monitor",
+            {"action": "get_stats"},
+            operation_name="get system stats"
+        )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             self.print_header("System Status")
 
             stats = result
@@ -128,9 +135,14 @@ class StatusCommand(BaseCommand):
             print()
 
         # Check for warnings
-        result = orchestrator.process_request("system_monitor", {"action": "check_limits"})
+        result = safe_orchestrator_call(
+            orchestrator,
+            "system_monitor",
+            {"action": "check_limits"},
+            operation_name="check system limits"
+        )
 
-        if result["status"] == "success" and result.get("warnings"):
+        if result.get("data", {}).get("status") == "success" and result.get("warnings"):
             print(f"{Fore.YELLOW}Warnings:{Style.RESET_ALL}")
             for warning in result["warnings"]:
                 print(f"  ⚠ {warning}")

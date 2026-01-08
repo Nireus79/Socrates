@@ -1,10 +1,12 @@
-"""Project statistics and progress commands"""
+"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Project statistics and progress commands"""
 
 from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
 from socratic_system.ui.commands.base import BaseCommand
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class ProjectStatsCommand(BaseCommand):
@@ -29,12 +31,15 @@ class ProjectStatsCommand(BaseCommand):
             return self.error("Required context not available")
 
         # Get statistics
-        result = orchestrator.process_request(
-            "context_analyzer", {"action": "get_statistics", "project": project}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "context_analyzer",
+            {"action": "get_statistics", "project": project},
+            operation_name="get statistics"
         )
 
-        if result["status"] == "success":
-            stats = result["statistics"]
+        if result.get("data", {}).get("status") == "success":
+            stats = result.get("data", {}).get("statistics")
 
             self.print_header(f"Project Statistics: {stats['project_name']}")
 
@@ -133,11 +138,14 @@ class ProjectProgressCommand(BaseCommand):
         # Save project
         orchestrator = context.get("orchestrator")
         if orchestrator:
-            result = orchestrator.process_request(
-                "project_manager", {"action": "save_project", "project": project}
+            result = safe_orchestrator_call(
+                orchestrator,
+                "project_manager",
+                {"action": "save_project", "project": project},
+                operation_name="save project"
             )
 
-            if result["status"] == "success":
+            if result.get("data", {}).get("status") == "success":
                 print(f"{Fore.GREEN}Progress bar:{Style.RESET_ALL}")
                 filled = int(20 * progress / 100)
                 bar = "█" * filled + "░" * (20 - filled)
@@ -198,11 +206,14 @@ class ProjectStatusCommand(BaseCommand):
         # Save project
         orchestrator = context.get("orchestrator")
         if orchestrator:
-            result = orchestrator.process_request(
-                "project_manager", {"action": "save_project", "project": project}
+            result = safe_orchestrator_call(
+                orchestrator,
+                "project_manager",
+                {"action": "save_project", "project": project},
+                operation_name="save project"
             )
 
-            if result["status"] == "success":
+            if result.get("data", {}).get("status") == "success":
                 self.print_success(f"Project status updated to '{status}'")
                 return self.success(data={"status": status})
             else:

@@ -1,4 +1,5 @@
-"""Finalize project - generate artifacts and documentation for any project type"""
+"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Finalize project - generate artifacts and documentation for any project type"""
 
 from typing import Any, Dict, List
 
@@ -6,6 +7,7 @@ from colorama import Fore, Style
 
 from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.utils.artifact_saver import ArtifactSaver
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class FinalizeGenerateCommand(BaseCommand):
@@ -34,16 +36,19 @@ class FinalizeGenerateCommand(BaseCommand):
         print(f"\n{Fore.CYAN}Generating {artifact_name}...{Style.RESET_ALL}")
 
         # Generate artifact
-        result = orchestrator.process_request(
-            "code_generator", {"action": "generate_artifact", "project": project}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "code_generator",
+            {"action": "generate_artifact", "project": project},
+            operation_name="generate artifact"
         )
 
-        if result["status"] != "success":
+        if result.get("data", {}).get("status") != "success":
             return self.error(result.get("message", f"Failed to generate {artifact_name.lower()}"))
 
-        artifact = result["artifact"]
+        artifact = result.get("data", {}).get("artifact")
         artifact_type = result.get("artifact_type", "code")
-        save_path = result.get("save_path")
+        save_path = result.get("data", {}).get("save_path")
         is_multi_file = result.get("is_multi_file", False)
 
         self.print_success(f"{artifact_name} Generated Successfully!")
@@ -128,20 +133,22 @@ class FinalizeGenerateCommand(BaseCommand):
         self, orchestrator, project, artifact: str, save_path: str
     ) -> None:
         """Generate and display implementation documentation"""
-        doc_result = orchestrator.process_request(
+        doc_result = safe_orchestrator_call(
+            orchestrator,
             "code_generator",
             {
                 "action": "generate_documentation",
                 "project": project,
                 "artifact": artifact,
             },
+            operation_name="generate documentation"
         )
 
-        if doc_result["status"] != "success":
+        if doc_result.get("data", {}).get("status") != "success":
             self.print_warning("Failed to generate documentation")
             return
 
-        doc_save_path = doc_result.get("save_path")
+        doc_save_path = doc_result.get("data", {}).get("save_path")
 
         self.print_success("Documentation Generated!")
         print(f"\n{Fore.YELLOW}{'=' * 60}")
@@ -189,25 +196,30 @@ class FinalizeDocsCommand(BaseCommand):
         print(f"\n{Fore.CYAN}Generating {artifact_name} and Documentation...{Style.RESET_ALL}")
 
         # First generate artifact if not done yet
-        result = orchestrator.process_request(
-            "code_generator", {"action": "generate_artifact", "project": project}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "code_generator",
+            {"action": "generate_artifact", "project": project},
+            operation_name="generate artifact"
         )
 
-        if result["status"] == "success":
-            artifact = result["artifact"]
+        if result.get("data", {}).get("status") == "success":
+            artifact = result.get("data", {}).get("artifact")
 
             # Generate documentation
-            doc_result = orchestrator.process_request(
+            doc_result = safe_orchestrator_call(
+                orchestrator,
                 "code_generator",
                 {
                     "action": "generate_documentation",
                     "project": project,
                     "artifact": artifact,
                 },
+                operation_name="generate documentation"
             )
 
-            if doc_result["status"] == "success":
-                doc_save_path = doc_result.get("save_path")
+            if doc_result.get("data", {}).get("status") == "success":
+                doc_save_path = doc_result.get("data", {}).get("save_path")
 
                 self.print_success("Documentation Generated Successfully!")
                 print(f"\n{Fore.YELLOW}{'=' * 60}")
@@ -226,7 +238,7 @@ class FinalizeDocsCommand(BaseCommand):
                         )
 
                 return self.success(
-                    data={"documentation": doc_result["documentation"], "save_path": doc_save_path}
+                    data={"documentation": doc_result.get("data", {}).get("documentation"), "save_path": doc_save_path}
                 )
             else:
                 return self.error(doc_result.get("message", "Failed to generate documentation"))

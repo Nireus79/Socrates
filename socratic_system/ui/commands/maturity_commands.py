@@ -1,4 +1,5 @@
 """
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.
 Maturity tracking commands for the CLI interface
 
 Commands:
@@ -12,6 +13,7 @@ from typing import Any, Dict
 from socratic_system.ui.maturity_display import MaturityDisplay
 
 from .base import BaseCommand
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class MaturityCommand(BaseCommand):
@@ -57,12 +59,14 @@ class MaturityCommand(BaseCommand):
             phase = project.phase
 
         # Calculate maturity
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "quality_controller",
             {"action": "calculate_maturity", "project": project, "phase": phase},
+            operation_name="calculate maturity"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             maturity = result.get("maturity", {})
             MaturityDisplay.display_detailed_maturity(maturity)
             return self.success()
@@ -96,12 +100,14 @@ class MaturitySummaryCommand(BaseCommand):
             return self.error("Orchestrator not available")
 
         # Get maturity summary
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "quality_controller",
             {"action": "get_maturity_summary", "project": project},
+            operation_name="get maturity summary"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             summary = result.get("summary", {})
             MaturityDisplay.display_maturity_summary_all_phases(summary)
             return self.success()
@@ -135,12 +141,14 @@ class MaturityHistoryCommand(BaseCommand):
             return self.error("Orchestrator not available")
 
         # Get maturity history
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "quality_controller",
             {"action": "get_history", "project": project},
+            operation_name="get maturity history"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             history = result.get("history", [])
             total_events = result.get("total_events", 0)
 

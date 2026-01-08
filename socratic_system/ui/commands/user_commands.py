@@ -1,4 +1,5 @@
-"""User authentication and account management commands"""
+"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.User authentication and account management commands"""
 
 import datetime
 from typing import Any, Dict, List
@@ -11,6 +12,7 @@ from socrates_api.auth.password import hash_password, verify_password
 
 from socratic_system.models import User
 from socratic_system.ui.commands.base import BaseCommand
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class UserLoginCommand(BaseCommand):
@@ -179,13 +181,15 @@ class UserArchiveCommand(BaseCommand):
             self.print_info("Archiving cancelled")
             return self.success()
 
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "user_manager",
             {"action": "archive_user", "username": user.username, "requester": user.username},
+            operation_name="archive user"
         )
 
-        if result["status"] == "success":
-            self.print_success(result["message"])
+        if result.get("data", {}).get("status") == "success":
+            self.print_success(result.get("data", {}).get("message"))
             self.print_info("You will be logged out now")
 
             app.current_user = None
@@ -239,7 +243,8 @@ class UserDeleteCommand(BaseCommand):
             self.print_info("Deletion cancelled")
             return self.success()
 
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "user_manager",
             {
                 "action": "delete_user_permanently",
@@ -247,10 +252,11 @@ class UserDeleteCommand(BaseCommand):
                 "requester": user.username,
                 "confirmation": "DELETE",
             },
+            operation_name="delete user permanently"
         )
 
-        if result["status"] == "success":
-            self.print_success(result["message"])
+        if result.get("data", {}).get("status") == "success":
+            self.print_success(result.get("data", {}).get("message"))
             print("Account has been permanently deleted.")
             print("Goodbye.")
 
@@ -310,11 +316,14 @@ class UserRestoreCommand(BaseCommand):
             self.print_info("Restoration cancelled")
             return self.success()
 
-        result = orchestrator.process_request(
-            "user_manager", {"action": "restore_user", "username": username}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "user_manager",
+            {"action": "restore_user", "username": username},
+            operation_name="restore user"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             self.print_success(f"Account '{username}' restored successfully!")
             return self.success()
         else:
@@ -327,13 +336,18 @@ class UserRestoreCommand(BaseCommand):
         if not orchestrator:
             return self.error("Orchestrator not available")
 
-        result = orchestrator.process_request("user_manager", {"action": "get_archived_users"})
+        result = safe_orchestrator_call(
+            orchestrator,
+            "user_manager",
+            {"action": "get_archived_users"},
+            operation_name="get archived users"
+        )
 
-        if result["status"] != "success" or not result.get("archived_users"):
+        if result.get("data", {}).get("status") != "success" or not result.get("archived_users"):
             self.print_info("No archived accounts found")
             return self.success()
 
-        archived_users = result["archived_users"]
+        archived_users = result.get("data", {}).get("archived_users")
         self._display_archived_users(archived_users)
 
         try:

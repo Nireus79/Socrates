@@ -1,10 +1,12 @@
-"""Project note management commands"""
+"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Project note management commands"""
 
 from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
 from socratic_system.ui.commands.base import BaseCommand
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class NoteAddCommand(BaseCommand):
@@ -69,7 +71,8 @@ class NoteAddCommand(BaseCommand):
             return self.error("Note content cannot be empty")
 
         # Add note via orchestrator
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "note_manager",
             {
                 "action": "add_note",
@@ -80,9 +83,10 @@ class NoteAddCommand(BaseCommand):
                 "created_by": user.username,
                 "tags": tags,
             },
+            operation_name="add note"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             note_data = result.get("note", {})
             self.print_success(f"Note '{title}' added")
             print(f"{Fore.CYAN}Note ID: {note_data.get('note_id', 'unknown')}")
@@ -123,12 +127,14 @@ class NoteListCommand(BaseCommand):
                 return self.error(f"Invalid note type. Must be one of: {', '.join(valid_types)}")
 
         # List notes via orchestrator
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "note_manager",
             {"action": "list_notes", "project_id": project.project_id, "note_type": note_type},
+            operation_name="list notes"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             notes = result.get("notes", [])
             count = result.get("count", 0)
 
@@ -195,12 +201,14 @@ class NoteSearchCommand(BaseCommand):
             return self.error("Required context not available")
 
         # Search notes via orchestrator
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "note_manager",
             {"action": "search_notes", "project_id": project.project_id, "query": query},
+            operation_name="search notes"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             results = result.get("results", [])
             count = result.get("count", 0)
 
@@ -268,12 +276,14 @@ class NoteDeleteCommand(BaseCommand):
             return self.success()
 
         # Delete note via orchestrator
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "note_manager",
             {"action": "delete_note", "note_id": note_id, "project_id": project.project_id},
+            operation_name="delete note"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             self.print_success("Note deleted successfully")
             return self.success(data={"deleted_note_id": note_id})
         else:

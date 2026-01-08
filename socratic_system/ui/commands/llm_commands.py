@@ -1,10 +1,12 @@
-"""Multi-LLM Provider management commands"""
+"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Multi-LLM Provider management commands"""
 
 from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
 from socratic_system.ui.commands.base import BaseCommand
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class LLMCommand(BaseCommand):
@@ -87,9 +89,14 @@ class LLMCommand(BaseCommand):
         """List all available providers"""
         print(f"\n{Fore.CYAN}Available LLM Providers{Style.RESET_ALL}\n")
 
-        result = orchestrator.process_request("multi_llm", {"action": "list_providers"})
+        result = safe_orchestrator_call(
+            orchestrator,
+            "multi_llm",
+            {"action": "list_providers"},
+            operation_name="list providers"
+        )
 
-        if result["status"] != "success":
+        if result.get("data", {}).get("status") != "success":
             return self.error(result.get("message", "Failed to list providers"))
 
         providers = result.get("providers", [])
@@ -119,11 +126,14 @@ class LLMCommand(BaseCommand):
         """Show user's provider configuration"""
         print(f"\n{Fore.CYAN}Your LLM Provider Configuration{Style.RESET_ALL}\n")
 
-        result = orchestrator.process_request(
-            "multi_llm", {"action": "get_provider_config", "user_id": user.username}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "multi_llm",
+            {"action": "get_provider_config", "user_id": user.username},
+            operation_name="get provider config"
         )
 
-        if result["status"] != "success":
+        if result.get("data", {}).get("status") != "success":
             return self.error(result.get("message", "Failed to get configuration"))
 
         default_provider = result.get("default_provider", "claude")
@@ -150,12 +160,14 @@ class LLMCommand(BaseCommand):
 
         provider = args[0].lower()
 
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "multi_llm",
             {"action": "set_default_provider", "user_id": user.username, "provider": provider},
+            operation_name="set default provider"
         )
 
-        if result["status"] != "success":
+        if result.get("data", {}).get("status") != "success":
             return self.error(result.get("message", "Failed to set default provider"))
 
         print(f"\n{Fore.GREEN}✓ Default provider set to {provider}{Style.RESET_ALL}\n")
@@ -171,7 +183,8 @@ class LLMCommand(BaseCommand):
         provider = args[0].lower()
         model = " ".join(args[1:])  # Allow model names with spaces
 
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "multi_llm",
             {
                 "action": "set_provider_model",
@@ -179,9 +192,10 @@ class LLMCommand(BaseCommand):
                 "provider": provider,
                 "model": model,
             },
+            operation_name="set provider model"
         )
 
-        if result["status"] != "success":
+        if result.get("data", {}).get("status") != "success":
             return self.error(result.get("message", "Failed to set model"))
 
         print(f"\n{Fore.GREEN}✓ Model set to {model} for {provider}{Style.RESET_ALL}\n")
@@ -194,11 +208,14 @@ class LLMCommand(BaseCommand):
 
         provider = args[0].lower()
 
-        result = orchestrator.process_request(
-            "multi_llm", {"action": "get_provider_models", "provider": provider}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "multi_llm",
+            {"action": "get_provider_models", "provider": provider},
+            operation_name="get provider models"
         )
 
-        if result["status"] != "success":
+        if result.get("data", {}).get("status") != "success":
             return self.error(result.get("message", f"Unknown provider: {provider}"))
 
         print(f"\n{Fore.CYAN}Models for {provider.upper()}{Style.RESET_ALL}\n")
@@ -238,7 +255,8 @@ class LLMCommand(BaseCommand):
             provider = args[1].lower()
             api_key = args[2]
 
-            result = orchestrator.process_request(
+            result = safe_orchestrator_call(
+                orchestrator,
                 "multi_llm",
                 {
                     "action": "add_api_key",
@@ -246,9 +264,10 @@ class LLMCommand(BaseCommand):
                     "provider": provider,
                     "api_key": api_key,
                 },
+                operation_name="add API key"
             )
 
-            if result["status"] != "success":
+            if result.get("data", {}).get("status") != "success":
                 return self.error(result.get("message", "Failed to add API key"))
 
             print(f"\n{Fore.GREEN}✓ API key added for {provider}{Style.RESET_ALL}\n")
@@ -260,12 +279,14 @@ class LLMCommand(BaseCommand):
 
             provider = args[1].lower()
 
-            result = orchestrator.process_request(
+            result = safe_orchestrator_call(
+                orchestrator,
                 "multi_llm",
                 {"action": "remove_api_key", "user_id": user.username, "provider": provider},
+                operation_name="remove API key"
             )
 
-            if result["status"] != "success":
+            if result.get("data", {}).get("status") != "success":
                 return self.error(result.get("message", "Failed to remove API key"))
 
             print(f"\n{Fore.GREEN}✓ API key removed for {provider}{Style.RESET_ALL}\n")
@@ -279,7 +300,8 @@ class LLMCommand(BaseCommand):
         provider = args[0].lower() if args else None
         days = int(args[1]) if len(args) > 1 else 30
 
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "multi_llm",
             {
                 "action": "get_usage_stats",
@@ -287,9 +309,10 @@ class LLMCommand(BaseCommand):
                 "provider": provider,
                 "days": days,
             },
+            operation_name="get usage stats"
         )
 
-        if result["status"] != "success":
+        if result.get("data", {}).get("status") != "success":
             return self.error(result.get("message", "Failed to get usage stats"))
 
         print(f"\n{Fore.CYAN}LLM Usage Statistics (Last {days} Days){Style.RESET_ALL}\n")

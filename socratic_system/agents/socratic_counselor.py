@@ -12,6 +12,7 @@ from socratic_system.agents.document_context_analyzer import DocumentContextAnal
 from socratic_system.events import EventType
 from socratic_system.models import ROLE_FOCUS_AREAS, ConflictInfo, ProjectContext
 from socratic_system.services import DocumentUnderstandingService
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 from .base import Agent
 
@@ -655,7 +656,8 @@ Return only the question, no additional text or explanation."""
             Dict with 'has_conflicts' bool and 'conflicts' list if in API mode
         """
         logger.info("Running conflict detection on new insights...")
-        conflict_result = self.orchestrator.process_request(
+        conflict_result = safe_orchestrator_call(
+            self.orchestrator,
             "conflict_detector",
             {
                 "action": "detect_conflicts",
@@ -663,6 +665,7 @@ Return only the question, no additional text or explanation."""
                 "new_insights": insights,
                 "current_user": current_user,
             },
+            operation_name="detect conflicts in insights"
         )
 
         if not (conflict_result["status"] == "success" and conflict_result["conflicts"]):
@@ -695,19 +698,26 @@ Return only the question, no additional text or explanation."""
             return
 
         logger.info("Calculating phase maturity...")
-        maturity_result = self.orchestrator.process_request(
-            "quality_controller",
-            {
-                "action": "update_after_response",
-                "project": project,
-                "insights": insights,
-            },
-        )
+        try:
+            maturity_result = safe_orchestrator_call(
+                self.orchestrator,
+                "quality_controller",
+                {
+                    "action": "update_after_response",
+                    "project": project,
+                    "insights": insights,
+                },
+                operation_name="update phase maturity"
+            )
 
-        if maturity_result["status"] == "success":
-            maturity = maturity_result.get("maturity", {})
-            score = maturity.get("overall_score", 0.0)
-            logger.info(f"Phase maturity updated: {score:.1f}%")
+            if maturity_result["status"] == "success":
+                maturity = maturity_result.get("maturity", {})
+                score = maturity.get("overall_score", 0.0)
+                logger.info(f"Phase maturity updated: {score:.1f}%")
+        except Exception as e:
+            # Phase maturity calculation is non-critical
+            # Don't break the main flow if it fails
+            logger.warning(f"Failed to update phase maturity: {e}")
 
     def _track_question_effectiveness(
         self, project, insights, user_response, current_user, logger
@@ -736,18 +746,26 @@ Return only the question, no additional text or explanation."""
         logger.debug(f"Tracking question effectiveness: {question_id}")
 
         user_role = project.get_member_role(current_user) if current_user else "general"
-        self.orchestrator.process_request(
-            "learning",
-            {
-                "action": "track_question_effectiveness",
-                "user_id": current_user,
-                "question_template_id": question_id,
-                "role": user_role,
-                "answer_length": len(user_response),
-                "specs_extracted": specs_extracted,
-                "answer_quality": 0.5,
-            },
-        )
+
+        try:
+            safe_orchestrator_call(
+                self.orchestrator,
+                "learning",
+                {
+                    "action": "track_question_effectiveness",
+                    "user_id": current_user,
+                    "question_template_id": question_id,
+                    "role": user_role,
+                    "answer_length": len(user_response),
+                    "specs_extracted": specs_extracted,
+                    "answer_quality": 0.5,
+                },
+                operation_name="track question effectiveness"
+            )
+        except Exception as e:
+            # Logging question effectiveness is a non-critical operation
+            # Don't break the main flow if it fails
+            logger.warning(f"Failed to track question effectiveness: {e}")
 
     def _find_last_question(self, phase_messages: list) -> dict:
         """Find the most recent question (assistant message) in phase"""
@@ -1007,37 +1025,45 @@ Return only the question, no additional text or explanation."""
 
         # NEW: Check maturity before advancing
         logger.info(f"Verifying readiness to advance from {project.phase}...")
-        readiness_result = self.orchestrator.process_request(
-            "quality_controller",
-            {
-                "action": "verify_advancement",
-                "project": project,
-                "from_phase": project.phase,
-            },
-        )
+        try:
+            readiness_result = safe_orchestrator_call(
+                self.orchestrator,
+                "quality_controller",
+                {
+                    "action": "verify_advancement",
+                    "project": project,
+                    "from_phase": project.phase,
+                },
+                operation_name="verify readiness to advance phase"
+            )
 
-        if readiness_result["status"] == "success":
-            verification = readiness_result["verification"]
-            maturity_score = verification.get("maturity_score", 0.0)
-            warnings = verification.get("warnings", [])
+            if readiness_result["status"] == "success":
+                verification = readiness_result["verification"]
+                maturity_score = verification.get("maturity_score", 0.0)
+                warnings = verification.get("warnings", [])
 
-            # Display warnings to user if present
-            if warnings:
-                print(f"\n{Fore.YELLOW}⚠ MATURITY WARNINGS:{Fore.RESET}")
-                for warning in warnings[:3]:  # Show top 3 warnings
-                    print(f"  • {warning}")
+                # Display warnings to user if present
+                if warnings:
+                    print(f"\n{Fore.YELLOW}Advancement Warnings:{Fore.RESET}")
+                    for warning in warnings[:3]:  # Show top 3 warnings
+                        print(f"  - {warning}")
 
-                # Ask for confirmation if maturity is low
-                if maturity_score < 60.0:
-                    print(f"\n{Fore.RED}Current phase maturity: {maturity_score:.1f}%")
-                    print(f"Recommended minimum: 60%{Fore.RESET}")
+                    # Ask for confirmation if maturity is low
+                    if maturity_score < 60.0:
+                        print(f"\n{Fore.RED}Current phase maturity: {maturity_score:.1f}%")
+                        print(f"Recommended minimum: 60%{Fore.RESET}")
 
-                    confirm = input(f"\n{Fore.CYAN}Advance anyway? (yes/no): {Fore.RESET}").lower()
-                    if confirm not in ["yes", "y"]:
-                        return {
-                            "status": "cancelled",
-                            "message": "Phase advancement cancelled",
-                        }
+                        confirm = input(f"\n{Fore.CYAN}Advance anyway? (yes/no): {Fore.RESET}").lower()
+                        if confirm not in ["yes", "y"]:
+                            return {
+                                "status": "cancelled",
+                                "message": "Phase advancement cancelled",
+                            }
+        except Exception as e:
+            # If maturity verification fails, allow advancement but log warning
+            logger.warning(f"Could not verify advancement readiness: {e}")
+            readiness_result = {"status": "error"}
+            verification = {}
 
         # Advance to next phase
         new_phase = phases[current_index + 1]

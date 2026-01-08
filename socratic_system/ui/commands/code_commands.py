@@ -1,4 +1,5 @@
-"""Code generation and documentation commands"""
+"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Code generation and documentation commands"""
 
 from pathlib import Path
 from typing import Any, Dict, List
@@ -7,6 +8,7 @@ from colorama import Fore, Style
 
 from socratic_system.ui.commands.base import BaseCommand
 from socratic_system.utils.artifact_saver import ArtifactSaver
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class CodeGenerateCommand(BaseCommand):
@@ -32,15 +34,18 @@ class CodeGenerateCommand(BaseCommand):
         print(f"\n{Fore.CYAN}Generating Code...{Style.RESET_ALL}")
 
         # Generate code
-        result = orchestrator.process_request(
-            "code_generator", {"action": "generate_script", "project": project}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "code_generator",
+            {"action": "generate_script", "project": project},
+            operation_name="generate code script"
         )
 
-        if result["status"] != "success":
+        if result.get("data", {}).get("status") != "success":
             return self.error(result.get("message", "Failed to generate code"))
 
-        script = result["script"]
-        save_path = result.get("save_path")
+        script = result.get("data", {}).get("script")
+        save_path = result.get("data", {}).get("save_path")
         is_multi_file = result.get("is_multi_file", False)
 
         self.print_success("Code Generated Successfully!")
@@ -109,16 +114,18 @@ class CodeGenerateCommand(BaseCommand):
         self, orchestrator, project, script: str, save_path: str
     ) -> None:
         """Generate and display documentation"""
-        doc_result = orchestrator.process_request(
+        doc_result = safe_orchestrator_call(
+            orchestrator,
             "code_generator",
             {"action": "generate_documentation", "project": project, "script": script},
+            operation_name="generate code documentation"
         )
 
-        if doc_result["status"] != "success":
+        if doc_result.get("data", {}).get("status") != "success":
             self.print_warning("Failed to generate documentation")
             return
 
-        doc_save_path = doc_result.get("save_path")
+        doc_save_path = doc_result.get("data", {}).get("save_path")
 
         self.print_success("Documentation Generated!")
         print(f"\n{Fore.YELLOW}{'=' * 60}")
@@ -155,21 +162,26 @@ class CodeDocsCommand(BaseCommand):
         print(f"\n{Fore.CYAN}Generating Documentation...{Style.RESET_ALL}")
 
         # First generate code if not done yet
-        result = orchestrator.process_request(
-            "code_generator", {"action": "generate_script", "project": project}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "code_generator",
+            {"action": "generate_script", "project": project},
+            operation_name="generate code script"
         )
 
-        if result["status"] == "success":
-            script = result["script"]
+        if result.get("data", {}).get("status") == "success":
+            script = result.get("data", {}).get("script")
 
             # Generate documentation
-            doc_result = orchestrator.process_request(
+            doc_result = safe_orchestrator_call(
+                orchestrator,
                 "code_generator",
                 {"action": "generate_documentation", "project": project, "script": script},
+                operation_name="generate code documentation"
             )
 
-            if doc_result["status"] == "success":
-                doc_save_path = doc_result.get("save_path")
+            if doc_result.get("data", {}).get("status") == "success":
+                doc_save_path = doc_result.get("data", {}).get("save_path")
 
                 self.print_success("Documentation Generated Successfully!")
                 print(f"\n{Fore.YELLOW}{'=' * 60}")
@@ -181,7 +193,7 @@ class CodeDocsCommand(BaseCommand):
                     print(ArtifactSaver.get_save_location_message(doc_save_path))
 
                 return self.success(
-                    data={"documentation": doc_result["documentation"], "save_path": doc_save_path}
+                    data={"documentation": doc_result.get("data", {}).get("documentation"), "save_path": doc_save_path}
                 )
             else:
                 return self.error(doc_result.get("message", "Failed to generate documentation"))

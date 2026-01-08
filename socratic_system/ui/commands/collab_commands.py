@@ -1,4 +1,5 @@
-"""Collaboration and team management commands"""
+"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Collaboration and team management commands"""
 
 from typing import Any, Dict, List
 
@@ -6,6 +7,7 @@ from colorama import Fore, Style
 
 from socratic_system.models import VALID_ROLES
 from socratic_system.ui.commands.base import BaseCommand
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class CollabAddCommand(BaseCommand):
@@ -41,15 +43,20 @@ class CollabAddCommand(BaseCommand):
         if not is_valid:
             return self.error(error_msg)
 
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "project_manager",
             {"action": "add_collaborator", "project": project, "username": username, "role": role},
+            operation_name="add collaborator"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             self.print_success(f"Added '{username}' as {role}!")
-            orchestrator.process_request(
-                "project_manager", {"action": "save_project", "project": project}
+            safe_orchestrator_call(
+                orchestrator,
+                "project_manager",
+                {"action": "save_project", "project": project},
+                operation_name="save project"
             )
             return self.success(data={"collaborator": username, "role": role})
         else:
@@ -142,7 +149,8 @@ class CollabRemoveCommand(BaseCommand):
             self.print_info("Removal cancelled")
             return self.success()
 
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "project_manager",
             {
                 "action": "remove_collaborator",
@@ -150,17 +158,21 @@ class CollabRemoveCommand(BaseCommand):
                 "username": username,
                 "requester": user.username,
             },
+            operation_name="remove collaborator"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             self.print_success(f"Removed '{username}' from project!")
             # Only remove from local list if still present
             if username in project.collaborators:
                 project.collaborators.remove(username)
 
                 # Save project
-                orchestrator.process_request(
-                    "project_manager", {"action": "save_project", "project": project}
+                safe_orchestrator_call(
+                    orchestrator,
+                    "project_manager",
+                    {"action": "save_project", "project": project},
+                    operation_name="save project"
                 )
 
             return self.success(data={"removed_user": username})
@@ -224,11 +236,14 @@ class CollabListCommand(BaseCommand):
             return self.error("Required context not available")
 
         # Get collaborators
-        result = orchestrator.process_request(
-            "project_manager", {"action": "list_collaborators", "project": project}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "project_manager",
+            {"action": "list_collaborators", "project": project},
+            operation_name="list collaborators"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             print(f"\n{Fore.CYAN}Team Members for '{project.name}':{Style.RESET_ALL}\n")
 
             members = result.get("collaborators", [])
@@ -305,7 +320,8 @@ class CollabRoleCommand(BaseCommand):
         if member_error:
             return self.error(member_error)
 
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "project_manager",
             {
                 "action": "update_member_role",
@@ -313,12 +329,16 @@ class CollabRoleCommand(BaseCommand):
                 "username": username,
                 "role": new_role,
             },
+            operation_name="update member role"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             self.print_success(f"Updated '{username}' role to {new_role}!")
-            orchestrator.process_request(
-                "project_manager", {"action": "save_project", "project": project}
+            safe_orchestrator_call(
+                orchestrator,
+                "project_manager",
+                {"action": "save_project", "project": project},
+                operation_name="save project"
             )
             return self.success(data={"username": username, "new_role": new_role})
         else:

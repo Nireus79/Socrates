@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict
 
 from socratic_system.models import VALID_ROLES, ProjectContext, TeamMemberRole
 from socratic_system.utils.id_generator import ProjectIDGenerator
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 from .base import Agent
 
@@ -93,7 +94,7 @@ class ProjectManagerAgent(Agent):
                 passcode_hash="",  # Empty hash - will need password reset to use UI
                 created_at=datetime.datetime.now(),
                 projects=[],
-                subscription_tier="pro",  # Default to pro tier for auto-created users
+                subscription_tier="free",  # Default to free tier for auto-created users (enforces project limits)
             )
             self.orchestrator.database.save_user(user)
 
@@ -253,7 +254,7 @@ class ProjectManagerAgent(Agent):
                 passcode_hash="",
                 created_at=datetime.datetime.now(),
                 projects=[],
-                subscription_tier="pro",
+                subscription_tier="free",  # Default to free tier for auto-created users
             )
             self.orchestrator.database.save_user(user)
         return user
@@ -272,13 +273,15 @@ class ProjectManagerAgent(Agent):
     def _run_code_validation(self, temp_path: str) -> Dict:
         """Run code validation on project"""
         self.log("Running code validation...")
-        return self.orchestrator.process_request(
+        return safe_orchestrator_call(
+            self.orchestrator,
             "code_validation",
             {
                 "action": "validate_project",
                 "project_path": temp_path,
                 "timeout": 300,
             },
+            operation_name="validate project code"
         )
 
     def _create_project_context(

@@ -84,7 +84,21 @@ class APIClient {
 
     // Setup response interceptor
     this.client.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        // Automatically unwrap APIResponse wrapper
+        // If response.data has success/status fields (APIResponse format),
+        // extract and return just the data field
+        if (response.data && typeof response.data === 'object') {
+          if ('success' in response.data && 'status' in response.data) {
+            // This is an APIResponse wrapper - extract the data
+            const wrappedData = response.data as any;
+            if (wrappedData.data !== undefined) {
+              response.data = wrappedData.data;
+            }
+          }
+        }
+        return response;
+      },
       (error) => this.handleResponseError(error)
     );
 

@@ -1,10 +1,12 @@
-"""Conversation history management commands"""
+"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Conversation history management commands"""
 
 from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
 from socratic_system.ui.commands.base import BaseCommand
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class ConvSearchCommand(BaseCommand):
@@ -37,12 +39,14 @@ class ConvSearchCommand(BaseCommand):
             return self.error("Required context not available")
 
         # Search conversations
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "context_analyzer",
             {"action": "search_conversations", "project": project, "query": query},
+            operation_name="search conversations"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             results = result.get("results", [])
             count = result.get("count", 0)
 
@@ -112,11 +116,14 @@ class ConvSummaryCommand(BaseCommand):
         )
 
         # Generate summary
-        result = orchestrator.process_request(
-            "context_analyzer", {"action": "generate_summary", "project": project, "limit": limit}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "context_analyzer",
+            {"action": "generate_summary", "project": project, "limit": limit},
+            operation_name="generate conversation summary"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             summary = result.get("summary", "")
 
             self.print_header("Conversation Summary")

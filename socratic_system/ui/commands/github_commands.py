@@ -1,10 +1,20 @@
-"""GitHub integration commands for importing and syncing repositories"""
+"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.GitHub integration commands for importing and syncing repositories"""
 
 from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
 from socratic_system.ui.commands.base import BaseCommand
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
+from socratic_system.agents.github_sync_handler import (
+    create_github_sync_handler,
+    NetworkSyncFailedError,
+    ConflictResolutionError,
+    TokenExpiredError,
+    PermissionDeniedError,
+    RepositoryNotFoundError,
+)
 
 
 class GithubImportCommand(BaseCommand):
@@ -37,7 +47,8 @@ class GithubImportCommand(BaseCommand):
 
         print(f"{Fore.YELLOW}Importing from GitHub...{Style.RESET_ALL}")
 
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "project_manager",
             {
                 "action": "create_from_github",
@@ -45,12 +56,13 @@ class GithubImportCommand(BaseCommand):
                 "project_name": project_name,
                 "owner": user.username,
             },
+            operation_name="import GitHub repository"
         )
 
-        if result["status"] != "success":
+        if result.get("data", {}).get("status") != "success":
             return self.error(result.get("message", "Failed to import repository"))
 
-        project = result["project"]
+        project = result.get("data", {}).get("project")
         app.current_project = project
         app.context_display.set_context(project=project)
 
@@ -149,6 +161,9 @@ class GithubPullCommand(BaseCommand):
 
         print(f"{Fore.YELLOW}Pulling latest changes from GitHub...{Style.RESET_ALL}")
 
+        # Initialize sync handler for edge case management
+        handler = create_github_sync_handler()
+
         try:
             from socratic_system.utils.git_repository_manager import GitRepositoryManager
 
@@ -157,12 +172,24 @@ class GithubPullCommand(BaseCommand):
             if not clone_result:
                 return self.error("Failed to clone repository")
 
-            temp_path = clone_result["path"]
+            temp_path = clone_result.get("data", {}).get("path")
             try:
-                return self._handle_pull_workflow(git_manager, temp_path, project, orchestrator)
+                return self._handle_pull_workflow(git_manager, temp_path, project, orchestrator, handler)
             finally:
                 git_manager.cleanup(temp_path)
 
+        except TokenExpiredError:
+            self.print_error("GitHub token has expired. Please re-authenticate.")
+            return self.error("Token expired")
+        except PermissionDeniedError:
+            self.print_error("Access to repository has been revoked.")
+            return self.error("Permission denied")
+        except RepositoryNotFoundError:
+            self.print_error("Repository has been deleted or is inaccessible.")
+            return self.error("Repository not found")
+        except NetworkSyncFailedError:
+            self.print_error("Failed to pull from GitHub after multiple retries.")
+            return self.error("Network sync failed")
         except Exception as e:
             self.print_error(f"Pull error: {str(e)}")
             return self.error(f"Pull error: {str(e)}")
@@ -203,17 +230,48 @@ class GithubPullCommand(BaseCommand):
         return clone_result
 
     def _handle_pull_workflow(
-        self, git_manager: Any, temp_path: str, project: Any, orchestrator: Any
+        self, git_manager: Any, temp_path: str, project: Any, orchestrator: Any, handler: Any = None
     ) -> Dict[str, Any]:
-        """Handle complete pull workflow"""
+        """Handle complete pull workflow with conflict detection"""
         print(f"{Fore.CYAN}Pulling updates...{Style.RESET_ALL}")
         pull_result = git_manager.pull_repository(temp_path)
 
-        if pull_result["status"] != "success":
+        if pull_result.get("data", {}).get("status") != "success":
             return self.error(f"Pull failed: {pull_result.get('message', 'Unknown error')}")
 
         self.print_success("Successfully pulled latest changes!")
         self._show_pull_output(pull_result)
+
+        # Check for merge conflicts if handler is available
+        if handler:
+            try:
+                conflicts = handler.detect_merge_conflicts(temp_path)
+                if conflicts:
+                    print(f"\n{Fore.YELLOW}Merge conflicts detected:{Style.RESET_ALL}")
+                    for conflict_file in conflicts:
+                        print(f"  {Fore.RED}conflict:{Style.RESET_ALL} {conflict_file}")
+
+                    # Auto-resolve with "ours" strategy
+                    print(f"\n{Fore.CYAN}Attempting automatic resolution...{Style.RESET_ALL}")
+                    resolution = handler.handle_merge_conflicts(
+                        temp_path,
+                        {},
+                        default_strategy="ours"
+                    )
+
+                    if resolution.get("manual_required"):
+                        print(f"\n{Fore.YELLOW}Manual resolution required for:{Style.RESET_ALL}")
+                        for file in resolution["manual_required"]:
+                            print(f"  {file}")
+                    else:
+                        print(f"{Fore.GREEN}All conflicts resolved automatically{Style.RESET_ALL}")
+
+            except ConflictResolutionError as e:
+                self.print_error(f"Conflict resolution failed: {str(e)}")
+                return self.error(f"Conflict resolution failed: {str(e)}")
+            except Exception as e:
+                self.logger.warning(f"Error detecting conflicts: {str(e)}")
+
         self._sync_file_changes(temp_path, project, orchestrator)
         self._show_git_diff(git_manager, temp_path)
 
@@ -224,7 +282,7 @@ class GithubPullCommand(BaseCommand):
         """Show pull command output"""
         if pull_result.get("message"):
             print(f"\n{Fore.CYAN}Pull Output:{Style.RESET_ALL}")
-            print(pull_result["message"][:500])
+            print(pull_result.get("data", {}).get("message")[:500])
 
     def _sync_file_changes(self, temp_path: str, project: Any, orchestrator: Any) -> None:
         """Detect and sync file changes"""
@@ -279,10 +337,10 @@ class GithubPullCommand(BaseCommand):
 
     def _show_change_summary(self, sync_result: Dict[str, Any]) -> None:
         """Show summary of file changes"""
-        if sync_result["status"] != "success":
+        if sync_result.get("data", {}).get("status") != "success":
             return
 
-        summary = sync_result["summary"]
+        summary = sync_result.get("data", {}).get("summary")
         added_count = len(summary.get("added", []))
         modified_count = len(summary.get("modified", []))
         deleted_count = len(summary.get("deleted", []))
@@ -433,6 +491,9 @@ class GithubPushCommand(BaseCommand):
 
         print(f"{Fore.YELLOW}Pushing changes to GitHub...{Style.RESET_ALL}")
 
+        # Initialize sync handler for edge case management
+        handler = create_github_sync_handler()
+
         try:
             from socratic_system.utils.git_repository_manager import GitRepositoryManager
 
@@ -441,12 +502,24 @@ class GithubPushCommand(BaseCommand):
             if not clone_result:
                 return self.error("Failed to clone repository")
 
-            temp_path = clone_result["path"]
+            temp_path = clone_result.get("data", {}).get("path")
             try:
-                return self._handle_push_workflow(git_manager, temp_path, commit_message)
+                return self._handle_push_workflow(git_manager, temp_path, commit_message, handler)
             finally:
                 git_manager.cleanup(temp_path)
 
+        except TokenExpiredError:
+            self.print_error("GitHub token has expired. Please re-authenticate.")
+            return self.error("Token expired")
+        except PermissionDeniedError:
+            self.print_error("Access to repository has been revoked.")
+            return self.error("Permission denied")
+        except RepositoryNotFoundError:
+            self.print_error("Repository has been deleted or is inaccessible.")
+            return self.error("Repository not found")
+        except NetworkSyncFailedError:
+            self.print_error("Failed to push to GitHub after multiple retries.")
+            return self.error("Network sync failed")
         except Exception as e:
             self.print_error(f"Push error: {str(e)}")
             return self.error(f"Push error: {str(e)}")
@@ -491,11 +564,53 @@ class GithubPushCommand(BaseCommand):
         return clone_result
 
     def _handle_push_workflow(
-        self, git_manager: Any, temp_path: str, commit_message: str
+        self, git_manager: Any, temp_path: str, commit_message: str, handler: Any = None
     ) -> Dict[str, Any]:
-        """Handle complete push workflow"""
+        """Handle complete push workflow with file size validation"""
         if not self._show_push_diff(git_manager, temp_path):
             return self.success(data={"message": "No changes to push"})
+
+        # Validate file sizes if handler is available
+        if handler:
+            try:
+                import subprocess
+                result = subprocess.run(
+                    ["git", "diff", "--name-only", "HEAD"],
+                    cwd=temp_path,
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+
+                if result.returncode == 0:
+                    import os
+                    modified_files = [
+                        os.path.join(temp_path, f)
+                        for f in result.stdout.strip().split('\n')
+                        if f
+                    ]
+
+                    if modified_files:
+                        file_report = handler.handle_large_files(
+                            files_to_push=modified_files,
+                            strategy="exclude"
+                        )
+
+                        if file_report.get("status") == "error":
+                            self.print_error(f"File size validation failed: {file_report.get('message')}")
+                            return self.error(f"File size validation failed")
+
+                        if file_report.get("status") == "partial":
+                            excluded_count = len(file_report.get("excluded_files", []))
+                            print(f"\n{Fore.YELLOW}Warning: {excluded_count} large files will be excluded from push{Style.RESET_ALL}")
+                            for file in file_report.get("excluded_files", [])[:5]:
+                                print(f"  {Fore.RED}excluded:{Style.RESET_ALL} {file}")
+                            if excluded_count > 5:
+                                print(f"  {Fore.YELLOW}... and {excluded_count - 5} more{Style.RESET_ALL}")
+
+            except Exception as e:
+                self.logger.warning(f"Error validating file sizes: {str(e)}")
+                # Continue anyway - this is a warning
 
         if not self._confirm_push(commit_message):
             return self.success(data={"message": "Push cancelled by user"})
@@ -539,11 +654,11 @@ class GithubPushCommand(BaseCommand):
 
     def _handle_push_result(self, push_result: Dict[str, Any]) -> Dict[str, Any]:
         """Handle push result and return appropriate response"""
-        if push_result.get("status") == "success":
+        if push_result.get("data", {}).get("status") == "success":
             self.print_success("Successfully pushed changes to GitHub!")
             if push_result.get("message"):
                 print(f"\n{Fore.CYAN}Push Output:{Style.RESET_ALL}")
-                print(push_result["message"][:500])
+                print(push_result.get("data", {}).get("message")[:500])
 
             print(f"\n{Fore.GREEN}[OK] Push completed successfully{Style.RESET_ALL}")
             return self.success(data={"push_result": push_result})
@@ -588,7 +703,7 @@ class GithubSyncCommand(BaseCommand):
         pull_command = GithubPullCommand()
         pull_result = pull_command.execute([], context)
 
-        if pull_result["status"] != "success":
+        if pull_result.get("data", {}).get("status") != "success":
             print(f"{Fore.YELLOW}Pull operation had issues, but continuing...{Style.RESET_ALL}")
 
         # Step 2: Push changes
@@ -599,7 +714,7 @@ class GithubSyncCommand(BaseCommand):
         push_command = GithubPushCommand()
         push_result = push_command.execute(push_args, context)
 
-        if push_result["status"] == "success":
+        if push_result.get("data", {}).get("status") == "success":
             self.print_success("Sync completed successfully!")
             print(f"\n{Fore.CYAN}Summary:{Style.RESET_ALL}")
             print("  • Pulled latest changes from GitHub")

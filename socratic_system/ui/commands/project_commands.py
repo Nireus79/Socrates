@@ -1,4 +1,5 @@
-"""Project management commands"""
+"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Project management commands"""
 
 import datetime
 from typing import Any, Dict, List
@@ -7,6 +8,7 @@ from colorama import Fore, Style
 
 from socratic_system.core import get_all_project_types, get_project_type_description
 from socratic_system.ui.commands.base import BaseCommand
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class ProjectCreateCommand(BaseCommand):
@@ -41,7 +43,8 @@ class ProjectCreateCommand(BaseCommand):
             return self.error("Required context not available")
 
         # Create project using orchestrator
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "project_manager",
             {
                 "action": "create_project",
@@ -49,10 +52,11 @@ class ProjectCreateCommand(BaseCommand):
                 "owner": user.username,
                 "project_type": project_type,
             },
+            operation_name="create_project"
         )
 
-        if result["status"] == "success":
-            project = result["project"]
+        if result.get("data", {}).get("status") == "success":
+            project = result.get("data", {}).get("project")
             app.current_project = project
             app.context_display.set_context(project=project)
 
@@ -106,8 +110,8 @@ class ProjectLoadCommand(BaseCommand):
             Flattened list of all projects for selection
         """
         # Separate active and archived
-        active_projects = [p for p in result["projects"] if p.get("status") != "archived"]
-        archived_projects = [p for p in result["projects"] if p.get("status") == "archived"]
+        active_projects = [p for p in result.get("data", {}).get("projects") if p.get("status") != "archived"]
+        archived_projects = [p for p in result.get("data", {}).get("projects") if p.get("status") == "archived"]
 
         print(f"\n{Fore.CYAN}Your Projects:{Style.RESET_ALL}")
 
@@ -148,12 +152,15 @@ class ProjectLoadCommand(BaseCommand):
         project_id = project_info["project_id"]
 
         # Load project
-        result = orchestrator.process_request(
-            "project_manager", {"action": "load_project", "project_id": project_id}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "project_manager",
+            {"action": "load_project", "project_id": project_id},
+            operation_name="load_project"
         )
 
-        if result["status"] == "success":
-            project = result["project"]
+        if result.get("data", {}).get("status") == "success":
+            project = result.get("data", {}).get("project")
             app.current_project = project
             app.context_display.set_context(project=project)
 
@@ -182,11 +189,14 @@ class ProjectLoadCommand(BaseCommand):
             return self.error("Required context not available")
 
         # Get user's projects
-        result = orchestrator.process_request(
-            "project_manager", {"action": "list_projects", "username": user.username}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "project_manager",
+            {"action": "list_projects", "username": user.username},
+            operation_name="list_projects"
         )
 
-        if result["status"] != "success" or not result.get("projects"):
+        if result.get("data", {}).get("status") != "success" or not result.get("projects"):
             self.print_info("No projects found")
             return self.success()
 
@@ -223,11 +233,14 @@ class ProjectListCommand(BaseCommand):
         if not orchestrator or not user:
             return self.error("Required context not available")
 
-        result = orchestrator.process_request(
-            "project_manager", {"action": "list_projects", "username": user.username}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "project_manager",
+            {"action": "list_projects", "username": user.username},
+            operation_name="list_projects"
         )
 
-        if result["status"] != "success" or not result.get("projects"):
+        if result.get("data", {}).get("status") != "success" or not result.get("projects"):
             self.print_info("No projects found")
             return self.success()
 
@@ -277,17 +290,19 @@ class ProjectArchiveCommand(BaseCommand):
             self.print_info("Archiving cancelled")
             return self.success()
 
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "project_manager",
             {
                 "action": "archive_project",
                 "project_id": project.project_id,
                 "requester": user.username,
             },
+            operation_name="archive_project"
         )
 
-        if result["status"] == "success":
-            self.print_success(result["message"])
+        if result.get("data", {}).get("status") == "success":
+            self.print_success(result.get("data", {}).get("message"))
             app.current_project = None
             app.context_display.set_context(project=None)
 
@@ -352,16 +367,18 @@ class ProjectRestoreCommand(BaseCommand):
             self.print_info("Restoration cancelled")
             return self.success()
 
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "project_manager",
             {
                 "action": "restore_project",
                 "project_id": project["project_id"],
                 "requester": user.username,
             },
+            operation_name="restore_project"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             self.print_success(f"Project '{project['name']}' restored successfully!")
             return self.success()
         else:
@@ -378,15 +395,18 @@ class ProjectRestoreCommand(BaseCommand):
         if not orchestrator or not user:
             return self.error("Required context not available")
 
-        result = orchestrator.process_request(
-            "project_manager", {"action": "get_archived_projects"}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "project_manager",
+            {"action": "get_archived_projects"},
+            operation_name="get_archived_projects"
         )
 
-        if result["status"] != "success" or not result.get("archived_projects"):
+        if result.get("data", {}).get("status") != "success" or not result.get("archived_projects"):
             self.print_info("No archived projects found")
             return self.success()
 
-        archived_projects = result["archived_projects"]
+        archived_projects = result.get("data", {}).get("archived_projects")
         self._display_archived_projects(archived_projects)
 
         try:
@@ -509,7 +529,8 @@ class ProjectDeleteCommand(BaseCommand):
         Returns:
             Result dictionary with success/error status
         """
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "project_manager",
             {
                 "action": "delete_project_permanently",
@@ -517,10 +538,11 @@ class ProjectDeleteCommand(BaseCommand):
                 "requester": user.username,
                 "confirmation": "DELETE",
             },
+            operation_name="delete_project_permanently"
         )
 
-        if result["status"] == "success":
-            self.print_success(result["message"])
+        if result.get("data", {}).get("status") == "success":
+            self.print_success(result.get("data", {}).get("message"))
 
             # Clear current project if it was the deleted one
             if app.current_project and app.current_project.project_id == project["project_id"]:
@@ -544,11 +566,14 @@ class ProjectDeleteCommand(BaseCommand):
             return self.error("Required context not available")
 
         # Get user's owned projects
-        result = orchestrator.process_request(
-            "project_manager", {"action": "list_projects", "username": user.username}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "project_manager",
+            {"action": "list_projects", "username": user.username},
+            operation_name="list_projects"
         )
 
-        if result["status"] != "success" or not result.get("projects"):
+        if result.get("data", {}).get("status") != "success" or not result.get("projects"):
             self.print_info("No projects found")
             return self.success()
 
@@ -615,7 +640,7 @@ class ProjectAnalyzeCommand(BaseCommand):
             if not clone_result:
                 return self.error("Failed to clone repository")
 
-            temp_path = clone_result["path"]
+            temp_path = clone_result.get("data", {}).get("path")
 
             try:
                 analysis = self._perform_code_analysis(project, temp_path)
@@ -732,13 +757,15 @@ class ProjectAnalyzeCommand(BaseCommand):
 
     def _run_analyze_validation(self, orchestrator: Any, project_path: str) -> Dict[str, Any]:
         """Run validation to get code quality metrics"""
-        return orchestrator.process_request(
+        return safe_orchestrator_call(
+            orchestrator,
             "code_validation",
             {
                 "action": "validate_project",
                 "project_path": project_path,
                 "timeout": 300,
             },
+            operation_name="validate_project"
         )
 
     def _display_analyze_results(
@@ -821,12 +848,12 @@ class ProjectTestCommand(BaseCommand):
             if not clone_result:
                 return self.error("Failed to clone repository")
 
-            temp_path = clone_result["path"]
+            temp_path = clone_result.get("data", {}).get("path")
 
             try:
                 test_result = self._run_project_tests(orchestrator, temp_path)
 
-                if test_result["status"] != "success":
+                if test_result.get("data", {}).get("status") != "success":
                     return self.error(
                         f"Test execution failed: {test_result.get('message', 'Unknown error')}"
                     )
@@ -877,13 +904,15 @@ class ProjectTestCommand(BaseCommand):
 
     def _run_project_tests(self, orchestrator: Any, project_path: str) -> Dict[str, Any]:
         """Run tests on the project using CodeValidationAgent"""
-        return orchestrator.process_request(
+        return safe_orchestrator_call(
+            orchestrator,
             "code_validation",
             {
                 "action": "run_tests",
                 "project_path": project_path,
                 "timeout": 300,
             },
+            operation_name="run_tests"
         )
 
     def _display_test_results(self, results: Dict[str, Any]) -> None:
@@ -948,19 +977,21 @@ class ProjectFixCommand(BaseCommand):
             if not clone_result:
                 return self.error("Failed to clone repository")
 
-            temp_path = clone_result["path"]
+            temp_path = clone_result.get("data", {}).get("path")
             try:
                 print(f"{Fore.CYAN}Identifying issues...{Style.RESET_ALL}")
-                validation_result = orchestrator.process_request(
+                validation_result = safe_orchestrator_call(
+                    orchestrator,
                     "code_validation",
                     {
                         "action": "validate_project",
                         "project_path": temp_path,
                         "timeout": 300,
                     },
+                    operation_name="validate_project"
                 )
 
-                if validation_result["status"] != "success":
+                if validation_result.get("data", {}).get("status") != "success":
                     return self.error("Validation failed before fixes")
 
                 validation_data = validation_result.get("validation_results", {})
@@ -1138,10 +1169,10 @@ class ProjectValidateCommand(BaseCommand):
             if not clone_result:
                 return self.error("Failed to clone repository")
 
-            temp_path = clone_result["path"]
+            temp_path = clone_result.get("data", {}).get("path")
             try:
                 validation_result = self._run_validation(orchestrator, temp_path)
-                if validation_result["status"] != "success":
+                if validation_result.get("data", {}).get("status") != "success":
                     return self.error(
                         f"Validation failed: {validation_result.get('message', 'Unknown error')}"
                     )
@@ -1193,13 +1224,15 @@ class ProjectValidateCommand(BaseCommand):
 
     def _run_validation(self, orchestrator: Any, project_path: str) -> Dict[str, Any]:
         """Run validation pipeline"""
-        return orchestrator.process_request(
+        return safe_orchestrator_call(
+            orchestrator,
             "code_validation",
             {
                 "action": "validate_project",
                 "project_path": project_path,
                 "timeout": 300,
             },
+            operation_name="validate_project"
         )
 
     def _display_validation_results(self, validation_result: Dict[str, Any]) -> None:
@@ -1324,7 +1357,7 @@ class ProjectReviewCommand(BaseCommand):
             if not clone_result.get("success"):
                 return self.error(f"Failed to clone repository: {clone_result.get('error')}")
 
-            temp_path = clone_result["path"]
+            temp_path = clone_result.get("data", {}).get("path")
 
             try:
                 # Gather code samples from main language files
@@ -1469,11 +1502,11 @@ class ProjectDiffCommand(BaseCommand):
             if not clone_result:
                 return self.error("Failed to clone repository")
 
-            temp_path = clone_result["path"]
+            temp_path = clone_result.get("data", {}).get("path")
 
             try:
                 validation_result = self._run_diff_validation(orchestrator, temp_path)
-                if validation_result["status"] != "success":
+                if validation_result.get("data", {}).get("status") != "success":
                     return self.error("Validation failed")
 
                 new_summary = validation_result.get("validation_summary", {})
@@ -1521,13 +1554,15 @@ class ProjectDiffCommand(BaseCommand):
 
     def _run_diff_validation(self, orchestrator: Any, project_path: str) -> Dict[str, Any]:
         """Run validation for diff operation"""
-        return orchestrator.process_request(
+        return safe_orchestrator_call(
+            orchestrator,
             "code_validation",
             {
                 "action": "validate_project",
                 "project_path": project_path,
                 "timeout": 300,
             },
+            operation_name="validate_project"
         )
 
     def _display_validation_comparison(

@@ -1,4 +1,5 @@
-"""Document and knowledge base management commands"""
+"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Document and knowledge base management commands"""
 
 import os
 from typing import Any, Dict, List
@@ -6,6 +7,7 @@ from typing import Any, Dict, List
 from colorama import Fore, Style
 
 from socratic_system.ui.commands.base import BaseCommand
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class DocsCommand(BaseCommand):
@@ -109,12 +111,14 @@ class DocImportCommand(BaseCommand):
 
         print(f"{Fore.YELLOW}Processing file...{Style.RESET_ALL}")
 
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "document_agent",
             {"action": "import_file", "file_path": file_path, "project_id": project_id},
+            operation_name="import file"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             file_name = result.get("file_name", "file")
             words = result.get("words_extracted", 0)
             chunks = result.get("chunks_created", 0)
@@ -204,7 +208,8 @@ class DocImportDirCommand(BaseCommand):
 
         print(f"{Fore.YELLOW}Processing directory...{Style.RESET_ALL}")
 
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "document_agent",
             {
                 "action": "import_directory",
@@ -212,9 +217,10 @@ class DocImportDirCommand(BaseCommand):
                 "project_id": project_id,
                 "recursive": recursive,
             },
+            operation_name="import directory"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             successful = result.get("files_processed", 0)
             failed = result.get("files_failed", 0)
             total_words = result.get("total_words_extracted", 0)
@@ -301,7 +307,7 @@ class DocPasteCommand(BaseCommand):
         result = self._process_text_import(orchestrator, text_content, title, project_id)
 
         # Handle result
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             return self._handle_import_success(result, title, project_id, context, orchestrator)
         else:
             return self.error(result.get("message", "Failed to import text"))
@@ -361,7 +367,8 @@ class DocPasteCommand(BaseCommand):
         """Process text import request"""
         print(f"{Fore.YELLOW}Processing text...{Style.RESET_ALL}")
 
-        return orchestrator.process_request(
+        return safe_orchestrator_call(
+            orchestrator,
             "document_agent",
             {
                 "action": "import_text",
@@ -369,6 +376,7 @@ class DocPasteCommand(BaseCommand):
                 "title": title,
                 "project_id": project_id,
             },
+            operation_name="import text"
         )
 
     def _handle_import_success(
@@ -466,16 +474,18 @@ class DocImportUrlCommand(BaseCommand):
 
         print(f"{Fore.YELLOW}Fetching URL content...{Style.RESET_ALL}")
 
-        result = orchestrator.process_request(
+        result = safe_orchestrator_call(
+            orchestrator,
             "document_agent",
             {
                 "action": "import_url",
                 "url": url,
                 "project_id": project_id,
             },
+            operation_name="import URL"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             file_name = result.get("file_name", "webpage")
             words = result.get("words_extracted", 0)
             chunks = result.get("chunks_created", 0)
@@ -549,11 +559,14 @@ class DocListCommand(BaseCommand):
         else:
             return self.error("No project specified and no project loaded")
 
-        result = orchestrator.process_request(
-            "document_agent", {"action": "list_documents", "project_id": project_id}
+        result = safe_orchestrator_call(
+            orchestrator,
+            "document_agent",
+            {"action": "list_documents", "project_id": project_id},
+            operation_name="list documents"
         )
 
-        if result["status"] == "success":
+        if result.get("data", {}).get("status") == "success":
             documents = result.get("documents", [])
 
             if not documents:

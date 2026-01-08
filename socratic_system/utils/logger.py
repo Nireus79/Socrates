@@ -157,7 +157,7 @@ class DebugLogger:
 
         # Update console handler level IMMEDIATELY
         if cls._console_handler:
-            new_level = logging.ERROR if enabled else logging.DEBUG
+            new_level = logging.DEBUG if enabled else logging.ERROR
             old_level = cls._console_handler.level
             cls._console_handler.setLevel(new_level)
             print(f"[LOGGER] Console handler level changed: {logging.getLevelName(old_level)} -> {logging.getLevelName(new_level)}", file=sys.stderr)
@@ -181,7 +181,7 @@ class DebugLogger:
             root_logger.setLevel(logging.WARNING)
 
         # Update all handlers attached to root logger
-        new_level = logging.ERROR if enabled else logging.DEBUG
+        new_level = logging.DEBUG if enabled else logging.ERROR
         for handler in root_logger.handlers[:]:
             if isinstance(handler, logging.StreamHandler) and not isinstance(
                 handler, logging.FileHandler

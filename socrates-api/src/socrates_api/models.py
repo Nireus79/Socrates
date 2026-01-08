@@ -3,9 +3,66 @@ Pydantic models for API request/response bodies
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+
+
+# ============================================================================
+# Standardized API Response Model
+# ============================================================================
+
+
+class APIResponse(BaseModel):
+    """
+    Standardized wrapper for all API responses.
+
+    This model provides consistent response formatting across all endpoints:
+    - success: boolean indicating operation success/failure
+    - status: more specific status string (e.g., "success", "error", "pending")
+    - data: the actual response data (optional, varies by endpoint)
+    - message: optional message to user
+    - error_code: machine-readable error code (for errors)
+    - timestamp: when the response was generated
+    """
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "success": True,
+                "status": "success",
+                "message": "Operation completed successfully",
+                "data": {
+                    "project_id": "proj_abc123",
+                    "name": "My Project"
+                },
+                "error_code": None,
+                "timestamp": "2026-01-08T12:30:45.123456Z"
+            }
+        }
+    )
+
+    success: bool = Field(..., description="Whether the operation succeeded")
+    status: Literal["success", "error", "pending", "created", "updated", "deleted"] = Field(
+        ..., description="Status of the operation"
+    )
+    data: Optional[Dict[str, Any]] = Field(
+        None, description="Response data (structure varies by endpoint)"
+    )
+    message: Optional[str] = Field(
+        None, description="Human-readable message (useful for errors and status updates)"
+    )
+    error_code: Optional[str] = Field(
+        None, description="Machine-readable error code for programmatic handling"
+    )
+    timestamp: Optional[str] = Field(
+        None, description="ISO 8601 timestamp when response was generated"
+    )
+
+
+# ============================================================================
+# Project Models
+# ============================================================================
 
 
 class CreateProjectRequest(BaseModel):
@@ -209,6 +266,23 @@ class GenerateCodeRequest(BaseModel):
     project_id: str = Field(..., description="Project identifier")
     specification: Optional[str] = Field(None, description="Code specification or requirements")
     language: str = Field(default="python", description="Programming language")
+
+
+class GenerateCodeForProjectRequest(BaseModel):
+    """Request body for code generation (when project_id is in URL path)"""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "specification": "Create a FastAPI endpoint for user registration",
+                "language": "python",
+            }
+        },
+    )
+
+    specification: Optional[str] = Field(None, description="Code specification or requirements")
+    language: Optional[str] = Field(default="python", description="Programming language")
 
 
 class CodeGenerationResponse(BaseModel):
@@ -719,3 +793,137 @@ class UpdateMessageRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(
         None, description="Optional metadata for the message"
     )
+
+
+# ============================================================================
+# Collaboration Response Models
+# ============================================================================
+
+
+class CollaboratorData(BaseModel):
+    """Response data for collaborator information"""
+
+    username: str = Field(..., description="Username of collaborator")
+    email: str = Field(..., description="Email of collaborator")
+    role: str = Field(..., description="Role in project (owner, editor, viewer)")
+    joined_at: Optional[str] = Field(None, description="When collaborator joined")
+    status: Optional[str] = Field(default="inactive", description="Current status")
+
+
+class CollaboratorListData(BaseModel):
+    """Response data for list of collaborators"""
+
+    project_id: str = Field(..., description="Project ID")
+    total: int = Field(..., description="Total number of collaborators")
+    collaborators: List[Dict[str, Any]] = Field(..., description="List of collaborators")
+
+
+class ActiveCollaboratorData(BaseModel):
+    """Response data for active collaborators"""
+
+    project_id: str = Field(..., description="Project ID")
+    active_count: int = Field(..., description="Number of active collaborators")
+    collaborators: List[Dict[str, Any]] = Field(..., description="List of active collaborators")
+
+
+class CollaborationTokenData(BaseModel):
+    """Response data for collaboration token validation"""
+
+    valid: bool = Field(..., description="Whether token is valid")
+    inviter: Optional[str] = Field(None, description="User who sent invitation")
+    project_id: Optional[str] = Field(None, description="Associated project ID")
+    email: Optional[str] = Field(None, description="Invited email")
+
+
+class CollaborationSyncData(BaseModel):
+    """Response data for collaboration sync"""
+
+    synced_count: int = Field(..., description="Number of items synced")
+    last_sync: str = Field(..., description="Timestamp of last sync")
+    status: str = Field(..., description="Sync status")
+
+
+class ActiveSessionsData(BaseModel):
+    """Response data for active collaboration sessions"""
+
+    total: int = Field(..., description="Total active sessions")
+    sessions: List[Dict[str, Any]] = Field(..., description="List of active sessions")
+
+
+class PresenceData(BaseModel):
+    """Response data for user presence"""
+
+    user_id: str = Field(..., description="User identifier")
+    project_id: str = Field(..., description="Project ID")
+    status: str = Field(..., description="Presence status (online, away, offline)")
+    last_activity: Optional[str] = Field(None, description="Last activity timestamp")
+
+
+# ============================================================================
+# Project Analytics Response Models
+# ============================================================================
+
+
+class ProjectStatsData(BaseModel):
+    """Response data for project statistics"""
+
+    project_id: str = Field(..., description="Project ID")
+    total_collaborators: int = Field(..., description="Total collaborators")
+    total_messages: int = Field(..., description="Total messages exchanged")
+    code_generations: int = Field(..., description="Number of code generations")
+    last_activity: Optional[str] = Field(None, description="Last activity timestamp")
+
+
+class ProjectMaturityData(BaseModel):
+    """Response data for project maturity assessment"""
+
+    project_id: str = Field(..., description="Project ID")
+    overall_maturity: float = Field(..., description="Overall maturity percentage (0-100)")
+    components: Dict[str, float] = Field(..., description="Maturity by component")
+    last_assessment: str = Field(..., description="When assessment was done")
+
+
+class ProjectAnalyticsData(BaseModel):
+    """Response data for project analytics"""
+
+    project_id: str = Field(..., description="Project ID")
+    period: str = Field(..., description="Analytics period")
+    metrics: Dict[str, Any] = Field(..., description="Various metrics")
+
+
+class ProjectExportData(BaseModel):
+    """Response data for project export"""
+
+    export_id: str = Field(..., description="Export identifier")
+    format: str = Field(..., description="Export format (json, csv, etc)")
+    size: int = Field(..., description="Size in bytes")
+    status: str = Field(..., description="Export status")
+
+
+# ============================================================================
+# Knowledge Response Models
+# ============================================================================
+
+
+class KnowledgeSearchData(BaseModel):
+    """Response data for knowledge search"""
+
+    query: str = Field(..., description="Search query")
+    total_results: int = Field(..., description="Total search results")
+    results: List[Dict[str, Any]] = Field(..., description="Search results")
+
+
+class RelatedDocumentsData(BaseModel):
+    """Response data for related documents"""
+
+    document_id: str = Field(..., description="Source document ID")
+    total_related: int = Field(..., description="Number of related documents")
+    documents: List[Dict[str, Any]] = Field(..., description="Related documents")
+
+
+class BulkImportData(BaseModel):
+    """Response data for bulk import"""
+
+    imported_count: int = Field(..., description="Number of documents imported")
+    failed_count: int = Field(default=0, description="Number of failed imports")
+    details: List[Dict[str, Any]] = Field(..., description="Import details")
