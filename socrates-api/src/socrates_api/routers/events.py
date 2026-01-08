@@ -14,6 +14,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
+from socrates_api.models import APIResponse
 from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
@@ -63,6 +64,7 @@ def record_event(event_type: str, data: dict = None, user_id: str = None) -> Non
 
 @router.get(
     "/history",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get event history",
     responses={
@@ -106,13 +108,18 @@ async def get_event_history(
 
         logger.info(f"Returning {len(paginated_events)} events (total: {total})")
 
-        return {
-            "events": paginated_events,
-            "total": total,
-            "limit": limit,
-            "offset": offset,
-            "event_type_filter": event_type,
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Retrieved {len(paginated_events)} events",
+            data={
+                "events": paginated_events,
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "event_type_filter": event_type,
+            },
+        )
 
     except Exception as e:
         logger.error(f"Error getting event history: {str(e)}")

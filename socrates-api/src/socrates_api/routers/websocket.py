@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisco
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
+from socrates_api.models import APIResponse
 from socrates_api.websocket import (
     MessageType,
     ResponseType,
@@ -628,17 +629,21 @@ async def send_chat_message(
         db.save_project(project)
 
         # Return response in format expected by frontend
-        return {
-            "status": "success",
-            "message": {
-                "id": f"msg_{int(datetime.now(timezone.utc).timestamp() * 1000)}",
-                "role": "assistant",
-                "content": assistant_response,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Chat message processed successfully",
+            data={
+                "message": {
+                    "id": f"msg_{int(datetime.now(timezone.utc).timestamp() * 1000)}",
+                    "role": "assistant",
+                    "content": assistant_response,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                },
+                "initial_question": question_response,
+                "mode": mode,
             },
-            "initial_question": question_response,
-            "mode": mode,
-        }
+        )
 
     except HTTPException:
         raise
@@ -709,14 +714,18 @@ async def get_chat_history(
             f"(offset={offset}, limit={limit}, total={total})"
         )
 
-        return {
-            "status": "success",
-            "project_id": project_id,
-            "messages": messages,
-            "total": total,
-            "limit": limit,
-            "offset": offset,
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Chat history retrieved successfully",
+            data={
+                "project_id": project_id,
+                "messages": messages,
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+            },
+        )
 
     except HTTPException:
         raise
@@ -778,12 +787,16 @@ async def switch_chat_mode(
 
         logger.info(f"Chat mode switched for project {project_id}: " f"{old_mode} → {mode}")
 
-        return {
-            "status": "success",
-            "project_id": project_id,
-            "mode": mode,
-            "previous_mode": old_mode,
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Chat mode switched to {mode}",
+            data={
+                "project_id": project_id,
+                "mode": mode,
+                "previous_mode": old_mode,
+            },
+        )
 
     except HTTPException:
         raise
@@ -873,11 +886,15 @@ async def request_hint(
 
         logger.info(f"Generated hint for project {project_id}")
 
-        return {
-            "status": "success",
-            "hint": hint,
-            "question": question or "Provide more details",
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Hint generated successfully",
+            data={
+                "hint": hint,
+                "question": question or "Provide more details",
+            },
+        )
 
     except HTTPException:
         raise
@@ -929,11 +946,14 @@ async def clear_chat_history(
             f"Chat history cleared for project {project_id} " f"({message_count} messages deleted)"
         )
 
-        return {
-            "status": "success",
-            "message": "Chat history cleared",
-            "messages_deleted": message_count,
-        }
+        return APIResponse(
+            success=True,
+            status="deleted",
+            message="Chat history cleared",
+            data={
+                "messages_deleted": message_count,
+            },
+        )
 
     except HTTPException:
         raise
@@ -980,13 +1000,17 @@ async def get_chat_summary(
         conversation_history = project.conversation_history or []
         if not conversation_history:
             logger.info(f"No conversation history for project {project_id}")
-            return {
-                "status": "success",
-                "project_id": project_id,
-                "summary": "No conversation history yet",
-                "key_points": [],
-                "insights": [],
-            }
+            return APIResponse(
+                success=True,
+                status="success",
+                message="Summary retrieved (no conversation history yet)",
+                data={
+                    "project_id": project_id,
+                    "summary": "No conversation history yet",
+                    "key_points": [],
+                    "insights": [],
+                },
+            )
 
         # Generate summary using orchestrator or Claude
         summary_text = "No conversation history available"
@@ -1059,13 +1083,17 @@ Provide response in JSON format:
 
         logger.info(f"Generated summary for project {project_id}")
 
-        return {
-            "status": "success",
-            "project_id": project_id,
-            "summary": summary_text,
-            "key_points": key_points,
-            "insights": insights,
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Conversation summary generated successfully",
+            data={
+                "project_id": project_id,
+                "summary": summary_text,
+                "key_points": key_points,
+                "insights": insights,
+            },
+        )
 
     except HTTPException:
         raise
@@ -1133,13 +1161,17 @@ async def search_conversations(
                     }
                 )
 
-        return {
-            "status": "success",
-            "project_id": project_id,
-            "query": query,
-            "results": results,
-            "count": len(results),
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Found {len(results)} matching messages",
+            data={
+                "project_id": project_id,
+                "query": query,
+                "results": results,
+                "count": len(results),
+            },
+        )
 
     except HTTPException:
         raise

@@ -34,6 +34,7 @@ class KnowledgeDocumentRequest(BaseModel):
 
 @router.post(
     "/{project_id}/knowledge/documents",
+    response_model=APIResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Add knowledge document to project",
 )
@@ -88,16 +89,17 @@ async def add_knowledge_document(
 
         logger.info(f"Knowledge document added: {doc_id}")
 
-        return {
-            "success": True,
-            "message": "Knowledge document added successfully",
-            "data": {
+        return APIResponse(
+            success=True,
+            status="created",
+            message="Knowledge document added successfully",
+            data={
                 "document_id": doc_id,
                 "title": request.title,
                 "type": request.type,
                 "created_at": document["created_at"],
             },
-        }
+        )
 
     except HTTPException:
         raise

@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
 from socrates_api.models import (
+    APIResponse,
     ChatMessage,
     ChatMessageRequest,
     ChatSessionResponse,
@@ -256,6 +257,7 @@ async def get_chat_session(
 
 @router.delete(
     "/{project_id}/chat/sessions/{session_id}",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Delete a chat session",
 )
@@ -292,7 +294,11 @@ async def delete_chat_session(
         del sessions_dict[session_id]
         db.save_project(project)
 
-        return {"success": True, "message": "Chat session deleted"}
+        return APIResponse(
+            success=True,
+            status="deleted",
+            message="Chat session deleted",
+        )
 
     except HTTPException:
         raise
@@ -467,6 +473,7 @@ async def get_chat_messages(
 
 @router.get(
     "/{project_id}/chat/question",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get next Socratic question",
 )
@@ -517,11 +524,14 @@ async def get_question(
         if project.conversation_history:
             db.save_conversation_history(project_id, project.conversation_history)
 
-        # Return unwrapped data (frontend expects this format)
-        return {
-            "question": result.get("question", ""),
-            "phase": project.phase,
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "question": result.get("question", ""),
+                "phase": project.phase,
+            },
+        )
 
     except HTTPException:
         raise
@@ -535,6 +545,7 @@ async def get_question(
 
 @router.post(
     "/{project_id}/chat/message",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Send chat message",
 )
@@ -593,16 +604,20 @@ async def send_message(
         # Check if conflicts detected - if so, return them for frontend resolution
         if result.get("conflicts_pending") and result.get("conflicts"):
             logger.info(f"Conflicts detected: {len(result['conflicts'])} conflict(s)")
-            return {
-                "message": {
-                    "id": f"msg_{id(result)}",
-                    "role": "assistant",
-                    "content": "Conflict detected. Please resolve the conflict to proceed.",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+            return APIResponse(
+                success=True,
+                status="success",
+                data={
+                    "message": {
+                        "id": f"msg_{id(result)}",
+                        "role": "assistant",
+                        "content": "Conflict detected. Please resolve the conflict to proceed.",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    },
+                    "conflicts_pending": True,
+                    "conflicts": result.get("conflicts", []),
                 },
-                "conflicts_pending": True,
-                "conflicts": result.get("conflicts", []),
-            }
+            )
 
         # Format insights for response
         insights = result.get("insights", {})
@@ -637,7 +652,11 @@ async def send_message(
             # Frontend will handle moving to next question without adding extra message
             response_data = {}
 
-        return response_data
+        return APIResponse(
+            success=True,
+            status="success",
+            data=response_data,
+        )
 
     except HTTPException:
         raise
@@ -651,6 +670,7 @@ async def send_message(
 
 @router.get(
     "/{project_id}/chat/history",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get chat history",
 )
@@ -686,13 +706,16 @@ async def get_history(
         if limit and limit > 0:
             history = history[-limit:]
 
-        # Return unwrapped data (frontend expects this format)
-        return {
-            "project_id": project_id,
-            "messages": history,
-            "mode": getattr(project, "chat_mode", "socratic"),
-            "total": len(history),
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "project_id": project_id,
+                "messages": history,
+                "mode": getattr(project, "chat_mode", "socratic"),
+                "total": len(history),
+            },
+        )
 
     except HTTPException:
         raise
@@ -706,6 +729,7 @@ async def get_history(
 
 @router.put(
     "/{project_id}/chat/mode",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Switch chat mode",
 )
@@ -741,7 +765,11 @@ async def switch_mode(
         project.chat_mode = request.mode
         db.save_project(project)
 
-        return {"mode": request.mode}
+        return APIResponse(
+            success=True,
+            status="success",
+            data={"mode": request.mode},
+        )
 
     except HTTPException:
         raise
@@ -755,6 +783,7 @@ async def switch_mode(
 
 @router.get(
     "/{project_id}/chat/hint",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get hint",
 )
@@ -796,14 +825,17 @@ async def get_hint(
         if result.get("status") != "success":
             # Fallback to a generic hint if hint generation fails
             logger.warning(f"Failed to generate hint: {result.get('message', 'Unknown error')}")
-            return {
-                "hint": "Review the project requirements and consider what step comes next in your learning journey."
-            }
+            return APIResponse(
+                success=True,
+                status="success",
+                data={"hint": "Review the project requirements and consider what step comes next in your learning journey."},
+            )
 
-        # Return unwrapped data (frontend expects this format)
-        return {
-            "hint": result.get("hint", "Continue working on your project."),
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            data={"hint": result.get("hint", "Continue working on your project.")},
+        )
 
     except HTTPException:
         raise
@@ -817,6 +849,7 @@ async def get_hint(
 
 @router.delete(
     "/{project_id}/chat/clear",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Clear chat history",
 )
@@ -848,7 +881,11 @@ async def clear_history(
         db.save_project(project)
         db.save_conversation_history(project_id, [])
 
-        return {"success": True}
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Chat history cleared",
+        )
 
     except HTTPException:
         raise
@@ -862,6 +899,7 @@ async def clear_history(
 
 @router.get(
     "/{project_id}/chat/summary",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get conversation summary",
 )
@@ -905,12 +943,15 @@ async def get_summary(
                 status_code=500, detail=result.get("message", "Failed to generate summary")
             )
 
-        # Return unwrapped data (frontend expects this format)
-        return {
-            "summary": result.get("summary", ""),
-            "key_points": result.get("key_points", []),
-            "insights": result.get("insights", []),
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "summary": result.get("summary", ""),
+                "key_points": result.get("key_points", []),
+                "insights": result.get("insights", []),
+            },
+        )
 
     except HTTPException:
         raise
@@ -924,6 +965,7 @@ async def get_summary(
 
 @router.post(
     "/{project_id}/chat/search",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Search conversations",
 )
@@ -956,8 +998,11 @@ async def search_conversations(
         history = project.conversation_history or []
         results = [msg for msg in history if request.query.lower() in str(msg).lower()]
 
-        # Return unwrapped data (frontend expects this format)
-        return {"results": results}
+        return APIResponse(
+            success=True,
+            status="success",
+            data={"results": results},
+        )
 
     except HTTPException:
         raise
@@ -971,6 +1016,7 @@ async def search_conversations(
 
 @router.post(
     "/{project_id}/chat/done",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Finish interactive session",
 )
@@ -1011,16 +1057,20 @@ async def finish_session(
         if project.conversation_history:
             db.save_conversation_history(project_id, project.conversation_history)
 
-        return {
-            "session_summary": {
-                "total_messages": conversation_count,
-                "current_phase": current_phase,
-                "overall_maturity": current_maturity,
-                "phase_maturity": phase_maturity,
-                "session_ended_at": None,  # Would use timestamp if available
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "session_summary": {
+                    "total_messages": conversation_count,
+                    "current_phase": current_phase,
+                    "overall_maturity": current_maturity,
+                    "phase_maturity": phase_maturity,
+                    "session_ended_at": None,
+                },
+                "project_id": project_id,
             },
-            "project_id": project_id,
-        }
+        )
 
     except HTTPException:
         raise
@@ -1034,6 +1084,7 @@ async def finish_session(
 
 @router.get(
     "/{project_id}/maturity/history",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get maturity history timeline",
 )
@@ -1072,13 +1123,17 @@ async def get_maturity_history(
         if limit and limit > 0:
             history = history[-limit:]
 
-        return {
-            "project_id": project_id,
-            "history": history,
-            "total_events": len(project.maturity_history or []),
-            "current_overall_maturity": project.overall_maturity,
-            "current_phase_maturity": (project.phase_maturity_scores or {}).get(project.phase, 0.0),
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "project_id": project_id,
+                "history": history,
+                "total_events": len(project.maturity_history or []),
+                "current_overall_maturity": project.overall_maturity,
+                "current_phase_maturity": (project.phase_maturity_scores or {}).get(project.phase, 0.0),
+            },
+        )
 
     except HTTPException:
         raise
@@ -1092,6 +1147,7 @@ async def get_maturity_history(
 
 @router.get(
     "/{project_id}/maturity/status",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get maturity status and phase completion",
 )
@@ -1140,20 +1196,24 @@ async def get_maturity_status(
                             {"phase": phase, "category": category, "score": score}
                         )
 
-        return {
-            "project_id": project_id,
-            "current_phase": project.phase,
-            "overall_maturity": project.overall_maturity,
-            "phase_maturity": {
-                "discovery": phase_scores.get("discovery", 0.0),
-                "analysis": phase_scores.get("analysis", 0.0),
-                "design": phase_scores.get("design", 0.0),
-                "implementation": phase_scores.get("implementation", 0.0),
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "project_id": project_id,
+                "current_phase": project.phase,
+                "overall_maturity": project.overall_maturity,
+                "phase_maturity": {
+                    "discovery": phase_scores.get("discovery", 0.0),
+                    "analysis": phase_scores.get("analysis", 0.0),
+                    "design": phase_scores.get("design", 0.0),
+                    "implementation": phase_scores.get("implementation", 0.0),
+                },
+                "strong_areas": strong_categories,
+                "weak_areas": weak_categories,
+                "analytics_metrics": project.analytics_metrics or {},
             },
-            "strong_areas": strong_categories,
-            "weak_areas": weak_categories,
-            "analytics_metrics": project.analytics_metrics or {},
-        }
+        )
 
     except HTTPException:
         raise
@@ -1172,6 +1232,7 @@ async def get_maturity_status(
 
 @router.get(
     "/{project_id}/chat/questions",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get all questions with status",
 )
@@ -1205,11 +1266,15 @@ async def get_questions(
         else:
             logger.info(f"Returning all {len(questions)} questions")
 
-        return {
-            "questions": questions,
-            "total": len(questions),
-            "filtered_by": status_filter or "none",
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "questions": questions,
+                "total": len(questions),
+                "filtered_by": status_filter or "none",
+            },
+        )
 
     except HTTPException:
         raise
@@ -1223,6 +1288,7 @@ async def get_questions(
 
 @router.post(
     "/{project_id}/chat/questions/{question_id}/reopen",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Reopen a skipped question",
 )
@@ -1259,11 +1325,14 @@ async def reopen_question(
 
         db.save_project(project)
 
-        return {
-            "success": True,
-            "message": result.get("message", "Question reopened"),
-            "question_id": question_id,
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "message": result.get("message", "Question reopened"),
+                "question_id": question_id,
+            },
+        )
 
     except HTTPException:
         raise
@@ -1277,6 +1346,7 @@ async def reopen_question(
 
 @router.post(
     "/{project_id}/chat/skip",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Mark current question as skipped",
 )
@@ -1319,7 +1389,11 @@ async def skip_question(
         db.save_project(project)
         logger.info(f"Saved project. Skipped {skipped_count} question(s)")
 
-        return {"success": True, "message": "Question marked as skipped"}
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Question marked as skipped",
+        )
 
     except HTTPException:
         raise
@@ -1333,6 +1407,7 @@ async def skip_question(
 
 @router.get(
     "/{project_id}/chat/suggestions",
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get answer suggestions for current question",
 )
@@ -1361,17 +1436,21 @@ async def get_answer_suggestions(
                 current_question = unanswered[0].get("question")
 
         if not current_question:
-            return {
-                "suggestions": [
-                    "Review your project goals and requirements",
-                    "Consider the next logical step in your plan",
-                    "Think about potential challenges and solutions",
-                    "Reflect on your target audience or users",
-                    "Consider how this relates to your tech stack"
-                ],
-                "question": "No active question",
-                "phase": project.phase,
-            }
+            return APIResponse(
+                success=True,
+                status="success",
+                data={
+                    "suggestions": [
+                        "Review your project goals and requirements",
+                        "Consider the next logical step in your plan",
+                        "Think about potential challenges and solutions",
+                        "Reflect on your target audience or users",
+                        "Consider how this relates to your tech stack"
+                    ],
+                    "question": "No active question",
+                    "phase": project.phase,
+                },
+            )
 
         orchestrator = get_orchestrator()
         result = orchestrator.process_request(
@@ -1385,23 +1464,31 @@ async def get_answer_suggestions(
 
         if result.get("status") != "success":
             # Return generic suggestions if generation failed
-            return {
-                "suggestions": [
-                    "Consider the problem from your target audience's perspective",
-                    "Think about the technical constraints you mentioned",
-                    "Review the project goals and how this relates to them",
-                    "Consider existing solutions and what makes your approach unique",
-                    "Think about potential challenges and how to address them"
-                ],
+            return APIResponse(
+                success=True,
+                status="success",
+                data={
+                    "suggestions": [
+                        "Consider the problem from your target audience's perspective",
+                        "Think about the technical constraints you mentioned",
+                        "Review the project goals and how this relates to them",
+                        "Consider existing solutions and what makes your approach unique",
+                        "Think about potential challenges and how to address them"
+                    ],
+                    "question": current_question,
+                    "phase": project.phase,
+                },
+            )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "suggestions": result.get("suggestions", []),
                 "question": current_question,
                 "phase": project.phase,
-            }
-
-        return {
-            "suggestions": result.get("suggestions", []),
-            "question": current_question,
-            "phase": project.phase,
-        }
+            },
+        )
 
     except HTTPException:
         raise

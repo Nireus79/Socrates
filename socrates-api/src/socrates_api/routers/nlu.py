@@ -638,6 +638,7 @@ async def get_available_commands(
     status_code=status.HTTP_200_OK,
     summary="Get context-aware command suggestions",
 )
+
 async def get_context_aware_suggestions(
     project_id: Optional[str] = None,
     current_phase: Optional[str] = None,

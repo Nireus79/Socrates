@@ -20,6 +20,8 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from socrates_api.models import APIResponse
+
 logger = logging.getLogger(__name__)
 
 # Router setup
@@ -118,10 +120,10 @@ async def get_query_profiler():
 # ============================================================================
 
 
-@router.get("/health", response_model=DatabaseHealthModel)
+@router.get("/health", response_model=APIResponse)
 async def database_health(
     pool=Depends(get_connection_pool),
-) -> DatabaseHealthModel:
+) -> APIResponse:
     """Check overall database health status.
 
     Performs a quick connectivity test and returns health status.
@@ -173,19 +175,23 @@ async def database_health(
         "unhealthy": "Database is not responding",
     }.get(health.get("status"), "Unknown status")
 
-    return DatabaseHealthModel(
-        status=health.get("status", "unknown"),
+    return APIResponse(
+        success=True,
+        status="success",
         message=status_message,
-        latency_ms=health.get("latency_ms", 0),
-        timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        data={
+            "health_status": health.get("status", "unknown"),
+            "latency_ms": health.get("latency_ms", 0),
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        },
     )
 
 
-@router.get("/health/detailed", response_model=DetailedHealthModel)
+@router.get("/health/detailed", response_model=APIResponse)
 async def database_health_detailed(
     pool=Depends(get_connection_pool),
     profiler=Depends(get_query_profiler),
-) -> DetailedHealthModel:
+) -> APIResponse:
     """Get detailed database health with metrics.
 
     Includes connection pool statistics and query performance metrics.
@@ -238,13 +244,17 @@ async def database_health_detailed(
         "unhealthy": "Database is not responding",
     }.get(health.get("status"), "Unknown status")
 
-    return DetailedHealthModel(
-        status=health.get("status", "unknown"),
+    return APIResponse(
+        success=True,
+        status="success",
         message=status_message,
-        latency_ms=health.get("latency_ms", 0),
-        timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        pool_status=pool_status,
-        query_stats=query_stats,
+        data={
+            "health_status": health.get("status", "unknown"),
+            "latency_ms": health.get("latency_ms", 0),
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "pool_status": pool_status.model_dump() if pool_status else None,
+            "query_stats": query_stats.model_dump() if query_stats else None,
+        },
     )
 
 
@@ -253,11 +263,11 @@ async def database_health_detailed(
 # ============================================================================
 
 
-@router.get("/stats", response_model=DatabaseStatsModel)
+@router.get("/stats", response_model=APIResponse)
 async def database_stats(
     pool=Depends(get_connection_pool),
     profiler=Depends(get_query_profiler),
-) -> DatabaseStatsModel:
+) -> APIResponse:
     """Get comprehensive database statistics.
 
     Returns:
@@ -313,10 +323,15 @@ async def database_stats(
                 "modified_at": time.ctime(stat.st_mtime),
             }
 
-    return DatabaseStatsModel(
-        pool_status=pool_status,
-        query_stats=query_stats,
-        file_info=file_info,
+    return APIResponse(
+        success=True,
+        status="success",
+        message="Database statistics retrieved successfully",
+        data={
+            "pool_status": pool_status.model_dump() if pool_status else None,
+            "query_stats": query_stats.model_dump() if query_stats else None,
+            "file_info": file_info,
+        },
     )
 
 
@@ -325,18 +340,18 @@ async def database_stats(
 # ============================================================================
 
 
-@router.get("/slow-queries", tags=["database", "performance"])
+@router.get("/slow-queries", response_model=APIResponse, tags=["database", "performance"])
 async def get_slow_queries(
     min_count: int = 1,
     profiler=Depends(get_query_profiler),
-) -> Dict[str, Any]:
+) -> APIResponse:
     """Get list of slow queries.
 
     Args:
         min_count: Minimum number of slow executions to include
 
     Returns:
-        Dict with slow query list sorted by count
+        APIResponse with slow query list sorted by count
 
     Example:
         ```bash
@@ -345,25 +360,30 @@ async def get_slow_queries(
     """
     slow_queries = profiler.get_slow_queries(min_slow_count=min_count)
 
-    return {
-        "total_slow_queries": len(slow_queries),
-        "min_count": min_count,
-        "queries": slow_queries,
-    }
+    return APIResponse(
+        success=True,
+        status="success",
+        message=f"Retrieved {len(slow_queries)} slow queries",
+        data={
+            "total_slow_queries": len(slow_queries),
+            "min_count": min_count,
+            "queries": slow_queries,
+        },
+    )
 
 
-@router.get("/slowest-queries", tags=["database", "performance"])
+@router.get("/slowest-queries", response_model=APIResponse, tags=["database", "performance"])
 async def get_slowest_queries(
     limit: int = 10,
     profiler=Depends(get_query_profiler),
-) -> Dict[str, Any]:
+) -> APIResponse:
     """Get slowest queries by average execution time.
 
     Args:
         limit: Maximum number of queries to return
 
     Returns:
-        Dict with slowest queries
+        APIResponse with slowest queries
 
     Example:
         ```bash
@@ -372,11 +392,16 @@ async def get_slowest_queries(
     """
     slowest = profiler.get_slowest_queries(limit=limit)
 
-    return {
-        "limit": limit,
-        "total_tracked": len(profiler.stats),
-        "queries": slowest,
-    }
+    return APIResponse(
+        success=True,
+        status="success",
+        message=f"Retrieved slowest {len(slowest)} queries",
+        data={
+            "limit": limit,
+            "total_tracked": len(profiler.stats),
+            "queries": slowest,
+        },
+    )
 
 
 # ============================================================================
@@ -384,18 +409,18 @@ async def get_slowest_queries(
 # ============================================================================
 
 
-@router.post("/stats/reset", tags=["database", "admin"])
+@router.post("/stats/reset", response_model=APIResponse, tags=["database", "admin"])
 async def reset_statistics(
     query_name: Optional[str] = None,
     profiler=Depends(get_query_profiler),
-) -> Dict[str, str]:
+) -> APIResponse:
     """Reset query statistics.
 
     Args:
         query_name: Specific query to reset, or None for all
 
     Returns:
-        Dict with reset status
+        APIResponse with reset status
 
     Example:
         ```bash
@@ -409,15 +434,19 @@ async def reset_statistics(
     profiler.reset_stats(query_name)
 
     if query_name:
-        return {
-            "status": "reset",
-            "message": f"Statistics reset for query: {query_name}",
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Statistics reset for query: {query_name}",
+            data={"query_name": query_name},
+        )
     else:
-        return {
-            "status": "reset",
-            "message": "All statistics reset",
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message="All statistics reset",
+            data={},
+        )
 
 
 # ============================================================================
@@ -425,14 +454,14 @@ async def reset_statistics(
 # ============================================================================
 
 
-@router.get("/live", tags=["health"])
+@router.get("/live", response_model=APIResponse, tags=["health"])
 async def liveness_probe(
     pool=Depends(get_connection_pool),
-) -> Dict[str, str]:
+) -> APIResponse:
     """Liveness probe for Kubernetes/container orchestration.
 
     Returns:
-        Dict with status
+        APIResponse with status
 
     Example:
         ```bash
@@ -443,20 +472,25 @@ async def liveness_probe(
         is_alive = await pool.test_connection()
         if not is_alive:
             raise HTTPException(status_code=503, detail="Database connection failed")
-        return {"status": "alive"}
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Database is alive",
+            data={"status": "alive"},
+        )
     except Exception as e:
         logger.error(f"Liveness probe failed: {e}")
         raise HTTPException(status_code=503, detail=str(e))
 
 
-@router.get("/ready", tags=["health"])
+@router.get("/ready", response_model=APIResponse, tags=["health"])
 async def readiness_probe(
     pool=Depends(get_connection_pool),
-) -> Dict[str, str]:
+) -> APIResponse:
     """Readiness probe for Kubernetes/container orchestration.
 
     Returns:
-        Dict with status
+        APIResponse with status
 
     Example:
         ```bash
@@ -472,7 +506,12 @@ async def readiness_probe(
                 detail="Database is not ready",
             )
 
-        return {"status": "ready"}
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Database is ready",
+            data={"status": "ready"},
+        )
     except Exception as e:
         logger.error(f"Readiness probe failed: {e}")
         raise HTTPException(status_code=503, detail=str(e))
