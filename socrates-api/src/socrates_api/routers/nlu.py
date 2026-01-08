@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from socrates_api.auth import get_current_user, get_current_user_optional
+from socrates_api.auth import get_current_user
 from socrates_api.models import APIResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
@@ -196,7 +196,7 @@ Respond ONLY with valid JSON."""
 )
 async def interpret_input(
     request: NLUInterpretRequest,
-    current_user: str = Depends(get_current_user_optional),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Interpret natural language input and return command suggestions using AI.
@@ -226,8 +226,7 @@ async def interpret_input(
 
         user_input = request.input.strip()
         user_input_lower = user_input.lower()
-        user_id_str = current_user if current_user else "anonymous"
-        logger.info(f"NLU interpretation request from user {user_id_str}: '{request.input}'")
+        logger.info(f"NLU interpretation request from user {current_user}: '{request.input}'")
 
         # Check if input is a direct command (starts with /)
         if user_input.startswith("/"):
@@ -393,7 +392,7 @@ async def interpret_input(
     summary="Get list of available commands",
 )
 async def get_available_commands(
-    current_user: str = Depends(get_current_user_optional),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Get list of all available commands for command discovery.
@@ -437,8 +436,7 @@ async def get_available_commands(
         ```
     """
     try:
-        user_id_str = current_user if current_user else "anonymous"
-        logger.info(f"Available commands requested by user: {user_id_str}")
+        logger.info(f"Available commands requested by user: {current_user}")
 
         # Static list of available commands organized by category
         commands_by_category = {
@@ -625,7 +623,7 @@ async def get_available_commands(
 async def get_context_aware_suggestions(
     project_id: Optional[str] = None,
     current_phase: Optional[str] = None,
-    current_user: str = Depends(get_current_user_optional),
+    current_user: str = Depends(get_current_user),
 ):
     """
     Get command suggestions based on current project context.
@@ -666,9 +664,8 @@ async def get_context_aware_suggestions(
         ```
     """
     try:
-        user_id_str = current_user if current_user else "anonymous"
         logger.info(
-            f"Context-aware suggestions requested by {user_id_str} "
+            f"Context-aware suggestions requested by {current_user} "
             f"for project {project_id}, phase {current_phase}"
         )
 
