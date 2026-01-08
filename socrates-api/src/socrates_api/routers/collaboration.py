@@ -931,6 +931,7 @@ async def create_project_invitation(
     project_id: str,
     request: CollaborationInviteRequest = Body(...),
     current_user: str = Depends(get_current_user),
+    user_object: "User" = Depends(get_current_user_object),
     db: ProjectDatabase = Depends(get_database),
 ):
     """
@@ -940,6 +941,7 @@ async def create_project_invitation(
         project_id: Project to invite collaborator to
         request: Invitation request with email and role
         current_user: Current authenticated user
+        user_object: Current user object
         db: Database connection
 
     Returns:
@@ -962,6 +964,43 @@ async def create_project_invitation(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only project owner can invite collaborators",
+            )
+
+        # CRITICAL: Validate subscription before creating invitation
+        logger.info(f"Validating subscription for creating invitation for user {current_user}")
+        try:
+            subscription_tier = user_object.subscription_tier.lower()
+
+            # Check if user has active subscription
+            if user_object.subscription_status != "active":
+                logger.warning(
+                    f"User {current_user} attempted to create invitation without active subscription (status: {user_object.subscription_status})"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Active subscription required to invite collaborators",
+                )
+
+            # Check subscription tier - collaboration feature requires pro or enterprise tier
+            if subscription_tier == "free" and not user_object.testing_mode:
+                logger.warning(f"Free-tier user {current_user} attempted to create invitation")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Collaboration feature requires 'pro' or 'enterprise' subscription",
+                )
+
+            logger.info(
+                f"Subscription validation passed for {current_user} (tier: {subscription_tier})"
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(
+                f"Error validating subscription for creating invitation: {type(e).__name__}: {e}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error validating subscription: {str(e)[:100]}",
             )
 
         # Validate email
@@ -1289,20 +1328,32 @@ async def cancel_invitation(
     responses={
         200: {"description": "Invitation sent"},
         400: {"description": "Invalid email", "model": ErrorResponse},
+        403: {"description": "Subscription limit exceeded", "model": ErrorResponse},
         422: {"description": "Missing email", "model": ErrorResponse},
     },
 )
 async def invite_team_member(
     request: CollaborationInviteRequest,
+    current_user: str = Depends(get_current_user),
+    user_object: "User" = Depends(get_current_user_object),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Invite a team member via email (global team).
 
+    Requires pro or enterprise subscription for collaboration.
+
     Args:
         request: Request body with email and optional role
+        current_user: Current authenticated user
+        user_object: Current user object
+        db: Database connection
 
     Returns:
         SuccessResponse with invitation details
+
+    Raises:
+        HTTPException: If user doesn't have subscription or collaboration feature
     """
     try:
         email = request.email
@@ -1319,6 +1370,43 @@ async def invite_team_member(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid email format",
+            )
+
+        # CRITICAL: Validate subscription before inviting team member
+        logger.info(f"Validating subscription for team member invitation for user {current_user}")
+        try:
+            subscription_tier = user_object.subscription_tier.lower()
+
+            # Check if user has active subscription
+            if user_object.subscription_status != "active":
+                logger.warning(
+                    f"User {current_user} attempted to invite team member without active subscription (status: {user_object.subscription_status})"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Active subscription required to invite team members",
+                )
+
+            # Check subscription tier - collaboration feature requires pro or enterprise tier
+            if subscription_tier == "free" and not user_object.testing_mode:
+                logger.warning(f"Free-tier user {current_user} attempted to invite team member")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Collaboration feature requires 'pro' or 'enterprise' subscription",
+                )
+
+            logger.info(
+                f"Subscription validation passed for {current_user} (tier: {subscription_tier})"
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(
+                f"Error validating subscription for team member invitation: {type(e).__name__}: {e}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error validating subscription: {str(e)[:100]}",
             )
 
         logger.info(f"Sending team invitation to {email} with role {role}")
