@@ -240,6 +240,8 @@ async def ask_question(
     try:
         if not request.question or not request.question.strip():
             return APIResponse(
+                success=False,
+                status="error",
                 message="Please provide a question.",
                 data={
                     "answer": "I'm ready to help. What would you like to know?",
@@ -327,6 +329,8 @@ async def ask_question(
         )
 
         return APIResponse(
+            success=True,
+            status="success",
             message="Answer generated successfully",
             data={
                 "answer": answer,
@@ -345,6 +349,8 @@ async def ask_question(
 
         logger.error(f"[free-session] Traceback: {traceback.format_exc()}")
         return APIResponse(
+            success=False,
+            status="error",
             message="Error generating answer",
             data={
                 "answer": "I encountered an error processing your question. Please try again.",
@@ -444,6 +450,8 @@ async def list_free_session_sessions(
         logger.info(f"Retrieved {len(sessions)} free_session sessions for user {current_user}")
 
         return APIResponse(
+            success=True,
+            status="success",
             message="Sessions retrieved successfully",
             data={
                 "sessions": [
@@ -463,6 +471,8 @@ async def list_free_session_sessions(
     except Exception as e:
         logger.error(f"Error listing free_session sessions for {current_user}: {e}", exc_info=True)
         return APIResponse(
+            success=False,
+            status="error",
             message="Error retrieving sessions",
             data={"sessions": []},
         )
@@ -507,6 +517,8 @@ async def get_free_session_session(
         )
 
         return APIResponse(
+            success=True,
+            status="success",
             message="Session retrieved successfully",
             data={
                 "session_id": session_id,
@@ -572,6 +584,8 @@ async def delete_free_session_session(
         logger.info(f"Deleted free_session session {session_id} for user {current_user}")
 
         return APIResponse(
+            success=True,
+            status="deleted",
             message="Session deleted successfully",
             data={"session_id": session_id},
         )
@@ -638,6 +652,8 @@ async def get_project_recommendations(
 
         if not conversation:
             return APIResponse(
+                success=True,
+                status="success",
                 message="No conversation history found",
                 data={"recommendations": []},
             )
@@ -653,6 +669,8 @@ async def get_project_recommendations(
         logger.info(f"Generated {len(recommendations)} project recommendations for {current_user}")
 
         return APIResponse(
+            success=True,
+            status="success",
             message="Recommendations generated successfully",
             data={
                 "topics_detected": topics,
@@ -672,6 +690,8 @@ async def get_project_recommendations(
     except Exception as e:
         logger.error(f"Error generating recommendations for {current_user}: {e}", exc_info=True)
         return APIResponse(
+            success=False,
+            status="error",
             message="Error generating recommendations",
             data={"recommendations": []},
         )
