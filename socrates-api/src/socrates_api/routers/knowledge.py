@@ -14,7 +14,7 @@ from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadF
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socrates_api.models import ErrorResponse, SuccessResponse
+from socrates_api.models import APIResponse, BulkImportData, ErrorResponse, SuccessResponse
 from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ def _get_orchestrator():
 
 @router.get(
     "/documents",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="List documents with advanced filtering",
     responses={
@@ -128,9 +128,11 @@ async def list_documents(
                 }
             )
 
-        return {
-            "status": "success",
-            "data": {
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Documents retrieved",
+            data={
                 "documents": doc_list,
                 "pagination": {
                     "total": total,
@@ -139,7 +141,7 @@ async def list_documents(
                     "has_more": offset + limit < total,
                 },
             },
-        }
+        )
 
     except HTTPException:
         raise
@@ -153,7 +155,7 @@ async def list_documents(
 
 @router.get(
     "/documents/{document_id}",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get document details and preview",
 )
@@ -756,7 +758,7 @@ async def delete_document(
 
 @router.post(
     "/documents/bulk-delete",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Bulk delete documents",
 )
@@ -797,16 +799,20 @@ async def bulk_delete_documents(
 
         logger.info(f"Bulk delete: {len(deleted)} deleted, {len(failed)} failed")
 
-        return {
-            "status": "success",
-            "deleted": deleted,
-            "failed": failed,
-            "summary": {
-                "total_requested": len(document_ids),
-                "deleted_count": len(deleted),
-                "failed_count": len(failed),
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Bulk delete completed: {len(deleted)} deleted, {len(failed)} failed",
+            data={
+                "deleted": deleted,
+                "failed": failed,
+                "summary": {
+                    "total_requested": len(document_ids),
+                    "deleted_count": len(deleted),
+                    "failed_count": len(failed),
+                },
             },
-        }
+        )
 
     except HTTPException:
         raise
@@ -819,7 +825,7 @@ async def bulk_delete_documents(
 
 @router.post(
     "/documents/bulk-import",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Bulk import documents",
 )
@@ -922,15 +928,16 @@ async def bulk_import_documents(
 
         logger.info(f"Bulk import: {success_count} imported, {failed_count} failed")
 
-        return {
-            "status": "success",
-            "results": results,
-            "summary": {
-                "total_files": len(files),
-                "imported_count": success_count,
-                "failed_count": failed_count,
-            },
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Bulk import completed: {success_count} imported, {failed_count} failed",
+            data=BulkImportData(
+                imported_count=success_count,
+                failed_count=failed_count,
+                details=results,
+            ).dict(),
+        )
 
     except HTTPException:
         raise
@@ -943,7 +950,7 @@ async def bulk_import_documents(
 
 @router.get(
     "/documents/{document_id}/analytics",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get document analytics",
 )

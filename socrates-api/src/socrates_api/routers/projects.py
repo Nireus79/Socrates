@@ -34,19 +34,21 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 if TYPE_CHECKING:
     import socrates
 
-from socrates_api.auth import get_current_user, get_current_user_object
+from socrates_api.auth import get_current_user, get_current_user_object, get_current_user_object_optional
 from socrates_api.database import get_database
 from socrates_api.middleware import SubscriptionChecker
 from socrates_api.models import (
+    APIResponse,
     CreateProjectRequest,
     ErrorResponse,
     ListProjectsResponse,
+    ProjectAnalyticsData,
     ProjectResponse,
     SuccessResponse,
     UpdateProjectRequest,
 )
 from socratic_system.database import ProjectDatabase
-from socratic_system.models import ProjectContext
+from socratic_system.models import ProjectContext, User
 from socratic_system.utils.id_generator import ProjectIDGenerator
 
 logger = logging.getLogger(__name__)
@@ -142,6 +144,7 @@ async def create_project(
     request: CreateProjectRequest,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
+    user_object: Optional[User] = Depends(get_current_user_object_optional),
 ):
     """
     Create a new project for the current user.
@@ -167,28 +170,21 @@ async def create_project(
         # This must happen regardless of whether orchestrator is used
         logger.info("Checking subscription limits...")
         try:
-            user_object = get_current_user_object(current_user)
-
-            # Check if user has active subscription
-            if user_object.subscription_status != "active":
-                logger.warning(
-                    f"User {current_user} attempted to create project without active subscription"
-                )
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Active subscription required to create projects",
-                )
+            # Determine subscription tier - default to free if user not in DB yet
+            subscription_tier = "free"
+            if user_object:
+                subscription_tier = getattr(user_object, "subscription_tier", "free")
 
             # Check project limit for subscription tier
             active_projects = db.get_user_projects(current_user)
-            can_create, error_msg = SubscriptionChecker.check_project_limit(
-                user_object, len(active_projects)
+            can_create, error_msg = SubscriptionChecker.can_create_projects(
+                subscription_tier, len(active_projects)
             )
             if not can_create:
                 logger.warning(f"User {current_user} exceeded project limit: {error_msg}")
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=error_msg)
 
-            logger.info(f"Subscription validation passed for {current_user}")
+            logger.info(f"Subscription validation passed for {current_user} (tier: {subscription_tier})")
         except HTTPException:
             raise
         except Exception as e:
@@ -263,8 +259,8 @@ async def create_project(
 
             # Check project limit for subscription tier
             active_projects = db.get_user_projects(current_user)
-            can_create, error_msg = SubscriptionChecker.check_project_limit(
-                user_object, len(active_projects)
+            can_create, error_msg = SubscriptionChecker.can_create_projects(
+                user_object.subscription_tier, len(active_projects)
             )
             if not can_create:
                 logger.warning(f"User {current_user} exceeded project limit: {error_msg}")
@@ -595,7 +591,7 @@ async def restore_project(
 
 @router.get(
     "/{project_id}/stats",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get project statistics",
     responses={
@@ -660,7 +656,7 @@ async def get_project_stats(
 
 @router.get(
     "/{project_id}/maturity",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get project maturity scores",
     responses={
@@ -811,7 +807,7 @@ async def advance_phase(
 
 @router.get(
     "/{project_id}/analytics",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get project analytics",
     responses={
@@ -900,11 +896,16 @@ async def get_project_analytics(
             user_id=current_user,
         )
 
-        return {
-            "status": "success",
-            "project_id": project_id,
-            "analytics": analytics,
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Analytics retrieved",
+            data=ProjectAnalyticsData(
+                project_id=project_id,
+                period="all_time",
+                metrics=analytics,
+            ).dict(),
+        )
 
     except HTTPException:
         raise

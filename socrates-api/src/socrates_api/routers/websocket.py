@@ -514,7 +514,7 @@ async def _route_command(
 
 @router.post(
     "/projects/{project_id}/chat/message",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Send chat message (HTTP fallback)",
 )
@@ -652,7 +652,7 @@ async def send_chat_message(
 
 @router.get(
     "/projects/{project_id}/chat/history",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get chat history",
 )
@@ -730,7 +730,7 @@ async def get_chat_history(
 
 @router.put(
     "/projects/{project_id}/chat/mode",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Switch chat mode",
 )
@@ -797,7 +797,7 @@ async def switch_chat_mode(
 
 @router.get(
     "/projects/{project_id}/chat/hint",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Request hint",
 )
@@ -891,7 +891,7 @@ async def request_hint(
 
 @router.delete(
     "/projects/{project_id}/chat/clear",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Clear chat history",
 )
@@ -947,7 +947,7 @@ async def clear_chat_history(
 
 @router.get(
     "/projects/{project_id}/chat/summary",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get conversation summary",
 )
@@ -1079,7 +1079,7 @@ Provide response in JSON format:
 
 @router.post(
     "/projects/{project_id}/chat/search",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Search conversation history",
 )

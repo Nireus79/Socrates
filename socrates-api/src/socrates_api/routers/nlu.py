@@ -19,7 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
-from socrates_api.models import SuccessResponse
+from socrates_api.models import APIResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/nlu", tags=["nlu"])
@@ -214,7 +214,7 @@ async def interpret_input(
     """
     try:
         if not request.input or not request.input.strip():
-            return SuccessResponse(
+            return APIResponse(
                 message="Please enter a command or question.",
                 data={
                     "status": "no_match",
@@ -232,7 +232,7 @@ async def interpret_input(
         if user_input.startswith("/"):
             # Direct command - return as-is
             logger.debug(f"Direct command detected: {user_input}")
-            return SuccessResponse(
+            return APIResponse(
                 message=f"Understood! Executing: {user_input}",
                 data={
                     "status": "success",
@@ -259,7 +259,7 @@ async def interpret_input(
             # Format AI suggestions properly
             if ai_suggestions:
                 logger.info(f"AI suggestions for '{user_input}': {len(ai_suggestions)} suggestions")
-                return SuccessResponse(
+                return APIResponse(
                     message="I found some relevant commands:",
                     data={
                         "status": "suggestions",
@@ -333,7 +333,7 @@ async def interpret_input(
         # If exact match found, return it
         if matched_command:
             logger.info(f"Exact keyword match: {matched_command}")
-            return SuccessResponse(
+            return APIResponse(
                 message=f"Understood! Executing: {matched_command}",
                 data={
                     "status": "success",
@@ -349,7 +349,7 @@ async def interpret_input(
             # Sort by confidence
             suggestions.sort(key=lambda x: x["confidence"], reverse=True)
             logger.info(f"Found {len(suggestions)} keyword-based suggestions")
-            return SuccessResponse(
+            return APIResponse(
                 message="Did you mean one of these?",
                 data={
                     "status": "suggestions",
@@ -362,7 +362,7 @@ async def interpret_input(
 
         # No match found
         logger.info(f"No match found for input: {user_input}")
-        return SuccessResponse(
+        return APIResponse(
             message="I didn't understand that. Try describing what you want or typing a command like /help",
             data={
                 "status": "no_match",
@@ -374,7 +374,7 @@ async def interpret_input(
 
     except Exception as e:
         logger.error(f"Error interpreting input: {str(e)}", exc_info=True)
-        return SuccessResponse(
+        return APIResponse(
             message="Error processing your request. Please try again.",
             data={
                 "status": "error",
@@ -601,7 +601,7 @@ async def get_available_commands(
             ],
         }
 
-        return SuccessResponse(
+        return APIResponse(
             message="Available commands retrieved successfully",
             data={"commands": commands_by_category},
         )
@@ -787,7 +787,7 @@ async def get_context_aware_suggestions(
 
         logger.info(f"Returning {len(all_suggestions)} context-aware suggestions")
 
-        return SuccessResponse(
+        return APIResponse(
             message=f"Suggestions for {current_phase or 'specification'} phase",
             data={
                 "suggestions": all_suggestions,

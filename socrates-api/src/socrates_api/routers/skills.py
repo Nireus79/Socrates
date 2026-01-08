@@ -15,7 +15,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socrates_api.models import SuccessResponse
+from socrates_api.models import APIResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["skills"])
@@ -115,8 +115,9 @@ async def set_skills(
 
         logger.info(f"Skill '{skill_name}' updated: {proficiency_level}")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message=f"Skill '{skill_name}' set successfully",
             data={
                 "skill_id": existing_skill.get("id"),
@@ -210,8 +211,9 @@ async def list_skills(
                 reverse=True,
             )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Skills retrieved successfully",
             data={
                 "project_id": project_id,

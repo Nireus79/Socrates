@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socrates_api.models import SuccessResponse
+from socrates_api.models import APIResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/query", tags=["query"])
@@ -84,8 +84,9 @@ async def explain_concept(
 - Documentation and references
 """
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message=f"Explanation for {concept}",
             data={
                 "concept": concept,
@@ -194,8 +195,9 @@ async def search_knowledge(
         if limit and limit > 0:
             results = results[:limit]
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Search completed",
             data={
                 "query": query,
@@ -262,8 +264,9 @@ async def find_similar_concepts(
         if limit and limit > 0:
             similar_concepts = similar_concepts[:limit]
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message=f"Similar concepts to {concept}",
             data={
                 "concept": concept,

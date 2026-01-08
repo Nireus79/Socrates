@@ -17,7 +17,7 @@ from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socrates_api.models import SuccessResponse
+from socrates_api.models import APIResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["knowledge"])
@@ -174,8 +174,9 @@ async def add_knowledge(
 
         logger.info(f"Knowledge item added: {knowledge_item['id']}")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Knowledge item added successfully",
             data={
                 "knowledge_id": knowledge_item["id"],
@@ -263,8 +264,9 @@ async def list_knowledge(
             for t in item.get("tags", []):
                 tags_count[t] = tags_count.get(t, 0) + 1
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Knowledge items retrieved successfully",
             data={
                 "project_id": project_id,
@@ -345,8 +347,9 @@ async def search_knowledge(
         if limit and limit > 0:
             results = results[:limit]
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message=f"Found {len(results)} matching knowledge items",
             data={
                 "query": query,
@@ -418,8 +421,9 @@ async def remember_knowledge(
 
         logger.info(f"Knowledge item pinned: {knowledge_id}")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Knowledge item remembered successfully",
             data={"knowledge_id": knowledge_id, "pinned": True},
         )
@@ -482,8 +486,9 @@ async def remove_knowledge(
 
         logger.info(f"Knowledge item removed: {knowledge_id}")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Knowledge item removed successfully",
             data={"knowledge_id": knowledge_id, "deleted": True},
         )
@@ -571,8 +576,9 @@ async def export_knowledge(
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message=f"Knowledge base exported as {format}",
             data={
                 "format": format,
@@ -655,8 +661,9 @@ async def import_knowledge(
 
         logger.info(f"Imported {imported_count} knowledge items")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message=f"Successfully imported {imported_count} knowledge items",
             data={
                 "imported_count": imported_count,

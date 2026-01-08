@@ -24,6 +24,7 @@ from socrates_api.auth import (
 )
 from socrates_api.database import get_database
 from socrates_api.models import (
+    APIResponse,
     AuthResponse,
     ChangePasswordRequest,
     ErrorResponse,
@@ -429,8 +430,9 @@ async def change_password(
 
         logger.info(f"Password changed successfully for user: {current_user}")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Password changed successfully",
         )
 
@@ -479,8 +481,9 @@ async def logout(
         _revoke_refresh_token(db, current_user)
 
         logger.info(f"User logged out and tokens revoked: {current_user}")
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Logout successful. All refresh tokens have been revoked. Access token will expire in 15 minutes.",
         )
     except Exception as e:
@@ -673,7 +676,8 @@ async def delete_account(
         # Call helper function to perform deletion
         await _delete_user_helper(current_user, db)
 
-        return SuccessResponse(success=True, message="Account deleted successfully")
+        return APIResponse(success=True,
+        status="success", message="Account deleted successfully")
 
     except HTTPException:
         raise
@@ -751,8 +755,9 @@ async def set_testing_mode(
         logger.info(
             f"Testing mode {'enabled' if enabled else 'disabled'} for user: {current_user} by {current_user}"
         )
-        return SuccessResponse(
-            success=True, message=f"Testing mode {'enabled' if enabled else 'disabled'}"
+        return APIResponse(
+            success=True,
+        status="success", message=f"Testing mode {'enabled' if enabled else 'disabled'}"
         )
 
     except HTTPException:
@@ -800,8 +805,9 @@ async def archive_account(
         user.archived_at = datetime.now(timezone.utc).isoformat()
         db.save_user(user)
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Account archived successfully",
             data={
                 "user_id": current_user,
@@ -858,8 +864,9 @@ async def restore_account(
         user.archived_at = None
         db.save_user(user)
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Account restored successfully",
             data={
                 "user_id": current_user,

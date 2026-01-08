@@ -15,7 +15,7 @@ from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socrates_api.models import SuccessResponse
+from socrates_api.models import APIResponse, SuccessResponse
 
 
 class SubscriptionPlan(BaseModel):
@@ -128,8 +128,9 @@ async def get_subscription_status(
         projects_count = 0
         team_members_count = 1
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Subscription status retrieved",
             data={
                 "current_tier": current_tier,
@@ -196,8 +197,9 @@ async def list_subscription_plans(
                 }
             )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Plans retrieved",
             data={"plans": plans},
         )
@@ -242,8 +244,9 @@ async def upgrade_subscription(
 
         tier_info = SUBSCRIPTION_TIERS[new_tier]
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message=f"Successfully upgraded to {tier_info['display_name']}",
             data={
                 "previous_tier": "free",
@@ -301,8 +304,9 @@ async def downgrade_subscription(
 
         tier_info = SUBSCRIPTION_TIERS[new_tier]
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message=f"Successfully downgraded to {tier_info['display_name']}",
             data={
                 "previous_tier": "pro",
@@ -365,8 +369,9 @@ async def toggle_testing_mode(
     try:
         logger.info(f"Toggling testing mode to {enabled} for user: {current_user}")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message=f"Testing mode {'enabled' if enabled else 'disabled'}",
             data={
                 "testing_mode": enabled,

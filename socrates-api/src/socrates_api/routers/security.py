@@ -14,7 +14,7 @@ import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
-from socrates_api.models import ErrorResponse, SuccessResponse
+from socrates_api.models import APIResponse, ErrorResponse, SuccessResponse
 from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
@@ -120,8 +120,9 @@ async def change_password(
             },
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Password changed successfully",
             data={"changed_at": datetime.utcnow().isoformat()},
         )
@@ -227,8 +228,9 @@ async def setup_2fa(
             },
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="2FA setup initiated. Scan QR code or enter manual key.",
             data=setup_data,
         )
@@ -325,8 +327,9 @@ async def verify_2fa(
             },
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="2FA enabled successfully",
             data={"enabled_at": datetime.utcnow().isoformat()},
         )
@@ -420,8 +423,9 @@ async def disable_2fa(
             },
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="2FA disabled",
             data={"disabled_at": datetime.utcnow().isoformat()},
         )
@@ -479,8 +483,9 @@ async def list_sessions(
 
         logger.info(f"Retrieved {len(formatted_sessions)} sessions for user {current_user}")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Sessions retrieved",
             data={"sessions": formatted_sessions, "total": len(formatted_sessions)},
         )
@@ -552,8 +557,9 @@ async def revoke_session(
             },
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Session revoked successfully",
             data={"session_id": session_id},
         )
@@ -627,8 +633,9 @@ async def revoke_all_sessions(
             },
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="All sessions revoked. You have been signed out from all other devices.",
             data={"revoked_count": revoked_count},
         )

@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socrates_api.models import SuccessResponse
+from socrates_api.models import APIResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["finalization"])
@@ -158,8 +158,9 @@ async def generate_final_artifacts(
             user_id=current_user,
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Final artifacts generated successfully",
             data={
                 "finalization_id": finalization_id,
@@ -354,8 +355,9 @@ For issues or questions, refer to the main README and API documentation.
             user_id=current_user,
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Final documentation package generated successfully",
             data={
                 "doc_id": doc_id,

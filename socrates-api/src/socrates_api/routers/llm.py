@@ -5,7 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 
 from socrates_api.auth import get_current_user
-from socrates_api.models import SuccessResponse
+from socrates_api.models import APIResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/llm", tags=["llm"])
@@ -22,7 +22,8 @@ async def list_providers(current_user: str = Depends(get_current_user)):
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
-        return SuccessResponse(success=True, message="Providers", data=result.get("data", result))
+        return APIResponse(success=True,
+        status="success", message="Providers", data=result.get("data", result))
     except HTTPException:
         raise
     except Exception as e:
@@ -40,7 +41,8 @@ async def get_config(current_user: str = Depends(get_current_user)):
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
-        return SuccessResponse(success=True, message="Config", data=result.get("data", result))
+        return APIResponse(success=True,
+        status="success", message="Config", data=result.get("data", result))
     except HTTPException:
         raise
     except Exception as e:
@@ -59,8 +61,9 @@ async def set_default_provider(provider: str, current_user: str = Depends(get_cu
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
-        return SuccessResponse(
-            success=True, message="Provider set", data=result.get("data", result)
+        return APIResponse(
+            success=True,
+        status="success", message="Provider set", data=result.get("data", result)
         )
     except HTTPException:
         raise
@@ -85,7 +88,8 @@ async def set_model(provider: str, model: str, current_user: str = Depends(get_c
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
-        return SuccessResponse(success=True, message="Model set", data=result.get("data", result))
+        return APIResponse(success=True,
+        status="success", message="Model set", data=result.get("data", result))
     except HTTPException:
         raise
     except Exception as e:
@@ -109,7 +113,12 @@ async def set_api_key(provider: str, api_key: str, current_user: str = Depends(g
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
-        return SuccessResponse(success=True, message="API key set", data={"provider": provider})
+        return APIResponse(
+        success=True,
+        status="success",
+        message="API key set",
+        data={"provider": provider},
+    )
     except HTTPException:
         raise
     except Exception as e:
@@ -127,7 +136,12 @@ async def remove_api_key(provider: str, current_user: str = Depends(get_current_
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
-        return SuccessResponse(success=True, message="API key removed", data={"provider": provider})
+        return APIResponse(
+        success=True,
+        status="success",
+        message="API key removed",
+        data={"provider": provider},
+    )
     except HTTPException:
         raise
     except Exception as e:
@@ -145,7 +159,8 @@ async def get_models(provider: str, current_user: str = Depends(get_current_user
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
-        return SuccessResponse(success=True, message="Models", data=result.get("data", result))
+        return APIResponse(success=True,
+        status="success", message="Models", data=result.get("data", result))
     except HTTPException:
         raise
     except Exception as e:
@@ -164,7 +179,8 @@ async def get_stats(time_period: str = "month", current_user: str = Depends(get_
         )
         if result.get("status") != "success":
             raise HTTPException(status_code=500, detail=result.get("message", "Failed"))
-        return SuccessResponse(success=True, message="Stats", data=result.get("data", result))
+        return APIResponse(success=True,
+        status="success", message="Stats", data=result.get("data", result))
     except HTTPException:
         raise
     except Exception as e:

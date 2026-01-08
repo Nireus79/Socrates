@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse
 
 from socrates_api.auth import get_current_user, get_current_user_object
 from socrates_api.database import get_database
-from socrates_api.models import ErrorResponse, SuccessResponse
+from socrates_api.models import APIResponse, ErrorResponse, SuccessResponse
 from socrates_api.services.report_generator import get_report_generator
 from socratic_system.database import ProjectDatabase
 
@@ -168,8 +168,9 @@ async def get_analytics_summary(
                 "total_issues_resolved": issues_resolved,
             }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Analytics summary retrieved",
             data=summary,
         )
@@ -241,8 +242,9 @@ async def get_project_analytics(
             "strong_categories": analytics_metrics.get("strong_categories", []),
         }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message=f"Analytics retrieved for project {project_id}",
             data=analytics,
         )
@@ -289,8 +291,9 @@ async def get_code_metrics():
             },
         }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Code metrics retrieved",
             data=metrics,
         )
@@ -337,8 +340,9 @@ async def get_usage_analytics():
             "error_rate": 0.02,
         }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Usage analytics retrieved",
             data=usage,
         )
@@ -452,8 +456,9 @@ async def get_trends(
             user_id=current_user,
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Trends retrieved",
             data=trends_response,
         )
@@ -569,8 +574,9 @@ async def get_recommendations(
             user_id=current_user,
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Recommendations retrieved",
             data=recommendations_response,
         )
@@ -729,7 +735,7 @@ async def export_analytics(
 
         logger.info(f"Successfully generated {format_type} report: {filepath}")
 
-        return SuccessResponse(
+        return APIResponse(
             message=f"Analytics report exported as {format_type}",
             data={
                 "project_id": project_id,
@@ -910,8 +916,9 @@ async def compare_projects(
             "summary": f"Project 1 ({project_1_id}) is performing better overall with higher confidence scores and more questions answered.",
         }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Projects compared",
             data=comparison,
         )
@@ -993,8 +1000,9 @@ async def generate_report(
             ],
         }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Report generated",
             data=report,
         )
@@ -1065,8 +1073,9 @@ async def analyze_project(
             "estimated_completion": "2025-01-10",
         }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Analysis completed",
             data=analysis,
         )
@@ -1161,8 +1170,9 @@ async def get_dashboard_analytics(
             },
         }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Dashboard data retrieved",
             data=dashboard,
         )
@@ -1261,8 +1271,9 @@ async def get_analytics_breakdown(
         if category and category in breakdown["categories"]:
             breakdown["categories"] = {category: breakdown["categories"][category]}
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Analytics breakdown retrieved",
             data=breakdown,
         )
@@ -1350,8 +1361,9 @@ async def get_analytics_status(
             },
         }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Analytics status retrieved",
             data=status_data,
         )

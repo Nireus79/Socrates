@@ -19,9 +19,16 @@ from socrates_api.auth import get_current_user, get_current_user_object, require
 from socrates_api.database import get_database
 from socrates_api.middleware.subscription import SubscriptionChecker
 from socrates_api.models import (
+    APIResponse,
+    ActiveCollaboratorData,
+    ActiveSessionsData,
     CollaborationInvitationResponse,
     CollaborationInviteRequest,
+    CollaborationSyncData,
+    CollaborationTokenData,
+    CollaboratorListData,
     ErrorResponse,
+    PresenceData,
     SuccessResponse,
 )
 from socrates_api.websocket import get_connection_manager
@@ -168,7 +175,7 @@ async def _broadcast_activity(
 
 @router.post(
     "/{project_id}/collaborators",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Add collaborator to project",
 )
@@ -359,15 +366,17 @@ async def add_collaborator_new(
             f"Collaborator {resolved_username} added to project {project_id} by {current_user}"
         )
 
-        return {
-            "status": "success",
-            "collaborator": {
+        return APIResponse(
+            success=True,
+            status="created",
+            message=f"Collaborator {resolved_username} added successfully",
+            data={
                 "username": resolved_username,
                 "role": request.role,
                 "added_at": datetime.utcnow().isoformat(),
                 "status": "active",
             },
-        }
+        )
 
     except HTTPException:
         raise
@@ -381,7 +390,7 @@ async def add_collaborator_new(
 
 @router.get(
     "/{project_id}/collaborators",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="List project collaborators",
 )
@@ -449,12 +458,16 @@ async def list_collaborators(
                     }
                 )
 
-        return {
-            "status": "success",
-            "project_id": project_id,
-            "collaborators": collaborators,
-            "total": len(collaborators),
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Collaborators retrieved successfully",
+            data=CollaboratorListData(
+                project_id=project_id,
+                total=len(collaborators),
+                collaborators=collaborators,
+            ).dict(),
+        )
 
     except HTTPException:
         raise
@@ -468,7 +481,7 @@ async def list_collaborators(
 
 @router.put(
     "/{project_id}/collaborators/{username}/role",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Update collaborator role",
 )
@@ -541,14 +554,16 @@ async def update_collaborator_role(
 
                     from datetime import datetime
 
-                    return {
-                        "status": "success",
-                        "collaborator": {
+                    return APIResponse(
+                        success=True,
+                        status="updated",
+                        message=f"Role updated to {role}",
+                        data={
                             "username": username,
                             "role": role,
                             "updated_at": datetime.utcnow().isoformat(),
                         },
-                    }
+                    )
 
         # Not found
         raise HTTPException(
@@ -568,7 +583,7 @@ async def update_collaborator_role(
 
 @router.delete(
     "/{project_id}/collaborators/{username}",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Remove collaborator",
 )
@@ -643,10 +658,12 @@ async def remove_collaborator(
 
         logger.info(f"Collaborator {username} removed from project {project_id}")
 
-        return {
-            "status": "success",
-            "message": f"Collaborator {username} removed",
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Collaborator {username} removed",
+            data={},
+        )
 
     except HTTPException:
         raise
@@ -665,7 +682,7 @@ async def remove_collaborator(
 
 @router.get(
     "/{project_id}/presence",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get active collaborators",
     dependencies=[require_project_role("viewer")],
@@ -724,7 +741,7 @@ async def get_presence(
 
 @router.post(
     "/{project_id}/activities",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Record activity",
     dependencies=[require_project_role("viewer")],
@@ -800,12 +817,16 @@ async def record_activity(
             f"(sent to {broadcast_count} connections)"
         )
 
-        return {
-            "status": "success",
-            "activity_id": activity["id"],
-            "activity_type": activity_type,
-            "timestamp": activity["created_at"],
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Activity recorded",
+            data={
+                "activity_id": activity["id"],
+                "activity_type": activity_type,
+                "timestamp": activity["created_at"],
+            },
+        )
 
     except HTTPException:
         raise
@@ -819,7 +840,7 @@ async def record_activity(
 
 @router.get(
     "/{project_id}/activities",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Get project activities",
     dependencies=[require_project_role("viewer")],
@@ -869,17 +890,21 @@ async def get_activities(
 
         logger.debug(f"Retrieved {len(activities)} activities for project {project_id}")
 
-        return {
-            "status": "success",
-            "project_id": project_id,
-            "activities": activities,
-            "pagination": {
-                "limit": limit,
-                "offset": offset,
-                "total": total,
-                "has_more": offset + limit < total,
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Activities retrieved",
+            data={
+                "project_id": project_id,
+                "activities": activities,
+                "pagination": {
+                    "limit": limit,
+                    "offset": offset,
+                    "total": total,
+                    "has_more": offset + limit < total,
+                },
             },
-        }
+        )
 
     except HTTPException:
         raise
@@ -994,7 +1019,7 @@ async def create_project_invitation(
 
 @router.get(
     "/{project_id}/invitations",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="List project invitations",
 )
@@ -1034,12 +1059,16 @@ async def get_project_invitations(
         # Load invitations
         invitations = db.get_project_invitations(project_id, status=status_filter)
 
-        return {
-            "status": "success",
-            "project_id": project_id,
-            "invitations": invitations,
-            "total": len(invitations),
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Invitations retrieved",
+            data={
+                "project_id": project_id,
+                "invitations": invitations,
+                "total": len(invitations),
+            },
+        )
 
     except HTTPException:
         raise
@@ -1053,7 +1082,7 @@ async def get_project_invitations(
 
 @router.post(
     "/invitations/{token}/accept",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Accept collaboration invitation",
 )
@@ -1161,12 +1190,15 @@ async def accept_invitation(
             f"User {current_user} accepted invitation for project {invitation['project_id']}"
         )
 
-        return {
-            "status": "success",
-            "message": f"Successfully joined project '{project.name}'",
-            "project_id": invitation["project_id"],
-            "role": invitation["role"],
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Successfully joined project '{project.name}'",
+            data={
+                "project_id": invitation["project_id"],
+                "role": invitation["role"],
+            },
+        )
 
     except HTTPException:
         raise
@@ -1180,7 +1212,7 @@ async def accept_invitation(
 
 @router.delete(
     "/{project_id}/invitations/{invitation_id}",
-    response_model=dict,
+    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Cancel invitation",
 )
@@ -1232,11 +1264,12 @@ async def cancel_invitation(
 
         logger.info(f"Cancelled invitation {invitation_id} for project {project_id}")
 
-        return {
-            "status": "success",
-            "message": "Invitation cancelled",
-            "invitation_id": invitation_id,
-        }
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Invitation cancelled",
+            data={"invitation_id": invitation_id},
+        )
 
     except HTTPException:
         raise

@@ -17,7 +17,7 @@ from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socrates_api.models import SuccessResponse
+from socrates_api.models import APIResponse, SuccessResponse
 
 
 class NoteRequest(BaseModel):
@@ -81,8 +81,9 @@ async def add_note(
         # Save project
         db.save_project(project)
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Note added successfully",
             data={"note": note},
         )
@@ -141,8 +142,9 @@ async def list_notes(
         if limit and limit > 0:
             notes = notes[-limit:]
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Notes retrieved",
             data={
                 "notes": notes,
@@ -203,8 +205,9 @@ async def search_notes(
             or query_lower in n.get("content", "").lower()
         ]
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Search completed",
             data={
                 "results": results,
@@ -265,8 +268,9 @@ async def delete_note(
         # Save project
         db.save_project(project)
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Note deleted successfully",
             data={"note_id": note_id},
         )

@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socrates_api.models import SuccessResponse
+from socrates_api.models import APIResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["progress"])
@@ -134,11 +134,26 @@ async def get_progress(
 
         # Category progress
         category_scores = getattr(project, "category_scores", {})
+        # Safely convert category scores to numbers
+        safe_category_scores = {}
+        numeric_values = []
+        for category, score in (category_scores.items() if isinstance(category_scores, dict) else []):
+            if isinstance(score, dict):
+                numeric_score = score.get("score", 0) if isinstance(score, dict) else score
+            else:
+                numeric_score = score
+            try:
+                numeric_score = float(numeric_score) if numeric_score else 0.0
+            except (TypeError, ValueError):
+                numeric_score = 0.0
+            safe_category_scores[category] = numeric_score
+            numeric_values.append(numeric_score)
+
         progress_data["category_progress"] = {
-            "total_categories": len(category_scores),
-            "categories": category_scores,
+            "total_categories": len(safe_category_scores),
+            "categories": safe_category_scores,
             "average_category_score": (
-                sum(category_scores.values()) / len(category_scores) if category_scores else 0
+                sum(numeric_values) / len(numeric_values) if numeric_values else 0
             ),
         }
 
@@ -189,8 +204,9 @@ async def get_progress(
             ),
         }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Project progress retrieved successfully",
             data=progress_data,
         )
@@ -313,8 +329,9 @@ async def get_progress_status(
             "recommendations": _generate_recommendations(project),
         }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Progress status retrieved successfully",
             data=status_data,
         )
@@ -436,8 +453,9 @@ async def get_project_stats(
             "updated_at": getattr(project, "updated_at", None),
         }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Project statistics retrieved successfully",
             data=stats_data,
         )

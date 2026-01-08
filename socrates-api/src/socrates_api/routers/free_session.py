@@ -21,7 +21,7 @@ from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socrates_api.models import SuccessResponse
+from socrates_api.models import APIResponse, SuccessResponse
 from socratic_system.database import ProjectDatabase
 
 # Import rate limiter if available
@@ -239,7 +239,7 @@ async def ask_question(
     """
     try:
         if not request.question or not request.question.strip():
-            return SuccessResponse(
+            return APIResponse(
                 message="Please provide a question.",
                 data={
                     "answer": "I'm ready to help. What would you like to know?",
@@ -326,7 +326,7 @@ async def ask_question(
             f"suggested commands: {suggested_commands}"
         )
 
-        return SuccessResponse(
+        return APIResponse(
             message="Answer generated successfully",
             data={
                 "answer": answer,
@@ -344,7 +344,7 @@ async def ask_question(
         import traceback
 
         logger.error(f"[free-session] Traceback: {traceback.format_exc()}")
-        return SuccessResponse(
+        return APIResponse(
             message="Error generating answer",
             data={
                 "answer": "I encountered an error processing your question. Please try again.",
@@ -443,7 +443,7 @@ async def list_free_session_sessions(
 
         logger.info(f"Retrieved {len(sessions)} free_session sessions for user {current_user}")
 
-        return SuccessResponse(
+        return APIResponse(
             message="Sessions retrieved successfully",
             data={
                 "sessions": [
@@ -462,7 +462,7 @@ async def list_free_session_sessions(
 
     except Exception as e:
         logger.error(f"Error listing free_session sessions for {current_user}: {e}", exc_info=True)
-        return SuccessResponse(
+        return APIResponse(
             message="Error retrieving sessions",
             data={"sessions": []},
         )
@@ -506,7 +506,7 @@ async def get_free_session_session(
             f"for user {current_user}"
         )
 
-        return SuccessResponse(
+        return APIResponse(
             message="Session retrieved successfully",
             data={
                 "session_id": session_id,
@@ -571,7 +571,7 @@ async def delete_free_session_session(
 
         logger.info(f"Deleted free_session session {session_id} for user {current_user}")
 
-        return SuccessResponse(
+        return APIResponse(
             message="Session deleted successfully",
             data={"session_id": session_id},
         )
@@ -637,7 +637,7 @@ async def get_project_recommendations(
                 conversation.extend(conv)
 
         if not conversation:
-            return SuccessResponse(
+            return APIResponse(
                 message="No conversation history found",
                 data={"recommendations": []},
             )
@@ -652,7 +652,7 @@ async def get_project_recommendations(
 
         logger.info(f"Generated {len(recommendations)} project recommendations for {current_user}")
 
-        return SuccessResponse(
+        return APIResponse(
             message="Recommendations generated successfully",
             data={
                 "topics_detected": topics,
@@ -671,7 +671,7 @@ async def get_project_recommendations(
 
     except Exception as e:
         logger.error(f"Error generating recommendations for {current_user}: {e}", exc_info=True)
-        return SuccessResponse(
+        return APIResponse(
             message="Error generating recommendations",
             data={"recommendations": []},
         )

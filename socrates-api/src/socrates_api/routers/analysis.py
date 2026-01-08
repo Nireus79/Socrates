@@ -96,8 +96,9 @@ async def validate_code(
             user_id=current_user,
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Code validation completed",
             data=validation_results,
         )
@@ -191,8 +192,9 @@ async def assess_maturity(
             user_id=current_user,
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message=f"Maturity assessment for {phase} phase",
             data=maturity_data,
         )
@@ -269,8 +271,9 @@ async def run_tests(
             user_id=current_user,
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Tests completed",
             data=test_results,
         )
@@ -344,8 +347,9 @@ async def analyze_structure(
             user_id=current_user,
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Context analysis completed",
             data=structure_data,
         )
@@ -421,8 +425,9 @@ async def review_code(
             user_id=current_user,
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Code statistics retrieved",
             data=stats,
         )
@@ -498,8 +503,9 @@ async def auto_fix_issues(
             user_id=current_user,
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Code generation completed",
             data=fix_results,
         )
@@ -575,8 +581,9 @@ async def get_analysis_report(
             user_id=current_user,
         )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Analysis report generated",
             data=report,
         )

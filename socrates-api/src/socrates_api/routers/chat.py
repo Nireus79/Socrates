@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socrates_api.models import ErrorResponse, SuccessResponse
+from socrates_api.models import APIResponse, ErrorResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -71,8 +71,9 @@ async def get_next_question(
                 status_code=500, detail=result.get("message", "Failed to generate question")
             )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Next question generated",
             data=result,
         )
@@ -129,8 +130,9 @@ async def get_conversation_history(
         if limit and limit > 0:
             history = history[-limit:]
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Conversation history retrieved",
             data={"history": history, "count": len(history)},
         )
@@ -195,8 +197,9 @@ async def get_conversation_summary(
                 status_code=500, detail=result.get("message", "Failed to generate summary")
             )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Conversation summary generated",
             data=result,
         )

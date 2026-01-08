@@ -9,7 +9,7 @@ import logging
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
-from socrates_api.models import SuccessResponse
+from socrates_api.models import APIResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/llm-config", tags=["llm-config"])
@@ -46,8 +46,9 @@ async def list_providers(
                 status_code=500, detail=result.get("message", "Failed to list providers")
             )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Available LLM providers",
             data=result.get("data", result),
         )
@@ -95,8 +96,9 @@ async def get_config(
                 status_code=500, detail=result.get("message", "Failed to get config")
             )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="LLM configuration",
             data=result.get("data", result),
         )
@@ -147,8 +149,9 @@ async def set_default_provider(
                 status_code=500, detail=result.get("message", "Failed to set provider")
             )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message=f"Default provider set to {provider}",
             data=result.get("data", result),
         )
@@ -206,8 +209,9 @@ async def set_api_key(
                 status_code=500, detail=result.get("message", "Failed to set API key")
             )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message=f"API key set for {provider}",
             data={"provider": provider},
         )
@@ -257,8 +261,9 @@ async def get_usage_stats(
                 status_code=500, detail=result.get("message", "Failed to get stats")
             )
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+        status="success",
             message="Usage statistics",
             data=result.get("data", result),
         )
