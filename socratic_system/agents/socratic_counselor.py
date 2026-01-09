@@ -74,6 +74,8 @@ class SocraticCounselorAgent(Agent):
             return self._extract_insights_only(request)
         elif action == "advance_phase":
             return self._advance_phase(request)
+        elif action == "rollback_phase":
+            return self._rollback_phase(request)
         elif action == "explain_document":
             return self._explain_document(request)
         elif action == "generate_hint":
@@ -1085,6 +1087,47 @@ Return only the question, no additional text or explanation."""
         )
 
         self.log(f"Advanced project to {new_phase} phase")
+
+        return {"status": "success", "new_phase": new_phase}
+    def _rollback_phase(self, request: Dict) -> Dict:
+        """Roll back project to the previous phase"""
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+
+        project = request.get("project")
+        phases = ["discovery", "analysis", "design", "implementation"]
+
+        try:
+            current_index = phases.index(project.phase)
+        except ValueError:
+            return {
+                "status": "error",
+                "message": f"Invalid current phase: {project.phase}",
+            }
+
+        if current_index <= 0:
+            return {
+                "status": "error",
+                "message": "Already at first phase (discovery) - cannot roll back",
+            }
+
+        # Roll back to previous phase
+        new_phase = phases[current_index - 1]
+        project.phase = new_phase
+        logger.info(f"Rolled back project from {phases[current_index]} to {new_phase}")
+
+        # Emit phase change event
+        self.emit_event(
+            EventType.PHASE_ADVANCED,
+            {
+                "from_phase": phases[current_index],
+                "to_phase": new_phase,
+                "direction": "backward",
+            },
+        )
+
+        self.log(f"Rolled back project to {new_phase} phase")
 
         return {"status": "success", "new_phase": new_phase}
 

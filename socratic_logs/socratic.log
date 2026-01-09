@@ -575,3 +575,23 @@
 [2026-01-09 09:38:13] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
 [2026-01-09 09:38:13] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
 [2026-01-09 09:38:15] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-01-09 09:40:51] [DEBUG] socratic_rag.orchestrator: Knowledge base loading thread stopped
+[2026-01-09 09:40:51] [WARNING] socratic_rag.orchestrator: Error closing vector database: [WinError 6] The handle is invalid
+[2026-01-09 09:40:51] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-01-09 09:40:51] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-01-09 09:40:51] [DEBUG] socratic_rag.orchestrator: Knowledge base loading thread stopped
+[2026-01-09 09:40:51] [WARNING] socratic_rag.orchestrator: Error closing vector database: [WinError 6] The handle is invalid
+[2026-01-09 09:40:51] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-01-09 09:40:51] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-01-09 09:40:51] [DEBUG] socratic_rag.orchestrator: Knowledge base loading thread stopped
+[2026-01-09 09:40:51] [WARNING] socratic_rag.orchestrator: Error closing vector database: [WinError 6] The handle is invalid
+[2026-01-09 09:40:51] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-01-09 09:40:51] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-01-09 09:40:51] [DEBUG] socratic_rag.orchestrator: Knowledge base loading thread stopped
+[2026-01-09 09:40:51] [WARNING] socratic_rag.orchestrator: Error closing vector database: [WinError 6] The handle is invalid
+[2026-01-09 09:40:51] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-01-09 09:40:51] [DEBUG] socratic_rag.orchestrator: Agents cache cleared
+[2026-01-09 09:40:51] [DEBUG] socratic_rag.orchestrator: Knowledge base loading thread stopped
+[2026-01-09 09:40:52] [WARNING] socratic_rag.orchestrator: Error closing vector database: sys.meta_path is None, Python is likely shutting down
+[2026-01-09 09:40:52] [INFO] socratic_rag.orchestrator: Project database closed
+[2026-01-09 09:40:52] [DEBUG] socratic_rag.orchestrator: Agents cache cleared

@@ -181,6 +181,7 @@ Focus on the connection between the user's statement and these insights."""
         print("  /mode      - Switch between socratic and direct mode (/mode <socratic|direct>)")
         print("  /done      - Finish this session")
         print("  /advance   - Move to next phase")
+        print("  /phase-back - Move to previous phase")
         print("  /help      - Show session help")
         print("  /back      - Return to main menu")
         print("  /exit      - Exit application\n")
@@ -586,6 +587,52 @@ class AdvanceCommand(BaseCommand):
             return self.success(data={"new_phase": result.get("data", {}).get("new_phase")})
         else:
             return self.error(result.get("message", "Could not advance phase"))
+
+
+class RollbackCommand(BaseCommand):
+    """Roll back project to the previous phase"""
+
+    def __init__(self):
+        super().__init__(
+            name="rollback",
+            description="Roll back current project to the previous phase",
+            usage="rollback"
+        )
+
+    def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute rollback command"""
+        if not self.require_project(context):
+            return self.error("No project loaded")
+
+        orchestrator = context.get("orchestrator")
+        project = context.get("project")
+
+        if not orchestrator or not project:
+            return self.error("Required context not available")
+
+        result = safe_orchestrator_call(
+            orchestrator,
+            "socratic_counselor",
+            {"action": "rollback_phase", "project": project},
+            operation_name="rollback phase"
+        )
+
+        if result.get("status") == "success":
+            new_phase = result.get("new_phase")
+            project.phase = new_phase
+            self.print_success(f"Rolled back to {new_phase} phase!")
+
+            # Save project
+            safe_orchestrator_call(
+                orchestrator,
+                "project_manager",
+                {"action": "save_project", "project": project},
+                operation_name="save project"
+            )
+
+            return self.success(data={"new_phase": new_phase})
+        else:
+            return self.error(result.get("message", "Could not roll back phase"))
 
 
 class ModeCommand(BaseCommand):

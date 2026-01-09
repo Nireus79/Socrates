@@ -87,6 +87,7 @@ from socratic_system.ui.commands import (  # Analytics commands; Code commands; 
     ProjectStatusCommand,
     ProjectTestCommand,
     ProjectValidateCommand,
+    RollbackCommand,
     PromptCommand,
     SearchCommand,
     SkillsListCommand,
@@ -169,6 +170,7 @@ COMMAND_REGISTRY = [
     (ModeCommand, []),
     (DoneCommand, []),
     (AdvanceCommand, ["phase"]),
+    (RollbackCommand, ["phase-back"]),
     (HintCommand, []),
     (SkippedCommand, []),
     # Code commands

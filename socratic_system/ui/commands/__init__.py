@@ -80,6 +80,7 @@ from socratic_system.ui.commands.session_commands import (
     DoneCommand,
     HintCommand,
     ModeCommand,
+    RollbackCommand,
     SkippedCommand,
 )
 from socratic_system.ui.commands.skills_commands import (
@@ -160,6 +161,7 @@ __all__ = [
     "ChatCommand",
     "DoneCommand",
     "AdvanceCommand",
+    "RollbackCommand",
     "HintCommand",
     "ModeCommand",
     "SkippedCommand",
