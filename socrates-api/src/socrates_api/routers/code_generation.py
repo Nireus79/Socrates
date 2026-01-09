@@ -199,13 +199,17 @@ async def generate_code(
 
             # Extract code from orchestrator result
             # The artifact agent returns "artifact", not "code"
+            logger.info(f"Orchestrator result status: {result.get('status')}, has artifact: {'artifact' in result}, has code: {'code' in result}")
+            if result.get("status") != "success":
+                logger.warning(f"Code generation failed with status: {result.get('status')}, message: {result.get('message')}, error: {result.get('error')}")
+
             generated_code = result.get("artifact", result.get("code", "")).strip() if result.get("status") == "success" else ""
             explanation = result.get("explanation", "Code generated successfully")
             token_usage = result.get("token_usage", 0)
 
             # If no code was generated, use simple template as fallback
             if not generated_code:
-                logger.info(f"Using fallback code template for {language}")
+                logger.info(f"Using fallback code template for {language} (no artifact generated)")
 
                 # Simple code templates for different languages
                 templates = {
