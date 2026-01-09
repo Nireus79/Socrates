@@ -73,6 +73,60 @@ class NoteManagerAgent(Agent):
             # Save to database
             if self.orchestrator.database.save_note(note):
                 self.log(f'Note "{title}" added to project {project_id}')
+
+                # Vectorize note content for knowledge base
+                vectorization_result = {
+                    "status": "pending",
+                    "chunks_created": 0,
+                    "message": "Note vectorization pending"
+                }
+
+                try:
+                    if self.orchestrator and self.orchestrator.vector_db:
+                        # Prepare note content for vectorization
+                        note_content = f"[{note_type.upper()} NOTE] {title}\n\n{content}"
+
+                        # Metadata for the note
+                        metadata = {
+                            "source": f"note_{note.note_id}",
+                            "project_id": project_id,
+                            "source_type": "project_note",
+                            "note_type": note_type,
+                            "title": title,
+                            "created_by": created_by,
+                        }
+
+                        # Add to vector database
+                        self.orchestrator.vector_db.add_text(note_content, metadata=metadata)
+                        vectorization_result["status"] = "success"
+                        vectorization_result["chunks_created"] = 1
+                        vectorization_result["message"] = "Note vectorized successfully"
+                        self.log(f"Vectorized note {note.note_id} to knowledge base")
+
+                        # Emit DOCUMENT_IMPORTED event for knowledge base
+                        try:
+                            from socratic_system.events import EventEmitter, EventType
+                            if self.orchestrator.event_emitter:
+                                self.orchestrator.event_emitter.emit(
+                                    EventType.DOCUMENT_IMPORTED,
+                                    {
+                                        "project_id": project_id,
+                                        "file_name": f"{note_type}_{note.note_id}",
+                                        "source_type": "project_note",
+                                        "words_extracted": len(content.split()),
+                                        "chunks_created": 1,
+                                        "user_id": created_by,
+                                    }
+                                )
+                                self.log(f"Emitted DOCUMENT_IMPORTED event for note {note.note_id}")
+                        except Exception as e:
+                            self.log(f"Warning: Could not emit DOCUMENT_IMPORTED event: {e}", level="WARNING")
+
+                except Exception as e:
+                    self.log(f"Warning: Could not vectorize note: {e}", level="WARNING")
+                    vectorization_result["status"] = "error"
+                    vectorization_result["message"] = str(e)
+
                 return {
                     "status": "success",
                     "message": f'Note "{title}" added successfully',
@@ -82,6 +136,7 @@ class NoteManagerAgent(Agent):
                         "type": note.note_type,
                         "created_at": note.created_at.isoformat(),
                     },
+                    "vectorization_result": vectorization_result,
                 }
             else:
                 return {"status": "error", "message": "Failed to save note to database"}

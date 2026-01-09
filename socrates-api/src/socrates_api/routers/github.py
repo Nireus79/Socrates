@@ -157,8 +157,109 @@ async def import_repository(
         # Save project to database
         db.save_project(project)
 
+        # Vectorize repository content for knowledge base
+        repo_knowledge_result = {
+            "status": "pending",
+            "entries_added": 0,
+            "message": "Repository content vectorization pending"
+        }
+
+        try:
+            from github import Github
+            github_token = os.getenv("GITHUB_TOKEN")
+            if github_token:
+                g = Github(github_token)
+                try:
+                    repo = g.get_repo(f"{repo_owner}/{repo_name}")
+
+                    # Extract and vectorize README if available
+                    readme_content = None
+                    try:
+                        readme = repo.get_readme()
+                        readme_content = readme.decoded_string.decode('utf-8') if isinstance(readme.decoded_string, bytes) else str(readme.decoded_string)
+                        if readme_content and len(readme_content.strip()) > 0:
+                            # Add README to vector database
+                            from socratic_system.database import VectorDatabase
+                            vector_db = VectorDatabase()
+                            metadata = {
+                                "source": "README.md",
+                                "project_id": project.project_id,
+                                "source_type": "github_readme",
+                                "repository": f"{repo_owner}/{repo_name}",
+                            }
+                            vector_db.add_text(readme_content, metadata=metadata)
+                            repo_knowledge_result["entries_added"] += 1
+                            logger.info(f"Vectorized README for {repo_owner}/{repo_name}")
+                    except Exception as e:
+                        logger.warning(f"Could not extract README: {e}")
+
+                    # Extract and vectorize common code files
+                    vectorized_files = 0
+                    supported_extensions = {".py", ".js", ".ts", ".java", ".cpp", ".c", ".go", ".rs", ".rb"}
+
+                    try:
+                        # Get up to 10 common code files
+                        contents = repo.get_contents("")
+                        files_to_process = []
+
+                        def extract_code_files(contents, depth=0, max_depth=2):
+                            if depth > max_depth or len(files_to_process) >= 10:
+                                return
+                            for item in contents:
+                                if len(files_to_process) >= 10:
+                                    break
+                                if item.type == "file":
+                                    _, ext = os.path.splitext(item.name)
+                                    if ext in supported_extensions:
+                                        files_to_process.append(item)
+                                elif item.type == "dir" and depth < max_depth:
+                                    try:
+                                        extract_code_files(repo.get_contents(item.path), depth + 1, max_depth)
+                                    except Exception:
+                                        pass
+
+                        extract_code_files(contents)
+
+                        # Process extracted code files
+                        for code_file in files_to_process:
+                            try:
+                                file_content = code_file.decoded_content.decode('utf-8') if isinstance(code_file.decoded_content, bytes) else str(code_file.decoded_content)
+                                if file_content and len(file_content.strip()) > 100:  # Only include non-trivial files
+                                    from socratic_system.database import VectorDatabase
+                                    vector_db = VectorDatabase()
+                                    metadata = {
+                                        "source": code_file.path,
+                                        "project_id": project.project_id,
+                                        "source_type": "github_code",
+                                        "repository": f"{repo_owner}/{repo_name}",
+                                    }
+                                    vector_db.add_text(file_content, metadata=metadata)
+                                    vectorized_files += 1
+                                    repo_knowledge_result["entries_added"] += 1
+                            except Exception as e:
+                                logger.warning(f"Could not vectorize {code_file.path}: {e}")
+
+                        if vectorized_files > 0:
+                            repo_knowledge_result["status"] = "success"
+                            repo_knowledge_result["message"] = f"Vectorized {vectorized_files} code files and README"
+                            logger.info(f"Vectorized {vectorized_files} code files from {repo_owner}/{repo_name}")
+
+                    except Exception as e:
+                        logger.warning(f"Could not extract code files from repository: {e}")
+                        if repo_knowledge_result["entries_added"] > 0:
+                            repo_knowledge_result["status"] = "partial"
+                            repo_knowledge_result["message"] = f"Partially vectorized repository (added {repo_knowledge_result['entries_added']} entries)"
+
+                except Exception as e:
+                    logger.warning(f"Could not vectorize repository content: {e}")
+        except ImportError:
+            logger.warning("PyGithub not installed - skipping content vectorization")
+        except Exception as e:
+            logger.warning(f"Error vectorizing GitHub repository: {e}")
+
         from socrates_api.routers.events import record_event
 
+        # Record initial import event
         record_event(
             "github_repository_imported",
             {
@@ -168,6 +269,21 @@ async def import_repository(
             },
             user_id=current_user,
         )
+
+        # Record document imported event for knowledge base
+        if repo_knowledge_result["entries_added"] > 0:
+            record_event(
+                "document.imported",
+                {
+                    "project_id": project.project_id,
+                    "file_name": f"{repo_owner}/{repo_name}",
+                    "source_type": "github_repository",
+                    "words_extracted": 0,  # Not tracked for repos
+                    "chunks_created": repo_knowledge_result["entries_added"],
+                    "user_id": current_user,
+                },
+                user_id=current_user,
+            )
 
         return APIResponse(
             success=True,
@@ -180,6 +296,7 @@ async def import_repository(
                 "branch": request.branch or "main",
                 "metadata": repo_metadata,
                 "validation_results": {},
+                "knowledge_result": repo_knowledge_result,
             },
         )
 

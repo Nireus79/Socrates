@@ -251,9 +251,19 @@ class SocraticCounselorAgent(Agent):
                 top_k = 5 if strategy == "full" else 3
 
                 # Use adaptive search
+                logger.info(f"[KNOWLEDGE DEBUG] Searching for documents in project {project.project_id}")
+                logger.info(f"[KNOWLEDGE DEBUG] Query context: {context[:100] if context else 'EMPTY'}...")
+                logger.info(f"[KNOWLEDGE DEBUG] Strategy: {strategy}, top_k: {top_k}")
+                
                 knowledge_results = self.orchestrator.vector_db.search_similar_adaptive(
                     query=context, strategy=strategy, top_k=top_k, project_id=project.project_id
                 )
+                
+                logger.info(f"[KNOWLEDGE DEBUG] Search returned {len(knowledge_results) if knowledge_results else 0} results")
+                if knowledge_results:
+                logger.info(f"[KNOWLEDGE DEBUG] Using {len(knowledge_results)} knowledge items for question context")
+                    for i, result in enumerate(knowledge_results[:3]):
+                        logger.info(f"[KNOWLEDGE DEBUG] Result {i+1}: source={result.get('metadata', {}).get('source', 'unknown')}, score={result.get('score', 'N/A')}")
 
                 # Cache the results for this phase
                 self.phase_docs_cache[phase_key] = {
@@ -263,6 +273,7 @@ class SocraticCounselorAgent(Agent):
                 logger.debug(f"Cached document results for {project.phase} phase")
 
             if knowledge_results:
+                logger.info(f"[KNOWLEDGE DEBUG] Using {len(knowledge_results)} knowledge items for question context")
                 # Build knowledge context based on strategy
                 if strategy == "full":
                     relevant_knowledge = self._build_full_knowledge_context(knowledge_results)
