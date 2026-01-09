@@ -813,7 +813,11 @@ ANALYTICS & CONVERSATIONS:
       const overall = progressData?.overall_progress || {};
       const status = overall?.status || 'unknown';
       const progress = overall?.percentage || 0;
-      const maturity = progressData?.maturity_progress?.current_score || 0;
+
+      // Get maturity from the maturity endpoint (which has the correct overall_maturity value)
+      const maturityResponse = await apiClient.get(`/projects/${id}/maturity`) as any;
+      const maturityData = maturityResponse?.data || maturityResponse;
+      const maturity = maturityData?.overall_maturity || 0;
 
       // Get current phase from the project endpoint to ensure we have the latest data
       const projectResponse = await apiClient.get(`/projects/${id}`) as any;
