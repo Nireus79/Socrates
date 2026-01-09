@@ -188,7 +188,7 @@ async def generate_code(
             result = await orchestrator.process_request_async(
                 "code_generator",
                 {
-                    "action": "generate_code",
+                    "action": "generate_artifact",
                     "project": project,
                     "language": language,
                     "requirements": specification,
@@ -198,7 +198,8 @@ async def generate_code(
             )
 
             # Extract code from orchestrator result
-            generated_code = result.get("code", "").strip() if result.get("status") == "success" else ""
+            # The artifact agent returns "artifact", not "code"
+            generated_code = result.get("artifact", result.get("code", "")).strip() if result.get("status") == "success" else ""
             explanation = result.get("explanation", "Code generated successfully")
             token_usage = result.get("token_usage", 0)
 

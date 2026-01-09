@@ -8,7 +8,7 @@
  * - Selection counter
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useKnowledgeStore } from '../../stores/knowledgeStore';
 
 interface DocumentBulkActionsProps {
@@ -27,6 +27,14 @@ export default function DocumentBulkActions({
   const { selectAll, unselectAll, bulkDeleteSelected, isBulkOperationLoading } = useKnowledgeStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const checkboxRef = useRef<HTMLInputElement>(null);
+
+  // Handle indeterminate state for the checkbox
+  useEffect(() => {
+    if (checkboxRef.current) {
+      checkboxRef.current.indeterminate = selectedCount > 0 && selectedCount < totalCount;
+    }
+  }, [selectedCount, totalCount]);
 
   const handleBulkDelete = async () => {
     setIsDeleting(true);
@@ -49,10 +57,10 @@ export default function DocumentBulkActions({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <input
+              ref={checkboxRef}
               type="checkbox"
               id="select-all"
               checked={selectedCount > 0 && selectedCount === totalCount}
-              indeterminate={selectedCount > 0 && selectedCount < totalCount}
               onChange={(e) => {
                 if (e.target.checked) {
                   selectAll();
