@@ -4,7 +4,20 @@
 
 import { create } from 'zustand';
 import type { Project, ProjectStats, ProjectMaturity, ProjectPhase } from '../types/models';
-import { projectsAPI } from '../api';
+import { projectsAPI, codeGenerationAPI } from '../api';
+
+interface FileNode {
+  name: string;
+  path: string;
+  type: 'file' | 'folder';
+  language?: string;
+  size?: number;
+  children?: FileNode[];
+  content?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  id?: string;
+}
 
 interface ProjectState {
   // State
@@ -14,6 +27,12 @@ interface ProjectState {
   projectMaturity: ProjectMaturity | null;
   isLoading: boolean;
   error: string | null;
+
+  // File management
+  files: FileNode[];
+  selectedFile: FileNode | null;
+  fileContent: string;
+  codeHistory: any[];
 
   // Undo/Redo
   history: Project[];
@@ -32,6 +51,13 @@ interface ProjectState {
   fetchMaturity: (projectId: string) => Promise<void>;
   advancePhase: (projectId: string, newPhase: ProjectPhase) => Promise<void>;
   getOrCreateOnboardingProject: () => Promise<string>;
+
+  // File management actions
+  fetchProjectFiles: (projectId: string) => Promise<void>;
+  selectFile: (file: FileNode | null) => void;
+  clearFiles: () => void;
+  setFileContent: (content: string) => void;
+
   undo: () => void;
   redo: () => void;
   clearError: () => void;
@@ -45,6 +71,10 @@ export const useProjectStore = create<ProjectState>((set) => ({
   projectMaturity: null,
   isLoading: false,
   error: null,
+  files: [],
+  selectedFile: null,
+  fileContent: '',
+  codeHistory: [],
   history: [],
   historyIndex: -1,
   pendingUpdates: new Map(),
@@ -277,6 +307,78 @@ export const useProjectStore = create<ProjectState>((set) => ({
     }
   },
 
+  // Fetch project files
+  fetchProjectFiles: async (projectId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const filesResponse = await projectsAPI.getProjectFiles(projectId);
+      const codeHistoryResponse = await codeGenerationAPI.getCodeHistory(projectId);
+
+      // Build file nodes from files, with content from code history
+      const fileNodes: FileNode[] = (filesResponse.files || []).map((file: any) => {
+        // Extract generation ID from filename (e.g., "generated_gen_123.py" -> "gen_123")
+        const match = file.name.match(/(?:generated|refactored)_(.+)\.\w+/);
+        const generationId = match ? match[1] : null;
+
+        // Find matching code in history
+        let content = '';
+        if (generationId && codeHistoryResponse.generations) {
+          const codeItem = codeHistoryResponse.generations.find((c: any) => c.generation_id === generationId);
+          if (codeItem) {
+            content = codeItem.code || '';
+          }
+        }
+
+        return {
+          id: file.id,
+          name: file.name,
+          path: file.path,
+          type: 'file',
+          language: file.type,
+          size: file.size,
+          createdAt: file.created_at,
+          updatedAt: file.updated_at,
+          content,
+        };
+      });
+
+      set({
+        files: fileNodes,
+        codeHistory: codeHistoryResponse.generations || [],
+        isLoading: false,
+      });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to fetch files',
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  // Select a file
+  selectFile: (file: FileNode | null) => {
+    set({
+      selectedFile: file,
+      fileContent: file?.content || '',
+    });
+  },
+
+  // Clear files
+  clearFiles: () => {
+    set({
+      files: [],
+      selectedFile: null,
+      fileContent: '',
+      codeHistory: [],
+    });
+  },
+
+  // Set file content
+  setFileContent: (content: string) => {
+    set({ fileContent: content });
+  },
+
   // Undo
   undo: () => {
     set((state) => {
@@ -308,3 +410,5 @@ export const useProjectStore = create<ProjectState>((set) => ({
   // Clear error
   clearError: () => set({ error: null }),
 }));
+
+export type { FileNode };

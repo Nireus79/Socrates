@@ -261,7 +261,7 @@ class SocraticCounselorAgent(Agent):
                 
                 logger.info(f"[KNOWLEDGE DEBUG] Search returned {len(knowledge_results) if knowledge_results else 0} results")
                 if knowledge_results:
-                logger.info(f"[KNOWLEDGE DEBUG] Using {len(knowledge_results)} knowledge items for question context")
+                    logger.info(f"[KNOWLEDGE DEBUG] Using {len(knowledge_results)} knowledge items for question context")
                     for i, result in enumerate(knowledge_results[:3]):
                         logger.info(f"[KNOWLEDGE DEBUG] Result {i+1}: source={result.get('metadata', {}).get('source', 'unknown')}, score={result.get('score', 'N/A')}")
 
@@ -695,7 +695,7 @@ Return only the question, no additional text or explanation."""
             }
 
         # CLI mode: handle interactively
-        conflicts_resolved = self._handle_conflicts_realtime(conflict_result["conflicts"], project)
+        conflicts_resolved = self._handle_conflicts_realtime(conflict_result["conflicts"], project, insights)
         if not conflicts_resolved:
             logger.info("User chose not to resolve conflicts")
             return {"has_conflicts": True, "conflicts": conflict_result["conflicts"]}
@@ -851,9 +851,15 @@ Return only the question, no additional text or explanation."""
         return ""
 
     def _handle_conflicts_realtime(
-        self, conflicts: List[ConflictInfo], project: ProjectContext
+        self, conflicts: List[ConflictInfo], project: ProjectContext, insights: Dict = None
     ) -> bool:
-        """Handle conflicts in real-time during conversation"""
+        """Handle conflicts in real-time during conversation
+
+        Args:
+            conflicts: List of detected conflicts
+            project: Current project context
+            insights: Mutable insights dict that will be modified based on resolution
+        """
         for conflict in conflicts:
             print(f"\n{Fore.RED}[WARNING]  CONFLICT DETECTED!")
             print(f"{Fore.YELLOW}Type: {conflict.conflict_type}")
@@ -878,7 +884,7 @@ Return only the question, no additional text or explanation."""
 
                 if choice == "1":
                     print(f"{Fore.GREEN}[OK] Keeping existing: '{conflict.old_value}'")
-                    self._remove_from_insights(conflict.new_value, conflict.conflict_type)
+                    self._remove_from_insights(conflict.new_value, conflict.conflict_type, insights)
                     break
                 elif choice == "2":
                     print(f"{Fore.GREEN}[OK] Replacing with: '{conflict.new_value}'")
@@ -888,7 +894,7 @@ Return only the question, no additional text or explanation."""
                     break
                 elif choice == "3":
                     print(f"{Fore.YELLOW}[SKIP]  Skipping specification")
-                    self._remove_from_insights(conflict.new_value, conflict.conflict_type)
+                    self._remove_from_insights(conflict.new_value, conflict.conflict_type, insights)
                     break
                 elif choice == "4":
                     resolved_value = self._manual_resolution(conflict)
@@ -897,7 +903,7 @@ Return only the question, no additional text or explanation."""
                             project, conflict.old_value, conflict.conflict_type
                         )
                         self._update_insights_value(
-                            conflict.new_value, resolved_value, conflict.conflict_type
+                            conflict.new_value, resolved_value, conflict.conflict_type, insights
                         )
                         print(f"{Fore.GREEN}[OK] Updated to: '{resolved_value}'")
                     break
@@ -1204,34 +1210,44 @@ Return only the question, no additional text or explanation."""
             "suggestions": conflict.suggestions,
         }
 
-    def _remove_from_insights(self, value: str, insight_type: str):
+    def _remove_from_insights(self, value: str, insight_type: str, insights: Dict = None):
         """Remove a value from insights before context update.
 
         This method is called when user rejects a conflicting insight.
-        Since insights are processed per-request and don't persist in agent state,
-        this mainly serves as a logging hook for conflict resolution decisions.
+        It removes the conflicting value from the insights dict so it won't be re-added.
 
         Args:
             value: The value to remove (the new/conflicting value)
             insight_type: Type of insight (goals, requirements, tech_stack, constraints)
+            insights: Mutable insights dict to modify
         """
         from socratic_system.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
         logger.info(f"Conflict resolution: Rejected {insight_type} - '{value}'")
 
-    def _update_insights_value(self, old_value: str, new_value: str, insight_type: str):
+        # Remove from insights if provided
+        if insights and insight_type in insights and insights[insight_type]:
+            insight_list = self._normalize_to_list(insights[insight_type])
+            if value in insight_list:
+                insight_list.remove(value)
+                # Update insights with the modified list
+                if insight_list:
+                    insights[insight_type] = insight_list
+                else:
+                    insights[insight_type] = []
+
+    def _update_insights_value(self, old_value: str, new_value: str, insight_type: str, insights: Dict = None):
         """Update a value in insights after manual conflict resolution.
 
         This method is called when user manually resolves a conflict.
-        Since insights are processed per-request and don't persist in agent state,
-        this mainly serves as a logging hook for conflict resolution decisions.
-        The actual project context update happens via _remove_from_project_context.
+        It updates the insights dict with the manually resolved value.
 
         Args:
             old_value: The old/existing value in the project
             new_value: The new/resolved value from manual input
             insight_type: Type of insight (goals, requirements, tech_stack, constraints)
+            insights: Mutable insights dict to modify
         """
         from socratic_system.utils.logger import get_logger
 
@@ -1240,6 +1256,20 @@ Return only the question, no additional text or explanation."""
             f"Conflict resolution: Manual resolution for {insight_type} - "
             f"'{old_value}' -> '{new_value}'"
         )
+
+        # Update insights with the manually resolved value
+        if insights:
+            if insight_type not in insights:
+                insights[insight_type] = []
+
+            insight_list = self._normalize_to_list(insights[insight_type])
+            # Remove old conflicting value if it exists
+            if old_value in insight_list:
+                insight_list.remove(old_value)
+            # Add the new resolved value if not already there
+            if new_value not in insight_list:
+                insight_list.append(new_value)
+            insights[insight_type] = insight_list
 
     def _generate_hint(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Generate a context-aware hint for the user based on project state"""

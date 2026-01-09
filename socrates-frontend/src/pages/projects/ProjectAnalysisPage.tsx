@@ -8,7 +8,7 @@ import { useProjectStore } from '../../stores';
 import { useProjectAnalysisStore } from '../../stores/projectAnalysisStore';
 import { MainLayout, PageHeader } from '../../components/layout';
 import { Card, Alert, Tab } from '../../components/common';
-import { AnalysisActionPanel, AnalysisResultsDisplay } from '../../components/analysis';
+import { AnalysisActionPanel, AnalysisResultsDisplay, DetailedMaturityAnalysis } from '../../components/analysis';
 
 type TabType = 'validation' | 'testing' | 'review' | 'maturity' | 'structure' | 'report';
 
@@ -181,8 +181,7 @@ export const ProjectAnalysisPage: React.FC = () => {
                 />
               )}
               {activeTab === 'maturity' && (
-                <AnalysisResultsDisplay
-                  title="Maturity Assessment"
+                <DetailedMaturityAnalysis
                   result={maturityResult}
                   isLoading={isLoading && activeAnalysis === 'maturity'}
                   error={error}

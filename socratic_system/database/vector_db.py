@@ -552,6 +552,38 @@ class VectorDatabase:
             self.logger.warning(f"Failed to delete project knowledge: {e}")
             return 0
 
+    def count_chunks_by_source(self, source: str, project_id: Optional[str] = None) -> int:
+        """Count chunks (entries) for a specific document source.
+
+        Args:
+            source: The source file name to count chunks for
+            project_id: Optional project ID to filter by
+
+        Returns:
+            Number of chunks found for the source
+        """
+        try:
+            # Build filter for source
+            where_filter = {"source": {"$eq": source}}
+
+            # Add project filter if provided
+            if project_id:
+                where_filter = {
+                    "$and": [
+                        {"source": {"$eq": source}},
+                        {"project_id": {"$eq": project_id}}
+                    ]
+                }
+
+            # Query the collection
+            results = self.collection.get(where=where_filter)
+            chunk_count = len(results.get("ids", []))
+
+            return chunk_count
+        except Exception as e:
+            self.logger.warning(f"Failed to count chunks for source '{source}': {e}")
+            return 0
+
     def _generate_chunk_summary(self, chunk: str, max_length: int = 150) -> str:
         """
         Generate a brief summary of a document chunk.

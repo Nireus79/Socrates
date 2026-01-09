@@ -38,11 +38,73 @@ export interface ReviewResult extends AnalysisResult {
   }>;
 }
 
+export interface CategoryInfo {
+  name: string;
+  current_score: number;
+  target_score: number;
+  percentage: number;
+  spec_count: number;
+  confidence: number;
+  remaining_score: number;
+  specs_needed_estimate: number;
+}
+
+export interface CategoryBreakdown {
+  strong: CategoryInfo[];
+  adequate: CategoryInfo[];
+  weak: CategoryInfo[];
+  missing: CategoryInfo[];
+}
+
+export interface Statistics {
+  total_categories: number;
+  completed_categories: number;
+  strong_categories: number;
+  adequate_count?: number;
+  weak_count?: number;
+  missing_count?: number;
+  total_points_earned: number;
+  total_points_possible: number;
+  average_category_confidence: number;
+}
+
+export interface Milestone {
+  target_percentage: number;
+  points_needed: number;
+  estimated_specs: number;
+  estimated_sessions: number;
+}
+
+export interface Recommendation {
+  category?: string;
+  title?: string;
+  priority: 'critical' | 'high' | 'info' | 'success';
+  description: string;
+  action_items?: string[];
+  focus_areas?: string[];
+}
+
+export interface PhaseAnalysis {
+  overall_percentage: number;
+  status: string;
+  ready_to_advance: boolean;
+  categories: CategoryBreakdown;
+  statistics: Statistics;
+  milestones: {
+    reach_60_percent: Milestone;
+    reach_80_percent: Milestone;
+    reach_100_percent: Milestone;
+  };
+  recommendations: Recommendation[];
+}
+
 export interface MaturityResult extends AnalysisResult {
-  overall_score?: number;
-  phase?: string;
-  dimensions?: {
-    [key: string]: number;
+  project_id?: string;
+  project_type?: string;
+  current_phase?: string;
+  overall_maturity?: number;
+  phases?: {
+    [key: string]: PhaseAnalysis;
   };
 }
 
@@ -74,12 +136,12 @@ export async function reviewProject(projectId: string): Promise<ReviewResult> {
 }
 
 /**
- * Assess project maturity
+ * Assess project maturity with detailed analysis
  */
 export async function assessMaturity(projectId: string, phase?: string): Promise<MaturityResult> {
-  const params = new URLSearchParams({ project_id: projectId });
+  const params = new URLSearchParams({});
   if (phase) params.append('phase', phase);
-  const response = await apiClient.post(`/analysis/maturity?${params}`, {}) as any;
+  const response = await apiClient.get(`/projects/${projectId}/maturity/analysis?${params}`) as any;
   return response?.data || { status: 'error', message: 'Maturity assessment failed' };
 }
 

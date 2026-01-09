@@ -86,22 +86,35 @@ class NoteManagerAgent(Agent):
                         # Prepare note content for vectorization
                         note_content = f"[{note_type.upper()} NOTE] {title}\n\n{content}"
 
-                        # Metadata for the note
-                        metadata = {
-                            "source": f"note_{note.note_id}",
-                            "project_id": project_id,
-                            "source_type": "project_note",
-                            "note_type": note_type,
-                            "title": title,
-                            "created_by": created_by,
-                        }
+                        # Chunk the note content (500-word chunks with 50-word overlap)
+                        chunks = self._chunk_note_content(note_content, chunk_size=500, overlap=50)
 
-                        # Add to vector database
-                        self.orchestrator.vector_db.add_text(note_content, metadata=metadata)
+                        # Store each chunk in vector database
+                        chunks_added = 0
+                        for i, chunk in enumerate(chunks):
+                            try:
+                                # Metadata for each chunk
+                                metadata = {
+                                    "source": f"note_{note.note_id}",
+                                    "chunk": i + 1,
+                                    "total_chunks": len(chunks),
+                                    "project_id": project_id,
+                                    "source_type": "project_note",
+                                    "note_type": note_type,
+                                    "title": title,
+                                    "created_by": created_by,
+                                }
+
+                                # Add chunk to vector database
+                                self.orchestrator.vector_db.add_text(chunk, metadata=metadata)
+                                chunks_added += 1
+                            except Exception as e:
+                                self.log(f"Warning: Could not add chunk {i+1} of note: {e}", level="WARNING")
+
                         vectorization_result["status"] = "success"
-                        vectorization_result["chunks_created"] = 1
-                        vectorization_result["message"] = "Note vectorized successfully"
-                        self.log(f"Vectorized note {note.note_id} to knowledge base")
+                        vectorization_result["chunks_created"] = chunks_added
+                        vectorization_result["message"] = f"Note chunked and vectorized ({chunks_added} chunks)"
+                        self.log(f"Vectorized note {note.note_id} to knowledge base ({chunks_added} chunks)")
 
                         # Emit DOCUMENT_IMPORTED event for knowledge base
                         try:
@@ -114,7 +127,7 @@ class NoteManagerAgent(Agent):
                                         "file_name": f"{note_type}_{note.note_id}",
                                         "source_type": "project_note",
                                         "words_extracted": len(content.split()),
-                                        "chunks_created": 1,
+                                        "chunks_created": chunks_added,
                                         "user_id": created_by,
                                     }
                                 )
@@ -236,3 +249,60 @@ class NoteManagerAgent(Agent):
         except Exception as e:
             self.log(f"Error deleting note: {str(e)}", level="ERROR")
             return {"status": "error", "message": f"Error deleting note: {str(e)}"}
+
+    def _chunk_note_content(self, content: str, chunk_size: int = 500, overlap: int = 50) -> list:
+        """
+        Split note content into overlapping chunks for better embedding coverage.
+
+        Args:
+            content: Full note text
+            chunk_size: Target words per chunk
+            overlap: Words to overlap between chunks
+
+        Returns:
+            List of text chunks
+        """
+        import re
+
+        # Split into sentences to avoid breaking in middle of thought
+        sentences = re.split(r"(?<=[.!?])\s+", content)
+
+        chunks = []
+        current_chunk = []
+        current_words = 0
+
+        for sentence in sentences:
+            sentence_words = len(sentence.split())
+
+            # If adding this sentence exceeds chunk size and we have content
+            if current_words + sentence_words > chunk_size and current_chunk:
+                # Save current chunk
+                chunk_text = " ".join(current_chunk).strip()
+                if chunk_text:
+                    chunks.append(chunk_text)
+
+                # Create overlap: keep last few sentences
+                overlap_words = 0
+                overlap_sentences = []
+                for s in reversed(current_chunk):
+                    s_words = len(s.split())
+                    if overlap_words + s_words <= overlap:
+                        overlap_sentences.insert(0, s)
+                        overlap_words += s_words
+                    else:
+                        break
+
+                current_chunk = overlap_sentences
+                current_words = overlap_words
+
+            # Add sentence to current chunk
+            current_chunk.append(sentence)
+            current_words += sentence_words
+
+        # Add last chunk
+        if current_chunk:
+            chunk_text = " ".join(current_chunk).strip()
+            if chunk_text:
+                chunks.append(chunk_text)
+
+        return chunks if chunks else [content]  # Return at least the full content

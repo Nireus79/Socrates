@@ -280,4 +280,11 @@ export const knowledgeAPI = {
       `/knowledge/documents/${documentId}/analytics`
     );
   },
+
+  /**
+   * Get all knowledge sources (PDFs, Notes, GitHub repos) for a project
+   */
+  async getAllKnowledgeSources(projectId: string): Promise<any> {
+    return apiClient.get(`/knowledge/all?project_id=${projectId}`);
+  },
 };

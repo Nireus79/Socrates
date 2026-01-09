@@ -117,8 +117,7 @@ export const ProjectsPage: React.FC = () => {
         setIsDeleting(true);
         const deletedProject = projects.find(p => p.project_id === projectId);
         await deleteProject(projectId);
-        // Refresh the projects list after deletion
-        await listProjects();
+        // No need to refresh - deleteProject already updates local state
         showSuccess('Project Deleted', `${deletedProject?.name} has been permanently deleted`);
       } catch (error) {
         console.error('Failed to delete project:', error);

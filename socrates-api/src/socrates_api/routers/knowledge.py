@@ -116,7 +116,21 @@ async def list_documents(
 
         # Transform to frontend format
         doc_list = []
+        orchestrator = None
+        try:
+            orchestrator = _get_orchestrator()
+        except Exception:
+            # Vector DB not available, will default to 0
+            pass
+
         for doc in paginated_docs:
+            # Get actual chunk count from vector database
+            chunk_count = 0
+            if orchestrator and orchestrator.vector_db:
+                doc_source = doc.get("source") or doc["title"]
+                project_id = doc.get("project_id")
+                chunk_count = orchestrator.vector_db.count_chunks_by_source(doc_source, project_id)
+
             doc_list.append(
                 {
                     "id": doc["id"],
@@ -124,7 +138,7 @@ async def list_documents(
                     "source_type": doc["document_type"],
                     "source": doc.get("source"),
                     "created_at": doc["uploaded_at"],
-                    "chunk_count": 0,
+                    "chunk_count": chunk_count,
                 }
             )
 
@@ -150,6 +164,164 @@ async def list_documents(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to list documents: {str(e)}",
+        )
+
+
+@router.get(
+    "/all",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get all knowledge sources (PDFs, Notes, GitHub repos)",
+)
+def get_all_knowledge_sources(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+) -> APIResponse:
+    """
+    Get all knowledge sources for a project: PDFs, Notes, and GitHub repositories.
+
+    Args:
+        project_id: Project identifier
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        APIResponse with categorized knowledge sources and chunk counts
+    """
+    try:
+        # Verify project ownership
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found",
+            )
+
+        if project.owner != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this project",
+            )
+
+        orchestrator = None
+        try:
+            from socrates_api.main import app_state
+            orchestrator = app_state.get("orchestrator")
+        except Exception:
+            pass
+
+        # Collect all knowledge sources
+        all_sources = {
+            "documents": [],  # PDFs and files
+            "notes": [],  # Project notes
+            "repositories": [],  # GitHub repos
+        }
+
+        # 1. Get uploaded documents (PDFs, etc.)
+        try:
+            documents = db.get_knowledge_documents(project_id)
+            for doc in documents:
+                chunk_count = 0
+                if orchestrator and orchestrator.vector_db:
+                    doc_source = doc.get("source") or doc["title"]
+                    chunk_count = orchestrator.vector_db.count_chunks_by_source(doc_source, project_id)
+
+                all_sources["documents"].append({
+                    "id": doc["id"],
+                    "title": doc["title"],
+                    "source_type": doc.get("document_type", "file"),
+                    "source": doc.get("source"),
+                    "created_at": doc.get("uploaded_at"),
+                    "chunk_count": chunk_count,
+                    "type": "document",
+                })
+        except Exception as e:
+            logger.warning(f"Error fetching documents: {e}")
+
+        # 2. Get project notes
+        try:
+            if hasattr(project, 'notes') and project.notes:
+                for note in project.notes:
+                    chunk_count = 0
+                    if orchestrator and orchestrator.vector_db:
+                        chunk_count = orchestrator.vector_db.count_chunks_by_source(
+                            f"note_{note.note_id}", project_id
+                        )
+
+                    all_sources["notes"].append({
+                        "id": note.note_id,
+                        "title": note.title,
+                        "source_type": "note",
+                        "note_type": note.note_type,
+                        "content_preview": note.content[:200] + "..." if len(note.content) > 200 else note.content,
+                        "created_at": note.created_at.isoformat() if hasattr(note.created_at, 'isoformat') else str(note.created_at),
+                        "chunk_count": chunk_count,
+                        "type": "note",
+                    })
+        except Exception as e:
+            logger.warning(f"Error fetching notes: {e}")
+
+        # 3. Get GitHub repositories
+        try:
+            if hasattr(project, 'repository_url') and project.repository_url:
+                # Count chunks for README and code files
+                readme_chunks = 0
+                code_chunks = 0
+
+                if orchestrator and orchestrator.vector_db:
+                    # Count README chunks
+                    readme_chunks = orchestrator.vector_db.count_chunks_by_source("README.md", project_id)
+                    # Count code file chunks (they all have source_type: github_code)
+                    # This is approximate - we can enhance if needed
+                    code_chunks = max(0, orchestrator.vector_db.count_chunks_by_source(
+                        project.repository_url, project_id
+                    ))
+
+                total_chunks = readme_chunks + code_chunks
+
+                all_sources["repositories"].append({
+                    "id": project.project_id,
+                    "title": f"{project.repository_owner}/{project.repository_name}",
+                    "source_type": "github",
+                    "url": project.repository_url,
+                    "owner": project.repository_owner,
+                    "name": project.repository_name,
+                    "chunk_count": total_chunks,
+                    "readme_chunks": readme_chunks,
+                    "code_chunks": code_chunks,
+                    "type": "repository",
+                })
+        except Exception as e:
+            logger.warning(f"Error fetching GitHub repo info: {e}")
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="All knowledge sources retrieved",
+            data={
+                "project_id": project_id,
+                "sources": all_sources,
+                "totals": {
+                    "documents": len(all_sources["documents"]),
+                    "notes": len(all_sources["notes"]),
+                    "repositories": len(all_sources["repositories"]),
+                    "total_chunks": sum(
+                        s.get("chunk_count", 0)
+                        for sources in all_sources.values()
+                        for s in sources
+                    ),
+                },
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting all knowledge sources: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving knowledge sources",
         )
 
 

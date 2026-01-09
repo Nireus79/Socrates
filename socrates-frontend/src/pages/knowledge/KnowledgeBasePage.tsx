@@ -15,6 +15,9 @@ import DocumentFilters from '../../components/knowledge/DocumentFilters';
 import DocumentBulkActions from '../../components/knowledge/DocumentBulkActions';
 import BulkImportModal from '../../components/knowledge/BulkImportModal';
 import { DocumentCard } from '../../components/knowledge/DocumentCard';
+import { NoteCard } from '../../components/knowledge/NoteCard';
+import { GitHubRepositoryCard } from '../../components/knowledge/GitHubRepositoryCard';
+import { knowledgeAPI } from '../../api/knowledge';
 
 export const KnowledgeBasePage: React.FC = () => {
   const { projectId } = useParams<{ projectId?: string }>();
@@ -59,6 +62,8 @@ export const KnowledgeBasePage: React.FC = () => {
   const [entryContent, setEntryContent] = React.useState('');
   const [entryCategory, setEntryCategory] = React.useState('general');
   const [showBulkImportModal, setShowBulkImportModal] = React.useState(false);
+  const [allSources, setAllSources] = React.useState<any>(null);
+  const [loadingAllSources, setLoadingAllSources] = React.useState(false);
 
   // Load projects on mount
   React.useEffect(() => {
@@ -77,6 +82,8 @@ export const KnowledgeBasePage: React.FC = () => {
     if (selectedProjectId) {
       getProject(selectedProjectId);
       listDocuments(selectedProjectId);
+      // Load all knowledge sources (documents, notes, repos)
+      loadAllKnowledgeSources();
     }
   }, [selectedProjectId, getProject, listDocuments]);
 
@@ -134,6 +141,20 @@ export const KnowledgeBasePage: React.FC = () => {
     }
   };
 
+  // Load all knowledge sources (documents, notes, repos)
+  const loadAllKnowledgeSources = async () => {
+    if (!selectedProjectId) return;
+    try {
+      setLoadingAllSources(true);
+      const response = await knowledgeAPI.getAllKnowledgeSources(selectedProjectId);
+      setAllSources(response.data?.sources);
+    } catch (err) {
+      console.error('Failed to load knowledge sources:', err);
+    } finally {
+      setLoadingAllSources(false);
+    }
+  };
+
   // Handle document delete
   const handleDeleteDocument = async (documentId: string) => {
     if (!window.confirm('Are you sure you want to delete this document?')) return;
@@ -141,6 +162,7 @@ export const KnowledgeBasePage: React.FC = () => {
       await deleteDocument(documentId);
       // Refresh documents after deletion
       await listDocuments(selectedProjectId);
+      loadAllKnowledgeSources();
       showSuccess('Document Deleted', 'The document has been successfully removed from your knowledge base');
     } catch (err) {
       console.error('Delete failed:', err);
@@ -164,6 +186,8 @@ export const KnowledgeBasePage: React.FC = () => {
 
   const tabs = [
     { label: 'Documents', value: 'documents' },
+    { label: 'Notes', value: 'notes' },
+    { label: 'GitHub', value: 'github' },
     { label: 'Import', value: 'import' },
     { label: 'Search', value: 'search' },
     { label: 'Entries', value: 'entries' },
@@ -287,6 +311,67 @@ export const KnowledgeBasePage: React.FC = () => {
               onClose={() => setShowBulkImportModal(false)}
               projectId={selectedProjectId}
             />
+          </div>
+        )}
+
+        {/* Notes Tab */}
+        {activeTab === 'notes' && (
+          <div className="space-y-6">
+            {loadingAllSources ? (
+              <SkeletonList count={3} height="150px" />
+            ) : allSources?.notes && allSources.notes.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {allSources.notes.map((note: any) => (
+                  <NoteCard
+                    key={note.id}
+                    note={note}
+                    onDelete={() => {
+                      if (window.confirm('Delete this note?')) {
+                        // Note deletion would be implemented via API
+                        showInfo('Note', 'Note deletion will be available soon');
+                      }
+                    }}
+                    onEdit={() => {
+                      showInfo('Note', 'Note editing will be available soon');
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Alert type="info" title="No Notes">
+                You haven't created any notes yet. Add notes from your project settings.
+              </Alert>
+            )}
+          </div>
+        )}
+
+        {/* GitHub Repositories Tab */}
+        {activeTab === 'github' && (
+          <div className="space-y-6">
+            {loadingAllSources ? (
+              <SkeletonList count={2} height="200px" />
+            ) : allSources?.repositories && allSources.repositories.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {allSources.repositories.map((repo: any) => (
+                  <GitHubRepositoryCard
+                    key={repo.id}
+                    repo={repo}
+                    onSync={() => {
+                      showInfo('GitHub', 'Repository sync will be available soon');
+                    }}
+                    onDelete={() => {
+                      if (window.confirm('Remove this repository from your project?')) {
+                        showInfo('GitHub', 'Repository removal will be available soon');
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Alert type="info" title="No GitHub Repositories">
+                You haven't imported any GitHub repositories yet. Use the Projects page to import a repository.
+              </Alert>
+            )}
           </div>
         )}
 

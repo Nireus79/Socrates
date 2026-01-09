@@ -131,10 +131,99 @@ class ProjectManagerAgent(Agent):
             project_type=project_type,
         )
 
+        # ONCE-ONLY analysis: Extract initial specs from description and knowledge base if provided
+        # This analysis happens only at project creation time
+        context_to_analyze = ""
+
+        if description and description.strip():
+            context_to_analyze = description
+
+        # Also include knowledge_base_content if provided
+        knowledge_base_content = request.get("knowledge_base_content", "")
+        if knowledge_base_content and knowledge_base_content.strip():
+            if context_to_analyze:
+                context_to_analyze += f"\n\nKnowledge Base:\n{knowledge_base_content}"
+            else:
+                context_to_analyze = knowledge_base_content
+
+        # Analyze combined context if anything was provided
+        if context_to_analyze:
+            try:
+                self.log(f"Analyzing project description and knowledge base for initial specifications...")
+
+                # Extract insights using same mechanism as conversation analysis
+                insights = self.orchestrator.claude_client.extract_insights(context_to_analyze, project)
+
+                if insights:
+                    # Apply extracted insights to project context
+                    self._apply_initial_insights(project, insights)
+                    self.log(f"Initial specifications extracted from context")
+            except Exception as e:
+                # Non-fatal: continue with empty specs if extraction fails
+                self.log(f"Warning: Could not analyze project context: {e}", level="warning")
+
         self.orchestrator.database.save_project(project)
         self.log(f"Created project '{project_name}' (type: {project_type}) with ID {project_id}")
 
         return {"status": "success", "project": project}
+
+    def _apply_initial_insights(self, project: ProjectContext, insights: Dict) -> None:
+        """Apply extracted insights from description/notes to project context.
+
+        This normalizes insights and populates project fields exactly like conversation analysis does.
+
+        Args:
+            project: ProjectContext to update
+            insights: Dict with extracted insights (goals, requirements, tech_stack, constraints)
+        """
+        if not insights or not isinstance(insights, dict):
+            return
+
+        try:
+            # Apply goals
+            if "goals" in insights and insights["goals"]:
+                goals_list = self._normalize_to_list(insights["goals"])
+                if goals_list:
+                    project.goals = " ".join(goals_list)
+
+            # Apply requirements
+            if "requirements" in insights and insights["requirements"]:
+                req_list = self._normalize_to_list(insights["requirements"])
+                self._update_list_field(project.requirements, req_list)
+
+            # Apply tech_stack
+            if "tech_stack" in insights and insights["tech_stack"]:
+                tech_list = self._normalize_to_list(insights["tech_stack"])
+                self._update_list_field(project.tech_stack, tech_list)
+
+            # Apply constraints
+            if "constraints" in insights and insights["constraints"]:
+                constraint_list = self._normalize_to_list(insights["constraints"])
+                self._update_list_field(project.constraints, constraint_list)
+
+        except Exception as e:
+            self.log(f"Error applying insights: {e}", level="warning")
+
+    @staticmethod
+    def _normalize_to_list(value: Any) -> list:
+        """Normalize various input types to a list of strings"""
+        if isinstance(value, list):
+            return [str(v).strip() for v in value if v]
+        elif isinstance(value, dict):
+            return [str(v).strip() for v in value.values() if v]
+        elif isinstance(value, str):
+            # Split by comma if multiple items
+            if "," in value:
+                return [s.strip() for s in value.split(",") if s.strip()]
+            return [value.strip()] if value.strip() else []
+        return []
+
+    @staticmethod
+    def _update_list_field(current_list: list, new_items: list) -> None:
+        """Add new unique items to a list field"""
+        for item in new_items:
+            if item and item not in current_list:
+                current_list.append(item)
 
     def _create_from_github(self, request: Dict) -> Dict:
         """Create a new project from a GitHub repository"""

@@ -81,4 +81,11 @@ export const projectsAPI = {
   async advancePhase(projectId: string, newPhase: ProjectPhase): Promise<Project> {
     return apiClient.put<Project>(`/projects/${projectId}/phase`, { phase: newPhase });
   },
+
+  /**
+   * Get project files
+   */
+  async getProjectFiles(projectId: string): Promise<{ project_id: string; files: any[]; total: number }> {
+    return apiClient.get(`/projects/${projectId}/files`);
+  },
 };
