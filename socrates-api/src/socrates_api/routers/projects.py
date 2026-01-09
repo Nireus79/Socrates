@@ -733,6 +733,7 @@ async def get_project_maturity(
             "project_id": project_id,
             "phase_maturity_scores": getattr(project, "phase_maturity_scores", {}),
             "overall_maturity": getattr(project, "overall_maturity", 0.0),
+            "categories": getattr(project, "categories", {}),
         }
 
         return APIResponse(

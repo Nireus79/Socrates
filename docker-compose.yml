@@ -37,7 +37,7 @@ services:
 
   # ChromaDB Vector Database
   chromadb:
-    image: chromadb/chroma:latest
+    image: chromadb/chroma:0.4.24
     container_name: socrates-chromadb
     ports:
       - "8001:8000"
@@ -104,7 +104,7 @@ services:
 
   # Nginx Reverse Proxy
   nginx:
-    image: nginx:alpine
+    image: nginx:1.27-alpine
     container_name: socrates-nginx
     ports:
       - "80:80"

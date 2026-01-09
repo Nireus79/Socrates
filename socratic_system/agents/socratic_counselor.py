@@ -261,7 +261,7 @@ class SocraticCounselorAgent(Agent):
                 
                 logger.info(f"[KNOWLEDGE DEBUG] Search returned {len(knowledge_results) if knowledge_results else 0} results")
                 if knowledge_results:
-                logger.info(f"[KNOWLEDGE DEBUG] Using {len(knowledge_results)} knowledge items for question context")
+                    logger.info(f"[KNOWLEDGE DEBUG] Using {len(knowledge_results)} knowledge items for question context")
                     for i, result in enumerate(knowledge_results[:3]):
                         logger.info(f"[KNOWLEDGE DEBUG] Result {i+1}: source={result.get('metadata', {}).get('source', 'unknown')}, score={result.get('score', 'N/A')}")
 
