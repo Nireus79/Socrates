@@ -179,7 +179,9 @@ export const CollaborationPage: React.FC = () => {
   };
 
   const isLoading = projectLoading || collabLoading;
-  const onlineCount = collaborators.filter((c) => c.status === 'active').length;
+  // Filter out undefined/null collaborators
+  const validCollaborators = collaborators.filter((c) => c !== undefined && c !== null);
+  const onlineCount = validCollaborators.filter((c) => c.status === 'active').length;
 
   if (collabError) {
     return (
@@ -197,7 +199,7 @@ export const CollaborationPage: React.FC = () => {
     );
   }
 
-  if (isLoading && collaborators.length === 0) {
+  if (isLoading && validCollaborators.length === 0) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center h-96">
@@ -261,7 +263,7 @@ export const CollaborationPage: React.FC = () => {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Members</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {collaborators.length}
+                {validCollaborators.length}
               </p>
             </div>
             <div>
@@ -292,11 +294,11 @@ export const CollaborationPage: React.FC = () => {
         {/* Team Members Tab */}
         {activeTab === 'team' && (
           <>
-            {isLoading && collaborators.length === 0 ? (
+            {isLoading && validCollaborators.length === 0 ? (
               <SkeletonList count={3} height="80px" />
             ) : (
               <CollaboratorList
-                collaborators={collaborators as Collaborator[]}
+                collaborators={validCollaborators as Collaborator[]}
                 isLoading={isLoading}
                 canManage={true}
                 onChangeRole={(username: string, role: string) => handleChangeRole(username, role)}
@@ -327,7 +329,7 @@ export const CollaborationPage: React.FC = () => {
                     Member Status
                   </h3>
 
-                  {collaborators.map((collab: any) => (
+                  {validCollaborators.map((collab: any) => (
                     <div
                       key={collab.username}
                       className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
