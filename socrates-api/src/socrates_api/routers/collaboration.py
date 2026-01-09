@@ -720,7 +720,9 @@ async def get_presence(
             f"{len(active_collaborators)} active collaborators"
         )
 
-        return SuccessResponse(
+        return APIResponse(
+            success=True,
+            status="success",
             message="Presence retrieved successfully",
             data={
                 "project_id": project_id,
@@ -1411,8 +1413,9 @@ async def invite_team_member(
 
         logger.info(f"Sending team invitation to {email} with role {role}")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+            status="success",
             message=f"Invitation sent to {email}",
             data={
                 "email": email,
@@ -1497,8 +1500,9 @@ async def update_member_role(
     try:
         logger.info(f"Updating member {member_id} role to {role}")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+            status="success",
             message=f"Member role updated to {role}",
             data={
                 "member_id": member_id,
@@ -1540,8 +1544,9 @@ async def remove_team_member(
     try:
         logger.info(f"Removing member {member_id}")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+            status="success",
             message=f"Member {member_id} removed from team",
             data={"member_id": member_id},
         )

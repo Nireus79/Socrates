@@ -537,9 +537,11 @@ async def delete_project(
 
         logger.info(f"Project {project_id} permanently deleted by {current_user}")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+            status="success",
             message=f"Project '{project_name}' has been permanently deleted",
+            data={"project_id": project_id, "name": project_name},
         )
 
     except HTTPException:

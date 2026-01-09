@@ -168,8 +168,9 @@ async def get_help(
             "support_email": "support@socrates.ai",
         }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+            status="success",
             message="System help documentation retrieved",
             data=help_data,
         )
@@ -288,8 +289,9 @@ async def get_info(
             },
         }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+            status="success",
             message="System information retrieved",
             data=info_data,
         )
@@ -382,8 +384,9 @@ async def get_status(
             },
         }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+            status="success",
             message="System status retrieved",
             data=status_data,
         )
@@ -464,8 +467,9 @@ async def get_logs(
         # Apply limit
         logs = logs[:limit]
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+            status="success",
             message=f"Retrieved {len(logs)} log entries",
             data={
                 "logs": logs,
@@ -560,8 +564,9 @@ async def get_context(
             },
         }
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+            status="success",
             message="System context retrieved",
             data=context_data,
         )
@@ -617,8 +622,9 @@ async def toggle_debug_mode(
 
         logger.info(f"Debug mode {('ENABLED' if new_state else 'DISABLED')} by {current_user}")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+            status="success",
             message=f"Debug mode {('enabled' if new_state else 'disabled')}",
             data={
                 "debug_enabled": new_state,
@@ -647,8 +653,9 @@ async def get_debug_status(
 
     Returns whether DEBUG level logging is currently enabled.
     """
-    return SuccessResponse(
+    return APIResponse(
         success=True,
+        status="success",
         message="Debug mode status retrieved",
         data={"debug_enabled": is_debug_mode()},
     )
