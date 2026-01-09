@@ -328,8 +328,9 @@ async def import_file(
                 logger.warning(f"Failed to emit DOCUMENT_IMPORTED event: {e}")
                 # Don't fail the import if event emission fails
 
-            return SuccessResponse(
+            return APIResponse(
                 success=True,
+                status="success",
                 message=f"File '{file.filename}' imported successfully",
                 data={
                     "filename": file.filename,
@@ -450,8 +451,9 @@ async def import_url(
             logger.warning(f"Failed to emit DOCUMENT_IMPORTED event: {e}")
             # Don't fail the import if event emission fails
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+            status="success",
             message=f"Content from '{url}' imported successfully",
             data={
                 "url": url,
@@ -568,8 +570,9 @@ async def import_text(
             logger.warning(f"Failed to emit DOCUMENT_IMPORTED event: {e}")
             # Don't fail the import if event emission fails
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+            status="success",
             message=f"Text document '{title or 'Untitled'}' imported successfully",
             data={
                 "title": title,
@@ -670,8 +673,9 @@ async def search_knowledge(
 
         logger.info(f"Search completed: found {len(search_results)} results")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+            status="success",
             message=f"Search completed for '{search_query}'",
             data={"query": search_query, "results": search_results, "total": len(search_results)},
         )
@@ -740,8 +744,9 @@ async def delete_document(
 
         logger.info(f"Document deleted successfully: {document_id}")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+            status="success",
             message="Document deleted successfully",
             data={"document_id": document_id},
         )
@@ -1088,8 +1093,9 @@ async def add_knowledge_entry(
 
         logger.info(f"Knowledge entry added successfully: {category}")
 
-        return SuccessResponse(
+        return APIResponse(
             success=True,
+            status="success",
             message="Knowledge entry added successfully",
             data={
                 "category": category,
