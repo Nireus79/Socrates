@@ -234,13 +234,26 @@ class CodeGeneratorAgent(Agent):
         context_parts = [
             f"Project: {project.name}",
             f"Phase: {project.phase}",
-            f"Goals: {project.goals}",
-            f"Tech Stack: {', '.join(project.tech_stack)}",
-            f"Requirements: {', '.join(project.requirements)}",
-            f"Constraints: {', '.join(project.constraints)}",
-            f"Target: {project.deployment_target}",
-            f"Style: {project.code_style}",
         ]
+
+        # Add optional fields with safe defaults
+        if project.goals:
+            context_parts.append(f"Goals: {project.goals}")
+
+        if project.tech_stack:
+            context_parts.append(f"Tech Stack: {', '.join(project.tech_stack)}")
+
+        if project.requirements:
+            context_parts.append(f"Requirements: {', '.join(project.requirements)}")
+
+        if project.constraints:
+            context_parts.append(f"Constraints: {', '.join(project.constraints)}")
+
+        if project.deployment_target:
+            context_parts.append(f"Target: {project.deployment_target}")
+
+        if project.code_style:
+            context_parts.append(f"Style: {project.code_style}")
 
         # Add conversation insights
         if project.conversation_history:
