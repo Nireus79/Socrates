@@ -807,13 +807,18 @@ ANALYTICS & CONVERSATIONS:
 
   const handleStatusCommand = async (id: string) => {
     try {
-      const response = await apiClient.get(`/projects/${id}/progress`) as any;
-      const data = response?.data || response;
-      const overall = data?.overall_progress || {};
+      // Get progress data
+      const progressResponse = await apiClient.get(`/projects/${id}/progress`) as any;
+      const progressData = progressResponse?.data || progressResponse;
+      const overall = progressData?.overall_progress || {};
       const status = overall?.status || 'unknown';
       const progress = overall?.percentage || 0;
-      const phase = currentProject?.phase || 'N/A';
-      const maturity = data?.maturity_progress?.current_score || 0;
+      const maturity = progressData?.maturity_progress?.current_score || 0;
+
+      // Get current phase from the project endpoint to ensure we have the latest data
+      const projectResponse = await apiClient.get(`/projects/${id}`) as any;
+      const projectData = projectResponse?.data || projectResponse;
+      const phase = projectData?.phase || currentProject?.phase || 'N/A';
 
       addSystemMessage(`Project Status: ${status} | Phase: ${phase} | Progress: ${progress}% | Maturity: ${maturity}`);
     } catch (error) {
@@ -1114,8 +1119,14 @@ User: ${currentProject?.owner || 'N/A'}`;
   // CORE CHAT COMMANDS
   const handleAdvanceCommand = async (id: string) => {
     try {
-      await apiClient.put(`/projects/${id}/phase`);
-      addSystemMessage('Advancing to next phase...');
+      const response = await apiClient.put(`/projects/${id}/phase`) as any;
+      const newPhase = response?.data?.phase || response?.phase;
+      addSystemMessage(`Advancing to next phase... Phase: ${newPhase || 'unknown'}`);
+
+      // Refresh the project to update the UI with new phase
+      if (selectedProjectId) {
+        await getProject(selectedProjectId);
+      }
     } catch (error) {
       addSystemMessage('Could not advance phase');
     }
