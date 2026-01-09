@@ -178,29 +178,23 @@ async def get_progress(
             "pinned_items": len([k for k in knowledge if k.get("pinned", False)]),
         }
 
-        # Calculate overall completion percentage
-        completion_metrics = []
-        if conversation_count > 0:
-            completion_metrics.append(min(100, conversation_count * 10))
-        if generated_code_count > 0:
-            completion_metrics.append(min(100, generated_code_count * 20))
+        # Use the actual project progress field (0-100) stored in database
+        # This is the authoritative progress value, not calculated from metrics
+        project_progress = getattr(project, "progress", 0)
+        try:
+            project_progress = int(project_progress) if project_progress else 0
+        except (TypeError, ValueError):
+            project_progress = 0
 
-        # Use already-converted maturity score from above
-        if maturity_score > 0:
-            completion_metrics.append(min(100, float(maturity_score)))
-        if len(skills) > 0:
-            completion_metrics.append(min(100, len(skills) * 5))
-
-        overall_progress = (
-            sum(completion_metrics) / len(completion_metrics) if completion_metrics else 0
-        )
+        # Ensure progress is within 0-100 range
+        project_progress = max(0, min(100, project_progress))
 
         progress_data["overall_progress"] = {
-            "percentage": round(overall_progress, 1),
+            "percentage": project_progress,
             "status": (
                 "not_started"
-                if overall_progress == 0
-                else "in_progress" if overall_progress < 100 else "completed"
+                if project_progress == 0
+                else "in_progress" if project_progress < 100 else "completed"
             ),
         }
 
