@@ -753,6 +753,252 @@ async def get_project_maturity(
         )
 
 
+@router.get(
+    "/{project_id}/maturity/analysis",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get detailed maturity analysis",
+    responses={
+        200: {"description": "Detailed analysis retrieved successfully"},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def get_maturity_analysis(
+    project_id: str,
+    phase: str = Query(None, description="Specific phase to analyze (optional)"),
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+):
+    """
+    Get detailed maturity analysis for a project or specific phase.
+
+    Includes:
+    - Category breakdown with scores, targets, and percentages
+    - Category analysis (strong, adequate, weak, missing)
+    - Summary statistics
+    - Action plans to reach milestones (60%, 80%, 100%)
+    - Recommended questions for next session
+    - Prioritized focus areas
+
+    Args:
+        project_id: Project identifier
+        phase: Optional specific phase to analyze
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        Detailed analysis with all metrics and recommendations
+    """
+    try:
+        project = db.load_project(project_id)
+
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found",
+            )
+
+        if project.owner != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this project",
+            )
+
+        # Get maturity data
+        phase_scores = getattr(project, "phase_maturity_scores", {})
+        category_scores = getattr(project, "category_scores", {})
+        analytics = getattr(project, "analytics_metrics", {})
+
+        # If specific phase requested, analyze only that phase
+        phases_to_analyze = [phase] if phase else list(phase_scores.keys())
+
+        analysis_data = {
+            "project_id": project_id,
+            "project_type": getattr(project, "project_type", "software"),
+            "current_phase": getattr(project, "current_phase", "discovery"),
+            "overall_maturity": getattr(project, "overall_maturity", 0.0),
+            "phases": {}
+        }
+
+        # Analyze each phase
+        for phase_name in phases_to_analyze:
+            phase_score = phase_scores.get(phase_name, 0.0)
+            phase_categories = category_scores.get(phase_name, {})
+
+            if not phase_categories and phase_score == 0:
+                continue  # Skip phases with no data
+
+            # Categorize categories by strength
+            strong_categories = []
+            adequate_categories = []
+            weak_categories = []
+            missing_categories = []
+
+            for cat_name, cat_data in phase_categories.items():
+                percentage = cat_data.get("percentage", 0.0) if isinstance(cat_data, dict) else getattr(cat_data, "percentage", 0.0)
+                current_score = cat_data.get("current_score", 0.0) if isinstance(cat_data, dict) else getattr(cat_data, "current_score", 0.0)
+                target_score = cat_data.get("target_score", 15.0) if isinstance(cat_data, dict) else getattr(cat_data, "target_score", 15.0)
+                spec_count = cat_data.get("spec_count", 0) if isinstance(cat_data, dict) else getattr(cat_data, "spec_count", 0)
+                confidence = cat_data.get("confidence", 0.0) if isinstance(cat_data, dict) else getattr(cat_data, "confidence", 0.0)
+
+                category_info = {
+                    "name": cat_name,
+                    "current_score": current_score,
+                    "target_score": target_score,
+                    "percentage": percentage,
+                    "spec_count": spec_count,
+                    "confidence": confidence,
+                    "remaining_score": max(0.0, target_score - current_score),
+                    "specs_needed_estimate": max(0, int((target_score - current_score) / 0.85))
+                }
+
+                if percentage >= 80:
+                    strong_categories.append(category_info)
+                elif percentage >= 30:
+                    adequate_categories.append(category_info)
+                elif percentage > 0:
+                    weak_categories.append(category_info)
+                else:
+                    missing_categories.append(category_info)
+
+            # Calculate statistics
+            total_categories = len(phase_categories)
+            completed_categories = sum(1 for cat in phase_categories.values()
+                                     if (isinstance(cat, dict) and cat.get("percentage", 0) >= 100) or
+                                        (hasattr(cat, "percentage") and cat.percentage >= 100))
+
+            # Estimate metrics for reaching milestones
+            current_score_sum = sum((cat.get("current_score", 0) if isinstance(cat, dict) else getattr(cat, "current_score", 0))
+                                   for cat in phase_categories.values())
+
+            milestone_60 = max(0, 54.0 - current_score_sum)  # 60% of 90
+            milestone_80 = max(0, 72.0 - current_score_sum)  # 80% of 90
+            milestone_100 = max(0, 90.0 - current_score_sum) # 100% of 90
+
+            # Estimate sessions needed (assuming 6.5 points per session)
+            avg_points_per_session = analytics.get("velocity", 6.5)
+            sessions_to_60 = max(0, int(milestone_60 / avg_points_per_session)) + 1
+            sessions_to_80 = max(0, int(milestone_80 / avg_points_per_session)) + 1
+            sessions_to_100 = max(0, int(milestone_100 / avg_points_per_session)) + 1
+
+            analysis_data["phases"][phase_name] = {
+                "overall_percentage": phase_score,
+                "status": "complete" if phase_score >= 100 else "ready" if phase_score >= 60 else "warning" if phase_score >= 40 else "critical",
+                "ready_to_advance": phase_score >= 60,
+                "categories": {
+                    "strong": strong_categories,
+                    "adequate": adequate_categories,
+                    "weak": weak_categories,
+                    "missing": missing_categories
+                },
+                "statistics": {
+                    "total_categories": total_categories,
+                    "completed_categories": completed_categories,
+                    "strong_count": len(strong_categories),
+                    "adequate_count": len(adequate_categories),
+                    "weak_count": len(weak_categories),
+                    "missing_count": len(missing_categories),
+                    "total_points_earned": current_score_sum,
+                    "total_points_possible": 90.0,
+                    "average_category_confidence": analytics.get("avg_confidence", 0.85)
+                },
+                "milestones": {
+                    "reach_60_percent": {
+                        "target_score": 54.0,
+                        "points_needed": milestone_60,
+                        "estimated_specs": max(0, int(milestone_60 / 0.85)),
+                        "estimated_sessions": sessions_to_60
+                    },
+                    "reach_80_percent": {
+                        "target_score": 72.0,
+                        "points_needed": milestone_80,
+                        "estimated_specs": max(0, int(milestone_80 / 0.85)),
+                        "estimated_sessions": sessions_to_80
+                    },
+                    "reach_100_percent": {
+                        "target_score": 90.0,
+                        "points_needed": milestone_100,
+                        "estimated_specs": max(0, int(milestone_100 / 0.85)),
+                        "estimated_sessions": sessions_to_100
+                    }
+                },
+                "recommendations": _generate_recommendations(
+                    weak_categories,
+                    missing_categories,
+                    phase_score
+                )
+            }
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Detailed maturity analysis retrieved successfully",
+            data=analysis_data,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting maturity analysis for project {project_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving maturity analysis",
+        )
+
+
+def _generate_recommendations(weak_categories, missing_categories, phase_score):
+    """Generate prioritized action recommendations based on phase status."""
+    recommendations = []
+
+    # Priority 1: Critical gaps
+    if phase_score < 40:
+        recommendations.append({
+            "priority": "critical",
+            "title": "Phase Maturity Very Low",
+            "description": "Your phase maturity is below 40%. Consider answering more questions to strengthen your specification.",
+            "focus_areas": [cat["name"] for cat in missing_categories[:3]]
+        })
+
+    # Priority 2: Weak categories
+    if weak_categories:
+        weakest = sorted(weak_categories, key=lambda x: x["percentage"])[:2]
+        recommendations.append({
+            "priority": "high",
+            "title": f"Strengthen Weak Areas",
+            "description": f"Focus on {', '.join([cat['name'] for cat in weakest])} categories to improve overall maturity.",
+            "focus_areas": [cat["name"] for cat in weakest]
+        })
+
+    # Priority 3: Missing categories
+    if missing_categories:
+        recommendations.append({
+            "priority": "high",
+            "title": f"Complete Missing Categories",
+            "description": f"Start coverage in: {', '.join([cat['name'] for cat in missing_categories[:3]])}",
+            "focus_areas": [cat["name"] for cat in missing_categories[:3]]
+        })
+
+    # Priority 4: Ready decision
+    if phase_score >= 60:
+        if phase_score < 80:
+            recommendations.append({
+                "priority": "info",
+                "title": "Ready to Advance (Consider Strengthening)",
+                "description": "Your phase is ready (60%+), but strengthening weak areas before advancing will reduce rework later.",
+                "focus_areas": [cat["name"] for cat in weak_categories[:2]] if weak_categories else []
+            })
+        elif phase_score >= 100:
+            recommendations.append({
+                "priority": "success",
+                "title": "Phase Complete",
+                "description": "Excellent work! This phase is fully specified and ready for the next phase.",
+                "focus_areas": []
+            })
+
+    return recommendations
+
+
 @router.put(
     "/{project_id}/phase",
     response_model=APIResponse,
@@ -1164,4 +1410,106 @@ async def get_project_files(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error retrieving project files",
+        )
+
+
+@router.get("/{project_id}/files/content")
+def get_file_content(
+    project_id: str,
+    file_name: str = Query(..., description="Name of the file to retrieve"),
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+) -> APIResponse:
+    """
+    Get content of a specific file in a project.
+
+    Args:
+        project_id: Project identifier
+        file_name: Name of the file to retrieve
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        SuccessResponse with file content
+    """
+    try:
+        from pathlib import Path
+
+        project = db.load_project(project_id)
+
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found",
+            )
+
+        if project.owner != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this project",
+            )
+
+        # Construct the file path
+        # Files can be in generated_files or refactored_files subdirectories
+        project_data_dir = Path(f"~/.socrates/projects/{project_id}").expanduser()
+
+        # Security: Prevent directory traversal attacks
+        # Normalize the file_name and ensure it doesn't contain path separators
+        if "/" in file_name or "\\" in file_name or file_name.startswith("."):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid file name",
+            )
+
+        # Try to find the file in standard locations
+        possible_paths = [
+            project_data_dir / "generated_files" / file_name,
+            project_data_dir / "refactored_files" / file_name,
+            project_data_dir / file_name,  # Also check root project dir
+        ]
+
+        file_path = None
+        for path in possible_paths:
+            if path.exists() and path.is_file():
+                file_path = path
+                break
+
+        if not file_path:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"File '{file_name}' not found in project",
+            )
+
+        # Read the file content
+        try:
+            content = file_path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            # If UTF-8 fails, try with default encoding
+            try:
+                content = file_path.read_text()
+            except Exception as read_error:
+                logger.error(f"Error reading file {file_name}: {str(read_error)}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Unable to read file content",
+                )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"File content retrieved for {file_name}",
+            data={
+                "project_id": project_id,
+                "file_name": file_name,
+                "content": content,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting file content for {project_id}/{file_name}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving file content",
         )

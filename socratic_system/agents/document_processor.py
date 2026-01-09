@@ -200,7 +200,8 @@ class DocumentProcessorAgent(Agent):
 
     def _import_text(self, request: Dict) -> Dict:
         """Import pasted or inline text into the knowledge base"""
-        text_content = request.get("text_content")
+        # Support both "content" and "text_content" parameter names for flexibility
+        text_content = request.get("text_content") or request.get("content")
         project_id = request.get("project_id")
         title = request.get("title", "pasted_text")
 

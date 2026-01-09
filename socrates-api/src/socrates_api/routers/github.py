@@ -32,6 +32,65 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/github", tags=["github"])
 
 
+def _chunk_code_content(content: str, chunk_size: int = 300, overlap: int = 30) -> list:
+    """
+    Split code content into overlapping chunks.
+    Uses line-based chunking for code to preserve semantic structure.
+
+    Args:
+        content: Full code content
+        chunk_size: Target words per chunk (smaller for code than text)
+        overlap: Words to overlap between chunks
+
+    Returns:
+        List of text chunks
+    """
+    import re
+
+    # Split into lines to maintain code structure
+    lines = content.split('\n')
+
+    chunks = []
+    current_chunk = []
+    current_words = 0
+
+    for line in lines:
+        line_words = len(line.split())
+
+        # If adding this line exceeds chunk size and we have content
+        if current_words + line_words > chunk_size and current_chunk:
+            # Save current chunk
+            chunk_text = '\n'.join(current_chunk).strip()
+            if chunk_text:
+                chunks.append(chunk_text)
+
+            # Create overlap: keep last few lines
+            overlap_words = 0
+            overlap_lines = []
+            for l in reversed(current_chunk):
+                l_words = len(l.split())
+                if overlap_words + l_words <= overlap:
+                    overlap_lines.insert(0, l)
+                    overlap_words += l_words
+                else:
+                    break
+
+            current_chunk = overlap_lines
+            current_words = overlap_words
+
+        # Add line to current chunk
+        current_chunk.append(line)
+        current_words += line_words
+
+    # Add last chunk
+    if current_chunk:
+        chunk_text = '\n'.join(current_chunk).strip()
+        if chunk_text:
+            chunks.append(chunk_text)
+
+    return chunks if chunks else [content]  # Return at least the full content
+
+
 def get_database() -> ProjectDatabase:
     """Get database instance."""
     data_dir = os.getenv("SOCRATES_DATA_DIR", str(Path.home() / ".socrates"))
@@ -220,22 +279,34 @@ async def import_repository(
 
                         extract_code_files(contents)
 
-                        # Process extracted code files
+                        # Process extracted code files with chunking
+                        from socratic_system.database import VectorDatabase
+                        vector_db = VectorDatabase()
+
                         for code_file in files_to_process:
                             try:
                                 file_content = code_file.decoded_content.decode('utf-8') if isinstance(code_file.decoded_content, bytes) else str(code_file.decoded_content)
                                 if file_content and len(file_content.strip()) > 100:  # Only include non-trivial files
-                                    from socratic_system.database import VectorDatabase
-                                    vector_db = VectorDatabase()
-                                    metadata = {
-                                        "source": code_file.path,
-                                        "project_id": project.project_id,
-                                        "source_type": "github_code",
-                                        "repository": f"{repo_owner}/{repo_name}",
-                                    }
-                                    vector_db.add_text(file_content, metadata=metadata)
+                                    # Chunk the code file (300-word chunks for code, 30-word overlap for function boundaries)
+                                    chunks = _chunk_code_content(file_content, chunk_size=300, overlap=30)
+
+                                    # Store each chunk
+                                    for chunk_idx, chunk in enumerate(chunks):
+                                        try:
+                                            metadata = {
+                                                "source": code_file.path,
+                                                "chunk": chunk_idx + 1,
+                                                "total_chunks": len(chunks),
+                                                "project_id": project.project_id,
+                                                "source_type": "github_code",
+                                                "repository": f"{repo_owner}/{repo_name}",
+                                            }
+                                            vector_db.add_text(chunk, metadata=metadata)
+                                            repo_knowledge_result["entries_added"] += 1
+                                        except Exception as chunk_error:
+                                            logger.warning(f"Could not add chunk {chunk_idx + 1} of {code_file.path}: {chunk_error}")
+
                                     vectorized_files += 1
-                                    repo_knowledge_result["entries_added"] += 1
                             except Exception as e:
                                 logger.warning(f"Could not vectorize {code_file.path}: {e}")
 
