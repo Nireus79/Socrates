@@ -3,10 +3,12 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import { useCodeGenerationStore, useFeatureGate, showError, showSuccess } from '../../stores';
+import { apiClient } from '../../api/client';
 import type { ProgrammingLanguage } from '../../types/models';
+import type { Project } from '../../types/models';
 
 const SUPPORTED_LANGUAGES: { id: ProgrammingLanguage; name: string }[] = [
   { id: 'python', name: 'Python' },
@@ -21,8 +23,13 @@ const SUPPORTED_LANGUAGES: { id: ProgrammingLanguage; name: string }[] = [
 ];
 
 export function CodeGenerationPage() {
-  const { projectId } = useParams<{ projectId: string }>();
+  const { projectId: urlProjectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
   const canGenerateCode = useFeatureGate('code-generation');
+  
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState(urlProjectId || '');
+  const [loadingProjects, setLoadingProjects] = useState(true);
 
   const {
     currentCode,
@@ -42,6 +49,38 @@ export function CodeGenerationPage() {
   const [showHistory, setShowHistory] = useState(false);
   const editorRef = useRef(null);
 
+  // Load projects on mount
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const response = await apiClient.get('/projects') as any;
+        const projectList = response?.data || response || [];
+        setProjects(Array.isArray(projectList) ? projectList : []);
+        
+        // Set selected project from URL or default to first project
+        if (urlProjectId && projectList.some((p: Project) => p.project_id === urlProjectId)) {
+          setSelectedProjectId(urlProjectId);
+        } else if (projectList.length > 0) {
+          setSelectedProjectId(projectList[0].project_id);
+        }
+      } catch (err) {
+        console.error('Failed to load projects:', err);
+        setProjects([]);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+
+    loadProjects();
+  }, [urlProjectId]);
+
+  const handleProjectChange = (projectId: string) => {
+    setSelectedProjectId(projectId);
+    navigate(`/code/${projectId}`);
+  };
+
+  const projectId = selectedProjectId || urlProjectId;
+
   if (!canGenerateCode) {
     return (
       <div className="p-8">
@@ -59,7 +98,7 @@ export function CodeGenerationPage() {
 
   const handleGenerateCode = async () => {
     if (!projectId || !specification.trim()) {
-      showError('Error', 'Please enter a specification');
+      showError('Error', 'Please select a project and enter a specification');
       return;
     }
 
@@ -94,6 +133,29 @@ export function CodeGenerationPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Panel - Controls */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Project Selector */}
+          <div className="card">
+            <h3 className="text-lg font-semibold mb-4">Project</h3>
+            {loadingProjects ? (
+              <div className="text-gray-500 text-sm">Loading projects...</div>
+            ) : projects.length === 0 ? (
+              <div className="text-gray-500 text-sm">No projects available</div>
+            ) : (
+              <select
+                value={selectedProjectId}
+                onChange={(e) => handleProjectChange(e.target.value)}
+                className="input-field"
+              >
+                <option value="">Select a project</option>
+                {projects.map((project) => (
+                  <option key={project.project_id} value={project.project_id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
           {/* Language Selector */}
           <div className="card">
             <h3 className="text-lg font-semibold mb-4">Language</h3>
