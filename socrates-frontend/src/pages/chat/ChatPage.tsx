@@ -621,6 +621,10 @@ export const ChatPage: React.FC = () => {
         if (selectedProjectId) handleAdvanceCommand(selectedProjectId);
         else addSystemMessage('No project selected');
         break;
+      case '/phase-back':
+        if (selectedProjectId) handlePhaseBackCommand(selectedProjectId);
+        else addSystemMessage('No project selected');
+        break;
       case '/done':
         if (selectedProjectId) handleDoneCommand(selectedProjectId);
         else addSystemMessage('No project selected');
@@ -748,6 +752,7 @@ SYSTEM:
 
 CHAT & PHASES:
   /advance - Advance to next project phase
+  /phase-back - Roll back to previous project phase
   /done - Finish current session
   /ask <question> - Ask direct question (not Socratic mode)
   /explain <topic> - Explain a concept
@@ -1133,6 +1138,21 @@ User: ${currentProject?.owner || 'N/A'}`;
       }
     } catch (error) {
       addSystemMessage('Could not advance phase');
+    }
+  };
+
+  const handlePhaseBackCommand = async (id: string) => {
+    try {
+      const response = await apiClient.post(`/projects/${id}/phase/rollback`) as any;
+      const newPhase = response?.data?.phase || response?.phase;
+      addSystemMessage(`Rolling back to previous phase... Phase: ${newPhase || 'unknown'}`);
+
+      // Refresh the project to update the UI with new phase
+      if (selectedProjectId) {
+        await getProject(selectedProjectId);
+      }
+    } catch (error) {
+      addSystemMessage('Could not roll back phase');
     }
   };
 

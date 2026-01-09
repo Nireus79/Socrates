@@ -846,6 +846,95 @@ async def advance_phase(
             detail="Error advancing project phase",
         )
 
+@router.post(
+    "/{project_id}/phase/rollback",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Rollback project to previous phase",
+    responses={
+        200: {"description": "Project phase rolled back successfully"},
+        400: {"description": "Invalid phase transition", "model": ErrorResponse},
+        401: {"description": "Not authenticated", "model": ErrorResponse},
+        403: {"description": "Access denied", "model": ErrorResponse},
+        404: {"description": "Project not found", "model": ErrorResponse},
+    },
+)
+async def rollback_phase(
+    project_id: str,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+):
+    """
+    Roll back project to the previous phase.
+
+    Args:
+        project_id: Project identifier
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        Updated ProjectResponse with previous phase
+    """
+    try:
+        project = db.load_project(project_id)
+
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found",
+            )
+
+        if project.owner != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this project",
+            )
+
+        # Determine the previous phase
+        valid_phases = ["discovery", "analysis", "design", "implementation"]
+        old_phase = project.phase or "discovery"
+
+        try:
+            current_index = valid_phases.index(old_phase)
+            if current_index > 0:
+                new_phase = valid_phases[current_index - 1]
+            else:
+                # Already at the first phase
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Cannot roll back from discovery phase (first phase)",
+                )
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid current phase: {old_phase}",
+            )
+
+        project.phase = new_phase
+        project.updated_at = datetime.now(timezone.utc)
+
+        # Save changes
+        db.save_project(project)
+
+        logger.info(f"Project {project_id} phase rolled back from {old_phase} to {new_phase}")
+
+        return APIResponse(
+            success=True,
+            status="updated",
+            message=f"Project phase rolled back to {new_phase}",
+            data=_project_to_response(project).dict() if hasattr(_project_to_response(project), 'dict') else _project_to_response(project),
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error rolling back phase for project {project_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error rolling back project phase",
+        )
+
+
 
 @router.get(
     "/{project_id}/analytics",
