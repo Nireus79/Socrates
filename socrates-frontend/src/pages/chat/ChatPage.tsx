@@ -354,7 +354,7 @@ export const ChatPage: React.FC = () => {
         }
       );
 
-      const result = response.data;
+      const result = response;
       if (result?.answer) {
         setFreeSessionResponses(prev => [...prev, {
           role: 'assistant',
@@ -474,7 +474,7 @@ export const ChatPage: React.FC = () => {
             }
           );
 
-          const result = response.data;
+          const result = response;
           if (result?.answer) {
             setFreeSessionResponses(prev => [...prev, {
               role: 'assistant',
