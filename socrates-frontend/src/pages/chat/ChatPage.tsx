@@ -694,8 +694,8 @@ export const ChatPage: React.FC = () => {
 
       const response = await apiClient.post<any>(url);
 
-      // apiClient.post() returns response.data directly (SuccessResponse object)
-      const isEnabled = response?.data?.debug_enabled ?? false;
+      // apiClient.post() unwraps APIResponse, so response is already the data
+      const isEnabled = response?.debug_enabled ?? false;
 
       setDebugInfo({
         debugEnabled: isEnabled,
