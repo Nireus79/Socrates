@@ -554,7 +554,8 @@ async def import_file(
             if result.get("status") == "success":
                 # Get file content for preview (store first 5000 chars)
                 try:
-                    file_content = await file.read()
+                    # Use already-read content instead of reading again
+                    file_content = content
                     # Try to extract text content based on file type
                     if file.filename.endswith(".pdf"):
                         try:
