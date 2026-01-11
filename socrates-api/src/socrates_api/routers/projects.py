@@ -1535,9 +1535,12 @@ def delete_project_file(
         Success response with deleted file details
     """
     try:
+        logger.debug(f"Delete file request: project_id={project_id}, file_name={file_name}, user={current_user}")
+
         # Get and verify project ownership
         project = db.load_project(project_id)
         if not project or project.owner != current_user:
+            logger.warning(f"Unauthorized delete attempt: user {current_user} on project {project_id}")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not authorized to delete files from this project",
@@ -1546,10 +1549,13 @@ def delete_project_file(
         # Delete file from database using ProjectFileManager
         from socratic_system.database.project_file_manager import ProjectFileManager
 
+        logger.debug(f"Using ProjectFileManager with db_path: {db.db_path}")
         file_manager = ProjectFileManager(db.db_path)
         success, message = file_manager.delete_file(project_id, file_name)
+        logger.debug(f"Delete result: success={success}, message={message}")
 
         if not success:
+            logger.warning(f"File not found or deletion failed: {file_name}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"File '{file_name}' not found",
@@ -1570,8 +1576,8 @@ def delete_project_file(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting file {project_id}/{file_name}: {str(e)}")
+        logger.error(f"Error deleting file {project_id}/{file_name}: {type(e).__name__}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error deleting file",
+            detail=f"Error deleting file: {str(e)}",
         )
