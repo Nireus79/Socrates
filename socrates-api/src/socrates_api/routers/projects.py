@@ -1516,10 +1516,11 @@ def get_file_content(
 
 
 @router.delete("/{project_id}/files")
-async def delete_project_file(
+def delete_project_file(
     project_id: str,
     file_name: str = Query(..., description="Name of the file to delete"),
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Delete a file from a project
@@ -1528,13 +1529,14 @@ async def delete_project_file(
         project_id: ID of the project
         file_name: Name of the file to delete
         current_user: Current authenticated user
+        db: Database connection
 
     Returns:
         Success response with deleted file details
     """
     try:
         # Get and verify project ownership
-        project = await ProjectManager.get_project(project_id)
+        project = db.load_project(project_id)
         if not project or project.owner != current_user:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
