@@ -27,6 +27,7 @@ from socrates_api.models import (
     GetChatMessagesResponse,
     ListChatSessionsResponse,
 )
+from socratic_system.database import ProjectDatabase
 
 
 class ChatModeRequest(BaseModel):
