@@ -18,6 +18,7 @@ from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
+from socrates_api.main import get_orchestrator
 from socrates_api.models import (
     APIResponse,
     ChatMessage,
