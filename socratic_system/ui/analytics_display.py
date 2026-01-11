@@ -278,7 +278,7 @@ class AnalyticsDisplay:
             score = project.phase_maturity_scores.get(phase, 0.0)
             category_scores = project.category_scores.get(phase, {})
 
-            status = "READY" if score >= 60 else "IN PROGRESS" if score > 0 else "NOT STARTED"
+            status = "READY" if score >= 20 else "IN PROGRESS" if score > 0 else "NOT STARTED"
             bar = AnalyticsDisplay._create_progress_bar(score)
 
             print(f"\n{phase.upper()}: {score:.1f}% {bar} [{status}]")

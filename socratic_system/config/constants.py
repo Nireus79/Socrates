@@ -19,14 +19,14 @@ TOKEN_USAGE_HIGH_THRESHOLD = 40000
 # MATURITY SCORING THRESHOLDS
 # ============================================================================
 
-# High maturity threshold (percentage)
-MATURITY_THRESHOLD_HIGH = 60.0
+# Ready to advance threshold (percentage) - when QC kicks in
+MATURITY_THRESHOLD_HIGH = 20.0
 
 # Medium maturity threshold (percentage)
-MATURITY_THRESHOLD_MEDIUM = 40.0
+MATURITY_THRESHOLD_MEDIUM = 10.0
 
 # Low maturity threshold (percentage)
-MATURITY_THRESHOLD_LOW = 20.0
+MATURITY_THRESHOLD_LOW = 5.0
 
 # ============================================================================
 # DOCUMENT PROCESSING CONFIGURATION

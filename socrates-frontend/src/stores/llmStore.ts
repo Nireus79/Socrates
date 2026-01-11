@@ -34,6 +34,7 @@ interface LLMState {
   setProviderModel: (provider: string, model: string) => Promise<void>;
   addAPIKey: (provider: string, apiKey: string) => Promise<void>;
   removeAPIKey: (provider: string) => Promise<void>;
+  setAuthMethod: (provider: string, authMethod: string) => Promise<void>;
   listProviderModels: (provider: string) => Promise<void>;
   getUsageStats: (timePeriod?: string) => Promise<void>;
   clearError: () => void;
@@ -191,6 +192,26 @@ export const useLLMStore = create<LLMState>((set, get) => ({
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Failed to remove API key';
+      set({ error: message, isSaving: false });
+      throw err;
+    }
+  },
+
+  /**
+   * Set authentication method for a provider
+   */
+  setAuthMethod: async (provider: string, authMethod: string) => {
+    set({ isSaving: true, error: null });
+    try {
+      await llmAPI.setAuthMethod(provider, authMethod);
+
+      // Refresh config to get updated auth method
+      await get().getConfig();
+
+      set({ isSaving: false });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to set auth method';
       set({ error: message, isSaving: false });
       throw err;
     }

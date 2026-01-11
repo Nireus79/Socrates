@@ -49,6 +49,7 @@ export const LLMSettingsPage: React.FC = () => {
     setProviderModel,
     addAPIKey,
     removeAPIKey,
+    setAuthMethod,
     clearError,
   } = useLLMStore();
 
@@ -56,6 +57,7 @@ export const LLMSettingsPage: React.FC = () => {
   const [apiKeyInput, setApiKeyInput] = useState<{ [key: string]: string }>({});
   const [showApiKey, setShowApiKey] = useState<{ [key: string]: boolean }>({});
   const [selectedModels, setSelectedModels] = useState<{ [key: string]: string }>({});
+  const [selectedAuthMethod, setSelectedAuthMethod] = useState<{ [key: string]: string }>({});
   const [isSaving, setIsSaving] = useState(false);
   const [savingProvider, setSavingProvider] = useState<string | null>(null);
 
@@ -67,6 +69,16 @@ export const LLMSettingsPage: React.FC = () => {
       getUsageStats().catch(console.error),
     ]);
   }, [listProviders, getConfig, getUsageStats]);
+
+  // Update selectedAuthMethod when config changes
+  React.useEffect(() => {
+    if (config && (config as any).auth_method) {
+      setSelectedAuthMethod({ claude: (config as any).auth_method });
+    } else {
+      // Default to 'api_key' if not set
+      setSelectedAuthMethod({ claude: 'api_key' });
+    }
+  }, [config]);
 
   const providersList = Array.from(providers.values());
 
@@ -106,6 +118,18 @@ export const LLMSettingsPage: React.FC = () => {
       await setProviderModel(providerName, model);
     } catch (err) {
       console.error('Error setting default:', err);
+    } finally {
+      setSavingProvider(null);
+    }
+  };
+
+  const handleSetAuthMethod = async (providerName: string, authMethod: string) => {
+    setSavingProvider(providerName);
+    try {
+      await setAuthMethod(providerName, authMethod);
+      setSelectedAuthMethod({ ...selectedAuthMethod, [providerName]: authMethod });
+    } catch (err) {
+      console.error('Error setting auth method:', err);
     } finally {
       setSavingProvider(null);
     }
@@ -208,7 +232,10 @@ export const LLMSettingsPage: React.FC = () => {
           <div className="grid gap-6">
             {providersList.map((provider) => {
               const isApiRequired = provider.requires_api_key;
-              const isConfigured = provider.is_configured || (!isApiRequired && provider.models?.length > 0);
+              // For providers with multiple auth methods (like Anthropic), only show as configured if API key is stored
+              // For regular providers, show as configured if API key is stored OR if it doesn't require one
+              const isConfigured = provider.is_configured ||
+                (!isApiRequired && !provider.auth_methods?.length && provider.models?.length > 0);
               const isDefault = config?.default_provider === provider.name;
               const selectedModel = selectedModels[provider.name] || provider.models?.[0] || '';
               const isExpanded = expandedProvider === provider.name;
@@ -278,69 +305,113 @@ export const LLMSettingsPage: React.FC = () => {
                     {/* Expanded Details */}
                     {isExpanded && (
                       <>
-                        {/* API Key Section (for API-based providers) */}
-                        {isApiRequired && (
+                        {/* Auth Method Selection (for providers with multiple auth methods) */}
+                        {((provider.auth_methods && provider.auth_methods.length > 1) || provider.name === 'claude') && (
+                          <div className="border-t border-gray-200 dark:border-gray-700 pt-4 pb-4">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
+                              Authentication Method
+                            </h4>
+                            <div className="space-y-2">
+                              {(provider.auth_methods || ['subscription', 'api_key']).map((method) => (
+                                <label
+                                  key={method}
+                                  className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                                >
+                                  <input
+                                    type="radio"
+                                    name={`auth-${provider.name}`}
+                                    value={method}
+                                    checked={selectedAuthMethod[provider.name] === method}
+                                    onChange={() => handleSetAuthMethod(provider.name, method)}
+                                    disabled={savingProvider === provider.name}
+                                    className="text-blue-600 dark:text-blue-400"
+                                  />
+                                  <div className="flex-1">
+                                    <div className="font-medium text-gray-900 dark:text-white">
+                                      {method === 'subscription' ? 'Use Subscription' : 'Use API Key'}
+                                    </div>
+                                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                                      {method === 'subscription'
+                                        ? 'Monthly payment, uses subscription token from environment'
+                                        : 'Pay-per-use, enter your API key from console.anthropic.com'}
+                                    </div>
+                                  </div>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* API Key Section (for API-based providers or when api_key auth method is selected) */}
+                        {((isApiRequired || (provider.auth_methods?.length > 0 && selectedAuthMethod[provider.name] === 'api_key')) || provider.name === 'claude') && (
                           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                             <h4 className="font-semibold text-gray-900 dark:text-white mb-3">API Key</h4>
-                            {!isConfigured ? (
-                              <div className="space-y-2">
-                                <div className="relative">
-                                  <input
-                                    type={showApiKey[provider.name] ? 'text' : 'password'}
-                                    placeholder="Paste your API key here"
-                                    value={apiKeyInput[provider.name] || ''}
-                                    onChange={(e) =>
-                                      setApiKeyInput({
-                                        ...apiKeyInput,
-                                        [provider.name]: e.target.value,
-                                      })
-                                    }
-                                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
-                                  />
-                                  <button
-                                    onClick={() =>
-                                      setShowApiKey({
-                                        ...showApiKey,
-                                        [provider.name]: !showApiKey[provider.name],
-                                      })
-                                    }
-                                    className="absolute right-3 top-2.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                                  >
-                                    {showApiKey[provider.name] ? (
-                                      <EyeOff className="h-4 w-4" />
-                                    ) : (
-                                      <Eye className="h-4 w-4" />
-                                    )}
-                                  </button>
+                            <div className="space-y-2">
+                              {/* Show status if configured */}
+                              {isConfigured && (
+                                <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded">
+                                  <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                  <span className="text-sm text-green-700 dark:text-green-300">API Key Configured</span>
                                 </div>
+                              )}
+                              {/* Input field - always shown for updating */}
+                              <div className="relative">
+                                <input
+                                  type={showApiKey[provider.name] ? 'text' : 'password'}
+                                  placeholder="Paste your API key here"
+                                  value={apiKeyInput[provider.name] || ''}
+                                  onChange={(e) =>
+                                    setApiKeyInput({
+                                      ...apiKeyInput,
+                                      [provider.name]: e.target.value,
+                                    })
+                                  }
+                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                                />
+                                <button
+                                  onClick={() =>
+                                    setShowApiKey({
+                                      ...showApiKey,
+                                      [provider.name]: !showApiKey[provider.name],
+                                    })
+                                  }
+                                  className="absolute right-3 top-2.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                                >
+                                  {showApiKey[provider.name] ? (
+                                    <EyeOff className="h-4 w-4" />
+                                  ) : (
+                                    <Eye className="h-4 w-4" />
+                                  )}
+                                </button>
+                              </div>
+                              {/* Action buttons */}
+                              <div className="flex gap-2">
                                 <Button
                                   variant="primary"
-                                  fullWidth
+                                  className="flex-1"
                                   onClick={() => handleAddApiKey(provider.name)}
                                   disabled={savingProvider === provider.name}
                                   icon={<Save className="h-4 w-4" />}
                                 >
-                                  {savingProvider === provider.name ? 'Saving...' : 'Save API Key'}
+                                  {savingProvider === provider.name
+                                    ? 'Saving...'
+                                    : isConfigured
+                                      ? 'Update API Key'
+                                      : 'Save API Key'}
                                 </Button>
+                                {isConfigured && (
+                                  <Button
+                                    variant="secondary"
+                                    onClick={() => handleRemoveApiKey(provider.name)}
+                                    disabled={savingProvider === provider.name}
+                                    icon={<Trash2 className="h-4 w-4" />}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    Remove
+                                  </Button>
+                                )}
                               </div>
-                            ) : (
-                              <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                <span className="text-sm text-green-700 dark:text-green-300">
-                                  <Check className="h-4 w-4 inline mr-2" />
-                                  API Key Configured
-                                </span>
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => handleRemoveApiKey(provider.name)}
-                                  disabled={savingProvider === provider.name}
-                                  icon={<Trash2 className="h-4 w-4" />}
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  Remove
-                                </Button>
-                              </div>
-                            )}
+                            </div>
                           </div>
                         )}
 

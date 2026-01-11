@@ -1068,9 +1068,9 @@ Return only the question, no additional text or explanation."""
                         print(f"  - {warning}")
 
                     # Ask for confirmation if maturity is low
-                    if maturity_score < 60.0:
+                    if maturity_score < 20.0:
                         print(f"\n{Fore.RED}Current phase maturity: {maturity_score:.1f}%")
-                        print(f"Recommended minimum: 60%{Fore.RESET}")
+                        print(f"Recommended minimum: 20%{Fore.RESET}")
 
                         confirm = input(f"\n{Fore.CYAN}Advance anyway? (yes/no): {Fore.RESET}").lower()
                         if confirm not in ["yes", "y"]:

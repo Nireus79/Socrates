@@ -148,6 +148,36 @@ async def remove_api_key(provider: str, current_user: str = Depends(get_current_
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.put("/auth-method", response_model=APIResponse)
+async def set_auth_method(provider: str, auth_method: str, current_user: str = Depends(get_current_user)):
+    """Set authentication method for a provider (e.g., Claude subscription vs API key)."""
+    try:
+        from socrates_api.main import get_orchestrator
+
+        orchestrator = get_orchestrator()
+        result = orchestrator.process_request(
+            "multi_llm",
+            {
+                "action": "set_auth_method",
+                "user_id": current_user,
+                "provider": provider,
+                "auth_method": auth_method,
+            },
+        )
+        if result.get("status") != "success":
+            raise HTTPException(status_code=400, detail=result.get("message", "Failed"))
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Auth method updated",
+            data={"provider": provider, "auth_method": auth_method},
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/models/{provider}", response_model=APIResponse)
 async def get_models(provider: str, current_user: str = Depends(get_current_user)):
     try:

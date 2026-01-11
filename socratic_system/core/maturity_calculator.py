@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 # Maturity thresholds
-READY_THRESHOLD = 60.0  # Minimum to advance without strong warning
+READY_THRESHOLD = 20.0  # Minimum to advance without strong warning
 COMPLETE_THRESHOLD = 100.0  # Phase fully mature
-WARNING_THRESHOLD = 40.0  # Below this = strong warning
+WARNING_THRESHOLD = 10.0  # Below this = strong warning
 
 
 class MaturityCalculator:
@@ -225,7 +225,7 @@ class MaturityCalculator:
         elif score < self.READY_THRESHOLD:
             logger.debug(f"Score {score:.1f}% below READY_THRESHOLD {self.READY_THRESHOLD}")
             warnings.append(
-                f"Phase maturity below recommended ({score:.1f}% < 60%). "
+                f"Phase maturity below recommended ({score:.1f}% < {self.READY_THRESHOLD}%). "
                 f"You can advance, but be prepared for rework later."
             )
 
@@ -397,7 +397,7 @@ class MaturityCalculator:
         return is_complete
 
     def is_ready_to_advance(self, maturity: PhaseMaturity) -> bool:
-        """Check if phase maturity is at 60% (recommended threshold)"""
+        """Check if phase maturity meets the ready threshold (recommended threshold)"""
         is_ready = maturity.overall_score >= self.READY_THRESHOLD
         logger.debug(
             f"Phase readiness check: {maturity.phase} = {maturity.overall_score:.1f}% >= {self.READY_THRESHOLD}% ? {is_ready}"

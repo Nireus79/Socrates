@@ -25,6 +25,7 @@ export interface LLMProvider {
   supports_streaming?: boolean;
   supports_vision?: boolean;
   available?: boolean;
+  auth_methods?: string[];
 }
 
 export interface LLMModel {
@@ -148,6 +149,19 @@ export const llmAPI = {
   async listProviderModels(provider: string): Promise<ListModelsResponse> {
     const response = await apiClient.get<ListModelsResponse>(`/llm/models/${provider}`);
     return response;
+  },
+
+  /**
+   * Set authentication method for a provider
+   */
+  async setAuthMethod(provider: string, authMethod: string): Promise<{ provider: string; auth_method: string }> {
+    const params = new URLSearchParams();
+    params.append('provider', provider);
+    params.append('auth_method', authMethod);
+    return apiClient.put<{ provider: string; auth_method: string }>(
+      `/llm/auth-method?${params.toString()}`,
+      {}
+    );
   },
 
   /**

@@ -26,10 +26,10 @@ class MaturityDisplay:
         if score >= 80:
             color = Fore.GREEN
             status = "Excellent"
-        elif score >= 60:
+        elif score >= 20:
             color = Fore.CYAN
             status = "Good"
-        elif score >= 40:
+        elif score >= 10:
             color = Fore.YELLOW
             status = "Moderate"
         else:
@@ -58,7 +58,7 @@ class MaturityDisplay:
                 f"{Fore.GREEN}✓ Phase complete! Use /advance to move to "
                 f"next phase or continue enriching.{Style.RESET_ALL}"
             )
-        elif score >= 60:
+        elif score >= 20:
             print(
                 f"{Fore.CYAN}✓ Ready to advance when you'd like. "
                 f"Current maturity is sufficient.{Style.RESET_ALL}"
@@ -105,7 +105,7 @@ class MaturityDisplay:
         print(f"Overall Maturity: {Fore.CYAN}{score:.1f}%{Style.RESET_ALL}")
         print(f"Total Specifications: {total_specs}")
         print(f"Status: {ready_color}{status}{Style.RESET_ALL}")
-        print("Threshold for Advancement: 60%\n")
+        print("Threshold for Advancement: 20%\n")
 
     @staticmethod
     def _format_category_breakdown(category_scores: Dict) -> None:
@@ -186,14 +186,14 @@ class MaturityDisplay:
     @staticmethod
     def _print_score_recommendation(score: float) -> None:
         """Print recommendation based on score."""
-        if score < 40:
+        if score < 10:
             print(
                 "  • Phase maturity is low. Consider answering more questions "
                 "to build a solid foundation."
             )
-        elif score < 60:
+        elif score < 20:
             print(
-                "  • Phase maturity is below recommended (60%). "
+                "  • Phase maturity is below recommended (20%). "
                 "You can advance, but be prepared for rework."
             )
         else:
@@ -317,7 +317,7 @@ class MaturityDisplay:
                     f"  {Fore.GREEN}✓{Style.RESET_ALL} {phase.capitalize():<15} "
                     f"{Fore.GREEN}100% (Complete){Style.RESET_ALL}"
                 )
-            elif score >= 60:
+            elif score >= 20:
                 print(
                     f"  {Fore.CYAN}→{Style.RESET_ALL} {phase.capitalize():<15} "
                     f"{Fore.CYAN}{score:.1f}% (Ready){Style.RESET_ALL}"

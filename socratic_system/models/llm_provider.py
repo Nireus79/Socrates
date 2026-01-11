@@ -140,6 +140,7 @@ class ProviderMetadata:
     available: bool = True
     description: str = ""
     base_url: Optional[str] = None
+    auth_methods: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -172,6 +173,7 @@ PROVIDER_METADATA = {
         supports_vision=True,
         available=True,
         description="Fast and efficient Claude models by Anthropic (Haiku is default)",
+        auth_methods=["subscription", "api_key"],  # Support both subscription and API key
     ),
     "openai": ProviderMetadata(
         provider="openai",

@@ -56,6 +56,7 @@ class MultiLLMAgent(Agent):
             "set_provider_model": self._set_provider_model,
             "add_api_key": self._add_api_key,
             "remove_api_key": self._remove_api_key,
+            "set_auth_method": self._set_auth_method,
             "get_usage_stats": self._get_usage_stats,
             "track_usage": self._track_usage,
             "get_provider_models": self._get_provider_models,
@@ -121,6 +122,7 @@ class MultiLLMAgent(Agent):
                     "supports_streaming": provider.supports_streaming,
                     "supports_vision": provider.supports_vision,
                     "available": provider.available,
+                    "auth_methods": provider.auth_methods,
                 }
 
                 # Check if user has configured this provider (has API key)
@@ -222,6 +224,10 @@ class MultiLLMAgent(Agent):
         self.logger.debug(f"Getting provider config for user: {user_id}")
 
         try:
+            # Get user to fetch auth_method
+            user = self.orchestrator.database.load_user(user_id)
+            auth_method = user.claude_auth_method if user else "api_key"
+
             configs = self.orchestrator.database.get_user_llm_configs(user_id)
 
             if not configs:
@@ -236,6 +242,7 @@ class MultiLLMAgent(Agent):
                     "status": "success",
                     "default_provider": "claude",
                     "providers": [default_config],
+                    "auth_method": auth_method,
                     "note": "Using default Claude configuration",
                 }
 
@@ -249,6 +256,7 @@ class MultiLLMAgent(Agent):
                 "status": "success",
                 "default_provider": default_provider,
                 "providers": provider_dicts,
+                "auth_method": auth_method,
             }
 
         except Exception as e:
@@ -443,40 +451,71 @@ class MultiLLMAgent(Agent):
             if not metadata:
                 return {"status": "error", "message": f"Unknown provider: {provider}"}
 
-            if not metadata.requires_api_key:
+            # Allow if requires_api_key OR provider supports api_key auth method
+            if not metadata.requires_api_key and "api_key" not in metadata.auth_methods:
                 return {
                     "status": "error",
-                    "message": f"Provider {provider} does not require API key",
+                    "message": f"Provider {provider} does not support API key authentication",
                 }
 
             # Encrypt and store
             encrypted_key = self._encrypt_api_key(api_key)
             key_hash = self._hash_api_key(api_key)
 
-            existing = self.orchestrator.database.get_api_key(user_id, provider)
-
-            if existing:
-                existing.encrypted_key = encrypted_key
-                existing.key_hash = key_hash
-                existing.updated_at = datetime.now(timezone.utc)
-                record = existing
-            else:
-                record = APIKeyRecord(
-                    id=str(uuid.uuid4()),
-                    user_id=user_id,
-                    provider=provider,
-                    encrypted_key=encrypted_key,
-                    key_hash=key_hash,
-                )
-
-            self.orchestrator.database.save_api_key(record)
+            self.orchestrator.database.save_api_key(user_id, provider, encrypted_key, key_hash)
 
             self.logger.info(f"Stored API key for {user_id}/{provider}")
 
-            return {"status": "success", "key_id": record.id, "provider": provider}
+            return {"status": "success", "key_id": str(uuid.uuid4()), "provider": provider}
 
         except Exception as e:
             self.logger.error(f"Error adding API key: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def _set_auth_method(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Set authentication method for Anthropic Claude.
+
+        Args:
+            data: {
+                'user_id': str,
+                'provider': str,  # Should be 'claude'
+                'auth_method': str  # 'api_key' or 'subscription'
+            }
+
+        Returns:
+            {'status': 'success', 'auth_method': str}
+        """
+        user_id = data.get("user_id")
+        provider = data.get("provider", "").lower()
+        auth_method = data.get("auth_method", "").lower()
+
+        if not user_id or not provider:
+            return {"status": "error", "message": "user_id and provider required"}
+
+        if provider != "claude":
+            return {"status": "error", "message": "Auth method only applies to Claude provider"}
+
+        if auth_method not in ["api_key", "subscription"]:
+            return {"status": "error", "message": "Invalid auth method. Must be 'api_key' or 'subscription'"}
+
+        self.logger.debug(f"Setting auth method for {user_id}/{provider} to {auth_method}")
+
+        try:
+            # Get user and update auth method
+            user = self.orchestrator.database.load_user(user_id)
+            if not user:
+                return {"status": "error", "message": "User not found"}
+
+            user.claude_auth_method = auth_method
+            self.orchestrator.database.save_user(user)
+
+            self.logger.info(f"Set Claude auth method to {auth_method} for user {user_id}")
+
+            return {"status": "success", "auth_method": auth_method}
+
+        except Exception as e:
+            self.logger.error(f"Error setting auth method: {e}")
             return {"status": "error", "message": str(e)}
 
     def _remove_api_key(self, data: Dict[str, Any]) -> Dict[str, Any]:
