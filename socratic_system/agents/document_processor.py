@@ -432,13 +432,32 @@ class DocumentProcessorAgent(Agent):
 
                     with open(file_path, "rb") as f:
                         pdf_reader = PdfReader(f)
-                        for page in pdf_reader.pages:
-                            content += page.extract_text() + "\n"
-                except ImportError:
-                    self.logger.warning("pypdf not installed, trying alternative PDF reading")
+                        page_count = len(pdf_reader.pages)
+                        self.logger.debug(f"PDF has {page_count} pages")
+
+                        for page_num, page in enumerate(pdf_reader.pages, 1):
+                            try:
+                                page_text = page.extract_text()
+                                if page_text:
+                                    content += page_text + "\n"
+                                    self.logger.debug(f"Extracted {len(page_text)} chars from page {page_num}")
+                                else:
+                                    self.logger.warning(f"No text extracted from page {page_num}")
+                            except Exception as page_error:
+                                self.logger.warning(f"Error extracting text from page {page_num}: {page_error}")
+
+                        if not content or content.strip() == "":
+                            self.logger.error(f"PDF {file_path} contains no extractable text")
+                except ImportError as ie:
+                    self.logger.error(f"pypdf import failed: {ie}")
                     # Fallback: read as text (won't work for binary PDFs)
-                    with open(file_path, encoding="utf-8", errors="ignore") as f:
-                        content = f.read()
+                    try:
+                        with open(file_path, encoding="utf-8", errors="ignore") as f:
+                            content = f.read()
+                    except Exception as fallback_error:
+                        self.logger.error(f"Fallback PDF reading also failed: {fallback_error}")
+                except Exception as pdf_error:
+                    self.logger.error(f"Error reading PDF {file_path}: {pdf_error}")
 
             return content.strip() if content else None
 
