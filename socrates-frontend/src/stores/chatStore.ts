@@ -292,10 +292,43 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     set({ isLoading: true, error: null });
     try {
-      // Call conflict resolution API endpoint
-      logger.info(`Resolving ${resolution.length} conflict(s) for project ${projectId}`);
+      // Transform resolution from modal format {conflict_id: choice_number}
+      // to API format {conflicts: [{conflict_type, old_value, new_value, resolution, manual_value}]}
+      const conflicts = state.conflicts || [];
+      const conflictResolutions: any[] = [];
 
-      const result = await chatAPI.resolveConflict(projectId, resolution);
+      for (const [conflictId, choiceNum] of Object.entries(resolution)) {
+        const conflict = conflicts.find(c => c.conflict_id === conflictId);
+        if (!conflict) continue;
+
+        // Map choice to resolution type
+        let resolutionType = 'skip';
+        let manualValue: string | undefined;
+
+        if (choiceNum === '1') {
+          resolutionType = 'keep';
+        } else if (choiceNum === '2') {
+          resolutionType = 'replace';
+        } else if (choiceNum === '3') {
+          resolutionType = 'skip';
+        } else {
+          // If not 1-3, it's a manual value (the actual text entered)
+          resolutionType = 'manual';
+          manualValue = String(choiceNum);
+        }
+
+        conflictResolutions.push({
+          conflict_type: conflict.conflict_type,
+          old_value: conflict.old_value,
+          new_value: conflict.new_value,
+          resolution: resolutionType,
+          manual_value: manualValue,
+        });
+      }
+
+      logger.info(`Resolving ${conflictResolutions.length} conflict(s) for project ${projectId}`);
+
+      const result = await chatAPI.resolveConflict(projectId, conflictResolutions);
 
       logger.info('Conflicts resolved successfully', result);
 
