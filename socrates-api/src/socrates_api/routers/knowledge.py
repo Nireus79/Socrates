@@ -221,7 +221,7 @@ def get_all_knowledge_sources(
 
         # 1. Get uploaded documents (PDFs, etc.)
         try:
-            documents = db.get_knowledge_documents(project_id)
+            documents = db.get_project_knowledge_documents(project_id)
             for doc in documents:
                 chunk_count = 0
                 if orchestrator and orchestrator.vector_db:

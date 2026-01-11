@@ -2038,23 +2038,23 @@ class ProjectDatabase:
                 SELECT id, project_id, user_id, title, content, source, document_type, uploaded_at
                 FROM knowledge_documents
                 WHERE project_id = ?
-                ORDER BY created_at DESC
+                ORDER BY uploaded_at DESC
             """,
                 (project_id,),
             )
 
             documents = []
             for row in cursor.fetchall():
-                metadata = json.loads(row[4]) if row[4] and isinstance(row[4], str) else row[4]
                 documents.append(
                     {
                         "id": row[0],
                         "project_id": row[1],
                         "user_id": row[2],
-                        "content": row[3],
-                        "metadata": metadata,
-                        "created_at": row[5],
-                        "updated_at": row[6],
+                        "title": row[3],
+                        "content": row[4],
+                        "source": row[5],
+                        "document_type": row[6],
+                        "uploaded_at": row[7],
                     }
                 )
 
