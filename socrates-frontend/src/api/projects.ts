@@ -97,4 +97,13 @@ export const projectsAPI = {
       params: { file_name: fileName },
     });
   },
+
+  /**
+   * Delete a file from project
+   */
+  async deleteFile(projectId: string, fileName: string): Promise<{ project_id: string; file_name: string }> {
+    return apiClient.delete(`/projects/${projectId}/files`, {
+      params: { file_name: fileName },
+    });
+  },
 };

@@ -3,13 +3,16 @@
  */
 
 import React from 'react';
-import { Download, Copy, CheckCircle } from 'lucide-react';
+import { Download, Copy, CheckCircle, Trash2 } from 'lucide-react';
 import { Card } from '../../../components/common';
+import { projectsAPI } from '../../../api';
 import type { FileNode } from '../../../stores/projectStore';
 
 interface FileMetadataProps {
   file: FileNode | null;
   content: string;
+  projectId?: string;
+  onFileDeleted?: () => void;
 }
 
 const formatDate = (dateString?: string): string => {
@@ -34,8 +37,9 @@ const formatFileSize = (bytes?: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-export const FileMetadata: React.FC<FileMetadataProps> = ({ file, content }) => {
+export const FileMetadata: React.FC<FileMetadataProps> = ({ file, content, projectId, onFileDeleted }) => {
   const [copiedToClipboard, setCopiedToClipboard] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   const handleDownload = () => {
     if (!file || !content) return;
@@ -58,6 +62,26 @@ export const FileMetadata: React.FC<FileMetadataProps> = ({ file, content }) => 
       setTimeout(() => setCopiedToClipboard(false), 2000);
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!file || !projectId) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${file.name}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      await projectsAPI.deleteFile(projectId, file.name);
+      onFileDeleted?.();
+    } catch (error) {
+      console.error('Failed to delete file:', error);
+      alert('Failed to delete file. Please try again.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -156,6 +180,15 @@ export const FileMetadata: React.FC<FileMetadataProps> = ({ file, content }) => 
               Copy Code
             </>
           )}
+        </button>
+
+        <button
+          onClick={handleDelete}
+          disabled={isDeleting}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white rounded-lg transition-colors text-sm font-medium"
+        >
+          <Trash2 className="w-4 h-4" />
+          {isDeleting ? 'Deleting...' : 'Delete'}
         </button>
       </div>
     </Card>

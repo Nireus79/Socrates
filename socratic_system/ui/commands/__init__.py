@@ -26,6 +26,7 @@ from socratic_system.ui.commands.doc_commands import (
     DocPasteCommand,
     DocsCommand,
 )
+from socratic_system.ui.commands.file_commands import FileDeleteCommand
 from socratic_system.ui.commands.finalize_commands import (
     FinalizeDocsCommand,
     FinalizeGenerateCommand,
@@ -181,6 +182,7 @@ __all__ = [
     "DocListCommand",
     "DocPasteCommand",
     "DocsCommand",
+    "FileDeleteCommand",
     "NoteAddCommand",
     "NoteListCommand",
     "NoteSearchCommand",

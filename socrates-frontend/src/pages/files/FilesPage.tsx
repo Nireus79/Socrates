@@ -141,7 +141,12 @@ export const FilesPage: React.FC = () => {
 
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Details</h3>
-                    <FileMetadata file={selectedFile} content={fileContent} />
+                    <FileMetadata
+                      file={selectedFile}
+                      content={fileContent}
+                      projectId={selectedProjectId}
+                      onFileDeleted={() => fetchProjectFiles(selectedProjectId)}
+                    />
                   </div>
                 </div>
               </div>

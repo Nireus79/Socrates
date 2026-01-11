@@ -1513,3 +1513,79 @@ def get_file_content(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error retrieving file content",
         )
+
+
+@router.delete("/{project_id}/files")
+async def delete_project_file(
+    project_id: str,
+    file_name: str = Query(..., description="Name of the file to delete"),
+    current_user: str = Depends(get_current_user),
+):
+    """
+    Delete a file from a project
+
+    Args:
+        project_id: ID of the project
+        file_name: Name of the file to delete
+        current_user: Current authenticated user
+
+    Returns:
+        Success response with deleted file details
+    """
+    try:
+        # Get and verify project ownership
+        project = await ProjectManager.get_project(project_id)
+        if not project or project.owner != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to delete files from this project",
+            )
+
+        # Security: Prevent directory traversal
+        if "/" in file_name or "\\" in file_name or file_name.startswith("."):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid file name",
+            )
+
+        # Check for file in different directories
+        file_path = None
+        possible_paths = [
+            Path.home() / ".socrates" / "projects" / project_id / "generated_files" / file_name,
+            Path.home() / ".socrates" / "projects" / project_id / "refactored_files" / file_name,
+            Path.home() / ".socrates" / "projects" / project_id / file_name,
+        ]
+
+        for path in possible_paths:
+            if path.exists() and path.is_file():
+                file_path = path
+                break
+
+        if not file_path:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"File '{file_name}' not found",
+            )
+
+        # Delete the file
+        file_path.unlink()
+        logger.info(f"Deleted file {project_id}/{file_name}")
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"File '{file_name}' deleted successfully",
+            data={
+                "project_id": project_id,
+                "file_name": file_name,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting file {project_id}/{file_name}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error deleting file",
+        )

@@ -47,6 +47,7 @@ from socratic_system.ui.commands import (  # Analytics commands; Code commands; 
     DoneCommand,
     ExitCommand,
     ExplainCommand,
+    FileDeleteCommand,
     FinalizeDocsCommand,
     FinalizeGenerateCommand,
     GithubImportCommand,
@@ -194,6 +195,8 @@ COMMAND_REGISTRY = [
     (DocImportUrlCommand, []),
     (DocListCommand, []),
     (DocPasteCommand, []),
+    # File commands
+    (FileDeleteCommand, []),
     # Note commands
     (NoteAddCommand, []),
     (NoteListCommand, []),
