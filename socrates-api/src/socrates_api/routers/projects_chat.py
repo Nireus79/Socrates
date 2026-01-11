@@ -1553,8 +1553,6 @@ async def resolve_conflicts(
         conflicts = body.get("conflicts", [])
         logger.info(f"Resolving {len(conflicts)} conflicts for project {project_id}")
 
-        # Project is already a ProjectContext from load_project
-        project_context = project
 
         # Apply each conflict resolution
         for conflict in conflicts:
@@ -1572,67 +1570,61 @@ async def resolve_conflicts(
             # Apply resolution based on choice
             if resolution == "keep":
                 # Keep existing - remove new from project if it exists
-                if conflict_type == "tech_stack" and new_value in project_context.tech_stack:
-                    project_context.tech_stack.remove(new_value)
-                elif conflict_type == "requirements" and new_value in project_context.requirements:
-                    project_context.requirements.remove(new_value)
-                elif conflict_type == "constraints" and new_value in project_context.constraints:
-                    project_context.constraints.remove(new_value)
+                if conflict_type == "tech_stack" and new_value in project.tech_stack:
+                    project.tech_stack.remove(new_value)
+                elif conflict_type == "requirements" and new_value in project.requirements:
+                    project.requirements.remove(new_value)
+                elif conflict_type == "constraints" and new_value in project.constraints:
+                    project.constraints.remove(new_value)
 
             elif resolution == "replace":
                 # Replace existing with new
                 if conflict_type == "tech_stack":
-                    if old_value in project_context.tech_stack:
-                        project_context.tech_stack.remove(old_value)
-                    if new_value not in project_context.tech_stack:
-                        project_context.tech_stack.append(new_value)
+                    if old_value in project.tech_stack:
+                        project.tech_stack.remove(old_value)
+                    if new_value not in project.tech_stack:
+                        project.tech_stack.append(new_value)
                 elif conflict_type == "requirements":
-                    if old_value in project_context.requirements:
-                        project_context.requirements.remove(old_value)
-                    if new_value not in project_context.requirements:
-                        project_context.requirements.append(new_value)
+                    if old_value in project.requirements:
+                        project.requirements.remove(old_value)
+                    if new_value not in project.requirements:
+                        project.requirements.append(new_value)
                 elif conflict_type == "constraints":
-                    if old_value in project_context.constraints:
-                        project_context.constraints.remove(old_value)
-                    if new_value not in project_context.constraints:
-                        project_context.constraints.append(new_value)
+                    if old_value in project.constraints:
+                        project.constraints.remove(old_value)
+                    if new_value not in project.constraints:
+                        project.constraints.append(new_value)
                 elif conflict_type == "goals":
-                    project_context.goals = new_value
+                    project.goals = new_value
 
             elif resolution == "skip":
                 # Skip - remove new value
-                if conflict_type == "tech_stack" and new_value in project_context.tech_stack:
-                    project_context.tech_stack.remove(new_value)
-                elif conflict_type == "requirements" and new_value in project_context.requirements:
-                    project_context.requirements.remove(new_value)
-                elif conflict_type == "constraints" and new_value in project_context.constraints:
-                    project_context.constraints.remove(new_value)
+                if conflict_type == "tech_stack" and new_value in project.tech_stack:
+                    project.tech_stack.remove(new_value)
+                elif conflict_type == "requirements" and new_value in project.requirements:
+                    project.requirements.remove(new_value)
+                elif conflict_type == "constraints" and new_value in project.constraints:
+                    project.constraints.remove(new_value)
 
             elif resolution == "manual" and manual_value:
                 # Manual resolution - use the provided value
                 if conflict_type == "tech_stack":
-                    if old_value in project_context.tech_stack:
-                        project_context.tech_stack.remove(old_value)
-                    if manual_value not in project_context.tech_stack:
-                        project_context.tech_stack.append(manual_value)
+                    if old_value in project.tech_stack:
+                        project.tech_stack.remove(old_value)
+                    if manual_value not in project.tech_stack:
+                        project.tech_stack.append(manual_value)
                 elif conflict_type == "requirements":
-                    if old_value in project_context.requirements:
-                        project_context.requirements.remove(old_value)
-                    if manual_value not in project_context.requirements:
-                        project_context.requirements.append(manual_value)
+                    if old_value in project.requirements:
+                        project.requirements.remove(old_value)
+                    if manual_value not in project.requirements:
+                        project.requirements.append(manual_value)
                 elif conflict_type == "constraints":
-                    if old_value in project_context.constraints:
-                        project_context.constraints.remove(old_value)
-                    if manual_value not in project_context.constraints:
-                        project_context.constraints.append(manual_value)
+                    if old_value in project.constraints:
+                        project.constraints.remove(old_value)
+                    if manual_value not in project.constraints:
+                        project.constraints.append(manual_value)
                 elif conflict_type == "goals":
-                    project_context.goals = manual_value
-
-        # Update project from modified context
-        project.goals = project_context.goals
-        project.requirements = project_context.requirements
-        project.tech_stack = project_context.tech_stack
-        project.constraints = project_context.constraints
+                    project.goals = manual_value
 
         # Save updated project to database
         db.save_project(project)
