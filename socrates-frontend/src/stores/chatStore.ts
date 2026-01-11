@@ -293,12 +293,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       // Call conflict resolution API endpoint
-      if (chatAPI.resolveConflict) {
-        await chatAPI.resolveConflict(projectId, resolution);
-      }
+      logger.info(`Resolving ${resolution.length} conflict(s) for project ${projectId}`);
+
+      const result = await chatAPI.resolveConflict(projectId, resolution);
+
+      logger.info('Conflicts resolved successfully', result);
 
       set({ conflicts: null, pendingConflicts: false, isLoading: false });
-      get().addSystemMessage('Conflict resolved. Continuing...');
+      get().addSystemMessage('Conflict resolved. Project specifications updated. Continuing...');
 
       // Get next question to continue flow
       try {
@@ -307,8 +309,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
         logger.warn(`Failed to get next question: ${questionError}`);
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to resolve conflict';
+      logger.error('Error resolving conflicts:', error);
       set({
-        error: error instanceof Error ? error.message : 'Failed to resolve conflict',
+        error: errorMessage,
         isLoading: false,
       });
       throw error;

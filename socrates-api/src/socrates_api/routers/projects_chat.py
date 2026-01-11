@@ -1498,3 +1498,167 @@ async def get_answer_suggestions(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get suggestions: {str(e)}",
         )
+
+
+# ============================================================================
+# CONFLICT RESOLUTION
+# ============================================================================
+
+
+@router.post(
+    "/{project_id}/chat/resolve-conflicts",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Resolve detected conflicts and update project specifications",
+)
+async def resolve_conflicts(
+    project_id: str,
+    body: dict = Body(...),
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+    orchestrator=Depends(get_orchestrator),
+):
+    """
+    Resolve conflicts detected in project specifications.
+
+    Args:
+        project_id: The project ID
+        body: JSON body with conflict resolutions
+            {
+                "conflicts": [
+                    {
+                        "conflict_type": "tech_stack",
+                        "old_value": "Python",
+                        "new_value": "JavaScript",
+                        "resolution": "keep|replace|skip|manual",
+                        "manual_value": "optional resolved value"
+                    }
+                ]
+            }
+        current_user: Current authenticated user
+        db: Database connection
+        orchestrator: Orchestrator instance
+
+    Returns:
+        Updated project and next question
+    """
+    try:
+        # Load and verify project
+        project = db.load_project(project_id)
+        if not project or project.owner != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to this project",
+            )
+
+        conflicts = body.get("conflicts", [])
+        logger.info(f"Resolving {len(conflicts)} conflicts for project {project_id}")
+
+        # Load project context
+        from socratic_system.models import ProjectContext
+
+        project_context = ProjectContext.from_project(project)
+
+        # Apply each conflict resolution
+        for conflict in conflicts:
+            conflict_type = conflict.get("conflict_type")
+            old_value = conflict.get("old_value")
+            new_value = conflict.get("new_value")
+            resolution = conflict.get("resolution")
+            manual_value = conflict.get("manual_value")
+
+            logger.debug(
+                f"Applying resolution for {conflict_type}: {resolution} "
+                f"({old_value} vs {new_value})"
+            )
+
+            # Apply resolution based on choice
+            if resolution == "keep":
+                # Keep existing - remove new from project if it exists
+                if conflict_type == "tech_stack" and new_value in project_context.tech_stack:
+                    project_context.tech_stack.remove(new_value)
+                elif conflict_type == "requirements" and new_value in project_context.requirements:
+                    project_context.requirements.remove(new_value)
+                elif conflict_type == "constraints" and new_value in project_context.constraints:
+                    project_context.constraints.remove(new_value)
+
+            elif resolution == "replace":
+                # Replace existing with new
+                if conflict_type == "tech_stack":
+                    if old_value in project_context.tech_stack:
+                        project_context.tech_stack.remove(old_value)
+                    if new_value not in project_context.tech_stack:
+                        project_context.tech_stack.append(new_value)
+                elif conflict_type == "requirements":
+                    if old_value in project_context.requirements:
+                        project_context.requirements.remove(old_value)
+                    if new_value not in project_context.requirements:
+                        project_context.requirements.append(new_value)
+                elif conflict_type == "constraints":
+                    if old_value in project_context.constraints:
+                        project_context.constraints.remove(old_value)
+                    if new_value not in project_context.constraints:
+                        project_context.constraints.append(new_value)
+                elif conflict_type == "goals":
+                    project_context.goals = new_value
+
+            elif resolution == "skip":
+                # Skip - remove new value
+                if conflict_type == "tech_stack" and new_value in project_context.tech_stack:
+                    project_context.tech_stack.remove(new_value)
+                elif conflict_type == "requirements" and new_value in project_context.requirements:
+                    project_context.requirements.remove(new_value)
+                elif conflict_type == "constraints" and new_value in project_context.constraints:
+                    project_context.constraints.remove(new_value)
+
+            elif resolution == "manual" and manual_value:
+                # Manual resolution - use the provided value
+                if conflict_type == "tech_stack":
+                    if old_value in project_context.tech_stack:
+                        project_context.tech_stack.remove(old_value)
+                    if manual_value not in project_context.tech_stack:
+                        project_context.tech_stack.append(manual_value)
+                elif conflict_type == "requirements":
+                    if old_value in project_context.requirements:
+                        project_context.requirements.remove(old_value)
+                    if manual_value not in project_context.requirements:
+                        project_context.requirements.append(manual_value)
+                elif conflict_type == "constraints":
+                    if old_value in project_context.constraints:
+                        project_context.constraints.remove(old_value)
+                    if manual_value not in project_context.constraints:
+                        project_context.constraints.append(manual_value)
+                elif conflict_type == "goals":
+                    project_context.goals = manual_value
+
+        # Update project from modified context
+        project.goals = project_context.goals
+        project.requirements = project_context.requirements
+        project.tech_stack = project_context.tech_stack
+        project.constraints = project_context.constraints
+
+        # Save updated project to database
+        db.save_project(project)
+        logger.info(f"Saved resolved project specifications for {project_id}")
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Conflicts resolved and project updated",
+            data={
+                "project_id": project_id,
+                "goals": project.goals,
+                "requirements": project.requirements,
+                "tech_stack": project.tech_stack,
+                "constraints": project.constraints,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error resolving conflicts: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to resolve conflicts: {str(e)}",
+        )

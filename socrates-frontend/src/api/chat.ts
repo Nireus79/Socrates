@@ -149,4 +149,23 @@ export const chatAPI = {
     );
   },
 
+  /**
+   * Resolve detected conflicts in project specifications
+   */
+  async resolveConflict(
+    projectId: string,
+    resolutions: Array<{
+      conflict_type: string;
+      old_value: string;
+      new_value: string;
+      resolution: 'keep' | 'replace' | 'skip' | 'manual';
+      manual_value?: string;
+    }>
+  ): Promise<any> {
+    return apiClient.post(
+      `/projects/${projectId}/chat/resolve-conflicts`,
+      { conflicts: resolutions }
+    );
+  },
+
 };
