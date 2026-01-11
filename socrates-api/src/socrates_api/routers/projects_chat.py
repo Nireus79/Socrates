@@ -18,7 +18,6 @@ from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socrates_api.main import get_orchestrator
 from socrates_api.models import (
     APIResponse,
     ChatMessage,
@@ -1517,7 +1516,6 @@ async def resolve_conflicts(
     body: dict = Body(...),
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
-    orchestrator=Depends(get_orchestrator),
 ):
     """
     Resolve conflicts detected in project specifications.
@@ -1538,7 +1536,6 @@ async def resolve_conflicts(
             }
         current_user: Current authenticated user
         db: Database connection
-        orchestrator: Orchestrator instance
 
     Returns:
         Updated project and next question
