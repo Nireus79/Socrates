@@ -2033,15 +2033,15 @@ class ProjectDatabase:
             row = cursor.fetchone()
 
             if row:
-                metadata = json.loads(row[4]) if row[4] and isinstance(row[4], str) else row[4]
                 return {
                     "id": row[0],
                     "project_id": row[1],
                     "user_id": row[2],
-                    "content": row[3],
-                    "metadata": metadata,
-                    "created_at": row[5],
-                    "updated_at": row[6],
+                    "title": row[3],
+                    "content": row[4],
+                    "source": row[5],
+                    "document_type": row[6],
+                    "uploaded_at": row[7],
                 }
 
             return None
