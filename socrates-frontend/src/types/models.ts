@@ -386,6 +386,8 @@ export interface DocumentDetails {
   preview?: string;
   content?: string;
   metadata?: Record<string, any>;
+  file_path?: string;
+  file_size?: number;
 }
 
 export interface DocumentDetailsResponse {

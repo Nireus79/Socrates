@@ -287,4 +287,13 @@ export const knowledgeAPI = {
   async getAllKnowledgeSources(projectId: string): Promise<any> {
     return apiClient.get(`/knowledge/all?project_id=${projectId}`);
   },
+
+  /**
+   * Download a document file
+   */
+  async downloadDocument(documentId: string): Promise<Blob> {
+    return apiClient.get<Blob>(`/knowledge/documents/${documentId}/download`, {
+      responseType: 'blob',
+    });
+  },
 };

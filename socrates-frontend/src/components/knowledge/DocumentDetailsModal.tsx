@@ -11,6 +11,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useKnowledgeStore } from '../../stores/knowledgeStore';
+import { knowledgeAPI } from '../../api/knowledge';
 import type { DocumentDetails, DocumentAnalytics } from '../../types/models';
 
 interface DocumentDetailsModalProps {
@@ -32,6 +33,7 @@ export default function DocumentDetailsModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'details' | 'analytics'>('details');
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !documentId) return;
@@ -58,6 +60,34 @@ export default function DocumentDetailsModal({
 
     loadData();
   }, [isOpen, documentId, loadDocumentDetails, loadDocumentAnalytics]);
+
+  const handleDownload = async () => {
+    if (!details) return;
+
+    setIsDownloading(true);
+    try {
+      const blob = await knowledgeAPI.downloadDocument(details.id);
+
+      // Create a temporary URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      // Extract filename from title or use default
+      const filename = details.title || 'document';
+      link.download = filename;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to download document';
+      setError(message);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -282,6 +312,15 @@ export default function DocumentDetailsModal({
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-b-lg">
+          {details?.document_type === 'file' && details?.file_path && (
+            <button
+              onClick={handleDownload}
+              disabled={isDownloading}
+              className="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors"
+            >
+              {isDownloading ? 'Downloading...' : 'Download'}
+            </button>
+          )}
           {onDelete && (
             <button
               onClick={() => {
