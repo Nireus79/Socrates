@@ -69,6 +69,13 @@ class ProjectContext:
     # Analytics tracking fields (real-time metrics updated after each Q&A)
     analytics_metrics: Dict[str, any] = None  # Real-time analytics metrics
 
+    # Workflow optimization fields (NEW)
+    workflow_definitions: Dict[str, any] = None  # Workflow definitions by phase
+    workflow_approval_requests: Optional[List[Dict[str, any]]] = None  # History of approval requests
+    active_workflow_execution: Optional[Dict[str, any]] = None  # Current workflow execution state
+    workflow_history: Optional[List[Dict[str, any]]] = None  # Completed workflows with metrics
+    metadata: Optional[Dict[str, any]] = None  # Project metadata (use_workflow_optimization flag, etc.)
+
     # LLM Provider configuration
     llm_configuration: Optional[Dict[str, any]] = (
         None  # LLM provider config (provider, model, temperature, etc.)
@@ -89,6 +96,7 @@ class ProjectContext:
         self._initialize_list_fields()
         self._initialize_team_members()
         self._initialize_maturity_fields()
+        self._initialize_workflow_fields()
 
     def _initialize_list_fields(self) -> None:
         """Initialize all list fields with empty defaults"""
@@ -195,6 +203,20 @@ class ProjectContext:
         if not scores:
             return 0.0
         return sum(scores) / len(scores)
+
+    def _initialize_workflow_fields(self) -> None:
+        """Initialize workflow optimization fields"""
+        if self.workflow_definitions is None:
+            self.workflow_definitions = {}
+        if self.workflow_approval_requests is None:
+            self.workflow_approval_requests = []
+        if self.workflow_history is None:
+            self.workflow_history = []
+        if self.metadata is None:
+            self.metadata = {}
+        # Ensure metadata has default optimization flag
+        if "use_workflow_optimization" not in self.metadata:
+            self.metadata["use_workflow_optimization"] = False
 
     def get_member_role(self, username: str) -> Optional[str]:
         """Get role for a specific team member."""

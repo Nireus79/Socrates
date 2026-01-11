@@ -3,14 +3,17 @@ Quality Controller Agent - Orchestrates maturity tracking and prevents greedy al
 """
 
 import logging
+import uuid
 from dataclasses import asdict
 from datetime import datetime
 from typing import Any, Dict, Optional
 
 from socratic_system.core.analytics_calculator import AnalyticsCalculator
 from socratic_system.core.maturity_calculator import MaturityCalculator
+from socratic_system.core.workflow_optimizer import WorkflowOptimizer
 from socratic_system.events import EventType
 from socratic_system.models import ProjectContext
+from socratic_system.models.workflow import WorkflowApprovalRequest
 
 from .base import Agent
 
@@ -45,6 +48,14 @@ class QualityControllerAgent(Agent):
         self.COMPLETE_THRESHOLD = self.calculator.COMPLETE_THRESHOLD
         self.WARNING_THRESHOLD = self.calculator.WARNING_THRESHOLD
 
+        # Initialize workflow optimizer for workflow optimization system
+        logging.debug("Initializing WorkflowOptimizer")
+        self.workflow_optimizer = WorkflowOptimizer()
+
+        # Track pending workflow approval requests
+        self.pending_approvals: Dict[str, WorkflowApprovalRequest] = {}
+        logging.debug("Initialized pending_approvals dictionary")
+
         logging.info(
             f"QualityControllerAgent initialized with thresholds: READY={self.READY_THRESHOLD}%, COMPLETE={self.COMPLETE_THRESHOLD}%, WARNING={self.WARNING_THRESHOLD}%"
         )
@@ -73,6 +84,19 @@ class QualityControllerAgent(Agent):
         elif action == "get_history":
             logging.debug("Routing to _get_maturity_history")
             return self._get_maturity_history(request)
+        # Workflow optimization actions
+        elif action == "request_workflow_approval":
+            logging.debug("Routing to _request_workflow_approval")
+            return self._request_workflow_approval(request)
+        elif action == "approve_workflow":
+            logging.debug("Routing to _approve_workflow")
+            return self._approve_workflow(request)
+        elif action == "reject_workflow":
+            logging.debug("Routing to _reject_workflow")
+            return self._reject_workflow(request)
+        elif action == "get_pending_approvals":
+            logging.debug("Routing to _get_pending_approvals")
+            return self._get_pending_approvals(request)
 
         logging.error(f"Unknown action: {action}")
         return {"status": "error", "message": f"Unknown action: {action}"}
@@ -385,3 +409,277 @@ class QualityControllerAgent(Agent):
             "history": project.maturity_history,
             "total_events": len(project.maturity_history),
         }
+
+    # ========================================================================
+    # Workflow Approval Methods (Phase 4)
+    # ========================================================================
+
+    def _request_workflow_approval(self, request: Dict) -> Dict:
+        """
+        Request workflow approval - BLOCKING POINT
+
+        Runs optimizer to enumerate paths, calculate metrics, recommend optimal path,
+        and returns pending status that halts execution until user approves.
+
+        Args:
+            request: Dict with keys:
+                - project: ProjectContext
+                - workflow: WorkflowDefinition
+
+        Returns:
+            Dict with status "pending_approval" (execution halts)
+        """
+        logging.debug("_request_workflow_approval called")
+
+        try:
+            project = request.get("project")
+            workflow = request.get("workflow")
+
+            if not project:
+                logging.error("Project not provided in approval request")
+                return {"status": "error", "message": "Project required"}
+
+            if not workflow:
+                logging.error("Workflow not provided in approval request")
+                return {"status": "error", "message": "Workflow required"}
+
+            logging.info(
+                f"Requesting workflow approval for project: {project.name}, "
+                f"workflow: {workflow.workflow_id}, phase: {workflow.phase}"
+            )
+
+            # Run optimizer to enumerate and evaluate all paths
+            logging.debug("Running workflow optimizer")
+            approval_request = self.workflow_optimizer.optimize_workflow(
+                workflow=workflow,
+                project=project,
+                strategy=request.get("strategy", workflow.strategy),
+                requested_by=request.get("requested_by", "quality_controller"),
+            )
+
+            # Store as pending approval
+            self.pending_approvals[approval_request.request_id] = approval_request
+            logging.info(
+                f"Approval request created: {approval_request.request_id}, "
+                f"paths: {len(approval_request.all_paths)}, "
+                f"recommended: {approval_request.recommended_path.path_id}"
+            )
+
+            # Emit event for UI/notification
+            logging.debug("Emitting WORKFLOW_APPROVAL_REQUESTED event")
+            self.emit_event(
+                EventType.WORKFLOW_APPROVAL_REQUESTED,
+                {
+                    "request_id": approval_request.request_id,
+                    "project_id": project.project_id,
+                    "phase": approval_request.phase,
+                    "path_count": len(approval_request.all_paths),
+                    "recommended_path_id": approval_request.recommended_path.path_id,
+                },
+            )
+
+            # Return BLOCKING status - execution stops here until approval
+            return {
+                "status": "pending_approval",
+                "request_id": approval_request.request_id,
+                "approval_request": asdict(approval_request),
+                "message": "Workflow approval required before proceeding",
+            }
+
+        except ValueError as e:
+            logging.error(f"ValueError in workflow approval request: {e}")
+            return {"status": "error", "message": str(e)}
+        except Exception as e:
+            logging.error(
+                f"Unexpected error in workflow approval request: {type(e).__name__}: {e}"
+            )
+            return {"status": "error", "message": str(e)}
+
+    def _approve_workflow(self, request: Dict) -> Dict:
+        """
+        Approve a workflow path and unblock execution
+
+        Marks the approval request as approved, sets the approved path,
+        and removes from pending list to allow execution to resume.
+
+        Args:
+            request: Dict with keys:
+                - request_id: ID of approval request
+                - approved_path_id: ID of path to approve
+                - project: Optional ProjectContext for logging
+
+        Returns:
+            Dict with status "success" (execution resumes)
+        """
+        logging.debug("_approve_workflow called")
+
+        try:
+            request_id = request.get("request_id")
+            approved_path_id = request.get("approved_path_id")
+
+            if not request_id:
+                logging.error("request_id not provided in approval")
+                return {"status": "error", "message": "request_id required"}
+
+            if not approved_path_id:
+                logging.error("approved_path_id not provided in approval")
+                return {"status": "error", "message": "approved_path_id required"}
+
+            # Get approval request from pending
+            approval_request = self.pending_approvals.get(request_id)
+            if not approval_request:
+                logging.error(f"Approval request not found: {request_id}")
+                return {"status": "error", "message": "Approval request not found"}
+
+            logging.info(
+                f"Approving workflow request: {request_id}, "
+                f"approved path: {approved_path_id}"
+            )
+
+            # Mark as approved
+            approval_request.status = "approved"
+            approval_request.approved_path_id = approved_path_id
+            approval_request.approval_timestamp = datetime.now().isoformat()
+
+            # Remove from pending
+            del self.pending_approvals[request_id]
+            logging.debug(f"Removed request from pending_approvals")
+
+            # Emit approval event
+            logging.debug("Emitting WORKFLOW_APPROVED event")
+            self.emit_event(
+                EventType.WORKFLOW_APPROVED,
+                {
+                    "request_id": request_id,
+                    "approved_path_id": approved_path_id,
+                    "timestamp": approval_request.approval_timestamp,
+                },
+            )
+
+            logging.info(f"Workflow approval completed successfully")
+
+            return {
+                "status": "success",
+                "request_id": request_id,
+                "approved_path_id": approved_path_id,
+                "message": "Workflow approved and execution may proceed",
+            }
+
+        except Exception as e:
+            logging.error(
+                f"Unexpected error approving workflow: {type(e).__name__}: {e}"
+            )
+            return {"status": "error", "message": str(e)}
+
+    def _reject_workflow(self, request: Dict) -> Dict:
+        """
+        Reject a workflow and request alternatives
+
+        Marks approval request as rejected and removes from pending.
+        Caller should generate alternative workflows or prompt user.
+
+        Args:
+            request: Dict with keys:
+                - request_id: ID of approval request
+                - reason: Optional rejection reason
+                - project: Optional ProjectContext
+
+        Returns:
+            Dict with status "success"
+        """
+        logging.debug("_reject_workflow called")
+
+        try:
+            request_id = request.get("request_id")
+            reason = request.get("reason", "No reason provided")
+
+            if not request_id:
+                logging.error("request_id not provided in rejection")
+                return {"status": "error", "message": "request_id required"}
+
+            # Get approval request from pending
+            approval_request = self.pending_approvals.get(request_id)
+            if not approval_request:
+                logging.error(f"Approval request not found: {request_id}")
+                return {"status": "error", "message": "Approval request not found"}
+
+            logging.info(
+                f"Rejecting workflow request: {request_id}, reason: {reason}"
+            )
+
+            # Mark as rejected
+            approval_request.status = "rejected"
+            approval_request.approval_timestamp = datetime.now().isoformat()
+
+            # Remove from pending
+            del self.pending_approvals[request_id]
+            logging.debug(f"Removed request from pending_approvals")
+
+            # Emit rejection event
+            logging.debug("Emitting WORKFLOW_REJECTED event")
+            self.emit_event(
+                EventType.WORKFLOW_REJECTED,
+                {
+                    "request_id": request_id,
+                    "reason": reason,
+                    "timestamp": approval_request.approval_timestamp,
+                },
+            )
+
+            logging.info(f"Workflow rejection completed successfully")
+
+            return {
+                "status": "success",
+                "request_id": request_id,
+                "reason": reason,
+                "message": "Workflow rejected - alternatives may be requested",
+            }
+
+        except Exception as e:
+            logging.error(
+                f"Unexpected error rejecting workflow: {type(e).__name__}: {e}"
+            )
+            return {"status": "error", "message": str(e)}
+
+    def _get_pending_approvals(self, request: Dict) -> Dict:
+        """
+        Get list of pending workflow approval requests
+
+        Returns all approval requests currently awaiting user decision.
+
+        Args:
+            request: Dict with optional keys:
+                - project_id: Filter by project (optional)
+
+        Returns:
+            Dict with status "success" and list of pending approvals
+        """
+        logging.debug("_get_pending_approvals called")
+
+        try:
+            project_id = request.get("project_id")
+
+            # Filter by project if specified
+            pending = list(self.pending_approvals.values())
+            if project_id:
+                pending = [a for a in pending if a.project_id == project_id]
+
+            logging.info(
+                f"Retrieved {len(pending)} pending approval requests"
+                + (f" for project: {project_id}" if project_id else "")
+            )
+
+            # Convert to dict for JSON serialization
+            pending_dicts = [asdict(a) for a in pending]
+
+            return {
+                "status": "success",
+                "pending_approvals": pending_dicts,
+                "total_count": len(pending_dicts),
+            }
+
+        except Exception as e:
+            logging.error(
+                f"Unexpected error retrieving pending approvals: {type(e).__name__}: {e}"
+            )
+            return {"status": "error", "message": str(e)}

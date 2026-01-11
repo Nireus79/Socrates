@@ -95,7 +95,7 @@ class SocraticCounselorAgent(Agent):
         return {"status": "error", "message": "Unknown action"}
 
     def _generate_question(self, request: Dict) -> Dict:
-        """Generate the next Socratic question with usage tracking"""
+        """Generate the next Socratic question with usage tracking and workflow optimization"""
         project = request.get("project")
         current_user = request.get("current_user")  # NEW: Accept current user for role context
 
@@ -107,6 +107,10 @@ class SocraticCounselorAgent(Agent):
             }
 
         import datetime
+
+        # Check if workflow optimization is enabled for this project
+        if self._should_use_workflow_optimization(project):
+            return self._generate_question_with_workflow(project, current_user)
 
         # HYBRID APPROACH: Check for existing unanswered question before generating new one
         # This prevents double question generation
@@ -1478,3 +1482,286 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
                     "Think about potential challenges and how to address them"
                 ]
             }
+
+    # ========================================================================
+    # Workflow Optimization Methods (Phase 5)
+    # ========================================================================
+
+    def _should_use_workflow_optimization(self, project: ProjectContext) -> bool:
+        """
+        Check if workflow optimization is enabled for this project.
+
+        Args:
+            project: ProjectContext
+
+        Returns:
+            True if use_workflow_optimization flag is set in metadata
+        """
+        return project.metadata.get("use_workflow_optimization", False) if project.metadata else False
+
+    def _generate_question_with_workflow(
+        self, project: ProjectContext, current_user: str
+    ) -> Dict:
+        """
+        Generate question constrained by approved workflow path.
+
+        Implements workflow-optimized question generation where questions
+        are selected from the approved workflow path rather than generated
+        dynamically.
+
+        Args:
+            project: ProjectContext with active workflow execution
+            current_user: User requesting the question
+
+        Returns:
+            Dict with status and question, or pending_approval status
+        """
+        logging.debug(
+            f"Generating question with workflow optimization for project: {project.name}"
+        )
+
+        try:
+            # Check for active workflow execution
+            if not project.active_workflow_execution:
+                logging.info(
+                    f"No active workflow execution for project {project.project_id}, "
+                    "initiating approval request"
+                )
+                # No approved workflow - initiate approval (BLOCKING)
+                return self._initiate_workflow_approval(project, current_user)
+
+            # Have approved path - select next question from it
+            execution = project.active_workflow_execution
+            workflow = project.workflow_definitions.get(project.phase)
+
+            if not workflow:
+                logging.error(
+                    f"Workflow definition not found for phase: {project.phase}"
+                )
+                return {
+                    "status": "error",
+                    "message": f"Workflow definition not found for {project.phase}",
+                }
+
+            logging.debug(
+                f"Selecting questions for workflow execution {execution.execution_id} "
+                f"at node {execution.current_node_id}"
+            )
+
+            # Import here to avoid circular dependency
+            from socratic_system.core.question_selector import QuestionSelector
+
+            selector = QuestionSelector()
+            questions = selector.select_next_questions(
+                project, workflow, execution, max_questions=1
+            )
+
+            if not questions:
+                logging.info(
+                    f"No more questions in current node, advancing workflow"
+                )
+                # No more questions - advance to next node
+                return self._advance_workflow_node(project, execution, workflow)
+
+            question = questions[0]
+            logging.info(
+                f"Selected question from workflow node {execution.current_node_id}: "
+                f"{question[:80]}..."
+            )
+
+            # Store question in conversation history
+            import uuid
+
+            project.conversation_history.append(
+                {
+                    "timestamp": datetime.datetime.now().isoformat(),
+                    "type": "assistant",
+                    "content": question,
+                    "phase": project.phase,
+                    "workflow_node": execution.current_node_id,
+                }
+            )
+
+            project.pending_questions.append(
+                {
+                    "id": f"q_{uuid.uuid4().hex[:8]}",
+                    "question": question,
+                    "phase": project.phase,
+                    "status": "unanswered",
+                    "created_at": datetime.datetime.now().isoformat(),
+                    "workflow_node": execution.current_node_id,
+                    "answer": None,
+                    "skipped_at": None,
+                    "answered_at": None,
+                }
+            )
+
+            # Persist changes
+            self.database.save_project(project)
+
+            logging.debug("Question stored in conversation history and pending questions")
+
+            return {"status": "success", "question": question, "workflow_node": execution.current_node_id}
+
+        except Exception as e:
+            logging.error(
+                f"Unexpected error in workflow-based question generation: {type(e).__name__}: {e}"
+            )
+            return {"status": "error", "message": str(e)}
+
+    def _initiate_workflow_approval(
+        self, project: ProjectContext, current_user: str
+    ) -> Dict:
+        """
+        Request workflow approval - BLOCKING POINT.
+
+        Creates workflow definition for current phase and requests approval
+        from quality controller. Returns pending_approval status that halts
+        execution until user approves a path.
+
+        Args:
+            project: ProjectContext
+            current_user: User requesting approval
+
+        Returns:
+            Dict with status "pending_approval" (execution halts) if approval needed
+            Dict with status "success" and first question if single path
+        """
+        logging.debug(
+            f"Initiating workflow approval for project {project.project_id}, phase {project.phase}"
+        )
+
+        try:
+            # Create workflow for current phase
+            workflow = self._create_workflow_for_phase(project)
+
+            logging.info(
+                f"Created workflow {workflow.workflow_id} for {project.phase} phase"
+            )
+
+            # Request approval from QC - BLOCKING call
+            logging.debug("Requesting workflow approval from QualityController")
+            result = safe_orchestrator_call(
+                self.orchestrator,
+                "quality_controller",
+                {
+                    "action": "request_workflow_approval",
+                    "project": project,
+                    "workflow": workflow,
+                    "requested_by": current_user,
+                },
+            )
+
+            if result.get("status") == "pending_approval":
+                logging.info(
+                    f"Workflow approval pending for request: {result.get('request_id')}"
+                )
+                # BLOCKING - execution stops here until approval
+                return result
+
+            # Approval succeeded or single path - proceed
+            logging.info("Workflow approval succeeded or single path approved")
+            return result
+
+        except Exception as e:
+            logging.error(
+                f"Unexpected error initiating workflow approval: {type(e).__name__}: {e}"
+            )
+            return {"status": "error", "message": str(e)}
+
+    def _create_workflow_for_phase(self, project: ProjectContext) -> "WorkflowDefinition":
+        """
+        Create workflow definition for current phase.
+
+        Currently creates comprehensive workflows for discovery phase,
+        can be extended for other phases.
+
+        Args:
+            project: ProjectContext
+
+        Returns:
+            WorkflowDefinition for current phase
+        """
+        from socratic_system.core.workflow_builder import (
+            create_discovery_workflow_comprehensive,
+            create_legacy_compatible_workflow,
+        )
+
+        logging.debug(
+            f"Creating workflow for phase: {project.phase}, project_type: {project.project_type}"
+        )
+
+        if project.phase == "discovery":
+            logging.info("Creating comprehensive discovery workflow")
+            return create_discovery_workflow_comprehensive(project)
+        else:
+            # For other phases, create simple linear workflow
+            logging.info(f"Creating legacy-compatible workflow for {project.phase}")
+            return create_legacy_compatible_workflow(project.phase)
+
+    def _advance_workflow_node(
+        self, project: ProjectContext, execution: "WorkflowExecutionState", workflow: "WorkflowDefinition"
+    ) -> Dict:
+        """
+        Advance to next node in workflow execution.
+
+        Called when current node is complete (all questions answered).
+
+        Args:
+            project: ProjectContext
+            execution: Current workflow execution state
+            workflow: WorkflowDefinition
+
+        Returns:
+            Dict with next question or completion status
+        """
+        from socratic_system.core.question_selector import QuestionSelector
+
+        logging.debug(
+            f"Advancing workflow execution {execution.execution_id} from node {execution.current_node_id}"
+        )
+
+        try:
+            selector = QuestionSelector()
+            next_node_id = selector.get_next_node(workflow, execution)
+
+            if not next_node_id:
+                logging.info("Workflow execution reached end node")
+                execution.status = "completed"
+                execution.current_node_id = None
+                self.database.save_project(project)
+
+                self.emit_event(
+                    EventType.WORKFLOW_NODE_COMPLETED,
+                    {
+                        "execution_id": execution.execution_id,
+                        "message": "Workflow completed",
+                    },
+                )
+
+                return {
+                    "status": "workflow_completed",
+                    "message": "Workflow path execution completed",
+                }
+
+            logging.info(f"Advancing to next node: {next_node_id}")
+            execution.current_node_id = next_node_id
+            execution.completed_nodes.append(next_node_id)
+
+            self.emit_event(
+                EventType.WORKFLOW_NODE_ENTERED,
+                {
+                    "execution_id": execution.execution_id,
+                    "node_id": next_node_id,
+                },
+            )
+
+            # Save and re-generate question from new node
+            self.database.save_project(project)
+            return self._generate_question_with_workflow(project, "system")
+
+        except Exception as e:
+            logging.error(
+                f"Unexpected error advancing workflow node: {type(e).__name__}: {e}"
+            )
+            return {"status": "error", "message": str(e)}

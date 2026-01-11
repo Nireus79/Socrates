@@ -60,6 +60,13 @@ class EventType(Enum):
     MATURITY_MILESTONE = "maturity.milestone"
     LEARNING_METRICS_UPDATED = "learning.metrics.updated"
 
+    # Workflow optimization events
+    WORKFLOW_APPROVAL_REQUESTED = "workflow.approval.requested"
+    WORKFLOW_APPROVED = "workflow.approved"
+    WORKFLOW_REJECTED = "workflow.rejected"
+    WORKFLOW_NODE_ENTERED = "workflow.node.entered"
+    WORKFLOW_NODE_COMPLETED = "workflow.node.completed"
+
     # Note events
     NOTE_ADDED = "note.added"
     NOTE_UPDATED = "note.updated"
