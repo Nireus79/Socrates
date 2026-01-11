@@ -1503,6 +1503,8 @@ class ProjectDatabase:
         content: str = "",
         source: str | None = None,
         document_type: str = "document",
+        file_path: str | None = None,
+        file_size: int | None = None,
     ) -> bool:
         """
         Save a knowledge document (entry).
@@ -1515,6 +1517,8 @@ class ProjectDatabase:
             content: Document content
             source: Optional source reference
             document_type: Type of document
+            file_path: Optional path to stored file
+            file_size: Optional file size in bytes
 
         Returns:
             True if successful, False otherwise
@@ -1528,8 +1532,8 @@ class ProjectDatabase:
             cursor.execute(
                 """
                 INSERT OR REPLACE INTO knowledge_documents
-                (id, project_id, user_id, title, content, source, document_type, uploaded_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (id, project_id, user_id, title, content, source, document_type, file_path, file_size, uploaded_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     doc_id,
@@ -1539,6 +1543,8 @@ class ProjectDatabase:
                     content,
                     source,
                     document_type,
+                    file_path,
+                    file_size,
                     serialize_datetime(now),
                 ),
             )

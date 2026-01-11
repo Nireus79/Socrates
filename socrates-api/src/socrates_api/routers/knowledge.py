@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
@@ -394,6 +395,74 @@ async def get_document_details(
         )
 
 
+@router.get(
+    "/documents/{document_id}/download",
+    summary="Download knowledge base document",
+    responses={
+        200: {"description": "File downloaded successfully"},
+        404: {"description": "Document or file not found", "model": ErrorResponse},
+        403: {"description": "Access denied", "model": ErrorResponse},
+    },
+)
+async def download_document(
+    document_id: str,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+):
+    """
+    Download an uploaded document from the knowledge base.
+
+    Args:
+        document_id: Document identifier
+        current_user: Current authenticated user
+        db: Database connection
+
+    Returns:
+        File download
+    """
+    try:
+        # Load document
+        document = db.get_knowledge_document(document_id)
+        if not document:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+        # Verify ownership
+        if document["user_id"] != current_user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this document"
+            )
+
+        # Get file path
+        file_path = document.get("file_path")
+        if not file_path:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="File not available for download"
+            )
+
+        # Verify file exists
+        file_obj = Path(file_path)
+        if not file_obj.exists():
+            logger.error(f"File not found on disk: {file_path}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="File not found"
+            )
+
+        # Return file for download
+        return FileResponse(
+            path=file_obj,
+            filename=file_obj.name,
+            media_type="application/octet-stream",
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downloading document {document_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error downloading file"
+        )
+
+
 @router.post(
     "/import/file",
     response_model=APIResponse,
@@ -442,13 +511,27 @@ async def import_file(
                     status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
                 )
 
-        # Save uploaded file temporarily
-        temp_dir = Path(tempfile.gettempdir()) / "socrates_uploads"
-        temp_dir.mkdir(exist_ok=True, parents=True)
-        temp_file = temp_dir / f"{uuid.uuid4()}_{file.filename}"
+        # Create document ID first
+        doc_id = str(uuid.uuid4())
+
+        # Save uploaded file to persistent storage
+        knowledge_dir = Path.home() / ".socrates" / "knowledge_base" / current_user / doc_id
+        knowledge_dir.mkdir(exist_ok=True, parents=True)
+
+        # Preserve original filename with document ID
+        stored_file = knowledge_dir / file.filename
 
         # Write file content
         content = await file.read()
+        stored_file.write_bytes(content)
+        file_size = len(content)
+
+        logger.info(f"Saved knowledge base file: {stored_file}")
+
+        # Also save to temp for processing
+        temp_dir = Path(tempfile.gettempdir()) / "socrates_uploads"
+        temp_dir.mkdir(exist_ok=True, parents=True)
+        temp_file = temp_dir / f"{uuid.uuid4()}_{file.filename}"
         temp_file.write_bytes(content)
 
         logger.debug(f"Saved temp file: {temp_file}")
@@ -494,8 +577,7 @@ async def import_file(
             # Limit content preview to first 5000 characters
             content_preview = extracted_content[:5000] if extracted_content else ""
 
-            # Save metadata to database
-            doc_id = str(uuid.uuid4())
+            # Save metadata to database with file path
             db.save_knowledge_document(
                 user_id=current_user,
                 project_id=project_id,
@@ -504,9 +586,11 @@ async def import_file(
                 content=content_preview,
                 source=file.filename,
                 document_type="file",
+                file_path=str(stored_file),
+                file_size=file_size,
             )
 
-            logger.info(f"File imported successfully: {file.filename} ({len(content_preview)} chars preview)")
+            logger.info(f"File imported successfully: {file.filename} ({len(content_preview)} chars preview, {file_size} bytes)")
 
             # Emit DOCUMENT_IMPORTED event to trigger knowledge analysis and question regeneration
             try:

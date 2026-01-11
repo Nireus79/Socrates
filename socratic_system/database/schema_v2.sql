@@ -275,6 +275,8 @@ CREATE TABLE IF NOT EXISTS knowledge_documents (
     content TEXT,
     source TEXT,
     document_type TEXT DEFAULT 'document',
+    file_path TEXT,  -- Path to stored file (for downloads)
+    file_size INTEGER,  -- File size in bytes
     uploaded_at TIMESTAMP NOT NULL,
 
     FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
