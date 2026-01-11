@@ -217,7 +217,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     const refreshToken = localStorage.getItem('refresh_token');
     const userData = localStorage.getItem('user');
 
-    if (accessToken) {
+    if (accessToken && refreshToken) {
       let user: User | null = null;
 
       // Try to restore user data from localStorage
@@ -227,6 +227,29 @@ export const useAuthStore = create<AuthStore>((set) => ({
         } catch (e) {
           console.warn('Failed to parse stored user data:', e);
         }
+      }
+
+      // Check if tokens are expired before restoring
+      try {
+        // Decode token to check expiration (without verification)
+        const tokenParts = accessToken.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          const expiresAt = payload.exp * 1000; // Convert to milliseconds
+          const now = Date.now();
+
+          if (now > expiresAt) {
+            console.warn('[Auth] Stored access token is expired, clearing tokens');
+            clearAuthTokens();
+            set({ user: null, isAuthenticated: false });
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('[Auth] Failed to check token expiration, clearing tokens:', e);
+        clearAuthTokens();
+        set({ user: null, isAuthenticated: false });
+        return;
       }
 
       setAuthTokens(accessToken, refreshToken || undefined, user || undefined);
