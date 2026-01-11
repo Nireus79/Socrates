@@ -543,6 +543,7 @@ async def import_file(
                 {
                     "action": "import_file",
                     "file_path": str(temp_file),
+                    "original_filename": file.filename,
                     "project_id": project_id,
                 },
             )
@@ -694,6 +695,9 @@ async def import_url(
                     status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
                 )
 
+        # Create document ID first (for source consistency)
+        doc_id = str(uuid.uuid4())
+
         # Process via DocumentProcessorAgent
         result = orchestrator.process_request(
             "document_agent",
@@ -701,19 +705,19 @@ async def import_url(
                 "action": "import_url",
                 "url": url,
                 "project_id": project_id,
+                "document_id": doc_id,  # Pass doc_id for source name consistency
             },
         )
 
         logger.debug(f"DocumentProcessor result: {result}")
 
         # Save metadata
-        doc_id = str(uuid.uuid4())
         db.save_knowledge_document(
             user_id=current_user,
             project_id=project_id,
             doc_id=doc_id,
             title=url,
-            source=url,
+            source=doc_id,  # Use same doc_id as source for vector DB matching
             document_type="url",
         )
 
@@ -810,6 +814,9 @@ async def import_text(
                     status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
                 )
 
+        # Create document ID first (for source consistency)
+        doc_id = str(uuid.uuid4())
+
         # Process via DocumentProcessorAgent
         result = orchestrator.process_request(
             "document_agent",
@@ -818,20 +825,20 @@ async def import_text(
                 "content": content,
                 "title": title or "Untitled",
                 "project_id": project_id,
+                "document_id": doc_id,  # Pass doc_id for source name consistency
             },
         )
 
         logger.debug(f"DocumentProcessor result: {result}")
 
         # Save metadata
-        doc_id = str(uuid.uuid4())
         db.save_knowledge_document(
             user_id=current_user,
             project_id=project_id,
             doc_id=doc_id,
             title=title or "Untitled",
             content=content[:1000],
-            source="pasted_text",
+            source=doc_id,  # Use same doc_id as source for vector DB matching
             document_type="text",
         )
 

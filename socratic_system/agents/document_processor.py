@@ -43,13 +43,14 @@ class DocumentProcessorAgent(Agent):
         """Import a single file - extract content and store in vector database"""
         file_path = request.get("file_path")
         project_id = request.get("project_id")
+        original_filename = request.get("original_filename")
 
         if not file_path:
             return {"status": "error", "message": "File path required"}
 
         try:
-            # Get file name for logging
-            file_name = os.path.basename(file_path)
+            # Use original filename if provided, otherwise extract from file_path
+            file_name = original_filename or os.path.basename(file_path)
             self.logger.info(f"Processing file: {file_name}")
 
             # Read file content
@@ -204,12 +205,14 @@ class DocumentProcessorAgent(Agent):
         text_content = request.get("text_content") or request.get("content")
         project_id = request.get("project_id")
         title = request.get("title", "pasted_text")
+        document_id = request.get("document_id")
 
         if not text_content:
             return {"status": "error", "message": "Text content required"}
 
         try:
-            file_name = f"{title}.txt"
+            # Use document_id as source if provided, otherwise create from title
+            file_name = document_id or f"{title}.txt"
             self.logger.info(f"Processing pasted text: {file_name}")
 
             # Count words
@@ -261,6 +264,7 @@ class DocumentProcessorAgent(Agent):
         """Import content from a web page URL"""
         url = request.get("url")
         project_id = request.get("project_id")
+        document_id = request.get("document_id")
 
         if not url:
             return {"status": "error", "message": "URL required"}
@@ -273,10 +277,13 @@ class DocumentProcessorAgent(Agent):
             if not content:
                 return {"status": "error", "message": f"Could not extract content from {url}"}
 
-            # Extract domain name for file name
-            parsed_url = urlparse(url)
-            domain = parsed_url.netloc.replace("www.", "")
-            file_name = f"web_{domain}.txt"
+            # Use document_id as source if provided, otherwise create from domain
+            if document_id:
+                file_name = document_id
+            else:
+                parsed_url = urlparse(url)
+                domain = parsed_url.netloc.replace("www.", "")
+                file_name = f"web_{domain}.txt"
 
             # Count words
             word_count = len(content.split())
