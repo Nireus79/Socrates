@@ -277,12 +277,14 @@ class DocumentProcessorAgent(Agent):
             if not content:
                 return {"status": "error", "message": f"Could not extract content from {url}"}
 
+            # Extract domain from URL first
+            parsed_url = urlparse(url)
+            domain = parsed_url.netloc.replace("www.", "")
+
             # Use document_id as source if provided, otherwise create from domain
             if document_id:
                 file_name = document_id
             else:
-                parsed_url = urlparse(url)
-                domain = parsed_url.netloc.replace("www.", "")
                 file_name = f"web_{domain}.txt"
 
             # Count words
