@@ -117,6 +117,9 @@ class VectorDatabase:
         """Add knowledge entry to vector database"""
         # Check if entry already exists
         if self._entry_exists(entry.id):
+            # Update metadata for existing entry (same content may be imported to different projects/sources)
+            self.logger.debug(f"Updating metadata for existing knowledge entry: {entry.id}")
+            self._update_entry_metadata(entry)
             return
 
         # Generate or get cached embedding
@@ -136,6 +139,19 @@ class VectorDatabase:
             # Entry doesn't exist or invalid query, proceed with adding
             self.logger.debug(f"Entry '{entry_id}' not found or invalid query, will proceed: {e}")
         return False
+
+    def _update_entry_metadata(self, entry: KnowledgeEntry) -> None:
+        """Update metadata for an existing entry (e.g., source, project_id from reimport)"""
+        try:
+            formatted_metadata = self._format_metadata_for_chromadb(entry.metadata)
+            self.collection.update(
+                ids=[entry.id],
+                metadatas=[formatted_metadata],
+            )
+            self.logger.debug(f"Updated metadata for knowledge entry: {entry.id}")
+            self._invalidate_search_caches_after_add()
+        except Exception as e:
+            self.logger.warning(f"Could not update metadata for entry {entry.id}: {e}")
 
     def _generate_or_cache_embedding(self, entry: KnowledgeEntry) -> None:
         """Generate embedding or retrieve from cache"""
