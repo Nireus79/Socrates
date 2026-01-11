@@ -1529,25 +1529,50 @@ class ProjectDatabase:
         try:
             now = datetime.now()
 
-            cursor.execute(
-                """
-                INSERT OR REPLACE INTO knowledge_documents
-                (id, project_id, user_id, title, content, source, document_type, file_path, file_size, uploaded_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-                (
-                    doc_id,
-                    project_id,
-                    user_id,
-                    title,
-                    content,
-                    source,
-                    document_type,
-                    file_path,
-                    file_size,
-                    serialize_datetime(now),
-                ),
-            )
+            # Try inserting with all columns including file_path and file_size
+            try:
+                cursor.execute(
+                    """
+                    INSERT OR REPLACE INTO knowledge_documents
+                    (id, project_id, user_id, title, content, source, document_type, file_path, file_size, uploaded_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                    (
+                        doc_id,
+                        project_id,
+                        user_id,
+                        title,
+                        content,
+                        source,
+                        document_type,
+                        file_path,
+                        file_size,
+                        serialize_datetime(now),
+                    ),
+                )
+            except sqlite3.OperationalError as col_err:
+                # If file_path/file_size columns don't exist, insert without them
+                if "no column named file_path" in str(col_err) or "no column named file_size" in str(col_err):
+                    self.logger.debug(f"file_path/file_size columns not found, inserting without them: {col_err}")
+                    cursor.execute(
+                        """
+                        INSERT OR REPLACE INTO knowledge_documents
+                        (id, project_id, user_id, title, content, source, document_type, uploaded_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                        (
+                            doc_id,
+                            project_id,
+                            user_id,
+                            title,
+                            content,
+                            source,
+                            document_type,
+                            serialize_datetime(now),
+                        ),
+                    )
+                else:
+                    raise
 
             conn.commit()
             self.logger.debug(f"Saved knowledge document {doc_id} for project {project_id}")
