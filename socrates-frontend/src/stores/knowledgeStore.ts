@@ -151,7 +151,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
   listDocuments: async (projectId?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await knowledgeAPI.listDocuments(projectId);
+      const response = await knowledgeAPI.listDocuments({ projectId });
       const documentsMap = new Map<string, DocumentMetadata>();
 
       // Handle different response formats
