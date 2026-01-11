@@ -25,7 +25,7 @@ let onConfigLoaded: ((url: string) => void) | null = null;
 const tryPort = async (port: number): Promise<boolean> => {
   try {
     const url = `http://127.0.0.1:${port}/health`;
-    const response = await fetch(url, { method: 'GET', timeout: 2000 });
+    const response = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(2000) });
     return response.ok;
   } catch {
     return false;
