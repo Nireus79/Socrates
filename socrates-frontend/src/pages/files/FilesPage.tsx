@@ -126,7 +126,7 @@ export const FilesPage: React.FC = () => {
                     <FileList
                       files={files}
                       selectedFile={selectedFile}
-                      onFileSelect={selectFile}
+                      onFileSelect={(file) => selectFile(file, selectedProjectId)}
                       isLoading={isLoading}
                     />
                   </div>

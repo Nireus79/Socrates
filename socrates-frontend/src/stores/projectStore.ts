@@ -54,7 +54,7 @@ interface ProjectState {
 
   // File management actions
   fetchProjectFiles: (projectId: string) => Promise<void>;
-  selectFile: (file: FileNode | null) => void;
+  selectFile: (file: FileNode | null, projectId?: string) => Promise<void>;
   clearFiles: () => void;
   setFileContent: (content: string) => void;
 
@@ -372,12 +372,34 @@ export const useProjectStore = create<ProjectState>((set) => ({
     }
   },
 
-  // Select a file
-  selectFile: (file: FileNode | null) => {
+  // Select a file and fetch its content
+  selectFile: async (file: FileNode | null, projectId?: string) => {
     set({
       selectedFile: file,
-      fileContent: file?.content || '',
+      fileContent: '',
+      isLoading: true,
     });
+
+    if (!file || !projectId) {
+      set({ isLoading: false });
+      return;
+    }
+
+    try {
+      // Fetch file content from the API
+      const response = await projectsAPI.getFileContent(projectId, file.name);
+      set({
+        fileContent: response.content || '',
+        isLoading: false,
+      });
+    } catch (error) {
+      console.warn(`Failed to fetch content for ${file.name}:`, error);
+      // Fall back to any cached content or empty string
+      set({
+        fileContent: file.content || '',
+        isLoading: false,
+      });
+    }
   },
 
   // Clear files

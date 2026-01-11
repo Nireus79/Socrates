@@ -88,4 +88,13 @@ export const projectsAPI = {
   async getProjectFiles(projectId: string): Promise<{ project_id: string; files: any[]; total: number }> {
     return apiClient.get(`/projects/${projectId}/files`);
   },
+
+  /**
+   * Get file content
+   */
+  async getFileContent(projectId: string, fileName: string): Promise<{ project_id: string; file_name: string; content: string }> {
+    return apiClient.get(`/projects/${projectId}/files/content`, {
+      params: { file_name: fileName },
+    });
+  },
 };
