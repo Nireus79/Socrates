@@ -42,6 +42,22 @@ class SearchRequest(BaseModel):
     query: str
 
 
+class ConflictResolution(BaseModel):
+    """Individual conflict resolution"""
+
+    conflict_type: str
+    old_value: str
+    new_value: str
+    resolution: str  # "keep", "replace", "skip", or "manual"
+    manual_value: Optional[str] = None
+
+
+class ConflictResolutionRequest(BaseModel):
+    """Request body for resolving conflicts"""
+
+    conflicts: list[ConflictResolution]
+
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["chat"])
 
@@ -1514,7 +1530,7 @@ async def get_answer_suggestions(
 )
 async def resolve_conflicts(
     project_id: str,
-    body: dict = Body(...),
+    request: ConflictResolutionRequest,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -1550,17 +1566,16 @@ async def resolve_conflicts(
                 detail="Access denied to this project",
             )
 
-        conflicts = body.get("conflicts", [])
+        conflicts = request.conflicts
         logger.info(f"Resolving {len(conflicts)} conflicts for project {project_id}")
-
 
         # Apply each conflict resolution
         for conflict in conflicts:
-            conflict_type = conflict.get("conflict_type")
-            old_value = conflict.get("old_value")
-            new_value = conflict.get("new_value")
-            resolution = conflict.get("resolution")
-            manual_value = conflict.get("manual_value")
+            conflict_type = conflict.conflict_type
+            old_value = conflict.old_value
+            new_value = conflict.new_value
+            resolution = conflict.resolution
+            manual_value = conflict.manual_value
 
             logger.debug(
                 f"Applying resolution for {conflict_type}: {resolution} "
