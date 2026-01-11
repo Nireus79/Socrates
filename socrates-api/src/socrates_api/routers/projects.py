@@ -1535,6 +1535,8 @@ def delete_project_file(
         Success response with deleted file details
     """
     try:
+        from pathlib import Path
+
         logger.debug(f"Delete file request: project_id={project_id}, file_name={file_name}, user={current_user}")
 
         # Get and verify project ownership
@@ -1546,22 +1548,40 @@ def delete_project_file(
                 detail="Not authorized to delete files from this project",
             )
 
-        # Delete file from database using ProjectFileManager
-        from socratic_system.database.project_file_manager import ProjectFileManager
+        # Security: Prevent directory traversal attacks
+        if "/" in file_name or "\\" in file_name or file_name.startswith("."):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid file name",
+            )
 
-        logger.debug(f"Using ProjectFileManager with db_path: {db.db_path}")
-        file_manager = ProjectFileManager(db.db_path)
-        success, message = file_manager.delete_file(project_id, file_name)
-        logger.debug(f"Delete result: success={success}, message={message}")
+        # Construct file path - files can be in generated_files or refactored_files subdirectories
+        project_data_dir = Path(f"~/.socrates/projects/{project_id}").expanduser()
 
-        if not success:
-            logger.warning(f"File not found or deletion failed: {file_name}")
+        # Try to find the file in standard locations (same as get_file_content endpoint)
+        possible_paths = [
+            project_data_dir / "generated_files" / file_name,
+            project_data_dir / "refactored_files" / file_name,
+            project_data_dir / file_name,  # Also check root project dir
+        ]
+
+        file_path = None
+        for path in possible_paths:
+            if path.exists() and path.is_file():
+                file_path = path
+                logger.debug(f"Found file at: {file_path}")
+                break
+
+        if not file_path:
+            logger.warning(f"File not found: {file_name}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"File '{file_name}' not found",
             )
 
-        logger.info(f"Deleted file {project_id}/{file_name}")
+        # Delete the file
+        file_path.unlink()
+        logger.info(f"Deleted file {project_id}/{file_name} from {file_path}")
 
         return APIResponse(
             success=True,
