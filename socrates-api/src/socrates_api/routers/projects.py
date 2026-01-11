@@ -495,9 +495,10 @@ async def update_project(
     status_code=status.HTTP_200_OK,
     summary="Archive/delete project",
     responses={
-        200: {"description": "Project archived successfully"},
+        200: {"description": "Project deleted successfully (idempotent)"},
         401: {"description": "Not authenticated", "model": ErrorResponse},
-        404: {"description": "Project not found", "model": ErrorResponse},
+        403: {"description": "Not authorized to delete this project", "model": ErrorResponse},
+        500: {"description": "Server error", "model": ErrorResponse},
     },
 )
 async def delete_project(
@@ -507,6 +508,8 @@ async def delete_project(
 ):
     """
     Permanently delete a project.
+
+    DELETE is idempotent - returns success even if project already deleted.
 
     Args:
         project_id: Project identifier
@@ -520,9 +523,13 @@ async def delete_project(
         project = db.load_project(project_id)
 
         if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Project '{project_id}' not found",
+            # Project already deleted or never existed - return success (idempotent)
+            logger.info(f"Delete requested for non-existent project {project_id} by {current_user}")
+            return APIResponse(
+                success=True,
+                status="success",
+                message=f"Project '{project_id}' has been deleted",
+                data={"project_id": project_id, "name": "unknown"},
             )
 
         if project.owner != current_user:
@@ -550,7 +557,7 @@ async def delete_project(
         logger.error(f"Error deleting project {project_id}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error archiving project",
+            detail="Error deleting project",
         )
 
 
