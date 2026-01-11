@@ -316,16 +316,32 @@ export const useProjectStore = create<ProjectState>((set) => ({
 
       // Build file nodes from files, with content from code history
       const fileNodes: FileNode[] = (filesResponse.files || []).map((file: any) => {
-        // Extract generation ID from filename (e.g., "generated_gen_123.py" -> "gen_123")
-        const match = file.name.match(/(?:generated|refactored)_(.+)\.\w+/);
-        const generationId = match ? match[1] : null;
-
-        // Find matching code in history
         let content = '';
-        if (generationId && codeHistoryResponse.generations) {
-          const codeItem = codeHistoryResponse.generations.find((c: any) => c.generation_id === generationId);
+
+        // Try to find matching code from code history
+        if (codeHistoryResponse.generations && codeHistoryResponse.generations.length > 0) {
+          // Method 1: Try to match by file ID (most reliable)
+          let codeItem = codeHistoryResponse.generations.find((c: any) => c.file_id === file.id);
+
+          // Method 2: Try to match by generation ID extracted from filename
+          if (!codeItem) {
+            const match = file.name.match(/(?:generated|refactored)_(.+)\.\w+/);
+            const generationId = match ? match[1] : null;
+            if (generationId) {
+              codeItem = codeHistoryResponse.generations.find((c: any) => c.generation_id === generationId);
+            }
+          }
+
+          // Method 3: Try to match by filename pattern as last resort
+          if (!codeItem && file.name) {
+            codeItem = codeHistoryResponse.generations.find((c: any) => {
+              const codeFileName = c.filename || c.file_name || '';
+              return codeFileName === file.name || codeFileName.includes(file.name);
+            });
+          }
+
           if (codeItem) {
-            content = codeItem.code || '';
+            content = codeItem.code || codeItem.refactored_code || '';
           }
         }
 
