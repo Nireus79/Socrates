@@ -1553,10 +1553,8 @@ async def resolve_conflicts(
         conflicts = body.get("conflicts", [])
         logger.info(f"Resolving {len(conflicts)} conflicts for project {project_id}")
 
-        # Load project context
-        from socratic_system.models import ProjectContext
-
-        project_context = ProjectContext.from_project(project)
+        # Project is already a ProjectContext from load_project
+        project_context = project
 
         # Apply each conflict resolution
         for conflict in conflicts:
