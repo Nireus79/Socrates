@@ -466,6 +466,34 @@ async def import_file(
 
             logger.debug(f"DocumentProcessor result: {result}")
 
+            # Extract content from processor result for preview
+            extracted_content = ""
+            if result.get("status") == "success":
+                # Get file content for preview (store first 5000 chars)
+                try:
+                    file_content = await file.read()
+                    # Try to extract text content based on file type
+                    if file.filename.endswith(".pdf"):
+                        try:
+                            from pypdf import PdfReader
+                            import io
+                            pdf_reader = PdfReader(io.BytesIO(file_content))
+                            for page in pdf_reader.pages:
+                                extracted_content += page.extract_text() + "\n"
+                        except:
+                            extracted_content = "[PDF content not extractable]"
+                    else:
+                        # For text files, try to decode
+                        try:
+                            extracted_content = file_content.decode("utf-8", errors="ignore")
+                        except:
+                            extracted_content = "[File content not readable]"
+                except:
+                    extracted_content = "[Could not read file for preview]"
+
+            # Limit content preview to first 5000 characters
+            content_preview = extracted_content[:5000] if extracted_content else ""
+
             # Save metadata to database
             doc_id = str(uuid.uuid4())
             db.save_knowledge_document(
@@ -473,12 +501,12 @@ async def import_file(
                 project_id=project_id,
                 doc_id=doc_id,
                 title=file.filename,
-                content="",
+                content=content_preview,
                 source=file.filename,
                 document_type="file",
             )
 
-            logger.info(f"File imported successfully: {file.filename}")
+            logger.info(f"File imported successfully: {file.filename} ({len(content_preview)} chars preview)")
 
             # Emit DOCUMENT_IMPORTED event to trigger knowledge analysis and question regeneration
             try:
@@ -507,8 +535,11 @@ async def import_file(
                 data={
                     "filename": file.filename,
                     "size": len(content),
-                    "chunks": result.get("chunks_added", 0),
-                    "entries": result.get("entries_added", 0),
+                    "document_id": doc_id,
+                    "chunks_created": result.get("chunks_created", 0),
+                    "chunks_stored": result.get("entries_added", 0),
+                    "words_extracted": result.get("words_extracted", 0),
+                    "content_preview": content_preview[:500] if content_preview else "",
                 },
             )
 
