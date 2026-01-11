@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { useCodeGenerationStore, useSubscriptionStore } from '../../stores';
+import { useCodeGenerationStore, useSubscriptionStore, useProjectStore } from '../../stores';
 import { MainLayout, PageHeader } from '../../components/layout';
 import {
   CodeGenerator,
@@ -19,8 +19,11 @@ import type {
 import { Card, Alert, Tab, LoadingSpinner } from '../../components/common';
 
 export const CodePage: React.FC = () => {
-  const { projectId } = useParams<{ projectId?: string }>();
+  const { projectId: paramProjectId } = useParams<{ projectId?: string }>();
   const { hasFeature } = useSubscriptionStore();
+  const { projects, listProjects } = useProjectStore();
+  const [selectedProjectId, setSelectedProjectId] = React.useState<string>(paramProjectId || '');
+  const projectId = selectedProjectId || paramProjectId;
   const {
     generatedCode,
     validationResult,
@@ -36,6 +39,11 @@ export const CodePage: React.FC = () => {
 
   const [activeTab, setActiveTab] = React.useState('generator');
   const [isFullScreen, setIsFullScreen] = React.useState(false);
+
+  // Load projects on mount
+  React.useEffect(() => {
+    listProjects();
+  }, [listProjects]);
 
   // Check if code generation feature is available
   if (!hasFeature('code_generation')) {
@@ -119,6 +127,36 @@ export const CodePage: React.FC = () => {
             { label: 'Code Generation' },
           ]}
         />
+
+        {/* Project Selector */}
+        {projects.length > 0 && (
+          <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 dark:from-blue-900 dark:to-indigo-900 dark:border-blue-800">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                Select Project:
+              </label>
+              <select
+                value={selectedProjectId}
+                onChange={(e) => setSelectedProjectId(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="">-- Choose a Project --</option>
+                {projects.map((project) => (
+                  <option key={project.project_id} value={project.project_id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </Card>
+        )}
+
+        {/* No Project Selected Warning */}
+        {!projectId && (
+          <Alert type="warning" title="No Project Selected">
+            <p>Please select a project to generate code.</p>
+          </Alert>
+        )}
 
         {/* Tabs */}
         <Card>

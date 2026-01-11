@@ -18,7 +18,7 @@ export const EmptyState: React.FC = () => {
           Start by generating code using the Code Generation feature. Generated files will appear here.
         </p>
         <Link
-          to="/code-generation"
+          to="/code"
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium"
         >
           Go to Code Generation
