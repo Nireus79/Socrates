@@ -17,6 +17,7 @@ import BulkImportModal from '../../components/knowledge/BulkImportModal';
 import { DocumentCard } from '../../components/knowledge/DocumentCard';
 import { NoteCard } from '../../components/knowledge/NoteCard';
 import { GitHubRepositoryCard } from '../../components/knowledge/GitHubRepositoryCard';
+import DocumentDetailsModal from '../../components/knowledge/DocumentDetailsModal';
 import { knowledgeAPI } from '../../api/knowledge';
 
 export const KnowledgeBasePage: React.FC = () => {
@@ -64,6 +65,8 @@ export const KnowledgeBasePage: React.FC = () => {
   const [showBulkImportModal, setShowBulkImportModal] = React.useState(false);
   const [allSources, setAllSources] = React.useState<any>(null);
   const [loadingAllSources, setLoadingAllSources] = React.useState(false);
+  const [selectedDocumentId, setSelectedDocumentId] = React.useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
 
   // Load projects on mount
   React.useEffect(() => {
@@ -295,7 +298,10 @@ export const KnowledgeBasePage: React.FC = () => {
                     isSelected={selectedDocuments.has(doc.id)}
                     onSelect={(selected) => toggleDocumentSelection(doc.id)}
                     onDelete={() => handleDeleteDocument(doc.id)}
-                    onView={() => console.log('View document:', doc.id)}
+                    onView={() => {
+                      setSelectedDocumentId(doc.id);
+                      setIsModalOpen(true);
+                    }}
                   />
                 ))}
               </div>
@@ -593,6 +599,23 @@ export const KnowledgeBasePage: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* Document Details Modal */}
+      <DocumentDetailsModal
+        documentId={selectedDocumentId || ''}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedDocumentId(null);
+        }}
+        onDelete={() => {
+          if (selectedDocumentId) {
+            handleDeleteDocument(selectedDocumentId);
+            setIsModalOpen(false);
+            setSelectedDocumentId(null);
+          }
+        }}
+      />
 
       {/* NLU Chat Widget */}
       <NLUChatWidget

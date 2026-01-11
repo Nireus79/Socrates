@@ -547,7 +547,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
 
     try {
       const response = await knowledgeAPI.getDocumentDetails(documentId, true);
-      const details = response.document || response;
+      const details = response.data?.document || response.document || response;
 
       // Cache the result
       const newCache = new Map(state.documentDetailsCache);
@@ -577,7 +577,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
 
     try {
       const response = await knowledgeAPI.getDocumentAnalytics(documentId);
-      const analytics = response.analytics || response;
+      const analytics = response.data?.analytics || response.analytics || response;
 
       // Cache the result
       const newCache = new Map(state.documentAnalyticsCache);

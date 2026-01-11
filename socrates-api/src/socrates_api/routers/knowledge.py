@@ -368,21 +368,24 @@ async def get_document_details(
         word_count = len(content.split()) if content else 0
 
         result = {
+            "success": True,
             "status": "success",
-            "document": {
-                "id": document["id"],
-                "title": document["title"],
-                "source": document["source"],
-                "document_type": document["document_type"],
-                "uploaded_at": document["uploaded_at"],
-                "word_count": word_count,
-                "preview": preview,
+            "data": {
+                "document": {
+                    "id": document["id"],
+                    "title": document["title"],
+                    "source": document["source"],
+                    "document_type": document["document_type"],
+                    "uploaded_at": document["uploaded_at"],
+                    "word_count": word_count,
+                    "preview": preview,
+                },
             },
         }
 
         # Include full content if requested
         if include_content:
-            result["document"]["content"] = content
+            result["data"]["document"]["content"] = content
 
         return result
 
@@ -1288,16 +1291,19 @@ async def get_document_analytics(
         char_count = len(content) if content else 0
 
         analytics = {
+            "success": True,
             "status": "success",
-            "document_id": document_id,
-            "analytics": {
-                "document_title": document["title"],
-                "document_type": document["document_type"],
-                "uploaded_at": document["uploaded_at"],
-                "word_count": word_count,
-                "char_count": char_count,
-                "estimated_reading_time_minutes": max(1, word_count // 200),
-                "source": document["source"],
+            "data": {
+                "document_id": document_id,
+                "analytics": {
+                    "document_title": document["title"],
+                    "document_type": document["document_type"],
+                    "uploaded_at": document["uploaded_at"],
+                    "word_count": word_count,
+                    "char_count": char_count,
+                    "estimated_reading_time_minutes": max(1, word_count // 200),
+                    "source": document["source"],
+                },
             },
         }
 
@@ -1405,4 +1411,53 @@ async def add_knowledge_entry(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to add entry: {str(e)}",
+        )
+
+
+# ============================================================================
+# DEBUG ENDPOINTS (for troubleshooting)
+# ============================================================================
+
+
+@router.get(
+    "/debug/vector-db-chunks",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Debug: List all chunks in vector database",
+)
+async def debug_get_vector_db_chunks(
+    orchestrator=Depends(_get_orchestrator),
+):
+    """
+    Debug endpoint to inspect what's actually stored in the vector database.
+    This helps diagnose why chunk_count might be showing 0.
+
+    Returns:
+        List of all chunks with their metadata
+    """
+    try:
+        if not orchestrator or not orchestrator.vector_db:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Vector database not available",
+            )
+
+        chunks = orchestrator.vector_db.get_all_chunks_debug()
+
+        return APIResponse(
+            success=True,
+            status="success",
+            data={
+                "total_chunks": len(chunks),
+                "chunks": chunks,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting vector db debug info: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get debug info: {str(e)}",
         )

@@ -2022,27 +2022,54 @@ class ProjectDatabase:
         cursor = conn.cursor()
 
         try:
-            cursor.execute(
-                """
-                SELECT id, project_id, user_id, title, content, source, document_type, uploaded_at
-                FROM knowledge_documents
-                WHERE id = ?
-            """,
-                (doc_id,),
-            )
-            row = cursor.fetchone()
+            # Try to get document with content column
+            try:
+                cursor.execute(
+                    """
+                    SELECT id, project_id, user_id, title, content, source, document_type, uploaded_at
+                    FROM knowledge_documents
+                    WHERE id = ?
+                """,
+                    (doc_id,),
+                )
+                row = cursor.fetchone()
 
-            if row:
-                return {
-                    "id": row[0],
-                    "project_id": row[1],
-                    "user_id": row[2],
-                    "title": row[3],
-                    "content": row[4],
-                    "source": row[5],
-                    "document_type": row[6],
-                    "uploaded_at": row[7],
-                }
+                if row:
+                    return {
+                        "id": row[0],
+                        "project_id": row[1],
+                        "user_id": row[2],
+                        "title": row[3],
+                        "content": row[4],
+                        "source": row[5],
+                        "document_type": row[6],
+                        "uploaded_at": row[7],
+                    }
+            except sqlite3.OperationalError as col_err:
+                # Column doesn't exist, try without content
+                if "no column named content" in str(col_err):
+                    cursor.execute(
+                        """
+                        SELECT id, project_id, user_id, title, source, document_type, uploaded_at
+                        FROM knowledge_documents
+                        WHERE id = ?
+                    """,
+                        (doc_id,),
+                    )
+                    row = cursor.fetchone()
+                    if row:
+                        return {
+                            "id": row[0],
+                            "project_id": row[1],
+                            "user_id": row[2],
+                            "title": row[3],
+                            "content": "",  # Empty content if column doesn't exist
+                            "source": row[4],
+                            "document_type": row[5],
+                            "uploaded_at": row[6],
+                        }
+                else:
+                    raise
 
             return None
 
@@ -2058,30 +2085,63 @@ class ProjectDatabase:
         cursor = conn.cursor()
 
         try:
-            cursor.execute(
-                """
-                SELECT id, project_id, user_id, title, content, source, document_type, uploaded_at
-                FROM knowledge_documents
-                WHERE project_id = ?
-                ORDER BY uploaded_at DESC
-            """,
-                (project_id,),
-            )
+            # Try to get documents with content column
+            try:
+                cursor.execute(
+                    """
+                    SELECT id, project_id, user_id, title, content, source, document_type, uploaded_at
+                    FROM knowledge_documents
+                    WHERE project_id = ?
+                    ORDER BY uploaded_at DESC
+                """,
+                    (project_id,),
+                )
+            except sqlite3.OperationalError as col_err:
+                # Column doesn't exist, try without content
+                if "no column named content" in str(col_err):
+                    cursor.execute(
+                        """
+                        SELECT id, project_id, user_id, title, source, document_type, uploaded_at
+                        FROM knowledge_documents
+                        WHERE project_id = ?
+                        ORDER BY uploaded_at DESC
+                    """,
+                        (project_id,),
+                    )
+                else:
+                    raise
 
             documents = []
             for row in cursor.fetchall():
-                documents.append(
-                    {
-                        "id": row[0],
-                        "project_id": row[1],
-                        "user_id": row[2],
-                        "title": row[3],
-                        "content": row[4],
-                        "source": row[5],
-                        "document_type": row[6],
-                        "uploaded_at": row[7],
-                    }
-                )
+                # Handle both with and without content column
+                if len(row) == 8:
+                    # With content column
+                    documents.append(
+                        {
+                            "id": row[0],
+                            "project_id": row[1],
+                            "user_id": row[2],
+                            "title": row[3],
+                            "content": row[4],
+                            "source": row[5],
+                            "document_type": row[6],
+                            "uploaded_at": row[7],
+                        }
+                    )
+                else:
+                    # Without content column
+                    documents.append(
+                        {
+                            "id": row[0],
+                            "project_id": row[1],
+                            "user_id": row[2],
+                            "title": row[3],
+                            "content": "",  # Empty content if column doesn't exist
+                            "source": row[4],
+                            "document_type": row[5],
+                            "uploaded_at": row[6],
+                        }
+                    )
 
             return documents
 

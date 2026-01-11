@@ -563,10 +563,7 @@ class VectorDatabase:
             Number of chunks found for the source
         """
         try:
-            # Build filter for source
-            where_filter = {"source": {"$eq": source}}
-
-            # Add project filter if provided
+            # First, try to count with project_id filter if provided
             if project_id:
                 where_filter = {
                     "$and": [
@@ -574,15 +571,58 @@ class VectorDatabase:
                         {"project_id": {"$eq": project_id}}
                     ]
                 }
+                results = self.collection.get(where=where_filter)
+                chunk_count = len(results.get("ids", []))
 
-            # Query the collection
+                # If found, return the count
+                if chunk_count > 0:
+                    self.logger.debug(f"Counted {chunk_count} chunks for source '{source}' (project_id={project_id})")
+                    return chunk_count
+
+                # If not found with project filter, try without project filter
+                # This handles legacy documents imported before project_id tracking
+                self.logger.debug(f"No chunks found for source '{source}' with project_id={project_id}, trying without project filter...")
+
+            # Query without project filter (fallback for legacy documents)
+            where_filter = {"source": {"$eq": source}}
             results = self.collection.get(where=where_filter)
             chunk_count = len(results.get("ids", []))
 
+            if chunk_count > 0:
+                self.logger.debug(f"Counted {chunk_count} chunks for source '{source}' (without project_id filter - legacy)")
+
             return chunk_count
         except Exception as e:
-            self.logger.warning(f"Failed to count chunks for source '{source}': {e}")
+            self.logger.error(f"Failed to count chunks for source '{source}': {e}", exc_info=True)
             return 0
+
+    def get_all_chunks_debug(self) -> List[Dict]:
+        """Debug method to list all chunks in the database with their metadata.
+
+        Returns:
+            List of all chunks with their IDs, metadata, and content preview
+        """
+        try:
+            # Get ALL chunks from the collection (limit 1000 for safety)
+            results = self.collection.get(limit=1000)
+
+            chunks = []
+            for i, chunk_id in enumerate(results.get("ids", [])):
+                chunk = {
+                    "id": chunk_id,
+                    "metadata": results.get("metadatas", [{}])[i] if i < len(results.get("metadatas", [])) else {},
+                    "content_preview": (results.get("documents", [""])[i][:100] + "...") if i < len(results.get("documents", [])) else "",
+                }
+                chunks.append(chunk)
+
+            self.logger.info(f"Debug: Found {len(chunks)} total chunks in vector database")
+            for chunk in chunks[:10]:  # Log first 10
+                self.logger.debug(f"  Chunk: {chunk['id']}, metadata={chunk['metadata']}")
+
+            return chunks
+        except Exception as e:
+            self.logger.error(f"Failed to get debug chunk list: {e}", exc_info=True)
+            return []
 
     def _generate_chunk_summary(self, chunk: str, max_length: int = 150) -> str:
         """
