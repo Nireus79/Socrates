@@ -9,6 +9,7 @@ import React from 'react';
 import { MessageSquare, X, Send } from 'lucide-react';
 import { nluAPI } from '../../api/nlu';
 import { freeSessionAPI } from '../../api/freeSession';
+import { authAPI } from '../../api/auth';
 import { LoadingSpinner } from '../common';
 
 interface NLUChatWidgetProps {
@@ -112,18 +113,40 @@ export const NLUChatWidget: React.FC<NLUChatWidgetProps> = ({
         const mode = cmd.replace('/subscription testing-mode', '').trim().toLowerCase();
 
         if (mode === 'on') {
-          localStorage.setItem('socrates_testing_mode', 'enabled');
-          localStorage.setItem('socrates_testing_mode_expires', (Date.now() + 24 * 60 * 60 * 1000).toString());
-          const msg = '✓ Testing mode enabled for 24 hours.\n\nFeatures unlocked for testing:\n• Unlimited projects\n• All subscription tiers\n• Testing utilities enabled';
-          setMessages(prev => [...prev, { role: 'assistant', content: msg, type: 'command' }]);
-          console.log('[Testing Mode] Enabled');
+          try {
+            // Call backend to set testing mode persistently
+            await authAPI.setTestingMode(true);
+
+            // Also set localStorage for transient use (in case backend call fails)
+            localStorage.setItem('socrates_testing_mode', 'enabled');
+            localStorage.setItem('socrates_testing_mode_expires', (Date.now() + 24 * 60 * 60 * 1000).toString());
+
+            const msg = '✓ Testing mode enabled for 24 hours.\n\nFeatures unlocked for testing:\n• Unlimited projects\n• All subscription tiers\n• Testing utilities enabled';
+            setMessages(prev => [...prev, { role: 'assistant', content: msg, type: 'command' }]);
+            console.log('[Testing Mode] Enabled (backend + localStorage)');
+          } catch (error) {
+            console.error('[Testing Mode] Failed to enable:', error);
+            const msg = '❌ Failed to enable testing mode. Please check your connection and try again.';
+            setMessages(prev => [...prev, { role: 'assistant', content: msg, type: 'command' }]);
+          }
           return;
         } else if (mode === 'off') {
-          localStorage.removeItem('socrates_testing_mode');
-          localStorage.removeItem('socrates_testing_mode_expires');
-          const msg = '✓ Testing mode disabled.\n\nNormal subscription rules apply.';
-          setMessages(prev => [...prev, { role: 'assistant', content: msg, type: 'command' }]);
-          console.log('[Testing Mode] Disabled');
+          try {
+            // Call backend to disable testing mode
+            await authAPI.setTestingMode(false);
+
+            // Also clear localStorage
+            localStorage.removeItem('socrates_testing_mode');
+            localStorage.removeItem('socrates_testing_mode_expires');
+
+            const msg = '✓ Testing mode disabled.\n\nNormal subscription rules apply.';
+            setMessages(prev => [...prev, { role: 'assistant', content: msg, type: 'command' }]);
+            console.log('[Testing Mode] Disabled (backend + localStorage)');
+          } catch (error) {
+            console.error('[Testing Mode] Failed to disable:', error);
+            const msg = '❌ Failed to disable testing mode. Please check your connection and try again.';
+            setMessages(prev => [...prev, { role: 'assistant', content: msg, type: 'command' }]);
+          }
           return;
         } else {
           const status = localStorage.getItem('socrates_testing_mode') === 'enabled' ? 'ON' : 'OFF';
