@@ -348,13 +348,25 @@ async def create_project(
                 logger.info(f"Adding initial knowledge base content to project {project_id}")
                 # Save knowledge base content as a knowledge document
                 # Using the description or content as the source for the knowledge base
-                db.save_knowledge(
+                db.save_knowledge_document(
                     project_id=project_id,
                     title="Initial Knowledge Base",
                     content=request.knowledge_base_content,
                     source="initial_upload",
                     content_type="text",
                 )
+
+                # Also add to vector database for semantic search
+                orchestrator = _get_orchestrator()
+                orchestrator.vector_db.add_text(
+                    content=request.knowledge_base_content,
+                    metadata={
+                        "project_id": project_id,
+                        "source": "initial_knowledge_base",
+                        "type": "knowledge_base"
+                    }
+                )
+
                 logger.info(
                     f"Successfully added initial knowledge base content to project {project_id}"
                 )
