@@ -1081,8 +1081,8 @@ async def finish_session(
                 "session_summary": {
                     "total_messages": conversation_count,
                     "current_phase": current_phase,
-                    "overall_maturity": current_maturity,
-                    "phase_maturity": phase_maturity,
+                    "overall_maturity": round(current_maturity, 2),
+                    "phase_maturity": round(phase_maturity, 2),
                     "session_ended_at": None,
                 },
                 "project_id": project_id,
@@ -1147,8 +1147,8 @@ async def get_maturity_history(
                 "project_id": project_id,
                 "history": history,
                 "total_events": len(project.maturity_history or []),
-                "current_overall_maturity": project.overall_maturity,
-                "current_phase_maturity": (project.phase_maturity_scores or {}).get(project.phase, 0.0),
+                "current_overall_maturity": round(project.overall_maturity, 2),
+                "current_phase_maturity": round((project.phase_maturity_scores or {}).get(project.phase, 0.0), 2),
             },
         )
 
@@ -1219,12 +1219,12 @@ async def get_maturity_status(
             data={
                 "project_id": project_id,
                 "current_phase": project.phase,
-                "overall_maturity": project.overall_maturity,
+                "overall_maturity": round(project.overall_maturity, 2),
                 "phase_maturity": {
-                    "discovery": phase_scores.get("discovery", 0.0),
-                    "analysis": phase_scores.get("analysis", 0.0),
-                    "design": phase_scores.get("design", 0.0),
-                    "implementation": phase_scores.get("implementation", 0.0),
+                    "discovery": round(phase_scores.get("discovery", 0.0), 2),
+                    "analysis": round(phase_scores.get("analysis", 0.0), 2),
+                    "design": round(phase_scores.get("design", 0.0), 2),
+                    "implementation": round(phase_scores.get("implementation", 0.0), 2),
                 },
                 "strong_areas": strong_categories,
                 "weak_areas": weak_categories,
