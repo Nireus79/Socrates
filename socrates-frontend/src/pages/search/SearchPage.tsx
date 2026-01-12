@@ -22,7 +22,7 @@ export const SearchPage: React.FC = () => {
     listProjects();
     // Clear search on page load
     searchStore.clear();
-  }, [listProjects, searchStore]);
+  }, [listProjects]);
 
   const handleSearch = async (query: string, searchType: 'all' | 'conversations' | 'knowledge' | 'notes') => {
     // Convert search type to filter type if needed

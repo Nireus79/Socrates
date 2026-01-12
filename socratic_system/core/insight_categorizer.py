@@ -314,9 +314,11 @@ Rules:
                 logger.debug(f"Skipping empty field in fallback: {field}")
                 continue
 
-            # Map field to category
+            # Map field to category with confidence tracking
             category = field_to_category.get(field, field)
-            logger.debug(f"Fallback mapping: {field} -> {category}")
+            is_direct_map = field in field_to_category  # Exact match in mapping
+            confidence = 0.85 if is_direct_map else 0.75  # Higher confidence for direct maps
+            logger.debug(f"Fallback mapping: {field} -> {category} (confidence={confidence:.2f})")
 
             # Ensure category is valid for this phase
             if category not in valid_categories:
@@ -325,11 +327,12 @@ Rules:
                 if matching:
                     logger.debug(f"Found matching category for '{field}': {matching[0]}")
                     category = matching[0]
+                    confidence = 0.70  # Lower confidence for fuzzy match
                 else:
                     logger.debug(f"No valid category found for '{field}' in fallback, skipping")
                     continue
 
-            # Create specs
+            # Create specs with confidence based on mapping quality
             spec_count = 0
             if isinstance(values, list):
                 for value in values:
@@ -338,7 +341,7 @@ Rules:
                             {
                                 "category": category,
                                 "content": str(value),
-                                "confidence": 0.7,  # Lower confidence for fallback
+                                "confidence": confidence,  # Use computed confidence
                                 "value": 1.0,
                                 "source_field": field,
                                 "timestamp": datetime.now().isoformat(),
@@ -346,20 +349,20 @@ Rules:
                         )
                         spec_count += 1
                 if spec_count > 0:
-                    logger.debug(f"Created {spec_count} fallback specs for field '{field}'")
+                    logger.debug(f"Created {spec_count} fallback specs for field '{field}' (confidence={confidence:.2f})")
             else:
                 if values:
                     categorized.append(
                         {
                             "category": category,
                             "content": str(values),
-                            "confidence": 0.7,
+                            "confidence": confidence,  # Use computed confidence
                             "value": 1.0,
                             "source_field": field,
                             "timestamp": datetime.now().isoformat(),
                         }
                     )
-                    logger.debug(f"Created 1 fallback spec for field '{field}'")
+                    logger.debug(f"Created 1 fallback spec for field '{field}' (confidence={confidence:.2f})")
 
         logger.info(f"Fallback categorization complete: {len(categorized)} specs created")
         return categorized

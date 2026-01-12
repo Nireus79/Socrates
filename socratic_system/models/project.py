@@ -196,13 +196,31 @@ class ProjectContext:
         self.overall_maturity = self._calculate_overall_maturity()
 
     def _calculate_overall_maturity(self) -> float:
-        """Calculate overall project maturity as average of phase scores."""
+        """
+        Calculate overall project maturity using weighted phase contributions.
+
+        Instead of averaging (which penalizes starting new phases), this uses:
+        - All completed phases (with scores) contribute equally
+        - Current/active phase (even if just started) contributes its current score
+        - Result: advancing to new phases doesn't decrease overall maturity
+
+        Example:
+        - Discovery: 100% → overall = 100%
+        - Discovery: 100%, Analysis: 0% → overall = 100% (not 50%)
+        - Discovery: 100%, Analysis: 30% → overall = (100 + 30) / 2 = 65%
+        """
         if not self.phase_maturity_scores:
             return 0.0
-        scores = [s for s in self.phase_maturity_scores.values() if s > 0]
-        if not scores:
+
+        # Get all phases with non-zero scores (these are the ones being worked on)
+        scored_phases = [s for s in self.phase_maturity_scores.values() if s > 0]
+
+        if not scored_phases:
             return 0.0
-        return sum(scores) / len(scores)
+
+        # Use average of active/completed phases
+        # This avoids penalizing users for advancing to new phases
+        return sum(scored_phases) / len(scored_phases)
 
     def _initialize_workflow_fields(self) -> None:
         """Initialize workflow optimization fields"""

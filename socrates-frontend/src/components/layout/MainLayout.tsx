@@ -3,14 +3,58 @@
  */
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
+import { NLUChatWidget } from '../nlu';
 
 interface MainLayoutProps {
   children: React.ReactNode;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
+  const navigate = useNavigate();
+
+  const handleNLUCommand = (command: string) => {
+    const cmd = command.toLowerCase().trim();
+
+    console.log('[MainLayout] Executing NLU command:', cmd);
+
+    // Navigate to the requested page
+    switch (cmd) {
+      case '/dashboard':
+        console.log('[MainLayout] Navigating to dashboard');
+        navigate('/dashboard');
+        break;
+      case '/projects':
+        console.log('[MainLayout] Navigating to projects');
+        navigate('/projects');
+        break;
+      case '/chat':
+        console.log('[MainLayout] Navigating to chat');
+        navigate('/chat');
+        break;
+      case '/notes':
+        console.log('[MainLayout] Navigating to notes');
+        navigate('/notes');
+        break;
+      case '/knowledge':
+        console.log('[MainLayout] Navigating to knowledge base');
+        navigate('/knowledge');
+        break;
+      case '/analytics':
+        console.log('[MainLayout] Navigating to analytics');
+        navigate('/analytics');
+        break;
+      case '/search':
+        console.log('[MainLayout] Navigating to search');
+        navigate('/search');
+        break;
+      default:
+        console.log('[MainLayout] Command handled in widget:', cmd);
+    }
+  };
+
   return (
     <div
       className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 relative"
@@ -32,6 +76,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </div>
         </main>
       </div>
+      <NLUChatWidget onCommandExecute={handleNLUCommand} />
     </div>
   );
 };

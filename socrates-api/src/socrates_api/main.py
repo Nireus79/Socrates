@@ -294,7 +294,7 @@ app.add_middleware(
     allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept", "X-Testing-Mode"],
     expose_headers=["X-Process-Time", "X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining"],
     max_age=3600,  # Cache preflight requests for 1 hour
 )

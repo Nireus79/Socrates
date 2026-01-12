@@ -1569,6 +1569,11 @@ async def resolve_conflicts(
         conflicts = request.conflicts
         logger.info(f"Resolving {len(conflicts)} conflicts for project {project_id}")
 
+        # IMPORTANT: Preserve categorized_specs (which includes confidence info)
+        # The conflict resolution only modifies the simple fields (tech_stack, requirements, etc.)
+        # Confidence metadata from the original specs is preserved in categorized_specs
+        logger.debug(f"Current categorized_specs before conflict resolution: {len(project.categorized_specs)} categories")
+
         # Apply each conflict resolution
         for conflict in conflicts:
             conflict_type = conflict.conflict_type
@@ -1643,7 +1648,12 @@ async def resolve_conflicts(
 
         # Save updated project to database
         db.save_project(project)
-        logger.info(f"Saved resolved project specifications for {project_id}")
+
+        # Log confidence preservation info
+        logger.info(
+            f"Saved resolved project specifications for {project_id}. "
+            f"Categorized specs with confidence metadata preserved: {len(project.categorized_specs)} categories"
+        )
 
         return APIResponse(
             success=True,

@@ -107,9 +107,9 @@ class DebugLogger:
         cls._file_handler.setFormatter(file_formatter)
         cls._logger.addHandler(cls._file_handler)
 
-        # Console handler (shows DEBUG by default, ERROR when enabled)
+        # Console handler (shows ERROR by default, DEBUG when debug mode enabled)
         cls._console_handler = logging.StreamHandler()
-        cls._console_handler.setLevel(logging.DEBUG)  # Default to DEBUG
+        cls._console_handler.setLevel(logging.ERROR)  # Default to ERROR (debug mode is OFF)
 
         # Enhanced formatter with better readability
         def format_console_message(record):

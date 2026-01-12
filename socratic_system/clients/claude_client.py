@@ -46,10 +46,18 @@ class ClaudeClient:
         self.model = orchestrator.config.claude_model
         self.logger = logging.getLogger("socrates.clients.claude")
 
-        # Initialize clients with API key (required for now)
-        # TODO: In future, support subscription-based auth when Anthropic provides it
+        # Initialize clients for both authentication methods
+        # API key based clients
         self.client = anthropic.Anthropic(api_key=api_key)
         self.async_client = anthropic.AsyncAnthropic(api_key=api_key)
+
+        # Subscription token based clients (if available)
+        self.subscription_client = None
+        self.subscription_async_client = None
+        if subscription_token:
+            self.subscription_client = anthropic.Anthropic(api_key=subscription_token)
+            self.subscription_async_client = anthropic.AsyncAnthropic(api_key=subscription_token)
+            self.logger.info("Subscription-based clients initialized")
 
         # Cache for insights extraction to avoid redundant Claude API calls
         # Maps message hash -> extracted insights
@@ -87,8 +95,46 @@ class ClaudeClient:
                 )
             return self.api_key
 
-    def extract_insights(self, user_response: str, project: ProjectContext) -> Dict:
-        """Extract insights from user response using Claude (synchronous) with caching"""
+    def _get_client(self, user_auth_method: str = "api_key"):
+        """
+        Get the appropriate sync client based on user's auth method.
+
+        Args:
+            user_auth_method: User's preferred auth method ('api_key' or 'subscription')
+
+        Returns:
+            Anthropic sync client instance
+        """
+        if user_auth_method == "subscription" and self.subscription_client:
+            return self.subscription_client
+        return self.client
+
+    def _get_async_client(self, user_auth_method: str = "api_key"):
+        """
+        Get the appropriate async client based on user's auth method.
+
+        Args:
+            user_auth_method: User's preferred auth method ('api_key' or 'subscription')
+
+        Returns:
+            Anthropic async client instance
+        """
+        if user_auth_method == "subscription" and self.subscription_async_client:
+            return self.subscription_async_client
+        return self.async_client
+
+    def extract_insights(self, user_response: str, project: ProjectContext, user_auth_method: str = "api_key") -> Dict:
+        """
+        Extract insights from user response using Claude (synchronous) with caching.
+
+        Args:
+            user_response: The user's response text
+            project: The project context
+            user_auth_method: User's preferred auth method ('api_key' or 'subscription')
+
+        Returns:
+            Dictionary of extracted insights
+        """
         # Handle empty or non-informative responses
         if not user_response or len(user_response.strip()) < 3:
             return {}
@@ -136,7 +182,9 @@ class ClaudeClient:
         """
 
         try:
-            response = self.client.messages.create(
+            # Get the appropriate client based on user's auth method
+            client = self._get_client(user_auth_method)
+            response = client.messages.create(
                 model=self.model,
                 max_tokens=1000,
                 temperature=0.3,
@@ -161,8 +209,18 @@ class ClaudeClient:
             )
             return {}
 
-    async def extract_insights_async(self, user_response: str, project: ProjectContext) -> Dict:
-        """Extract insights from user response asynchronously with caching"""
+    async def extract_insights_async(self, user_response: str, project: ProjectContext, user_auth_method: str = "api_key") -> Dict:
+        """
+        Extract insights from user response asynchronously with caching.
+
+        Args:
+            user_response: The user's response text
+            project: The project context
+            user_auth_method: User's preferred auth method ('api_key' or 'subscription')
+
+        Returns:
+            Dictionary of extracted insights
+        """
         # Handle empty or non-informative responses
         if not user_response or len(user_response.strip()) < 3:
             return {}
@@ -204,7 +262,9 @@ class ClaudeClient:
         """
 
         try:
-            response = await self.async_client.messages.create(
+            # Get the appropriate async client based on user's auth method
+            async_client = self._get_async_client(user_auth_method)
+            response = await async_client.messages.create(
                 model=self.model,
                 max_tokens=1000,
                 temperature=0.3,
@@ -769,17 +829,31 @@ class ClaudeClient:
             )
             return {}
 
-    def generate_socratic_question(self, prompt: str, cache_key: str = None) -> str:
-        """Generate a Socratic question using Claude with optional caching
+    def generate_socratic_question(self, prompt: str, cache_key: str = None, user_auth_method: str = "api_key") -> str:
+        """
+        Generate a Socratic question using Claude with optional caching.
 
         Note: Cache is disabled for question generation to prevent repeated questions
         when conversation history changes. Each question is generated fresh.
+
+        Args:
+            prompt: The prompt for question generation
+            cache_key: Optional cache key (not used, for backward compatibility)
+            user_auth_method: User's preferred auth method ('api_key' or 'subscription')
+
+        Returns:
+            Generated Socratic question
+
+        Raises:
+            APIError: If API call fails
         """
         # Cache is intentionally disabled for questions to ensure variety and avoid
         # returning stale cached questions when conversation history changes
 
         try:
-            response = self.client.messages.create(
+            # Get the appropriate client based on user's auth method
+            client = self._get_client(user_auth_method)
+            response = client.messages.create(
                 model=self.model,
                 max_tokens=200,
                 temperature=0.7,
@@ -907,7 +981,7 @@ class ClaudeClient:
             )
 
     def generate_response(
-        self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7
+        self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7, user_auth_method: str = "api_key"
     ) -> str:
         """
         Generate a general response from Claude for any prompt.
@@ -916,6 +990,7 @@ class ClaudeClient:
             prompt: The prompt to send to Claude
             max_tokens: Maximum tokens in response (default: 2000)
             temperature: Temperature for response generation (default: 0.7)
+            user_auth_method: User's preferred auth method ('api_key' or 'subscription')
 
         Returns:
             Claude's response as a string
@@ -924,7 +999,9 @@ class ClaudeClient:
             APIError: If API call fails
         """
         try:
-            response = self.client.messages.create(
+            # Get the appropriate client based on user's auth method
+            client = self._get_client(user_auth_method)
+            response = client.messages.create(
                 model=self.model,
                 max_tokens=max_tokens,
                 temperature=temperature,
@@ -944,7 +1021,7 @@ class ClaudeClient:
             raise APIError(f"Error generating response: {e}", error_type="GENERATION_ERROR") from e
 
     async def generate_response_async(
-        self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7
+        self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7, user_auth_method: str = "api_key"
     ) -> str:
         """
         Generate a general response from Claude asynchronously.
@@ -953,6 +1030,7 @@ class ClaudeClient:
             prompt: The prompt to send to Claude
             max_tokens: Maximum tokens in response
             temperature: Temperature for response generation
+            user_auth_method: User's preferred auth method ('api_key' or 'subscription')
 
         Returns:
             Claude's response as a string
@@ -961,7 +1039,9 @@ class ClaudeClient:
             APIError: If API call fails
         """
         try:
-            response = await self.async_client.messages.create(
+            # Get the appropriate async client based on user's auth method
+            async_client = self._get_async_client(user_auth_method)
+            response = await async_client.messages.create(
                 model=self.model,
                 max_tokens=max_tokens,
                 temperature=temperature,
@@ -1013,7 +1093,7 @@ class ClaudeClient:
             self.logger.error(f"Error generating code (async): {e}")
             return f"Error generating code: {e}"
 
-    async def generate_socratic_question_async(self, prompt: str, cache_key: str = None) -> str:
+    async def generate_socratic_question_async(self, prompt: str, cache_key: str = None, user_auth_method: str = "api_key") -> str:
         """
         Generate socratic question asynchronously (high-frequency operation).
 
@@ -1022,9 +1102,19 @@ class ClaudeClient:
 
         Note: Cache is disabled for question generation to prevent repeated questions
         when conversation history changes. Each question is generated fresh.
+
+        Args:
+            prompt: The prompt for question generation
+            cache_key: Optional cache key (not used, for backward compatibility)
+            user_auth_method: User's preferred auth method ('api_key' or 'subscription')
+
+        Returns:
+            Generated Socratic question
         """
         try:
-            response = await self.async_client.messages.create(
+            # Get the appropriate async client based on user's auth method
+            async_client = self._get_async_client(user_auth_method)
+            response = await async_client.messages.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=4096,

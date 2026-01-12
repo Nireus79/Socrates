@@ -15,7 +15,6 @@ import {
   TrendsChart,
 } from '../../components/analytics';
 import { Card, Tab, Alert, LoadingSpinner, Button } from '../../components/common';
-import { NLUChatWidget } from '../../components/nlu';
 
 export const AnalyticsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId?: string }>();
@@ -411,15 +410,6 @@ export const AnalyticsPage: React.FC = () => {
         )}
       </div>
 
-      {/* NLU Chat Widget */}
-      <NLUChatWidget
-        initiallyOpen={false}
-        context={{ project_id: selectedProjectId }}
-        onCommandExecute={(command) => {
-          // Command execution handled by slash commands
-          console.log('Command executed:', command);
-        }}
-      />
     </MainLayout>
   );
 };

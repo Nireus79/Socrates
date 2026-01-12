@@ -29,7 +29,7 @@ import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
 
 if TYPE_CHECKING:
     import socrates
@@ -150,6 +150,7 @@ async def create_project(
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
     user_object: Optional[User] = Depends(get_current_user_object_optional),
+    http_request: Request = None,
 ):
     """
     Create a new project for the current user.
@@ -180,10 +181,11 @@ async def create_project(
             if user_object:
                 subscription_tier = getattr(user_object, "subscription_tier", "free")
 
-            # Check project limit for subscription tier
+            # Check project limit for subscription tier (respecting testing mode)
+            testing_mode = (http_request.headers.get("X-Testing-Mode", "") if http_request else "").lower() == "enabled"
             active_projects = db.get_user_projects(current_user)
-            can_create, error_msg = SubscriptionChecker.can_create_projects(
-                subscription_tier, len(active_projects)
+            can_create, error_msg = SubscriptionChecker.check_project_limit(
+                user_object, len(active_projects), testing_mode=testing_mode
             )
             if not can_create:
                 logger.warning(f"User {current_user} exceeded project limit: {error_msg}")
@@ -208,12 +210,15 @@ async def create_project(
             if orchestrator:
                 logger.info("Orchestrator available, using it...")
                 # Use orchestrator pattern (same as CLI)
+                # Pass description and knowledge_base_content so ProjectManagerAgent can analyze them
                 result = orchestrator.process_request(
                     "project_manager",
                     {
                         "action": "create_project",
                         "project_name": request.name,
                         "owner": current_user,
+                        "description": request.description or "",
+                        "knowledge_base_content": request.knowledge_base_content or "",
                         "project_type": request.knowledge_base_content or "general",
                     },
                 )
@@ -301,8 +306,38 @@ async def create_project(
             is_archived=False,
             conversation_history=[],
             maturity=0,
+            goals="",
+            requirements=[],
+            tech_stack=[],
+            constraints=[],
         )
         logger.info("Created ProjectContext object")
+
+        # Analyze description and knowledge_base_content to extract initial specifications
+        context_to_analyze = ""
+        if request.description and request.description.strip():
+            context_to_analyze = request.description
+
+        if request.knowledge_base_content and request.knowledge_base_content.strip():
+            if context_to_analyze:
+                context_to_analyze += f"\n\nKnowledge Base:\n{request.knowledge_base_content}"
+            else:
+                context_to_analyze = request.knowledge_base_content
+
+        # Extract insights if we have content to analyze
+        if context_to_analyze:
+            try:
+                logger.info("Analyzing project description and knowledge base for initial specifications...")
+                # Use the same approach as ProjectManagerAgent
+                insights = await apiClient.claude_client.extract_insights(context_to_analyze, project)
+
+                if insights:
+                    # Apply extracted insights to project (goals, requirements, tech_stack, constraints)
+                    _apply_initial_insights_to_project(project, insights)
+                    logger.info("Initial specifications extracted and applied to project")
+            except Exception as e:
+                logger.warning(f"Could not analyze project context: {str(e)}")
+                # Continue without analysis - non-fatal
 
         db.save_project(project)
         logger.info("Saved project to database")
@@ -671,6 +706,8 @@ async def get_project_stats(
             )
 
         # Gather statistics
+        conversation_history = getattr(project, "conversation_history", [])
+
         stats = {
             "project_id": project_id,
             "phase": project.phase,
@@ -678,10 +715,17 @@ async def get_project_stats(
             "team_size": len(getattr(project, "team_members", [])),
             "created_at": project.created_at,
             "updated_at": project.updated_at,
-            "conversation_count": len(getattr(project, "conversation_history", [])),
+            "conversation_count": len(conversation_history),
+            "questions_asked": len(conversation_history),
+            "code_generated": getattr(project, "code_generated_count", 0),
         }
 
-        return stats
+        return APIResponse(
+            success=True,
+            status="success",
+            data=stats,
+            message="Project statistics retrieved successfully"
+        )
 
     except HTTPException:
         raise
@@ -1608,3 +1652,64 @@ def delete_project_file(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting file: {str(e)}",
         )
+
+
+def _apply_initial_insights_to_project(project, insights: dict) -> None:
+    """
+    Apply extracted insights from description/knowledge base to project context.
+
+    Mirrors the logic from ProjectManagerAgent._apply_initial_insights()
+    to ensure consistent behavior across orchestrator and fallback paths.
+
+    Args:
+        project: ProjectContext to update
+        insights: Dict with extracted insights (goals, requirements, tech_stack, constraints)
+    """
+    if not insights or not isinstance(insights, dict):
+        return
+
+    try:
+        # Apply goals
+        if "goals" in insights and insights["goals"]:
+            goals_list = _normalize_to_list(insights["goals"])
+            if goals_list:
+                project.goals = " ".join(goals_list)
+
+        # Apply requirements
+        if "requirements" in insights and insights["requirements"]:
+            req_list = _normalize_to_list(insights["requirements"])
+            _update_list_field(project.requirements, req_list)
+
+        # Apply tech_stack
+        if "tech_stack" in insights and insights["tech_stack"]:
+            tech_list = _normalize_to_list(insights["tech_stack"])
+            _update_list_field(project.tech_stack, tech_list)
+
+        # Apply constraints
+        if "constraints" in insights and insights["constraints"]:
+            constraint_list = _normalize_to_list(insights["constraints"])
+            _update_list_field(project.constraints, constraint_list)
+
+    except Exception as e:
+        logger.warning(f"Error applying insights to project: {e}")
+
+
+def _normalize_to_list(value) -> list:
+    """Normalize various input types to a list of strings"""
+    if isinstance(value, list):
+        return [str(v).strip() for v in value if v]
+    elif isinstance(value, dict):
+        return [str(v).strip() for v in value.values() if v]
+    elif isinstance(value, str):
+        # Split by comma if multiple items
+        if "," in value:
+            return [s.strip() for s in value.split(",") if s.strip()]
+        return [value.strip()] if value.strip() else []
+    return []
+
+
+def _update_list_field(current_list: list, new_items: list) -> None:
+    """Add new unique items to a list field"""
+    for item in new_items:
+        if item and item not in current_list:
+            current_list.append(item)

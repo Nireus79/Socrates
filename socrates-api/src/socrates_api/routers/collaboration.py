@@ -13,11 +13,12 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
 
 from socrates_api.auth import get_current_user, get_current_user_object, require_project_role
 from socrates_api.database import get_database
 from socrates_api.middleware.subscription import SubscriptionChecker
+from socrates_api.testing_mode import TestingModeChecker
 from socrates_api.models import (
     APIResponse,
     ActiveCollaboratorData,
@@ -185,6 +186,7 @@ async def add_collaborator_new(
     current_user: str = Depends(get_current_user),
     user_object: "User" = Depends(get_current_user_object),
     db: ProjectDatabase = Depends(get_database),
+    http_request: Request = None,
 ):
     """
     Add a collaborator to a project.
@@ -241,10 +243,15 @@ async def add_collaborator_new(
                     detail="Active subscription required to add collaborators",
                 )
 
+            # Check if testing mode is enabled via request headers
+            testing_mode_enabled = TestingModeChecker.is_testing_mode_enabled(
+                http_request.headers if http_request else {}
+            )
+
             # Check subscription tier - collaboration feature requires pro or enterprise tier
             # NOTE: Free tier has collaboration=False in TIER_FEATURES, so free users cannot add team members
             # BUT: Testing mode bypasses this restriction
-            if subscription_tier == "free" and not user_object.testing_mode:
+            if subscription_tier == "free" and not testing_mode_enabled:
                 logger.warning(f"Free-tier user {current_user} attempted to add collaborators")
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -259,17 +266,17 @@ async def add_collaborator_new(
             )
 
             # Allow testing mode to bypass quota limits only
-            if not can_add and not user_object.testing_mode:
+            if not can_add and not testing_mode_enabled:
                 logger.warning(f"User {current_user} exceeded team member limit: {error_msg}")
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=error_msg)
 
-            if not can_add and user_object.testing_mode:
+            if not can_add and testing_mode_enabled:
                 logger.info(
                     f"User {current_user} in testing mode - bypassing quota limits for collaboration"
                 )
 
             logger.info(
-                f"Subscription validation passed for {current_user} (tier: {subscription_tier}, testing_mode: {user_object.testing_mode})"
+                f"Subscription validation passed for {current_user} (tier: {subscription_tier}, testing_mode: {testing_mode_enabled})"
             )
         except HTTPException:
             raise
@@ -935,6 +942,7 @@ async def create_project_invitation(
     current_user: str = Depends(get_current_user),
     user_object: "User" = Depends(get_current_user_object),
     db: ProjectDatabase = Depends(get_database),
+    http_request: Request = None,
 ):
     """
     Create and send an invitation to a collaborator.
@@ -971,6 +979,11 @@ async def create_project_invitation(
         # CRITICAL: Validate subscription before creating invitation
         logger.info(f"Validating subscription for creating invitation for user {current_user}")
         try:
+            # Check if testing mode is enabled via request headers
+            testing_mode_enabled = TestingModeChecker.is_testing_mode_enabled(
+                http_request.headers if http_request else {}
+            )
+
             subscription_tier = user_object.subscription_tier.lower()
 
             # Check if user has active subscription
@@ -984,7 +997,7 @@ async def create_project_invitation(
                 )
 
             # Check subscription tier - collaboration feature requires pro or enterprise tier
-            if subscription_tier == "free" and not user_object.testing_mode:
+            if subscription_tier == "free" and not testing_mode_enabled:
                 logger.warning(f"Free-tier user {current_user} attempted to create invitation")
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -1339,6 +1352,7 @@ async def invite_team_member(
     current_user: str = Depends(get_current_user),
     user_object: "User" = Depends(get_current_user_object),
     db: ProjectDatabase = Depends(get_database),
+    http_request: Request = None,
 ):
     """
     Invite a team member via email (global team).
@@ -1377,6 +1391,11 @@ async def invite_team_member(
         # CRITICAL: Validate subscription before inviting team member
         logger.info(f"Validating subscription for team member invitation for user {current_user}")
         try:
+            # Check if testing mode is enabled via request headers
+            testing_mode_enabled = TestingModeChecker.is_testing_mode_enabled(
+                http_request.headers if http_request else {}
+            )
+
             subscription_tier = user_object.subscription_tier.lower()
 
             # Check if user has active subscription
@@ -1390,7 +1409,7 @@ async def invite_team_member(
                 )
 
             # Check subscription tier - collaboration feature requires pro or enterprise tier
-            if subscription_tier == "free" and not user_object.testing_mode:
+            if subscription_tier == "free" and not testing_mode_enabled:
                 logger.warning(f"Free-tier user {current_user} attempted to invite team member")
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,

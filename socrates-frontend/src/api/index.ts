@@ -15,3 +15,4 @@ export { llmAPI } from './llm';
 export { analysisAPI } from './analysis';
 export { analyticsAPI } from './analytics';
 export { nluAPI } from './nlu';
+export { freeSessionAPI } from './freeSession';

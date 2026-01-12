@@ -10,7 +10,6 @@ import { useKnowledgeStore } from '../../stores/knowledgeStore';
 import { showSuccess, showError, showInfo } from '../../stores/notificationStore';
 import { MainLayout, PageHeader } from '../../components/layout';
 import { Card, Tab, Alert, LoadingSpinner, Button, Input, SkeletonList, ErrorBoundary } from '../../components/common';
-import { NLUChatWidget } from '../../components/nlu';
 import DocumentFilters from '../../components/knowledge/DocumentFilters';
 import DocumentBulkActions from '../../components/knowledge/DocumentBulkActions';
 import BulkImportModal from '../../components/knowledge/BulkImportModal';
@@ -617,15 +616,6 @@ export const KnowledgeBasePage: React.FC = () => {
         }}
       />
 
-      {/* NLU Chat Widget */}
-      <NLUChatWidget
-        initiallyOpen={false}
-        context={{ project_id: selectedProjectId }}
-        onCommandExecute={(command) => {
-          // Command execution handled by slash commands
-          console.log('Command executed:', command);
-        }}
-      />
       </MainLayout>
     </ErrorBoundary>
   );

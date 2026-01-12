@@ -267,6 +267,18 @@ class APIClient {
         localStorageToken: !!localStorage.getItem('access_token'),
       });
     }
+
+    // Include testing mode header if enabled (for subscription testing)
+    const testingMode = localStorage.getItem('socrates_testing_mode');
+    const testingExpires = localStorage.getItem('socrates_testing_mode_expires');
+    if (testingMode === 'enabled' && testingExpires) {
+      const expiresAt = parseInt(testingExpires, 10);
+      if (Date.now() < expiresAt) {
+        config.headers['X-Testing-Mode'] = 'enabled';
+        console.log('[APIClient] Testing mode header included');
+      }
+    }
+
     return config;
   }
 

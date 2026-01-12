@@ -333,9 +333,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
       logger.info('Conflicts resolved successfully', result);
 
       set({ conflicts: null, pendingConflicts: false, isLoading: false });
-      get().addSystemMessage('Conflict resolved. Project specifications updated. Continuing...');
 
-      // Get next question to continue flow
+      // All conflicts resolved - show single confirmation message
+      const conflictCount = Object.keys(newResolutions).length;
+      const message = conflictCount === 1
+        ? 'Conflict resolved. Project specifications updated.'
+        : `All ${conflictCount} conflicts resolved. Project specifications updated.`;
+      get().addSystemMessage(message + ' Loading next question...');
+
+      // Get next question to continue flow (only once after ALL conflicts are resolved)
       try {
         await get().getQuestion(projectId);
       } catch (questionError) {

@@ -8,6 +8,7 @@
 import React from 'react';
 import { MessageSquare, X, Send } from 'lucide-react';
 import { nluAPI } from '../../api/nlu';
+import { freeSessionAPI } from '../../api/freeSession';
 import { LoadingSpinner } from '../common';
 
 interface NLUChatWidgetProps {
@@ -50,6 +51,14 @@ export const NLUChatWidget: React.FC<NLUChatWidgetProps> = ({
   const [input, setInput] = React.useState('');
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [sessionId, setSessionId] = React.useState<string>(() => {
+    // Generate or retrieve session ID
+    const stored = localStorage.getItem('nlu_session_id');
+    if (stored) return stored;
+    const newId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('nlu_session_id', newId);
+    return newId;
+  });
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom
@@ -68,42 +77,117 @@ export const NLUChatWidget: React.FC<NLUChatWidgetProps> = ({
 
     // If input starts with /, treat as direct command
     if (userInput.startsWith('/')) {
-      const commandMsg = `Executing: ${userInput}`;
-      setMessages(prev => [...prev, { role: 'assistant', content: commandMsg, type: 'command' }]);
-      onCommandExecute?.(userInput);
+      const cmd = userInput.toLowerCase().trim();
+
+      console.log('[NLUWidget] Processing command:', cmd);
+
+      // Handle help, info, status locally in widget
+      if (cmd === '/help') {
+        console.log('[NLUWidget] Showing help');
+        const helpText = `Available Commands:
+• /help - Show this help message
+• /dashboard - Go to dashboard
+• /projects - Go to projects
+• /chat - Open chat
+• /notes - Open notes
+• /knowledge - Open knowledge base
+• /analytics - Open analytics
+• /search - Open search
+• /info - Show system information
+• /status - Show system status`;
+        setMessages(prev => [...prev, { role: 'assistant', content: helpText, type: 'command' }]);
+        return;
+      }
+
+      if (cmd === '/info' || cmd === '/status') {
+        console.log('[NLUWidget] Showing info');
+        const infoText = 'Socrates - AI-Powered Development Platform\n\nStatus: Online\n\nYour AI coding assistant is ready to help you build, analyze, and improve your projects.';
+        setMessages(prev => [...prev, { role: 'assistant', content: infoText, type: 'command' }]);
+        return;
+      }
+
+      // Hidden command: /subscription testing-mode on/off
+      if (cmd.startsWith('/subscription testing-mode')) {
+        console.log('[NLUWidget] Testing mode command detected');
+        const mode = cmd.replace('/subscription testing-mode', '').trim().toLowerCase();
+
+        if (mode === 'on') {
+          localStorage.setItem('socrates_testing_mode', 'enabled');
+          localStorage.setItem('socrates_testing_mode_expires', (Date.now() + 24 * 60 * 60 * 1000).toString());
+          const msg = '✓ Testing mode enabled for 24 hours.\n\nFeatures unlocked for testing:\n• Unlimited projects\n• All subscription tiers\n• Testing utilities enabled';
+          setMessages(prev => [...prev, { role: 'assistant', content: msg, type: 'command' }]);
+          console.log('[Testing Mode] Enabled');
+          return;
+        } else if (mode === 'off') {
+          localStorage.removeItem('socrates_testing_mode');
+          localStorage.removeItem('socrates_testing_mode_expires');
+          const msg = '✓ Testing mode disabled.\n\nNormal subscription rules apply.';
+          setMessages(prev => [...prev, { role: 'assistant', content: msg, type: 'command' }]);
+          console.log('[Testing Mode] Disabled');
+          return;
+        } else {
+          const status = localStorage.getItem('socrates_testing_mode') === 'enabled' ? 'ON' : 'OFF';
+          const msg = `Testing mode is currently: ${status}\n\nUsage: /subscription testing-mode on|off`;
+          setMessages(prev => [...prev, { role: 'assistant', content: msg, type: 'command' }]);
+          return;
+        }
+      }
+
+      // For navigation commands, show executing message and call callback
+      console.log('[NLUWidget] Executing navigation command:', userInput);
+      const executingMsg = `Executing: ${userInput}`;
+      setMessages(prev => [...prev, { role: 'assistant', content: executingMsg, type: 'command' }]);
+
+      // Call the command handler with a small delay to ensure message renders first
+      setTimeout(() => {
+        console.log('[NLUWidget] Calling onCommandExecute with:', userInput);
+        onCommandExecute?.(userInput);
+      }, 100);
       return;
     }
 
-    // Otherwise, use NLU to interpret
+    // For natural language, use free_session API for conversational response
     setIsLoading(true);
     try {
-      const result = await nluAPI.interpret(userInput, context);
+      const response = await freeSessionAPI.ask(userInput, sessionId);
 
-      if (result.status === 'success' && result.command) {
-        // High confidence match
-        const responseMsg = `🎯 Understood! Executing: ${result.command}`;
-        setMessages(prev => [...prev, { role: 'assistant', content: responseMsg, type: 'command' }]);
-        onCommandExecute?.(result.command);
-      } else if (result.status === 'suggestions' && result.suggestions && result.suggestions.length > 0) {
-        // Medium confidence - show suggestions
-        const suggestionText = result.suggestions
-          .slice(0, 3)
-          .map((s, i) => `${i + 1}. ${s.command} (${Math.round(s.confidence * 100)}%) - ${s.reasoning}`)
-          .join('\n');
-        const responseMsg = `I found a few possibilities:\n${suggestionText}`;
-        setMessages(prev => [...prev, { role: 'assistant', content: responseMsg, type: 'suggestion' }]);
-      } else {
-        // No match - provide help
-        const responseMsg = result.message || "I didn't understand that. Try typing a command like /help or describe what you want.";
-        setMessages(prev => [...prev, { role: 'assistant', content: responseMsg, type: 'message' }]);
+      // Display the conversational response
+      setMessages(prev => [...prev, { role: 'assistant', content: response.answer, type: 'message' }]);
+
+      // If there are suggested commands, show them
+      if (response.suggested_commands && response.suggested_commands.length > 0) {
+        const suggestionsMsg = `\nYou can also try:\n${response.suggested_commands.slice(0, 3).map(cmd => `• ${cmd}`).join('\n')}`;
+        setMessages(prev => [...prev, { role: 'assistant', content: suggestionsMsg, type: 'suggestion' }]);
       }
     } catch (error) {
-      console.error('NLU error:', error);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
-        type: 'message'
-      }]);
+      console.error('Free session error:', error);
+      // Fallback to NLU interpret for command suggestions
+      try {
+        const result = await nluAPI.interpret(userInput, context);
+
+        if (result.status === 'success' && result.command) {
+          const responseMsg = `🎯 Understood! Executing: ${result.command}`;
+          setMessages(prev => [...prev, { role: 'assistant', content: responseMsg, type: 'command' }]);
+          onCommandExecute?.(result.command);
+        } else if (result.status === 'suggestions' && result.suggestions && result.suggestions.length > 0) {
+          const suggestionText = result.suggestions
+            .slice(0, 3)
+            .map((s, i) => `${i + 1}. ${s.command} (${Math.round(s.confidence * 100)}%)`)
+            .join('\n');
+          const responseMsg = `Did you mean?\n${suggestionText}`;
+          setMessages(prev => [...prev, { role: 'assistant', content: responseMsg, type: 'suggestion' }]);
+        } else {
+          const responseMsg = result.message || "I'm not sure how to help with that. Try typing /help for available commands.";
+          setMessages(prev => [...prev, { role: 'assistant', content: responseMsg, type: 'message' }]);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback NLU error:', fallbackError);
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: 'Sorry, I encountered an error. Please try again.',
+          type: 'message'
+        }]);
+      }
     } finally {
       setIsLoading(false);
     }

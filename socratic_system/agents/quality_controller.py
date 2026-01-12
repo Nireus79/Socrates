@@ -186,6 +186,9 @@ class QualityControllerAgent(Agent):
 
         logging.debug(f"Processing response with {len(insights)} insight fields")
 
+        # Capture score BEFORE recalculation
+        score_before = project.phase_maturity_scores.get(project.phase, 0.0)
+
         # Use calculator to categorize the new insights
         logging.debug("Categorizing insights")
         categorized = self.calculator.categorize_insights(insights, project.phase)
@@ -204,12 +207,18 @@ class QualityControllerAgent(Agent):
             {"project": project, "phase": project.phase}
         )
 
-        # Record in history
+        # Record in history with both before and after scores
         if maturity_result["status"] == "success":
             logging.debug("Recording maturity event in history")
+            # Capture score AFTER recalculation
+            score_after = project.phase_maturity_scores.get(project.phase, 0.0)
+            delta = score_after - score_before
             self._record_maturity_event(
                 project,
                 event_type="response_processed",
+                score_before=score_before,
+                score_after=score_after,
+                delta=delta,
                 details={"specs_added": len(categorized)},
             )
 
@@ -217,7 +226,7 @@ class QualityControllerAgent(Agent):
         logging.debug("Updating analytics metrics")
         self._update_analytics_metrics(project)
 
-        logging.info(f"Response processed: {len(categorized)} specs added, maturity recalculated")
+        logging.info(f"Response processed: {len(categorized)} specs added, maturity recalculated. Delta: {score_after - score_before:.2f}%")
 
         return maturity_result
 
@@ -273,30 +282,38 @@ class QualityControllerAgent(Agent):
         self,
         project: ProjectContext,
         event_type: str,
+        score_before: Optional[float] = None,
+        score_after: Optional[float] = None,
+        delta: Optional[float] = None,
         details: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Record a maturity event in history"""
+        """Record a maturity event in history with proper before/after scores"""
         logging.debug(f"Recording maturity event: {event_type}")
 
         if details is None:
             details = {}
 
-        # Get current maturity before the event
-        current_score = project.phase_maturity_scores.get(project.phase, 0.0)
+        # Use provided scores or calculate from project state
+        if score_before is None:
+            score_before = project.phase_maturity_scores.get(project.phase, 0.0)
+        if score_after is None:
+            score_after = project.phase_maturity_scores.get(project.phase, 0.0)
+        if delta is None:
+            delta = score_after - score_before
 
         event = {
             "timestamp": datetime.now().isoformat(),
             "phase": project.phase,
-            "score_before": current_score,
-            "score_after": current_score,  # Will be updated after recalculation
-            "delta": 0.0,
+            "score_before": score_before,
+            "score_after": score_after,
+            "delta": delta,
             "event_type": event_type,
             "details": details,
         }
 
         project.maturity_history.append(event)
         logging.debug(
-            f"Event recorded: {event_type} at {event['timestamp']}, current score: {current_score:.1f}%"
+            f"Event recorded: {event_type} at {event['timestamp']}, score: {score_before:.1f}% → {score_after:.1f}% (delta: {delta:+.1f}%)"
         )
 
     def _verify_advancement(self, request: Dict) -> Dict:

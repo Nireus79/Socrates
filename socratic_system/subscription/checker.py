@@ -60,14 +60,20 @@ class SubscriptionChecker:
         return False, upgrade_message
 
     @staticmethod
-    def check_project_limit(user: User, current_project_count: int) -> Tuple[bool, Optional[str]]:
+    def check_project_limit(user: User, current_project_count: int, testing_mode: bool = False) -> Tuple[bool, Optional[str]]:
         """
         Check if user can create another project.
+
+        Args:
+            user: User object
+            current_project_count: Current number of projects
+            testing_mode: Whether testing mode is enabled (from headers)
 
         Returns:
             (can_create: bool, error_message: Optional[str])
         """
-        if user and user.testing_mode:
+        # Check both user model and header-based testing mode
+        if (user and user.testing_mode) or testing_mode:
             return True, None
 
         if user is None:
@@ -95,14 +101,20 @@ class SubscriptionChecker:
         return True, None
 
     @staticmethod
-    def check_team_member_limit(user: User, current_team_size: int) -> Tuple[bool, Optional[str]]:
+    def check_team_member_limit(user: User, current_team_size: int, testing_mode: bool = False) -> Tuple[bool, Optional[str]]:
         """
         Check if user can add another team member.
+
+        Args:
+            user: User object
+            current_team_size: Current team size
+            testing_mode: Whether testing mode is enabled (from headers)
 
         Returns:
             (can_add: bool, error_message: Optional[str])
         """
-        if user and user.testing_mode:
+        # Check both user model and header-based testing mode
+        if (user and user.testing_mode) or testing_mode:
             return True, None
 
         user_tier = user.subscription_tier.lower()

@@ -921,13 +921,13 @@ User: ${currentProject?.owner || 'N/A'}`;
       // Format analytics data for readable display
       let summary = '📊 Analytics Report\n\n';
       if (data.maturity_score !== undefined) {
-        summary += `Overall Maturity: ${data.maturity_score.toFixed(2)}\n`;
+        summary += `Overall Maturity: ${data.maturity_score.toFixed(2)}%\n`;
       }
 
       if (data.phase_maturity_scores) {
         summary += '\nPhase Scores:\n';
         Object.entries(data.phase_maturity_scores).forEach(([phase, score]: [string, any]) => {
-          summary += `  • ${phase}: ${score.toFixed(2)}\n`;
+          summary += `  • ${phase}: ${score.toFixed(2)}%\n`;
         });
       }
 

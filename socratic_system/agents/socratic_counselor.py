@@ -311,12 +311,20 @@ class SocraticCounselorAgent(Agent):
         try:
             logger.info(f"Generating dynamic question for {project.phase} phase")
 
+            # Get user's auth method for API calls
+            user_auth_method = "api_key"  # default
+            if current_user:
+                user = self.orchestrator.database.load_user(current_user)
+                if user and hasattr(user, 'claude_auth_method'):
+                    user_auth_method = user.claude_auth_method or "api_key"
+                    logger.debug(f"Using auth method '{user_auth_method}' for user {current_user}")
+
             # Generate cache key based on project context to avoid redundant Claude calls
             # Cache key includes project ID, phase, and question number to ensure variety
             cache_key = f"{project.project_id}:{project.phase}:{question_count}"
 
             question = self.orchestrator.claude_client.generate_socratic_question(
-                prompt, cache_key=cache_key
+                prompt, cache_key=cache_key, user_auth_method=user_auth_method
             )
             logger.debug(f"Question generated successfully: {question[:100]}...")
             self.log(f"Generated dynamic question for {project.phase} phase")
@@ -584,12 +592,20 @@ Return only the question, no additional text or explanation."""
 
         project = request.get("project")
         user_response = request.get("response")
+        current_user = request.get("current_user")
 
         logger.debug(f"Extracting insights only ({len(user_response)} chars)")
 
+        # Get user's auth method for API calls
+        user_auth_method = "api_key"  # default
+        if current_user:
+            user = self.orchestrator.database.load_user(current_user)
+            if user and hasattr(user, 'claude_auth_method'):
+                user_auth_method = user.claude_auth_method or "api_key"
+
         # Extract insights using Claude
         logger.info("Extracting insights from user response (confirmation mode)...")
-        insights = self.orchestrator.claude_client.extract_insights(user_response, project)
+        insights = self.orchestrator.claude_client.extract_insights(user_response, project, user_auth_method=user_auth_method)
         self._log_extracted_insights(logger, insights)
 
         return {"status": "success", "insights": insights}
@@ -622,13 +638,21 @@ Return only the question, no additional text or explanation."""
             f"Added response to conversation history (total: {len(project.conversation_history)} messages)"
         )
 
+        # Get user's auth method for API calls
+        user_auth_method = "api_key"  # default
+        if current_user:
+            user = self.orchestrator.database.load_user(current_user)
+            if user and hasattr(user, 'claude_auth_method'):
+                user_auth_method = user.claude_auth_method or "api_key"
+                logger.debug(f"Using auth method '{user_auth_method}' for user {current_user}")
+
         # Extract insights using Claude (or use pre-extracted if provided)
         if pre_extracted_insights is not None:
             logger.info("Using pre-extracted insights from direct mode confirmation")
             insights = pre_extracted_insights
         else:
             logger.info("Extracting insights from user response...")
-            insights = self.orchestrator.claude_client.extract_insights(user_response, project)
+            insights = self.orchestrator.claude_client.extract_insights(user_response, project, user_auth_method=user_auth_method)
             self._log_extracted_insights(logger, insights)
 
         # REAL-TIME CONFLICT DETECTION
@@ -1415,11 +1439,19 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
         logger = get_logger("socratic_counselor")
         project = request.get("project")
         current_question = request.get("current_question")
+        current_user = request.get("current_user")
 
         if not project or not current_question:
             return {"status": "error", "message": "Project and current_question required"}
 
         try:
+            # Get user's auth method for API calls
+            user_auth_method = "api_key"  # default
+            if current_user:
+                user = self.orchestrator.database.load_user(current_user)
+                if user and hasattr(user, 'claude_auth_method'):
+                    user_auth_method = user.claude_auth_method or "api_key"
+
             # Build prompt for suggestions
             suggestions_prompt = f"""Based on this Socratic question in the {project.phase} phase:
 
@@ -1442,7 +1474,8 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
             response = self.orchestrator.claude_client.generate_response(
                 prompt=suggestions_prompt,
                 max_tokens=800,
-                temperature=0.7
+                temperature=0.7,
+                user_auth_method=user_auth_method
             )
 
             # Parse suggestions from numbered list
