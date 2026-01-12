@@ -130,6 +130,23 @@ class QualityControllerAgent(Agent):
             logging.debug("Delegating to MaturityCalculator.calculate_phase_maturity")
             maturity = self.calculator.calculate_phase_maturity(phase_specs, phase)
 
+            # Apply maturity floor: prevent sudden drops
+            # Maturity represents accumulated progress and should be monotonically increasing
+            previous_phase_maturity = project.phase_maturity_scores.get(phase, 0.0)
+            new_phase_maturity = maturity.overall_score
+
+            # Allow small fluctuations (±2%) but prevent drops > 2%
+            # This prevents sudden drops from confidence variance while allowing actual progress
+            MAX_DROP_THRESHOLD = 2.0  # Allow drops up to 2%
+            if new_phase_maturity < previous_phase_maturity - MAX_DROP_THRESHOLD:
+                logging.info(
+                    f"Maturity drop prevented: {previous_phase_maturity:.1f}% → {new_phase_maturity:.1f}% "
+                    f"(would drop {previous_phase_maturity - new_phase_maturity:.1f}%). "
+                    f"Using floor value of {previous_phase_maturity - MAX_DROP_THRESHOLD:.1f}%"
+                )
+                # Use a smoothed value that allows small adjustments but prevents large drops
+                maturity.overall_score = max(new_phase_maturity, previous_phase_maturity - MAX_DROP_THRESHOLD)
+
             # Update project's maturity scores
             project.phase_maturity_scores[phase] = maturity.overall_score
             project.category_scores[phase] = {
