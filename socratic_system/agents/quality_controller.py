@@ -196,14 +196,21 @@ class QualityControllerAgent(Agent):
             return {"status": "error", "message": str(e)}
 
     def _update_maturity_after_response(self, request: Dict) -> Dict:
-        """Called after each question/response to update maturity"""
+        """Called after each question/response to update maturity
+
+        IMPORTANT: Uses incremental scoring instead of full recalculation.
+        Each answer gets a score: answer_score = sum(spec_value * confidence)
+        Then: overall_maturity += answer_score
+
+        This prevents low-confidence specs from pulling down previous answers' scores.
+        """
         logging.debug("_update_maturity_after_response called")
         project = request.get("project")
         insights = request.get("insights")
 
         logging.debug(f"Processing response with {len(insights)} insight fields")
 
-        # Capture score BEFORE recalculation
+        # Capture score BEFORE adding new specs
         score_before = project.phase_maturity_scores.get(project.phase, 0.0)
 
         # Use calculator to categorize the new insights
@@ -211,41 +218,69 @@ class QualityControllerAgent(Agent):
         categorized = self.calculator.categorize_insights(insights, project.phase)
         logging.info(f"Insights categorized into {len(categorized)} specs")
 
-        # Add to project's categorized specs
+        if not categorized:
+            logging.debug("No specs categorized, returning")
+            return {"status": "success", "message": "No new specs added"}
+
+        # Calculate score contribution for THIS answer
+        # score = sum(spec_value * confidence) for all specs in this response
+        logging.debug("Calculating answer score from categorized specs")
+        answer_score = 0.0
+        for spec in categorized:
+            confidence = spec.get("confidence", 0.9)
+            value = spec.get("value", 1.0)
+            spec_score = value * confidence
+            answer_score += spec_score
+            logging.debug(f"Spec score: {value} × {confidence:.2f} = {spec_score:.2f}")
+
+        logging.info(f"Answer score: {answer_score:.2f} (from {len(categorized)} specs)")
+
+        # Add to project's categorized specs for reference
         if project.phase not in project.categorized_specs:
             project.categorized_specs[project.phase] = []
         project.categorized_specs[project.phase].extend(categorized)
 
         logging.debug(f"Added {len(categorized)} specs to phase {project.phase}")
 
-        # Recalculate maturity
-        logging.debug("Recalculating phase maturity")
-        maturity_result = self._calculate_phase_maturity(
-            {"project": project, "phase": project.phase}
-        )
+        # Instead of recalculating entire maturity, ADD this answer's score
+        # This prevents previous answers' scores from being affected by new specs' confidence
+        score_after = score_before + answer_score
+        project.phase_maturity_scores[project.phase] = score_after
 
-        # Record in history with both before and after scores
-        if maturity_result["status"] == "success":
-            logging.debug("Recording maturity event in history")
-            # Capture score AFTER recalculation
-            score_after = project.phase_maturity_scores.get(project.phase, 0.0)
-            delta = score_after - score_before
-            self._record_maturity_event(
-                project,
-                event_type="response_processed",
-                score_before=score_before,
-                score_after=score_after,
-                delta=delta,
-                details={"specs_added": len(categorized)},
-            )
+        # Calculate and update overall maturity
+        project.overall_maturity = project._calculate_overall_maturity()
+
+        # Auto-update progress to match overall maturity
+        project.progress = int(project.overall_maturity)
+
+        # Record in history with before/after scores
+        logging.debug("Recording maturity event in history")
+        delta = score_after - score_before
+        self._record_maturity_event(
+            project,
+            event_type="response_processed",
+            score_before=score_before,
+            score_after=score_after,
+            delta=delta,
+            details={"specs_added": len(categorized), "answer_score": answer_score},
+        )
 
         # Update analytics metrics
         logging.debug("Updating analytics metrics")
         self._update_analytics_metrics(project)
 
-        logging.info(f"Response processed: {len(categorized)} specs added, maturity recalculated. Delta: {score_after - score_before:.2f}%")
+        logging.info(
+            f"Response processed: {len(categorized)} specs added, answer_score={answer_score:.2f}, "
+            f"phase_maturity: {score_before:.1f}% → {score_after:.1f}% (delta: +{delta:.2f}%)"
+        )
 
-        return maturity_result
+        return {
+            "status": "success",
+            "message": "Maturity updated",
+            "answer_score": answer_score,
+            "score_before": score_before,
+            "score_after": score_after,
+        }
 
     def _update_analytics_metrics(self, project: ProjectContext) -> None:
         """Update real-time analytics metrics after maturity change."""
