@@ -88,181 +88,278 @@ Project Context
 
 ## Core Algorithm
 
-### The Confidence-Weighted, Capped Algorithm
+### Incremental Scoring System (Updated January 2026)
 
-The maturity calculation follows a deterministic, step-by-step process:
+The maturity calculation uses an **incremental scoring approach** where each user response contributes a score to the running total, and previous scores are never re-evaluated. This prevents sudden maturity drops when new, lower-confidence specifications are added.
 
-### Phase 1: Specification Collection
+### Key Innovation: Why Incremental Scoring?
+
+**Previous Approach (Deprecated)**: Each response recalculated maturity from ALL accumulated specs, which meant:
+- Low-confidence new specs (0.7) would average with high-confidence existing specs (0.9)
+- Could cause sudden maturity drops when adding exploratory content
+- Discouraged users from providing diverse input
+
+**Current Approach (Incremental)**: Each response independently contributes its own score:
+- Each answer's specifications get scored: `answer_score = Σ(spec_value × confidence)`
+- That score is ADDED to the phase's running total
+- Previous responses' scores are locked in and never re-evaluated
+- Users can add exploratory content without affecting past progress
+
+### Phase 1: Specification Collection from User Response
+
+When a user answers a question, their response generates new specifications:
 
 ```python
-# For a given phase (e.g., Discovery):
-phase_specs = project.categorized_specs.get("discovery", [])
-
-# Each spec has this structure:
-{
-    "category": "goals",                    # Category name
-    "content": "Application should...",     # Spec content
-    "confidence": 0.9,                      # Confidence score (0.0-1.0)
-    "value": 1.0,                           # Point value (typically 1.0)
-    "source_field": "goals",                # Original field name
-    "timestamp": "2025-01-09T12:34:56"     # When spec was created
-}
+# New specs from this answer
+answer_specs = [
+    {
+        "category": "goals",           # Category name
+        "content": "...",              # Spec content
+        "confidence": 0.9,             # Claude extraction: 0.9
+        "value": 1.0,                  # Point value (typically 1.0)
+        "timestamp": "2025-01-09T12:34:56",
+        "source": "response_2"         # Which answer this came from
+    },
+    {
+        "category": "constraints",
+        "content": "...",
+        "confidence": 0.7,             # Heuristic/fallback: 0.7
+        "value": 1.0,
+        "timestamp": "2025-01-09T12:35:00",
+        "source": "response_2"
+    }
+]
 ```
 
-### Phase 2: Category-Level Scoring
+### Phase 2: Calculate Answer Score
 
-For each category in the phase:
-
-```python
-# 1. Collect all specs for this category
-category_specs = [s for s in phase_specs if s["category"] == category_name]
-
-# 2. Calculate confidence-weighted sum
-weighted_sum = 0.0
-for spec in category_specs:
-    confidence = spec.get("confidence", 0.9)  # Default to 0.9 if missing
-    value = spec.get("value", 1.0)            # Usually 1.0
-    contribution = value * confidence
-    weighted_sum += contribution
-
-# Example: 10 specs with 0.9 confidence
-# weighted_sum = 10 × (1.0 × 0.9) = 9.0
-
-# 3. Cap the score at category target
-category_target = category_targets.get(category_name, 15)  # Default 15 if not found
-capped_score = min(weighted_sum, category_target)
-
-# Example: min(9.0, 20) = 9.0 points
-
-# 4. Calculate category percentage
-category_percentage = (capped_score / category_target) * 100
-# Example: (9.0 / 20) * 100 = 45%
-
-# 5. Store category score
-category_scores[category_name] = CategoryScore(
-    category=category_name,
-    current_score=capped_score,
-    target_score=category_target,
-    confidence=_calculate_category_confidence(category_specs),
-    spec_count=len(category_specs),
-    percentage=category_percentage,
-    is_complete=(capped_score >= category_target)
-)
-```
-
-### Phase 3: Phase-Level Aggregation
+For each answer, calculate its total contribution:
 
 ```python
-# Sum all capped category scores
-total_score = sum(score.current_score for score in category_scores.values())
-# Example: 9.0 + 12.5 + 8.0 + 6.5 + ... = 70.5
-
-# Normalize to percentage (90 is the fixed total per phase)
-overall_percentage = (total_score / 90.0) * 100.0
-# Example: (70.5 / 90) * 100 = 78.3%
-```
-
-### Phase 4: Overall Project Maturity
-
-```python
-# For each phase with specs (> 0%), get its maturity percentage
-phase_percentages = [score for score in phase_scores.values() if score > 0]
-
-# Calculate overall maturity as average
-overall_maturity = sum(phase_percentages) / len(phase_percentages)
-# Example: (78.3 + 65.2 + 52.1) / 3 = 65.2%
-```
-
-### Complete Pseudocode
-
-```python
-def calculate_phase_maturity(project, phase_name):
+def calculate_answer_score(answer_specs):
     """
-    Calculate maturity for a specific phase.
+    Calculate the score contribution of this answer.
 
-    Returns: PhaseMaturity object with complete breakdown
+    Each spec contributes: value × confidence
+    Total: sum of all contributions
     """
+    answer_score = 0.0
+    for spec in answer_specs:
+        confidence = spec.get("confidence", 0.9)
+        value = spec.get("value", 1.0)
+        spec_contribution = value * confidence
+        answer_score += spec_contribution
 
-    # Get category targets for this project type
-    category_targets = get_category_targets(project.project_type, phase_name)
+    return answer_score
 
-    # Get specs for this phase
-    phase_specs = project.categorized_specs.get(phase_name, [])
+# Example Answer 1: 5 specs × 0.9 confidence
+# answer_score = 5 × (1.0 × 0.9) = 4.5 points
+# Phase maturity: 0 + 4.5 = 4.5%
 
-    if not phase_specs:
-        return PhaseMaturity(
-            phase=phase_name,
-            overall_percentage=0.0,
-            category_scores={},
-            warnings=["No specifications yet. Answer questions to start."]
-        )
+# Example Answer 2: 3 specs × 0.7 confidence (exploratory content)
+# answer_score = 3 × (1.0 × 0.7) = 2.1 points
+# Phase maturity: 4.5 + 2.1 = 6.6% (INCREASED, never decreased!)
+```
 
-    # Calculate scores for each category
+### Phase 3: Update Phase Running Total
+
+```python
+# Get current phase score
+score_before = project.phase_maturity_scores.get(phase_name, 0.0)
+
+# Calculate new answer's contribution
+answer_score = calculate_answer_score(answer_specs)
+
+# ADD to running total (don't recalculate everything)
+score_after = score_before + answer_score
+project.phase_maturity_scores[phase_name] = score_after
+
+# Example progression:
+# After answer 1: score = 0 + 4.5 = 4.5
+# After answer 2: score = 4.5 + 2.1 = 6.6
+# After answer 3: score = 6.6 + 3.8 = 10.4
+# (scores never decrease unless specs are explicitly deleted)
+```
+
+### Phase 4: Calculate Category Breakdown (For Reporting)
+
+When generating reports, categorize specs by when they were added to show category progression:
+
+```python
+def get_category_breakdown(project, phase_name):
+    """
+    For display purposes, show breakdown of specs by category.
+
+    Note: Categories are calculated from accumulated specs for clarity,
+    but maturity scoring is purely incremental (sum of answer scores).
+    """
+    # Collect ALL specs for this phase (for reporting)
+    all_phase_specs = project.categorized_specs.get(phase_name, [])
+
     category_scores = {}
-    total_score = 0.0
+    for category_name, target_score in category_targets.items():
+        category_specs = [s for s in all_phase_specs if s["category"] == category_name]
+
+        if not category_specs:
+            category_scores[category_name] = {
+                "count": 0,
+                "percentage": 0.0,
+                "confidence": 0.0
+            }
+            continue
+
+        # Calculate spec count and average confidence for display
+        spec_count = len(category_specs)
+        avg_confidence = sum(s.get("confidence", 0.9) for s in category_specs) / spec_count
+
+        category_scores[category_name] = {
+            "count": spec_count,
+            "percentage": (spec_count / target_category_size) * 100,
+            "confidence": avg_confidence
+        }
+
+    return category_scores
+
+# Note: Category breakdown is informational only.
+# ACTUAL maturity percentage comes from the running score total.
+# This prevents category averaging from distorting the true progress.
+```
+
+### Phase 5: Calculate Overall Phase Percentage
+
+```python
+# Phase maturity percentage is normalized to 0-100%
+# (90 points = 100% per phase, this is a fixed scale)
+raw_score = project.phase_maturity_scores.get(phase_name, 0.0)
+phase_percentage = min((raw_score / 90.0) * 100.0, 100.0)
+
+# Example:
+# raw_score = 45.5 points
+# phase_percentage = (45.5 / 90.0) * 100 = 50.6%
+```
+
+### Phase 6: Overall Project Maturity
+
+```python
+# Average of all phases with specs (excluding empty phases)
+phases_with_specs = [
+    score for score in project.phase_maturity_scores.values()
+    if score > 0
+]
+
+if phases_with_specs:
+    overall_maturity = sum(phases_with_specs) / len(phases_with_specs)
+else:
+    overall_maturity = 0.0
+
+# Example:
+# Discovery: 50.6%, Analysis: 35.2%, Design: 0%
+# overall_maturity = (50.6 + 35.2) / 2 = 42.9%
+```
+
+### Complete Pseudocode: Incremental Scoring
+
+```python
+def update_maturity_after_response(project, phase_name, answer_specs):
+    """
+    Update maturity after user provides a response.
+
+    Uses incremental scoring: new answer's score is ADDED to running total,
+    previous scores remain unchanged.
+
+    Args:
+        project: Project object with phase_maturity_scores
+        phase_name: "discovery", "analysis", "design", "implementation"
+        answer_specs: List of specs extracted from this answer
+
+    Returns: Updated PhaseMaturity object
+    """
+
+    # Step 1: Calculate this answer's contribution
+    answer_score = 0.0
+    for spec in answer_specs:
+        confidence = spec.get("confidence", 0.9)
+        value = spec.get("value", 1.0)
+        spec_contribution = value * confidence
+        answer_score += spec_contribution
+
+    # Step 2: Get current phase score
+    current_score = project.phase_maturity_scores.get(phase_name, 0.0)
+
+    # Step 3: Add new answer's score to running total
+    new_score = current_score + answer_score
+    project.phase_maturity_scores[phase_name] = new_score
+
+    # Step 4: Calculate percentage (normalized to 90-point scale)
+    phase_percentage = min((new_score / 90.0) * 100.0, 100.0)
+
+    # Step 5: Generate category breakdown for reporting (informational only)
+    category_breakdown = get_category_breakdown(
+        project,
+        phase_name,
+        project.categorized_specs.get(phase_name, [])
+    )
+
+    # Step 6: Generate warnings based on current state
+    warnings = _generate_warnings(category_breakdown, phase_percentage)
+
+    # Step 7: Return updated maturity object
+    return PhaseMaturity(
+        phase=phase_name,
+        overall_percentage=phase_percentage,
+        category_scores=category_breakdown,
+        warnings=warnings,
+        ready_to_advance=(phase_percentage >= 60.0)
+    )
+
+
+def get_category_breakdown(project, phase_name, all_phase_specs):
+    """
+    Calculate category breakdown from all accumulated specs (for display).
+
+    Note: This is INFORMATIONAL ONLY for showing spec distribution by category.
+    ACTUAL maturity is calculated incrementally and stored in
+    project.phase_maturity_scores[phase_name].
+
+    Returns: Dict of CategoryScore objects
+    """
+    category_targets = get_category_targets(project.project_type, phase_name)
+    category_scores = {}
     missing_categories = []
 
     for category_name, target_score in category_targets.items():
-        # Get specs for this category
-        category_specs = [s for s in phase_specs if s.get("category") == category_name]
+        # Get all specs for this category
+        category_specs = [s for s in all_phase_specs if s.get("category") == category_name]
 
         if not category_specs:
             missing_categories.append(category_name)
             category_scores[category_name] = CategoryScore(
                 category=category_name,
-                current_score=0.0,
-                target_score=target_score,
-                confidence=0.0,
                 spec_count=0,
+                confidence=0.0,
                 percentage=0.0,
                 is_complete=False
             )
             continue
 
-        # Calculate confidence-weighted sum
-        weighted_sum = 0.0
-        for spec in category_specs:
-            confidence = spec.get("confidence", 0.9)
-            value = spec.get("value", 1.0)
-            weighted_sum += value * confidence
-
-        # Cap at category target
-        capped_score = min(weighted_sum, target_score)
-        total_score += capped_score
-
-        # Calculate percentage
-        percentage = (capped_score / target_score) * 100 if target_score > 0 else 0.0
-
-        # Calculate category confidence (average of all specs)
+        # Calculate spec count and average confidence for this category
+        spec_count = len(category_specs)
         confidences = [s.get("confidence", 0.9) for s in category_specs]
         avg_confidence = sum(confidences) / len(confidences)
 
-        # Store category score
+        # Calculate percentage of category target
+        percentage = min((spec_count / target_score) * 100, 100.0)
+
+        # Store category info for display
         category_scores[category_name] = CategoryScore(
             category=category_name,
-            current_score=capped_score,
-            target_score=target_score,
+            spec_count=spec_count,
             confidence=avg_confidence,
-            spec_count=len(category_specs),
             percentage=percentage,
-            is_complete=(capped_score >= target_score)
+            is_complete=(spec_count >= target_score)
         )
 
-    # Calculate overall percentage
-    overall_percentage = (total_score / 90.0) * 100.0 if total_score > 0 else 0.0
-
-    # Generate warnings
-    warnings = _generate_warnings(category_scores, missing_categories, overall_percentage)
-
-    # Return results
-    return PhaseMaturity(
-        phase=phase_name,
-        overall_percentage=overall_percentage,
-        category_scores=category_scores,
-        warnings=warnings,
-        missing_categories=missing_categories,
-        ready_to_advance=(overall_percentage >= 60.0)
-    )
+    return category_scores
 ```
 
 ---
@@ -507,17 +604,16 @@ if all_specs:
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ 6. MATURITY CALCULATION                                         │
-│    - MaturityCalculator.calculate_phase_maturity() executes:   │
-│      • For each category:                                      │
-│        - weighted_sum = Σ(value × confidence)                  │
-│        - capped = min(weighted_sum, target)                    │
-│        - store category score                                  │
-│      • Sum all capped categories                               │
-│      • Divide by 90 for percentage                             │
-│      • Calculate category breakdown                            │
-│    - Generate warnings (priority-ordered)                      │
-│    - Calculate overall maturity                                │
+│ 6. MATURITY CALCULATION (INCREMENTAL SCORING)                   │
+│    - QualityController.update_maturity_after_response():        │
+│      • Calculate answer_score = Σ(spec_value × confidence)     │
+│      • Get current_score = phase_maturity_scores[phase]        │
+│      • Add: new_score = current_score + answer_score           │
+│      • Store: phase_maturity_scores[phase] = new_score         │
+│      • Calculate category breakdown (informational)            │
+│      • Generate warnings (priority-ordered)                    │
+│      • Calculate overall maturity (average of phases)          │
+│    - KEY: Previous scores LOCKED IN, never recalculated        │
 └──────────────────────┬──────────────────────────────────────────┘
                        │
                        ▼
@@ -901,69 +997,96 @@ class ProjectContext:
 
 ## Examples
 
-### Example 1: High Confidence Phase Build-Up
+### Example 1: High Confidence Phase Build-Up (Incremental Scoring)
 
 **Scenario:** User completes Discovery phase with Claude questions
 
-**Question:** "What problem does your project solve?"
+**Question 1:** "What problem does your project solve?"
 **Answer:** "Help users manage personal budgets efficiently"
 
-**Claude Extraction:**
+**Claude Extraction from Answer 1:**
 ```
 [
   {
     "content": "Personal budget management",
     "category": "problem_definition",
-    "confidence": 0.9
+    "confidence": 0.9,
+    "value": 1.0
   },
   {
     "content": "Emphasis on efficiency",
     "category": "success_metrics",
-    "confidence": 0.9
+    "confidence": 0.9,
+    "value": 1.0
   }
 ]
 ```
 
-**Calculation for problem_definition category (target: 20):**
+**INCREMENTAL SCORING - Answer 1 Score:**
 ```
-weighted_sum = 1.0 × 0.9 = 0.9 points
-capped_score = min(0.9, 20) = 0.9
-percentage = (0.9 / 20) × 100 = 4.5%
-confidence = 0.9
-```
-
-**After 20 questions (20 specs × 0.9 confidence):**
-```
-weighted_sum = 20 × (1.0 × 0.9) = 18.0 points
-capped_score = min(18.0, 20) = 18.0
-percentage = (18.0 / 20) × 100 = 90%
-confidence = 0.9
-status = ready (18/20 points, only 2 away from complete)
+answer_score = (1.0 × 0.9) + (1.0 × 0.9) = 1.8 points
+phase_maturity_scores["discovery"] = 0 + 1.8 = 1.8 points
+phase_percentage = (1.8 / 90.0) × 100 = 2.0%
 ```
 
-### Example 2: Mixed Confidence Category
+**Question 2:** "What are the main requirements?"
+**Answer:** "(5 requirements extracted at 0.9 confidence)"
 
-**Scenario:** Category with both Claude and Heuristic specs
-
-**Specs in "Requirements" category (target: 20):**
+**INCREMENTAL SCORING - Answer 2 Score:**
 ```
-1. "Mobile-first design" (Claude, 0.9) → 0.9 points
-2. "Support iOS and Android" (Claude, 0.9) → 0.9 points
-3. "Real-time notifications" (Claude, 0.9) → 0.9 points
-4. "User registration" (Heuristic, 0.7) → 0.7 points
-5. "Payment processing" (Heuristic, 0.7) → 0.7 points
+answer_score = 5 × (1.0 × 0.9) = 4.5 points
+phase_maturity_scores["discovery"] = 1.8 + 4.5 = 6.3 points
+phase_percentage = (6.3 / 90.0) × 100 = 7.0%
 ```
 
-**Calculation:**
+**After 20 Questions (cumulative):**
 ```
-weighted_sum = (3 × 0.9) + (2 × 0.7) = 2.7 + 1.4 = 4.1 points
-capped_score = min(4.1, 20) = 4.1
-percentage = (4.1 / 20) × 100 = 20.5%
-avg_confidence = (0.9 + 0.9 + 0.9 + 0.7 + 0.7) / 5 = 0.82
-status = weak (only 20.5%)
+Total score = 90 points (sum of all 20 answer scores)
+Phase percentage = (90 / 90.0) × 100 = 100% (ready to advance)
+
+CRITICAL: This score came from accumulated answer scores, NOT recalculation.
+If answer 20 had lower-confidence specs (0.7), it wouldn't reduce
+the total—it would just add fewer points (e.g., 3.5 instead of 4.5).
 ```
 
-**Insight:** The 2 heuristic specs contributed less (1.4 points) than if they were Claude specs (1.8 points), a difference of 0.4 points or 2%.
+### Example 2: How Specs Contribute Across Multiple Answers (Incremental)
+
+**Scenario:** Requirements category gets specs from multiple answers
+
+**From Answer 3 (Claude extraction):**
+```
+1. "Mobile-first design" → 1.0 × 0.9 = 0.9 points
+2. "Support iOS and Android" → 1.0 × 0.9 = 0.9 points
+3. "Real-time notifications" → 1.0 × 0.9 = 0.9 points
+Answer 3 total contribution = 2.7 points
+```
+
+**From Answer 7 (Heuristic specs):**
+```
+1. "User registration" → 1.0 × 0.7 = 0.7 points
+2. "Payment processing" → 1.0 × 0.7 = 0.7 points
+Answer 7 total contribution = 1.4 points
+```
+
+**Category Breakdown (Informational Only):**
+```
+Total specs in "Requirements" = 5
+Total points from these specs = 2.7 + 1.4 = 4.1
+Average confidence = 0.82
+Category percentage = (5 specs / 20 target) × 100 = 25%
+```
+
+**How This Fits Incremental Scoring:**
+```
+Answer 3: phase_score += 2.7 (covers 3 requirements)
+Answer 7: phase_score += 1.4 (covers 2 requirements)
+
+Total phase score = previous_score + 2.7 + 1.4 + ...
+
+The category breakdown is INFORMATIONAL (shows which specs are in which
+categories). The ACTUAL maturity is just the running sum of all answer scores,
+never recalculated from the categories.
+```
 
 ### Example 3: User Uncertainty Handling
 
@@ -1058,6 +1181,18 @@ Analysis:
 
 ## API Reference
 
+### Data Format Notes
+
+**Maturity Values Formatting (Updated January 2026):**
+- All maturity percentages are rounded to **2 decimal places**
+- Example: `75.32`, `62.50`, `8.04` (not `75.318` or `8.041923847`)
+- This applies to:
+  - Phase maturity scores (`discovery`, `analysis`, `design`, `implementation`)
+  - Overall maturity
+  - Category percentages
+  - All history and analytics values
+- Confidence values are floating point (not rounded)
+
 ### Maturity Endpoints
 
 #### GET /projects/{project_id}/maturity
@@ -1071,19 +1206,19 @@ Get complete maturity data for a project.
   "data": {
     "project_id": "proj_abc123",
     "phase_maturity_scores": {
-      "discovery": 75.3,
-      "analysis": 62.5,
-      "design": 0.0,
-      "implementation": 0.0
+      "discovery": 75.32,
+      "analysis": 62.50,
+      "design": 0.00,
+      "implementation": 0.00
     },
-    "overall_maturity": 68.9,
+    "overall_maturity": 68.91,
     "current_phase": "analysis",
     "category_scores": {
       "discovery": {
         "problem_definition": {
           "current_score": 18.5,
           "target_score": 20,
-          "percentage": 92.5,
+          "percentage": 92.50,
           "confidence": 0.89,
           "spec_count": 18,
           "is_complete": false
@@ -1097,10 +1232,10 @@ Get complete maturity data for a project.
     ],
     "ready_to_advance": true,
     "analytics_metrics": {
-      "current_phase_maturity": 62.5,
-      "overall_maturity": 68.9,
+      "current_phase_maturity": 62.50,
+      "overall_maturity": 68.91,
       "total_qa_sessions": 10,
-      "velocity": 6.2,
+      "velocity": 6.25,
       "avg_confidence": 0.85,
       "strong_categories": [...],
       "weak_categories": [...]
@@ -1123,9 +1258,9 @@ Get maturity progression over time.
       {
         "timestamp": "2025-01-05T10:30:00",
         "phase": "discovery",
-        "old_score": 55.0,
-        "new_score": 65.2,
-        "delta": 10.2,
+        "old_score": 55.00,
+        "new_score": 65.23,
+        "delta": 10.23,
         "specs_added": 5,
         "warnings": ["Weak areas: constraints"]
       }
@@ -1146,11 +1281,11 @@ Get detailed analytics and metrics.
   "data": {
     "project_id": "proj_abc123",
     "metrics": {
-      "current_phase_maturity": 68.5,
-      "overall_maturity": 52.3,
+      "current_phase_maturity": 68.50,
+      "overall_maturity": 52.31,
       "total_qa_sessions": 15,
-      "velocity": 4.6,
-      "velocity_trend": [5.2, 4.8, 4.6, 4.3],
+      "velocity": 4.60,
+      "velocity_trend": [5.20, 4.80, 4.60, 4.31],
       "avg_confidence": 0.84,
       "strong_categories": [...],
       "weak_categories": [...]

@@ -133,18 +133,28 @@ This transforms locally-optimal, myopic decision-making into globally-optimal, s
 
 The Quality Controller currently operates as a **measurement and warning system** without blocking capabilities:
 
-#### 1. Maturity Measurement
+#### 1. Maturity Measurement (Incremental Scoring)
 - **Location**: `socratic_system/agents/quality_controller.py`
 - **Triggered**: After each user response is processed
-- **Function**: Calculates phase maturity using the `MaturityCalculator`
-- **Algorithm**:
+- **Function**: Updates phase maturity using incremental scoring (added in January 2026)
+- **Algorithm** (Incremental):
   ```python
-  For each phase category:
-      Get all specs tagged with that category
-      Calculate: weighted_sum = Σ(spec_value × confidence)
-      Cap at category target (prevents domination)
-  Overall maturity = (total_score / 90) × 100
+  When user provides answer with new specs:
+      Calculate answer_score = Σ(spec_value × confidence)
+      Get current_score = project.phase_maturity_scores[phase]
+      Set new_score = current_score + answer_score
+      project.phase_maturity_scores[phase] = new_score
+
+      phase_percentage = (new_score / 90.0) × 100.0
+
+      # IMPORTANT: Each answer's score is added once and locked in
+      # Previous answers' scores NEVER re-evaluated
+      # This prevents maturity drops when adding exploratory content
   ```
+- **Why Incremental?**:
+  - Prevents sudden maturity drops (9% → 5%)
+  - Low-confidence exploratory specs don't affect established progress
+  - Encourages comprehensive knowledge gathering without score penalties
 
 #### 2. Warning Generation
 - **Thresholds**:
