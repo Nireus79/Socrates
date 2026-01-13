@@ -286,7 +286,7 @@ class ClaudeClient:
             return {}
 
     def generate_conflict_resolution_suggestions(
-        self, conflict: ConflictInfo, project: ProjectContext
+        self, conflict: ConflictInfo, project: ProjectContext, user_auth_method: str = "api_key"
     ) -> str:
         """Generate suggestions for resolving a specific conflict"""
         context_summary = self.orchestrator.context_analyzer.get_context_summary(project)
@@ -311,7 +311,8 @@ class ClaudeClient:
     Be specific and practical, not just theoretical."""
 
         try:
-            response = self.client.messages.create(
+            client = self._get_client(user_auth_method)
+            response = client.messages.create(
                 model=self.model,
                 max_tokens=600,
                 temperature=0.7,
@@ -323,24 +324,24 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating suggestions: {e}"
 
-    def generate_artifact(self, context: str, project_type: str) -> str:
+    def generate_artifact(self, context: str, project_type: str, user_auth_method: str = "api_key") -> str:
         """Generate project-type-appropriate artifact"""
         if project_type == "software":
-            return self.generate_code(context)
+            return self.generate_code(context, user_auth_method)
         elif project_type == "business":
-            return self.generate_business_plan(context)
+            return self.generate_business_plan(context, user_auth_method)
         elif project_type == "research":
-            return self.generate_research_protocol(context)
+            return self.generate_research_protocol(context, user_auth_method)
         elif project_type == "creative":
-            return self.generate_creative_brief(context)
+            return self.generate_creative_brief(context, user_auth_method)
         elif project_type == "marketing":
-            return self.generate_marketing_plan(context)
+            return self.generate_marketing_plan(context, user_auth_method)
         elif project_type == "educational":
-            return self.generate_curriculum(context)
+            return self.generate_curriculum(context, user_auth_method)
         else:
-            return self.generate_code(context)  # Default to code
+            return self.generate_code(context, user_auth_method)  # Default to code
 
-    def generate_code(self, context: str) -> str:
+    def generate_code(self, context: str, user_auth_method: str = "api_key") -> str:
         """Generate code based on project context"""
         prompt = f"""
         Generate a complete, functional script based on this project context:
@@ -358,7 +359,9 @@ class ClaudeClient:
         """
 
         try:
-            response = self.client.messages.create(
+            client = self._get_client(user_auth_method)
+
+            response = client.messages.create(
                 model=self.model,
                 max_tokens=4000,
                 temperature=0.7,
@@ -381,7 +384,7 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating code: {e}"
 
-    def generate_business_plan(self, context: str) -> str:
+    def generate_business_plan(self, context: str, user_auth_method: str = "api_key") -> str:
         """Generate business plan document"""
         prompt = f"""
         Generate a comprehensive business plan based on this context:
@@ -404,7 +407,9 @@ class ClaudeClient:
         """
 
         try:
-            response = self.client.messages.create(
+            client = self._get_client(user_auth_method)
+
+            response = client.messages.create(
                 model=self.model,
                 max_tokens=4000,
                 temperature=0.7,
@@ -427,7 +432,7 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating business plan: {e}"
 
-    def generate_research_protocol(self, context: str) -> str:
+    def generate_research_protocol(self, context: str, user_auth_method: str = "api_key") -> str:
         """Generate research protocol and methodology document"""
         prompt = f"""
         Generate a detailed research protocol and methodology document based on this context:
@@ -450,7 +455,9 @@ class ClaudeClient:
         """
 
         try:
-            response = self.client.messages.create(
+            client = self._get_client(user_auth_method)
+
+            response = client.messages.create(
                 model=self.model,
                 max_tokens=4000,
                 temperature=0.7,
@@ -473,7 +480,7 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating research protocol: {e}"
 
-    def generate_creative_brief(self, context: str) -> str:
+    def generate_creative_brief(self, context: str, user_auth_method: str = "api_key") -> str:
         """Generate creative/design brief document"""
         prompt = f"""
         Generate a comprehensive creative brief and design specifications based on this context:
@@ -496,7 +503,9 @@ class ClaudeClient:
         """
 
         try:
-            response = self.client.messages.create(
+            client = self._get_client(user_auth_method)
+
+            response = client.messages.create(
                 model=self.model,
                 max_tokens=4000,
                 temperature=0.7,
@@ -519,7 +528,7 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating creative brief: {e}"
 
-    def generate_marketing_plan(self, context: str) -> str:
+    def generate_marketing_plan(self, context: str, user_auth_method: str = "api_key") -> str:
         """Generate marketing campaign plan document"""
         prompt = f"""
         Generate a comprehensive marketing campaign plan based on this context:
@@ -542,7 +551,9 @@ class ClaudeClient:
         """
 
         try:
-            response = self.client.messages.create(
+            client = self._get_client(user_auth_method)
+
+            response = client.messages.create(
                 model=self.model,
                 max_tokens=4000,
                 temperature=0.7,
@@ -565,7 +576,7 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating marketing plan: {e}"
 
-    def generate_curriculum(self, context: str) -> str:
+    def generate_curriculum(self, context: str, user_auth_method: str = "api_key") -> str:
         """Generate educational curriculum document"""
         prompt = f"""
         Generate a comprehensive curriculum design document based on this context:
@@ -588,7 +599,9 @@ class ClaudeClient:
         """
 
         try:
-            response = self.client.messages.create(
+            client = self._get_client(user_auth_method)
+
+            response = client.messages.create(
                 model=self.model,
                 max_tokens=4000,
                 temperature=0.7,
@@ -612,7 +625,7 @@ class ClaudeClient:
             return f"Error generating curriculum: {e}"
 
     def generate_documentation(
-        self, project: ProjectContext, artifact: str, artifact_type: str = "code"
+        self, project: ProjectContext, artifact: str, artifact_type: str = "code", user_auth_method: str = "api_key"
     ) -> str:
         """Generate documentation for any artifact type"""
         doc_instructions = {
@@ -695,7 +708,9 @@ class ClaudeClient:
         """
 
         try:
-            response = self.client.messages.create(
+            client = self._get_client(user_auth_method)
+
+            response = client.messages.create(
                 model=self.model,
                 max_tokens=3000,
                 temperature=0.5,
@@ -718,7 +733,7 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating documentation: {e}"
 
-    def test_connection(self) -> bool:
+    def test_connection(self, user_auth_method: str = "api_key") -> bool:
         """Test connection to Claude API"""
         try:
             self.client.messages.create(
@@ -875,7 +890,7 @@ class ClaudeClient:
                 f"Error generating Socratic question: {e}", error_type="GENERATION_ERROR"
             ) from e
 
-    def generate_suggestions(self, current_question: str, project: ProjectContext) -> str:
+    def generate_suggestions(self, current_question: str, project: ProjectContext, user_auth_method: str = "api_key") -> str:
         """Generate helpful suggestions when user can't answer a question"""
 
         # Get recent conversation for context
@@ -924,7 +939,9 @@ class ClaudeClient:
     """
 
         try:
-            response = self.client.messages.create(
+            client = self._get_client(user_auth_method)
+
+            response = client.messages.create(
                 model=self.model,
                 max_tokens=800,
                 temperature=0.7,
@@ -1061,7 +1078,7 @@ class ClaudeClient:
     # PHASE 2: ADDITIONAL ASYNC METHODS FOR HIGH-TRAFFIC OPERATIONS
     # =====================================================================
 
-    async def generate_code_async(self, context: str) -> str:
+    async def generate_code_async(self, context: str, user_auth_method: str = "api_key") -> str:
         """Generate code asynchronously (high-traffic for code_generator agent)."""
         prompt = f"""
         Generate a complete, functional script based on this project context:
@@ -1079,7 +1096,9 @@ class ClaudeClient:
         """
 
         try:
-            response = await self.async_client.messages.create(
+            client = self._get_async_client(user_auth_method)
+
+            response = await client.messages.create(
                 model=self.model,
                 max_tokens=4000,
                 temperature=0.7,
@@ -1129,7 +1148,7 @@ class ClaudeClient:
             self.logger.error(f"Error generating socratic question (async): {e}")
             return "I'd like to understand your thinking better. Can you elaborate?"
 
-    async def detect_conflicts_async(self, requirements: list) -> list:
+    async def detect_conflicts_async(self, requirements: list, user_auth_method: str = "api_key") -> list:
         """
         Detect conflicts in requirements asynchronously.
 
@@ -1157,7 +1176,9 @@ class ClaudeClient:
         """
 
         try:
-            response = await self.async_client.messages.create(
+            client = self._get_async_client(user_auth_method)
+
+            response = await client.messages.create(
                 model=self.model,
                 max_tokens=2000,
                 temperature=0.3,
@@ -1171,7 +1192,7 @@ class ClaudeClient:
             self.logger.error(f"Error detecting conflicts (async): {e}")
             return []
 
-    async def analyze_context_async(self, project: ProjectContext) -> str:
+    async def analyze_context_async(self, project: ProjectContext, user_auth_method: str = "api_key") -> str:
         """
         Analyze project context asynchronously.
 
@@ -1199,7 +1220,9 @@ class ClaudeClient:
         """
 
         try:
-            response = await self.async_client.messages.create(
+            client = self._get_async_client(user_auth_method)
+
+            response = await client.messages.create(
                 model=self.model,
                 max_tokens=500,
                 temperature=0.5,
@@ -1213,7 +1236,7 @@ class ClaudeClient:
             self.logger.error(f"Error analyzing context (async): {e}")
             return ""
 
-    async def generate_business_plan_async(self, context: str) -> str:
+    async def generate_business_plan_async(self, context: str, user_auth_method: str = "api_key") -> str:
         """Generate business plan asynchronously."""
         prompt = f"""
         Generate a comprehensive business plan based on this context:
@@ -1236,7 +1259,9 @@ class ClaudeClient:
         """
 
         try:
-            response = await self.async_client.messages.create(
+            client = self._get_async_client(user_auth_method)
+
+            response = await client.messages.create(
                 model=self.model,
                 max_tokens=4000,
                 temperature=0.7,
@@ -1250,7 +1275,7 @@ class ClaudeClient:
             self.logger.error(f"Error generating business plan (async): {e}")
             return f"Error generating business plan: {e}"
 
-    async def generate_documentation_async(self, context: str, doc_type: str = "technical") -> str:
+    async def generate_documentation_async(self, context: str, doc_type: str = "technical", user_auth_method: str = "api_key") -> str:
         """
         Generate documentation asynchronously.
 
@@ -1273,7 +1298,9 @@ class ClaudeClient:
         """
 
         try:
-            response = await self.async_client.messages.create(
+            client = self._get_async_client(user_auth_method)
+
+            response = await client.messages.create(
                 model=self.model,
                 max_tokens=3000,
                 temperature=0.5,
@@ -1288,7 +1315,7 @@ class ClaudeClient:
             return f"Error generating documentation: {e}"
 
     async def extract_tech_recommendations_async(
-        self, project: ProjectContext, query: str
+        self, project: ProjectContext, query: str, user_auth_method: str = "api_key"
     ) -> Dict[str, Any]:
         """
         Extract technology recommendations asynchronously.
@@ -1316,7 +1343,9 @@ class ClaudeClient:
         """
 
         try:
-            response = await self.async_client.messages.create(
+            client = self._get_async_client(user_auth_method)
+
+            response = await client.messages.create(
                 model=self.model,
                 max_tokens=2000,
                 temperature=0.5,
@@ -1333,7 +1362,7 @@ class ClaudeClient:
             return {}
 
     async def evaluate_quality_async(
-        self, content: str, content_type: str = "code"
+        self, content: str, content_type: str = "code", user_auth_method: str = "api_key"
     ) -> Dict[str, Any]:
         """
         Evaluate quality of generated content asynchronously.
@@ -1357,7 +1386,9 @@ class ClaudeClient:
         """
 
         try:
-            response = await self.async_client.messages.create(
+            client = self._get_async_client(user_auth_method)
+
+            response = await client.messages.create(
                 model=self.model,
                 max_tokens=1500,
                 temperature=0.3,
@@ -1372,7 +1403,7 @@ class ClaudeClient:
             return {"score": 0, "feedback": str(e)}
 
     async def generate_suggestions_async(
-        self, current_question: str, project: ProjectContext
+        self, current_question: str, project: ProjectContext, user_auth_method: str = "api_key"
     ) -> str:
         """
         Generate follow-up suggestions asynchronously.
@@ -1399,7 +1430,9 @@ class ClaudeClient:
         """
 
         try:
-            response = await self.async_client.messages.create(
+            client = self._get_async_client(user_auth_method)
+
+            response = await client.messages.create(
                 model=self.model,
                 max_tokens=500,
                 temperature=0.6,
@@ -1414,7 +1447,7 @@ class ClaudeClient:
             return ""
 
     async def generate_conflict_resolution_async(
-        self, conflict: Any, project: ProjectContext
+        self, conflict: Any, project: ProjectContext, user_auth_method: str = "api_key"
     ) -> str:
         """Generate conflict resolution suggestions asynchronously."""
         prompt = f"""Help resolve this project specification conflict:
@@ -1435,7 +1468,9 @@ class ClaudeClient:
     Be specific and practical, not just theoretical."""
 
         try:
-            response = await self.async_client.messages.create(
+            client = self._get_async_client(user_auth_method)
+
+            response = await client.messages.create(
                 model=self.model,
                 max_tokens=600,
                 temperature=0.7,
@@ -1451,10 +1486,12 @@ class ClaudeClient:
             self.logger.error(f"Error generating conflict resolution (async): {e}")
             return f"Error generating resolution: {e}"
 
-    async def test_connection_async(self) -> bool:
+    async def test_connection_async(self, user_auth_method: str = "api_key") -> bool:
         """Test Claude API connection asynchronously."""
         try:
-            response = await self.async_client.messages.create(
+            client = self._get_async_client(user_auth_method)
+
+            response = await client.messages.create(
                 model=self.model, max_tokens=10, messages=[{"role": "user", "content": "Hi"}]
             )
             return response.content[0].text is not None

@@ -723,7 +723,13 @@ Return only the question, no additional text or explanation."""
             }
 
         # CLI mode: handle interactively
-        conflicts_resolved = self._handle_conflicts_realtime(conflict_result["conflicts"], project, insights)
+        # Load user auth method for API calls
+        user_auth_method = "api_key"
+        if current_user:
+            user_obj = self.orchestrator.database.load_user(current_user)
+            if user_obj and hasattr(user_obj, 'claude_auth_method'):
+                user_auth_method = user_obj.claude_auth_method or "api_key"
+        conflicts_resolved = self._handle_conflicts_realtime(conflict_result["conflicts"], project, insights, user_auth_method)
         if not conflicts_resolved:
             logger.info("User chose not to resolve conflicts")
             return {"has_conflicts": True, "conflicts": conflict_result["conflicts"]}
@@ -879,7 +885,7 @@ Return only the question, no additional text or explanation."""
         return ""
 
     def _handle_conflicts_realtime(
-        self, conflicts: List[ConflictInfo], project: ProjectContext, insights: Dict = None
+        self, conflicts: List[ConflictInfo], project: ProjectContext, insights: Dict = None, user_auth_method: str = "api_key"
     ) -> bool:
         """Handle conflicts in real-time during conversation
 
@@ -897,7 +903,7 @@ Return only the question, no additional text or explanation."""
 
             # Get AI-generated suggestions
             suggestions = self.orchestrator.claude_client.generate_conflict_resolution_suggestions(
-                conflict, project
+                conflict, project, user_auth_method
             )
             print(f"\n{Fore.MAGENTA}{suggestions}")
 
