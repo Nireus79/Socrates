@@ -350,12 +350,16 @@ async def create_project(
                 logger.info(f"Adding initial knowledge base content to project {project_id}")
                 # Save knowledge base content as a knowledge document
                 # Using the description or content as the source for the knowledge base
+                import uuid
+                doc_id = str(uuid.uuid4())
                 db.save_knowledge_document(
+                    user_id=current_user,
                     project_id=project_id,
+                    doc_id=doc_id,
                     title="Initial Knowledge Base",
                     content=request.knowledge_base_content,
                     source="initial_upload",
-                    content_type="text",
+                    document_type="text",
                 )
 
                 # Also add to vector database for semantic search
@@ -376,6 +380,31 @@ async def create_project(
                 logger.warning(f"Failed to add initial knowledge base content: {str(e)}")
                 # Don't fail the project creation if knowledge base save fails
                 # The project is already created successfully
+
+        # Calculate initial maturity based on specs that were extracted from description/KB
+        if context_to_analyze and project.requirements:
+            try:
+                logger.info(f"Calculating initial maturity for project {project_id}...")
+                # Get orchestrator and quality controller
+                orchestrator = _get_orchestrator()
+                # Use quality controller to calculate initial maturity
+                maturity_result = await orchestrator.process_request(
+                    "quality_controller",
+                    {
+                        "action": "calculate_maturity",
+                        "project": project,
+                        "current_user": current_user,
+                    },
+                )
+                if maturity_result.get("overall_maturity") is not None:
+                    project.overall_maturity = maturity_result["overall_maturity"]
+                    if maturity_result.get("phase_maturity_scores"):
+                        project.phase_maturity_scores = maturity_result["phase_maturity_scores"]
+                    db.save_project(project)
+                    logger.info(f"Initial maturity calculated: {project.overall_maturity}%")
+            except Exception as e:
+                logger.warning(f"Could not calculate initial maturity: {str(e)}")
+                # Continue without maturity calculation - non-fatal
 
         logger.info(f"Project {project_id} created by {current_user} (direct database)")
         return APIResponse(
