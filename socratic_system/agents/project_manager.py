@@ -165,6 +165,32 @@ class ProjectManagerAgent(Agent):
         self.orchestrator.database.save_project(project)
         self.log(f"Created project '{project_name}' (type: {project_type}) with ID {project_id}")
 
+        # Calculate initial maturity based on specs that were extracted from description/KB
+        # Note: Calculate if context was analyzed, regardless of whether requirements were extracted
+        # (description alone can contribute to maturity assessment)
+        if context_to_analyze:
+            try:
+                self.log(f"Calculating initial maturity for project '{project_name}'...")
+                # Use quality controller to calculate initial maturity from specs
+                maturity_result = self.orchestrator.process_request(
+                    "quality_controller",
+                    {
+                        "action": "calculate_maturity",
+                        "project": project,
+                        "current_user": owner,
+                    },
+                )
+                if maturity_result and maturity_result.get("overall_maturity") is not None:
+                    project.overall_maturity = maturity_result["overall_maturity"]
+                    if maturity_result.get("phase_maturity_scores"):
+                        project.phase_maturity_scores = maturity_result["phase_maturity_scores"]
+                    # Save updated project with maturity
+                    self.orchestrator.database.save_project(project)
+                    self.log(f"Initial maturity calculated: {project.overall_maturity:.1f}%")
+            except Exception as e:
+                # Non-fatal: continue without maturity if calculation fails
+                self.log(f"Warning: Could not calculate initial maturity: {e}", level="warning")
+
         return {"status": "success", "project": project}
 
     def _apply_initial_insights(self, project: ProjectContext, insights: Dict) -> None:

@@ -307,7 +307,7 @@ async def create_project(
             updated_at=datetime.now(timezone.utc).isoformat(),
             is_archived=False,
             conversation_history=[],
-            maturity=0,
+            overall_maturity=0.0,
             goals="",
             requirements=[],
             tech_stack=[],
@@ -382,7 +382,9 @@ async def create_project(
                 # The project is already created successfully
 
         # Calculate initial maturity based on specs that were extracted from description/KB
-        if context_to_analyze and project.requirements:
+        # Note: Calculate if context was analyzed, regardless of whether requirements were extracted
+        # (description alone can contribute to maturity assessment)
+        if context_to_analyze:
             try:
                 logger.info(f"Calculating initial maturity for project {project_id}...")
                 # Get orchestrator and quality controller
