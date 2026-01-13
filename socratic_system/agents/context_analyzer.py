@@ -165,12 +165,12 @@ Conversation:
 Provide a concise, focused summary."""
 
             # Get user's auth method
-        user_auth_method = "api_key"
-        if self.current_user:
-            user_obj = self.orchestrator.database.load_user(self.current_user)
-            if user_obj and hasattr(user_obj, 'claude_auth_method'):
-                user_auth_method = user_obj.claude_auth_method or "api_key"
-        summary = self.orchestrator.claude_client.generate_response(prompt, user_auth_method=user_auth_method)
+            user_auth_method = "api_key"
+            if self.current_user:
+                user_obj = self.orchestrator.database.load_user(self.current_user)
+                if user_obj and hasattr(user_obj, 'claude_auth_method'):
+                    user_auth_method = user_obj.claude_auth_method or "api_key"
+            summary = self.orchestrator.claude_client.generate_response(prompt, user_auth_method=user_auth_method)
 
             self.log(f"Generated summary for project {project.name}")
             return {"status": "success", "summary": summary}
