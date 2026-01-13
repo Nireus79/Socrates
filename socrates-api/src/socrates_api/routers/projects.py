@@ -181,15 +181,17 @@ async def create_project(
             if user_object:
                 subscription_tier = getattr(user_object, "subscription_tier", "free")
 
-            # Check project limit for subscription tier (respecting testing mode)
-            testing_mode = (http_request.headers.get("X-Testing-Mode", "") if http_request else "").lower() == "enabled"
-            active_projects = db.get_user_projects(current_user)
-            can_create, error_msg = SubscriptionChecker.check_project_limit(
-                user_object, len(active_projects), testing_mode=testing_mode
-            )
-            if not can_create:
-                logger.warning(f"User {current_user} exceeded project limit: {error_msg}")
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=error_msg)
+            # Check project limit for subscription tier (testing mode checked via database flag)
+            # If testing mode is enabled in database, bypass subscription checks
+            testing_mode_enabled = getattr(user_object, "testing_mode", False) if user_object else False
+            if not testing_mode_enabled:
+                active_projects = db.get_user_projects(current_user)
+                can_create, error_msg = SubscriptionChecker.can_create_projects(
+                    subscription_tier, len(active_projects)
+                )
+                if not can_create:
+                    logger.warning(f"User {current_user} exceeded project limit: {error_msg}")
+                    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=error_msg)
 
             logger.info(f"Subscription validation passed for {current_user} (tier: {subscription_tier})")
         except HTTPException:

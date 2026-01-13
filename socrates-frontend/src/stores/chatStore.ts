@@ -335,7 +335,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({ conflicts: null, pendingConflicts: false, isLoading: false });
 
       // All conflicts resolved - show single confirmation message
-      const conflictCount = Object.keys(newResolutions).length;
+      const conflictCount = Object.keys(resolution).length;
       const message = conflictCount === 1
         ? 'Conflict resolved. Project specifications updated.'
         : `All ${conflictCount} conflicts resolved. Project specifications updated.`;

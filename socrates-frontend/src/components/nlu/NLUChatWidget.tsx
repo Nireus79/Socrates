@@ -10,6 +10,7 @@ import { MessageSquare, X, Send } from 'lucide-react';
 import { nluAPI } from '../../api/nlu';
 import { freeSessionAPI } from '../../api/freeSession';
 import { authAPI } from '../../api/auth';
+import { apiClient } from '../../api/client';
 import { LoadingSpinner } from '../common';
 
 interface NLUChatWidgetProps {
@@ -95,7 +96,9 @@ export const NLUChatWidget: React.FC<NLUChatWidgetProps> = ({
 • /analytics - Open analytics
 • /search - Open search
 • /info - Show system information
-• /status - Show system status`;
+• /status - Show system status
+• /debug on|off|status - Toggle debug mode
+• /subscription testing-mode on|off - Enable/disable testing mode (admin)`;
         setMessages(prev => [...prev, { role: 'assistant', content: helpText, type: 'command' }]);
         return;
       }
@@ -154,6 +157,40 @@ export const NLUChatWidget: React.FC<NLUChatWidgetProps> = ({
           setMessages(prev => [...prev, { role: 'assistant', content: msg, type: 'command' }]);
           return;
         }
+      }
+
+      // Debug command: /debug on/off/status
+      if (cmd.startsWith('/debug')) {
+        console.log('[NLUWidget] Debug command detected');
+        const mode = cmd.replace('/debug', '').trim().toLowerCase();
+
+        try {
+          if (mode === 'on') {
+            await apiClient.post('/debug/toggle?enabled=true', {});
+            const msg = '✓ Debug mode enabled.\n\nServer logging increased to DEBUG level.';
+            setMessages(prev => [...prev, { role: 'assistant', content: msg, type: 'command' }]);
+            console.log('[Debug Mode] Enabled');
+          } else if (mode === 'off') {
+            await apiClient.post('/debug/toggle?enabled=false', {});
+            const msg = '✓ Debug mode disabled.\n\nServer logging set to normal level.';
+            setMessages(prev => [...prev, { role: 'assistant', content: msg, type: 'command' }]);
+            console.log('[Debug Mode] Disabled');
+          } else if (mode === 'status' || mode === '') {
+            const response = await apiClient.get<{ debug_enabled: boolean }>('/debug/status');
+            const status = response.debug_enabled ? 'ON' : 'OFF';
+            const msg = `Debug mode is currently: ${status}\n\nUsage: /debug on|off|status`;
+            setMessages(prev => [...prev, { role: 'assistant', content: msg, type: 'command' }]);
+            console.log('[Debug Mode] Status:', status);
+          } else {
+            const msg = `Unknown debug command: ${mode}\n\nUsage: /debug on|off|status`;
+            setMessages(prev => [...prev, { role: 'assistant', content: msg, type: 'command' }]);
+          }
+        } catch (error) {
+          console.error('[Debug] Error:', error);
+          const msg = '❌ Failed to toggle debug mode. Please check your connection and permissions.';
+          setMessages(prev => [...prev, { role: 'assistant', content: msg, type: 'command' }]);
+        }
+        return;
       }
 
       // For navigation commands, show executing message and call callback

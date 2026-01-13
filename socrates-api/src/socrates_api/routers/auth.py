@@ -152,7 +152,7 @@ async def register(request: RegisterRequest, db: ProjectDatabase = Depends(get_d
             passcode_hash=password_hash,
             subscription_tier="free",  # Default to free tier
             subscription_status="active",
-            testing_mode=True,  # Testing mode enabled by default for all new users
+            testing_mode=False,  # Testing mode disabled by default - users must explicitly enable
             created_at=datetime.now(timezone.utc),
         )
 
