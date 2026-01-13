@@ -757,7 +757,8 @@ async def set_testing_mode(
         )
         return APIResponse(
             success=True,
-        status="success", message=f"Testing mode {'enabled' if enabled else 'disabled'}"
+            status="success",
+            message=f"Testing mode {'enabled' if enabled else 'disabled'}"
         )
 
     except HTTPException:

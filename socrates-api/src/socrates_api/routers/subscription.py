@@ -342,6 +342,7 @@ async def downgrade_subscription(
 async def toggle_testing_mode(
     enabled: bool = Query(...),
     current_user: str = Depends(get_current_user),
+    db: "ProjectDatabase" = Depends(get_database),
 ):
     """
     Enable/disable testing mode (bypasses subscription restrictions).
@@ -354,14 +355,15 @@ async def toggle_testing_mode(
     - This allows all registered users to test the system without monetization limits
     - No admin check is needed - users can manage their own testing mode
 
-    ## NOTE: Primary Implementation
+    ## Persistent Storage
 
-    For persistent storage, use `/auth/me/testing-mode` (PUT) instead.
-    This endpoint provides informational response about testing mode capabilities.
+    This endpoint persists the testing mode state to the database.
+    The change is effective immediately and persists across sessions.
 
     Args:
         enabled: True to enable testing mode, False to disable (query parameter)
         current_user: Authenticated user (from JWT token)
+        db: Database connection
 
     Returns:
         SuccessResponse with testing mode status and restrictions bypassed
@@ -369,9 +371,21 @@ async def toggle_testing_mode(
     try:
         logger.info(f"Toggling testing mode to {enabled} for user: {current_user}")
 
+        # Load user and update testing mode flag
+        user = db.load_user(current_user)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        user.testing_mode = enabled
+        db.save_user(user)
+        logger.info(f"Testing mode {'enabled' if enabled else 'disabled'} for user: {current_user}")
+
         return APIResponse(
             success=True,
-        status="success",
+            status="success",
             message=f"Testing mode {'enabled' if enabled else 'disabled'}",
             data={
                 "testing_mode": enabled,
@@ -394,6 +408,8 @@ async def toggle_testing_mode(
             },
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error toggling testing mode: {str(e)}")
         raise HTTPException(
