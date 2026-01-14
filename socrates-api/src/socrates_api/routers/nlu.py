@@ -52,13 +52,15 @@ class NLUInterpretResponse(BaseModel):
     intent: Optional[str] = None
 
 
-async def _extract_entities(text: str, context: Optional[dict] = None) -> Dict[str, Any]:
+async def _extract_entities(text: str, context: Optional[dict] = None, user_id: str = None, user_auth_method: str = "api_key") -> Dict[str, Any]:
     """
     Extract entities from user input using Claude AI.
 
     Args:
         text: User input text
         context: Optional context about the project
+        user_id: Optional user ID for user-specific API key
+        user_auth_method: User's preferred auth method
 
     Returns:
         Dictionary of extracted entities (action, object, parameters, etc.)
@@ -83,7 +85,7 @@ Extract the following in JSON format:
 
 Respond ONLY with valid JSON."""
 
-        response = orchestrator.claude_client.generate_response(prompt)
+        response = orchestrator.claude_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=user_id)
 
         try:
             entities = json.loads(response)
@@ -110,7 +112,7 @@ Respond ONLY with valid JSON."""
 
 
 async def _get_ai_command_suggestions(
-    text: str, context: Optional[dict] = None
+    text: str, context: Optional[dict] = None, user_id: str = None, user_auth_method: str = "api_key"
 ) -> List[Dict[str, Any]]:
     """
     Get AI-powered command suggestions using Claude.
@@ -118,6 +120,8 @@ async def _get_ai_command_suggestions(
     Args:
         text: User input text
         context: Optional context about the project
+        user_id: Optional user ID for user-specific API key
+        user_auth_method: User's preferred auth method
 
     Returns:
         List of suggested commands with reasoning
@@ -171,7 +175,7 @@ Respond with JSON:
 
 Respond ONLY with valid JSON."""
 
-        response = orchestrator.claude_client.generate_response(prompt)
+        response = orchestrator.claude_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=user_id)
 
         try:
             result = json.loads(response)
@@ -231,6 +235,15 @@ async def interpret_input(
         user_id_str = current_user if current_user else "free_session"
         logger.info(f"NLU interpretation request from user {user_id_str}: '{request.input}'")
 
+        # Get user's auth method if logged in
+        user_auth_method = "api_key"
+        if current_user:
+            from socrates_api.database import get_database
+            db = get_database()
+            user_obj = db.load_user(current_user)
+            if user_obj and hasattr(user_obj, 'claude_auth_method'):
+                user_auth_method = user_obj.claude_auth_method or "api_key"
+
         # Check if input is a direct command (starts with /)
         if user_input.startswith("/"):
             # Direct command - return as-is
@@ -252,14 +265,14 @@ async def interpret_input(
         logger.debug("Using AI-powered NLU interpretation")
 
         # Extract entities using Claude
-        entities = await _extract_entities(user_input, request.context)
+        entities = await _extract_entities(user_input, request.context, user_id=current_user, user_auth_method=user_auth_method)
         intent = entities.get("intent_category", "query")
         entity_confidence = entities.get("confidence", 0.0)
 
         # Get AI suggestions if confidence is moderate or higher
         ai_suggestions = []
         if entity_confidence >= 0.3:
-            ai_suggestions = await _get_ai_command_suggestions(user_input, request.context)
+            ai_suggestions = await _get_ai_command_suggestions(user_input, request.context, user_id=current_user, user_auth_method=user_auth_method)
 
             # Format AI suggestions properly
             if ai_suggestions:

@@ -99,12 +99,14 @@ class ProjectRecommendation(BaseModel):
     reason: str
 
 
-async def _extract_conversation_topics(conversation_history: List[Dict]) -> List[str]:
+async def _extract_conversation_topics(conversation_history: List[Dict], user_id: str = None, user_auth_method: str = "api_key") -> List[str]:
     """
     Extract topics/intents from conversation history using Claude.
 
     Args:
         conversation_history: List of messages with role and content
+        user_id: Optional user ID for user-specific API key
+        user_auth_method: User's preferred auth method
 
     Returns:
         List of detected topics (e.g., ['web development', 'python', 'database design'])
@@ -132,7 +134,7 @@ Conversation:
 
 Return ONLY a JSON array of topics (strings), like: ["web development", "python", "database design"]"""
 
-        response = orchestrator.claude_client.generate_response(prompt)
+        response = orchestrator.claude_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=user_id)
 
         # Parse JSON response
         import json
@@ -260,6 +262,12 @@ async def ask_question(
             f"Pre-session question from user {current_user} in session {session_id}: '{question}'"
         )
 
+        # Get user's auth method
+        user_auth_method = "api_key"
+        user_obj = db.load_user(current_user)
+        if user_obj and hasattr(user_obj, 'claude_auth_method'):
+            user_auth_method = user_obj.claude_auth_method or "api_key"
+
         # Get orchestrator (database is already injected as parameter)
         logger.info("[free-session] Getting orchestrator...")
         orchestrator = _get_orchestrator()
@@ -291,7 +299,7 @@ async def ask_question(
 
         # Get answer from Claude
         logger.info("[free-session] Calling Claude API...")
-        answer = orchestrator.claude_client.generate_response(prompt)
+        answer = orchestrator.claude_client.generate_response(prompt, user_auth_method=user_auth_method, user_id=current_user)
         logger.info(
             f"[free-session] Claude response received, length={len(answer) if answer else 0}"
         )
@@ -317,7 +325,9 @@ async def ask_question(
         # Extract topics and generate command suggestions
         topics = await _extract_conversation_topics(
             conversation_history
-            + [{"role": "user", "content": question}, {"role": "assistant", "content": answer}]
+            + [{"role": "user", "content": question}, {"role": "assistant", "content": answer}],
+            user_id=current_user,
+            user_auth_method=user_auth_method
         )
         suggested_commands = await _generate_command_suggestions(
             conversation_history + [{"role": "user", "content": question}], topics
