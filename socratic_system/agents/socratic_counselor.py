@@ -324,7 +324,7 @@ class SocraticCounselorAgent(Agent):
             cache_key = f"{project.project_id}:{project.phase}:{question_count}"
 
             question = self.orchestrator.claude_client.generate_socratic_question(
-                prompt, cache_key=cache_key, user_auth_method=user_auth_method
+                prompt, cache_key=cache_key, user_auth_method=user_auth_method, user_id=current_user
             )
             logger.debug(f"Question generated successfully: {question[:100]}...")
             self.log(f"Generated dynamic question for {project.phase} phase")
@@ -605,7 +605,7 @@ Return only the question, no additional text or explanation."""
 
         # Extract insights using Claude
         logger.info("Extracting insights from user response (confirmation mode)...")
-        insights = self.orchestrator.claude_client.extract_insights(user_response, project, user_auth_method=user_auth_method)
+        insights = self.orchestrator.claude_client.extract_insights(user_response, project, user_auth_method=user_auth_method, user_id=current_user)
         self._log_extracted_insights(logger, insights)
 
         return {"status": "success", "insights": insights}
@@ -652,7 +652,7 @@ Return only the question, no additional text or explanation."""
             insights = pre_extracted_insights
         else:
             logger.info("Extracting insights from user response...")
-            insights = self.orchestrator.claude_client.extract_insights(user_response, project, user_auth_method=user_auth_method)
+            insights = self.orchestrator.claude_client.extract_insights(user_response, project, user_auth_method=user_auth_method, user_id=current_user)
             self._log_extracted_insights(logger, insights)
 
         # REAL-TIME CONFLICT DETECTION

@@ -167,45 +167,54 @@ async def lifespan(app: FastAPI):
         logger.warning("Rate limiting is disabled")
 
     # Auto-initialize orchestrator on startup
+    # Note: API key can be provided via environment variable OR per-user via database
     try:
         api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            logger.warning(
-                "ANTHROPIC_API_KEY not set. Orchestrator will be unavailable until /initialize is called with valid key."
-            )
-        else:
+        if api_key:
             logger.info(f"ANTHROPIC_API_KEY is set ({api_key[:10]}...)")
+        else:
+            logger.info(
+                "ANTHROPIC_API_KEY not set. Users will provide their own API keys via Settings > LLM > Anthropic"
+            )
 
-            # Create and initialize orchestrator
-            logger.info("Creating AgentOrchestrator...")
-            orchestrator = AgentOrchestrator(api_key_or_config=api_key)
-            logger.info("AgentOrchestrator created successfully")
+        # Create and initialize orchestrator
+        # If no env API key, use a placeholder - actual keys will be fetched per-user from database
+        logger.info("Creating AgentOrchestrator...")
+        orchestrator = AgentOrchestrator(
+            api_key_or_config=api_key or "placeholder-key-will-use-user-specific-keys"
+        )
+        logger.info("AgentOrchestrator created successfully")
 
-            # Test connection to ensure API key is valid (but don't fail startup if it's not)
+        # Test connection only if we have an env API key
+        if api_key:
             try:
-                logger.info("Testing API connection...")
+                logger.info("Testing API connection with environment API key...")
                 orchestrator.claude_client.test_connection()
-                logger.info("Orchestrator initialized successfully with valid API key")
+                logger.info("Orchestrator initialized successfully with valid environment API key")
             except Exception as e:
                 logger.warning(
-                    f"API key connection test failed (this is normal for test keys): {type(e).__name__}: {str(e)[:100]}"
+                    f"Environment API key connection test failed: {type(e).__name__}: {str(e)[:100]}"
                 )
                 logger.info(
-                    "Orchestrator initialized with provided API key (operations will fail if key is invalid)"
+                    "Orchestrator initialized but will rely on per-user API keys from database"
                 )
+        else:
+            logger.info(
+                "No environment API key set. System will use per-user API keys from database."
+            )
 
-            # Setup event listeners
-            logger.info("Setting up event listeners...")
-            _setup_event_listeners(orchestrator)
-            logger.info("Event listeners set up")
+        # Setup event listeners
+        logger.info("Setting up event listeners...")
+        _setup_event_listeners(orchestrator)
+        logger.info("Event listeners set up")
 
-            # Store in global state
-            logger.info("Storing orchestrator in global state...")
-            app_state["orchestrator"] = orchestrator
-            app_state["start_time"] = time.time()
-            logger.info(f"Orchestrator stored. app_state['orchestrator'] = {app_state['orchestrator']}")
+        # Store in global state
+        logger.info("Storing orchestrator in global state...")
+        app_state["orchestrator"] = orchestrator
+        app_state["start_time"] = time.time()
+        logger.info(f"Orchestrator stored. app_state['orchestrator'] = {app_state['orchestrator']}")
 
-            logger.info("Socrates API orchestrator fully initialized and ready")
+        logger.info("Socrates API orchestrator fully initialized and ready for per-user API keys")
 
     except Exception as e:
         logger.error(f"Failed to auto-initialize orchestrator on startup: {type(e).__name__}: {e}")
@@ -527,6 +536,8 @@ async def initialize(request: Optional[InitializeRequest] = Body(None)):
 
     Parameters:
     - api_key: Claude API key (optional, will use ANTHROPIC_API_KEY env var if not provided)
+
+    Note: API key can be provided here OR users can set it in Settings > LLM > Anthropic
     """
     try:
         # Get API key from request body or environment variable
@@ -537,24 +548,30 @@ async def initialize(request: Optional[InitializeRequest] = Body(None)):
             # Fall back to environment variable
             api_key = os.getenv("ANTHROPIC_API_KEY")
 
-        if not api_key:
-            raise HTTPException(
-                status_code=400,
-                detail="API key is required. Provide api_key in request body or set ANTHROPIC_API_KEY environment variable.",
+        # If no API key provided, that's okay - users will provide their own via UI
+        if api_key:
+            logger.info("Initializing with provided API key")
+
+            # Create orchestrator with provided API key
+            orchestrator = AgentOrchestrator(api_key_or_config=api_key)
+
+            # Test connection
+            try:
+                orchestrator.claude_client.test_connection()
+                logger.info("API key connection successful")
+            except Exception as e:
+                logger.warning(f"API key connection test failed: {e}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"API key is invalid: {str(e)}"
+                )
+        else:
+            logger.info("No API key provided in request. Using placeholder for per-user keys from database")
+
+            # Create orchestrator with placeholder - will use per-user keys
+            orchestrator = AgentOrchestrator(
+                api_key_or_config="placeholder-key-will-use-user-specific-keys"
             )
-
-        # Create configuration
-        config_dict = {"api_key": api_key}
-        data_dir = os.getenv("SOCRATES_DATA_DIR", None)
-        if data_dir:
-            config_dict["data_dir"] = Path(data_dir)
-
-        # Create orchestrator with API key
-        # AgentOrchestrator requires api_key_or_config parameter
-        orchestrator = AgentOrchestrator(api_key_or_config=api_key)
-
-        # Test connection
-        orchestrator.claude_client.test_connection()
 
         # Setup event listeners
         _setup_event_listeners(orchestrator)
@@ -569,6 +586,8 @@ async def initialize(request: Optional[InitializeRequest] = Body(None)):
             version="8.0.0", library_version="8.0.0", status="operational", uptime=0.0
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Initialization failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))

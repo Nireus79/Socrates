@@ -95,35 +95,160 @@ class ClaudeClient:
                 )
             return self.api_key
 
-    def _get_client(self, user_auth_method: str = "api_key"):
+    def _get_user_api_key(self, user_id: str = None) -> tuple:
         """
-        Get the appropriate sync client based on user's auth method.
+        Get API key for a user, trying in order:
+        1. User's stored API key from database (decrypted)
+        2. Environment variable (fallback for all users)
+        3. Return None if nothing available
+
+        Args:
+            user_id: The user ID to fetch key for
+
+        Returns:
+            tuple: (api_key, is_user_specific) - api_key is the key to use, is_user_specific indicates if it's from user settings
+                   Returns (None, False) if no key found
+
+        Raises:
+            APIError: If user has no key and env variable is not set
+        """
+        # Try to get user's stored API key from database
+        if user_id:
+            try:
+                stored_key = self.orchestrator.database.get_api_key(user_id, "claude")
+                if stored_key:
+                    # Decrypt the stored key
+                    decrypted_key = self._decrypt_api_key_from_db(stored_key)
+                    if decrypted_key:
+                        self.logger.info(f"Using user-specific API key for user {user_id}")
+                        return decrypted_key, True
+            except Exception as e:
+                self.logger.warning(f"Error fetching user API key for {user_id}: {e}")
+
+        # Fall back to environment variable
+        env_key = self.api_key
+        if env_key:
+            self.logger.debug("Using environment variable API key as fallback")
+            return env_key, False
+
+        # No key available - raise error with helpful message
+        raise APIError(
+            f"No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+            error_type="MISSING_API_KEY"
+        )
+
+    def _decrypt_api_key_from_db(self, encrypted_key: str) -> str:
+        """
+        Decrypt an API key stored in the database.
+
+        Args:
+            encrypted_key: The encrypted API key from database
+
+        Returns:
+            Decrypted API key string, or None if decryption fails
+        """
+        try:
+            from cryptography.fernet import Fernet
+            import os
+
+            # Get encryption key from environment or use default
+            encryption_key_base = os.getenv("SOCRATES_ENCRYPTION_KEY", "default-insecure-key-change-in-production")
+
+            # Derive the encryption key (must match what was used to encrypt)
+            from cryptography.hazmat.primitives import hashes
+            from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
+            import base64
+
+            salt = b"socrates-salt"
+            kdf = PBKDF2(
+                algorithm=hashes.SHA256(),
+                length=32,
+                salt=salt,
+                iterations=100000,
+            )
+            derived_key = base64.urlsafe_b64encode(kdf.derive(encryption_key_base.encode()))
+
+            cipher = Fernet(derived_key)
+            decrypted = cipher.decrypt(encrypted_key.encode())
+            return decrypted.decode()
+
+        except Exception as e:
+            self.logger.error(f"Error decrypting API key: {e}")
+            return None
+
+    def _get_client(self, user_auth_method: str = "api_key", user_id: str = None):
+        """
+        Get the appropriate sync client based on user's auth method and user-specific API key.
 
         Args:
             user_auth_method: User's preferred auth method ('api_key' or 'subscription')
+            user_id: Optional user ID to fetch user-specific API key
 
         Returns:
             Anthropic sync client instance
+
+        Raises:
+            APIError: If auth method requires API key but none is available
         """
-        if user_auth_method == "subscription" and self.subscription_client:
-            return self.subscription_client
+        if user_auth_method == "subscription":
+            if self.subscription_client:
+                return self.subscription_client
+            raise APIError(
+                "Subscription token not configured. Set ANTHROPIC_SUBSCRIPTION_TOKEN environment variable.",
+                error_type="MISSING_SUBSCRIPTION_TOKEN"
+            )
+
+        # For api_key auth method, try to get user-specific key
+        try:
+            api_key, _ = self._get_user_api_key(user_id)
+            if api_key:
+                # Create a new client with the user's API key
+                return anthropic.Anthropic(api_key=api_key)
+        except APIError:
+            raise
+        except Exception as e:
+            self.logger.warning(f"Error getting user API key: {e}")
+
+        # Fallback to default client if no user key
         return self.client
 
-    def _get_async_client(self, user_auth_method: str = "api_key"):
+    def _get_async_client(self, user_auth_method: str = "api_key", user_id: str = None):
         """
-        Get the appropriate async client based on user's auth method.
+        Get the appropriate async client based on user's auth method and user-specific API key.
 
         Args:
             user_auth_method: User's preferred auth method ('api_key' or 'subscription')
+            user_id: Optional user ID to fetch user-specific API key
 
         Returns:
             Anthropic async client instance
+
+        Raises:
+            APIError: If auth method requires API key but none is available
         """
-        if user_auth_method == "subscription" and self.subscription_async_client:
-            return self.subscription_async_client
+        if user_auth_method == "subscription":
+            if self.subscription_async_client:
+                return self.subscription_async_client
+            raise APIError(
+                "Subscription token not configured. Set ANTHROPIC_SUBSCRIPTION_TOKEN environment variable.",
+                error_type="MISSING_SUBSCRIPTION_TOKEN"
+            )
+
+        # For api_key auth method, try to get user-specific key
+        try:
+            api_key, _ = self._get_user_api_key(user_id)
+            if api_key:
+                # Create a new async client with the user's API key
+                return anthropic.AsyncAnthropic(api_key=api_key)
+        except APIError:
+            raise
+        except Exception as e:
+            self.logger.warning(f"Error getting user API key: {e}")
+
+        # Fallback to default async client if no user key
         return self.async_client
 
-    def extract_insights(self, user_response: str, project: ProjectContext, user_auth_method: str = "api_key") -> Dict:
+    def extract_insights(self, user_response: str, project: ProjectContext, user_auth_method: str = "api_key", user_id: str = None) -> Dict:
         """
         Extract insights from user response using Claude (synchronous) with caching.
 
@@ -131,6 +256,7 @@ class ClaudeClient:
             user_response: The user's response text
             project: The project context
             user_auth_method: User's preferred auth method ('api_key' or 'subscription')
+            user_id: Optional user ID for fetching user-specific API key
 
         Returns:
             Dictionary of extracted insights
@@ -182,8 +308,8 @@ class ClaudeClient:
         """
 
         try:
-            # Get the appropriate client based on user's auth method
-            client = self._get_client(user_auth_method)
+            # Get the appropriate client based on user's auth method and user-specific API key
+            client = self._get_client(user_auth_method, user_id)
             response = client.messages.create(
                 model=self.model,
                 max_tokens=1000,
@@ -263,7 +389,7 @@ class ClaudeClient:
 
         try:
             # Get the appropriate async client based on user's auth method
-            async_client = self._get_async_client(user_auth_method)
+            async_client = self._get_async_client(user_auth_method, user_id)
             response = await async_client.messages.create(
                 model=self.model,
                 max_tokens=1000,
@@ -311,7 +437,7 @@ class ClaudeClient:
     Be specific and practical, not just theoretical."""
 
         try:
-            client = self._get_client(user_auth_method)
+            client = self._get_client(user_auth_method, user_id)
             response = client.messages.create(
                 model=self.model,
                 max_tokens=600,
@@ -324,24 +450,24 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating suggestions: {e}"
 
-    def generate_artifact(self, context: str, project_type: str, user_auth_method: str = "api_key") -> str:
+    def generate_artifact(self, context: str, project_type: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
         """Generate project-type-appropriate artifact"""
         if project_type == "software":
-            return self.generate_code(context, user_auth_method)
+            return self.generate_code(context, user_auth_method, user_id)
         elif project_type == "business":
-            return self.generate_business_plan(context, user_auth_method)
+            return self.generate_business_plan(context, user_auth_method, user_id)
         elif project_type == "research":
-            return self.generate_research_protocol(context, user_auth_method)
+            return self.generate_research_protocol(context, user_auth_method, user_id)
         elif project_type == "creative":
-            return self.generate_creative_brief(context, user_auth_method)
+            return self.generate_creative_brief(context, user_auth_method, user_id)
         elif project_type == "marketing":
-            return self.generate_marketing_plan(context, user_auth_method)
+            return self.generate_marketing_plan(context, user_auth_method, user_id)
         elif project_type == "educational":
-            return self.generate_curriculum(context, user_auth_method)
+            return self.generate_curriculum(context, user_auth_method, user_id)
         else:
-            return self.generate_code(context, user_auth_method)  # Default to code
+            return self.generate_code(context, user_auth_method, user_id)  # Default to code
 
-    def generate_code(self, context: str, user_auth_method: str = "api_key") -> str:
+    def generate_code(self, context: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
         """Generate code based on project context"""
         prompt = f"""
         Generate a complete, functional script based on this project context:
@@ -359,7 +485,7 @@ class ClaudeClient:
         """
 
         try:
-            client = self._get_client(user_auth_method)
+            client = self._get_client(user_auth_method, user_id)
 
             response = client.messages.create(
                 model=self.model,
@@ -384,7 +510,7 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating code: {e}"
 
-    def generate_business_plan(self, context: str, user_auth_method: str = "api_key") -> str:
+    def generate_business_plan(self, context: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
         """Generate business plan document"""
         prompt = f"""
         Generate a comprehensive business plan based on this context:
@@ -407,7 +533,7 @@ class ClaudeClient:
         """
 
         try:
-            client = self._get_client(user_auth_method)
+            client = self._get_client(user_auth_method, user_id)
 
             response = client.messages.create(
                 model=self.model,
@@ -432,7 +558,7 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating business plan: {e}"
 
-    def generate_research_protocol(self, context: str, user_auth_method: str = "api_key") -> str:
+    def generate_research_protocol(self, context: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
         """Generate research protocol and methodology document"""
         prompt = f"""
         Generate a detailed research protocol and methodology document based on this context:
@@ -455,7 +581,7 @@ class ClaudeClient:
         """
 
         try:
-            client = self._get_client(user_auth_method)
+            client = self._get_client(user_auth_method, user_id)
 
             response = client.messages.create(
                 model=self.model,
@@ -480,7 +606,7 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating research protocol: {e}"
 
-    def generate_creative_brief(self, context: str, user_auth_method: str = "api_key") -> str:
+    def generate_creative_brief(self, context: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
         """Generate creative/design brief document"""
         prompt = f"""
         Generate a comprehensive creative brief and design specifications based on this context:
@@ -503,7 +629,7 @@ class ClaudeClient:
         """
 
         try:
-            client = self._get_client(user_auth_method)
+            client = self._get_client(user_auth_method, user_id)
 
             response = client.messages.create(
                 model=self.model,
@@ -528,7 +654,7 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating creative brief: {e}"
 
-    def generate_marketing_plan(self, context: str, user_auth_method: str = "api_key") -> str:
+    def generate_marketing_plan(self, context: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
         """Generate marketing campaign plan document"""
         prompt = f"""
         Generate a comprehensive marketing campaign plan based on this context:
@@ -551,7 +677,7 @@ class ClaudeClient:
         """
 
         try:
-            client = self._get_client(user_auth_method)
+            client = self._get_client(user_auth_method, user_id)
 
             response = client.messages.create(
                 model=self.model,
@@ -576,7 +702,7 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating marketing plan: {e}"
 
-    def generate_curriculum(self, context: str, user_auth_method: str = "api_key") -> str:
+    def generate_curriculum(self, context: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
         """Generate educational curriculum document"""
         prompt = f"""
         Generate a comprehensive curriculum design document based on this context:
@@ -599,7 +725,7 @@ class ClaudeClient:
         """
 
         try:
-            client = self._get_client(user_auth_method)
+            client = self._get_client(user_auth_method, user_id)
 
             response = client.messages.create(
                 model=self.model,
@@ -625,7 +751,7 @@ class ClaudeClient:
             return f"Error generating curriculum: {e}"
 
     def generate_documentation(
-        self, project: ProjectContext, artifact: str, artifact_type: str = "code", user_auth_method: str = "api_key"
+        self, project: ProjectContext, artifact: str, artifact_type: str = "code", user_auth_method: str = "api_key", user_id: str = None
     ) -> str:
         """Generate documentation for any artifact type"""
         doc_instructions = {
@@ -708,7 +834,7 @@ class ClaudeClient:
         """
 
         try:
-            client = self._get_client(user_auth_method)
+            client = self._get_client(user_auth_method, user_id)
 
             response = client.messages.create(
                 model=self.model,
@@ -844,7 +970,7 @@ class ClaudeClient:
             )
             return {}
 
-    def generate_socratic_question(self, prompt: str, cache_key: str = None, user_auth_method: str = "api_key") -> str:
+    def generate_socratic_question(self, prompt: str, cache_key: str = None, user_auth_method: str = "api_key", user_id: str = None) -> str:
         """
         Generate a Socratic question using Claude with optional caching.
 
@@ -855,6 +981,7 @@ class ClaudeClient:
             prompt: The prompt for question generation
             cache_key: Optional cache key (not used, for backward compatibility)
             user_auth_method: User's preferred auth method ('api_key' or 'subscription')
+            user_id: Optional user ID for fetching user-specific API key
 
         Returns:
             Generated Socratic question
@@ -866,8 +993,8 @@ class ClaudeClient:
         # returning stale cached questions when conversation history changes
 
         try:
-            # Get the appropriate client based on user's auth method
-            client = self._get_client(user_auth_method)
+            # Get the appropriate client based on user's auth method and user-specific API key
+            client = self._get_client(user_auth_method, user_id)
             response = client.messages.create(
                 model=self.model,
                 max_tokens=200,
@@ -939,7 +1066,7 @@ class ClaudeClient:
     """
 
         try:
-            client = self._get_client(user_auth_method)
+            client = self._get_client(user_auth_method, user_id)
 
             response = client.messages.create(
                 model=self.model,
@@ -998,7 +1125,7 @@ class ClaudeClient:
             )
 
     def generate_response(
-        self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7, user_auth_method: str = "api_key"
+        self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7, user_auth_method: str = "api_key", user_id: str = None
     ) -> str:
         """
         Generate a general response from Claude for any prompt.
@@ -1008,6 +1135,7 @@ class ClaudeClient:
             max_tokens: Maximum tokens in response (default: 2000)
             temperature: Temperature for response generation (default: 0.7)
             user_auth_method: User's preferred auth method ('api_key' or 'subscription')
+            user_id: Optional user ID for fetching user-specific API key
 
         Returns:
             Claude's response as a string
@@ -1016,8 +1144,8 @@ class ClaudeClient:
             APIError: If API call fails
         """
         try:
-            # Get the appropriate client based on user's auth method
-            client = self._get_client(user_auth_method)
+            # Get the appropriate client based on user's auth method and user-specific API key
+            client = self._get_client(user_auth_method, user_id)
             response = client.messages.create(
                 model=self.model,
                 max_tokens=max_tokens,
@@ -1038,7 +1166,7 @@ class ClaudeClient:
             raise APIError(f"Error generating response: {e}", error_type="GENERATION_ERROR") from e
 
     async def generate_response_async(
-        self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7, user_auth_method: str = "api_key"
+        self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7, user_auth_method: str = "api_key", user_id: str = None
     ) -> str:
         """
         Generate a general response from Claude asynchronously.
@@ -1048,6 +1176,7 @@ class ClaudeClient:
             max_tokens: Maximum tokens in response
             temperature: Temperature for response generation
             user_auth_method: User's preferred auth method ('api_key' or 'subscription')
+            user_id: Optional user ID for fetching user-specific API key
 
         Returns:
             Claude's response as a string
@@ -1056,8 +1185,8 @@ class ClaudeClient:
             APIError: If API call fails
         """
         try:
-            # Get the appropriate async client based on user's auth method
-            async_client = self._get_async_client(user_auth_method)
+            # Get the appropriate async client based on user's auth method and user-specific API key
+            async_client = self._get_async_client(user_auth_method, user_id)
             response = await async_client.messages.create(
                 model=self.model,
                 max_tokens=max_tokens,
@@ -1078,7 +1207,7 @@ class ClaudeClient:
     # PHASE 2: ADDITIONAL ASYNC METHODS FOR HIGH-TRAFFIC OPERATIONS
     # =====================================================================
 
-    async def generate_code_async(self, context: str, user_auth_method: str = "api_key") -> str:
+    async def generate_code_async(self, context: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
         """Generate code asynchronously (high-traffic for code_generator agent)."""
         prompt = f"""
         Generate a complete, functional script based on this project context:
@@ -1112,7 +1241,7 @@ class ClaudeClient:
             self.logger.error(f"Error generating code (async): {e}")
             return f"Error generating code: {e}"
 
-    async def generate_socratic_question_async(self, prompt: str, cache_key: str = None, user_auth_method: str = "api_key") -> str:
+    async def generate_socratic_question_async(self, prompt: str, cache_key: str = None, user_auth_method: str = "api_key", user_id: str = None) -> str:
         """
         Generate socratic question asynchronously (high-frequency operation).
 
@@ -1126,13 +1255,14 @@ class ClaudeClient:
             prompt: The prompt for question generation
             cache_key: Optional cache key (not used, for backward compatibility)
             user_auth_method: User's preferred auth method ('api_key' or 'subscription')
+            user_id: Optional user ID for fetching user-specific API key
 
         Returns:
             Generated Socratic question
         """
         try:
-            # Get the appropriate async client based on user's auth method
-            async_client = self._get_async_client(user_auth_method)
+            # Get the appropriate async client based on user's auth method and user-specific API key
+            async_client = self._get_async_client(user_auth_method, user_id)
             response = await async_client.messages.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],

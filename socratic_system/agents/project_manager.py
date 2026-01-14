@@ -152,7 +152,16 @@ class ProjectManagerAgent(Agent):
                 self.log(f"Analyzing project description and knowledge base for initial specifications...")
 
                 # Extract insights using same mechanism as conversation analysis
-                insights = self.orchestrator.claude_client.extract_insights(context_to_analyze, project)
+                # Get user's auth method
+                user_auth_method = "api_key"
+                owner = request.get("owner")
+                if owner:
+                    user_obj = self.orchestrator.database.load_user(owner)
+                    if user_obj and hasattr(user_obj, 'claude_auth_method'):
+                        user_auth_method = user_obj.claude_auth_method or "api_key"
+                insights = self.orchestrator.claude_client.extract_insights(
+                    context_to_analyze, project, user_auth_method=user_auth_method, user_id=owner
+                )
 
                 if insights:
                     # Apply extracted insights to project context
