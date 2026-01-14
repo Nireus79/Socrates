@@ -595,86 +595,156 @@ async def send_message(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Call socratic_counselor to process response
-        # Pre-extracted insights caching and async processing happen internally
-        orchestrator = get_orchestrator()
-        result = orchestrator.process_request(
-            "socratic_counselor",
-            {
-                "action": "process_response",
-                "project": project,
-                "response": request.message,
-                "current_user": current_user,
-                "is_api_mode": True,  # Indicate API mode to handle conflicts differently
-            },
-        )
+        # Get user's auth method
+        user_auth_method = "api_key"
+        user_obj = db.load_user(current_user)
+        if user_obj and hasattr(user_obj, 'claude_auth_method'):
+            user_auth_method = user_obj.claude_auth_method or "api_key"
 
-        if result.get("status") != "success":
-            raise HTTPException(
-                status_code=500, detail=result.get("message", "Failed to process message")
+        # Determine chat mode and handle accordingly
+        chat_mode = getattr(project, "chat_mode", "socratic")
+        orchestrator = get_orchestrator()
+
+        if chat_mode == "direct":
+            # Direct mode: Generate a direct answer without Socratic questioning
+            logger.info(f"Processing message in DIRECT mode")
+
+            # Build context from project
+            context_parts = []
+            if project.goals:
+                context_parts.append(f"Project Goal: {project.goals}")
+            if project.requirements:
+                context_parts.append(f"Requirements: {', '.join(project.requirements)}")
+            if project.tech_stack:
+                context_parts.append(f"Tech Stack: {', '.join(project.tech_stack)}")
+
+            context = "\n".join(context_parts) if context_parts else "No project context"
+
+            # Generate direct answer
+            prompt = f"""You are a helpful coding assistant. Answer the user's question directly and concisely.
+
+Project Context:
+{context}
+
+User Question: {request.message}
+
+Provide a helpful, direct answer."""
+
+            answer = orchestrator.claude_client.generate_response(
+                prompt, user_auth_method=user_auth_method, user_id=current_user
             )
 
-        # Persist project changes to database (conversation history, maturity, etc.)
-        db.save_project(project)
-        if project.conversation_history:
-            db.save_conversation_history(project_id, project.conversation_history)
+            # Save to conversation history
+            project.conversation_history.append({
+                "role": "user",
+                "content": request.message,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+            project.conversation_history.append({
+                "role": "assistant",
+                "content": answer,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+            db.save_project(project)
+            if project.conversation_history:
+                db.save_conversation_history(project_id, project.conversation_history)
 
-        # Check if conflicts detected - if so, return them for frontend resolution
-        if result.get("conflicts_pending") and result.get("conflicts"):
-            logger.info(f"Conflicts detected: {len(result['conflicts'])} conflict(s)")
             return APIResponse(
                 success=True,
                 status="success",
                 data={
                     "message": {
-                        "id": f"msg_{id(result)}",
+                        "id": f"msg_{id(answer)}",
                         "role": "assistant",
-                        "content": "Conflict detected. Please resolve the conflict to proceed.",
+                        "content": answer,
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                     },
-                    "conflicts_pending": True,
-                    "conflicts": result.get("conflicts", []),
+                    "mode": "direct",
+                },
+            )
+        else:
+            # Socratic mode: Use the existing Socratic questioning approach
+            logger.info(f"Processing message in SOCRATIC mode")
+
+            # Call socratic_counselor to process response
+            # Pre-extracted insights caching and async processing happen internally
+            result = orchestrator.process_request(
+                "socratic_counselor",
+                {
+                    "action": "process_response",
+                    "project": project,
+                    "response": request.message,
+                    "current_user": current_user,
+                    "is_api_mode": True,  # Indicate API mode to handle conflicts differently
                 },
             )
 
-        # Format insights for response
-        insights = result.get("insights", {})
-        if insights:
-            # Format insights as a readable string for the frontend
-            content_parts = []
-            if insights.get("goals"):
-                content_parts.append(f"Goals: {insights.get('goals')}")
-            if insights.get("requirements"):
-                content_parts.append(f"Requirements: {', '.join(insights.get('requirements', []))}")
-            if insights.get("tech_stack"):
-                content_parts.append(f"Tech Stack: {', '.join(insights.get('tech_stack', []))}")
-            if insights.get("constraints"):
-                content_parts.append(f"Constraints: {', '.join(insights.get('constraints', []))}")
-            if insights.get("team_structure"):
-                content_parts.append(f"Team: {insights.get('team_structure')}")
-            if insights.get("note"):
-                content_parts.append(f"Note: {insights.get('note')}")
-            content = "\n".join(content_parts) if content_parts else "Insights recorded."
+            if result.get("status") != "success":
+                raise HTTPException(
+                    status_code=500, detail=result.get("message", "Failed to process message")
+                )
 
-            # Return insights message
-            response_data = {
-                "message": {
-                    "id": f"msg_{id(result)}",
-                    "role": "assistant",
-                    "content": content,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+            # Persist project changes to database (conversation history, maturity, etc.)
+            db.save_project(project)
+            if project.conversation_history:
+                db.save_conversation_history(project_id, project.conversation_history)
+
+            # Check if conflicts detected - if so, return them for frontend resolution
+            if result.get("conflicts_pending") and result.get("conflicts"):
+                logger.info(f"Conflicts detected: {len(result['conflicts'])} conflict(s)")
+                return APIResponse(
+                    success=True,
+                    status="success",
+                    data={
+                        "message": {
+                            "id": f"msg_{id(result)}",
+                            "role": "assistant",
+                            "content": "Conflict detected. Please resolve the conflict to proceed.",
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        },
+                        "conflicts_pending": True,
+                        "conflicts": result.get("conflicts", []),
+                    },
+                )
+
+            # Format insights for response
+            insights = result.get("insights", {})
+            if insights:
+                # Format insights as a readable string for the frontend
+                content_parts = []
+                if insights.get("goals"):
+                    content_parts.append(f"Goals: {insights.get('goals')}")
+                if insights.get("requirements"):
+                    content_parts.append(f"Requirements: {', '.join(insights.get('requirements', []))}")
+                if insights.get("tech_stack"):
+                    content_parts.append(f"Tech Stack: {', '.join(insights.get('tech_stack', []))}")
+                if insights.get("constraints"):
+                    content_parts.append(f"Constraints: {', '.join(insights.get('constraints', []))}")
+                if insights.get("team_structure"):
+                    content_parts.append(f"Team: {insights.get('team_structure')}")
+                if insights.get("note"):
+                    content_parts.append(f"Note: {insights.get('note')}")
+                content = "\n".join(content_parts) if content_parts else "Insights recorded."
+
+                # Return insights message
+                response_data = {
+                    "message": {
+                        "id": f"msg_{id(result)}",
+                        "role": "assistant",
+                        "content": content,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
                 }
-            }
-        else:
-            # No insights - don't return a message, just return empty data
-            # Frontend will handle moving to next question without adding extra message
-            response_data = {}
+            else:
+                # No insights - don't return a message, just return empty data
+                # Frontend will handle moving to next question without adding extra message
+                response_data = {}
 
-        return APIResponse(
-            success=True,
-            status="success",
-            data=response_data,
-        )
+            return APIResponse(
+                success=True,
+                status="success",
+                data=response_data,
+            )
 
     except HTTPException:
         raise
