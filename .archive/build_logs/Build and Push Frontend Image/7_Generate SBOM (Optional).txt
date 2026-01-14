@@ -1,0 +1,77 @@
+﻿2025-12-31T22:20:35.0930155Z ##[group]Run anchore/sbom-action@v0
+2025-12-31T22:20:35.0930446Z with:
+2025-12-31T22:20:35.0931120Z   image: ghcr.io/nireus79/socrates/frontend:master
+ghcr.io/nireus79/socrates/frontend:latest
+ghcr.io/nireus79/socrates/frontend:master-3a5c55d
+2025-12-31T22:20:35.0931690Z   format: spdx-json
+2025-12-31T22:20:35.0931899Z   output-file: sbom-frontend.spdx.json
+2025-12-31T22:20:35.0932133Z   path: .
+2025-12-31T22:20:35.0932437Z   github-token: ***
+2025-12-31T22:20:35.0932639Z   dependency-snapshot: false
+2025-12-31T22:20:35.0932855Z   upload-artifact: true
+2025-12-31T22:20:35.0933059Z   upload-artifact-retention: 0
+2025-12-31T22:20:35.0933290Z   upload-release-assets: true
+2025-12-31T22:20:35.0933491Z env:
+2025-12-31T22:20:35.0933660Z   DOCKER_METADATA_OUTPUT_VERSION: master
+2025-12-31T22:20:35.0934306Z   DOCKER_METADATA_OUTPUT_TAGS: ghcr.io/nireus79/socrates/frontend:master
+ghcr.io/nireus79/socrates/frontend:latest
+ghcr.io/nireus79/socrates/frontend:master-3a5c55d
+2025-12-31T22:20:35.0935016Z   DOCKER_METADATA_OUTPUT_TAG_NAMES: master
+latest
+master-3a5c55d
+2025-12-31T22:20:35.0936745Z   DOCKER_METADATA_OUTPUT_LABELS: org.opencontainers.image.created=2025-12-31T22:17:47.336Z
+org.opencontainers.image.description=
+org.opencontainers.image.licenses=MIT
+org.opencontainers.image.revision=3a5c55dc376d28862c1eed57a6531b53ac8c3430
+org.opencontainers.image.source=https://github.com/Nireus79/Socrates
+org.opencontainers.image.title=Socrates
+org.opencontainers.image.url=https://github.com/Nireus79/Socrates
+org.opencontainers.image.version=master
+2025-12-31T22:20:35.0940269Z   DOCKER_METADATA_OUTPUT_ANNOTATIONS: manifest:org.opencontainers.image.created=2025-12-31T22:17:47.336Z
+manifest:org.opencontainers.image.description=
+manifest:org.opencontainers.image.licenses=MIT
+manifest:org.opencontainers.image.revision=3a5c55dc376d28862c1eed57a6531b53ac8c3430
+manifest:org.opencontainers.image.source=https://github.com/Nireus79/Socrates
+manifest:org.opencontainers.image.title=Socrates
+manifest:org.opencontainers.image.url=https://github.com/Nireus79/Socrates
+manifest:org.opencontainers.image.version=master
+2025-12-31T22:20:35.0946029Z   DOCKER_METADATA_OUTPUT_JSON: {"tags":["ghcr.io/nireus79/socrates/frontend:master","ghcr.io/nireus79/socrates/frontend:latest","ghcr.io/nireus79/socrates/frontend:master-3a5c55d"],"tag-names":["master","latest","master-3a5c55d"],"labels":{"org.opencontainers.image.created":"2025-12-31T22:17:47.336Z","org.opencontainers.image.description":"","org.opencontainers.image.licenses":"MIT","org.opencontainers.image.revision":"3a5c55dc376d28862c1eed57a6531b53ac8c3430","org.opencontainers.image.source":"https://github.com/Nireus79/Socrates","org.opencontainers.image.title":"Socrates","org.opencontainers.image.url":"https://github.com/Nireus79/Socrates","org.opencontainers.image.version":"master"},"annotations":["manifest:org.opencontainers.image.created=2025-12-31T22:17:47.336Z","manifest:org.opencontainers.image.description=","manifest:org.opencontainers.image.licenses=MIT","manifest:org.opencontainers.image.revision=3a5c55dc376d28862c1eed57a6531b53ac8c3430","manifest:org.opencontainers.image.source=https://github.com/Nireus79/Socrates","manifest:org.opencontainers.image.title=Socrates","manifest:org.opencontainers.image.url=https://github.com/Nireus79/Socrates","manifest:org.opencontainers.image.version=master"]}
+2025-12-31T22:20:35.0950649Z   DOCKER_METADATA_OUTPUT_BAKE_FILE_TAGS: /home/runner/work/_temp/docker-actions-toolkit-jlIEIW/docker-metadata-action-bake-tags.json
+2025-12-31T22:20:35.0951491Z   DOCKER_METADATA_OUTPUT_BAKE_FILE_LABELS: /home/runner/work/_temp/docker-actions-toolkit-jlIEIW/docker-metadata-action-bake-labels.json
+2025-12-31T22:20:35.0952382Z   DOCKER_METADATA_OUTPUT_BAKE_FILE_ANNOTATIONS: /home/runner/work/_temp/docker-actions-toolkit-jlIEIW/docker-metadata-action-bake-annotations.json
+2025-12-31T22:20:35.0953221Z   DOCKER_METADATA_OUTPUT_BAKE_FILE: /home/runner/work/_temp/docker-actions-toolkit-jlIEIW/docker-metadata-action-bake.json
+2025-12-31T22:20:35.0953707Z ##[endgroup]
+2025-12-31T22:20:35.3323863Z ------------------------------ Running SBOM Action -----------------------------
+2025-12-31T22:20:35.3919871Z [command]/usr/bin/sh /home/runner/work/_temp/5318e78e-1168-42ba-ad65-905db06b860a -d -b /home/runner/work/_temp/5318e78e-1168-42ba-ad65-905db06b860a_syft v1.39.0
+2025-12-31T22:20:35.3975077Z [info] checking github for release tag='v1.39.0' 
+2025-12-31T22:20:35.4012968Z [debug] http_download(url=https://github.com/anchore/syft/releases/v1.39.0) 
+2025-12-31T22:20:35.6469441Z [info] fetching release script for tag='v1.39.0' 
+2025-12-31T22:20:35.6495998Z [debug] http_download(url=https://get.anchore.io/syft/v1.39.0/install.sh) 
+2025-12-31T22:20:35.9654659Z [info] checking github for release tag='v1.39.0' 
+2025-12-31T22:20:35.9691202Z [debug] http_download(url=https://github.com/anchore/syft/releases/v1.39.0) 
+2025-12-31T22:20:36.0507939Z [info] using release tag='v1.39.0' version='1.39.0' os='linux' arch='amd64' 
+2025-12-31T22:20:36.0530082Z [debug] downloading files into /tmp/tmp.XY4by6bNRT 
+2025-12-31T22:20:36.0566337Z [debug] http_download(url=https://github.com/anchore/syft/releases/download/v1.39.0/syft_1.39.0_checksums.txt) 
+2025-12-31T22:20:36.2264902Z [debug] http_download(url=https://github.com/anchore/syft/releases/download/v1.39.0/syft_1.39.0_linux_amd64.tar.gz) 
+2025-12-31T22:20:36.9607826Z [info] installed /home/runner/work/_temp/5318e78e-1168-42ba-ad65-905db06b860a_syft/syft 
+2025-12-31T22:20:37.0368514Z [command]/opt/hostedtoolcache/syft/1.39.0/x64/syft scan ghcr.io/nireus79/socrates/frontend:master
+2025-12-31T22:20:37.0369227Z ghcr.io/nireus79/socrates/frontend:latest
+2025-12-31T22:20:37.0369590Z ghcr.io/nireus79/socrates/frontend:master-3a5c55d -o spdx-json
+2025-12-31T22:20:37.0370496Z ##[group]Executing Syft...
+2025-12-31T22:20:37.0642416Z [0000] ERROR could not determine source: errors occurred attempting to resolve 'ghcr.io/nireus79/socrates/frontend:master
+2025-12-31T22:20:37.0643333Z ghcr.io/nireus79/socrates/frontend:latest
+2025-12-31T22:20:37.0643828Z ghcr.io/nireus79/socrates/frontend:master-3a5c55d':
+2025-12-31T22:20:37.0645260Z   - snap: snap file "ghcr.io/nireus79/socrates/frontend:master\nghcr.io/nireus79/socrates/frontend:latest\nghcr.io/nireus79/socrates/frontend:master-3a5c55d" does not exist
+2025-12-31T22:20:37.0646083Z   - docker: could not parse reference: ghcr.io/nireus79/socrates/frontend:master
+2025-12-31T22:20:37.0646475Z ghcr.io/nireus79/socrates/frontend:latest
+2025-12-31T22:20:37.0646761Z ghcr.io/nireus79/socrates/frontend:master-3a5c55d
+2025-12-31T22:20:37.0647064Z   - podman: podman not available: no host address
+2025-12-31T22:20:37.0647869Z   - containerd: containerd not available: failed to dial "/run/containerd/containerd.sock": connection error: desc = "transport: error while dialing: dial unix /run/containerd/containerd.sock: connect: permission denied"
+2025-12-31T22:20:37.0649688Z   - oci-registry: unable to parse registry reference="ghcr.io/nireus79/socrates/frontend:master\nghcr.io/nireus79/socrates/frontend:latest\nghcr.io/nireus79/socrates/frontend:master-3a5c55d": could not parse reference: ghcr.io/nireus79/socrates/frontend:master
+2025-12-31T22:20:37.0650727Z ghcr.io/nireus79/socrates/frontend:latest
+2025-12-31T22:20:37.0651007Z ghcr.io/nireus79/socrates/frontend:master-3a5c55d
+2025-12-31T22:20:37.0652047Z   - snap: failed to create HTTP request: parse "https://api.snapcraft.io/v2/snaps/info/ghcr.io/nireus79/socrates/frontend:master\nghcr.io/nireus79/socrates/frontend:latest\nghcr.io/nireus79/socrates/frontend:master-3a5c55d": net/url: invalid control character in URL
+2025-12-31T22:20:37.0653386Z   - additionally, the following providers failed with file does not exist: docker-archive, oci-archive, oci-dir, singularity, local-file, local-directory
+2025-12-31T22:20:37.0653904Z 
+2025-12-31T22:20:37.0663973Z ##[endgroup]
+2025-12-31T22:20:37.0683083Z ##[error]The process '/opt/hostedtoolcache/syft/1.39.0/x64/syft' failed with exit code 1

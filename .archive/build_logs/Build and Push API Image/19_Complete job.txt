@@ -1,0 +1,4 @@
+﻿2025-12-31T22:20:48.0869192Z Evaluate and set job outputs
+2025-12-31T22:20:48.0874388Z Set output 'api-image'
+2025-12-31T22:20:48.0876117Z Set output 'api-digest'
+2025-12-31T22:20:48.0877010Z Cleaning up orphan processes

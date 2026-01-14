@@ -1,0 +1,39 @@
+﻿2025-12-31T22:20:52.2052426Z Current runner version: '2.330.0'
+2025-12-31T22:20:52.2076615Z ##[group]Runner Image Provisioner
+2025-12-31T22:20:52.2077862Z Hosted Compute Agent
+2025-12-31T22:20:52.2078390Z Version: 20251211.462
+2025-12-31T22:20:52.2078991Z Commit: 6cbad8c2bb55d58165063d031ccabf57e2d2db61
+2025-12-31T22:20:52.2079776Z Build Date: 2025-12-11T16:28:49Z
+2025-12-31T22:20:52.2080412Z Worker ID: {72bdf378-16d7-4be0-bc66-d4d1f960d882}
+2025-12-31T22:20:52.2081129Z ##[endgroup]
+2025-12-31T22:20:52.2081706Z ##[group]Operating System
+2025-12-31T22:20:52.2082279Z Ubuntu
+2025-12-31T22:20:52.2082733Z 24.04.3
+2025-12-31T22:20:52.2083268Z LTS
+2025-12-31T22:20:52.2083714Z ##[endgroup]
+2025-12-31T22:20:52.2084248Z ##[group]Runner Image
+2025-12-31T22:20:52.2084894Z Image: ubuntu-24.04
+2025-12-31T22:20:52.2085398Z Version: 20251215.174.1
+2025-12-31T22:20:52.2086416Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20251215.174/images/ubuntu/Ubuntu2404-Readme.md
+2025-12-31T22:20:52.2087966Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20251215.174
+2025-12-31T22:20:52.2089142Z ##[endgroup]
+2025-12-31T22:20:52.2090404Z ##[group]GITHUB_TOKEN Permissions
+2025-12-31T22:20:52.2092443Z Attestations: write
+2025-12-31T22:20:52.2093125Z Contents: read
+2025-12-31T22:20:52.2093671Z Metadata: read
+2025-12-31T22:20:52.2094186Z Packages: write
+2025-12-31T22:20:52.2094739Z ##[endgroup]
+2025-12-31T22:20:52.2096704Z Secret source: Actions
+2025-12-31T22:20:52.2097719Z Prepare workflow directory
+2025-12-31T22:20:52.2409907Z Prepare all required actions
+2025-12-31T22:20:52.2446610Z Getting action download info
+2025-12-31T22:20:52.5357285Z Download action repository 'aquasecurity/trivy-action@master' (SHA:22438a435773de8c97dc0958cc0b823c45b064ac)
+2025-12-31T22:20:52.8470390Z Download action repository 'github/codeql-action@v2' (SHA:b8d3b6e8af63cde30bdc382c0bc28114f4346c88)
+2025-12-31T22:20:57.9395908Z Getting action download info
+2025-12-31T22:20:58.0983064Z Download action repository 'aquasecurity/setup-trivy@e6c2c5e321ed9123bda567646e2f96565e34abe1' (SHA:e6c2c5e321ed9123bda567646e2f96565e34abe1)
+2025-12-31T22:20:58.2328683Z Download action repository 'actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809' (SHA:0400d5f644dc74513175e3cd8d07132dd4860809)
+2025-12-31T22:20:58.5376704Z Getting action download info
+2025-12-31T22:20:58.6705877Z Download action repository 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' (SHA:08c6903cd8c0fde910a37f88322edcfb5dd907a8)
+2025-12-31T22:20:58.7855778Z Getting action download info
+2025-12-31T22:20:58.9244683Z Getting action download info
+2025-12-31T22:20:59.1186503Z Complete job name: Scan Images with Trivy

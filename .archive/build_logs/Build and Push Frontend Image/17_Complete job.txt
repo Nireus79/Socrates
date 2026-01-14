@@ -1,0 +1,4 @@
+﻿2025-12-31T22:20:40.5220593Z Evaluate and set job outputs
+2025-12-31T22:20:40.5226055Z Set output 'frontend-image'
+2025-12-31T22:20:40.5227727Z Set output 'frontend-digest'
+2025-12-31T22:20:40.5228992Z Cleaning up orphan processes
