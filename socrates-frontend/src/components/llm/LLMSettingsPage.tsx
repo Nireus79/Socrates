@@ -305,47 +305,15 @@ export const LLMSettingsPage: React.FC = () => {
                     {/* Expanded Details */}
                     {isExpanded && (
                       <>
-                        {/* Auth Method Selection (for providers with multiple auth methods) */}
-                        {((provider.auth_methods && provider.auth_methods.length > 1) || provider.name === 'claude') && (
-                          <div className="border-t border-gray-200 dark:border-gray-700 pt-4 pb-4">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
-                              Authentication Method
-                            </h4>
-                            <div className="space-y-2">
-                              {(provider.auth_methods || ['subscription', 'api_key']).map((method) => (
-                                <label
-                                  key={method}
-                                  className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-                                >
-                                  <input
-                                    type="radio"
-                                    name={`auth-${provider.name}`}
-                                    value={method}
-                                    checked={selectedAuthMethod[provider.name] === method}
-                                    onChange={() => handleSetAuthMethod(provider.name, method)}
-                                    disabled={savingProvider === provider.name}
-                                    className="text-blue-600 dark:text-blue-400"
-                                  />
-                                  <div className="flex-1">
-                                    <div className="font-medium text-gray-900 dark:text-white">
-                                      {method === 'subscription' ? 'Use Subscription' : 'Use API Key'}
-                                    </div>
-                                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                                      {method === 'subscription'
-                                        ? 'Monthly payment, uses subscription token from environment'
-                                        : 'Pay-per-use, enter your API key from console.anthropic.com'}
-                                    </div>
-                                  </div>
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* API Key Section (for API-based providers or when api_key auth method is selected) */}
-                        {((isApiRequired || (provider.auth_methods?.length > 0 && selectedAuthMethod[provider.name] === 'api_key')) || provider.name === 'claude') && (
+                        {/* API Key Section (for API-based providers or Claude) */}
+                        {((isApiRequired || provider.name === 'claude')) && (
                           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">API Key</h4>
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-2">API Key</h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                              {provider.name === 'claude'
+                                ? 'Get your API key from console.anthropic.com. Pay-per-use billing.'
+                                : 'Enter your API key for this provider'}
+                            </p>
                             <div className="space-y-2">
                               {/* Show status if configured */}
                               {isConfigured && (
