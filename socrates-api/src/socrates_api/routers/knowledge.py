@@ -74,12 +74,9 @@ async def list_documents(
     """
     try:
         if project_id:
-            # Verify user has access to project
-            project = db.load_project(project_id)
-            if not project or project.owner != current_user:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
-                )
+            # Verify user has access to project using RBAC (viewers and above can read knowledge)
+            from socrates_api.auth.project_access import check_project_access
+            await check_project_access(project_id, current_user, db, min_role="viewer")
             documents = db.get_project_knowledge_documents(project_id)
         else:
             # Get all documents for user
@@ -174,7 +171,7 @@ async def list_documents(
     status_code=status.HTTP_200_OK,
     summary="Get all knowledge sources (PDFs, Notes, GitHub repos)",
 )
-def get_all_knowledge_sources(
+async def get_all_knowledge_sources(
     project_id: str,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
@@ -191,18 +188,19 @@ def get_all_knowledge_sources(
         APIResponse with categorized knowledge sources and chunk counts
     """
     try:
-        # Verify project ownership
+        # Verify user has access to project using RBAC (viewers and above can read knowledge)
+        from socrates_api.auth.project_access import check_project_access
+        import asyncio
+
+        # Run async RBAC check synchronously
+        loop = asyncio.get_event_loop()
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found",
-            )
-
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this project",
             )
 
         orchestrator = None
@@ -509,10 +507,14 @@ async def import_file(
         # Verify project access if provided
         if project_id:
             project = db.load_project(project_id)
-            if not project or project.owner != current_user:
+            if not project:
                 raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
                 )
+            # Check RBAC for write operations (requires editor or owner role)
+            # Import here to avoid circular imports
+            from socrates_api.auth.project_access import check_project_access as rbac_check
+            await rbac_check(project_id, current_user, db, min_role="editor")
 
         # Create document ID first
         doc_id = str(uuid.uuid4())
@@ -693,10 +695,14 @@ async def import_url(
         # Verify project access if provided
         if project_id:
             project = db.load_project(project_id)
-            if not project or project.owner != current_user:
+            if not project:
                 raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
                 )
+            # Check RBAC for write operations (requires editor or owner role)
+            # Import here to avoid circular imports
+            from socrates_api.auth.project_access import check_project_access as rbac_check
+            await rbac_check(project_id, current_user, db, min_role="editor")
 
         # Create document ID first (for source consistency)
         doc_id = str(uuid.uuid4())
@@ -812,10 +818,14 @@ async def import_text(
         # Verify project access if provided
         if project_id:
             project = db.load_project(project_id)
-            if not project or project.owner != current_user:
+            if not project:
                 raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
                 )
+            # Check RBAC for write operations (requires editor or owner role)
+            # Import here to avoid circular imports
+            from socrates_api.auth.project_access import check_project_access as rbac_check
+            await rbac_check(project_id, current_user, db, min_role="editor")
 
         # Create document ID first (for source consistency)
         doc_id = str(uuid.uuid4())
@@ -937,10 +947,14 @@ async def search_knowledge(
         # Verify project access if provided
         if project_id:
             project = db.load_project(project_id)
-            if not project or project.owner != current_user:
+            if not project:
                 raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
                 )
+            # Check RBAC for write operations (requires editor or owner role)
+            # Import here to avoid circular imports
+            from socrates_api.auth.project_access import check_project_access as rbac_check
+            await rbac_check(project_id, current_user, db, min_role="editor")
 
         # Use VectorDatabase via orchestrator
         vector_db = orchestrator.vector_db
@@ -1156,10 +1170,14 @@ async def bulk_import_documents(
         # Verify project access if specified
         if project_id:
             project = db.load_project(project_id)
-            if not project or project.owner != current_user:
+            if not project:
                 raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
                 )
+            # Check RBAC for write operations (requires editor or owner role)
+            # Import here to avoid circular imports
+            from socrates_api.auth.project_access import check_project_access as rbac_check
+            await rbac_check(project_id, current_user, db, min_role="editor")
 
         results = []
         for file in files:
@@ -1362,10 +1380,14 @@ async def add_knowledge_entry(
         # Verify project access if provided
         if project_id:
             project = db.load_project(project_id)
-            if not project or project.owner != current_user:
+            if not project:
                 raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this project"
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
                 )
+            # Check RBAC for write operations (requires editor or owner role)
+            # Import here to avoid circular imports
+            from socrates_api.auth.project_access import check_project_access as rbac_check
+            await rbac_check(project_id, current_user, db, min_role="editor")
 
         # Process as text import with category metadata
         result = orchestrator.process_request(
