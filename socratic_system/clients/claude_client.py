@@ -215,7 +215,7 @@ class ClaudeClient:
         Get the appropriate sync client based on user's auth method and user-specific API key.
 
         Args:
-            user_auth_method: User's preferred auth method ('api_key' or 'subscription')
+            user_auth_method: User's preferred auth method (only 'api_key' is supported)
             user_id: Optional user ID to fetch user-specific API key
 
         Returns:
@@ -224,15 +224,12 @@ class ClaudeClient:
         Raises:
             APIError: If auth method requires API key but none is available
         """
+        # Subscription mode is not supported - always use api_key
         if user_auth_method == "subscription":
-            if self.subscription_client:
-                return self.subscription_client
-            raise APIError(
-                "Subscription token not configured. Set ANTHROPIC_SUBSCRIPTION_TOKEN environment variable.",
-                error_type="MISSING_SUBSCRIPTION_TOKEN"
-            )
+            self.logger.warning("Subscription mode is not supported. Defaulting to api_key")
+            user_auth_method = "api_key"
 
-        # For api_key auth method, try to get user-specific key
+        # Use api_key authentication with user-specific or default key
         try:
             api_key, _ = self._get_user_api_key(user_id)
             if api_key and not api_key.startswith("placeholder"):
@@ -268,7 +265,7 @@ class ClaudeClient:
         Get the appropriate async client based on user's auth method and user-specific API key.
 
         Args:
-            user_auth_method: User's preferred auth method ('api_key' or 'subscription')
+            user_auth_method: User's preferred auth method (only 'api_key' is supported)
             user_id: Optional user ID to fetch user-specific API key
 
         Returns:
@@ -277,15 +274,12 @@ class ClaudeClient:
         Raises:
             APIError: If auth method requires API key but none is available
         """
+        # Subscription mode is not supported - always use api_key
         if user_auth_method == "subscription":
-            if self.subscription_async_client:
-                return self.subscription_async_client
-            raise APIError(
-                "Subscription token not configured. Set ANTHROPIC_SUBSCRIPTION_TOKEN environment variable.",
-                error_type="MISSING_SUBSCRIPTION_TOKEN"
-            )
+            self.logger.warning("Subscription mode is not supported. Defaulting to api_key")
+            user_auth_method = "api_key"
 
-        # For api_key auth method, try to get user-specific key
+        # Use api_key authentication with user-specific or default key
         try:
             api_key, _ = self._get_user_api_key(user_id)
             if api_key and not api_key.startswith("placeholder"):

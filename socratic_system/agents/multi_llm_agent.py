@@ -480,7 +480,7 @@ class MultiLLMAgent(Agent):
             data: {
                 'user_id': str,
                 'provider': str,  # Should be 'claude'
-                'auth_method': str  # 'api_key' or 'subscription'
+                'auth_method': str  # Only 'api_key' is supported
             }
 
         Returns:
@@ -496,8 +496,12 @@ class MultiLLMAgent(Agent):
         if provider != "claude":
             return {"status": "error", "message": "Auth method only applies to Claude provider"}
 
-        if auth_method not in ["api_key", "subscription"]:
-            return {"status": "error", "message": "Invalid auth method. Must be 'api_key' or 'subscription'"}
+        # Only api_key is supported (subscription mode is not implemented)
+        if auth_method == "subscription":
+            self.logger.warning(f"Subscription auth method not supported. Using api_key for user {user_id}")
+            auth_method = "api_key"
+        elif auth_method not in ["api_key"]:
+            return {"status": "error", "message": "Invalid auth method. Only 'api_key' is supported"}
 
         self.logger.debug(f"Setting auth method for {user_id}/{provider} to {auth_method}")
 
