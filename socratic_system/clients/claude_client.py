@@ -152,8 +152,6 @@ class ClaudeClient:
         import base64
         import os
         from cryptography.fernet import Fernet
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
 
         # Get encryption key from environment or use default
         encryption_key_base = os.getenv("SOCRATES_ENCRYPTION_KEY", "default-insecure-key-change-in-production")
@@ -164,6 +162,9 @@ class ClaudeClient:
 
         # Try Fernet decryption first
         try:
+            from cryptography.hazmat.primitives import hashes
+            from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
+
             salt = b"socrates-salt"
             kdf = PBKDF2(
                 algorithm=hashes.SHA256(),
@@ -178,21 +179,39 @@ class ClaudeClient:
             self.logger.info("API key decrypted successfully using Fernet")
             return decrypted.decode()
 
+        except ImportError as import_error:
+            self.logger.debug(f"PBKDF2 import failed, trying simpler decryption: {import_error}")
+
+            # Try simpler approach using just the key directly
+            try:
+                import hashlib
+                # Create a key from the encryption base using sha256
+                key_bytes = hashlib.sha256(encryption_key_base.encode()).digest()
+                derived_key = base64.urlsafe_b64encode(key_bytes)
+
+                cipher = Fernet(derived_key)
+                decrypted = cipher.decrypt(encrypted_key.encode())
+                self.logger.info("API key decrypted successfully using SHA256 key derivation")
+                return decrypted.decode()
+            except Exception as e:
+                self.logger.debug(f"SHA256 decryption failed: {e}")
+                # Continue to base64 fallback
+                pass
+
         except Exception as fernet_error:
             self.logger.debug(f"Fernet decryption failed: {fernet_error}")
 
-            # Try base64 fallback (used when Fernet encryption failed during save)
-            try:
-                self.logger.info("Attempting base64 decoding as fallback...")
-                decrypted = base64.b64decode(encrypted_key.encode()).decode()
-                self.logger.info("API key decoded successfully using base64 fallback")
-                return decrypted
-            except Exception as base64_error:
-                self.logger.error(f"Both Fernet and base64 decryption failed")
-                self.logger.error(f"Fernet error: {fernet_error}")
-                self.logger.error(f"Base64 error: {base64_error}")
-                self.logger.error(f"If key was encrypted with SOCRATES_ENCRYPTION_KEY, set that env variable.")
-                return None
+        # Try base64 fallback (used when Fernet encryption failed during save)
+        try:
+            self.logger.info("Attempting base64 decoding as fallback...")
+            decrypted = base64.b64decode(encrypted_key.encode()).decode()
+            self.logger.info("API key decoded successfully using base64 fallback")
+            return decrypted
+        except Exception as base64_error:
+            self.logger.error(f"All decryption methods failed")
+            self.logger.error(f"Base64 error: {base64_error}")
+            self.logger.error(f"If key was encrypted with SOCRATES_ENCRYPTION_KEY, set that env variable.")
+            return None
 
     def _get_client(self, user_auth_method: str = "api_key", user_id: str = None):
         """
