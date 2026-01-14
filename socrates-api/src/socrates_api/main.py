@@ -15,7 +15,7 @@ from typing import Optional
 import uvicorn
 from fastapi import Body, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from slowapi.errors import RateLimitExceeded
 
 from socrates_api.middleware.metrics import (
@@ -420,7 +420,7 @@ async def detailed_health_check():
     }
 
 
-@app.get("/metrics", response_class=type("PlainTextResponse", (), {}))
+@app.get("/metrics", response_class=PlainTextResponse)
 async def metrics_endpoint():
     """
     Prometheus metrics endpoint.
