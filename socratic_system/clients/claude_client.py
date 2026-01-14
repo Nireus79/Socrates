@@ -141,7 +141,7 @@ class ClaudeClient:
         """
         Decrypt an API key stored in the database.
 
-        Supports both Fernet encryption and base64 fallback (used when Fernet unavailable).
+        Supports multiple encryption methods for compatibility.
 
         Args:
             encrypted_key: The encrypted API key from database
@@ -150,6 +150,7 @@ class ClaudeClient:
             Decrypted API key string, or None if decryption fails
         """
         import base64
+        import hashlib
         import os
         from cryptography.fernet import Fernet
 
@@ -160,58 +161,54 @@ class ClaudeClient:
         key_source = "SOCRATES_ENCRYPTION_KEY env var" if os.getenv("SOCRATES_ENCRYPTION_KEY") else "default insecure key"
         self.logger.info(f"Decrypting API key using: {key_source}")
 
-        # Try Fernet decryption first
+        # Method 1: Try SHA256-based Fernet decryption (simple, reliable, doesn't require PBKDF2)
+        try:
+            key_bytes = hashlib.sha256(encryption_key_base.encode()).digest()
+            derived_key = base64.urlsafe_b64encode(key_bytes)
+            cipher = Fernet(derived_key)
+            decrypted = cipher.decrypt(encrypted_key.encode())
+            self.logger.info("API key decrypted successfully using SHA256-Fernet")
+            return decrypted.decode()
+        except Exception as e:
+            self.logger.debug(f"SHA256-Fernet decryption failed: {e}")
+
+        # Method 2: Try PBKDF2-based Fernet decryption (for older keys encrypted with PBKDF2)
         try:
             from cryptography.hazmat.primitives import hashes
-            from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
+            from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+            from cryptography.hazmat.backends import default_backend
 
             salt = b"socrates-salt"
-            kdf = PBKDF2(
+            kdf = PBKDF2HMAC(
                 algorithm=hashes.SHA256(),
                 length=32,
                 salt=salt,
                 iterations=100000,
+                backend=default_backend(),
             )
             derived_key = base64.urlsafe_b64encode(kdf.derive(encryption_key_base.encode()))
-
             cipher = Fernet(derived_key)
             decrypted = cipher.decrypt(encrypted_key.encode())
-            self.logger.info("API key decrypted successfully using Fernet")
+            self.logger.info("API key decrypted successfully using PBKDF2-Fernet")
             return decrypted.decode()
+        except ImportError:
+            self.logger.debug("PBKDF2 not available, skipping PBKDF2 decryption")
+        except Exception as e:
+            self.logger.debug(f"PBKDF2-Fernet decryption failed: {e}")
 
-        except ImportError as import_error:
-            self.logger.debug(f"PBKDF2 import failed, trying simpler decryption: {import_error}")
-
-            # Try simpler approach using just the key directly
-            try:
-                import hashlib
-                # Create a key from the encryption base using sha256
-                key_bytes = hashlib.sha256(encryption_key_base.encode()).digest()
-                derived_key = base64.urlsafe_b64encode(key_bytes)
-
-                cipher = Fernet(derived_key)
-                decrypted = cipher.decrypt(encrypted_key.encode())
-                self.logger.info("API key decrypted successfully using SHA256 key derivation")
-                return decrypted.decode()
-            except Exception as e:
-                self.logger.debug(f"SHA256 decryption failed: {e}")
-                # Continue to base64 fallback
-                pass
-
-        except Exception as fernet_error:
-            self.logger.debug(f"Fernet decryption failed: {fernet_error}")
-
-        # Try base64 fallback (used when Fernet encryption failed during save)
+        # Method 3: Try base64 fallback (for keys saved with base64 encoding)
         try:
             self.logger.info("Attempting base64 decoding as fallback...")
             decrypted = base64.b64decode(encrypted_key.encode()).decode()
             self.logger.info("API key decoded successfully using base64 fallback")
             return decrypted
-        except Exception as base64_error:
-            self.logger.error(f"All decryption methods failed")
-            self.logger.error(f"Base64 error: {base64_error}")
-            self.logger.error(f"If key was encrypted with SOCRATES_ENCRYPTION_KEY, set that env variable.")
-            return None
+        except Exception as e:
+            self.logger.debug(f"Base64 decoding failed: {e}")
+
+        # All methods failed
+        self.logger.error(f"All decryption methods failed for API key")
+        self.logger.error(f"If key was encrypted with custom SOCRATES_ENCRYPTION_KEY, ensure it's set.")
+        return None
 
     def _get_client(self, user_auth_method: str = "api_key", user_id: str = None):
         """
