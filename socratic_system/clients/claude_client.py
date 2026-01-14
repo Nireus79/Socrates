@@ -154,6 +154,10 @@ class ClaudeClient:
             # Get encryption key from environment or use default
             encryption_key_base = os.getenv("SOCRATES_ENCRYPTION_KEY", "default-insecure-key-change-in-production")
 
+            # Log which key is being used (without revealing the actual key)
+            key_source = "SOCRATES_ENCRYPTION_KEY env var" if os.getenv("SOCRATES_ENCRYPTION_KEY") else "default insecure key"
+            self.logger.info(f"Decrypting API key using: {key_source}")
+
             # Derive the encryption key (must match what was used to encrypt)
             from cryptography.hazmat.primitives import hashes
             from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
@@ -170,10 +174,13 @@ class ClaudeClient:
 
             cipher = Fernet(derived_key)
             decrypted = cipher.decrypt(encrypted_key.encode())
+            self.logger.info("API key decrypted successfully")
             return decrypted.decode()
 
         except Exception as e:
             self.logger.error(f"Error decrypting API key: {e}")
+            self.logger.error(f"This usually means the encryption key doesn't match. "
+                            f"Set SOCRATES_ENCRYPTION_KEY env variable if key was encrypted with a specific key.")
             return None
 
     def _get_client(self, user_auth_method: str = "api_key", user_id: str = None):
