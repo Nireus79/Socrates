@@ -1,6 +1,0 @@
-﻿2025-12-31T22:20:44.5252376Z Post job cleanup.
-2025-12-31T22:20:44.7646240Z ##[group]Removing temp folder /home/runner/work/_temp/docker-actions-toolkit-tsDpY4
-2025-12-31T22:20:44.7660336Z ##[endgroup]
-2025-12-31T22:20:44.7660866Z ##[group]Post cache
-2025-12-31T22:20:44.7662920Z State not set
-2025-12-31T22:20:44.7663423Z ##[endgroup]
