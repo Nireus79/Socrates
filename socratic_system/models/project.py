@@ -133,7 +133,7 @@ class ProjectContext:
         if self.owner:
             owner_member = TeamMemberRole(
                 username=self.owner,
-                role="lead",
+                role="owner",
                 skills=[],
                 joined_at=self.created_at,
             )
@@ -144,7 +144,7 @@ class ProjectContext:
         for collab_username in self.collaborators:
             member = TeamMemberRole(
                 username=collab_username,
-                role="creator",
+                role="editor",
                 skills=[],
                 joined_at=datetime.datetime.now(),
             )
@@ -156,7 +156,7 @@ class ProjectContext:
             if self.owner:
                 owner_member = TeamMemberRole(
                     username=self.owner,
-                    role="lead",
+                    role="owner",
                     skills=[],
                     joined_at=self.created_at,
                 )
