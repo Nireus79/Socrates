@@ -125,9 +125,9 @@ class ClaudeClient:
             except Exception as e:
                 self.logger.warning(f"Error fetching user API key for {user_id}: {e}")
 
-        # Fall back to environment variable
+        # Fall back to environment variable (but not placeholder)
         env_key = self.api_key
-        if env_key:
+        if env_key and not env_key.startswith("placeholder"):
             self.logger.debug("Using environment variable API key as fallback")
             return env_key, False
 
@@ -201,15 +201,32 @@ class ClaudeClient:
         # For api_key auth method, try to get user-specific key
         try:
             api_key, _ = self._get_user_api_key(user_id)
-            if api_key:
+            if api_key and not api_key.startswith("placeholder"):
                 # Create a new client with the user's API key
                 return anthropic.Anthropic(api_key=api_key)
+            elif api_key and api_key.startswith("placeholder"):
+                # Placeholder key detected - user hasn't set their API key yet
+                raise APIError(
+                    f"No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                    error_type="MISSING_API_KEY"
+                )
         except APIError:
             raise
         except Exception as e:
             self.logger.warning(f"Error getting user API key: {e}")
+            raise APIError(
+                f"No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                error_type="MISSING_API_KEY"
+            )
 
-        # Fallback to default client if no user key
+        # Default client should not be used if it has placeholder key
+        if self.api_key and self.api_key.startswith("placeholder"):
+            raise APIError(
+                f"No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                error_type="MISSING_API_KEY"
+            )
+
+        # Fallback to default client if it has a real key
         return self.client
 
     def _get_async_client(self, user_auth_method: str = "api_key", user_id: str = None):
@@ -237,15 +254,32 @@ class ClaudeClient:
         # For api_key auth method, try to get user-specific key
         try:
             api_key, _ = self._get_user_api_key(user_id)
-            if api_key:
+            if api_key and not api_key.startswith("placeholder"):
                 # Create a new async client with the user's API key
                 return anthropic.AsyncAnthropic(api_key=api_key)
+            elif api_key and api_key.startswith("placeholder"):
+                # Placeholder key detected - user hasn't set their API key yet
+                raise APIError(
+                    f"No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                    error_type="MISSING_API_KEY"
+                )
         except APIError:
             raise
         except Exception as e:
             self.logger.warning(f"Error getting user API key: {e}")
+            raise APIError(
+                f"No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                error_type="MISSING_API_KEY"
+            )
 
-        # Fallback to default async client if no user key
+        # Default client should not be used if it has placeholder key
+        if self.api_key and self.api_key.startswith("placeholder"):
+            raise APIError(
+                f"No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                error_type="MISSING_API_KEY"
+            )
+
+        # Fallback to default async client if it has a real key
         return self.async_client
 
     def extract_insights(self, user_response: str, project: ProjectContext, user_auth_method: str = "api_key", user_id: str = None) -> Dict:
