@@ -10,8 +10,10 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
+from socrates_api.auth.project_access import check_project_access
 from socrates_api.database import get_database
 from socrates_api.models import APIResponse, ErrorResponse, SuccessResponse
+from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analysis", tags=["analysis"])
@@ -128,6 +130,7 @@ async def assess_maturity(
     project_id: str,
     phase: Optional[str] = None,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Assess project maturity for current or specified phase.
@@ -136,18 +139,21 @@ async def assess_maturity(
         project_id: Project ID (required)
         phase: Phase to assess (discovery, analysis, design, implementation)
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with maturity metrics from quality_controller
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         from socrates_api.main import get_orchestrator
         from socrates_api.routers.events import record_event
 
         logger.info(f"Assessing maturity for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -222,6 +228,7 @@ async def assess_maturity(
 async def run_tests(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Run tests for a project.
@@ -229,18 +236,21 @@ async def run_tests(
     Args:
         project_id: Project ID
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with test results from code_validation agent
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         from socrates_api.main import get_orchestrator
         from socrates_api.routers.events import record_event
 
         logger.info(f"Running tests for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
 
         if not project:
@@ -301,6 +311,7 @@ async def run_tests(
 async def analyze_structure(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Analyze the project context and structure.
@@ -308,11 +319,15 @@ async def analyze_structure(
     Args:
         project_id: Project ID
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with structure/context analysis
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         from socrates_api.main import get_orchestrator
         from socrates_api.routers.events import record_event
 
@@ -377,6 +392,7 @@ async def analyze_structure(
 async def review_code(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get code statistics and quality summary for a project.
@@ -384,11 +400,15 @@ async def review_code(
     Args:
         project_id: Project ID
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with project statistics
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         from socrates_api.main import get_orchestrator
         from socrates_api.routers.events import record_event
 
@@ -455,6 +475,7 @@ async def review_code(
 async def auto_fix_issues(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Generate improved code for a project.
@@ -462,18 +483,21 @@ async def auto_fix_issues(
     Args:
         project_id: Project ID
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with generated code
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         from socrates_api.main import get_orchestrator
         from socrates_api.routers.events import record_event
 
         logger.info(f"Auto-fixing issues for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -533,6 +557,7 @@ async def auto_fix_issues(
 async def get_analysis_report(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get comprehensive analysis report for a project.
@@ -540,11 +565,15 @@ async def get_analysis_report(
     Args:
         project_id: Project ID
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with analysis report
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         from socrates_api.main import get_orchestrator
         from socrates_api.routers.events import record_event
 

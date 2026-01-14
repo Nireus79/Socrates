@@ -1,4 +1,4 @@
-"""
+﻿"""
 Chat and Dialogue API endpoints for Socrates.
 
 Provides REST endpoints for chat operations including:
@@ -14,6 +14,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
+from socrates_api.auth.project_access import check_project_access
+from socratic_system.database import ProjectDatabase
 from socrates_api.models import APIResponse, ErrorResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
@@ -33,6 +35,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 async def get_next_question(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get the next Socratic question for a project.
@@ -40,17 +43,17 @@ async def get_next_question(
     Args:
         project_id: Project ID
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with the next question
     """
     try:
+        await check_project_access(project_id, current_user, db, min_role="editor")
+
         from socrates_api.main import get_orchestrator
 
         logger.info(f"Getting next question for project: {project_id}")
-
-        # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -102,6 +105,7 @@ async def get_conversation_history(
     project_id: str,
     limit: Optional[int] = None,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get conversation history for a project.
@@ -110,15 +114,15 @@ async def get_conversation_history(
         project_id: Project ID
         limit: Maximum number of messages to return
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with conversation history
     """
     try:
-        logger.info(f"Getting conversation history for project: {project_id}")
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        # Load project
-        db = get_database()
+        logger.info(f"Getting conversation history for project: {project_id}")
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -160,6 +164,7 @@ async def get_conversation_history(
 async def get_conversation_summary(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get AI-generated summary of conversation.
@@ -167,17 +172,17 @@ async def get_conversation_summary(
     Args:
         project_id: Project ID
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with summary
     """
     try:
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         from socrates_api.main import get_orchestrator
 
         logger.info(f"Generating summary for project: {project_id}")
-
-        # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -212,3 +217,8 @@ async def get_conversation_summary(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate summary: {str(e)}",
         )
+
+
+
+
+

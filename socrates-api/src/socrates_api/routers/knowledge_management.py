@@ -16,8 +16,10 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
+from socrates_api.auth.project_access import check_project_access
 from socrates_api.database import get_database
 from socrates_api.models import APIResponse, SuccessResponse
+from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["knowledge"])
@@ -42,6 +44,7 @@ async def add_knowledge_document(
     project_id: str,
     request: KnowledgeDocumentRequest,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Add a knowledge document to the project's knowledge base.
@@ -50,21 +53,21 @@ async def add_knowledge_document(
         project_id: Project identifier
         request: Document request with title, content, and type
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         Success response with document details
     """
     try:
+        # Check project access - requires editor or better
+        await check_project_access(project_id, current_user, db, min_role="editor")
+
         logger.info(f"Adding knowledge document to project {project_id}")
 
-        db = get_database()
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
 
         # Create document
         doc_id = f"doc_{int(datetime.now(timezone.utc).timestamp() * 1000)}"
@@ -124,6 +127,7 @@ async def add_knowledge(
     category: Optional[str] = Body(None),
     tags: Optional[List[str]] = Body(None),
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Add a knowledge item to the project's knowledge base.
@@ -135,21 +139,21 @@ async def add_knowledge(
         category: Optional category (e.g., "concept", "pattern", "best_practice")
         tags: Optional list of tags for categorization
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with created knowledge item
     """
     try:
+        # Check project access - requires editor or better
+        await check_project_access(project_id, current_user, db, min_role="editor")
+
         logger.info(f"Adding knowledge item to project {project_id}")
 
-        db = get_database()
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
 
         # Create knowledge item
         knowledge_item = {
@@ -211,6 +215,7 @@ async def list_knowledge(
     pinned_only: Optional[bool] = False,
     limit: Optional[int] = 50,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     List knowledge items in project's knowledge base.
@@ -222,21 +227,21 @@ async def list_knowledge(
         pinned_only: If True, only return pinned items
         limit: Maximum items to return
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with list of knowledge items
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         logger.info(f"Listing knowledge items for project {project_id}")
 
-        db = get_database()
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
 
         # Get knowledge items
         items = getattr(project, "knowledge_base", []) or []
@@ -300,6 +305,7 @@ async def search_knowledge(
     query: str = Body(...),
     limit: Optional[int] = Body(10),
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Search knowledge items by title and content.
@@ -309,21 +315,21 @@ async def search_knowledge(
         query: Search query string
         limit: Maximum results to return
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with matching knowledge items
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         logger.info(f"Searching knowledge in project {project_id}: {query}")
 
-        db = get_database()
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
 
         # Get knowledge items
         items = getattr(project, "knowledge_base", []) or []
@@ -380,6 +386,7 @@ async def remember_knowledge(
     project_id: str,
     knowledge_id: str = Body(...),
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Pin a knowledge item for easy access (mark as important/remembered).
@@ -388,21 +395,21 @@ async def remember_knowledge(
         project_id: Project identifier
         knowledge_id: Knowledge item identifier
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with updated knowledge item
     """
     try:
+        # Check project access - requires editor or better
+        await check_project_access(project_id, current_user, db, min_role="editor")
+
         logger.info(f"Remembering knowledge {knowledge_id} in project {project_id}")
 
-        db = get_database()
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
 
         # Find and update knowledge item
         items = getattr(project, "knowledge_base", []) or []
@@ -450,6 +457,7 @@ async def remove_knowledge(
     project_id: str,
     knowledge_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Remove a knowledge item from the project's knowledge base.
@@ -458,21 +466,21 @@ async def remove_knowledge(
         project_id: Project identifier
         knowledge_id: Knowledge item identifier
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse confirming deletion
     """
     try:
+        # Check project access - requires editor or better
+        await check_project_access(project_id, current_user, db, min_role="editor")
+
         logger.info(f"Removing knowledge {knowledge_id} from project {project_id}")
 
-        db = get_database()
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
 
         # Find and remove knowledge item
         items = getattr(project, "knowledge_base", []) or []
@@ -515,6 +523,7 @@ async def export_knowledge(
     project_id: str,
     format: Optional[str] = Body("json"),
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Export project knowledge base in specified format.
@@ -523,21 +532,21 @@ async def export_knowledge(
         project_id: Project identifier
         format: Export format (json, markdown, csv)
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with exported knowledge data
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         logger.info(f"Exporting knowledge from project {project_id} as {format}")
 
-        db = get_database()
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
 
         # Get knowledge items
         items = getattr(project, "knowledge_base", []) or []
@@ -611,6 +620,7 @@ async def import_knowledge(
     knowledge_items: List[dict] = Body(...),
     merge: Optional[bool] = Body(True),
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Import knowledge items into project knowledge base.
@@ -620,21 +630,21 @@ async def import_knowledge(
         knowledge_items: List of knowledge items to import
         merge: If True, merge with existing items; if False, replace all
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with import results
     """
     try:
+        # Check project access - requires editor or better
+        await check_project_access(project_id, current_user, db, min_role="editor")
+
         logger.info(f"Importing {len(knowledge_items)} knowledge items to project {project_id}")
 
-        db = get_database()
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
 
         # Prepare import
         if not merge:

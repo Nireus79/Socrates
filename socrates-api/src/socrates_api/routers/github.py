@@ -1,4 +1,4 @@
-"""
+﻿"""
 GitHub Integration API endpoints for Socrates.
 
 Provides GitHub repository import, pull, push, and sync functionality.
@@ -19,6 +19,7 @@ from socrates_api.models import (
     SuccessResponse,
 )
 from socratic_system.database import ProjectDatabase
+from socrates_api.auth.project_access import check_project_access
 from socratic_system.agents.github_sync_handler import (
     create_github_sync_handler,
     TokenExpiredError,
@@ -425,6 +426,7 @@ async def pull_changes(
     handler = create_github_sync_handler(db=db)
 
     try:
+        await check_project_access(project_id, current_user, db, min_role="editor")
         # Validate project exists
         project = db.load_project(project_id)
         if not project:
@@ -616,6 +618,7 @@ async def push_changes(
     handler = create_github_sync_handler(db=db)
 
     try:
+        await check_project_access(project_id, current_user, db, min_role="editor")
         # Load project
         project = db.load_project(project_id)
         if not project:
@@ -824,6 +827,7 @@ async def sync_project(
     handler = create_github_sync_handler(db=db)
 
     try:
+        await check_project_access(project_id, current_user, db, min_role="editor")
         # Load project
         project = db.load_project(project_id)
         if not project:
@@ -1052,6 +1056,7 @@ async def get_sync_status(
         HTTPException: If project not found
     """
     try:
+        await check_project_access(project_id, current_user, db, min_role="viewer")
         # Load project
         project = db.load_project(project_id)
         if not project:
@@ -1295,3 +1300,12 @@ async def disconnect_github(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to disconnect GitHub: {str(e)}",
         )
+
+
+
+
+
+
+
+
+

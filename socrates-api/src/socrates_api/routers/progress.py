@@ -1,4 +1,4 @@
-"""
+﻿"""
 Project Progress Tracking API endpoints for Socrates.
 
 Provides REST endpoints for tracking project progress including:
@@ -13,6 +13,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
+from socrates_api.auth.project_access import check_project_access
+from socratic_system.database import ProjectDatabase
 from socrates_api.models import APIResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
@@ -28,6 +30,7 @@ router = APIRouter(prefix="/projects", tags=["progress"])
 async def get_progress(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get overall progress of the project.
@@ -35,14 +38,15 @@ async def get_progress(
     Args:
         project_id: Project identifier
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with project progress details
     """
     try:
-        logger.info(f"Getting progress for project {project_id}")
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        db = get_database()
+        logger.info(f"Getting progress for project {project_id}")
         project = db.load_project(project_id)
 
         if not project:
@@ -224,6 +228,7 @@ async def get_progress(
 async def get_progress_status(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get detailed progress status with milestone tracking and trends.
@@ -231,14 +236,15 @@ async def get_progress_status(
     Args:
         project_id: Project identifier
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with detailed status information
     """
     try:
-        logger.info(f"Getting progress status for project {project_id}")
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        db = get_database()
+        logger.info(f"Getting progress status for project {project_id}")
         project = db.load_project(project_id)
 
         if not project:
@@ -381,6 +387,7 @@ def _generate_recommendations(project) -> list:
 async def get_project_stats(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get project statistics including message count, insights, and questions.
@@ -388,14 +395,15 @@ async def get_project_stats(
     Args:
         project_id: Project identifier
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with project statistics
     """
     try:
-        logger.info(f"Getting stats for project {project_id}")
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        db = get_database()
+        logger.info(f"Getting stats for project {project_id}")
         project = db.load_project(project_id)
 
         if not project:
@@ -462,3 +470,9 @@ async def get_project_stats(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get project stats: {str(e)}",
         )
+
+
+
+
+
+

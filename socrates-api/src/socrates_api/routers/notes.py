@@ -16,8 +16,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
+from socrates_api.auth.project_access import check_project_access
 from socrates_api.database import get_database
 from socrates_api.models import APIResponse, SuccessResponse
+from socratic_system.database import ProjectDatabase
 
 
 class NoteRequest(BaseModel):
@@ -42,6 +44,7 @@ async def add_note(
     project_id: str,
     request: NoteRequest,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Add a new note to a project.
@@ -50,22 +53,21 @@ async def add_note(
         project_id: Project ID
         request: Note content and metadata
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with created note
     """
     try:
+        # Check project access - requires editor or better
+        await check_project_access(project_id, current_user, db, min_role="editor")
+
         logger.info(f"Adding note to project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-
-        # Verify project ownership
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
 
         # Create note
         note = {
@@ -113,6 +115,7 @@ async def list_notes(
     limit: Optional[int] = None,
     tag: Optional[str] = None,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     List all notes for a project.
@@ -122,22 +125,21 @@ async def list_notes(
         limit: Maximum number of notes to return
         tag: Optional tag to filter by
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with list of notes
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         logger.info(f"Listing notes for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-
-        # Verify project ownership
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
 
         # Get notes
         notes = project.notes or []
@@ -182,6 +184,7 @@ async def search_notes(
     project_id: str,
     query: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Search notes by content and title.
@@ -190,22 +193,21 @@ async def search_notes(
         project_id: Project ID
         query: Search query
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with matching notes
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         logger.info(f"Searching notes for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-
-        # Verify project ownership
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
 
         # Search in notes
         notes = project.notes or []
@@ -248,6 +250,7 @@ async def delete_note(
     project_id: str,
     note_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Delete a note from a project.
@@ -256,22 +259,21 @@ async def delete_note(
         project_id: Project ID
         note_id: Note ID to delete
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with confirmation
     """
     try:
+        # Check project access - requires editor or better
+        await check_project_access(project_id, current_user, db, min_role="editor")
+
         logger.info(f"Deleting note {note_id} from project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-
-        # Verify project ownership
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
 
         # Find and delete note
         notes = project.notes or []

@@ -35,6 +35,12 @@ if TYPE_CHECKING:
     import socrates
 
 from socrates_api.auth import get_current_user, get_current_user_object, get_current_user_object_optional
+from socrates_api.auth.project_access import (
+    check_project_access,
+    require_editor_or_owner,
+    require_owner,
+    require_viewer_or_better,
+)
 from socrates_api.database import get_database
 from socrates_api.middleware import SubscriptionChecker
 from socrates_api.models import (
@@ -736,18 +742,15 @@ async def get_project_stats(
         Dictionary with project statistics
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found",
-            )
-
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this project",
             )
 
         # Gather statistics
@@ -810,18 +813,15 @@ async def get_project_maturity(
         Dictionary with maturity scores by phase
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found",
-            )
-
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this project",
             )
 
         # Get maturity scores
@@ -887,18 +887,15 @@ async def get_maturity_analysis(
         Detailed analysis with all metrics and recommendations
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found",
-            )
-
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this project",
             )
 
         # Get maturity data
@@ -1128,18 +1125,15 @@ async def advance_phase(
         Updated ProjectResponse with new phase
     """
     try:
+        # Check project access - owner only for phase management
+        await check_project_access(project_id, current_user, db, min_role="owner")
+
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found",
-            )
-
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this project",
             )
 
         # Determine the new phase
@@ -1219,18 +1213,15 @@ async def rollback_phase(
         Updated ProjectResponse with previous phase
     """
     try:
+        # Check project access - owner only for phase management
+        await check_project_access(project_id, current_user, db, min_role="owner")
+
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found",
-            )
-
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this project",
             )
 
         # Determine the previous phase
@@ -1307,18 +1298,15 @@ async def get_project_analytics(
         Analytics data including velocity, confidence, recommendations
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found",
-            )
-
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this project",
             )
 
         # Calculate comprehensive analytics from project data
@@ -1419,18 +1407,15 @@ async def get_project_files(
         SuccessResponse with list of project files
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found",
-            )
-
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this project",
             )
 
         # Read actual project files from filesystem
@@ -1510,7 +1495,7 @@ async def get_project_files(
 
 
 @router.get("/{project_id}/files/content")
-def get_file_content(
+async def get_file_content(
     project_id: str,
     file_name: str = Query(..., description="Name of the file to retrieve"),
     current_user: str = Depends(get_current_user),
@@ -1531,18 +1516,15 @@ def get_file_content(
     try:
         from pathlib import Path
 
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         project = db.load_project(project_id)
 
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project '{project_id}' not found",
-            )
-
-        if project.owner != current_user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this project",
             )
 
         # Construct the file path
@@ -1612,7 +1594,7 @@ def get_file_content(
 
 
 @router.delete("/{project_id}/files")
-def delete_project_file(
+async def delete_project_file(
     project_id: str,
     file_name: str = Query(..., description="Name of the file to delete"),
     current_user: str = Depends(get_current_user),
@@ -1635,13 +1617,15 @@ def delete_project_file(
 
         logger.debug(f"Delete file request: project_id={project_id}, file_name={file_name}, user={current_user}")
 
-        # Get and verify project ownership
+        # Check project access - requires editor or better
+        await check_project_access(project_id, current_user, db, min_role="editor")
+
+        # Get and verify project exists
         project = db.load_project(project_id)
-        if not project or project.owner != current_user:
-            logger.warning(f"Unauthorized delete attempt: user {current_user} on project {project_id}")
+        if not project:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized to delete files from this project",
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found",
             )
 
         # Security: Prevent directory traversal attacks

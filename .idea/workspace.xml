@@ -5,8 +5,187 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="Before new QC">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FIXES_AND_CURRENT_STATUS.md" beforeDir="false" afterPath="$PROJECT_DIR$/.archive/FIXES_AND_CURRENT_STATUS.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/analysis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/chat.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/finalization.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/finalization.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/github.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/github.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/knowledge_management.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/knowledge_management.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/notes.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/notes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/progress.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/progress.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects_chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects_chat.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/skills.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/skills.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/workflow.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/workflow.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-0074-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-011e-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-03b9-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-0540-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-0577-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-05ae-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-0626-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-06b7-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-06ba-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-07b1-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-0830-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-08b3-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-08ba-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-0e4e-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-0e61-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-0f49-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-0fc8-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-10c5-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-1101-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-1354-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-14ff-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-15c8-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-16c3-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-17dd-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-1833-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-196d-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-1b27-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-1bac-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-1d0d-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-1eda-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-1f0a-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-1f22-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-2230-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-25fe-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-2721-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-2775-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-2799-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-2a61-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-2ba9-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-2bff-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-2c2c-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-2c33-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-2d91-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-2f4d-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-3174-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-35ee-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-35f3-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-3628-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-37af-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-38fc-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-3b05-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-3dc3-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-3ecd-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-4066-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-40db-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-41d2-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-466f-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-49a1-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-4a27-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-4d41-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-5191-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-5217-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-52b0-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-534e-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-5355-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-5518-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-5554-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-5677-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-5738-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-59f8-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-5ac1-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-5b49-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-5c13-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-5c57-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-6097-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-6157-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-61fe-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-621d-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-62d8-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-655e-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-669f-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-675c-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-67d9-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-6949-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-6ae8-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-6f12-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-7162-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-757a-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-763b-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-7708-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-77b5-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-783d-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-79f8-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-7af6-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-7d95-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-7ef5-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-7f21-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-800f-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-834f-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-8428-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-84cb-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-87f0-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-8924-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-89b1-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-8af4-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-8ff6-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-9089-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-90d3-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-9504-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-9ac0-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-9c7a-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-9e51-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-a161-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-a300-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-a73c-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-a7c7-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-a7e3-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-aa6b-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-aaa9-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-abcc-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-b07f-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-b435-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-b4d8-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-b4fc-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-b57e-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-b586-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-b65b-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-b669-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-ba27-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-bb98-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-be7b-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-bef4-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-bfa4-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-bfc4-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-c2f8-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-c515-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-c594-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-ca30-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-caa4-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-cc44-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-cc47-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-d600-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-d65c-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-d668-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-d6dd-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-d9c5-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-da07-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-da8b-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-dc0c-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-dc34-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-dfc2-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-e3cd-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-e425-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-e6a6-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-e714-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-e8ac-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-e926-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-ed37-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-ede6-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-ee9e-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-f0be-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-f414-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-f92b-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-f985-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-f9e5-cwd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tmpclaude-ff1b-cwd" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -65,10 +244,10 @@
       <recent name="C:\Users\themi\PycharmProjects\Socrates\docs\future" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\themi\PycharmProjects\Socrates\docs" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\.archive" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\archive" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\tests" />
-      <recent name="C:\Users\themi\PycharmProjects\Socrates\docs" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\docs\future" />
     </key>
   </component>

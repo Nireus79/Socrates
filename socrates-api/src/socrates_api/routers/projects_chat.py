@@ -17,6 +17,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
+from socrates_api.auth.project_access import check_project_access
 from socrates_api.database import get_database
 from socrates_api.models import (
     APIResponse,
@@ -1109,6 +1110,7 @@ async def get_maturity_history(
     project_id: str,
     limit: Optional[int] = None,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get historical maturity tracking for a project.
@@ -1120,15 +1122,18 @@ async def get_maturity_history(
         project_id: Project ID
         limit: Maximum number of history entries to return (optional)
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with maturity history
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         logger.info(f"Getting maturity history for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -1171,6 +1176,7 @@ async def get_maturity_history(
 async def get_maturity_status(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get detailed maturity status for all project phases.
@@ -1181,15 +1187,18 @@ async def get_maturity_status(
     Args:
         project_id: Project ID
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with phase maturity breakdown
     """
     try:
+        # Check project access - requires viewer or better
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         logger.info(f"Getting maturity status for project: {project_id}")
 
         # Load project
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -1370,20 +1379,20 @@ async def reopen_question(
 async def skip_question(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Mark the current unanswered question as skipped.
     """
     try:
+        # Check project access - requires editor or better
+        await check_project_access(project_id, current_user, db, min_role="editor")
+
         logger.info(f"Skipping question for project {project_id}")
 
-        db = get_database()
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-
-        if project.owner != current_user:
-            raise HTTPException(status_code=403, detail="Access denied")
 
         # Find the current unanswered question and mark it as skipped
         skipped_count = 0
@@ -1558,12 +1567,15 @@ async def resolve_conflicts(
         Updated project and next question
     """
     try:
+        # Check project access - requires editor or better
+        await check_project_access(project_id, current_user, db, min_role="editor")
+
         # Load and verify project
         project = db.load_project(project_id)
-        if not project or project.owner != current_user:
+        if not project:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to this project",
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found",
             )
 
         conflicts = request.conflicts

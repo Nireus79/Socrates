@@ -1,4 +1,4 @@
-"""
+﻿"""
 Project Finalization API endpoints for Socrates.
 
 Provides REST endpoints for finalizing projects including:
@@ -15,6 +15,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
+from socrates_api.auth.project_access import check_project_access
+from socratic_system.database import ProjectDatabase
 from socrates_api.models import APIResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
@@ -33,6 +35,7 @@ async def generate_final_artifacts(
     include_docs: Optional[bool] = True,
     include_tests: Optional[bool] = True,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Generate final project artifacts and deliverables.
@@ -46,15 +49,15 @@ async def generate_final_artifacts(
         include_docs: Include project documentation
         include_tests: Include test files and results
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with artifact generation summary
     """
     try:
-        logger.info(f"Generating final artifacts for project: {project_id}")
+        await check_project_access(project_id, current_user, db, min_role="editor")
 
-        # Verify project access
-        db = get_database()
+        logger.info(f"Generating final artifacts for project: {project_id}")
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -192,6 +195,7 @@ async def generate_final_documentation(
     include_code_docs: Optional[bool] = True,
     include_deployment_guide: Optional[bool] = True,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Generate comprehensive final documentation package.
@@ -206,15 +210,15 @@ async def generate_final_documentation(
         include_code_docs: Include code/implementation documentation
         include_deployment_guide: Include deployment guide
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with documentation package
     """
     try:
-        logger.info(f"Generating final documentation for project: {project_id}")
+        await check_project_access(project_id, current_user, db, min_role="editor")
 
-        # Verify project access
-        db = get_database()
+        logger.info(f"Generating final documentation for project: {project_id}")
         project = db.load_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -375,3 +379,7 @@ For issues or questions, refer to the main README and API documentation.
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate documentation: {str(e)}",
         )
+
+
+
+

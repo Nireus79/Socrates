@@ -1,4 +1,4 @@
-"""
+﻿"""
 Skills Management API endpoints for Socrates.
 
 Provides REST endpoints for tracking and managing project skills including:
@@ -15,6 +15,8 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
+from socrates_api.auth.project_access import check_project_access
+from socratic_system.database import ProjectDatabase
 from socrates_api.models import APIResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
@@ -34,6 +36,7 @@ async def set_skills(
     confidence: Optional[float] = Body(0.5),
     notes: Optional[str] = Body(None),
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Set or update a skill in the project.
@@ -45,14 +48,15 @@ async def set_skills(
         confidence: Confidence score (0.0-1.0) in understanding the skill
         notes: Optional notes about the skill
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with updated skill information
     """
     try:
-        logger.info(f"Setting skill '{skill_name}' for project {project_id}")
+        await check_project_access(project_id, current_user, db, min_role="editor")
 
-        db = get_database()
+        logger.info(f"Setting skill '{skill_name}' for project {project_id}")
         project = db.load_project(project_id)
 
         if not project:
@@ -150,6 +154,7 @@ async def list_skills(
     min_confidence: Optional[float] = None,
     sort_by: Optional[str] = "proficiency",
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     List all skills acquired in the project.
@@ -160,14 +165,15 @@ async def list_skills(
         min_confidence: Optional minimum confidence score (0.0-1.0)
         sort_by: Sort field (proficiency, confidence, name, created_at)
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with list of skills and statistics
     """
     try:
-        logger.info(f"Listing skills for project {project_id}")
+        await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        db = get_database()
+        logger.info(f"Listing skills for project {project_id}")
         project = db.load_project(project_id)
 
         if not project:
@@ -248,3 +254,7 @@ async def list_skills(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to list skills: {str(e)}",
         )
+
+
+
+

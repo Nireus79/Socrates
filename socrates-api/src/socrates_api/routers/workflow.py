@@ -1,4 +1,4 @@
-"""
+﻿"""
 Workflow optimization and approval API endpoints for Socrates.
 
 Provides workflow approval, path selection, and optimization functionality.
@@ -12,6 +12,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
+from socrates_api.auth.project_access import check_project_access
+from socratic_system.database import ProjectDatabase
 from socrates_api.models import APIResponse, ErrorResponse, SuccessResponse
 
 logger = logging.getLogger(__name__)
@@ -32,6 +34,7 @@ router = APIRouter(prefix="/api/v1/workflow", tags=["workflow"])
 async def get_pending_approvals(
     project_id: str,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get list of pending workflow approval requests for a project.
@@ -41,15 +44,17 @@ async def get_pending_approvals(
     Args:
         project_id: Project ID
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with list of pending approvals
     """
     try:
+        await check_project_access(project_id, current_user, db, min_role="viewer")
+
         from socrates_api.main import get_orchestrator
 
         orchestrator = get_orchestrator()
-        db = get_database()
 
         # Load project to verify it exists
         project = db.load_project(project_id)
@@ -105,6 +110,7 @@ async def approve_workflow(
     approved_path_id: str,
     project_id: Optional[str] = None,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Approve a workflow path and resume execution.
@@ -117,11 +123,15 @@ async def approve_workflow(
         approved_path_id: ID of path to approve
         project_id: Optional project ID for logging
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with approved path information
     """
     try:
+        if project_id:
+            await check_project_access(project_id, current_user, db, min_role="editor")
+
         from socrates_api.main import get_orchestrator
         from socrates_api.routers.events import record_event
 
@@ -196,6 +206,7 @@ async def reject_workflow(
     reason: Optional[str] = None,
     project_id: Optional[str] = None,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Reject a workflow approval.
@@ -208,11 +219,15 @@ async def reject_workflow(
         reason: Optional rejection reason
         project_id: Optional project ID for logging
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with rejection confirmation
     """
     try:
+        if project_id:
+            await check_project_access(project_id, current_user, db, min_role="editor")
+
         from socrates_api.main import get_orchestrator
         from socrates_api.routers.events import record_event
 
@@ -287,6 +302,7 @@ async def get_workflow_info(
     request_id: str,
     project_id: Optional[str] = None,
     current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
 ):
     """
     Get detailed workflow approval information.
@@ -298,11 +314,15 @@ async def get_workflow_info(
         request_id: Approval request ID
         project_id: Optional project ID to filter by
         current_user: Authenticated user
+        db: Database connection
 
     Returns:
         SuccessResponse with approval details
     """
     try:
+        if project_id:
+            await check_project_access(project_id, current_user, db, min_role="viewer")
+
         from socrates_api.main import get_orchestrator
 
         orchestrator = get_orchestrator()
@@ -346,3 +366,9 @@ async def get_workflow_info(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve workflow information",
         )
+
+
+
+
+
+
