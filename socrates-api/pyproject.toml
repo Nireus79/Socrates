@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socrates-ai-api"
-version = "1.1.0"
-description = "REST API server for Socrates AI tutoring system"
+version = "1.2.0"
+description = "REST API server for Socrates AI with GitHub-ready project generation, export, and publishing capabilities"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
@@ -17,10 +17,14 @@ keywords = [
     "fastapi",
     "socrates",
     "ai",
-    "tutoring"
+    "tutoring",
+    "github",
+    "export",
+    "git",
+    "ci-cd"
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -36,7 +40,7 @@ classifiers = [
 requires-python = ">=3.8"
 
 dependencies = [
-    "socrates-ai>=0.6.0",
+    "socrates-ai>=1.2.0",
     "fastapi>=0.100.0",
     "uvicorn[standard]>=0.23.0",
     "pydantic>=2.0.0",
