@@ -91,6 +91,25 @@ class ProjectContext:
     repository_file_count: int = 0  # Number of files in repository
     repository_has_tests: bool = False  # Whether repository has tests
 
+    # Export & GitHub Publishing Tracking (NEW)
+    last_export_time: Optional[datetime.datetime] = None  # When project was last exported
+    last_export_format: Optional[str] = None  # Last export format used (zip, tar, tar.gz, tar.bz2)
+    export_count: int = 0  # Total number of exports
+
+    # GitHub Publishing Status (NEW)
+    is_published_to_github: bool = False  # Whether project has been published to GitHub
+    github_repo_url: Optional[str] = None  # URL of GitHub repository created from this project
+    github_clone_url: Optional[str] = None  # Git clone URL (https or ssh)
+    github_published_date: Optional[datetime.datetime] = None  # When published to GitHub
+    github_repo_private: bool = True  # Whether GitHub repo is private
+    github_username: Optional[str] = None  # GitHub username that owns the published repo
+
+    # Git Repository Status (NEW)
+    has_git_initialized: bool = False  # Whether git repo has been initialized locally
+    git_branch: Optional[str] = None  # Current git branch name
+    git_remote_url: Optional[str] = None  # Git remote URL
+    uncommitted_changes: bool = False  # Whether there are uncommitted changes
+
     def __post_init__(self):
         """Initialize default values and migrate legacy collaborators to team_members"""
         self._initialize_list_fields()

@@ -1,0 +1,199 @@
+name: Frontend Tests
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'socrates-frontend/**'
+      - '.github/workflows/frontend-tests.yml'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'socrates-frontend/**'
+      - '.github/workflows/frontend-tests.yml'
+
+jobs:
+  frontend-unit-tests:
+    name: React Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'socrates-frontend/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd socrates-frontend
+          npm ci
+
+      - name: Run unit tests
+        run: |
+          cd socrates-frontend
+          npm test -- --coverage --watchAll=false --passWithNoTests
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-coverage
+          path: socrates-frontend/coverage/
+
+  component-tests:
+    name: React Component Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'socrates-frontend/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd socrates-frontend
+          npm ci
+
+      - name: Run component tests
+        run: |
+          cd socrates-frontend
+          npm test -- tests/frontend/test_*.test.tsx --coverage --watchAll=false
+
+      - name: Upload component test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: component-test-results
+          path: |
+            socrates-frontend/coverage/
+            socrates-frontend/test-results/
+
+  e2e-tests:
+    name: E2E Tests (Cypress)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'socrates-frontend/package-lock.json'
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install frontend dependencies
+        run: |
+          cd socrates-frontend
+          npm ci
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . -e ./socrates-cli -e ./socrates-api
+
+      - name: Start backend server
+        run: |
+          cd socrates-api
+          uvicorn socrates_api.main:app --host 127.0.0.1 --port 8000 &
+          sleep 5
+        env:
+          DATABASE_URL: sqlite:///:memory:
+          CLAUDE_API_KEY: test-key
+
+      - name: Start frontend dev server
+        run: |
+          cd socrates-frontend
+          npm start &
+          sleep 10
+
+      - name: Run Cypress tests
+        run: |
+          cd socrates-frontend
+          npx cypress run --spec "tests/e2e/project_generation_export_publish.cy.ts" \
+                         --config baseUrl=http://localhost:3000 \
+                         --env API_URL=http://localhost:8000
+        env:
+          CYPRESS_API_URL: http://localhost:8000
+          CYPRESS_BASE_URL: http://localhost:3000
+
+      - name: Upload Cypress videos
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-videos
+          path: socrates-frontend/cypress/videos/
+
+      - name: Upload Cypress screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: socrates-frontend/cypress/screenshots/
+
+  frontend-lint:
+    name: Frontend Lint & Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'socrates-frontend/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd socrates-frontend
+          npm ci
+
+      - name: Run ESLint
+        run: |
+          cd socrates-frontend
+          npm run lint
+
+      - name: Check formatting with Prettier
+        run: |
+          cd socrates-frontend
+          npm run format:check || npm run format
+
+  all-frontend-tests-passed:
+    name: All Frontend Tests Passed
+    runs-on: ubuntu-latest
+    needs: [frontend-unit-tests, component-tests, e2e-tests, frontend-lint]
+    if: always()
+
+    steps:
+      - name: Check if all frontend tests passed
+        run: |
+          if [[ "${{ needs.frontend-unit-tests.result }}" != "success" || \
+                "${{ needs.component-tests.result }}" != "success" || \
+                "${{ needs.e2e-tests.result }}" != "success" || \
+                "${{ needs.frontend-lint.result }}" != "success" ]]; then
+            echo "Some frontend tests failed"
+            exit 1
+          else
+            echo "All frontend tests passed!"
+          fi

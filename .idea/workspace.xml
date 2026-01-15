@@ -5,7 +5,74 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="Before new QC">
+      <change beforePath="$PROJECT_DIR$/.env.local.example" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env.production.example" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/workflows/test.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/test.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DATABASE_MIGRATION_GUIDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/.archive/DATABASE_MIGRATION_GUIDE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dockerfile.api" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dockerfile.frontend" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ENDPOINT_PATH_CORRECTIONS.md" beforeDir="false" afterPath="$PROJECT_DIR$/.archive/ENDPOINT_PATH_CORRECTIONS.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/EXECUTIVE_SUMMARY.md" beforeDir="false" afterPath="$PROJECT_DIR$/.archive/EXECUTIVE_SUMMARY.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FAILING_TESTS_ANALYSIS.md" beforeDir="false" afterPath="$PROJECT_DIR$/.archive/FAILING_TESTS_ANALYSIS.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FAILURE_ROOT_CAUSE_MATRIX.csv" beforeDir="false" afterPath="$PROJECT_DIR$/.archive/FAILURE_ROOT_CAUSE_MATRIX.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/1732270415056/generated/test_proj_001/test_project/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/1732270415056/generated/test_proj_001/test_project/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/1732270415056/generated/test_proj_001/test_project/config/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/1732270415056/generated/test_proj_001/test_project/main.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/1732270415056/generated/test_proj_001/test_project/requirements.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/1732270415056/generated/test_proj_001/test_project/src/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2248669439392/generated/test_proj_001/test_project/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2248669439392/generated/test_proj_001/test_project/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2248669439392/generated/test_proj_001/test_project/config/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2248669439392/generated/test_proj_001/test_project/main.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2248669439392/generated/test_proj_001/test_project/requirements.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2248669439392/generated/test_proj_001/test_project/src/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2431913216480/generated/test_proj_001/test_project/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2431913216480/generated/test_proj_001/test_project/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2431913216480/generated/test_proj_001/test_project/config/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2431913216480/generated/test_proj_001/test_project/main.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2431913216480/generated/test_proj_001/test_project/requirements.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2431913216480/generated/test_proj_001/test_project/src/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2471947949008/generated/test_proj_001/test_project/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2471947949008/generated/test_proj_001/test_project/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2471947949008/generated/test_proj_001/test_project/config/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2471947949008/generated/test_proj_001/test_project/main.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2471947949008/generated/test_proj_001/test_project/requirements.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2471947949008/generated/test_proj_001/test_project/src/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2712432969872/generated/test_proj_001/test_project/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2712432969872/generated/test_proj_001/test_project/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2712432969872/generated/test_proj_001/test_project/config/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2712432969872/generated/test_proj_001/test_project/main.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2712432969872/generated/test_proj_001/test_project/requirements.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MagicMock/mock.config.data_dir/2712432969872/generated/test_proj_001/test_project/src/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ORGANIZATION_SUMMARY.md" beforeDir="false" afterPath="$PROJECT_DIR$/.archive/ORGANIZATION_SUMMARY.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RBAC_COMPLETION_SUMMARY.md" beforeDir="false" afterPath="$PROJECT_DIR$/.archive/RBAC_COMPLETION_SUMMARY.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/helm/Chart.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/helm/values.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubernetes/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubernetes/api-deployment.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubernetes/chromadb-deployment.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubernetes/configmap.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubernetes/frontend-deployment.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubernetes/ingress.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubernetes/monitoring-stack.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubernetes/namespace.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubernetes/postgres-deployment.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubernetes/redis-deployment.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/migration_scripts/add_claude_auth_method_column.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/migration_scripts/add_github_import_tables.sql" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/migration_scripts/migrate_v1_to_v2.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/migration_scripts/rename_v2_tables.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/nginx.conf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/finalization.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/finalization.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/api/projects.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/api/projects.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/models/project.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/project.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/models/user.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/models/user.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/utils/multi_file_splitter.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/utils/multi_file_splitter.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/verify_database_migrations.py" beforeDir="false" afterPath="$PROJECT_DIR$/.archive/verify_database_migrations.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -64,8 +131,8 @@
       <recent name="C:\Users\themi\PycharmProjects\Socrates\docs\future" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\Users\themi\PycharmProjects\Socrates\docs" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\.archive" />
+      <recent name="C:\Users\themi\PycharmProjects\Socrates\docs" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\archive" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\tests" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\docs\future" />

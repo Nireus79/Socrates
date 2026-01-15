@@ -324,27 +324,115 @@ class ProjectStructureGenerator:
         project_name: str,
         generated_files: Dict[str, str],
         project_type: str = "software",
+        python_version: str = "3.9",
+        dependencies: list = None,
     ) -> Dict[str, str]:
         """
-        Create complete project structure.
+        Create complete project structure with all production-ready files.
 
         Args:
             project_name: Name of the project
             generated_files: Dictionary of generated code files
             project_type: Type of project
+            python_version: Target Python version
+            dependencies: List of project dependencies
 
         Returns:
             Complete file structure with paths and contents
         """
+        from socratic_system.utils.project_templates import ProjectTemplateGenerator
+
+        if dependencies is None:
+            dependencies = []
+
         complete_structure = {}
 
         # Add generated files
         for file_path, content in generated_files.items():
             complete_structure[file_path] = content
 
-        # Ensure key files exist
+        # Initialize template generator
+        templates = ProjectTemplateGenerator()
+
+        # ===== Core Build System Files =====
+        # Add pyproject.toml
+        if "pyproject.toml" not in complete_structure:
+            complete_structure["pyproject.toml"] = templates.generate_pyproject_toml(
+                project_name=project_name,
+                description=f"Project: {project_name}",
+                dependencies=dependencies,
+                python_version=python_version,
+            )
+
+        # Add setup.py for backwards compatibility
+        if "setup.py" not in complete_structure:
+            complete_structure["setup.py"] = templates.generate_setup_py(
+                project_name=project_name,
+                description=f"Project: {project_name}",
+            )
+
+        # Add setup.cfg
+        if "setup.cfg" not in complete_structure:
+            complete_structure["setup.cfg"] = templates.generate_setup_cfg()
+
+        # ===== GitHub Workflows (CI/CD) =====
+        workflows = templates.generate_github_workflows()
+        for workflow_path, workflow_content in workflows.items():
+            if workflow_path not in complete_structure:
+                complete_structure[workflow_path] = workflow_content
+
+        # ===== Configuration Files =====
+        # Add pytest.ini
+        if "pytest.ini" not in complete_structure:
+            complete_structure["pytest.ini"] = templates.generate_pytest_ini()
+
+        # Add .pre-commit-config.yaml
+        if ".pre-commit-config.yaml" not in complete_structure:
+            complete_structure[".pre-commit-config.yaml"] = templates.generate_pre_commit_config()
+
+        # Add Makefile
+        if "Makefile" not in complete_structure:
+            complete_structure["Makefile"] = templates.generate_makefile(project_name)
+
+        # ===== License & Documentation =====
+        # Add LICENSE (MIT by default)
+        if "LICENSE" not in complete_structure:
+            complete_structure["LICENSE"] = templates.generate_license("MIT")
+
+        # Add CONTRIBUTING.md
+        if "CONTRIBUTING.md" not in complete_structure:
+            complete_structure["CONTRIBUTING.md"] = templates.generate_contributing_md(project_name)
+
+        # Add CHANGELOG.md
+        if "CHANGELOG.md" not in complete_structure:
+            complete_structure["CHANGELOG.md"] = templates.generate_changelog_md()
+
+        # Add .env.example
+        if ".env.example" not in complete_structure:
+            complete_structure[".env.example"] = templates.generate_env_example()
+
+        # ===== Docker Support =====
+        # Add Dockerfile
+        if "Dockerfile" not in complete_structure:
+            complete_structure["Dockerfile"] = templates.generate_dockerfile(
+                python_version=python_version,
+                project_type=project_type,
+            )
+
+        # Add docker-compose.yml
+        if "docker-compose.yml" not in complete_structure:
+            complete_structure["docker-compose.yml"] = templates.generate_docker_compose(
+                project_name=project_name,
+                python_version=python_version,
+            )
+
+        # Add .dockerignore
+        if ".dockerignore" not in complete_structure:
+            complete_structure[".dockerignore"] = templates.generate_dockerignore()
+
+        # ===== Ensure key files exist =====
         if "requirements.txt" not in complete_structure:
-            complete_structure["requirements.txt"] = "# Add dependencies here\n"
+            complete_structure["requirements.txt"] = "\n".join(dependencies) if dependencies else "# Add dependencies here\n"
 
         if "README.md" not in complete_structure:
             complete_structure["README.md"] = f"# {project_name}\n\nProject description.\n"

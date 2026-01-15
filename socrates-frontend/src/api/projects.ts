@@ -106,4 +106,77 @@ export const projectsAPI = {
       params: { file_name: fileName },
     });
   },
+
+  /**
+   * Export project as archive (ZIP, TAR, TAR.GZ, etc.)
+   */
+  async exportProject(projectId: string, format: 'zip' | 'tar' | 'tar.gz' | 'tar.bz2' = 'zip'): Promise<Blob> {
+    const response = await fetch(`/api/projects/${projectId}/export?format=${format}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || `Failed to export project: ${response.statusText}`);
+    }
+
+    return response.blob();
+  },
+
+  /**
+   * Publish project to GitHub
+   */
+  async publishToGitHub(
+    projectId: string,
+    repoName: string,
+    description: string,
+    isPrivate: boolean,
+    githubToken: string,
+  ): Promise<{
+    success: boolean;
+    status: string;
+    message: string;
+    data: {
+      repo_url: string;
+      clone_url: string;
+      repo_name: string;
+      private: boolean;
+      github_user: string;
+      project_id: string;
+      git_status: any;
+    };
+  }> {
+    return apiClient.post<any>(`/projects/${projectId}/publish-to-github`, {
+      repo_name: repoName,
+      description,
+      private: isPrivate,
+      github_token: githubToken,
+    });
+  },
+};
+
+/**
+ * Export project wrapper function
+ */
+export const exportProject = async (
+  projectId: string,
+  format: 'zip' | 'tar' | 'tar.gz' | 'tar.bz2' = 'zip'
+): Promise<Blob> => {
+  return projectsAPI.exportProject(projectId, format);
+};
+
+/**
+ * Publish to GitHub wrapper function
+ */
+export const publishToGitHub = async (
+  projectId: string,
+  repoName: string,
+  description: string,
+  isPrivate: boolean,
+  githubToken: string,
+) => {
+  return projectsAPI.publishToGitHub(projectId, repoName, description, isPrivate, githubToken);
 };

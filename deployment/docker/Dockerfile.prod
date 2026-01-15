@@ -1,0 +1,93 @@
+# Production-optimized Dockerfile with security hardening
+# Stage 1: Builder
+FROM python:3.11-slim as builder
+
+WORKDIR /build
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+COPY socratic_system socratic_system/
+COPY socrates-api socrates-api/
+COPY socrates-cli socrates-cli/
+
+# Install Python dependencies with optimization flags
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir \
+    --compile \
+    --no-binary :all: \
+    -r requirements.txt
+
+# Stage 2: Runtime
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install runtime dependencies and security tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Python packages from builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy application code
+COPY . .
+
+# Create non-root user with minimal privileges
+RUN useradd -m -u 1000 -s /sbin/nologin socrates && \
+    mkdir -p /app/logs /app/data && \
+    chown -R socrates:socrates /app && \
+    chmod -R 755 /app
+
+# Install gunicorn for production WSGI server
+RUN pip install --no-cache-dir gunicorn
+
+# Switch to non-root user
+USER socrates
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONHASHSEED=random \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PATH="/home/socrates/.local/bin:$PATH"
+
+# Security headers and hardening
+ENV SECURE_HSTS_SECONDS=31536000 \
+    SECURE_HSTS_INCLUDE_SUBDOMAINS=True \
+    SECURE_SSL_REDIRECT=True \
+    SESSION_COOKIE_SECURE=True \
+    SESSION_COOKIE_HTTPONLY=True \
+    CSRF_COOKIE_SECURE=True \
+    CSRF_COOKIE_HTTPONLY=True
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Expose port
+EXPOSE 8000
+
+# Run with gunicorn
+CMD ["gunicorn", \
+     "--bind", "0.0.0.0:8000", \
+     "--workers", "4", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--worker-tmp-dir", "/dev/shm", \
+     "--max-requests", "1000", \
+     "--max-requests-jitter", "50", \
+     "--timeout", "30", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-", \
+     "--log-level", "info", \
+     "socrates_api.main:app"]

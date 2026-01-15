@@ -1,0 +1,58 @@
+[Unit]
+Description=Socrates API Service
+Documentation=https://github.com/yourusername/socrates
+After=network-online.target postgresql.service redis.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=socrates
+Group=socrates
+WorkingDirectory=/opt/socrates
+
+# Service execution
+ExecStart=/opt/socrates/venv/bin/gunicorn \
+    --bind 127.0.0.1:8000 \
+    --workers 4 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --worker-tmp-dir /dev/shm \
+    --max-requests 1000 \
+    --max-requests-jitter 50 \
+    --timeout 30 \
+    --access-logfile /var/log/socrates/access.log \
+    --error-logfile /var/log/socrates/error.log \
+    --log-level info \
+    socrates_api.main:app
+
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+
+# Environment variables
+EnvironmentFile=/etc/socrates/.env.production
+Environment="PYTHONUNBUFFERED=1"
+Environment="PYTHONDONTWRITEBYTECODE=1"
+
+# Process management
+Restart=on-failure
+RestartSec=5s
+StartLimitInterval=600s
+StartLimitBurst=5
+
+# Security and hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/socrates /opt/socrates/data
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=512
+MemoryLimit=2G
+CPUQuota=80%
+
+# Timeout settings
+TimeoutStartSec=30s
+TimeoutStopSec=10s
+
+[Install]
+WantedBy=multi-user.target

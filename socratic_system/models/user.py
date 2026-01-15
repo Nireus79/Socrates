@@ -50,6 +50,17 @@ class User:
     # Claude authentication method: "api_key" or "subscription"
     claude_auth_method: str = "api_key"  # How to authenticate with Claude API
 
+    # GitHub Integration (NEW)
+    github_token: Optional[str] = None  # Encrypted GitHub Personal Access Token
+    github_username: Optional[str] = None  # GitHub username (cached from API)
+    github_token_expires: Optional[datetime.datetime] = None  # Token expiration date
+    has_github_auth: bool = False  # Whether user has authenticated with GitHub
+
+    # Export & Git Preferences (NEW)
+    default_export_format: str = "zip"  # Default export format: zip, tar, tar.gz, tar.bz2
+    auto_initialize_git: bool = True  # Automatically initialize git repos
+    default_repo_visibility: str = "private"  # Default repo visibility: private, public
+
     def __post_init__(self):
         """Initialize projects list and subscription fields for new users."""
         if self.projects is None:
