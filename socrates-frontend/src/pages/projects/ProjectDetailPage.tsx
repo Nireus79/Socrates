@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { Users, Settings, TrendingUp, MessageSquare, Code, Github, Zap } from 'lucide-react';
+import { Users, Settings, TrendingUp, MessageSquare, Code, Github, Zap, Download, GitPullRequest } from 'lucide-react';
 import { useProjectStore } from '../../stores';
 import { useCollaborationStore } from '../../stores/collaborationStore';
 import { showSuccess, showError } from '../../stores/notificationStore';
@@ -20,6 +20,8 @@ import {
 import { SyncStatusWidget } from '../../components/github';
 import { GitHubImportModal } from '../../components/github';
 import { EditProjectModal } from '../../components/project';
+import { ProjectExport } from '../../components/project/ProjectExport';
+import { GitHubPublish } from '../../components/project/GitHubPublish';
 
 export const ProjectDetailPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -29,6 +31,8 @@ export const ProjectDetailPage: React.FC = () => {
   const [showGitHubImport, setShowGitHubImport] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [showExportDialog, setShowExportDialog] = React.useState(false);
+  const [showPublishDialog, setShowPublishDialog] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [previousProjectName, setPreviousProjectName] = React.useState<string | null>(null);
 
@@ -163,7 +167,7 @@ export const ProjectDetailPage: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Quick Actions
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
             <Button
               variant="primary"
               icon={<MessageSquare className="h-4 w-4" />}
@@ -179,6 +183,14 @@ export const ProjectDetailPage: React.FC = () => {
               onClick={() => window.location.href = `/code`}
             >
               Generate Code
+            </Button>
+            <Button
+              variant="outline"
+              icon={<Download className="h-4 w-4" />}
+              fullWidth
+              onClick={() => setShowExportDialog(true)}
+            >
+              Export
             </Button>
             <Button
               variant="outline"
@@ -247,7 +259,28 @@ export const ProjectDetailPage: React.FC = () => {
 
             {activeTab === 'github' && (
               <div className="space-y-4">
+                <Alert type="info" title="GitHub Integration">
+                  Export your project and publish it to GitHub with complete CI/CD workflows, testing, and documentation.
+                </Alert>
                 <SyncStatusWidget projectId={currentProject.project_id} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Button
+                    variant="primary"
+                    fullWidth
+                    icon={<Download className="h-4 w-4" />}
+                    onClick={() => setShowExportDialog(true)}
+                  >
+                    Export Project
+                  </Button>
+                  <Button
+                    variant="primary"
+                    fullWidth
+                    icon={<GitPullRequest className="h-4 w-4" />}
+                    onClick={() => setShowPublishDialog(true)}
+                  >
+                    Publish to GitHub
+                  </Button>
+                </div>
                 <div>
                   <Button
                     variant="secondary"
@@ -255,7 +288,7 @@ export const ProjectDetailPage: React.FC = () => {
                     icon={<Github className="h-4 w-4" />}
                     onClick={() => setShowGitHubImport(true)}
                   >
-                    Link Repository
+                    Link Existing Repository
                   </Button>
                 </div>
               </div>
@@ -381,6 +414,39 @@ export const ProjectDetailPage: React.FC = () => {
             )}
           </div>
         </Card>
+
+        {/* Export Dialog */}
+        {showExportDialog && projectId && (
+          <ProjectExport
+            projectId={projectId}
+            projectName={currentProject.name}
+            onClose={() => setShowExportDialog(false)}
+            onSuccess={() => {
+              showSuccess('Export Successful', `${currentProject.name} has been exported successfully`);
+              setShowExportDialog(false);
+            }}
+            onError={(error) => {
+              showError('Export Failed', error);
+            }}
+          />
+        )}
+
+        {/* Publish to GitHub Dialog */}
+        {showPublishDialog && projectId && (
+          <GitHubPublish
+            projectId={projectId}
+            projectName={currentProject.name}
+            onClose={() => setShowPublishDialog(false)}
+            onSuccess={(repoUrl) => {
+              showSuccess('Published to GitHub', `Project is now available at ${repoUrl}`);
+              setShowPublishDialog(false);
+              setActiveTab('github');
+            }}
+            onError={(error) => {
+              showError('GitHub Publish Failed', error);
+            }}
+          />
+        )}
 
         {/* GitHub Import Modal */}
         <GitHubImportModal

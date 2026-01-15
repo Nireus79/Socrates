@@ -93,3 +93,24 @@ ValueError: Test exception
 [2026-01-15 13:45:52] [INFO] socratic_rag.orchestrator: Found 100 knowledge entries to load
 [2026-01-15 13:46:01] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
 [2026-01-15 13:46:01] [INFO] socratic_rag.orchestrator: Knowledge base loaded: 100 entries added
+[2026-01-15 13:47:30] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-01-15 13:47:30] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-01-15 13:47:30] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-01-15 13:47:30] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-01-15 13:47:30] [DEBUG] socratic_rag.test: Test debug message
+[2026-01-15 13:47:30] [INFO] socratic_rag.test: Test info message
+[2026-01-15 13:47:30] [WARNING] socratic_rag.test: Test warning message
+[2026-01-15 13:47:30] [ERROR] socratic_rag.test: Test error message
+[2026-01-15 13:47:30] [ERROR] socratic_rag.test: An error occurred
+Traceback (most recent call last):
+  File "C:\Users\themi\PycharmProjects\Socrates\tests\utils\test_utils.py", line 72, in test_error_logging_with_exception
+    raise ValueError("Test exception")
+ValueError: Test exception
+[2026-01-15 13:47:30] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-01-15 13:47:30] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-01-15 13:47:30] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-01-15 13:47:30] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-01-15 13:47:30] [INFO] socratic_rag.integration_test: Test message
+[2026-01-15 13:47:30] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
+[2026-01-15 13:47:30] [WARNING] socratic_rag.system: >>> DEBUG MODE ENABLED <<<
+[2026-01-15 13:47:30] [WARNING] socratic_rag.system: >>> DEBUG MODE DISABLED <<<
