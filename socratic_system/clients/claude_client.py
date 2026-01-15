@@ -474,7 +474,7 @@ class ClaudeClient:
             return {}
 
     def generate_conflict_resolution_suggestions(
-        self, conflict: ConflictInfo, project: ProjectContext, user_auth_method: str = "api_key"
+        self, conflict: ConflictInfo, project: ProjectContext, user_auth_method: str = "api_key", user_id: str = None
     ) -> str:
         """Generate suggestions for resolving a specific conflict"""
         context_summary = self.orchestrator.context_analyzer.get_context_summary(project)

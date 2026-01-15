@@ -168,4 +168,30 @@ export const chatAPI = {
     );
   },
 
+  /**
+   * Interpret natural language input and get command suggestions
+   */
+  async interpretNLU(projectId: string, input: string): Promise<any> {
+    return apiClient.post('/nlu/interpret', {
+      text: input,
+      project_id: projectId,
+    });
+  },
+
+  /**
+   * Get all available commands for NLU
+   */
+  async getAvailableCommands(): Promise<{ commands: any[]; categories: string[] }> {
+    return apiClient.get<{ commands: any[]; categories: string[] }>('/nlu/commands');
+  },
+
+  /**
+   * Get context-aware command suggestions
+   */
+  async getCommandSuggestions(projectId: string, phase?: string): Promise<{ suggestions: any[] }> {
+    return apiClient.get<{ suggestions: any[] }>('/nlu/suggestions', {
+      params: { project_id: projectId, phase },
+    });
+  },
+
 };

@@ -6,6 +6,7 @@ export { ChatMessage } from './ChatMessage';
 export type { MessageRole } from './ChatMessage';
 export { QuestionDisplay } from './QuestionDisplay';
 export { ResponseInput } from './ResponseInput';
+export { NLUInput } from './NLUInput';
 export { ConversationHistory } from './ConversationHistory';
 export type { ConversationItem } from './ConversationHistory';
 export { PhaseIndicator } from './PhaseIndicator';

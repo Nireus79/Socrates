@@ -17,6 +17,7 @@ import {
   ConflictResolutionModal,
   SkippedQuestionsPanel,
   AnswerSuggestionsModal,
+  NLUInput,
 } from '../../components/chat';
 import { Card, LoadingSpinner, Alert, Button, Input } from '../../components/common';
 
@@ -87,6 +88,9 @@ export const ChatPage: React.FC = () => {
   const [freeSessionInput, setFreeSessionInput] = React.useState('');
   const [freeSessionResponses, setFreeSessionResponses] = React.useState<Array<{ role: 'user' | 'assistant'; content: string; type?: 'command' | 'suggestion' | 'message' }>>([]);
   const [isInterpretingNLU, setIsInterpretingNLU] = React.useState(false);
+
+  // NLU mode toggle for all chat modes
+  const [useNLUMode, setUseNLUMode] = React.useState(false);
 
   // Refs for auto-scroll
   const messagesContainerRef = React.useRef<HTMLDivElement>(null);
@@ -536,6 +540,44 @@ export const ChatPage: React.FC = () => {
     } catch (error) {
       console.error('Failed to send message:', error);
     }
+  };
+
+  /**
+   * Handle NLU command confirmation
+   * User confirmed the interpreted command, now execute it
+   */
+  const handleNLUCommandConfirmed = async (command: string) => {
+    if (!command.trim()) return;
+
+    // Add user's natural language intent to messages
+    addChatMessage({
+      id: `msg_nlu_${Date.now()}`,
+      role: 'user',
+      content: `[Executed: ${command}]`,
+      timestamp: new Date().toISOString(),
+    });
+
+    // Execute the slash command
+    if (command.startsWith('/')) {
+      handleSlashCommand(command);
+    } else {
+      // If not a slash command, treat as message in selected project
+      if (selectedProjectId) {
+        try {
+          await sendMessage(command);
+        } catch (error) {
+          console.error('Failed to send message:', error);
+          addChatMessage({
+            id: `msg_error_${Date.now()}`,
+            role: 'system',
+            content: 'Failed to execute command. Please try again.',
+            timestamp: new Date().toISOString(),
+          });
+        }
+      }
+    }
+
+    setUseNLUMode(false);
   };
 
   /**
@@ -1788,19 +1830,44 @@ User: ${currentProject?.owner || 'N/A'}`;
             </div>
 
             {/* Input Area - Fixed at Bottom */}
-            <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 p-4">
-              <ResponseInput
-                value={response}
-                onChange={setResponse}
-                onSubmit={handleSubmitResponse}
-                onSkip={mode === 'socratic' ? handleSkipQuestion : undefined}
-                onRequestHint={mode === 'socratic' ? handleRequestHint : undefined}
-                onRequestSuggestions={mode === 'socratic' ? handleRequestSuggestions : undefined}
-                isLoading={chatLoading}
-                minLength={1}
-                maxLength={5000}
-                placeholder={mode === 'socratic' ? 'Type your response...' : 'Ask your question...'}
-              />
+            <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 p-4 space-y-3">
+              {/* NLU Mode Toggle */}
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  onClick={() => setUseNLUMode(!useNLUMode)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                    useNLUMode
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                  title={useNLUMode ? 'Click to use regular input' : 'Click to use natural language commands'}
+                >
+                  {useNLUMode ? '🧠 NLU Mode On' : '🧠 NLU Mode'}
+                </button>
+              </div>
+
+              {/* Conditional Input Rendering */}
+              {useNLUMode && selectedProjectId ? (
+                <NLUInput
+                  projectId={selectedProjectId}
+                  isLoading={chatLoading}
+                  onCommandConfirmed={handleNLUCommandConfirmed}
+                  placeholder="Ask me anything or give me a command... (e.g., 'Create a project named X' or 'Advance to the next phase')"
+                />
+              ) : (
+                <ResponseInput
+                  value={response}
+                  onChange={setResponse}
+                  onSubmit={handleSubmitResponse}
+                  onSkip={mode === 'socratic' ? handleSkipQuestion : undefined}
+                  onRequestHint={mode === 'socratic' ? handleRequestHint : undefined}
+                  onRequestSuggestions={mode === 'socratic' ? handleRequestSuggestions : undefined}
+                  isLoading={chatLoading}
+                  minLength={1}
+                  maxLength={5000}
+                  placeholder={mode === 'socratic' ? 'Type your response...' : 'Ask your question...'}
+                />
+              )}
             </div>
           </>
         )}

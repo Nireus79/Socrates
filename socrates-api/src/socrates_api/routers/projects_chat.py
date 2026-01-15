@@ -740,6 +740,12 @@ Provide a helpful, direct answer."""
                 # Frontend will handle moving to next question without adding extra message
                 response_data = {}
 
+            # Check if phase is complete and add recommendation
+            if result.get("phase_complete"):
+                response_data["phase_complete"] = True
+                response_data["phase_completion_message"] = result.get("phase_completion_message")
+                response_data["next_phase"] = result.get("phase_completion_message", {}).get("next_phase")
+
             return APIResponse(
                 success=True,
                 status="success",
@@ -907,6 +913,7 @@ async def get_hint(
             {
                 "action": "generate_hint",
                 "project": project,
+                "current_user": current_user,
             },
         )
 

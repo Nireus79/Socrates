@@ -478,14 +478,131 @@ Return only the question, no additional text or explanation."""
         if question_count < len(questions):
             return questions[question_count]
         else:
-            # Fallback questions when we've exhausted the static list
-            fallbacks = {
-                "discovery": "What other aspects of the problem space should we explore?",
-                "analysis": "What technical considerations haven't we discussed yet?",
-                "design": "What design decisions are you still uncertain about?",
-                "implementation": "What implementation details would you like to work through?",
+            # Extended fallback questions when we've exhausted the static list
+            # Use rotation to vary responses instead of repeating the same question
+            fallback_questions = {
+                "discovery": [
+                    "What other aspects of the problem space should we explore?",
+                    "Are there any assumptions we should validate further?",
+                    "What patterns or trends do you see in the market?",
+                    "How might your users' needs evolve over time?",
+                    "What would make your solution stand out?",
+                ],
+                "analysis": [
+                    "What technical considerations haven't we discussed yet?",
+                    "Are there any performance or scalability concerns we haven't addressed?",
+                    "What dependencies or third-party tools will be critical?",
+                    "How will you handle edge cases and error scenarios?",
+                    "What are the key technical risks we should mitigate?",
+                ],
+                "design": [
+                    "What design decisions are you still uncertain about?",
+                    "How will you ensure code maintainability as the project grows?",
+                    "What testing strategy will ensure quality?",
+                    "How will different components interact and communicate?",
+                    "What patterns will help you manage complexity?",
+                ],
+                "implementation": [
+                    "What implementation details would you like to work through?",
+                    "How will you prioritize features for initial release?",
+                    "What metrics will you track to measure success?",
+                    "How will you handle deployment and rollout?",
+                    "What's your strategy for maintaining the system long-term?",
+                ],
             }
-            return fallbacks.get(project.phase, "What would you like to explore further?")
+
+            # Get phase-specific fallback questions
+            fallbacks = fallback_questions.get(project.phase, [
+                "What would you like to explore further?",
+                "What aspects are still unclear?",
+                "What questions do you have?",
+                "What should we focus on next?",
+            ])
+
+            # Rotate through fallback questions based on question_count
+            if fallbacks:
+                return fallbacks[(question_count - len(questions)) % len(fallbacks)]
+            return "What would you like to explore further?"
+
+    def _check_phase_completion(self, project: ProjectContext, logger) -> Dict[str, Any]:
+        """
+        Check if current phase is now complete (maturity >= 100%) and generate
+        a Socratic question asking if user wants to advance or enrich further.
+
+        Returns:
+            Dict with:
+            - is_complete: bool indicating if phase is complete
+            - message: Socratic question if complete, else None
+        """
+        try:
+            # Get current phase maturity
+            quality_result = safe_orchestrator_call(
+                self.orchestrator,
+                "quality_controller",
+                {
+                    "action": "get_phase_maturity",
+                    "project": project,
+                },
+                operation_name="get phase maturity"
+            )
+
+            if quality_result.get("status") != "success":
+                return {"is_complete": False, "message": None}
+
+            maturity = quality_result.get("maturity", {})
+            current_score = maturity.get("overall_score", 0.0)
+
+            # Check if phase is complete (>= 100%)
+            if current_score < 100.0:
+                return {"is_complete": False, "message": None}
+
+            # Phase is complete - generate Socratic question about advancing
+            phase_names = {
+                "discovery": "Discovery",
+                "analysis": "Analysis",
+                "design": "Design",
+                "implementation": "Implementation"
+            }
+            next_phases = {
+                "discovery": "Analysis",
+                "analysis": "Design",
+                "design": "Implementation",
+                "implementation": None
+            }
+
+            current_phase_name = phase_names.get(project.phase, project.phase.title())
+            next_phase_name = next_phases.get(project.phase)
+
+            # Generate Socratic question based on phase status
+            if next_phase_name:
+                question = f"""Excellent work on the {current_phase_name} phase! You've thoroughly explored the project specifications.
+
+You now have the option to:
+1. **Advance to the {next_phase_name} phase** - Move forward with implementing your ideas
+2. **Enrich the {current_phase_name} phase further** - Deepen your understanding and fill in any remaining gaps
+
+Which would you prefer? Would you like to advance to the next phase, or would you like to explore the {current_phase_name} phase more deeply?"""
+            else:
+                # Final phase (implementation)
+                question = """Congratulations! You've completed the Implementation phase. Your project specifications are now fully defined.
+
+Would you like to:
+1. **Review and refine** - Take another look at any aspects of your implementation plan
+2. **Consider next steps** - Discuss what comes after implementation (deployment, maintenance, etc.)
+
+What would be most helpful for you?"""
+
+            logger.info(f"Phase {project.phase} is complete (maturity: {current_score:.1f}%)")
+            return {
+                "is_complete": True,
+                "message": question,
+                "maturity": current_score,
+                "next_phase": next_phase_name
+            }
+
+        except Exception as e:
+            logger.debug(f"Failed to check phase completion: {e}")
+            return {"is_complete": False, "message": None}
 
     def _build_full_knowledge_context(self, results: List[Dict]) -> str:
         """Build rich knowledge context with full document content and summaries"""
@@ -683,7 +800,14 @@ Return only the question, no additional text or explanation."""
                     logger.debug(f"Marked question as answered: {q.get('question', '')[:50]}...")
                     break
 
-        return {"status": "success", "insights": insights}
+        # Check if phase is now complete and offer advancement option
+        result = {"status": "success", "insights": insights}
+        phase_completion = self._check_phase_completion(project, logger)
+        if phase_completion["is_complete"]:
+            result["phase_complete"] = True
+            result["phase_completion_message"] = phase_completion["message"]
+
+        return result
 
     def _handle_conflict_detection(
         self, insights, project, current_user, logger, is_api_mode=False
@@ -1311,6 +1435,7 @@ Return only the question, no additional text or explanation."""
 
         logger = get_logger("socratic_counselor")
         project = request.get("project")
+        current_user = request.get("current_user")
 
         if not project:
             return {"status": "error", "message": "Project context is required to generate hints"}
@@ -1343,11 +1468,21 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
                 f"Generating hint for project {project.project_id} in {project.phase} phase"
             )
 
+            # Get user's auth method for API calls
+            user_auth_method = "api_key"  # default
+            if current_user:
+                user = self.orchestrator.database.load_user(current_user)
+                if user and hasattr(user, 'claude_auth_method'):
+                    user_auth_method = user.claude_auth_method or "api_key"
+                    logger.debug(f"Using auth method '{user_auth_method}' for user {current_user}")
+
             # Generate hint using Claude
             hint = self.orchestrator.claude_client.generate_response(
                 prompt=hint_prompt,
                 max_tokens=500,  # Hints should be concise (1-2 sentences)
-                temperature=0.7  # Balanced creativity
+                temperature=0.7,  # Balanced creativity
+                user_auth_method=user_auth_method,
+                user_id=current_user
             )
 
             self.log(f"Generated hint for {project.phase} phase")
@@ -1481,7 +1616,8 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
                 prompt=suggestions_prompt,
                 max_tokens=800,
                 temperature=0.7,
-                user_auth_method=user_auth_method
+                user_auth_method=user_auth_method,
+                user_id=current_user
             )
 
             # Parse suggestions from numbered list

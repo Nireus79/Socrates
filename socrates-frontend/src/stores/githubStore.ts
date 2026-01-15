@@ -30,11 +30,12 @@ interface GitHubState {
   clearError: () => void;
 }
 
-export const useGithubStore = create<GitHubState>((set) => ({
+export const useGithubStore = create<GitHubState>((set, get) => ({
   selectedProjectId: null,
   isLoading: false,
   error: null,
   syncStatus: null,
+  syncStatuses: new Map(),
   isConnected: false,
 
   setSelectedProject: (projectId: string | null) => {
@@ -92,8 +93,11 @@ export const useGithubStore = create<GitHubState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const status = await githubAPI.getGithubStatus(projectId);
+      const syncStatuses = new Map(get().syncStatuses);
+      syncStatuses.set(projectId, status);
       set({
         syncStatus: status,
+        syncStatuses,
         isLoading: false,
         isConnected: status.status === 'synced',
       });
@@ -101,6 +105,23 @@ export const useGithubStore = create<GitHubState>((set) => ({
       const message = error instanceof Error ? error.message : 'Failed to get status';
       set({ error: message, isLoading: false });
     }
+  },
+
+  // Aliases for API compatibility
+  getSyncStatus: async (projectId: string) => {
+    return get().getStatus(projectId);
+  },
+
+  pullChanges: async (projectId: string) => {
+    return get().pullFromGithub(projectId);
+  },
+
+  pushChanges: async (projectId: string) => {
+    return get().pushToGithub(projectId);
+  },
+
+  syncProject: async (projectId: string) => {
+    return get().syncWithGithub(projectId);
   },
 
   disconnect: async (projectId: string) => {

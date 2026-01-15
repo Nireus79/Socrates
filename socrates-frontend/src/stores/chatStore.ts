@@ -139,6 +139,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
         return;
       }
 
+      // If phase is complete, show Socratic question about advancing
+      if (response.phase_complete && response.phase_completion_message) {
+        logger.info('Phase complete! Asking about advancement...');
+        get().addMessage({
+          id: `phase_complete_${Date.now()}`,
+          role: 'assistant',
+          content: response.phase_completion_message,
+          timestamp: new Date().toISOString(),
+        });
+        set({ isLoading: false });
+        return;
+      }
+
       // Get the next question after response is processed (in Socratic mode)
       if (state.mode === 'socratic') {
         try {
