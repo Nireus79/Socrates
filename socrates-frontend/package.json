@@ -1,8 +1,48 @@
 {
-  "name": "socrates-frontend",
-  "private": true,
-  "version": "0.0.0",
+  "name": "socrates-ai-ui",
+  "private": false,
+  "version": "1.0.0",
   "type": "module",
+  "description": "Production-ready React UI for Socrates AI collaborative development platform with GitHub integration",
+  "license": "MIT",
+  "author": {
+    "name": "Socrates AI Contributors"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nireus79/Socrates.git",
+    "directory": "socrates-frontend"
+  },
+  "bugs": {
+    "url": "https://github.com/Nireus79/Socrates/issues"
+  },
+  "homepage": "https://github.com/Nireus79/Socrates",
+  "keywords": [
+    "react",
+    "ui",
+    "socrates",
+    "ai",
+    "github",
+    "project-generation",
+    "typescript",
+    "tailwindcss"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -11,7 +51,12 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
