@@ -9,19 +9,21 @@ import React, { useState } from 'react';
 import {
   AlertCircle,
   Check,
-  ChevronDown,
   Loader,
   Lock,
   Unlock,
   Github,
+  X,
+  ExternalLink,
 } from 'lucide-react';
-import { publishToGitHub } from '@/api/projects';
-import type { Project } from '@/types';
+import { Dialog, Button, Alert, Input } from '../common';
 
 interface GitHubPublishProps {
-  project: Project;
-  onSuccess?: (repoUrl: string) => void;
-  onError?: (error: string) => void;
+  projectId: string;
+  projectName: string;
+  onClose: () => void;
+  onSuccess: (repoUrl: string) => void;
+  onError: (error: string) => void;
 }
 
 interface PublishFormData {
@@ -32,108 +34,87 @@ interface PublishFormData {
 }
 
 export const GitHubPublish: React.FC<GitHubPublishProps> = ({
-  project,
+  projectId,
+  projectName,
+  onClose,
   onSuccess,
   onError,
 }) => {
   const [formData, setFormData] = useState<PublishFormData>({
-    repoName: project.name.toLowerCase().replace(/\s+/g, '-'),
-    description: project.description || '',
+    repoName: projectName.toLowerCase().replace(/\s+/g, '-'),
+    description: '',
     isPrivate: true,
-    githubToken: '',
+    githubToken: localStorage.getItem('github_token') || '',
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [successData, setSuccessData] = useState<{
-    repoUrl: string;
-    cloneUrl: string;
-    githubUser: string;
-  } | null>(null);
-  const [showTokenHelp, setShowTokenHelp] = useState(false);
+  const [successData, setSuccessData] = useState<{ repoUrl: string } | null>(null);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value, type } = e.target;
-    if (type === 'checkbox') {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: (e.target as HTMLInputElement).checked,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
-  };
-
-  const validateForm = (): boolean => {
-    if (!formData.repoName.trim()) {
-      setError('Repository name is required');
-      return false;
-    }
-    if (!formData.githubToken.trim()) {
-      setError('GitHub Personal Access Token is required');
-      return false;
-    }
-    if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(formData.repoName)) {
-      setError(
-        'Repository name can only contain lowercase letters, numbers, and hyphens'
-      );
-      return false;
-    }
-    return true;
+  const handleInputChange = (field: keyof PublishFormData, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
   const handlePublish = async () => {
-    setError(null);
-    setSuccess(false);
+    // Validate required fields
+    if (!formData.repoName.trim()) {
+      setError('Repository name is required');
+      return;
+    }
 
-    if (!validateForm()) {
+    if (!formData.githubToken.trim()) {
+      setError('GitHub token is required');
       return;
     }
 
     setIsLoading(true);
+    setError(null);
+    setSuccess(false);
 
     try {
-      const response = await publishToGitHub(
-        project.id,
-        formData.repoName,
-        formData.description,
-        formData.isPrivate,
-        formData.githubToken
+      // Save token for future use
+      localStorage.setItem('github_token', formData.githubToken);
+
+      // Call the publish API endpoint
+      const response = await fetch(
+        `/api/projects/${projectId}/publish-to-github`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+          },
+          body: JSON.stringify({
+            repo_name: formData.repoName,
+            description: formData.description || undefined,
+            private: formData.isPrivate,
+            github_token: formData.githubToken,
+          }),
+        }
       );
 
-      if (response.success) {
-        setSuccess(true);
-        setSuccessData({
-          repoUrl: response.data.repo_url,
-          cloneUrl: response.data.clone_url,
-          githubUser: response.data.github_user,
-        });
-        onSuccess?.(response.data.repo_url);
-
-        // Clear form and success message after 5 seconds
-        setTimeout(() => {
-          setSuccess(false);
-          setFormData({
-            repoName: project.name.toLowerCase().replace(/\s+/g, '-'),
-            description: project.description || '',
-            isPrivate: true,
-            githubToken: '',
-          });
-        }, 5000);
-      } else {
-        setError(response.message || 'Failed to publish to GitHub');
-        onError?.(response.message || 'Failed to publish to GitHub');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || `Publish failed: ${response.statusText}`);
       }
+
+      const data = await response.json();
+      const repoUrl = data.github_repo_url || `https://github.com/${data.github_username}/${formData.repoName}`;
+
+      setSuccess(true);
+      setSuccessData({ repoUrl });
+      onSuccess(repoUrl);
+
+      // Close dialog after 3 seconds
+      setTimeout(() => onClose(), 3000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to publish to GitHub';
       setError(errorMessage);
-      onError?.(errorMessage);
+      onError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -141,270 +122,219 @@ export const GitHubPublish: React.FC<GitHubPublishProps> = ({
 
   if (success && successData) {
     return (
-      <div className="space-y-4">
-        {/* Success Message */}
-        <div className="rounded-md bg-green-50 dark:bg-green-900/20 p-6 border border-green-200 dark:border-green-800">
-          <div className="flex items-start gap-4">
-            <Check className="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="font-semibold text-green-900 dark:text-green-200 mb-2">
-                Project Published Successfully!
-              </h3>
-              <p className="text-sm text-green-800 dark:text-green-300 mb-4">
-                Your project has been created on GitHub and code has been pushed.
-              </p>
+      <Dialog isOpen={true} onClose={onClose}>
+        <div className="max-w-md w-full text-center">
+          <div className="mb-6">
+            <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
+              <Check className="h-8 w-8 text-green-600 dark:text-green-400" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              Published to GitHub!
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Your project has been successfully created and pushed to GitHub.
+            </p>
+          </div>
 
-              {/* Repository Details */}
-              <div className="space-y-3 bg-white dark:bg-gray-800 rounded p-4">
-                <div>
-                  <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                    GitHub User
-                  </label>
-                  <p className="text-sm font-mono text-gray-900 dark:text-white mt-1">
-                    {successData.githubUser}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                    Repository URL
-                  </label>
-                  <a
-                    href={successData.repoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-mono text-blue-600 dark:text-blue-400 hover:underline mt-1 block break-all"
-                  >
-                    {successData.repoUrl}
-                  </a>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                    Clone URL
-                  </label>
-                  <code className="text-sm text-gray-900 dark:text-white mt-1 block bg-gray-100 dark:bg-gray-700 p-2 rounded break-all">
-                    {successData.cloneUrl}
-                  </code>
-                </div>
-              </div>
-
-              {/* Next Steps */}
-              <div className="mt-4 space-y-2 text-sm text-green-800 dark:text-green-300">
-                <p className="font-medium">Next steps:</p>
-                <ol className="list-decimal list-inside space-y-1 ml-2">
-                  <li>Clone the repository locally</li>
-                  <li>Make your changes and commits</li>
-                  <li>GitHub Actions will automatically run tests on push</li>
-                  <li>Push to main branch for CI/CD pipeline</li>
-                </ol>
-              </div>
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-6 text-left">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Repository URL:</p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-sm font-mono text-gray-900 dark:text-white break-all">
+                {successData.repoUrl}
+              </code>
+              <button
+                onClick={() => navigator.clipboard.writeText(successData.repoUrl)}
+                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                title="Copy URL"
+              >
+                📋
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          <a
-            href={successData.repoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-white text-white dark:text-gray-900 font-medium rounded-lg transition-colors"
-          >
-            <Github className="h-4 w-4" />
-            View on GitHub
-          </a>
-          <button
-            onClick={() => setSuccess(false)}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium rounded-lg transition-colors"
-          >
-            Close
-          </button>
+          <div className="space-y-2">
+            <Button
+              variant="primary"
+              fullWidth
+              icon={<ExternalLink className="h-4 w-4" />}
+              onClick={() => window.open(successData.repoUrl, '_blank')}
+            >
+              View on GitHub
+            </Button>
+            <Button variant="secondary" fullWidth onClick={onClose}>
+              Close
+            </Button>
+          </div>
         </div>
-      </div>
+      </Dialog>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Publish to GitHub
-        </h3>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Create a GitHub repository and push your project code
-        </p>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-red-800 dark:text-red-200">
-            <p className="font-medium">Error</p>
-            <p className="mt-1">{error}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Repository Name */}
-      <div>
-        <label htmlFor="repoName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Repository Name
-        </label>
-        <input
-          type="text"
-          id="repoName"
-          name="repoName"
-          value={formData.repoName}
-          onChange={handleInputChange}
-          disabled={isLoading}
-          placeholder="my-awesome-project"
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          Lowercase letters, numbers, and hyphens only
-        </p>
-      </div>
-
-      {/* Description */}
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Repository Description
-        </label>
-        <textarea
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleInputChange}
-          disabled={isLoading}
-          placeholder="A brief description of your project"
-          rows={3}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      {/* Visibility */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-          Visibility
-        </label>
-        <div className="space-y-2">
-          <label className="flex items-center gap-3">
-            <input
-              type="radio"
-              name="visibility"
-              value="private"
-              checked={formData.isPrivate}
-              onChange={() => setFormData((prev) => ({ ...prev, isPrivate: true }))}
-              disabled={isLoading}
-              className="cursor-pointer"
-            />
-            <div className="flex items-center gap-2">
-              <Lock className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-              <div>
-                <div className="font-medium text-gray-900 dark:text-white">Private</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  Only you and collaborators can access
-                </div>
-              </div>
-            </div>
-          </label>
-          <label className="flex items-center gap-3">
-            <input
-              type="radio"
-              name="visibility"
-              value="public"
-              checked={!formData.isPrivate}
-              onChange={() => setFormData((prev) => ({ ...prev, isPrivate: false }))}
-              disabled={isLoading}
-              className="cursor-pointer"
-            />
-            <div className="flex items-center gap-2">
-              <Unlock className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-              <div>
-                <div className="font-medium text-gray-900 dark:text-white">Public</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  Anyone can view
-                </div>
-              </div>
-            </div>
-          </label>
-        </div>
-      </div>
-
-      {/* GitHub Token */}
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <label htmlFor="githubToken" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            GitHub Personal Access Token
-          </label>
+    <Dialog isOpen={true} onClose={onClose}>
+      <div className="max-w-md w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            Publish to GitHub
+          </h2>
           <button
-            type="button"
-            onClick={() => setShowTokenHelp(!showTokenHelp)}
-            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
-            {showTokenHelp ? 'Hide' : 'How to get token?'}
+            <X className="h-5 w-5 text-gray-500" />
           </button>
         </div>
 
-        <input
-          type="password"
-          id="githubToken"
-          name="githubToken"
-          value={formData.githubToken}
-          onChange={handleInputChange}
-          disabled={isLoading}
-          placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div className="space-y-4">
+          {/* Description */}
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Create a new GitHub repository and push your project code. Your repository
+            will include CI/CD workflows, tests, and all documentation.
+          </p>
 
-        {showTokenHelp && (
-          <div className="mt-3 rounded-md bg-blue-50 dark:bg-blue-900/20 p-4 text-sm text-blue-800 dark:text-blue-200 space-y-2">
-            <p className="font-medium">To generate a GitHub token:</p>
-            <ol className="list-decimal list-inside space-y-1 ml-2">
-              <li>Go to GitHub Settings → Developer settings → Personal access tokens</li>
-              <li>Click "Generate new token"</li>
-              <li>Select scopes: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">repo</code></li>
-              <li>Copy the token (you won't see it again!)</li>
-              <li>Paste it here</li>
-            </ol>
-            <p className="text-xs mt-2">
-              🔒 Your token is sent only to create the repository and is never stored.
+          {/* GitHub Token */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              GitHub Personal Access Token
+            </label>
+            <input
+              type="password"
+              value={formData.githubToken}
+              onChange={(e) => handleInputChange('githubToken', e.target.value)}
+              placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+              disabled={isLoading}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 disabled:bg-gray-100 dark:disabled:bg-gray-700"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              <a
+                href="https://github.com/settings/tokens"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Create a token →
+              </a>
             </p>
           </div>
-        )}
-      </div>
 
-      {/* Publish Button */}
-      <button
-        onClick={handlePublish}
-        disabled={isLoading}
-        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 dark:bg-gray-100 dark:hover:bg-white dark:disabled:bg-gray-600 text-white dark:text-gray-900 font-medium rounded-lg transition-colors"
-      >
-        {isLoading ? (
-          <>
-            <Loader className="h-4 w-4 animate-spin" />
-            Creating Repository...
-          </>
-        ) : (
-          <>
-            <Github className="h-4 w-4" />
-            Publish to GitHub
-          </>
-        )}
-      </button>
+          {/* Repository Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Repository Name
+            </label>
+            <input
+              type="text"
+              value={formData.repoName}
+              onChange={(e) => handleInputChange('repoName', e.target.value)}
+              placeholder="my-project"
+              disabled={isLoading}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 disabled:bg-gray-100 dark:disabled:bg-gray-700"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Must contain only letters, numbers, hyphens, and underscores
+            </p>
+          </div>
 
-      {/* Info Box */}
-      <div className="rounded-md bg-gray-50 dark:bg-gray-900/50 p-4 text-sm text-gray-700 dark:text-gray-300 space-y-2">
-        <p className="font-medium">This will:</p>
-        <ul className="list-disc list-inside space-y-1 ml-2">
-          <li>Create a new GitHub repository with your settings</li>
-          <li>Initialize git in your project directory</li>
-          <li>Push your code to GitHub</li>
-          <li>Activate GitHub Actions workflows</li>
-        </ul>
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Repository Description (Optional)
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="A brief description of your project..."
+              disabled={isLoading}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 disabled:bg-gray-100 dark:disabled:bg-gray-700"
+            />
+          </div>
+
+          {/* Visibility */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Repository Visibility
+            </label>
+            <div className="space-y-2">
+              <label className="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <input
+                  type="radio"
+                  checked={formData.isPrivate}
+                  onChange={() => handleInputChange('isPrivate', true)}
+                  disabled={isLoading}
+                  className="cursor-pointer"
+                />
+                <Lock className="h-4 w-4 ml-3 text-gray-500" />
+                <div className="ml-2">
+                  <div className="font-medium text-gray-900 dark:text-white">
+                    Private
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Only you can see it
+                  </div>
+                </div>
+              </label>
+
+              <label className="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <input
+                  type="radio"
+                  checked={!formData.isPrivate}
+                  onChange={() => handleInputChange('isPrivate', false)}
+                  disabled={isLoading}
+                  className="cursor-pointer"
+                />
+                <Unlock className="h-4 w-4 ml-3 text-gray-500" />
+                <div className="ml-2">
+                  <div className="font-medium text-gray-900 dark:text-white">
+                    Public
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Anyone can see it
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <Alert type="error" title="Publish Failed">
+              {error}
+            </Alert>
+          )}
+
+          {/* Info Box */}
+          <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-4 border border-blue-200 dark:border-blue-800">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              <strong>What happens next:</strong> We'll create the repository on GitHub,
+              initialize git, and push your code automatically.
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4">
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={onClose}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              fullWidth
+              onClick={handlePublish}
+              disabled={isLoading || !formData.repoName.trim() || !formData.githubToken.trim()}
+              icon={isLoading ? <Loader className="h-4 w-4 animate-spin" /> : <Github className="h-4 w-4" />}
+            >
+              {isLoading ? 'Publishing...' : 'Publish'}
+            </Button>
+          </div>
+        </div>
       </div>
-    </div>
+    </Dialog>
   );
 };
 

@@ -6,14 +6,15 @@
  */
 
 import React, { useState } from 'react';
-import { AlertCircle, Download, Loader } from 'lucide-react';
-import { exportProject } from '@/api/projects';
-import type { Project } from '@/types';
+import { AlertCircle, Download, Loader, X } from 'lucide-react';
+import { Dialog, Button, Alert } from '../common';
 
 interface ProjectExportProps {
-  project: Project;
-  onSuccess?: () => void;
-  onError?: (error: string) => void;
+  projectId: string;
+  projectName: string;
+  onClose: () => void;
+  onSuccess: () => void;
+  onError: (error: string) => void;
 }
 
 type ExportFormat = 'zip' | 'tar' | 'tar.gz' | 'tar.bz2';
@@ -48,7 +49,9 @@ const EXPORT_FORMATS: FormatOption[] = [
 ];
 
 export const ProjectExport: React.FC<ProjectExportProps> = ({
-  project,
+  projectId,
+  projectName,
+  onClose,
   onSuccess,
   onError,
 }) => {
@@ -63,7 +66,22 @@ export const ProjectExport: React.FC<ProjectExportProps> = ({
     setSuccess(false);
 
     try {
-      const blob = await exportProject(project.id, selectedFormat);
+      // Call the export API endpoint
+      const response = await fetch(
+        `/api/projects/${projectId}/export?format=${selectedFormat}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
 
       // Create download link
       const url = window.URL.createObjectURL(blob);
@@ -72,9 +90,9 @@ export const ProjectExport: React.FC<ProjectExportProps> = ({
 
       // Determine filename based on format
       const timestamp = new Date().toISOString().split('T')[0];
-      const projectName = project.name.toLowerCase().replace(/\s+/g, '_');
-      const extension = selectedFormat === 'zip' ? 'zip' : selectedFormat === 'tar' ? 'tar' : selectedFormat;
-      link.download = `${projectName}_${timestamp}.${extension}`;
+      const formattedName = projectName.toLowerCase().replace(/\s+/g, '_');
+      const extension = selectedFormat === 'zip' ? 'zip' : selectedFormat;
+      link.download = `${formattedName}_${timestamp}.${extension}`;
 
       // Trigger download
       document.body.appendChild(link);
@@ -83,112 +101,120 @@ export const ProjectExport: React.FC<ProjectExportProps> = ({
       window.URL.revokeObjectURL(url);
 
       setSuccess(true);
-      onSuccess?.();
+      onSuccess();
 
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(false), 3000);
+      // Close dialog after 2 seconds
+      setTimeout(() => onClose(), 2000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to export project';
       setError(errorMessage);
-      onError?.(errorMessage);
+      onError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Download Project
-        </h3>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Export your generated project as a downloadable archive
-        </p>
-      </div>
-
-      {/* Format Selection */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Select Format
-        </label>
-        <div className="space-y-2">
-          {EXPORT_FORMATS.map((format) => (
-            <div key={format.value} className="flex items-start">
-              <input
-                type="radio"
-                id={`format-${format.value}`}
-                name="export-format"
-                value={format.value}
-                checked={selectedFormat === format.value}
-                onChange={(e) => setSelectedFormat(e.target.value as ExportFormat)}
-                className="mt-1 cursor-pointer"
-                disabled={isLoading}
-              />
-              <label
-                htmlFor={`format-${format.value}`}
-                className="ml-3 cursor-pointer"
-              >
-                <div className="font-medium text-gray-900 dark:text-white">
-                  {format.label}
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  {format.description}
-                </div>
-              </label>
-            </div>
-          ))}
+    <Dialog isOpen={true} onClose={onClose}>
+      <div className="max-w-md w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            Export Project
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          >
+            <X className="h-5 w-5 text-gray-500" />
+          </button>
         </div>
-      </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-red-800 dark:text-red-200">
-            <p className="font-medium">Export Failed</p>
-            <p className="mt-1">{error}</p>
+        <div className="space-y-4">
+          {/* Description */}
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Download your generated project as a complete, GitHub-ready archive with
+            all necessary files, configurations, and workflows.
+          </p>
+
+          {/* Format Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Select Format
+            </label>
+            <div className="space-y-2">
+              {EXPORT_FORMATS.map((format) => (
+                <label
+                  key={format.value}
+                  className="flex items-start p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                >
+                  <input
+                    type="radio"
+                    name="export-format"
+                    value={format.value}
+                    checked={selectedFormat === format.value}
+                    onChange={(e) => setSelectedFormat(e.target.value as ExportFormat)}
+                    className="mt-1 cursor-pointer"
+                    disabled={isLoading}
+                  />
+                  <div className="ml-3 flex-1">
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {format.label}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {format.description}
+                    </div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <Alert type="error" title="Export Failed">
+              {error}
+            </Alert>
+          )}
+
+          {/* Success Message */}
+          {success && (
+            <Alert type="success" title="Export Successful">
+              Your project is being downloaded. Check your downloads folder.
+            </Alert>
+          )}
+
+          {/* Info Box */}
+          <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-4 border border-blue-200 dark:border-blue-800">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              <strong>Included:</strong> All source code, GitHub Actions workflows,
+              Docker configuration, tests, and documentation.
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4">
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={onClose}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              fullWidth
+              onClick={handleExport}
+              disabled={isLoading}
+              icon={isLoading ? <Loader className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            >
+              {isLoading ? 'Preparing...' : 'Download'}
+            </Button>
           </div>
         </div>
-      )}
-
-      {/* Success Message */}
-      {success && (
-        <div className="rounded-md bg-green-50 dark:bg-green-900/20 p-4">
-          <p className="text-sm font-medium text-green-800 dark:text-green-200">
-            ✓ Project exported successfully
-          </p>
-        </div>
-      )}
-
-      {/* Export Button */}
-      <button
-        onClick={handleExport}
-        disabled={isLoading}
-        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors"
-      >
-        {isLoading ? (
-          <>
-            <Loader className="h-4 w-4 animate-spin" />
-            Preparing Download...
-          </>
-        ) : (
-          <>
-            <Download className="h-4 w-4" />
-            Download Project
-          </>
-        )}
-      </button>
-
-      {/* Info Box */}
-      <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-4">
-        <p className="text-sm text-blue-800 dark:text-blue-200">
-          <strong>Tip:</strong> Your project includes all necessary files for GitHub:
-          pyproject.toml, GitHub Actions workflows, Dockerfile, tests, and documentation.
-        </p>
       </div>
-    </div>
+    </Dialog>
   );
 };
 
