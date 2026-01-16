@@ -6,6 +6,9 @@ Provides REST endpoints for subscription management including:
 - Upgrading/downgrading plans
 - Comparing subscription tiers
 - Testing mode management
+
+Uses centralized tier definitions from socratic_system.subscription.tiers
+to maintain a single source of truth.
 """
 
 import logging
@@ -16,6 +19,7 @@ from pydantic import BaseModel
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
 from socrates_api.models import APIResponse, SuccessResponse
+from socratic_system.subscription.tiers import TIER_LIMITS
 
 
 class SubscriptionPlan(BaseModel):
@@ -32,17 +36,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/subscription", tags=["subscription"])
 
 
-# Define subscription tiers
+# Build subscription tier details from central TIER_LIMITS
 # FREEMIUM MODEL: All tiers have FULL FEATURE ACCESS, differentiated only by quotas
-SUBSCRIPTION_TIERS = {
-    "free": {
-        "tier": "free",
-        "display_name": "Free",
-        "price": 0.0,
-        "projects_limit": 1,
-        "team_members_limit": 1,
-        "storage_gb": 5,
-        "features": [
+def _build_subscription_tiers():
+    """Build SUBSCRIPTION_TIERS from central TIER_LIMITS."""
+    tiers = {}
+
+    # Feature descriptions for each tier
+    feature_descriptions = {
+        "free": [
             "✓ Socratic dialogue mode",
             "✓ Direct mode (code conversations)",
             "✓ Code generation & documentation",
@@ -52,16 +54,7 @@ SUBSCRIPTION_TIERS = {
             "✓ API access",
             "✓ Unlimited questions per month",
         ],
-        "description": "Full-featured for solo developers and students",
-    },
-    "pro": {
-        "tier": "pro",
-        "display_name": "Pro",
-        "price": 4.99,
-        "projects_limit": 10,
-        "team_members_limit": 5,
-        "storage_gb": 100,
-        "features": [
+        "pro": [
             "✓ Everything in Free",
             "✓ Up to 10 projects",
             "✓ Team collaboration (up to 5 members)",
@@ -69,16 +62,7 @@ SUBSCRIPTION_TIERS = {
             "✓ Priority support",
             "✓ Advanced integrations",
         ],
-        "description": "For teams and growing projects",
-    },
-    "enterprise": {
-        "tier": "enterprise",
-        "display_name": "Enterprise",
-        "price": 9.99,
-        "projects_limit": None,  # Unlimited
-        "team_members_limit": None,  # Unlimited
-        "storage_gb": None,  # Unlimited
-        "features": [
+        "enterprise": [
             "✓ Everything in Pro",
             "✓ Unlimited projects & team members",
             "✓ Unlimited storage",
@@ -86,9 +70,30 @@ SUBSCRIPTION_TIERS = {
             "✓ Custom SLA & support",
             "✓ White-label options (coming soon)",
         ],
-        "description": "For organizations and enterprises",
-    },
-}
+    }
+
+    tier_descriptions = {
+        "free": "Full-featured for solo developers and students",
+        "pro": "For teams and growing projects",
+        "enterprise": "For organizations and enterprises",
+    }
+
+    for tier_name, tier_limits in TIER_LIMITS.items():
+        tiers[tier_name] = {
+            "tier": tier_name,
+            "display_name": tier_limits.name,
+            "price": tier_limits.monthly_cost,
+            "projects_limit": tier_limits.max_projects,
+            "team_members_limit": tier_limits.max_team_members,
+            "storage_gb": tier_limits.storage_gb,
+            "features": feature_descriptions.get(tier_name, []),
+            "description": tier_descriptions.get(tier_name, ""),
+        }
+
+    return tiers
+
+# Dynamically built from central TIER_LIMITS
+SUBSCRIPTION_TIERS = _build_subscription_tiers()
 
 
 @router.get(
@@ -123,10 +128,25 @@ async def get_subscription_status(
 
         tier_info = SUBSCRIPTION_TIERS.get(current_tier, SUBSCRIPTION_TIERS["free"])
 
-        # Calculate usage (mock data for now)
-        # In production, would calculate from actual database
-        projects_count = 0
-        team_members_count = 1
+        # Calculate actual usage from database
+        from socratic_system.subscription.storage import StorageQuotaManager
+
+        projects = db.get_user_projects(current_user)
+        # Count only owned projects
+        owned_projects = [p for p in projects if p.owner == current_user]
+        projects_count = len(owned_projects)
+
+        # Get team members count (from owned projects)
+        team_members_count = 1  # User is always a member of their own project
+        for proj in owned_projects:
+            if hasattr(proj, 'team_members') and proj.team_members:
+                team_members_count = max(team_members_count, len(proj.team_members) + 1)
+
+        # Calculate storage usage
+        storage_used_gb = StorageQuotaManager.bytes_to_gb(
+            StorageQuotaManager.calculate_user_storage_usage(current_user, db)
+        )
+        storage_limit_gb = tier_info["storage_gb"]
 
         return APIResponse(
             success=True,
@@ -141,8 +161,9 @@ async def get_subscription_status(
                     "projects_limit": tier_info["projects_limit"],
                     "team_members_used": team_members_count,
                     "team_members_limit": tier_info["team_members_limit"],
-                    "storage_used_gb": 0.1,
-                    "storage_limit_gb": tier_info["storage_gb"],
+                    "storage_used_gb": round(storage_used_gb, 2),
+                    "storage_limit_gb": storage_limit_gb,
+                    "storage_percentage_used": round((storage_used_gb / storage_limit_gb * 100), 2) if storage_limit_gb else 0,
                 },
                 "billing": {
                     "next_billing_date": "2025-01-26",
@@ -158,6 +179,61 @@ async def get_subscription_status(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get subscription status: {str(e)}",
+        )
+
+
+@router.get(
+    "/storage",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get storage usage report",
+)
+async def get_storage_usage(
+    current_user: str = Depends(get_current_user),
+    db: "ProjectDatabase" = Depends(get_database),
+):
+    """
+    Get detailed storage usage report for user.
+
+    Returns storage used, limit, and percentage for current tier.
+
+    Args:
+        current_user: Authenticated user
+
+    Returns:
+        SuccessResponse with storage usage details
+    """
+    try:
+        logger.info(f"Getting storage usage for user: {current_user}")
+
+        from socratic_system.subscription.storage import StorageQuotaManager
+
+        # Import here to avoid circular imports at module level
+        from socrates_api.database import get_database as get_db_instance
+        db = get_db_instance()
+
+        report = StorageQuotaManager.get_storage_usage_report(current_user, db)
+
+        if "error" in report:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=report["error"],
+            )
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Storage usage retrieved",
+            data=report,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting storage usage: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get storage usage: {str(e)}",
         )
 
 

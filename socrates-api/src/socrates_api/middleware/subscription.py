@@ -3,6 +3,9 @@ Subscription-based Feature Gating Middleware.
 
 Enforces feature access based on user subscription tier.
 Provides decorators for protecting endpoints by tier requirements.
+
+Centralized tier definitions now imported from socratic_system.subscription.tiers
+to maintain a single source of truth across CLI, API, and storage systems.
 """
 
 import logging
@@ -10,64 +13,45 @@ from functools import wraps
 from typing import Callable
 
 from fastapi import HTTPException, status
+from socratic_system.subscription.tiers import TIER_LIMITS
 
 logger = logging.getLogger(__name__)
 
-# Subscription tier feature matrix
-# FREEMIUM MODEL: All tiers have FULL FEATURE ACCESS, limited only by quotas (projects, team members)
-TIER_FEATURES = {
-    "free": {
-        "projects": 1,  # Quota limit
-        "team_members": 1,  # Quota limit (solo only)
-        "questions_per_month": None,  # Unlimited
-        "features": {
-            "basic_chat": True,
-            "socratic_mode": True,
-            "direct_mode": True,  # All features available in free
-            "code_generation": True,
-            "collaboration": False,  # Still restricted due to team_members=1 quota
-            "github_import": True,
-            "advanced_analytics": True,
-            "multi_llm": True,
-            "api_access": True,
-            "project_creation": True,
-        },
-    },
-    "pro": {
-        "projects": 10,  # Quota limit
-        "team_members": 5,  # Quota limit
-        "questions_per_month": None,  # Unlimited
-        "features": {
-            "basic_chat": True,
-            "socratic_mode": True,
-            "direct_mode": True,
-            "code_generation": True,
-            "collaboration": True,  # Can collaborate with up to 5 members
-            "github_import": True,
-            "advanced_analytics": True,
-            "multi_llm": True,
-            "api_access": True,
-            "project_creation": True,
-        },
-    },
-    "enterprise": {
-        "projects": None,  # Unlimited
-        "team_members": None,  # Unlimited
-        "questions_per_month": None,  # Unlimited
-        "features": {
-            "basic_chat": True,
-            "socratic_mode": True,
-            "direct_mode": True,
-            "code_generation": True,
-            "collaboration": True,
-            "github_import": True,
-            "advanced_analytics": True,
-            "multi_llm": True,
-            "api_access": True,
-            "project_creation": True,
-        },
-    },
-}
+# Build API-compatible feature matrix from central TIER_LIMITS
+# This maintains backward compatibility while using the centralized definitions
+def _build_tier_features():
+    """Build TIER_FEATURES from central TIER_LIMITS for backward compatibility."""
+    tier_features = {}
+    for tier_name, tier_limits in TIER_LIMITS.items():
+        tier_features[tier_name] = {
+            "projects": tier_limits.max_projects,
+            "team_members": tier_limits.max_team_members,
+            "storage_gb": tier_limits.storage_gb,
+            "questions_per_month": tier_limits.max_questions_per_month,
+            "features": {
+                # All features available to all tiers - limited only by quotas
+                "basic_chat": True,
+                "socratic_mode": True,
+                "direct_mode": True,
+                "code_generation": tier_limits.code_generation,
+                "collaboration": tier_limits.max_team_members != 1,  # True for pro+, False for solo
+                "github_import": True,
+                "github_export": True,
+                "advanced_analytics": tier_limits.advanced_analytics,
+                "multi_llm": tier_limits.multi_llm_access,
+                "api_access": True,
+                "project_creation": True,
+                "knowledge_management": True,
+                "nlu_features": True,
+            },
+        }
+    return tier_features
+
+# Dynamically built from central TIER_LIMITS
+# FREEMIUM MODEL: All tiers have FULL FEATURE ACCESS, limited only by quotas (projects, team members, storage).
+# Free tier users can use all features (code generation, analytics, GitHub, etc.) on their single project.
+# Pro tier users can collaborate with teams, have more projects, and more storage.
+TIER_FEATURES = _build_tier_features()
 
 
 class SubscriptionChecker:
