@@ -26,6 +26,7 @@ from socrates_api.routers.projects_chat import router as projects_chat_router
 from socrates_api.routers.query import router as query_router
 from socrates_api.routers.security import router as security_router
 from socrates_api.routers.skills import router as skills_router
+from socrates_api.routers.sponsorships import router as sponsorships_router
 from socrates_api.routers.subscription import router as subscription_router
 from socrates_api.routers.system import router as system_router
 
@@ -46,6 +47,7 @@ __all__ = [
     "notes_router",
     "finalization_router",
     "subscription_router",
+    "sponsorships_router",
     "query_router",
     "knowledge_management_router",
     "skills_router",

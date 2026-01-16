@@ -66,6 +66,7 @@ from .routers import (
     query_router,
     security_router,
     skills_router,
+    sponsorships_router,
     subscription_router,
     system_router,
 )
@@ -328,6 +329,7 @@ app.include_router(events_router)
 app.include_router(notes_router)
 app.include_router(finalization_router)
 app.include_router(subscription_router)
+app.include_router(sponsorships_router)
 app.include_router(query_router)
 app.include_router(knowledge_management_router)
 app.include_router(skills_router)
