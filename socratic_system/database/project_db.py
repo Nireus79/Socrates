@@ -2080,16 +2080,16 @@ class ProjectDatabase:
             conn.close()
 
     def get_project_knowledge_documents(self, project_id: str) -> list[dict[str, any]]:
-        """Get all knowledge documents for a project"""
+        """Get all knowledge documents for a project (includes file_size for storage tracking)"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
         try:
-            # Try to get documents with content column
+            # Try to get documents with all columns including file_size
             try:
                 cursor.execute(
                     """
-                    SELECT id, project_id, user_id, title, content, source, document_type, uploaded_at
+                    SELECT id, project_id, user_id, title, content, source, document_type, file_size, uploaded_at
                     FROM knowledge_documents
                     WHERE project_id = ?
                     ORDER BY uploaded_at DESC
@@ -2097,25 +2097,40 @@ class ProjectDatabase:
                     (project_id,),
                 )
             except sqlite3.OperationalError as col_err:
-                # Column doesn't exist, try without content
-                if "no column named content" in str(col_err):
-                    cursor.execute(
-                        """
-                        SELECT id, project_id, user_id, title, source, document_type, uploaded_at
-                        FROM knowledge_documents
-                        WHERE project_id = ?
-                        ORDER BY uploaded_at DESC
-                    """,
-                        (project_id,),
-                    )
-                else:
-                    raise
+                # Fallback for older schema without file_size
+                try:
+                    if "no column named file_size" in str(col_err):
+                        cursor.execute(
+                            """
+                            SELECT id, project_id, user_id, title, content, source, document_type, uploaded_at
+                            FROM knowledge_documents
+                            WHERE project_id = ?
+                            ORDER BY uploaded_at DESC
+                        """,
+                            (project_id,),
+                        )
+                    else:
+                        raise
+                except sqlite3.OperationalError as col_err2:
+                    # Try without content column
+                    if "no column named content" in str(col_err2):
+                        cursor.execute(
+                            """
+                            SELECT id, project_id, user_id, title, source, document_type, uploaded_at
+                            FROM knowledge_documents
+                            WHERE project_id = ?
+                            ORDER BY uploaded_at DESC
+                        """,
+                            (project_id,),
+                        )
+                    else:
+                        raise
 
             documents = []
             for row in cursor.fetchall():
-                # Handle both with and without content column
-                if len(row) == 8:
-                    # With content column
+                # Handle different column configurations
+                if len(row) == 9:
+                    # With file_size and content
                     documents.append(
                         {
                             "id": row[0],
@@ -2125,20 +2140,37 @@ class ProjectDatabase:
                             "content": row[4],
                             "source": row[5],
                             "document_type": row[6],
-                            "uploaded_at": row[7],
+                            "file_size": row[7] or 0,
+                            "uploaded_at": row[8],
                         }
                     )
-                else:
-                    # Without content column
+                elif len(row) == 8:
+                    # With content but no file_size
                     documents.append(
                         {
                             "id": row[0],
                             "project_id": row[1],
                             "user_id": row[2],
                             "title": row[3],
-                            "content": "",  # Empty content if column doesn't exist
+                            "content": row[4],
+                            "source": row[5],
+                            "document_type": row[6],
+                            "file_size": 0,
+                            "uploaded_at": row[7],
+                        }
+                    )
+                else:
+                    # Without content column (legacy)
+                    documents.append(
+                        {
+                            "id": row[0],
+                            "project_id": row[1],
+                            "user_id": row[2],
+                            "title": row[3],
+                            "content": "",
                             "source": row[4],
                             "document_type": row[5],
+                            "file_size": 0,
                             "uploaded_at": row[6],
                         }
                     )
@@ -3332,5 +3364,144 @@ class ProjectDatabase:
         except Exception as e:
             self.logger.error(f"Error counting activities for {project_id}: {e}")
             return 0
+        finally:
+            conn.close()
+
+    # ========================================================================
+    # GitHub Sponsors / Sponsorship Methods
+    # ========================================================================
+
+    def create_sponsorship(self, sponsorship_data: dict) -> int:
+        """Create or update a sponsorship record"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO sponsorships (
+                    username, github_username, github_sponsor_id, sponsorship_amount,
+                    socrates_tier_granted, sponsorship_status, sponsored_at, tier_expires_at,
+                    last_payment_at, payment_id, webhook_event_id, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    sponsorship_data.get("username"),
+                    sponsorship_data.get("github_username"),
+                    sponsorship_data.get("github_sponsor_id"),
+                    sponsorship_data.get("sponsorship_amount", 0),
+                    sponsorship_data.get("socrates_tier_granted", ""),
+                    sponsorship_data.get("sponsorship_status", "active"),
+                    sponsorship_data.get("sponsored_at"),
+                    sponsorship_data.get("tier_expires_at"),
+                    sponsorship_data.get("last_payment_at"),
+                    sponsorship_data.get("payment_id", ""),
+                    sponsorship_data.get("webhook_event_id", ""),
+                    sponsorship_data.get("notes", ""),
+                ),
+            )
+            conn.commit()
+            return cursor.lastrowid
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error creating sponsorship: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def get_active_sponsorship(self, username: str) -> dict | None:
+        """Get active sponsorship for a user"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT * FROM sponsorships
+                WHERE username = ? AND sponsorship_status = 'active'
+                AND (tier_expires_at IS NULL OR tier_expires_at > datetime('now'))
+                ORDER BY sponsored_at DESC
+                LIMIT 1
+            """,
+                (username,),
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
+        except Exception as e:
+            self.logger.error(f"Error getting active sponsorship for {username}: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def get_sponsorship_history(self, username: str) -> list:
+        """Get all sponsorships for a user"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT * FROM sponsorships
+                WHERE username = ?
+                ORDER BY sponsored_at DESC
+            """,
+                (username,),
+            )
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+        except Exception as e:
+            self.logger.error(f"Error getting sponsorship history for {username}: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def get_sponsorship_by_github_username(self, github_username: str) -> dict | None:
+        """Get sponsorship by GitHub username"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT * FROM sponsorships
+                WHERE github_username = ?
+                AND sponsorship_status = 'active'
+                AND (tier_expires_at IS NULL OR tier_expires_at > datetime('now'))
+                ORDER BY sponsored_at DESC
+                LIMIT 1
+            """,
+                (github_username,),
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
+        except Exception as e:
+            self.logger.error(f"Error getting sponsorship for {github_username}: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def cancel_sponsorship(self, username: str) -> bool:
+        """Cancel active sponsorship for a user"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                UPDATE sponsorships
+                SET sponsorship_status = 'cancelled'
+                WHERE username = ? AND sponsorship_status = 'active'
+            """,
+                (username,),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error cancelling sponsorship for {username}: {e}")
+            return False
         finally:
             conn.close()

@@ -239,7 +239,37 @@ mypy socrates_api/ socratic_system/
 bandit -r socrates_api/ socratic_system/
 ```
 
+## ☕ Support Socrates Development
+
+Socrates is free and open-source. If you find it useful, consider supporting development through GitHub Sponsors:
+
+### GitHub Sponsors
+Become a sponsor to unlock premium features and support active development:
+
+- **[$5/month Sponsor](https://github.com/sponsors/Nireus79)** → **Pro Tier**
+  - 10 projects
+  - 5 team members
+  - 100GB storage
+  - Priority support
+
+- **[$15/month Sponsor](https://github.com/sponsors/Nireus79)** → **Enterprise Tier**
+  - Unlimited projects
+  - Unlimited team members
+  - Unlimited storage
+  - Dedicated support
+
+### Other Ways to Support
+- **Star the repository** ⭐
+- **Fork and contribute** code improvements
+- **Share feedback** and feature requests
+- **Report bugs** to help us improve
+- **Write documentation** for new features
+
+---
+
 ## Contributing
+
+
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-feature`

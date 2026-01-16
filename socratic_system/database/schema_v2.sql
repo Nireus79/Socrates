@@ -461,6 +461,33 @@ CREATE INDEX IF NOT EXISTS idx_analytics_created ON knowledge_analytics(created_
 CREATE INDEX IF NOT EXISTS idx_analytics_type ON knowledge_analytics(event_type);
 CREATE INDEX IF NOT EXISTS idx_analytics_document_created ON knowledge_analytics(document_id, created_at DESC);
 
+-- GitHub Sponsors tracking (monetization)
+CREATE TABLE IF NOT EXISTS sponsorships (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    github_username TEXT NOT NULL,
+    github_sponsor_id INTEGER,
+    sponsorship_amount INTEGER NOT NULL,  -- Amount in dollars per month
+    socrates_tier_granted TEXT NOT NULL,  -- "pro" or "enterprise"
+    sponsorship_status TEXT DEFAULT 'active',  -- active, pending, cancelled
+    sponsored_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    tier_expires_at TIMESTAMP,
+    last_payment_at TIMESTAMP,
+    payment_id TEXT,
+    webhook_event_id TEXT,
+    notes TEXT,
+
+    FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
+);
+
+-- Indexes for sponsorship queries
+CREATE INDEX IF NOT EXISTS idx_sponsorships_username ON sponsorships(username);
+CREATE INDEX IF NOT EXISTS idx_sponsorships_github_username ON sponsorships(github_username);
+CREATE INDEX IF NOT EXISTS idx_sponsorships_status ON sponsorships(sponsorship_status);
+CREATE INDEX IF NOT EXISTS idx_sponsorships_created ON sponsorships(sponsored_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sponsorships_expires ON sponsorships(tier_expires_at);
+CREATE INDEX IF NOT EXISTS idx_sponsorships_active ON sponsorships(username, sponsorship_status) WHERE sponsorship_status = 'active';
+
 -- ============================================================================
 -- Summary of Key Improvements
 -- ============================================================================
@@ -473,4 +500,5 @@ CREATE INDEX IF NOT EXISTS idx_analytics_document_created ON knowledge_analytics
 -- 3. Arrays moved to separate tables (requirements, tech_stack, team_members, etc.)
 -- 4. Large text fields (conversation, specs) in separate tables for lazy loading
 -- 5. All complex dicts stored as JSON text for flexibility
+-- 6. GitHub Sponsors tracking for monetization integration
 -- ============================================================================
