@@ -73,7 +73,7 @@ services:
 
   # Redis Cache
   redis:
-    image: redis:7-alpine
+    image: redis:7.4-alpine
     ports:
       - "6379:6379"
     volumes:
@@ -88,7 +88,7 @@ services:
 
   # Nginx Reverse Proxy (optional, for production simulation)
   nginx:
-    image: nginx:alpine
+    image: nginx:1.27-alpine
     ports:
       - "80:80"
       - "443:443"
