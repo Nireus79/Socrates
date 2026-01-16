@@ -146,6 +146,43 @@ async def import_repository(
 
         logger.info(f"Importing GitHub repository: {request.url}")
 
+        # CRITICAL: Check subscription limit BEFORE attempting to create project
+        logger.info("Checking subscription limits for GitHub import...")
+        try:
+            from socrates_api.routers.projects import get_current_user_object
+            from socratic_system.subscription.checker import SubscriptionChecker
+
+            user_object = get_current_user_object(current_user)
+
+            # Determine subscription tier - default to free if user not in DB yet
+            subscription_tier = "free"
+            if user_object:
+                subscription_tier = getattr(user_object, "subscription_tier", "free")
+
+            # Check project limit for subscription tier (testing mode checked via database flag)
+            # If testing mode is enabled in database, bypass subscription checks
+            testing_mode_enabled = getattr(user_object, "testing_mode", False) if user_object else False
+            if not testing_mode_enabled:
+                # Count only OWNED projects for tier limit, not collaborated projects
+                all_projects = db.get_user_projects(current_user)
+                owned_projects = [p for p in all_projects if p.owner == current_user]
+                can_create, error_msg = SubscriptionChecker.can_create_projects(
+                    subscription_tier, len(owned_projects)
+                )
+                if not can_create:
+                    logger.warning(f"User {current_user} exceeded project limit via GitHub import: {error_msg}")
+                    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=error_msg)
+
+            logger.info(f"Subscription validation passed for {current_user} (tier: {subscription_tier})")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error validating subscription for GitHub import: {type(e).__name__}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error validating subscription: {str(e)[:100]}",
+            )
+
         # Extract repository information from URL
         import re
 
