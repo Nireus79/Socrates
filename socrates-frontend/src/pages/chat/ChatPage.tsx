@@ -1545,8 +1545,8 @@ User: ${currentProject?.owner || 'N/A'}`;
     if (!selectedProjectId) return;
     try {
       const result = await getSuggestions(selectedProjectId);
-      setSuggestions(result || []);
-      setSuggestionsQuestion('Current question');
+      setSuggestions(result?.suggestions || []);
+      setSuggestionsQuestion(result?.question || 'Current question');
       setShowSuggestions(true);
     } catch (error) {
       console.error('Failed to get suggestions:', error);

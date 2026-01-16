@@ -401,7 +401,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       const response = await chatAPI.getSuggestions(projectId);
       set({ isLoading: false });
-      return response.suggestions;
+      return response;
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to get suggestions',
