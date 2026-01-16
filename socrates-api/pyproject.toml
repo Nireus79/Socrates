@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socrates-ai-api"
-version = "1.2.0"
+version = "1.3.0"
 description = "REST API server for Socrates AI with GitHub-ready project generation, export, and publishing capabilities"
 readme = "README.md"
 license = {text = "MIT"}
@@ -40,7 +40,7 @@ classifiers = [
 requires-python = ">=3.8"
 
 dependencies = [
-    "socrates-ai>=1.2.0",
+    "socrates-ai>=1.3.0",
     "fastapi>=0.100.0",
     "uvicorn[standard]>=0.23.0",
     "pydantic>=2.0.0",
