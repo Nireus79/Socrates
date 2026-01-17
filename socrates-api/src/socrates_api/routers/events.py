@@ -8,7 +8,7 @@ import asyncio
 import json
 import logging
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -47,7 +47,7 @@ def record_event(event_type: str, data: dict = None, user_id: str = None) -> Non
     event = {
         "id": f"evt_{len(_event_queue)}",
         "type": event_type,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "user_id": user_id,
         "data": data or {},
     }

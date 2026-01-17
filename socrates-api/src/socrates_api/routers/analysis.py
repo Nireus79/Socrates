@@ -66,12 +66,23 @@ async def validate_code(
             if not project:
                 raise HTTPException(status_code=404, detail="Project not found")
 
+            # Check if project has source files (from GitHub import)
+            if not project.repository_url:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Project must be imported from GitHub or have source files for code validation"
+                )
+
+            # For now, get project path from repository if available
+            # In the future, this can export project files for analysis
+            project_path = project.repository_url or project_id
+
             # Call code validation agent - same as CLI uses
             result = orchestrator.process_request(
                 "code_validation",
                 {
                     "action": "validate_project",
-                    "project": project,
+                    "project_path": project_path,
                 },
             )
 
@@ -178,6 +189,7 @@ async def assess_maturity(
                 "action": "calculate_maturity",
                 "project": project,
                 "phase": phase,
+                "current_user": current_user,
             },
         )
 
@@ -256,13 +268,22 @@ async def run_tests(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
+        # Check if project has source files (from GitHub import)
+        if not project.repository_url:
+            raise HTTPException(
+                status_code=400,
+                detail="Project must be imported from GitHub or have source files for testing"
+            )
+
+        project_path = project.repository_url or project_id
+
         # Call code_validation agent - same as CLI uses
         orchestrator = get_orchestrator()
         result = orchestrator.process_request(
             "code_validation",
             {
                 "action": "run_tests",
-                "project": project,
+                "project_path": project_path,
             },
         )
 
@@ -346,11 +367,12 @@ async def analyze_structure(
             {
                 "action": "analyze_context",
                 "project": project,
+                "current_user": current_user,
             },
         )
 
         if result["status"] != "success":
-            raise HTTPException(status_code=500, detail=result.get("message", "Failed to analyze"))
+            raise HTTPException(status_code=500, detail=result.get("message", "Failed to analyze structure"))
 
         structure_data = result
 
@@ -425,8 +447,9 @@ async def review_code(
         result = orchestrator.process_request(
             "context_analyzer",
             {
-                "action": "get_statistics",
+                "action": "analyze_context",
                 "project": project,
+                "current_user": current_user,
             },
         )
 
@@ -509,6 +532,7 @@ async def auto_fix_issues(
             {
                 "action": "generate_script",
                 "project": project,
+                "current_user": current_user,
             },
         )
 
@@ -592,6 +616,7 @@ async def get_analysis_report(
             {
                 "action": "generate_summary",
                 "project": project,
+                "current_user": current_user,
             },
         )
 

@@ -528,8 +528,23 @@ async def import_file(
 
         # Write file content
         content = await file.read()
-        stored_file.write_bytes(content)
         file_size = len(content)
+
+        # CHECK STORAGE QUOTA BEFORE SAVING
+        user_object = db.load_user(current_user)
+        if user_object:
+            from socratic_system.subscription.storage import StorageQuotaManager
+            can_upload, error_msg = StorageQuotaManager.can_upload_document(
+                user_object, db, file_size, testing_mode=False
+            )
+            if not can_upload:
+                logger.warning(f"Storage quota exceeded for user {current_user}: {error_msg}")
+                raise HTTPException(
+                    status_code=status.HTTP_413_PAYLOAD_TOO_LARGE,
+                    detail=error_msg,
+                )
+
+        stored_file.write_bytes(content)
 
         logger.info(f"Saved knowledge base file: {stored_file}")
 
@@ -829,6 +844,21 @@ async def import_text(
 
         # Create document ID first (for source consistency)
         doc_id = str(uuid.uuid4())
+
+        # CHECK STORAGE QUOTA BEFORE IMPORTING TEXT
+        content_size_bytes = len(content.encode("utf-8"))
+        user_object = db.load_user(current_user)
+        if user_object:
+            from socratic_system.subscription.storage import StorageQuotaManager
+            can_upload, error_msg = StorageQuotaManager.can_upload_document(
+                user_object, db, content_size_bytes, testing_mode=False
+            )
+            if not can_upload:
+                logger.warning(f"Storage quota exceeded for user {current_user}: {error_msg}")
+                raise HTTPException(
+                    status_code=status.HTTP_413_PAYLOAD_TOO_LARGE,
+                    detail=error_msg,
+                )
 
         # Process via DocumentProcessorAgent
         result = orchestrator.process_request(

@@ -28,6 +28,7 @@ from socrates_api.models import (
     GetChatMessagesResponse,
     ListChatSessionsResponse,
 )
+from socratic_system.utils.logger import is_debug_mode
 from socratic_system.database import ProjectDatabase
 
 
@@ -707,10 +708,11 @@ Provide a helpful, direct answer."""
                     },
                 )
 
-            # Format insights for response
+            # Format insights for response (only if debug mode is enabled)
             insights = result.get("insights", {})
-            if insights:
-                # Format insights as a readable string for the frontend
+            if insights and is_debug_mode():
+                # DEBUG MODE: Format insights as a readable string for the frontend
+                logger.debug("Debug mode enabled - including insights in response")
                 content_parts = []
                 if insights.get("goals"):
                     content_parts.append(f"Goals: {insights.get('goals')}")
@@ -736,8 +738,10 @@ Provide a helpful, direct answer."""
                     }
                 }
             else:
-                # No insights - don't return a message, just return empty data
+                # No insights or debug mode off - don't return a message, just return empty data
                 # Frontend will handle moving to next question without adding extra message
+                if insights and not is_debug_mode():
+                    logger.debug("Debug mode disabled - insights hidden from response")
                 response_data = {}
 
             # Check if phase is complete and add recommendation
@@ -1160,7 +1164,9 @@ async def finish_session(
                     "total_messages": conversation_count,
                     "current_phase": current_phase,
                     "overall_maturity": round(current_maturity, 2),
+                    "overall_maturity_formatted": f"{round(current_maturity, 2)}%",
                     "phase_maturity": round(phase_maturity, 2),
+                    "phase_maturity_formatted": f"{round(phase_maturity, 2)}%",
                     "session_ended_at": None,
                 },
                 "project_id": project_id,
@@ -1230,7 +1236,9 @@ async def get_maturity_history(
                 "history": history,
                 "total_events": len(project.maturity_history or []),
                 "current_overall_maturity": round(project.overall_maturity, 2),
+                "current_overall_maturity_formatted": f"{round(project.overall_maturity, 2)}%",
                 "current_phase_maturity": round((project.phase_maturity_scores or {}).get(project.phase, 0.0), 2),
+                "current_phase_maturity_formatted": f"{round((project.phase_maturity_scores or {}).get(project.phase, 0.0), 2)}%",
             },
         )
 
@@ -1306,11 +1314,18 @@ async def get_maturity_status(
                 "project_id": project_id,
                 "current_phase": project.phase,
                 "overall_maturity": round(project.overall_maturity, 2),
+                "overall_maturity_formatted": f"{round(project.overall_maturity, 2)}%",
                 "phase_maturity": {
                     "discovery": round(phase_scores.get("discovery", 0.0), 2),
                     "analysis": round(phase_scores.get("analysis", 0.0), 2),
                     "design": round(phase_scores.get("design", 0.0), 2),
                     "implementation": round(phase_scores.get("implementation", 0.0), 2),
+                },
+                "phase_maturity_formatted": {
+                    "discovery": f"{round(phase_scores.get('discovery', 0.0), 2)}%",
+                    "analysis": f"{round(phase_scores.get('analysis', 0.0), 2)}%",
+                    "design": f"{round(phase_scores.get('design', 0.0), 2)}%",
+                    "implementation": f"{round(phase_scores.get('implementation', 0.0), 2)}%",
                 },
                 "strong_areas": strong_categories,
                 "weak_areas": weak_categories,
@@ -1562,10 +1577,15 @@ async def get_answer_suggestions(
                 "action": "generate_answer_suggestions",
                 "project": project,
                 "current_question": current_question,
+                "current_user": current_user,
             },
         )
 
         if result.get("status") != "success":
+            # Log the error for debugging
+            error_message = result.get("message", "Unknown error")
+            logger.warning(f"Suggestion generation failed: {error_message}")
+
             # Return generic suggestions if generation failed
             return APIResponse(
                 success=True,
@@ -1580,6 +1600,8 @@ async def get_answer_suggestions(
                     ],
                     "question": current_question,
                     "phase": project.phase,
+                    "generated": False,
+                    "error": error_message,
                 },
             )
 
@@ -1590,6 +1612,7 @@ async def get_answer_suggestions(
                 "suggestions": result.get("suggestions", []),
                 "question": current_question,
                 "phase": project.phase,
+                "generated": True,
             },
         )
 

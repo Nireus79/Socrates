@@ -233,7 +233,7 @@ async def import_repository(
             logger.warning(f"Error fetching GitHub metadata: {e}")
 
         # Create project from GitHub import
-        from datetime import datetime
+        from datetime import datetime, timezone
 
         from socratic_system.models.project import ProjectContext
 
@@ -242,8 +242,8 @@ async def import_repository(
             name=project_name,
             owner=current_user,
             phase="planning",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             repository_url=request.url,
             repository_owner=repo_owner,
             repository_name=repo_name,

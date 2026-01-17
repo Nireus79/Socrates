@@ -10,7 +10,7 @@ Provides:
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
@@ -135,7 +135,7 @@ async def _broadcast_activity(
             "user_id": current_user,
             "activity_type": activity_type,
             "activity_data": activity_data or {},
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
         # Broadcast to all users in the project
@@ -290,8 +290,6 @@ async def add_collaborator_new(
             )
 
         # Initialize team_members if not present
-        from datetime import datetime
-
         from socratic_system.models.role import TeamMemberRole
 
         project.team_members = project.team_members or []
@@ -349,7 +347,7 @@ async def add_collaborator_new(
             username=resolved_username,
             role=request.role,
             skills=[],
-            joined_at=datetime.utcnow(),
+            joined_at=datetime.now(timezone.utc),
         )
         project.team_members.append(new_member)
 
@@ -380,7 +378,7 @@ async def add_collaborator_new(
             data={
                 "username": resolved_username,
                 "role": request.role,
-                "added_at": datetime.utcnow().isoformat(),
+                "added_at": datetime.now(timezone.utc).isoformat(),
                 "status": "active",
             },
         )
@@ -559,8 +557,6 @@ async def update_collaborator_role(
                         f"Collaborator {username} role updated to {role} in project {project_id}"
                     )
 
-                    from datetime import datetime
-
                     return APIResponse(
                         success=True,
                         status="updated",
@@ -568,7 +564,7 @@ async def update_collaborator_role(
                         data={
                             "username": username,
                             "role": role,
-                            "updated_at": datetime.utcnow().isoformat(),
+                            "updated_at": datetime.now(timezone.utc).isoformat(),
                         },
                     )
 
@@ -734,7 +730,7 @@ async def get_presence(
             data={
                 "project_id": project_id,
                 "active_collaborators": active_collaborators,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         )
 
@@ -780,7 +776,6 @@ async def record_activity(
     """
     try:
         import uuid
-        from datetime import datetime
 
         # Verify project access
         project = db.load_project(project_id)
@@ -807,7 +802,7 @@ async def record_activity(
             "user_id": current_user,
             "activity_type": activity_type or "unknown",
             "activity_data": activity_data,
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
         }
 
         # Save to database
@@ -960,7 +955,7 @@ async def create_project_invitation(
     try:
         import secrets
         import uuid
-        from datetime import datetime, timedelta
+        from datetime import timedelta
 
         # Verify project exists and user is owner
         project = db.load_project(project_id)
@@ -1037,7 +1032,7 @@ async def create_project_invitation(
         token = secrets.token_urlsafe(32)
 
         # Set expiration to 7 days from now
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expires_at = now + timedelta(days=7)
 
         # Create invitation record
@@ -1159,8 +1154,6 @@ async def accept_invitation(
         Success response with project details
     """
     try:
-        from datetime import datetime
-
         # Find invitation by token
         invitation = db.get_invitation_by_token(token)
         if not invitation:
@@ -1178,7 +1171,7 @@ async def accept_invitation(
 
         # Check if expired
         expires_at = datetime.fromisoformat(invitation["expires_at"])
-        if datetime.utcnow() > expires_at:
+        if datetime.now(timezone.utc) > expires_at:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invitation has expired",
@@ -1216,7 +1209,7 @@ async def accept_invitation(
             username=current_user,
             role=invitation["role"],
             skills=[],
-            joined_at=datetime.utcnow(),
+            joined_at=datetime.now(timezone.utc),
         )
         project.team_members.append(new_member)
 

@@ -60,7 +60,7 @@ export interface RecommendationsData {
 }
 
 export interface ExportFormat {
-  format: 'csv' | 'json' | 'pdf';
+  format: 'csv' | 'pdf';
   filename: string;
   data: string;
   size: number;
@@ -121,7 +121,7 @@ export const analyticsAPI = {
    */
   async exportAnalytics(
     projectId: string,
-    format: 'csv' | 'json' | 'pdf' = 'json'
+    format: 'csv' | 'pdf' = 'pdf'
   ): Promise<ExportFormat> {
     return apiClient.post<ExportFormat>(
       `/analytics/export`,

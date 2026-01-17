@@ -40,7 +40,7 @@ class InsightCategorizer:
         logger.info("InsightCategorizer initialized successfully")
 
     def categorize_insights(
-        self, insights: Dict, phase: str, project_type: str = "software"
+        self, insights: Dict, phase: str, project_type: str = "software", user_id: str = None
     ) -> List[Dict]:
         """
         Categorize insights using Claude intelligence.
@@ -52,12 +52,13 @@ class InsightCategorizer:
             insights: Dict of insights (e.g., goals, requirements, constraints)
             phase: Current phase (discovery, analysis, design, implementation)
             project_type: Type of project for context (software, business, etc.)
+            user_id: Optional user ID for API key lookup in Claude client
 
         Returns:
             List of categorized spec dicts with category, content, confidence, etc.
         """
         logger.debug(
-            f"Starting insight categorization: phase={phase}, project_type={project_type}, fields={list(insights.keys())}"
+            f"Starting insight categorization: phase={phase}, project_type={project_type}, fields={list(insights.keys())}, user_id={user_id}"
         )
 
         if not insights:
@@ -87,9 +88,9 @@ class InsightCategorizer:
             )
             logger.debug(f"Prompt created: {len(prompt)} characters")
 
-            # Call Claude
+            # Call Claude (pass user_id for API key lookup)
             logger.debug("Sending request to Claude API")
-            response = self.claude_client.generate_response(prompt)
+            response = self.claude_client.generate_response(prompt, user_id=user_id)
             logger.debug(f"Received response from Claude: {len(response)} characters")
 
             # Parse Claude's response

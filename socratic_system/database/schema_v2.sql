@@ -461,13 +461,13 @@ CREATE INDEX IF NOT EXISTS idx_analytics_created ON knowledge_analytics(created_
 CREATE INDEX IF NOT EXISTS idx_analytics_type ON knowledge_analytics(event_type);
 CREATE INDEX IF NOT EXISTS idx_analytics_document_created ON knowledge_analytics(document_id, created_at DESC);
 
--- GitHub Sponsors tracking (monetization)
+-- GitHub Sponsors tracking (monetization) - Main sponsorship record
 CREATE TABLE IF NOT EXISTS sponsorships (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL,
     github_username TEXT NOT NULL,
     github_sponsor_id INTEGER,
-    sponsorship_amount INTEGER NOT NULL,  -- Amount in dollars per month
+    sponsorship_amount INTEGER NOT NULL,  -- Current monthly amount in dollars
     socrates_tier_granted TEXT NOT NULL,  -- "pro" or "enterprise"
     sponsorship_status TEXT DEFAULT 'active',  -- active, pending, cancelled
     sponsored_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -480,6 +480,82 @@ CREATE TABLE IF NOT EXISTS sponsorships (
     FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
 );
 
+-- Sponsorship payment history - Track all payments
+CREATE TABLE IF NOT EXISTS sponsorship_payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sponsorship_id INTEGER NOT NULL,
+    username TEXT NOT NULL,
+    amount INTEGER NOT NULL,  -- Amount in dollars (whole number)
+    currency TEXT DEFAULT 'USD',
+    payment_status TEXT NOT NULL,  -- succeeded, failed, refunded, pending
+    payment_date TIMESTAMP NOT NULL,
+    payment_id TEXT,  -- GitHub/Stripe transaction ID
+    payment_method_id INTEGER,  -- Reference to payment_methods table
+    reference_id TEXT,  -- For reconciliation/invoice
+    notes TEXT,
+
+    FOREIGN KEY (sponsorship_id) REFERENCES sponsorships(id) ON DELETE CASCADE,
+    FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE,
+    FOREIGN KEY (payment_method_id) REFERENCES sponsorship_payment_methods(id) ON DELETE SET NULL
+);
+
+-- Sponsorship refunds - Track refunds separately
+CREATE TABLE IF NOT EXISTS sponsorship_refunds (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    payment_id INTEGER NOT NULL,
+    sponsorship_id INTEGER NOT NULL,
+    username TEXT NOT NULL,
+    refund_amount INTEGER NOT NULL,  -- Amount refunded in dollars
+    refund_status TEXT DEFAULT 'pending',  -- pending, completed, failed
+    refund_reason TEXT NOT NULL,  -- user_request, chargeback, duplicate, other
+    refund_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    processed_date TIMESTAMP,  -- When refund actually completed
+    refund_id TEXT,  -- Payment provider refund ID
+    notes TEXT,
+
+    FOREIGN KEY (payment_id) REFERENCES sponsorship_payments(id) ON DELETE CASCADE,
+    FOREIGN KEY (sponsorship_id) REFERENCES sponsorships(id) ON DELETE CASCADE,
+    FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
+);
+
+-- Sponsorship payment methods - Track all payment methods used
+CREATE TABLE IF NOT EXISTS sponsorship_payment_methods (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sponsorship_id INTEGER NOT NULL,
+    username TEXT NOT NULL,
+    payment_method_type TEXT NOT NULL,  -- credit_card, debit_card, paypal, bank_transfer, etc.
+    last_four TEXT,  -- Last 4 digits for cards
+    card_brand TEXT,  -- Visa, MasterCard, Amex, etc.
+    expiry_date TEXT,  -- MM/YY for cards
+    is_default BOOLEAN DEFAULT 0,
+    is_expired BOOLEAN DEFAULT 0,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_used_at TIMESTAMP,
+    notes TEXT,
+
+    FOREIGN KEY (sponsorship_id) REFERENCES sponsorships(id) ON DELETE CASCADE,
+    FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
+);
+
+-- Sponsorship tier changes - Track all upgrades/downgrades
+CREATE TABLE IF NOT EXISTS sponsorship_tier_changes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sponsorship_id INTEGER NOT NULL,
+    username TEXT NOT NULL,
+    change_type TEXT NOT NULL,  -- upgrade, downgrade, renewal, cancellation, reactivation
+    old_tier TEXT,  -- Previous tier (null if new sponsorship)
+    new_tier TEXT,  -- Current tier
+    old_amount INTEGER,  -- Previous monthly amount
+    new_amount INTEGER,  -- Current monthly amount
+    change_reason TEXT,  -- user_requested, payment_failed, automatic_renewal, etc.
+    change_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    effective_date TIMESTAMP,
+    notes TEXT,
+
+    FOREIGN KEY (sponsorship_id) REFERENCES sponsorships(id) ON DELETE CASCADE,
+    FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
+);
+
 -- Indexes for sponsorship queries
 CREATE INDEX IF NOT EXISTS idx_sponsorships_username ON sponsorships(username);
 CREATE INDEX IF NOT EXISTS idx_sponsorships_github_username ON sponsorships(github_username);
@@ -487,6 +563,30 @@ CREATE INDEX IF NOT EXISTS idx_sponsorships_status ON sponsorships(sponsorship_s
 CREATE INDEX IF NOT EXISTS idx_sponsorships_created ON sponsorships(sponsored_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sponsorships_expires ON sponsorships(tier_expires_at);
 CREATE INDEX IF NOT EXISTS idx_sponsorships_active ON sponsorships(username, sponsorship_status) WHERE sponsorship_status = 'active';
+
+-- Indexes for payment history
+CREATE INDEX IF NOT EXISTS idx_payments_sponsorship ON sponsorship_payments(sponsorship_id);
+CREATE INDEX IF NOT EXISTS idx_payments_username ON sponsorship_payments(username);
+CREATE INDEX IF NOT EXISTS idx_payments_date ON sponsorship_payments(payment_date DESC);
+CREATE INDEX IF NOT EXISTS idx_payments_status ON sponsorship_payments(payment_status);
+CREATE INDEX IF NOT EXISTS idx_payments_user_date ON sponsorship_payments(username, payment_date DESC);
+
+-- Indexes for refunds
+CREATE INDEX IF NOT EXISTS idx_refunds_payment ON sponsorship_refunds(payment_id);
+CREATE INDEX IF NOT EXISTS idx_refunds_username ON sponsorship_refunds(username);
+CREATE INDEX IF NOT EXISTS idx_refunds_status ON sponsorship_refunds(refund_status);
+CREATE INDEX IF NOT EXISTS idx_refunds_date ON sponsorship_refunds(refund_date DESC);
+
+-- Indexes for payment methods
+CREATE INDEX IF NOT EXISTS idx_payment_methods_sponsorship ON sponsorship_payment_methods(sponsorship_id);
+CREATE INDEX IF NOT EXISTS idx_payment_methods_username ON sponsorship_payment_methods(username);
+CREATE INDEX IF NOT EXISTS idx_payment_methods_default ON sponsorship_payment_methods(sponsorship_id, is_default);
+
+-- Indexes for tier changes
+CREATE INDEX IF NOT EXISTS idx_tier_changes_sponsorship ON sponsorship_tier_changes(sponsorship_id);
+CREATE INDEX IF NOT EXISTS idx_tier_changes_username ON sponsorship_tier_changes(username);
+CREATE INDEX IF NOT EXISTS idx_tier_changes_date ON sponsorship_tier_changes(change_date DESC);
+CREATE INDEX IF NOT EXISTS idx_tier_changes_type ON sponsorship_tier_changes(change_type);
 
 -- ============================================================================
 -- Summary of Key Improvements

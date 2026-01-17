@@ -259,7 +259,7 @@ class MaturityCalculator:
         logger.info(f"Generated {len(warnings)} warnings (limited to top 3)")
         return warnings[:3]  # Return top 3 warnings
 
-    def categorize_insights(self, insights: Dict, phase: str) -> List[Dict]:
+    def categorize_insights(self, insights: Dict, phase: str, user_id: str = None) -> List[Dict]:
         """
         Categorize extracted insights into phase categories.
 
@@ -269,12 +269,13 @@ class MaturityCalculator:
         Args:
             insights: Dict of insights extracted from user (goals, requirements, etc.)
             phase: Current phase (discovery, analysis, design, implementation)
+            user_id: Optional user ID for API key lookup in Claude client
 
         Returns:
             List of categorized spec dicts ready to be stored in project
         """
         logger.debug(
-            f"Categorizing insights for phase={phase}, insight_fields={list(insights.keys())}"
+            f"Categorizing insights for phase={phase}, insight_fields={list(insights.keys())}, user_id={user_id}"
         )
 
         if not insights:
@@ -284,7 +285,7 @@ class MaturityCalculator:
         # Try Claude categorization first if available
         if self.categorizer:
             logger.debug("Using Claude-based intelligent categorization")
-            categorized = self.categorizer.categorize_insights(insights, phase, self.project_type)
+            categorized = self.categorizer.categorize_insights(insights, phase, self.project_type, user_id=user_id)
             logger.info(f"Claude categorization produced {len(categorized)} specs")
             return categorized
 

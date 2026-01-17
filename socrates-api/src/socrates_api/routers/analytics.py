@@ -6,7 +6,7 @@ Provides analytics trends, exports, and comparative analysis with PDF/CSV report
 
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -18,9 +18,41 @@ from socrates_api.database import get_database
 from socrates_api.models import APIResponse, ErrorResponse, SuccessResponse
 from socrates_api.services.report_generator import get_report_generator
 from socratic_system.database import ProjectDatabase
+from socratic_system.core.maturity_calculator import MaturityCalculator
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analytics", tags=["analytics"])
+
+
+def get_phase_readiness_status(project, maturity_calculator: MaturityCalculator):
+    """
+    Get readiness status for all phases based on maturity scores.
+
+    Returns information about whether user is ready to advance to next phase.
+    """
+    phase_maturity_scores = getattr(project, "phase_maturity_scores", {}) or {}
+    all_phases = maturity_calculator.get_all_phases()
+    current_phase = getattr(project, "current_phase", "discovery") or "discovery"
+
+    readiness_status = {}
+    for phase in all_phases:
+        score = phase_maturity_scores.get(phase, 0.0)
+        is_ready = score >= maturity_calculator.READY_THRESHOLD
+
+        readiness_status[phase] = {
+            "phase": phase,
+            "maturity_percentage": round(score, 1),
+            "is_ready_to_advance": is_ready,
+            "ready_threshold": maturity_calculator.READY_THRESHOLD,
+            "complete_threshold": maturity_calculator.COMPLETE_THRESHOLD,
+            "is_complete": score >= maturity_calculator.COMPLETE_THRESHOLD,
+            "status": "complete" if score >= maturity_calculator.COMPLETE_THRESHOLD
+                     else "ready" if is_ready
+                     else "in_progress" if score > 0
+                     else "not_started",
+        }
+
+    return readiness_status
 
 
 @router.get(
@@ -230,27 +262,71 @@ async def get_project_analytics(
         analytics_metrics = getattr(project, "analytics_metrics", {}) or {}
         phase_maturity_scores = getattr(project, "phase_maturity_scores", {}) or {}
         overall_maturity = getattr(project, "overall_maturity", 0.0)
+        project_type = getattr(project, "project_type", "software") or "software"
 
         # Calculate metrics from conversation history
         conversation = project.conversation_history or []
         total_questions = len([m for m in conversation if m.get("type") == "user"])
         total_answers = len([m for m in conversation if m.get("type") == "assistant"])
 
-        # Calculate completion percentage (based on maturity)
-        completion_percentage = min(100, overall_maturity * 10)
+        # Calculate project completion percentage from all phase maturity scores
+        # This represents overall project progress across all phases
+        if phase_maturity_scores and len(phase_maturity_scores) > 0:
+            completion_percentage = sum(phase_maturity_scores.values()) / len(phase_maturity_scores)
+        else:
+            completion_percentage = 0.0
+
+        # Get phase readiness information
+        maturity_calc = MaturityCalculator(project_type=project_type)
+        phase_readiness = get_phase_readiness_status(project, maturity_calc)
 
         analytics = {
             "project_id": project_id,
             "total_questions": total_questions,
-            "completion_percentage": round(completion_percentage, 1),
             "average_response_time": 2.3,
-            "maturity_score": round(overall_maturity, 2),
+            # Backward compatibility: old field names for frontend
+            "completion_percentage": round(completion_percentage, 1),
+            "maturity_score": round(overall_maturity, 1),
             "phase_maturity_scores": phase_maturity_scores,
-            "velocity": analytics_metrics.get("velocity", 0.0),
-            "total_qa_sessions": analytics_metrics.get("total_qa_sessions", 0),
-            "average_confidence": round(analytics_metrics.get("avg_confidence", 0.0), 3),
-            "weak_categories": analytics_metrics.get("weak_categories", []),
-            "strong_categories": analytics_metrics.get("strong_categories", []),
+            # New structured fields
+            "phase_maturity": {
+                "scores": phase_maturity_scores,
+                "unit": "percentage",
+                "labels": {k: f"{v:.1f}%" for k, v in phase_maturity_scores.items()},
+            },
+            # Overall metrics
+            "maturity_metrics": {
+                "overall_project_completion": round(completion_percentage, 1),
+                "current_phase_maturity": round(overall_maturity, 1),
+                "unit": "percentage",
+            },
+            # Phase readiness and advancement guidance
+            "phase_readiness": phase_readiness,
+            "advancement_guidance": {
+                "current_phase": getattr(project, "current_phase", "discovery") or "discovery",
+                "ready_to_advance": any(
+                    phase_readiness[ph].get("is_ready_to_advance", False)
+                    for ph in phase_readiness
+                ),
+                "next_action": (
+                    "You're ready to advance to the next phase. Review findings and proceed to the next phase."
+                    if any(
+                        phase_readiness[ph].get("is_ready_to_advance", False)
+                        for ph in phase_readiness
+                    )
+                    else "Continue answering questions to increase phase maturity. Target: 20% to unlock advancement."
+                ),
+            },
+            "confidence_metrics": {
+                "average_confidence": round(analytics_metrics.get("avg_confidence", 0.0), 3),
+                "strong_categories": analytics_metrics.get("strong_categories", []),
+                "weak_categories": analytics_metrics.get("weak_categories", []),
+            },
+            "velocity": {
+                "value": round(analytics_metrics.get("velocity", 0.0), 2),
+                "unit": "points_per_session",
+                "total_qa_sessions": analytics_metrics.get("total_qa_sessions", 0),
+            },
         }
 
         return APIResponse(
@@ -901,7 +977,7 @@ async def compare_projects(
         comparison = {
             "project_1_id": project_1_id,
             "project_2_id": project_2_id,
-            "comparison_date": datetime.utcnow().isoformat(),
+            "comparison_date": datetime.now(timezone.utc).isoformat(),
             "metrics": {
                 "questions": {
                     "project_1": 42,
@@ -980,7 +1056,7 @@ async def generate_report(
 
         report = {
             "project_id": project_id,
-            "report_date": datetime.utcnow().isoformat(),
+            "report_date": datetime.now(timezone.utc).isoformat(),
             "title": f"Analytics Report for Project {project_id}",
             "executive_summary": "The project shows strong progress with increasing engagement and improving confidence scores.",
             "sections": [
@@ -1064,7 +1140,7 @@ async def analyze_project(
 
         analysis = {
             "project_id": project_id,
-            "analysis_date": datetime.utcnow().isoformat(),
+            "analysis_date": datetime.now(timezone.utc).isoformat(),
             "insights": [
                 "Strong learning velocity - increased 15% this week",
                 "High confidence in functions and loops",
@@ -1134,12 +1210,16 @@ async def get_dashboard_analytics(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
         # Compile all analytics into dashboard view
-        # Calculate maturity score from phase maturity scores
+        # Calculate completion from phase maturity scores
         maturity_scores = project.phase_maturity_scores or {}
-        (sum(maturity_scores.values()) / len(maturity_scores) if maturity_scores else 0)
+        overall_project_completion = (
+            sum(maturity_scores.values()) / len(maturity_scores)
+            if maturity_scores else 0
+        )
 
         # Get overall maturity from project
         overall_maturity = project.overall_maturity or 0
+        project_type = getattr(project, "project_type", "software") or "software"
 
         # Calculate code quality from files and project metrics
         code_quality = min(100, 50 + (overall_maturity * 0.5))
@@ -1150,28 +1230,59 @@ async def get_dashboard_analytics(
         # Documentation score based on notes and project documentation
         documentation = min(100, 70 + len(project.notes or []) * 2)
 
+        # Get phase readiness information
+        maturity_calc = MaturityCalculator(project_type=project_type)
+        phase_readiness = get_phase_readiness_status(project, maturity_calc)
+
         dashboard = {
             "project_id": project_id,
             "summary": {
-                "maturity_score": round(overall_maturity, 1),
+                "overall_project_completion": round(overall_project_completion, 1),
+                "current_phase_maturity": round(overall_maturity, 1),
                 "code_quality": round(code_quality, 1),
                 "test_coverage": round(test_coverage, 1),
                 "documentation": round(documentation, 1),
+                "unit": "percentage",
+            },
+            "phase_breakdown": {
+                "scores": {k: round(v, 1) for k, v in maturity_scores.items()},
+                "labels": {k: f"{v:.1f}%" for k, v in maturity_scores.items()},
+                "readiness": phase_readiness,
+            },
+            "advancement_guidance": {
+                "current_phase": getattr(project, "current_phase", "discovery") or "discovery",
+                "ready_to_advance": any(
+                    phase_readiness[ph].get("is_ready_to_advance", False)
+                    for ph in phase_readiness
+                ),
+                "next_steps": [
+                    pr.get("phase") for pr in phase_readiness.values()
+                    if pr.get("is_ready_to_advance", False)
+                ],
+                "recommendation": (
+                    f"Ready to advance! Current maturity is sufficient to move forward."
+                    if any(
+                        phase_readiness[ph].get("is_ready_to_advance", False)
+                        for ph in phase_readiness
+                    )
+                    else "Keep working on the current phase. You need to reach 20% maturity to advance."
+                ),
             },
             "recent_changes": {
-                "maturity_change": (
-                    f"+{round(overall_maturity - 50, 1)}%"
-                    if overall_maturity > 50
-                    else f"{round(overall_maturity - 50, 1)}%"
+                "overall_change": (
+                    f"+{round(overall_project_completion - 5, 1)}%"
+                    if overall_project_completion > 5
+                    else f"{round(overall_project_completion - 5, 1)}%"
                 ),
                 "tests_added": 0,  # Would require historical tracking
                 "issues_resolved": 0,  # Would require issue tracking
             },
             "top_metrics": [
-                {"name": "Code Quality", "score": round(code_quality, 1)},
-                {"name": "Test Coverage", "score": round(test_coverage, 1)},
-                {"name": "Documentation", "score": round(documentation, 1)},
-                {"name": "Overall Maturity", "score": round(overall_maturity, 1)},
+                {"name": "Overall Completion", "score": round(overall_project_completion, 1), "unit": "%"},
+                {"name": "Current Phase Maturity", "score": round(overall_maturity, 1), "unit": "%"},
+                {"name": "Code Quality", "score": round(code_quality, 1), "unit": "%"},
+                {"name": "Test Coverage", "score": round(test_coverage, 1), "unit": "%"},
+                {"name": "Documentation", "score": round(documentation, 1), "unit": "%"},
             ],
             "project_info": {
                 "name": project.name,
@@ -1334,7 +1445,7 @@ async def get_analytics_status(
             "project_name": project.name,
             "health_status": "healthy",
             "health_score": 78,
-            "last_updated": datetime.utcnow().isoformat(),
+            "last_updated": datetime.now(timezone.utc).isoformat(),
             "key_indicators": {
                 "code_quality": {
                     "status": "good",

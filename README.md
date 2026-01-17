@@ -243,20 +243,23 @@ bandit -r socrates_api/ socratic_system/
 
 Socrates is free and open-source. If you find it useful, consider supporting development through GitHub Sponsors:
 
-### GitHub Sponsors
-Become a sponsor to unlock premium features and support active development:
+### 🎁 GitHub Sponsors - Premium Tiers
 
-- **[$5/month Sponsor](https://github.com/sponsors/Nireus79)** → **Pro Tier**
-  - 10 projects
-  - 5 team members
-  - 100GB storage
-  - Priority support
+Become a sponsor to unlock premium features and support active development. **Your sponsorship is automatically applied to your Socrates account!**
 
-- **[$15/month Sponsor](https://github.com/sponsors/Nireus79)** → **Enterprise Tier**
-  - Unlimited projects
-  - Unlimited team members
-  - Unlimited storage
-  - Dedicated support
+| Tier | Price | Features | Link |
+|------|-------|----------|------|
+| **Supporter** | $5/month | 10 projects, 5 team members, 100GB storage | [Sponsor Now](https://github.com/sponsors/Nireus79) |
+| **Contributor** | $15/month | Unlimited projects, unlimited members, unlimited storage | [Sponsor Now](https://github.com/sponsors/Nireus79) |
+| **Custom** | $25+/month | All Enterprise + priority support | [Sponsor Now](https://github.com/sponsors/Nireus79) |
+
+**How It Works:**
+1. Sponsor on [GitHub Sponsors](https://github.com/sponsors/Nireus79)
+2. Your Socrates account is **automatically upgraded** (usually within seconds)
+3. Start using premium features immediately
+4. View payment history and tier details in Socrates Settings
+
+👉 **[Full Sponsorship Guide](SPONSORSHIP.md)** - Learn how to manage your sponsorship and access premium features in Socrates.
 
 ### Other Ways to Support
 - **Star the repository** ⭐
@@ -264,6 +267,7 @@ Become a sponsor to unlock premium features and support active development:
 - **Share feedback** and feature requests
 - **Report bugs** to help us improve
 - **Write documentation** for new features
+- **Spread the word** about Socrates
 
 ---
 
@@ -279,8 +283,10 @@ Become a sponsor to unlock premium features and support active development:
 
 ## Support
 
-- **Bugs & Issues**: [GitHub Issues](https://github.com/your-org/Socrates/issues)
+- **Bugs & Issues**: [GitHub Issues](https://github.com/Nireus79/Socrates/issues)
 - **Documentation**: [Docs Directory](./docs)
+- **Sponsorship**: [Sponsorship Guide](SPONSORSHIP.md)
+- **GitHub Sponsors**: [Become a Sponsor](https://github.com/sponsors/Nireus79)
 - **Email**: support@socrates-ai.dev
 
 ## License

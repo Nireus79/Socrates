@@ -786,7 +786,7 @@ What would be most helpful for you?"""
                 }
 
         # Update context and maturity
-        self._update_project_and_maturity(project, insights, logger)
+        self._update_project_and_maturity(project, insights, logger, current_user)
 
         # Track question effectiveness for learning
         self._track_question_effectiveness(project, insights, user_response, current_user, logger)
@@ -859,7 +859,7 @@ What would be most helpful for you?"""
             return {"has_conflicts": True, "conflicts": conflict_result["conflicts"]}
         return {"has_conflicts": False}
 
-    def _update_project_and_maturity(self, project, insights, logger) -> None:
+    def _update_project_and_maturity(self, project, insights, logger, current_user: str = None) -> None:
         """Update project context and phase maturity"""
         logger.info("Updating project context with insights...")
         self._update_project_context(project, insights)
@@ -870,14 +870,19 @@ What would be most helpful for you?"""
 
         logger.info("Calculating phase maturity...")
         try:
+            request_data = {
+                "action": "update_after_response",
+                "project": project,
+                "insights": insights,
+            }
+            # Pass current_user if available for API key lookup
+            if current_user:
+                request_data["current_user"] = current_user
+
             maturity_result = safe_orchestrator_call(
                 self.orchestrator,
                 "quality_controller",
-                {
-                    "action": "update_after_response",
-                    "project": project,
-                    "insights": insights,
-                },
+                request_data,
                 operation_name="update phase maturity"
             )
 
@@ -1582,7 +1587,11 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
         current_question = request.get("current_question")
         current_user = request.get("current_user")
 
+        logger.debug(f"Generating suggestions for question: {current_question[:50]}..." if current_question else "No question provided")
+        logger.debug(f"Project: {project.name if project else 'None'}, User: {current_user}")
+
         if not project or not current_question:
+            logger.warning("Missing project or current_question for suggestions")
             return {"status": "error", "message": "Project and current_question required"}
 
         try:
@@ -1612,6 +1621,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
             logger.info(f"Generating answer suggestions for {project.phase} phase")
 
             # Call Claude to generate suggestions
+            logger.debug(f"Calling Claude API with auth_method={user_auth_method}, user_id={current_user}")
             response = self.orchestrator.claude_client.generate_response(
                 prompt=suggestions_prompt,
                 max_tokens=800,
@@ -1619,6 +1629,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
                 user_auth_method=user_auth_method,
                 user_id=current_user
             )
+            logger.debug(f"Claude response length: {len(response)} chars")
 
             # Parse suggestions from numbered list
             suggestions = []
@@ -1629,6 +1640,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
                     suggestion = line.split(".", 1)[1].strip() if "." in line else line
                     suggestions.append(suggestion)
 
+            logger.info(f"Successfully generated {len(suggestions)} answer suggestions")
             self.log(f"Generated {len(suggestions)} answer suggestions")
 
             return {
@@ -1643,12 +1655,14 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
             }
 
         except Exception as e:
-            logger.warning(f"Failed to generate answer suggestions: {e}")
-            self.log(f"Failed to generate answer suggestions: {e}", "WARN")
+            error_details = f"{type(e).__name__}: {str(e)}"
+            logger.error(f"Failed to generate answer suggestions: {error_details}")
+            self.log(f"Failed to generate answer suggestions: {error_details}", "ERROR")
 
-            # Return generic suggestions as fallback
+            # Return error status so API can log and track this
             return {
-                "status": "success",
+                "status": "error",
+                "message": f"Suggestion generation failed: {str(e)}",
                 "suggestions": [
                     "Consider the problem from your target audience's perspective",
                     "Think about the technical constraints you mentioned",

@@ -69,6 +69,21 @@ async def add_knowledge_document(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
+        # CHECK STORAGE QUOTA BEFORE ADDING DOCUMENT
+        content_size_bytes = len(request.content.encode("utf-8"))
+        user_object = db.load_user(current_user)
+        if user_object:
+            from socratic_system.subscription.storage import StorageQuotaManager
+            can_upload, error_msg = StorageQuotaManager.can_upload_document(
+                user_object, db, content_size_bytes, testing_mode=False
+            )
+            if not can_upload:
+                logger.warning(f"Storage quota exceeded for user {current_user}: {error_msg}")
+                raise HTTPException(
+                    status_code=status.HTTP_413_PAYLOAD_TOO_LARGE,
+                    detail=error_msg,
+                )
+
         # Create document
         doc_id = f"doc_{int(datetime.now(timezone.utc).timestamp() * 1000)}"
         document = {
@@ -154,6 +169,21 @@ async def add_knowledge(
 
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
+
+        # CHECK STORAGE QUOTA BEFORE ADDING KNOWLEDGE ITEM
+        content_size_bytes = len(content.encode("utf-8"))
+        user_object = db.load_user(current_user)
+        if user_object:
+            from socratic_system.subscription.storage import StorageQuotaManager
+            can_upload, error_msg = StorageQuotaManager.can_upload_document(
+                user_object, db, content_size_bytes, testing_mode=False
+            )
+            if not can_upload:
+                logger.warning(f"Storage quota exceeded for user {current_user}: {error_msg}")
+                raise HTTPException(
+                    status_code=status.HTTP_413_PAYLOAD_TOO_LARGE,
+                    detail=error_msg,
+                )
 
         # Create knowledge item
         knowledge_item = {

@@ -32,7 +32,10 @@ export const Header: React.FC = () => {
               alt="Socrates Logo"
               className="w-8 h-8 object-contain rounded-md"
             />
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Socrates</h1>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Socrates</h1>
+              <p className="text-xs text-gray-600 dark:text-gray-400 italic leading-tight">Ουδέν οίδα, ούτε διδάσκω τι, αλλά διαπορώ μόνον</p>
+            </div>
           </div>
 
           {/* Search Bar - placeholder */}

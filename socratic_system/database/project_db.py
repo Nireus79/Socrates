@@ -233,6 +233,7 @@ class ProjectDatabase:
             self._save_project_team_members(cursor, project, now)
             self._save_project_scores(cursor, project)
             self._save_project_analytics(cursor, project)
+            self._save_categorized_specs(cursor, project)
             conn.commit()
             self.logger.debug(f"Saved project {project.project_id}")
 
@@ -326,6 +327,7 @@ class ProjectDatabase:
         cursor.execute("DELETE FROM team_members WHERE project_id = ?", (project_id,))
         cursor.execute("DELETE FROM phase_maturity_scores WHERE project_id = ?", (project_id,))
         cursor.execute("DELETE FROM category_scores WHERE project_id = ?", (project_id,))
+        cursor.execute("DELETE FROM categorized_specs WHERE project_id = ?", (project_id,))
 
     def _save_project_lists(self, cursor, project: ProjectContext) -> None:
         """Save project requirements, tech stack, and constraints"""
@@ -412,6 +414,49 @@ class ProjectDatabase:
             ),
         )
 
+    def _save_categorized_specs(self, cursor: sqlite3.Cursor, project: ProjectContext) -> None:
+        """Save categorized specifications for a project"""
+        if not project.categorized_specs:
+            return
+
+        try:
+            # Track overall sort order
+            global_order = 0
+
+            # Save specs phase by phase
+            for phase, specs_list in project.categorized_specs.items():
+                if not isinstance(specs_list, list):
+                    self.logger.warning(f"Invalid specs format for phase {phase}")
+                    continue
+
+                for spec in specs_list:
+                    if not isinstance(spec, dict):
+                        continue
+
+                    try:
+                        spec_json = json.dumps(spec)
+                        category = spec.get("category", "uncategorized")
+
+                        cursor.execute(
+                            """
+                            INSERT INTO categorized_specs
+                            (project_id, phase, category, spec_data, sort_order)
+                            VALUES (?, ?, ?, ?, ?)
+                            """,
+                            (project.project_id, phase, category, spec_json, global_order)
+                        )
+                        global_order += 1
+
+                    except (json.JSONEncodeError, TypeError) as e:
+                        self.logger.error(f"Failed to serialize spec: {e}")
+                        continue
+
+            self.logger.debug(f"Saved {global_order} specs for {project.project_id}")
+
+        except Exception as e:
+            self.logger.error(f"Error saving specs: {e}")
+            raise
+
     def load_project(self, project_id: str) -> ProjectContext | None:
         """
         Load a project by ID
@@ -443,6 +488,7 @@ class ProjectDatabase:
             team_members = self._load_team_members(cursor, project_id)
             phase_maturity = self._load_phase_maturity(cursor, project_id)
             category_scores = self._load_category_scores(cursor, project_id)
+            categorized_specs = self._load_categorized_specs(cursor, project_id)
             analytics = self._load_analytics_metrics(cursor, project_id)
             conversation_history = self.get_conversation_history(project_id)
             pending_questions = self._load_pending_questions(project_id)
@@ -489,6 +535,7 @@ class ProjectDatabase:
                 team_members=team_members,
                 phase_maturity_scores=phase_maturity,
                 category_scores=category_scores,
+                categorized_specs=categorized_specs,
                 analytics_metrics=analytics,
                 conversation_history=conversation_history,
                 pending_questions=pending_questions,
@@ -2670,6 +2717,48 @@ class ProjectDatabase:
             "strong_categories": json.loads(row[4]) if row[4] else [],
         }
 
+    def _load_categorized_specs(
+        self, cursor: sqlite3.Cursor, project_id: str
+    ) -> dict[str, list[dict]] | None:
+        """Load categorized specifications for a project"""
+        try:
+            cursor.execute(
+                """
+                SELECT phase, spec_data
+                FROM categorized_specs
+                WHERE project_id = ?
+                ORDER BY sort_order
+                """,
+                (project_id,)
+            )
+
+            rows = cursor.fetchall()
+            if not rows:
+                return None
+
+            specs_by_phase = {}
+
+            for phase, spec_json in rows:
+                if phase not in specs_by_phase:
+                    specs_by_phase[phase] = []
+
+                try:
+                    spec = json.loads(spec_json)
+                    specs_by_phase[phase].append(spec)
+                except json.JSONDecodeError as e:
+                    self.logger.warning(f"Failed to decode spec: {e}")
+                    continue
+
+            if specs_by_phase:
+                self.logger.debug(f"Loaded {sum(len(v) for v in specs_by_phase.values())} specs")
+                return specs_by_phase
+
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Error loading specs: {e}")
+            return None
+
     # ========================================================================
     # BACKWARD COMPATIBILITY - Stub methods pointing to V2 implementations
     # ========================================================================
@@ -3503,5 +3592,346 @@ class ProjectDatabase:
             conn.rollback()
             self.logger.error(f"Error cancelling sponsorship for {username}: {e}")
             return False
+        finally:
+            conn.close()
+
+    def get_all_sponsorships(self) -> list:
+        """Get all sponsorships (admin/dashboard use)"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT * FROM sponsorships
+                ORDER BY sponsored_at DESC
+            """
+            )
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+        except Exception as e:
+            self.logger.error(f"Error getting all sponsorships: {e}")
+            return []
+        finally:
+            conn.close()
+
+    # ========================================================================
+    # Payment History & Tracking Methods
+    # ========================================================================
+
+    def record_payment(self, payment_data: dict) -> int:
+        """Record a sponsorship payment"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                INSERT INTO sponsorship_payments (
+                    sponsorship_id, username, amount, currency, payment_status,
+                    payment_date, payment_id, payment_method_id, reference_id, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    payment_data.get("sponsorship_id"),
+                    payment_data.get("username"),
+                    payment_data.get("amount", 0),
+                    payment_data.get("currency", "USD"),
+                    payment_data.get("payment_status", "pending"),
+                    payment_data.get("payment_date"),
+                    payment_data.get("payment_id", ""),
+                    payment_data.get("payment_method_id"),
+                    payment_data.get("reference_id", ""),
+                    payment_data.get("notes", ""),
+                ),
+            )
+            conn.commit()
+            return cursor.lastrowid
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error recording payment: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def get_payment_history(self, username: str, limit: int = 50) -> list:
+        """Get payment history for a user"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT * FROM sponsorship_payments
+                WHERE username = ?
+                ORDER BY payment_date DESC
+                LIMIT ?
+            """,
+                (username, limit),
+            )
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+        except Exception as e:
+            self.logger.error(f"Error getting payment history for {username}: {e}")
+            return []
+        finally:
+            conn.close()
+
+    # ========================================================================
+    # Refund Tracking Methods
+    # ========================================================================
+
+    def record_refund(self, refund_data: dict) -> int:
+        """Record a sponsorship refund"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                INSERT INTO sponsorship_refunds (
+                    payment_id, sponsorship_id, username, refund_amount,
+                    refund_status, refund_reason, refund_date, processed_date,
+                    refund_id, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    refund_data.get("payment_id"),
+                    refund_data.get("sponsorship_id"),
+                    refund_data.get("username"),
+                    refund_data.get("refund_amount", 0),
+                    refund_data.get("refund_status", "pending"),
+                    refund_data.get("refund_reason", "user_request"),
+                    refund_data.get("refund_date"),
+                    refund_data.get("processed_date"),
+                    refund_data.get("refund_id", ""),
+                    refund_data.get("notes", ""),
+                ),
+            )
+            conn.commit()
+            return cursor.lastrowid
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error recording refund: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def get_refund_history(self, username: str, limit: int = 50) -> list:
+        """Get refund history for a user"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT * FROM sponsorship_refunds
+                WHERE username = ?
+                ORDER BY refund_date DESC
+                LIMIT ?
+            """,
+                (username, limit),
+            )
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+        except Exception as e:
+            self.logger.error(f"Error getting refund history for {username}: {e}")
+            return []
+        finally:
+            conn.close()
+
+    # ========================================================================
+    # Payment Method Tracking Methods
+    # ========================================================================
+
+    def add_payment_method(self, method_data: dict) -> int:
+        """Add a payment method for a sponsorship"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                INSERT INTO sponsorship_payment_methods (
+                    sponsorship_id, username, payment_method_type, last_four,
+                    card_brand, expiry_date, is_default, is_expired, added_at, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    method_data.get("sponsorship_id"),
+                    method_data.get("username"),
+                    method_data.get("payment_method_type"),
+                    method_data.get("last_four", ""),
+                    method_data.get("card_brand", ""),
+                    method_data.get("expiry_date", ""),
+                    method_data.get("is_default", 0),
+                    method_data.get("is_expired", 0),
+                    method_data.get("added_at"),
+                    method_data.get("notes", ""),
+                ),
+            )
+            conn.commit()
+            return cursor.lastrowid
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error adding payment method: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def get_payment_methods(self, sponsorship_id: int) -> list:
+        """Get all payment methods for a sponsorship"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT * FROM sponsorship_payment_methods
+                WHERE sponsorship_id = ?
+                ORDER BY is_default DESC, added_at DESC
+            """,
+                (sponsorship_id,),
+            )
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+        except Exception as e:
+            self.logger.error(f"Error getting payment methods: {e}")
+            return []
+        finally:
+            conn.close()
+
+    # ========================================================================
+    # Tier Change Tracking Methods
+    # ========================================================================
+
+    def record_tier_change(self, change_data: dict) -> int:
+        """Record a sponsorship tier change (upgrade, downgrade, renewal, etc.)"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                INSERT INTO sponsorship_tier_changes (
+                    sponsorship_id, username, change_type, old_tier, new_tier,
+                    old_amount, new_amount, change_reason, change_date,
+                    effective_date, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    change_data.get("sponsorship_id"),
+                    change_data.get("username"),
+                    change_data.get("change_type"),
+                    change_data.get("old_tier"),
+                    change_data.get("new_tier"),
+                    change_data.get("old_amount"),
+                    change_data.get("new_amount"),
+                    change_data.get("change_reason", ""),
+                    change_data.get("change_date"),
+                    change_data.get("effective_date"),
+                    change_data.get("notes", ""),
+                ),
+            )
+            conn.commit()
+            return cursor.lastrowid
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error recording tier change: {e}")
+            raise
+        finally:
+            conn.close()
+
+    def get_tier_change_history(self, username: str, limit: int = 50) -> list:
+        """Get tier change history for a user"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT * FROM sponsorship_tier_changes
+                WHERE username = ?
+                ORDER BY change_date DESC
+                LIMIT ?
+            """,
+                (username, limit),
+            )
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+        except Exception as e:
+            self.logger.error(f"Error getting tier change history for {username}: {e}")
+            return []
+        finally:
+            conn.close()
+
+    # ========================================================================
+    # Sponsorship Analytics Methods
+    # ========================================================================
+
+    def get_sponsorship_analytics(self, username: str) -> dict:
+        """Get comprehensive sponsorship analytics for a user"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            # Get current sponsorship
+            cursor.execute("SELECT * FROM sponsorships WHERE username = ? AND sponsorship_status = 'active'", (username,))
+            sponsorship = dict(cursor.fetchone() or {})
+
+            # Get payment stats
+            cursor.execute(
+                """
+                SELECT
+                    COUNT(*) as total_payments,
+                    SUM(amount) as total_paid,
+                    SUM(CASE WHEN payment_status = 'succeeded' THEN amount ELSE 0 END) as total_successful,
+                    SUM(CASE WHEN payment_status = 'failed' THEN 1 ELSE 0 END) as failed_payments
+                FROM sponsorship_payments WHERE username = ?
+            """,
+                (username,),
+            )
+            payment_stats = dict(cursor.fetchone() or {})
+
+            # Get refund stats
+            cursor.execute(
+                """
+                SELECT
+                    COUNT(*) as total_refunds,
+                    SUM(refund_amount) as total_refunded
+                FROM sponsorship_refunds WHERE username = ? AND refund_status = 'completed'
+            """,
+                (username,),
+            )
+            refund_stats = dict(cursor.fetchone() or {})
+
+            # Get tier changes
+            cursor.execute(
+                """
+                SELECT change_type, COUNT(*) as count
+                FROM sponsorship_tier_changes WHERE username = ?
+                GROUP BY change_type
+            """,
+                (username,),
+            )
+            tier_changes = {row["change_type"]: row["count"] for row in cursor.fetchall()}
+
+            return {
+                "sponsorship": sponsorship,
+                "payments": payment_stats,
+                "refunds": refund_stats,
+                "tier_changes": tier_changes,
+                "net_revenue": (payment_stats.get("total_successful", 0) or 0) - (refund_stats.get("total_refunded", 0) or 0),
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error getting sponsorship analytics for {username}: {e}")
+            return {}
         finally:
             conn.close()

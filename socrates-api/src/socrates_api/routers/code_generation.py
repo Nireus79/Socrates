@@ -9,6 +9,7 @@ Provides:
 """
 
 import logging
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -229,7 +230,6 @@ async def generate_code(
                 token_usage = 0
 
             # Record event
-            from datetime import datetime
             import os
             from pathlib import Path
 
@@ -266,7 +266,7 @@ async def generate_code(
                 {
                     "id": generation_id,
                     "code": generated_code,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "language": language,
                     "explanation": explanation,
                     "lines": len(generated_code.splitlines()),
@@ -297,7 +297,7 @@ async def generate_code(
                     language=language,
                     token_usage=token_usage,
                     generation_id=generation_id,
-                    created_at=datetime.utcnow().isoformat(),
+                    created_at=datetime.now(timezone.utc).isoformat(),
                 ).dict(),
             )
 
@@ -314,7 +314,7 @@ async def generate_code(
                     language=language,
                     token_usage=0,
                     generation_id=f"gen_{int(__import__('time').time() * 1000)}",
-                    created_at=__import__("datetime").datetime.utcnow().isoformat(),
+                    created_at=datetime.now(timezone.utc).isoformat(),
                 ).dict(),
             )
 
@@ -707,7 +707,6 @@ async def refactor_code(
         try:
             from socrates_api.main import get_orchestrator
             from socrates_api.routers.events import record_event
-            from datetime import datetime
             import os
             from pathlib import Path
 
@@ -773,7 +772,7 @@ async def refactor_code(
                 {
                     "id": generation_id,
                     "code": refactored_code,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "language": language,
                     "explanation": explanation,
                     "refactor_type": refactor_type,
@@ -881,8 +880,6 @@ async def generate_documentation(
             )
 
         # Generate documentation
-        from datetime import datetime
-
         # Build documentation from project metadata
         doc_sections = []
 
@@ -957,7 +954,7 @@ async def generate_documentation(
             {
                 "id": generation_id,
                 "format": format,
-                "generated_at": datetime.utcnow().isoformat(),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
                 "length": len(output),
             }
         )

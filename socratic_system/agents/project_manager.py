@@ -98,8 +98,10 @@ class ProjectManagerAgent(Agent):
             )
             self.orchestrator.database.save_user(user)
 
-        active_projects = self.orchestrator.database.get_user_projects(owner)
-        active_count = len([p for p in active_projects if p.status != "archived"])
+        # Count only OWNED projects for tier limit, not collaborated projects
+        all_projects = self.orchestrator.database.get_user_projects(owner)
+        owned_projects = [p for p in all_projects if p.owner == owner and not p.is_archived]
+        active_count = len(owned_projects)
 
         can_create, error_message = SubscriptionChecker.check_project_limit(user, active_count)
         if not can_create:
@@ -387,8 +389,10 @@ class ProjectManagerAgent(Agent):
         """Validate user subscription allows project creation"""
         from socratic_system.subscription.checker import SubscriptionChecker
 
-        active_projects = self.orchestrator.database.get_user_projects(owner)
-        active_count = len([p for p in active_projects if p.status != "archived"])
+        # Count only OWNED projects for tier limit, not collaborated projects
+        all_projects = self.orchestrator.database.get_user_projects(owner)
+        owned_projects = [p for p in all_projects if p.owner == owner and not p.is_archived]
+        active_count = len(owned_projects)
         can_create, error_message = SubscriptionChecker.check_project_limit(user, active_count)
         if not can_create:
             return {"status": "error", "message": error_message}

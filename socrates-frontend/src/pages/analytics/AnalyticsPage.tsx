@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { Download, TrendingUp, BarChart3, PieChart } from 'lucide-react';
+import { Download, TrendingUp, BarChart3, PieChart, ChevronDown } from 'lucide-react';
 import { useProjectStore } from '../../stores';
 import { apiClient } from '../../api/client';
 import { MainLayout, PageHeader } from '../../components/layout';
@@ -33,6 +33,8 @@ export const AnalyticsPage: React.FC = () => {
   const [statusData, setStatusData] = React.useState<any>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   const [activeTab, setActiveTab] = React.useState('summary');
 
@@ -77,16 +79,31 @@ export const AnalyticsPage: React.FC = () => {
     loadAnalytics();
   }, [selectedProjectId]);
 
+  // Handle clicking outside dropdown
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isDropdownOpen]);
+
   // Handle project selection from dropdown
   const handleProjectChange = (newProjectId: string) => {
     setSelectedProjectId(newProjectId);
+    setIsDropdownOpen(false);
   };
 
   // Get the selected project object for display
   const selectedProject = projects.find(p => p.project_id === selectedProjectId) || currentProject;
 
   // Handle export analytics
-  const handleExportAnalytics = async (format: 'csv' | 'json' | 'pdf' = 'json') => {
+  const handleExportAnalytics = async (format: 'csv' | 'pdf' = 'pdf') => {
     if (!selectedProjectId) return;
     try {
       const result = await apiClient.post(`/analytics/export`, {
@@ -157,7 +174,7 @@ export const AnalyticsPage: React.FC = () => {
     },
     {
       label: 'Maturity Score',
-      value: `${(analyticsData.maturity_score ?? 0).toFixed(2)}`,
+      value: `${(analyticsData.maturity_score ?? 0).toFixed(2)}%`,
       change: 0,
       period: 'overall',
     },
@@ -213,12 +230,12 @@ export const AnalyticsPage: React.FC = () => {
               ]}
             />
             <Button
-              onClick={() => handleExportAnalytics('json')}
+              onClick={() => handleExportAnalytics('pdf')}
               variant="outline"
               className="flex items-center gap-2"
             >
               <Download size={18} />
-              Export Data
+              Export Data (PDF)
             </Button>
           </div>
 
@@ -228,22 +245,74 @@ export const AnalyticsPage: React.FC = () => {
               <label className="text-sm font-semibold text-gray-700">
                 Select Project:
               </label>
-              <select
-                value={selectedProjectId}
-                onChange={(e) => handleProjectChange(e.target.value)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              >
-                <option value="">-- Choose a Project --</option>
-                {projects.length > 0 ? (
-                  projects.map((project) => (
-                    <option key={project.project_id} value={project.project_id}>
-                      {project.name} {selectedProjectId === project.project_id ? '(Current)' : ''}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>No projects available</option>
+
+              {/* Custom Styled Dropdown */}
+              <div ref={dropdownRef} className="flex-1 relative">
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-full px-4 py-2 border border-indigo-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-indigo-100 text-gray-900 text-left flex items-center justify-between hover:bg-indigo-200 transition-colors"
+                >
+                  <span>{selectedProject?.name || '-- Choose a Project --'}</span>
+                  <ChevronDown
+                    size={18}
+                    className={`text-gray-600 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+
+                {/* Dropdown Menu */}
+                {isDropdownOpen && (
+                  <div
+                    className="absolute top-full left-0 right-0 mt-1 rounded-lg shadow-lg z-50"
+                    style={{
+                      backgroundColor: '#c7d2fe',
+                      border: '2px solid #a5b4fc',
+                    }}
+                  >
+                    <div className="py-1 max-h-64 overflow-y-auto">
+                      <button
+                        onClick={() => handleProjectChange('')}
+                        className="w-full px-4 py-2 text-sm text-gray-900 text-left transition-colors"
+                        style={{
+                          backgroundColor: '#c7d2fe',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a5b4fc'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#c7d2fe'}
+                      >
+                        -- Choose a Project --
+                      </button>
+                      {projects.length > 0 ? (
+                        projects.map((project) => (
+                          <button
+                            key={project.project_id}
+                            onClick={() => handleProjectChange(project.project_id)}
+                            className="w-full px-4 py-2 text-sm text-left transition-colors"
+                            style={{
+                              backgroundColor: selectedProjectId === project.project_id ? '#3b82f6' : '#c7d2fe',
+                              color: selectedProjectId === project.project_id ? 'white' : '#111827',
+                              fontWeight: selectedProjectId === project.project_id ? 'bold' : 'normal',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (selectedProjectId !== project.project_id) {
+                                e.currentTarget.style.backgroundColor = '#a5b4fc';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (selectedProjectId !== project.project_id) {
+                                e.currentTarget.style.backgroundColor = '#c7d2fe';
+                              }
+                            }}
+                          >
+                            {project.name} {selectedProjectId === project.project_id ? '✓' : ''}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-4 py-2 text-sm text-gray-700">No projects available</div>
+                      )}
+                    </div>
+                  </div>
                 )}
-              </select>
+              </div>
+
               {selectedProject && (
                 <div className="text-sm text-gray-600 whitespace-nowrap">
                   Phase: <span className="font-semibold capitalize">{selectedProject.phase || 'N/A'}</span>
@@ -293,7 +362,7 @@ export const AnalyticsPage: React.FC = () => {
                             <div key={phase.name}>
                               <div className="flex justify-between text-sm mb-1">
                                 <span className="font-medium">{phase.name}</span>
-                                <span className="text-gray-600">{(phase.maturity ?? 0).toFixed(2)}</span>
+                                <span className="text-gray-600">{(phase.maturity ?? 0).toFixed(2)}%</span>
                               </div>
                               <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div

@@ -164,6 +164,20 @@ export const analysisAPI = {
   },
 
   /**
+   * Assess code maturity for a project
+   */
+  async assessMaturity(projectId: string, phase?: string): Promise<any> {
+    const params = new URLSearchParams();
+    if (phase) {
+      params.append('phase', phase);
+    }
+    return apiClient.post<any>(
+      `/analysis/${projectId}/maturity?${params.toString()}`,
+      {}
+    );
+  },
+
+  /**
    * Perform code review
    */
   async reviewCode(

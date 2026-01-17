@@ -1301,7 +1301,7 @@ async def websocket_collaboration_endpoint(
                             "user_id": user_id,
                             "activity_type": activity_type,
                             "activity_data": activity_data,
-                            "created_at": datetime.utcnow().isoformat(),
+                            "created_at": datetime.now(timezone.utc).isoformat(),
                         }
                         db.save_activity(activity)
                         logger.debug(f"Recorded activity: {activity_type}")

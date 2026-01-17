@@ -69,6 +69,9 @@ class QualityControllerAgent(Agent):
         if action == "calculate_maturity":
             logging.debug("Routing to _calculate_phase_maturity")
             return self._calculate_phase_maturity(request)
+        elif action == "get_phase_maturity":
+            logging.debug("Routing to _calculate_phase_maturity (get_phase_maturity)")
+            return self._calculate_phase_maturity(request)
         elif action == "get_readiness":
             logging.debug("Routing to _get_phase_readiness")
             return self._get_phase_readiness(request)
@@ -105,8 +108,8 @@ class QualityControllerAgent(Agent):
         """
         Calculate maturity for current phase.
 
-        Delegates to MaturityCalculator for pure calculation logic.
-        Handles event emission and project context updates.
+        Returns the SAVED maturity score (from incremental scoring), not recalculated from specs.
+        This preserves the incremental scoring logic used during Q&A sessions.
         """
         logging.debug("_calculate_phase_maturity called")
         project = request.get("project")
@@ -122,28 +125,31 @@ class QualityControllerAgent(Agent):
                 )
                 self.calculator.set_project_type(project.project_type)
 
-            # Get specs for this phase
+            # Get the SAVED maturity score (from incremental scoring, NOT recalculation)
+            saved_score = project.phase_maturity_scores.get(phase, 0.0)
+            logging.debug(f"Using saved maturity score for phase {phase}: {saved_score:.1f}%")
+
+            # Get specs for category breakdown (analysis only, not for score)
             phase_specs = project.categorized_specs.get(phase, [])
             logging.debug(f"Found {len(phase_specs)} specs for phase {phase}")
 
-            # Use calculator to compute maturity
-            logging.debug("Delegating to MaturityCalculator.calculate_phase_maturity")
-            maturity = self.calculator.calculate_phase_maturity(phase_specs, phase)
+            # Use calculator to get category breakdown (for analysis/warnings only)
+            logging.debug("Calculating category breakdown from specs")
+            spec_maturity = self.calculator.calculate_phase_maturity(phase_specs, phase)
 
-            # Update project's maturity scores
-            project.phase_maturity_scores[phase] = maturity.overall_score
+            # Create a maturity object with the SAVED score but spec analysis
+            # This preserves incremental scoring while providing category details
+            maturity = spec_maturity
+            maturity.overall_score = saved_score  # Use saved score, not recalculated
+
+            # Update category scores from analysis (for reference only)
             project.category_scores[phase] = {
                 cat: asdict(score) for cat, score in maturity.category_scores.items()
             }
 
-            # Calculate and update overall maturity
-            project.overall_maturity = project._calculate_overall_maturity()
-
-            # Auto-update progress to match overall maturity
-            project.progress = int(project.overall_maturity)
-
+            # Overall maturity stays as-is (already calculated in _update_maturity_after_response)
             logging.info(
-                f"Maturity calculated: {phase} = {maturity.overall_score:.1f}%, overall = {project.overall_maturity:.1f}%, progress = {project.progress}%"
+                f"Maturity for phase {phase}: {saved_score:.1f}% (saved), overall = {project.overall_maturity:.1f}%"
             )
 
             # Emit maturity updated event
@@ -152,14 +158,14 @@ class QualityControllerAgent(Agent):
                 EventType.PHASE_MATURITY_UPDATED,
                 {
                     "phase": phase,
-                    "score": maturity.overall_score,
-                    "ready": maturity.is_ready_to_advance,
-                    "complete": self.calculator.is_phase_complete(maturity),
+                    "score": saved_score,
+                    "ready": saved_score >= self.READY_THRESHOLD,
+                    "complete": saved_score >= self.COMPLETE_THRESHOLD,
                 },
             )
 
             # If phase is at 100%, notify user
-            if self.calculator.is_phase_complete(maturity):
+            if saved_score >= self.COMPLETE_THRESHOLD:
                 logging.info(f"Phase {phase} reached 100% completion!")
                 self.emit_event(
                     EventType.PHASE_READY_TO_ADVANCE,
@@ -190,15 +196,16 @@ class QualityControllerAgent(Agent):
         logging.debug("_update_maturity_after_response called")
         project = request.get("project")
         insights = request.get("insights")
+        current_user = request.get("current_user")
 
-        logging.debug(f"Processing response with {len(insights)} insight fields")
+        logging.debug(f"Processing response with {len(insights)} insight fields for user {current_user}")
 
         # Capture score BEFORE adding new specs
         score_before = project.phase_maturity_scores.get(project.phase, 0.0)
 
-        # Use calculator to categorize the new insights
+        # Use calculator to categorize the new insights (pass user_id for API key lookup)
         logging.debug("Categorizing insights")
-        categorized = self.calculator.categorize_insights(insights, project.phase)
+        categorized = self.calculator.categorize_insights(insights, project.phase, user_id=current_user)
         logging.info(f"Insights categorized into {len(categorized)} specs")
 
         if not categorized:

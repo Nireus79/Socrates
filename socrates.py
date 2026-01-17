@@ -17,12 +17,14 @@ As a CLI Application:
     python socrates.py --version       # Show version
     python socrates.py --help          # Show help
 """
-
+# /subscription testing-mode on/off
 import argparse
 import os
 import socket
+import subprocess
 import sys
 from pathlib import Path
+from typing import Optional
 
 from socratic_system.config import SocratesConfig
 from socratic_system.orchestration import AgentOrchestrator
@@ -196,7 +198,7 @@ def start_full_stack() -> None:
     # Store process references for cleanup
     processes = []
     api_ready = threading.Event()
-    api_process = None
+    api_process: Optional[subprocess.Popen] = None
     browser_opened = threading.Event()
 
     def start_api_server_process():

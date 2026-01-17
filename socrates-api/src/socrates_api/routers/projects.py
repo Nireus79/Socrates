@@ -191,9 +191,11 @@ async def create_project(
             # If testing mode is enabled in database, bypass subscription checks
             testing_mode_enabled = getattr(user_object, "testing_mode", False) if user_object else False
             if not testing_mode_enabled:
-                active_projects = db.get_user_projects(current_user)
+                # Count only OWNED projects for tier limit, not collaborated projects
+                all_projects = db.get_user_projects(current_user)
+                owned_projects = [p for p in all_projects if p.owner == current_user]
                 can_create, error_msg = SubscriptionChecker.can_create_projects(
-                    subscription_tier, len(active_projects)
+                    subscription_tier, len(owned_projects)
                 )
                 if not can_create:
                     logger.warning(f"User {current_user} exceeded project limit: {error_msg}")
@@ -280,10 +282,11 @@ async def create_project(
                     detail="Active subscription required to create projects",
                 )
 
-            # Check project limit for subscription tier
-            active_projects = db.get_user_projects(current_user)
+            # Check project limit for subscription tier (count only OWNED projects)
+            all_projects = db.get_user_projects(current_user)
+            owned_projects = [p for p in all_projects if p.owner == current_user]
             can_create, error_msg = SubscriptionChecker.can_create_projects(
-                user_object.subscription_tier, len(active_projects)
+                user_object.subscription_tier, len(owned_projects)
             )
             if not can_create:
                 logger.warning(f"User {current_user} exceeded project limit: {error_msg}")
