@@ -93,8 +93,21 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    const response = await logout();
+
+    // Display the logout message (contains Greek phrase)
+    if (response?.message) {
+      console.log('Logout message:', response.message);
+      // Log the Greek phrase for the user's appreciation
+      const messageLines = response.message.split('\n');
+      const greekPhrase = messageLines.slice(2).join('\n');
+      if (greekPhrase) {
+        console.log('Socrates\' final words:', greekPhrase);
+      }
+    }
+
+    // Redirect to login
     window.location.href = '/auth/login';
   };
 

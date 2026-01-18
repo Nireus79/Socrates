@@ -145,7 +145,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
   logout: async () => {
     try {
       // Call logout endpoint
-      await axios.post(`${API_URL}/auth/logout`);
+      const response = await axios.post(`${API_URL}/auth/logout`);
+      // Log the logout message (may contain the Greek phrase)
+      if (response.data?.message) {
+        console.log('Logout message:', response.data.message);
+      }
+      return response.data;
     } catch (err) {
       // Even if logout fails, clear local state
       console.warn('Logout API call failed:', err);

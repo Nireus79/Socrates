@@ -21,7 +21,7 @@ Complete guide to finding documentation for Socrates features and functionality.
 
 ### CLI & Local Development
 
-- **[Local Development](LOCAL_DEVELOPMENT.md)** - Setting up dev environment
+- **[Development Setup](DEVELOPMENT_SETUP.md)** - Setting up dev environment
 - **[Configuration](CONFIGURATION.md)** - Environment variables and settings
 
 ---
@@ -163,13 +163,42 @@ POST /subscription/testing-mode            - Enable/disable testing mode
 
 ### Docs Directory (`docs/`)
 ```
-├── INDEX.md                      - This file
-├── SPONSORSHIP_USER_GUIDE.md     - Quick user reference
-├── TIERS_AND_SUBSCRIPTIONS.md    - Detailed tier information
-├── SPONSORSHIP_SETUP.md          - Server setup
-├── API_REFERENCE.md              - API documentation
-├── LOCAL_DEVELOPMENT.md          - Dev environment setup
-└── CONFIGURATION.md              - Configuration guide
+├── INDEX.md                              - This file (navigation hub)
+│
+├─ Getting Started
+│  ├── README.md                          - Project overview
+│  ├── INSTALLATION.md                    - Installation for all platforms
+│  ├── WINDOWS_SETUP_GUIDE.md             - Windows exe setup
+│  ├── v1.3.0_RELEASE_NOTES.md            - What's new in v1.3.0
+│  └── GUIDES_BY_ROLE.md                  - Getting started by user type
+│
+├─ User Guides
+│  ├── USER_GUIDE.md                      - Complete user tutorial
+│  ├── PROJECT_MAINTENANCE.md             - Project management and cleanup
+│  ├── CONFIGURATION.md                   - Configuration reference
+│  ├── TROUBLESHOOTING.md                 - Common issues and solutions
+│  └── FAQ_BY_SCENARIO.md                 - FAQ organized by use case
+│
+├─ Developer & Advanced
+│  ├── DEVELOPER_GUIDE.md                 - Development environment setup
+│  ├── ARCHITECTURE.md                    - Technical deep-dive
+│  ├── API_REFERENCE.md                   - Complete API documentation
+│  ├── INTEGRATIONS.md                    - Integration guide
+│  └── UNINSTALL_AND_RECOVERY.md          - Uninstall and disaster recovery
+│
+├─ Architecture Decision Records (adr/)
+│  ├── ADR-001-MULTI_AGENT_ARCHITECTURE.md      - Why multi-agent design
+│  ├── ADR-002-VECTOR_DATABASE_CHROMADB.md      - Why ChromaDB
+│  ├── ADR-003-EVENT_DRIVEN_COMMUNICATION.md    - Why event-driven
+│  └── ADR-004-FASTAPI_BACKEND.md               - Why FastAPI
+│
+├─ Sponsorship & Business
+│  ├── SPONSORSHIP_USER_GUIDE.md          - Quick sponsorship reference
+│  ├── TIERS_AND_SUBSCRIPTIONS.md         - Detailed tier information
+│  └── SPONSORSHIP_SETUP.md               - Admin webhook configuration
+│
+└─ Role-Based Access Control (rbac/)
+   └── (RBAC documentation)
 ```
 
 ---
@@ -209,11 +238,45 @@ POST /subscription/testing-mode            - Enable/disable testing mode
 → **[setup_github_sponsors_webhook.py](../setup_github_sponsors_webhook.py)** - Webhook registration script
 
 ### I'm developing a feature
-→ **[CONTRIBUTING.md](../CONTRIBUTING.md)** - Code standards and setup
+→ **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** - Development environment setup
+→ **[ARCHITECTURE.md](ARCHITECTURE.md)** - System design and ADRs
 → **[API_REFERENCE.md](API_REFERENCE.md)** - API documentation
-→ **[LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md)** - Dev environment
+→ **[CONTRIBUTING.md](../CONTRIBUTING.md)** - Code standards
+
+### I need to choose the right user guide
+→ **[GUIDES_BY_ROLE.md](GUIDES_BY_ROLE.md)** - Find guide for your role
+
+### I want to understand why technical decisions were made
+→ **[adr/ADR-001-MULTI_AGENT_ARCHITECTURE.md](adr/ADR-001-MULTI_AGENT_ARCHITECTURE.md)**
+→ **[adr/ADR-002-VECTOR_DATABASE_CHROMADB.md](adr/ADR-002-VECTOR_DATABASE_CHROMADB.md)**
+→ **[adr/ADR-003-EVENT_DRIVEN_COMMUNICATION.md](adr/ADR-003-EVENT_DRIVEN_COMMUNICATION.md)**
+→ **[adr/ADR-004-FASTAPI_BACKEND.md](adr/ADR-004-FASTAPI_BACKEND.md)**
+
+### I want to integrate Socrates with external systems
+→ **[INTEGRATIONS.md](INTEGRATIONS.md)** - Complete integration guide
+→ **[API_REFERENCE.md](API_REFERENCE.md)** - API endpoints
+
+### I need to uninstall or recover data
+→ **[UNINSTALL_AND_RECOVERY.md](UNINSTALL_AND_RECOVERY.md)** - Complete guide
+→ **[PROJECT_MAINTENANCE.md](PROJECT_MAINTENANCE.md)** - Backup procedures
+
+### I want to manage my projects better
+→ **[PROJECT_MAINTENANCE.md](PROJECT_MAINTENANCE.md)** - Archive, cleanup, backup
+
+### I'm looking for answers to common questions
+→ **[FAQ_BY_SCENARIO.md](FAQ_BY_SCENARIO.md)** - Organized by use case
+→ **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common problems
+
+### I just upgraded to v1.3.0 - what's new?
+→ **[v1.3.0_RELEASE_NOTES.md](v1.3.0_RELEASE_NOTES.md)** - Complete release notes
+→ **[README.md](README.md)** - Updated features section
+
+### I'm on Windows and need setup help
+→ **[WINDOWS_SETUP_GUIDE.md](WINDOWS_SETUP_GUIDE.md)** - Complete Windows guide
+→ **[INSTALLATION.md](INSTALLATION.md)** - All platforms
 
 ### I found a bug
+→ **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Possible solutions
 → **[CONTRIBUTING.md](../CONTRIBUTING.md)** - "Bug Reports" section
 → **[GitHub Issues](https://github.com/Nireus79/Socrates/issues)** - Report here
 
@@ -262,9 +325,9 @@ POST /subscription/testing-mode            - Enable/disable testing mode
 
 ## Version Info
 
-- **Last Updated**: January 2024
-- **Socrates Version**: 1.2.0+
-- **Status**: Complete documentation for v1.2.0 sponsorship integration
+- **Last Updated**: January 2026
+- **Socrates Version**: 1.3.0
+- **Status**: Complete and current documentation for v1.3.0
 
 ---
 

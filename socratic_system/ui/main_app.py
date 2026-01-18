@@ -422,7 +422,7 @@ class SocraticRAGSystem:
         print(f"{Fore.CYAN}{Style.BRIGHT}")
         print("╔═══════════════════════════════════════════════╗")
         print("║             Socrates RAG System               ║")
-        print("║Ουδέν οίδα, ούτε διδάσκω τι, αλλά διαπορώ μόνον║")
+        print("║Οὐδὲν οἶδα, οὔτε διδάσκω τι, ἀλλὰ διαπορῶ μόνον║")
         print("╚═══════════════════════════════════════════════╝")
         print(f"{Style.RESET_ALL}")
 
@@ -492,7 +492,7 @@ class SocraticRAGSystem:
 
             elif choice == "3" or choice == "/exit":
                 print(f"\n{Fore.GREEN}Thank you for using Socrates AI")
-                print("..τω Ασκληπιώ οφείλομεν αλετρυόνα, απόδοτε και μη αμελήσετε..\n")
+                print("..τῷ Ἀσκληπιῷ ὀφείλομεν ἀλεκτρυόνα, ἀπόδοτε καὶ μὴ ἀμελήσετε...\n")
                 return False
 
             else:

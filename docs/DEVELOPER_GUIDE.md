@@ -766,10 +766,10 @@ logger.debug(f"value = {value}")  # Better
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System design
 - [API_REFERENCE.md](API_REFERENCE.md) - API documentation
-- [Code on GitHub](https://github.com/your-org/socrates)
-- [Issues & Discussions](https://github.com/your-org/socrates/issues)
+- [Code on GitHub](https://github.com/Nireus79/Socrates)
+- [Issues & Discussions](https://github.com/Nireus79/Socrates/issues)
 
 ---
 
-**Last Updated**: December 2025
-**Version**: 7.0
+**Last Updated**: January 2026
+**Version**: 1.3.0

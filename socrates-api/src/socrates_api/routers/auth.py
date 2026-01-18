@@ -484,7 +484,7 @@ async def logout(
         return APIResponse(
             success=True,
         status="success",
-            message="Logout successful. All refresh tokens have been revoked. Access token will expire in 15 minutes.",
+            message="Logout successful. All refresh tokens have been revoked. Access token will expire in 15 minutes.\n\nτῷ Ἀσκληπιῷ ὀφείλομεν ἀλεκτρυόνα, ἀπόδοτε καὶ μὴ ἀμελήσετε.",
         )
     except Exception as e:
         logger.error(f"Error during logout: {str(e)}")

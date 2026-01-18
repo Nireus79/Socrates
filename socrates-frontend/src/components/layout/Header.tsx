@@ -17,8 +17,30 @@ export const Header: React.FC = () => {
   const [showUserMenu, setShowUserMenu] = React.useState(false);
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/auth/login');
+    const response = await logout();
+
+    // Display the logout message (contains Greek phrase)
+    if (response?.message) {
+      // Show the message in console for now
+      console.log('Logout:', response.message);
+
+      // Also create a brief visual notification
+      const messageLines = response.message.split('\n');
+      const mainMessage = messageLines[0];
+      const greekPhrase = messageLines.slice(2).join('\n');
+
+      // Log both parts separately
+      console.log('Main:', mainMessage);
+      console.log('Greek:', greekPhrase);
+
+      // Show in alert if you want the user to see it before redirect
+      // alert(`${mainMessage}\n\n${greekPhrase}`);
+    }
+
+    // Redirect to login after brief delay
+    setTimeout(() => {
+      navigate('/auth/login');
+    }, 500);
   };
 
   return (
@@ -34,7 +56,7 @@ export const Header: React.FC = () => {
             />
             <div>
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">Socrates</h1>
-              <p className="text-xs text-gray-600 dark:text-gray-400 italic leading-tight">Ουδέν οίδα, ούτε διδάσκω τι, αλλά διαπορώ μόνον</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 italic leading-tight">Οὐδὲν οἶδα, οὔτε διδάσκω τι, ἀλλὰ διαπορῶ μόνον</p>
             </div>
           </div>
 

@@ -41,7 +41,7 @@ class ExitCommand(BaseCommand):
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute exit command"""
         print(f"\n{Fore.GREEN}Thank you for using Socrates AI")
-        print(f"..τω Ασκληπιώ οφείλομεν αλετρυόνα, απόδοτε και μη αμελήσετε..{Style.RESET_ALL}\n")
+        print(f"..τῷ Ἀσκληπιῷ ὀφείλομεν ἀλεκτρυόνα, ἀπόδοτε καὶ μὴ ἀμελήσετε...{Style.RESET_ALL}\n")
 
         return {"status": "exit", "message": "Exiting application"}
 
@@ -213,7 +213,7 @@ class InfoCommand(BaseCommand):
 
         print("Version: 7.0")
         print("Purpose: Socratic guidance for software development")
-        print("Motto: Ουδέν οίδα, ούτε διδάσκω τι, αλλά διαπορώ μόνον")
+        print("Motto: Οὐδὲν οἶδα, οὔτε διδάσκω τι, ἀλλὰ διαπορῶ μόνον")
         print("       (I know nothing, nor do I teach anything, but I only question)")
         print()
         print("Current Session:")

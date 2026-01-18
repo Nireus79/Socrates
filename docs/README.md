@@ -8,6 +8,7 @@ Welcome to **Socrates AI**, an AI-powered software development companion that gu
 - [What is Socratic?](#what-is-socratic)
 - [Key Features](#key-features)
 - [System Overview](#system-overview)
+- [What's New in v1.3.0](#whats-new-in-v130)
 - [Documentation Structure](#documentation-structure)
 - [Getting Help](#getting-help)
 
@@ -300,6 +301,38 @@ System that identifies contradictions between:
 
 ---
 
+## What's New in v1.3.0
+
+### Spec Persistence System
+
+**Persistent Project Specifications** - Project specifications are now automatically saved and retrieved, enabling:
+- Specifications persist across sessions without loss
+- Complete project context maintained in database
+- Ability to load previous project specifications instantly
+- Project specifications included in all knowledge base queries
+
+**Impact**: Your project specifications are now truly persistent. No more worrying about losing critical project context between sessions.
+
+### Improved Maturity Scoring
+
+**Enhanced Project Maturity Calculation** - The system now provides more accurate project maturity assessment:
+- Refined scoring algorithm for better accuracy
+- More nuanced maturity levels (not just binary)
+- Better detection of project completeness across phases
+- Improved feedback on what's needed to advance
+
+**Impact**: Get more reliable guidance on when your project specification is ready for code generation.
+
+### Bug Fixes & Improvements
+
+- Fixed issue where current question wasn't loading in suggestions modal
+- Improved overall system stability and performance
+- Enhanced documentation and examples
+
+For a detailed changelog, see the commit history or [ARCHITECTURE.md](ARCHITECTURE.md).
+
+---
+
 ## Next Steps
 
 1. **[Install the system](INSTALLATION.md)** (5 minutes)
@@ -321,7 +354,7 @@ Interested in contributing? See [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) for:
 
 ## License
 
-[Specify your license here]
+Socrates AI is released under the **MIT License**. See [LICENSE](../LICENSE) file for full details.
 
 ---
 
@@ -331,7 +364,7 @@ For issues, questions, or feature requests:
 - Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 - Review [API_REFERENCE.md](API_REFERENCE.md)
 - Submit an issue on GitHub
-- Contact support at [support email]
+- Contact support at: [issues@github.com/Nireus79/Socrates](https://github.com/Nireus79/Socrates/issues)
 
 ---
 
@@ -351,4 +384,4 @@ If you use Socratic in your research or project, please cite:
 ---
 
 **Last Updated**: January 2026
-**Version**: 1.1.0
+**Version**: 1.3.0

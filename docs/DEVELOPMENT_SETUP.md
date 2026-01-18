@@ -489,5 +489,5 @@ What does this PR do?
 
 ---
 
-**Last Updated**: December 2025
-**Version**: 7.0+
+**Last Updated**: January 2026
+**Version**: 1.3.0
