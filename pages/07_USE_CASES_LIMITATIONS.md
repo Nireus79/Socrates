@@ -2,7 +2,7 @@
 
 ## What Socrates Is Good For
 
-### ✅ Perfect Use Cases
+### [YES] Perfect Use Cases
 
 #### 1. Starting New Projects
 **Best for**: Projects just starting from scratch
@@ -104,44 +104,44 @@ When you need to:
 
 ## What Socrates Is NOT Good For
 
-### ❌ Limitations & When to Use Something Else
+### [NO] Limitations & When to Use Something Else
 
 #### 1. Embedded Systems
 **Why not**: Socrates generates high-level code, not bare-metal firmware
 
-❌ **Don't use for**:
+[NO] **Don't use for**:
 - IoT firmware
 - Microcontroller programming
 - RTOS development
 - Hardware abstraction layers
 
-✅ **Use instead**: ARM Mbed, PlatformIO, MPLAB
+[YES] **Use instead**: ARM Mbed, PlatformIO, MPLAB
 
 ---
 
 #### 2. Real-Time Systems
 **Why not**: Generated code doesn't optimize for microsecond-level timing
 
-❌ **Don't use for**:
+[NO] **Don't use for**:
 - Audio processing (needs low latency)
 - Game engines (real-time rendering)
 - Trading systems (millisecond precision)
 - Robotics control loops
 
-✅ **Use instead**: Hand-optimized C/C++, Rust
+[YES] **Use instead**: Hand-optimized C/C++, Rust
 
 ---
 
 #### 3. Machine Learning & AI
 **Why not**: Requires specialized knowledge, not generic scaffolding
 
-❌ **Don't use for**:
+[NO] **Don't use for**:
 - Model training pipelines
 - Neural network architecture
 - Data preprocessing complex logic
 - Statistical analysis
 
-✅ **Use instead**: TensorFlow, PyTorch, scikit-learn
+[YES] **Use instead**: TensorFlow, PyTorch, scikit-learn
 📅 **Coming**: v1.5 - ML scaffolding support
 
 ---
@@ -149,82 +149,82 @@ When you need to:
 #### 4. System-Level Programming
 **Why not**: Needs low-level optimization and unsafe code
 
-❌ **Don't use for**:
+[NO] **Don't use for**:
 - Operating system kernels
 - Drivers
 - Performance-critical systems
 - Memory management
 - Concurrency primitives
 
-✅ **Use instead**: Hand-written C/Rust
+[YES] **Use instead**: Hand-written C/Rust
 
 ---
 
 #### 5. Very Complex Business Logic
 **Why not**: Socrates generates structure, you add business logic
 
-❌ **Don't use for**:
+[NO] **Don't use for**:
 - Complex financial calculations
 - Advanced statistical analysis
 - Specialized domain algorithms
 - Business rule engines (>1000 rules)
 
-✅ **Use instead**: Expert-written domain code
+[YES] **Use instead**: Expert-written domain code
 
 ---
 
 #### 6. Legacy System Integration
 **Why not**: Requires understanding of existing codebase
 
-❌ **Don't use for**:
+[NO] **Don't use for**:
 - Refactoring old code
 - Integrating with legacy systems
 - Modernizing monoliths
 - Migration from old frameworks
 
-✅ **Use instead**: Domain experts familiar with legacy system
+[YES] **Use instead**: Domain experts familiar with legacy system
 
 ---
 
 #### 7. Highly Specialized Domains
 **Why not**: Requires deep domain expertise
 
-❌ **Don't use for**:
+[NO] **Don't use for**:
 - Genomics analysis
 - Quantum computing
 - Scientific computing
 - Specialized medical software
 - Aerospace/aviation systems
 
-✅ **Use instead**: Domain-specific experts and tools
+[YES] **Use instead**: Domain-specific experts and tools
 
 ---
 
 #### 8. Security-Critical Systems
 **Why not**: Needs thorough security review (not auto-generated)
 
-❌ **Don't use as-is for**:
+[NO] **Don't use as-is for**:
 - Banking/payment systems
 - Healthcare systems (PHI/HIPAA)
 - Government systems
 - Military applications
 - Cryptographic algorithms
 
-✅ **Use for**: Initial scaffold, then have security experts review
+[YES] **Use for**: Initial scaffold, then have security experts review
 
 ---
 
 #### 9. Performance-Critical Code
 **Why not**: Generated code prioritizes readability over optimization
 
-❌ **Don't use for**:
+[NO] **Don't use for**:
 - High-frequency trading
 - Game rendering
 - Video encoding/decoding
 - Large-scale data processing
 - Search algorithms
 
-✅ **Use for**: Initial implementation, optimize later
+[YES] **Use for**: Initial implementation, optimize later
 
 ---
 
@@ -251,20 +251,20 @@ When you need to:
 - Small teams: Good (use Pro tier)
 - Large teams: Possible (use Enterprise)
 
-### Examples in Sweet Spot ✅
+### Examples in Sweet Spot [YES]
 
 | Project | Scope | Good for Socrates? |
 |---------|-------|-------------------|
-| Todo app | 500 LOC | ✅ Perfect |
-| Blog platform | 2000 LOC | ✅ Perfect |
-| Payment API | 1500 LOC | ✅ Great |
-| Admin dashboard | 3000 LOC | ✅ Good |
-| Email service | 800 LOC | ✅ Great |
-| Auth service | 600 LOC | ✅ Perfect |
-| Notification system | 1200 LOC | ✅ Good |
-| File upload service | 700 LOC | ✅ Great |
+| Todo app | 500 LOC | [YES] Perfect |
+| Blog platform | 2000 LOC | [YES] Perfect |
+| Payment API | 1500 LOC | [YES] Great |
+| Admin dashboard | 3000 LOC | [YES] Good |
+| Email service | 800 LOC | [YES] Great |
+| Auth service | 600 LOC | [YES] Perfect |
+| Notification system | 1200 LOC | [YES] Good |
+| File upload service | 700 LOC | [YES] Great |
 
-### Examples Outside Sweet Spot ❌
+### Examples Outside Sweet Spot [NO]
 
 | Project | Problem | Better Solution |
 |---------|---------|-----------------|
@@ -285,11 +285,11 @@ When you need to:
 
 ```
 Idea → Discovery → Architecture → Scaffolding → Implementation → Testing → Deploy
-       ✅           ✅           ✅            ⚠️              ❌        ⚠️
+       [YES]           [YES]           [YES]            ⚠️              [NO]        ⚠️
       Excellent   Excellent    Excellent   Some Help    Manual Work  Limited
 ```
 
-**✅ Socrates excels**:
+**[YES] Socrates excels**:
 - Clarifying vague ideas
 - Designing architecture
 - Generating scaffolding
@@ -300,7 +300,7 @@ Idea → Discovery → Architecture → Scaffolding → Implementation → Testi
 - Testing (generates test structure)
 - Deployment config
 
-**❌ Socrates doesn't do**:
+**[NO] Socrates doesn't do**:
 - Complex testing strategy
 - Performance optimization
 - Security hardening
@@ -355,25 +355,25 @@ Idea → Discovery → Architecture → Scaffolding → Implementation → Testi
 
 **Don't use Socrates when**:
 
-1. ❌ **Vague requirements** - "Build an app that does everything"
+1. [NO] **Vague requirements** - "Build an app that does everything"
    - Fix: Clarify requirements first, then use Socrates
 
-2. ❌ **Rapidly changing specs** - Requirements change weekly
+2. [NO] **Rapidly changing specs** - Requirements change weekly
    - Fix: Stabilize requirements first
 
-3. ❌ **Complex domain** - Deep expertise required
+3. [NO] **Complex domain** - Deep expertise required
    - Fix: Get domain experts to define spec first
 
-4. ❌ **Unknown architecture** - Not sure how to approach it
+4. [NO] **Unknown architecture** - Not sure how to approach it
    - Fix: Research and prototype first
 
-5. ❌ **Time-critical** - Need code in < 1 hour
+5. [NO] **Time-critical** - Need code in < 1 hour
    - Fix: Use Socrates for future sprints
 
-6. ❌ **Specialized tech** - Very new framework/library
+6. [NO] **Specialized tech** - Very new framework/library
    - Fix: Socrates works best with proven tech
 
-7. ❌ **No internet** - Claude API requires connection
+7. [NO] **No internet** - Claude API requires connection
    - Fix: Use local-first option (coming v1.5)
 
 ---
@@ -422,20 +422,20 @@ Idea → Discovery → Architecture → Scaffolding → Implementation → Testi
 ### How to Know Socrates Works for You
 
 **You'll see these benefits**:
-- ✅ Faster project kickoff (40% faster)
-- ✅ Fewer requirement misunderstandings
-- ✅ Better code structure
-- ✅ Team alignment improves
-- ✅ Less rework and refactoring
-- ✅ Clearer project specifications
-- ✅ Easier onboarding for new team members
+- [YES] Faster project kickoff (40% faster)
+- [YES] Fewer requirement misunderstandings
+- [YES] Better code structure
+- [YES] Team alignment improves
+- [YES] Less rework and refactoring
+- [YES] Clearer project specifications
+- [YES] Easier onboarding for new team members
 
 **If you see these, Socrates might not be the fit**:
-- ❌ Generated code doesn't fit domain
-- ❌ Specifications keep changing
-- ❌ You need real-time performance
-- ❌ Domain expertise isn't easily captured
-- ❌ Your team prefers manual processes
+- [NO] Generated code doesn't fit domain
+- [NO] Specifications keep changing
+- [NO] You need real-time performance
+- [NO] Domain expertise isn't easily captured
+- [NO] Your team prefers manual processes
 
 ---
 

@@ -46,19 +46,19 @@ Socrates guides you through **4 phases** of structured thinking:
 ## Why Socrates?
 
 ### For Individual Developers
-✅ **Less Decision Fatigue** - AI asks the right questions so you don't miss anything
-✅ **Faster Clarification** - Turn vague ideas into specs in hours, not days
-✅ **Production-Ready Code** - Start with solid foundations, not scaffolding
+[YES] **Less Decision Fatigue** - AI asks the right questions so you don't miss anything
+[YES] **Faster Clarification** - Turn vague ideas into specs in hours, not days
+[YES] **Production-Ready Code** - Start with solid foundations, not scaffolding
 
 ### For Teams
-✅ **Aligned Requirements** - Everyone starts from the same clear specification
-✅ **No Knowledge Silos** - Specifications are documented and searchable
-✅ **Collaboration Built-In** - Real-time updates when team members contribute
+[YES] **Aligned Requirements** - Everyone starts from the same clear specification
+[YES] **No Knowledge Silos** - Specifications are documented and searchable
+[YES] **Collaboration Built-In** - Real-time updates when team members contribute
 
 ### For Project Managers
-✅ **Scope Control** - See exactly what's being built before development starts
-✅ **Timeline Confidence** - Better estimates based on detailed specifications
-✅ **Risk Reduction** - Conflicts and gaps surface during planning, not during development
+[YES] **Scope Control** - See exactly what's being built before development starts
+[YES] **Timeline Confidence** - Better estimates based on detailed specifications
+[YES] **Risk Reduction** - Conflicts and gaps surface during planning, not during development
 
 ---
 
@@ -96,30 +96,30 @@ Socrates guides you through **4 phases** of structured thinking:
 **Choose your plan:**
 
 ### Free Tier
-- ✅ Unlimited projects
-- ✅ Full Socratic dialogue
-- ✅ Code generation
-- ✅ Community support
+- [YES] Unlimited projects
+- [YES] Full Socratic dialogue
+- [YES] Code generation
+- [YES] Community support
 - 💰 **Your own API costs** (Claude API)
 
 ### Basic Tier ($5/month)
-- ✅ Everything in Free
-- ✅ 500 MB storage
-- ✅ Priority support
-- ✅ Advanced analytics
+- [YES] Everything in Free
+- [YES] 500 MB storage
+- [YES] Priority support
+- [YES] Advanced analytics
 
 ### Pro Tier ($15/month)
-- ✅ Everything in Basic
-- ✅ 2 GB storage
-- ✅ Team collaboration
-- ✅ Custom integrations
-- ✅ 24-hour support response
+- [YES] Everything in Basic
+- [YES] 2 GB storage
+- [YES] Team collaboration
+- [YES] Custom integrations
+- [YES] 24-hour support response
 
 ### Enterprise
-- ✅ Everything in Pro
-- ✅ Unlimited storage
-- ✅ Dedicated support
-- ✅ Custom features
+- [YES] Everything in Pro
+- [YES] Unlimited storage
+- [YES] Dedicated support
+- [YES] Custom features
 - 📧 **Contact sales**
 
 [View Full Pricing →](pricing-page-link)
@@ -162,12 +162,12 @@ Socrates guides you through **4 phases** of structured thinking:
 
 ## Security & Privacy
 
-✅ **Your data stays yours**
+[YES] **Your data stays yours**
 - All project data stored locally on your machine
 - Optional: Use your own cloud storage
 - Enterprise: Self-hosted option available
 
-✅ **API security**
+[YES] **API security**
 - Your API key is yours to control
 - We never store your keys
 - GDPR compliant

@@ -55,11 +55,11 @@ docker run -it ghcr.io/nireus79/socrates:latest
 **That's it!** You're ready to create your first project.
 
 **Advantages**:
-- ✅ No programming knowledge needed
-- ✅ One-click installation
-- ✅ Automatic updates available
-- ✅ Desktop shortcut created
-- ✅ Uninstall through Control Panel
+- [YES] No programming knowledge needed
+- [YES] One-click installation
+- [YES] Automatic updates available
+- [YES] Desktop shortcut created
+- [YES] Uninstall through Control Panel
 
 **File Size**: 280 MB
 
@@ -117,11 +117,11 @@ http://localhost:8000
 ```
 
 **Advantages**:
-- ✅ Full source code access
-- ✅ Can modify and customize
-- ✅ Easy to contribute back
-- ✅ Latest development version
-- ✅ Can develop extensions
+- [YES] Full source code access
+- [YES] Can modify and customize
+- [YES] Easy to contribute back
+- [YES] Latest development version
+- [YES] Can develop extensions
 
 **Troubleshooting**:
 - **Port 8000 already in use**: Edit `config.py` and change `PORT=8001`
@@ -151,9 +151,9 @@ socrates /project create
 **Browser opens automatically** at `http://localhost:8000`
 
 **Advantages**:
-- ✅ One-line installation
-- ✅ Automatic updates via `brew upgrade`
-- ✅ Easy uninstall: `brew uninstall socrates`
+- [YES] One-line installation
+- [YES] Automatic updates via `brew upgrade`
+- [YES] Easy uninstall: `brew uninstall socrates`
 
 #### Option B: Clone from GitHub
 
@@ -184,9 +184,9 @@ socrates /project create
 ```
 
 **Advantages**:
-- ✅ Full source code access
-- ✅ Latest development version
-- ✅ Can customize for your needs
+- [YES] Full source code access
+- [YES] Latest development version
+- [YES] Can customize for your needs
 
 **System Requirements**:
 - OS: macOS 10.15+ (Catalina or later)
@@ -253,10 +253,10 @@ socrates /project create
 ```
 
 **Advantages**:
-- ✅ Full control over installation
-- ✅ Can install globally or per-user
-- ✅ Latest code
-- ✅ Easy to contribute
+- [YES] Full control over installation
+- [YES] Can install globally or per-user
+- [YES] Latest code
+- [YES] Easy to contribute
 
 **System Requirements**:
 - OS: Ubuntu 20.04+, Debian 11+, or any modern Linux distribution
@@ -333,11 +333,11 @@ docker-compose up -d
 ```
 
 **Advantages**:
-- ✅ Works on any platform (Windows, macOS, Linux)
-- ✅ Isolated environment (no conflicts)
-- ✅ Easy to scale
-- ✅ Production-ready
-- ✅ Easy deployment
+- [YES] Works on any platform (Windows, macOS, Linux)
+- [YES] Isolated environment (no conflicts)
+- [YES] Easy to scale
+- [YES] Production-ready
+- [YES] Easy deployment
 
 **System Requirements**:
 - Docker 20.10+
@@ -359,11 +359,11 @@ docker stop <container-id>
 ### 5. Cloud / Online (Coming Soon)
 
 A hosted version of Socrates AI will be available at `app.socrates-ai.com` with:
-- ✅ No installation needed
-- ✅ Cloud-based storage
-- ✅ Always updated
-- ✅ Team collaboration built-in
-- ✅ Enterprise features
+- [YES] No installation needed
+- [YES] Cloud-based storage
+- [YES] Always updated
+- [YES] Team collaboration built-in
+- [YES] Enterprise features
 
 **Expected**: Q2 2026
 

@@ -215,9 +215,9 @@ But always review before deploying.
 
 ### Q: Can it generate code for my specific business logic?
 **A**: Socrates generates architectural code and scaffolding. You fill in business logic:
-- Data models → ✅ Generated
-- API structure → ✅ Generated
-- Database schema → ✅ Generated
+- Data models → [YES] Generated
+- API structure → [YES] Generated
+- Database schema → [YES] Generated
 - Business logic → You add this
 
 ### Q: How do I integrate generated code into my project?

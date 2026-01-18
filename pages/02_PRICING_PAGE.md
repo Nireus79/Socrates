@@ -17,23 +17,23 @@ Choose the plan that's right for you. All plans include the core Socratic dialog
 | **Projects** | Unlimited | Unlimited | Unlimited | Unlimited |
 | **Storage** | 100 MB | 500 MB | 2 GB | Unlimited |
 | **Users** | 1 | 1 | Up to 5 | Unlimited |
-| **Socratic Dialogue** | ✅ | ✅ | ✅ | ✅ |
-| **Code Generation** | ✅ | ✅ | ✅ | ✅ |
-| **Conflict Detection** | ✅ | ✅ | ✅ | ✅ |
-| **Knowledge Base** | ✅ | ✅ | ✅ | ✅ |
-| **Project Export** | ✅ | ✅ | ✅ | ✅ |
-| **API Access** | ✅ | ✅ | ✅ | ✅ |
-| **Community Support** | ✅ | ✅ | ✅ | ✅ |
-| **Email Support** | — | ✅ | ✅ | ✅ |
+| **Socratic Dialogue** | [YES] | [YES] | [YES] | [YES] |
+| **Code Generation** | [YES] | [YES] | [YES] | [YES] |
+| **Conflict Detection** | [YES] | [YES] | [YES] | [YES] |
+| **Knowledge Base** | [YES] | [YES] | [YES] | [YES] |
+| **Project Export** | [YES] | [YES] | [YES] | [YES] |
+| **API Access** | [YES] | [YES] | [YES] | [YES] |
+| **Community Support** | [YES] | [YES] | [YES] | [YES] |
+| **Email Support** | — | [YES] | [YES] | [YES] |
 | **Response Time** | Forum | 48 hours | 24 hours | 2 hours |
-| **Team Collaboration** | — | — | ✅ | ✅ |
-| **Custom Integrations** | — | — | ✅ | ✅ |
-| **Webhooks** | — | — | ✅ | ✅ |
-| **Priority Processing** | — | — | ✅ | ✅ |
-| **Advanced Analytics** | — | ✅ | ✅ | ✅ |
-| **SLA Guarantee** | — | — | — | ✅ |
-| **Custom Features** | — | — | — | ✅ |
-| **Self-Hosted Option** | — | — | — | ✅ |
+| **Team Collaboration** | — | — | [YES] | [YES] |
+| **Custom Integrations** | — | — | [YES] | [YES] |
+| **Webhooks** | — | — | [YES] | [YES] |
+| **Priority Processing** | — | — | [YES] | [YES] |
+| **Advanced Analytics** | — | [YES] | [YES] | [YES] |
+| **SLA Guarantee** | — | — | — | [YES] |
+| **Custom Features** | — | — | — | [YES] |
+| **Self-Hosted Option** | — | — | — | [YES] |
 
 ---
 
@@ -43,15 +43,15 @@ Choose the plan that's right for you. All plans include the core Socratic dialog
 **Perfect for: Individual developers, students, evaluating Socrates**
 
 **What's included:**
-- ✅ Unlimited projects (100 MB total storage)
-- ✅ Complete Socratic dialogue (all 4 phases)
-- ✅ Production-ready code generation
-- ✅ Conflict detection across requirements
-- ✅ Knowledge base with RAG search
-- ✅ Multi-language support
-- ✅ Community support (Discord/GitHub)
-- ✅ Full API access
-- ✅ Export to JSON/CSV
+- [YES] Unlimited projects (100 MB total storage)
+- [YES] Complete Socratic dialogue (all 4 phases)
+- [YES] Production-ready code generation
+- [YES] Conflict detection across requirements
+- [YES] Knowledge base with RAG search
+- [YES] Multi-language support
+- [YES] Community support (Discord/GitHub)
+- [YES] Full API access
+- [YES] Export to JSON/CSV
 
 **Limitations:**
 - Storage: 100 MB (roughly 50-100 projects)
@@ -75,12 +75,12 @@ Choose the plan that's right for you. All plans include the core Socratic dialog
 **Perfect for: Professional developers, freelancers, small teams**
 
 **What's included:**
-- ✅ Everything in Free
-- ✅ 500 MB storage (200-400 projects)
-- ✅ Priority email support (48-hour response)
-- ✅ Advanced analytics dashboard
-- ✅ Project metrics and insights
-- ✅ Extended knowledge base size
+- [YES] Everything in Free
+- [YES] 500 MB storage (200-400 projects)
+- [YES] Priority email support (48-hour response)
+- [YES] Advanced analytics dashboard
+- [YES] Project metrics and insights
+- [YES] Extended knowledge base size
 
 **Upgrades from Free:**
 - 5x more storage
@@ -108,17 +108,17 @@ Choose the plan that's right for you. All plans include the core Socratic dialog
 **Perfect for: Teams, project managers, companies**
 
 **What's included:**
-- ✅ Everything in Basic
-- ✅ 2 GB storage (1000+ projects)
-- ✅ Team collaboration (up to 5 users)
-- ✅ Real-time project sharing
-- ✅ 24-hour email support
-- ✅ Custom integrations (GitHub, Jira, Slack)
-- ✅ Webhooks for automation
-- ✅ Priority code generation (faster)
-- ✅ Advanced team analytics
-- ✅ Project templates
-- ✅ Custom knowledge bases
+- [YES] Everything in Basic
+- [YES] 2 GB storage (1000+ projects)
+- [YES] Team collaboration (up to 5 users)
+- [YES] Real-time project sharing
+- [YES] 24-hour email support
+- [YES] Custom integrations (GitHub, Jira, Slack)
+- [YES] Webhooks for automation
+- [YES] Priority code generation (faster)
+- [YES] Advanced team analytics
+- [YES] Project templates
+- [YES] Custom knowledge bases
 
 **Upgrades from Basic:**
 - 4x more storage
@@ -154,19 +154,19 @@ Choose the plan that's right for you. All plans include the core Socratic dialog
 **Perfect for: Large organizations, corporations**
 
 **What's included:**
-- ✅ Everything in Pro
-- ✅ Unlimited storage and projects
-- ✅ Unlimited team members
-- ✅ Dedicated account manager
-- ✅ 2-hour email support (dedicated line)
-- ✅ Custom features development
-- ✅ Self-hosted option (on your servers)
-- ✅ Advanced security (SSO, 2FA)
-- ✅ SLA guarantee (99.9% uptime)
-- ✅ API rate limit increase
-- ✅ Custom integrations
-- ✅ Data residency options
-- ✅ Advanced audit logging
+- [YES] Everything in Pro
+- [YES] Unlimited storage and projects
+- [YES] Unlimited team members
+- [YES] Dedicated account manager
+- [YES] 2-hour email support (dedicated line)
+- [YES] Custom features development
+- [YES] Self-hosted option (on your servers)
+- [YES] Advanced security (SSO, 2FA)
+- [YES] SLA guarantee (99.9% uptime)
+- [YES] API rate limit increase
+- [YES] Custom integrations
+- [YES] Data residency options
+- [YES] Advanced audit logging
 
 **Upgrades from Pro:**
 - Unlimited everything
@@ -335,14 +335,14 @@ Support Socrates development on GitHub Sponsors and get access to premium featur
 
 | Feature | Socrates | ChatGPT | GitHub Copilot | Traditional IDE |
 |---------|----------|---------|-----------------|-----------------|
-| **Interactive guidance** | ✅ | Limited | ✗ | ✗ |
-| **Conflict detection** | ✅ | ✗ | ✗ | ✗ |
-| **Structured process** | ✅ | ✗ | ✗ | ✗ |
-| **Code generation** | ✅ | ✅ | ✅ | ✗ |
-| **Specifications** | ✅ | ✗ | ✗ | ✗ |
-| **Team collaboration** | ✅ (Pro) | ✗ | Limited | Limited |
-| **Self-hosted** | ✅ (Enterprise) | ✗ | ✗ | ✅ |
-| **Local data** | ✅ | ✗ | ✗ | ✅ |
+| **Interactive guidance** | [YES] | Limited | ✗ | ✗ |
+| **Conflict detection** | [YES] | ✗ | ✗ | ✗ |
+| **Structured process** | [YES] | ✗ | ✗ | ✗ |
+| **Code generation** | [YES] | [YES] | [YES] | ✗ |
+| **Specifications** | [YES] | ✗ | ✗ | ✗ |
+| **Team collaboration** | [YES] (Pro) | ✗ | Limited | Limited |
+| **Self-hosted** | [YES] (Enterprise) | ✗ | ✗ | [YES] |
+| **Local data** | [YES] | ✗ | ✗ | [YES] |
 
 ---
 

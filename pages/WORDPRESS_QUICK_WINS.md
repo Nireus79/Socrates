@@ -14,18 +14,18 @@ Socrates AI - A production-ready, collaborative development platform...
 ```
 Socrates AI - A production-ready, collaborative development platform...
 
-⭐ Trusted by 2,000+ developers
-📦 50,000+ projects created
-💾 1M+ lines of code generated
-⭐ 95% satisfaction rate
-📌 500+ GitHub stars
+[STAR] Trusted by 2,000+ developers
+[BOX] 50,000+ projects created
+[DATA] 1M+ lines of code generated
+[STAR] 95% satisfaction rate
+[PIN] 500+ GitHub stars
 ```
 
 **How to Add**:
 1. Open WordPress page editor
 2. Add "Stats Row" section below headline
 3. Copy the metrics above
-4. Add emoji before each stat
+4. Add icon before each stat (use Unicode or special characters)
 5. Style with larger font (16-18px)
 
 **Time**: 5 minutes
@@ -84,11 +84,11 @@ No more 'that's not what we agreed to' moments."
 ```
 🔒 YOUR PRIVACY & SECURITY
 
-✅ Encryption: AES-256 at rest, TLS 1.3 in transit
-✅ Compliance: GDPR & CCPA compliant
-✅ Your Control: Your API key, your data, your choice
-✅ No Training: We never train AI models on your code
-✅ Full Export: Download all your data anytime
+[YES] Encryption: AES-256 at rest, TLS 1.3 in transit
+[YES] Compliance: GDPR & CCPA compliant
+[YES] Your Control: Your API key, your data, your choice
+[YES] No Training: We never train AI models on your code
+[YES] Full Export: Download all your data anytime
 
 [Learn more about security & privacy →]
 ```
@@ -112,27 +112,27 @@ No more 'that's not what we agreed to' moments."
 ```
 FAQ
 
-❓ Do I need programming experience?
+[Q] Do I need programming experience?
 A: Yes, some programming knowledge is helpful. Socrates generates
 code for developers, not complete beginners.
 
-❓ How much does it cost?
+[Q] How much does it cost?
 A: Free tier + API costs (~$1-5 per project). Paid tiers start at
 $5/month. [View pricing →]
 
-❓ Is the generated code production-ready?
+[Q] Is the generated code production-ready?
 A: Nearly! It's high quality and well-structured. Always review code
 and test before deploying.
 
-❓ Can I use Socrates offline?
+[Q] Can I use Socrates offline?
 A: Processing happens locally, but code generation needs Claude API
 (internet required).
 
-❓ What about my data/code privacy?
+[Q] What about my data/code privacy?
 A: Your code stays private. AES-256 encryption at rest, TLS 1.3 in
 transit. GDPR compliant.
 
-❓ How long does it take to generate code?
+[Q] How long does it take to generate code?
 A: Dialogue phase: 30 mins to 2 hours. Code generation: 10-30 seconds.
 Total: 1-3 hours to production code.
 
@@ -186,10 +186,10 @@ All free. No credit card required.
 HOW SOCRATES COMPARES
 
                     Socrates    ChatGPT    Copilot    Agency
-Requirements        ✅          ❌         ❌         ✅
-Code Generation     ✅          ✅         ✅         ✅
-Team Alignment      ✅          ❌         ❌         ✅
-Team Collab         ✅          ❌         ❌         ✅
+Requirements        [YES]          [NO]         [NO]         [YES]
+Code Generation     [YES]          [YES]         [YES]         [YES]
+Team Alignment      [YES]          [NO]         [NO]         [YES]
+Team Collab         [YES]          [NO]         [NO]         [YES]
 Cost/Month          $0-15       $20        $10-20     $10k+
 Speed to Code       1-3 hours   2-5 hours  Instant    1-4 weeks
 
@@ -333,26 +333,26 @@ For decision makers:
 ## Implementation Priority Order
 
 ### Day 1 (High impact, low effort):
-1. ✅ Add trust metrics (5 min)
-2. ✅ Add testimonials (10 min)
-3. ✅ Improve CTA buttons (10 min)
-4. ✅ Add security badge (8 min)
+1. [YES] Add trust metrics (5 min)
+2. [YES] Add testimonials (10 min)
+3. [YES] Improve CTA buttons (10 min)
+4. [YES] Add security badge (8 min)
 
 **Subtotal: 33 minutes**
 **Expected lift: +30-40%**
 
 ### Day 2 (Medium effort):
-5. ✅ Expand FAQ (15 min)
-6. ✅ Add quick start buttons (10 min)
-7. ✅ Add comparison table (12 min)
+5. [YES] Expand FAQ (15 min)
+6. [YES] Add quick start buttons (10 min)
+7. [YES] Add comparison table (12 min)
 
 **Subtotal: 37 minutes**
 **Expected additional lift: +20-25%**
 
 ### Day 3 (Higher effort):
-8. ✅ Add integration logos (10 min)
-9. ✅ Add before/after (8 min)
-10. ✅ Embed video demo (5 min)
+8. [YES] Add integration logos (10 min)
+9. [YES] Add before/after (8 min)
+10. [YES] Embed video demo (5 min)
 
 **Subtotal: 23 minutes**
 **Expected additional lift: +15-20%**
@@ -366,16 +366,16 @@ For decision makers:
 
 All of the following files contain ready-to-use content. Just copy sections and paste into WordPress:
 
-- ✅ `00_INSTALLATION.md` - Installation instructions
-- ✅ `01_HERO_HOMEPAGE.md` - Main content
-- ✅ `02_PRICING_PAGE.md` - Pricing details
-- ✅ `03_SECURITY_PRIVACY.md` - Security info
-- ✅ `04_GETTING_STARTED.md` - Getting started guide
-- ✅ `05_INTEGRATIONS.md` - Integration details
-- ✅ `06_FAQ.md` - 80+ FAQ answers
-- ✅ `07_USE_CASES_LIMITATIONS.md` - Use case examples
-- ✅ `08_FEATURES.md` - Feature breakdown
-- ✅ `09_COMPARISON.md` - Detailed comparisons
+- [YES] `00_INSTALLATION.md` - Installation instructions
+- [YES] `01_HERO_HOMEPAGE.md` - Main content
+- [YES] `02_PRICING_PAGE.md` - Pricing details
+- [YES] `03_SECURITY_PRIVACY.md` - Security info
+- [YES] `04_GETTING_STARTED.md` - Getting started guide
+- [YES] `05_INTEGRATIONS.md` - Integration details
+- [YES] `06_FAQ.md` - 80+ FAQ answers
+- [YES] `07_USE_CASES_LIMITATIONS.md` - Use case examples
+- [YES] `08_FEATURES.md` - Feature breakdown
+- [YES] `09_COMPARISON.md` - Detailed comparisons
 
 ---
 
