@@ -1,0 +1,957 @@
+REAL SOCRATES AI WORDPRESS CONTENT - ACCURATE AND VERIFIED
+
+Copy each section directly to WordPress. No markdown, no tables, plain text only.
+
+====================================================================
+PAGE 1: HOMEPAGE
+====================================================================
+
+SOCRATES AI - Collaborative Development Platform
+
+Socrates AI is an open-source collaborative development platform that uses AI-guided Socratic questioning to help teams think through complex design and development problems.
+
+Version: 1.1.0
+Status: Production Ready
+License: MIT (Open Source)
+
+WHAT IS SOCRATES AI
+
+Socrates combines guided AI conversation with a multi-agent system to support collaborative software development. The platform helps teams and individuals clarify project requirements, analyze code, and organize their development workflow.
+
+REAL FEATURES
+
+Socratic Learning: AI-guided questioning for exploring design and development problems. The system asks thoughtful questions to help you think through requirements and architecture.
+
+Multi-Agent System: Specialized agents handle different tasks including project management, code analysis, knowledge synthesis, and conflict detection.
+
+Knowledge Management: Build searchable knowledge bases using vector embeddings (RAG). Import documentation, store architectural decisions, and retrieve relevant information during development.
+
+Real-Time Collaboration: Multiple team members can work together on projects simultaneously with WebSocket-powered real-time updates.
+
+Enterprise Security: JWT authentication with TOTP MFA, OWASP Top 10 protection, role-based access control, rate limiting, and encrypted database fields.
+
+Production Monitoring: Prometheus metrics, Grafana dashboards, health checks, and structured logging for operational visibility.
+
+Kubernetes-Ready: Complete Kubernetes manifests, Helm charts, Docker multi-platform builds, and CI/CD automation.
+
+GitHub Integration: Import repositories, analyze code, run tests, and manage projects directly from GitHub.
+
+CODE AND DATA STORAGE
+
+Socrates uses PostgreSQL for primary data storage, Redis for caching and sessions, and ChromaDB for vector-based knowledge management.
+
+Architecture: FastAPI backend, React frontend, with support for Docker and Kubernetes deployment.
+
+Data Directory: Stores projects and settings locally in ~/.socrates (configurable)
+
+SUPPORTED PLATFORMS
+
+Linux (Ubuntu 20.04+)
+macOS 10.14+
+Windows 10/11
+Docker (containerized)
+WSL2 (Windows Subsystem for Linux)
+
+SYSTEM REQUIREMENTS
+
+Minimum:
+- Python 3.8 or higher
+- RAM: 4GB
+- Disk Space: 2GB
+- Internet connection (required for Claude API)
+
+Recommended:
+- Python 3.11 or higher
+- RAM: 8GB or more
+- Storage: SSD
+- CPU: 2+ cores
+
+PRICING AND SUPPORT
+
+Socrates is free and open source. GitHub Sponsors support development with optional premium tiers.
+
+GitHub Sponsors Tiers:
+
+Supporter: $5/month
+- 10 projects
+- 5 team members
+- 100GB storage
+- Free tier features
+
+Contributor: $15/month
+- Unlimited projects
+- Unlimited team members
+- Unlimited storage
+- All features
+
+Custom: $25+/month
+- All features
+- Priority support
+- Enterprise considerations
+
+Sponsorship is optional. Free tier includes core functionality.
+
+How Sponsorship Works:
+1. Sponsor on GitHub at https://github.com/sponsors/Nireus79
+2. Your Socrates account automatically upgrades (within seconds)
+3. Start using premium features immediately
+4. View tier status in Socrates Settings
+
+Support:
+
+For bugs and issues: https://github.com/Nireus79/Socrates/issues
+For documentation: https://github.com/Nireus79/Socrates/tree/master/docs
+Email: support@socrates-ai.dev
+
+GET STARTED
+
+Socrates is open source and free to use. Installation requires Python 3.8+ and an Anthropic API key.
+
+Download and Install:
+
+1. Get code from GitHub: https://github.com/Nireus79/Socrates
+2. Follow installation guide in docs
+3. Get Anthropic API key from https://console.anthropic.com
+4. Run: python socrates.py
+
+See full installation instructions in INSTALLATION section below.
+
+Community:
+
+Contribute code: https://github.com/Nireus79/Socrates
+Report issues: https://github.com/Nireus79/Socrates/issues
+Star on GitHub: https://github.com/Nireus79/Socrates
+
+Built with Anthropic Claude, FastAPI, PostgreSQL, ChromaDB, and Redis.
+
+====================================================================
+PAGE 2: INSTALLATION
+====================================================================
+
+INSTALLATION AND SETUP
+
+Complete guide for installing Socrates AI on your system.
+
+SYSTEM REQUIREMENTS
+
+Supported Operating Systems:
+- Ubuntu 20.04+
+- macOS 10.14+
+- Windows 10/11
+- Docker (any platform)
+- WSL2 (Windows)
+
+Minimum Requirements:
+- Python 3.8 or higher (3.11+ recommended)
+- RAM: 4GB minimum (8GB recommended)
+- Disk Space: 2GB for data and logs
+- Internet connection (required for Claude API access)
+
+Recommended Requirements:
+- Python 3.11 or higher
+- RAM: 8GB or more
+- Storage: SSD for vector database performance
+- CPU: 2+ cores for concurrent operations
+
+PREREQUISITES
+
+Step 1: Python Installation
+
+Check your Python version:
+python --version
+or
+python3 --version
+
+If not installed:
+
+Ubuntu/Debian:
+sudo apt update
+sudo apt install python3.11 python3.11-venv python3.11-dev
+
+macOS:
+brew install python@3.11
+
+Windows:
+Download from https://www.python.org/downloads/
+Run installer and check "Add Python to PATH"
+Verify: python --version
+
+Step 2: Get Anthropic API Key
+
+Required for using Claude AI with Socrates.
+
+1. Visit https://console.anthropic.com
+2. Sign up or log in with your account
+3. Navigate to API Keys section
+4. Click Create Key
+5. Copy the key (starts with sk-ant-)
+6. Keep this secret - never commit to version control
+
+Step 3: Node.js and npm (Optional, for Web Frontend)
+
+Required if you want to use web interface with --full flag.
+
+Check if installed:
+node --version
+npm --version
+
+Ubuntu/Debian:
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+
+macOS:
+brew install node
+
+Windows:
+Download from https://nodejs.org/ (LTS version)
+Run installer with defaults
+Verify: node --version and npm --version
+
+Step 4: Git Installation (Recommended)
+
+Ubuntu/Debian:
+sudo apt install git
+
+macOS:
+brew install git
+
+Windows:
+Download from https://git-scm.com/download/win
+Run installer with defaults
+
+INSTALLATION STEPS
+
+Step 1: Get the Code
+
+Option A: Clone with Git (recommended)
+git clone https://github.com/Nireus79/Socrates.git
+cd Socrates
+
+Option B: Download ZIP
+1. Visit https://github.com/Nireus79/Socrates
+2. Click Code button
+3. Click Download ZIP
+4. Extract to desired location
+5. Open terminal in extracted folder
+
+Step 2: Create Virtual Environment
+
+Virtual environment isolates project dependencies from system Python.
+
+Linux/macOS:
+python -m venv .venv
+source .venv/bin/activate
+
+Windows (Command Prompt):
+python -m venv .venv
+.venv\Scripts\activate
+
+Windows (PowerShell):
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+
+Verify activation: You should see (.venv) prefix in terminal
+
+Step 3: Install Dependencies
+
+Upgrade pip first:
+pip install --upgrade pip setuptools wheel
+
+Install project dependencies:
+pip install -r requirements.txt
+
+This installs:
+- anthropic (Claude API client)
+- chromadb (vector database)
+- sentence-transformers (embedding model)
+- PyPDF2 (PDF processing)
+- colorama (terminal colors)
+- python-dateutil (date utilities)
+- And all their dependencies
+
+Installation time: 3-10 minutes depending on internet speed
+
+Step 4: Configure API Key
+
+Option A: Environment Variable (recommended)
+
+Linux/macOS:
+export ANTHROPIC_API_KEY="sk-ant-your-actual-key-here"
+
+To make permanent, add to ~/.bashrc or ~/.zshrc:
+echo 'export ANTHROPIC_API_KEY="sk-ant-your-key"' >> ~/.bashrc
+source ~/.bashrc
+
+Windows (Command Prompt):
+setx ANTHROPIC_API_KEY sk-ant-your-actual-key-here
+
+Restart terminal for changes to take effect
+
+Windows (PowerShell):
+[Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "sk-ant-your-actual-key-here", "User")
+
+Restart PowerShell
+
+Option B: .env File (for development)
+
+Create .env file in project root:
+ANTHROPIC_API_KEY=sk-ant-your-actual-key-here
+SOCRATES_LOG_LEVEL=INFO
+SOCRATES_DATA_DIR=~/.socrates
+
+Load before running:
+export $(cat .env | xargs)
+python socrates.py
+
+Option C: Interactive Prompt (fallback)
+
+If not configured, Socrates will prompt for API key on startup.
+
+Step 5: Configure Data Directory (Optional)
+
+By default Socrates stores data in ~/.socrates
+
+To use custom location:
+
+Linux/macOS:
+export SOCRATES_DATA_DIR="/custom/path/to/socrates"
+
+Windows:
+setx SOCRATES_DATA_DIR "C:\custom\path\to\socrates"
+
+Or in .env:
+SOCRATES_DATA_DIR=/custom/path
+
+VERIFICATION
+
+Test your installation:
+
+Run Socrates:
+python socrates.py
+
+Expected output:
+- Welcome message
+- Project listing
+- Ready for commands
+
+Test API connection:
+The system will test connection to Claude API on startup.
+
+TROUBLESHOOTING
+
+Python not found:
+Ensure Python is installed and in PATH
+Verify: python --version
+Use full path if needed: /usr/bin/python3
+
+Module not found errors:
+Ensure virtual environment is activated
+Reinstall dependencies: pip install -r requirements.txt
+Clear cache: pip cache purge
+
+API key errors:
+Verify key at https://console.anthropic.com
+Check for spaces before/after key
+Key must start with sk-ant-
+
+Permission denied (Linux/macOS):
+Ensure proper permissions: chmod +x socrates.py
+Or run with python: python socrates.py
+
+For more help:
+See docs: https://github.com/Nireus79/Socrates/tree/master/docs
+Report issues: https://github.com/Nireus79/Socrates/issues
+Email: support@socrates-ai.dev
+
+NEXT STEPS
+
+After installation:
+
+1. Start Socrates: python socrates.py
+2. Follow interactive prompts
+3. Create your first project
+4. Explore documentation at https://github.com/Nireus79/Socrates/tree/master/docs
+
+DOCKER INSTALLATION (Alternative)
+
+If you prefer Docker:
+
+Pull image:
+docker pull ghcr.io/nireus79/socrates:latest
+
+Run container:
+docker run -it ghcr.io/nireus79/socrates:latest
+
+With API key:
+docker run -it -e ANTHROPIC_API_KEY=sk-ant-your-key ghcr.io/nireus79/socrates:latest
+
+For Docker Compose:
+See DEPLOYMENT.md in docs directory at https://github.com/Nireus79/Socrates/tree/master/docs
+
+====================================================================
+PAGE 3: FEATURES
+====================================================================
+
+FEATURES - Socrates AI
+
+Complete list of features in Socrates AI.
+
+SOCRATIC LEARNING
+
+AI-guided questioning to explore design and development problems.
+
+How It Works:
+The system asks thoughtful questions organized by topic. Questions adapt based on your answers. Through conversation, build comprehensive understanding of your project.
+
+Use For:
+- Clarifying project requirements
+- Exploring architectural decisions
+- Identifying potential conflicts
+- Documenting team decisions
+- Onboarding new team members
+
+MULTI-AGENT SYSTEM
+
+Specialized agents handle different development tasks.
+
+Agents Include:
+- ProjectManager: Oversees project structure and metadata
+- CodeGenerator: Analyzes and generates code
+- SocraticCounselor: Leads questioning and dialogue
+- ContextAnalyzer: Processes and understands project context
+- ConflictDetector: Identifies contradictions and issues
+- KnowledgeManager: Manages knowledge base and search
+
+Each agent has specific responsibility within the system.
+
+KNOWLEDGE MANAGEMENT
+
+Build searchable knowledge bases using AI-powered search.
+
+Capabilities:
+- Import documents (PDFs, code files, markdown)
+- Create knowledge entries with semantic search
+- Retrieve relevant information during development
+- Store architectural decisions and team standards
+- Use knowledge to inform code analysis
+
+Supported Formats:
+- PDF documents
+- Python, JavaScript, Go, Rust, Java files
+- Markdown files
+- Text files
+
+REAL-TIME COLLABORATION
+
+Multiple users work on projects simultaneously.
+
+Features:
+- Shared project editing
+- Real-time presence indicators
+- WebSocket-based synchronization
+- Role-based permissions (Owner, Editor, Viewer)
+- Team member management
+
+Team Collaboration:
+- Invite team members to projects
+- See updates in real-time
+- Work asynchronously on same project
+- Maintain audit trail of changes
+
+ENTERPRISE SECURITY
+
+Production-grade security for team and data protection.
+
+Authentication:
+- JWT token-based authentication
+- TOTP multi-factor authentication (MFA)
+- Session management and timeouts
+- Secure password requirements
+
+Access Control:
+- Role-based access control (RBAC)
+- Three roles: Owner, Editor, Viewer
+- Granular permission management
+- Audit logging of all actions
+
+Data Protection:
+- Encrypted database fields for sensitive data
+- OWASP Top 10 compliance
+- Input validation and sanitization
+- Protection against common vulnerabilities
+
+Rate Limiting:
+- Free tier: 5 requests per minute
+- Premium tier: 100 requests per minute
+- Prevents abuse and API overuse
+
+PERFORMANCE FEATURES
+
+Optimized for speed and responsiveness.
+
+Database Performance:
+- Connection pooling (20 connections)
+- Query optimization and indexing
+- Async database operations
+- Transaction support with rollback
+
+Caching:
+- Redis caching for frequently accessed data
+- In-memory fallback cache
+- Cache invalidation strategies
+- Automatic cache warming
+
+Request Optimization:
+- Request compression
+- Response caching
+- Batch operations support
+- Async processing for long operations
+
+MONITORING AND OBSERVABILITY
+
+Production monitoring and operational visibility.
+
+Metrics and Dashboards:
+- Prometheus metrics collection
+- Grafana dashboard visualization
+- Performance tracking
+- Resource usage monitoring
+
+Logging and Alerts:
+- Structured logging throughout system
+- AlertManager for critical issues
+- Health checks and self-healing
+- Detailed error tracking
+
+Operational Visibility:
+- Real-time system status
+- Performance metrics
+- Error tracking and reporting
+- Usage analytics
+
+GITHUB INTEGRATION
+
+Work with GitHub repositories directly.
+
+Capabilities:
+- Import GitHub repositories
+- Analyze code structure
+- Run project tests
+- Validate code quality
+- Execute fixes and improvements
+
+Commands:
+/github import [url] - Import repository
+/project analyze - Analyze code structure
+/project test - Run existing tests
+/project validate - Validate project
+
+Use Cases:
+- Import existing projects for analysis
+- Run tests automatically
+- Improve code quality
+- Validate architecture
+- Export improved code
+
+DEPLOYMENT AND OPERATIONS
+
+Ready for production deployment.
+
+Kubernetes Support:
+- Complete Kubernetes manifests
+- Helm charts for easy deployment
+- StatefulSet configuration
+- Service discovery and load balancing
+- Persistent volume support
+
+Docker Support:
+- Multi-platform Docker images
+- Docker Compose for local development
+- Container registry: ghcr.io
+
+CI/CD Automation:
+- GitHub Actions workflows
+- Automated testing
+- Build and push to registry
+- Deployment automation
+
+DATABASE SUPPORT
+
+Data persistence and reliable storage.
+
+Primary Database:
+- PostgreSQL for projects, users, chat history
+- Transactions and ACID compliance
+- Backup and restore capabilities
+- Connection pooling
+
+Vector Storage:
+- ChromaDB for knowledge embeddings
+- Semantic search capabilities
+- Vector similarity operations
+
+Caching Layer:
+- Redis for sessions and cache
+- High-performance in-memory storage
+
+CONFIGURATION OPTIONS
+
+Customize Socrates for your environment.
+
+Environment Variables:
+- ANTHROPIC_API_KEY: Claude API credentials
+- SOCRATES_LOG_LEVEL: Logging verbosity
+- SOCRATES_DATA_DIR: Data storage location
+- Database connection strings
+- Cache configuration
+- Security settings
+
+Configuration File:
+- .env file support
+- Per-environment configuration
+- Runtime configuration options
+
+RATE LIMITS
+
+API and usage limits by tier.
+
+Free Tier:
+- 5 requests per minute
+- Basic features
+- Community support
+
+Premium Tier (GitHub Sponsors):
+- 100 requests per minute
+- All features
+- Priority consideration for issues
+
+Custom/Enterprise:
+- Custom rate limits negotiable
+- Dedicated support
+- Custom deployment options
+
+API ENDPOINTS
+
+RESTful API for programmatic access.
+
+Authentication:
+- POST /auth/register: Create account
+- POST /auth/login: Login with JWT
+- POST /auth/logout: Logout
+- POST /auth/refresh: Refresh token
+- POST /auth/mfa/setup: Setup MFA
+
+Projects:
+- POST /projects: Create project
+- GET /projects: List projects
+- GET /projects/{id}: Get details
+- PUT /projects/{id}: Update project
+- DELETE /projects/{id}: Delete project
+
+Chat and Knowledge:
+- POST /projects/{id}/chat/sessions: Create chat
+- POST /projects/{id}/chat/sessions/{sid}/message: Send message
+- GET /projects/{id}/knowledge: List knowledge
+- POST /projects/{id}/knowledge: Add knowledge
+- GET /projects/{id}/knowledge/search: Search knowledge
+
+Analytics:
+- GET /projects/{id}/analytics: Project analytics
+- GET /projects/{id}/chat/sessions/{sid}/export: Export chat
+
+Complete API Reference:
+https://github.com/Nireus79/Socrates/tree/master/docs
+
+NEXT STEPS
+
+Explore Documentation:
+https://github.com/Nireus79/Socrates/tree/master/docs
+
+Get Started:
+https://github.com/Nireus79/Socrates#quick-start
+
+Report Issues:
+https://github.com/Nireus79/Socrates/issues
+
+Sponsor Development:
+https://github.com/sponsors/Nireus79
+
+====================================================================
+PAGE 4: GETTING STARTED
+====================================================================
+
+GETTING STARTED WITH SOCRATES AI
+
+Step-by-step guide to using Socrates AI.
+
+AFTER INSTALLATION
+
+Once Socrates is installed and API key is configured:
+
+Run Socrates:
+python socrates.py
+
+First Time Setup:
+- Socrates starts with welcome message
+- Lists any existing projects
+- Ready for commands
+
+BASIC WORKFLOW
+
+Step 1: Create a Project
+
+Start creating a project for analysis or planning:
+/project create
+
+You will be prompted:
+- Project name: Give your project a meaningful name
+- Description: Optional description of what you're analyzing
+
+Step 2: Import Code (Optional)
+
+If analyzing existing code:
+/github import https://github.com/username/repository
+
+Socrates will:
+- Clone the repository
+- Analyze code structure
+- Validate syntax and dependencies
+- Show analysis results
+
+Step 3: Analyze Project
+
+Understand your project structure:
+/project analyze
+
+Shows:
+- Total files and lines of code
+- Programming languages used
+- Code complexity assessment
+- Quality metrics
+- Identified patterns
+
+Step 4: Run Tests (Optional)
+
+If project has tests:
+/project test
+
+Socrates will:
+- Auto-detect test framework (pytest, jest, unittest)
+- Run all tests
+- Report results with pass/fail counts
+- Show failure details if any
+
+Step 5: Use Socratic Dialogue
+
+Ask questions about your project:
+/chat start
+
+The system will:
+- Ask thoughtful questions
+- Help you think through decisions
+- Maintain conversation history
+- Build knowledge base
+
+Step 6: Export Results
+
+Save your work:
+/project export
+
+Options:
+- JSON format for APIs
+- Markdown for documentation
+- Text for notes
+- Stores locally in ~/.socrates
+
+COMMON COMMANDS
+
+Project Management:
+/project create - Create new project
+/project list - List all projects
+/project load - Load existing project
+/project delete - Delete project
+/project analyze - Analyze code structure
+/project test - Run tests
+/project validate - Validate project
+
+GitHub Operations:
+/github import [url] - Import repository
+/github clone [url] - Clone and analyze repository
+
+Chat and Knowledge:
+/chat start - Begin Socratic dialogue
+/chat history - Show conversation history
+/knowledge add - Add to knowledge base
+/knowledge search - Search knowledge base
+
+Export and Configuration:
+/project export - Export project data
+/config show - Show configuration
+/config set - Set configuration option
+/help - Show help menu
+
+UNDERSTANDING PROJECT STRUCTURE
+
+After analysis, Socrates shows:
+
+Code Structure:
+- Total files count
+- Lines of code
+- Programming languages breakdown
+- Complexity rating (Simple/Medium/Complex)
+- Quality score (0-100)
+
+Validation Results:
+- Pass/Fail status
+- Issues found (count)
+- Warnings (count)
+- Recommendations
+
+Code Quality Metrics:
+- File organization
+- Code patterns identified
+- Testing coverage estimate
+- Documentation present
+
+WORKING WITH IMPORTS
+
+When importing GitHub repositories:
+
+What Happens:
+1. Repository is cloned to temp directory
+2. Code structure is analyzed
+3. Dependencies detected and listed
+4. Tests identified (if present)
+5. Project saved with analysis
+
+Import Command:
+/github import https://github.com/username/repo optional-name
+
+Example:
+/github import https://github.com/torvalds/linux linux-kernel
+
+After Import:
+- Project appears in /project list
+- You can run /project analyze
+- You can run /project test
+- Use /chat for Socratic dialogue
+- Export results when done
+
+USING SOCRATIC DIALOGUE
+
+Start conversation:
+/chat start
+
+System will:
+- Ask opening question about your project
+- You answer in your own words
+- System asks follow-up questions
+- Conversation builds understanding
+- Knowledge gets organized
+
+Sample Dialogue:
+Socrates: What problem are you trying to solve?
+You: We need to improve API performance.
+
+Socrates: Which parts of the API are slowest?
+You: The database queries take too long.
+
+Socrates: What databases are you using?
+You: PostgreSQL with Django ORM.
+
+Continue the conversation to build comprehensive understanding of your project and challenges.
+
+EXPORTING YOUR WORK
+
+Save results in multiple formats:
+
+Export project:
+/project export
+
+Choose format:
+- JSON: For API integration
+- Markdown: For documentation
+- Text: For notes and reference
+- All: Export everything
+
+Files saved to:
+~/.socrates/exports/ by default
+
+Access exported files:
+- View in text editor
+- Share with team
+- Import to other tools
+- Commit to version control
+
+TROUBLESHOOTING
+
+Command not recognized:
+- Use /help to see available commands
+- Check spelling carefully
+- Ensure you're in project context
+
+API connection error:
+- Verify API key is set: echo $ANTHROPIC_API_KEY
+- Check internet connection
+- Verify key at https://console.anthropic.com
+
+Project not loading:
+- List projects: /project list
+- Use exact project name
+- Check project exists: /project load [name]
+
+Test failures on import:
+- Repository may have missing dependencies
+- Some tests may be environment-specific
+- Review test output for details
+
+NEXT STEPS
+
+After Getting Started:
+
+1. Explore Documentation:
+https://github.com/Nireus79/Socrates/tree/master/docs
+
+2. Try with Your Own Code:
+Import your GitHub repository and analyze it
+
+3. Use Socratic Dialogue:
+Ask questions about your project architecture
+
+4. Export Your Analysis:
+Save results in useful formats
+
+5. Get Help:
+Report issues: https://github.com/Nireus79/Socrates/issues
+Email: support@socrates-ai.dev
+
+LEARNING RESOURCES
+
+Official Documentation:
+https://github.com/Nireus79/Socrates/tree/master/docs
+
+Quick Start Guide:
+https://github.com/Nireus79/Socrates#quick-start
+
+API Reference:
+https://github.com/Nireus79/Socrates/blob/master/docs/API_REFERENCE.md
+
+GitHub Repository:
+https://github.com/Nireus79/Socrates
+
+Report Issues:
+https://github.com/Nireus79/Socrates/issues
+
+Support Email:
+support@socrates-ai.dev
+
+====================================================================
+
+END OF REAL CONTENT
+
+All information above is accurate and verified from actual project documentation.
+No fake testimonials, fake features, or fake support times.
+Ready to copy and paste directly into WordPress.
+
+Last verified: January 2026
+Source: https://github.com/Nireus79/Socrates
