@@ -10,6 +10,29 @@ All files are in **Markdown format** and ready to copy-paste into WordPress page
 
 ## File Index
 
+### 0. **00_INSTALLATION.md**
+**Purpose**: Complete installation guide for all platforms
+**Content**: Step-by-step setup for Windows, macOS, Linux, Docker; troubleshooting; system requirements; GitHub links
+**Use**: /installation or /download page
+**Length**: ~3000 words
+**Key Sections**:
+- Quick start (5-minute setup)
+- Windows (exe download or source installation)
+- macOS (Homebrew or source)
+- Linux (package manager or source)
+- Docker (containerized deployment)
+- Cloud/Online (coming soon)
+- Developer installation
+- System requirements by tier
+- Verification testing
+- Port configuration
+- API key setup
+- Comprehensive troubleshooting
+- Uninstall and update procedures
+- GitHub repository links
+
+---
+
 ### 1. **01_HERO_HOMEPAGE.md**
 **Purpose**: Main landing page content
 **Content**: Hero section, how it works, key features, pricing preview, testimonials, CTA
@@ -221,9 +244,10 @@ pages/
 
 ```
 Home
+├── Installation (/installation)
+├── Getting Started (/getting-started)
 ├── Features (/features)
 ├── Pricing (/pricing)
-├── Getting Started (/getting-started)
 ├── Security (/security)
 ├── Integrations (/integrations)
 ├── Comparison (/comparison)
@@ -237,9 +261,10 @@ Home
 | Page | Slug | File |
 |------|------|------|
 | Homepage | / | 01_HERO_HOMEPAGE.md |
+| Installation | /installation | 00_INSTALLATION.md |
+| Getting Started | /getting-started | 04_GETTING_STARTED.md |
 | Features | /features | 08_FEATURES.md |
 | Pricing | /pricing | 02_PRICING_PAGE.md |
-| Getting Started | /getting-started | 04_GETTING_STARTED.md |
 | Security | /security | 03_SECURITY_PRIVACY.md |
 | Integrations | /integrations | 05_INTEGRATIONS.md |
 | FAQ | /faq | 06_FAQ.md |
@@ -252,13 +277,16 @@ Home
 
 | Metric | Count |
 |--------|-------|
-| Total Files | 9 pages + 1 README |
-| Total Words | ~25,000+ |
-| Total Sections | 100+ |
-| Table Comparisons | 15+ |
-| Code Examples | 20+ |
+| Total Files | 10 pages + 1 README |
+| Total Words | ~28,000+ |
+| Total Sections | 110+ |
+| Table Comparisons | 20+ |
+| Code Examples | 40+ |
 | Use Cases | 15+ |
-| FAQ Questions | 60+ |
+| FAQ Questions | 80+ |
+| Platform Guides | 6 (Windows, macOS, Linux, Docker, Cloud, Developer) |
+| Installation Options | 12+ |
+| Troubleshooting Steps | 25+ |
 
 ---
 
