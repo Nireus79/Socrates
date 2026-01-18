@@ -1,0 +1,433 @@
+USE CASES AND LIMITATIONS - Socrates AI
+
+What Socrates Is Good For and What It's Not
+
+PERFECT USE CASES
+
+1. Starting New Projects
+
+Best for: Projects just starting from scratch
+
+You have an idea but not a spec. Socrates helps you:
+- Define requirements clearly
+- Think through architecture
+- Identify risks early
+- Generate code structure
+- Speed up initial development
+
+Example: "I want to build a task manager app"
+
+2. Creating Microservices
+
+Best for: Building modular services
+
+Use Socrates to:
+- Design each service independently
+- Generate service scaffolding
+- Create API interfaces
+- Plan service communication
+- Generate deployment config
+
+Example: "Build an authentication service"
+
+3. API Development
+
+Best for: REST/GraphQL APIs
+
+Socrates can help with:
+- API design and endpoints
+- Request/response schemas
+- Authentication strategy
+- Error handling patterns
+- Documentation
+
+Example: "Create a payment processing API"
+
+4. Data Pipeline Projects
+
+Best for: Data processing workflows
+
+Socrates works for:
+- ETL pipeline architecture
+- Data validation logic
+- Storage schema design
+- Reporting interfaces
+- Monitoring setup
+
+Example: "Build an analytics pipeline for user events"
+
+5. Web Applications
+
+Best for: Full-stack web apps
+
+Frontend + Backend:
+- Frontend scaffolding (React, Vue)
+- Backend API structure
+- Database schema
+- Authentication flow
+- Deployment strategy
+
+Example: "Build a project management tool"
+
+6. CLI Tools and Scripts
+
+Best for: Command-line utilities
+
+Perfect for:
+- Argument parsing
+- File operations
+- Process automation
+- Configuration management
+- Error handling
+
+Example: "Create a database migration tool"
+
+7. Team Projects
+
+Best for: When team alignment matters (Pro tier)
+
+Socrates ensures:
+- Everyone understands requirements
+- Specifications are documented
+- Architectural decisions are clear
+- Implementation is consistent
+- Knowledge is preserved
+
+Example: "New team member needs to understand the system"
+
+8. Prototyping and MVPs
+
+Best for: Quick proof-of-concept
+
+When you need to:
+- Validate an idea quickly
+- Create a demo
+- Get stakeholder feedback
+- Iterate rapidly
+- Minimize initial investment
+
+Example: "Build MVP in a weekend"
+
+LIMITATIONS - When NOT to Use Socrates
+
+1. Embedded Systems
+
+Why not: Socrates generates high-level code, not bare-metal firmware
+
+Don't use for:
+- IoT firmware
+- Microcontroller programming
+- RTOS development
+- Hardware abstraction layers
+
+Use instead: ARM Mbed, PlatformIO, MPLAB
+
+2. Real-Time Systems
+
+Why not: Generated code doesn't optimize for microsecond-level timing
+
+Don't use for:
+- Audio processing (needs low latency)
+- Game engines (real-time rendering)
+- Trading systems (millisecond precision)
+- Robotics control loops
+
+Use instead: Hand-optimized C/C++, Rust
+
+3. Machine Learning and AI
+
+Why not: Requires specialized knowledge, not generic scaffolding
+
+Don't use for:
+- Model training pipelines
+- Neural network architecture
+- Data preprocessing complex logic
+- Statistical analysis
+
+Use instead: TensorFlow, PyTorch, scikit-learn
+Coming: v1.5 - ML scaffolding support
+
+4. System-Level Programming
+
+Why not: Needs low-level optimization and unsafe code
+
+Don't use for:
+- Operating system kernels
+- Drivers
+- Performance-critical systems
+- Memory management
+- Concurrency primitives
+
+Use instead: Hand-written C/Rust
+
+5. Very Complex Business Logic
+
+Why not: Socrates generates structure, you add business logic
+
+Don't use for:
+- Complex financial calculations
+- Advanced statistical analysis
+- Specialized domain algorithms
+- Business rule engines (>1000 rules)
+
+Use instead: Expert-written domain code
+
+6. Legacy System Integration
+
+Why not: Requires understanding of existing codebase
+
+Don't use for:
+- Refactoring old code
+- Integrating with legacy systems
+- Modernizing monoliths
+- Migration from old frameworks
+
+Use instead: Domain experts familiar with legacy system
+
+7. Highly Specialized Domains
+
+Why not: Requires deep domain expertise
+
+Don't use for:
+- Genomics analysis
+- Quantum computing
+- Scientific computing
+- Specialized medical software
+- Aerospace/aviation systems
+
+Use instead: Domain-specific experts and tools
+
+8. Security-Critical Systems
+
+Why not: Needs thorough security review (not auto-generated)
+
+Don't use as-is for:
+- Banking/payment systems
+- Healthcare systems (PHI/HIPAA)
+- Government systems
+- Military applications
+- Cryptographic algorithms
+
+Use for: Initial scaffold, then have security experts review
+
+PROJECT COMPLEXITY GUIDE
+
+Sweet Spot for Socrates:
+
+Project Scope: 100-5000 lines of code
+- Too small: "Hello world" examples
+- Too large: > 50,000 lines (use Socrates per module)
+
+Complexity: Medium
+- Moderate number of features (5-20)
+- Clear architecture
+- Well-defined requirements
+- Standard patterns
+
+Development Time: Days to Weeks
+- Too quick: Already know exactly what to build
+- Too slow: Requirements are vague/changing rapidly
+
+Team Size: 1-10 people
+- Solo developers: Perfect
+- Small teams: Good (use Pro tier)
+- Large teams: Possible (use Enterprise)
+
+EXAMPLES IN SWEET SPOT
+
+Project | Scope | Good for Socrates?
+Todo app | 500 LOC | [YES] Perfect
+Blog platform | 2000 LOC | [YES] Perfect
+Payment API | 1500 LOC | [YES] Great
+Admin dashboard | 3000 LOC | [YES] Good
+Email service | 800 LOC | [YES] Great
+Auth service | 600 LOC | [YES] Perfect
+Notification system | 1200 LOC | [YES] Good
+File upload service | 700 LOC | [YES] Great
+
+EXAMPLES OUTSIDE SWEET SPOT
+
+Project | Problem | Better Solution
+Game engine | Real-time rendering | Hand-written, optimized
+ML pipeline | Complex math | TensorFlow/PyTorch
+OS kernel | System-level | C/Rust + low-level
+IoT firmware | Embedded systems | ARM Mbed, RTOS
+Blockchain | Cryptography | Specialist code
+Video encoder | Performance-critical | Optimized C/Rust
+Legacy modernization | Complex integration | Domain experts
+Financial trading | Microsecond precision | Hand-optimized
+
+WHERE SOCRATES FITS IN YOUR WORKFLOW
+
+Development Process:
+
+Idea → Discovery → Architecture → Scaffolding → Implementation → Testing → Deploy
+     [YES]      [YES]          [YES]        [SOME]        [NO]       [LIMITED]
+
+Socrates excels:
+- Clarifying vague ideas
+- Designing architecture
+- Generating scaffolding
+- Creating structure
+
+Socrates helps:
+- Business logic implementation
+- Testing (generates test structure)
+- Deployment config
+
+Socrates doesn't do:
+- Complex testing strategy
+- Performance optimization
+- Security hardening
+- Production monitoring setup
+
+COMBINING SOCRATES WITH OTHER TOOLS
+
+The Complete Workflow:
+
+1. Requirements Clarification → Socrates Dialogue
+- Define requirements
+- Design architecture
+- Document decisions
+
+2. Code Scaffolding → Socrates Code Gen
+- Generate basic structure
+- Create API interfaces
+- Set up database schema
+
+3. Business Logic → You + your team
+- Implement core logic
+- Add business rules
+- Integrate with services
+
+4. Testing → pytest, Jest, etc.
+- Write comprehensive tests
+- Achieve code coverage
+- Performance testing
+
+5. Security Review → Security experts
+- Code review
+- Penetration testing
+- Security hardening
+
+6. Performance Optimization → Performance tools
+- Profiling and benchmarking
+- Optimization
+- Load testing
+
+7. Deployment → DevOps tools
+- Container orchestration
+- CI/CD pipelines
+- Monitoring
+
+RED FLAGS - When NOT to Use Socrates
+
+Don't use Socrates when:
+
+1. Vague requirements
+"Build an app that does everything"
+Fix: Clarify requirements first, then use Socrates
+
+2. Rapidly changing specs
+"Requirements change weekly"
+Fix: Stabilize requirements first
+
+3. Complex domain
+"Deep expertise required"
+Fix: Get domain experts to define spec first
+
+4. Unknown architecture
+"Not sure how to approach it"
+Fix: Research and prototype first
+
+5. Time-critical
+"Need code in < 1 hour"
+Fix: Use Socrates for future sprints
+
+6. Specialized tech
+"Very new framework/library"
+Fix: Socrates works best with proven tech
+
+7. No internet
+"Claude API requires connection"
+Fix: Use local-first option (coming v1.5)
+
+WHEN TO CONSIDER ALTERNATIVES
+
+Tool Comparison:
+
+Tool | Best For | vs Socrates
+GitHub Copilot | Inline code completion | Socrates is broader (requirements + code)
+ChatGPT | General questions | Socrates specialized for development
+Codeium | AI code completion | Socrates includes requirements clarification
+Traditional IDE | All languages | Socrates focuses on architecture
+Boilerplate templates | Fast setup | Socrates = adaptive templates
+Framework scaffolding | Specific framework | Socrates works across frameworks
+
+MIGRATION PATHS
+
+Using Socrates Incrementally:
+
+Start small:
+1. Use Socrates for your next small project
+2. Evaluate the workflow
+3. Expand to team (Pro tier)
+4. Scale up to larger projects
+
+Integrate gradually:
+1. Use alongside current tools
+2. Automate specific phases
+3. Build integrations (API)
+4. Full workflow integration
+
+Mix and match:
+- Use Socrates for new services
+- Keep existing codebase as-is
+- Integrate generated code with legacy
+- Migrate to Socrates gradually
+
+SUCCESS METRICS
+
+How to Know Socrates Works for You
+
+You'll see these benefits:
+- Faster project kickoff (40% faster)
+- Fewer requirement misunderstandings
+- Better code structure
+- Team alignment improves
+- Less rework and refactoring
+- Clearer project specifications
+- Easier onboarding for new team members
+
+If you see these, Socrates might not be the fit:
+- Generated code doesn't fit domain
+- Specifications keep changing
+- You need real-time performance
+- Domain expertise isn't easily captured
+- Your team prefers manual processes
+
+NEXT STEPS
+
+Explore Use Cases:
+
+For small teams: Try Pro tier at hermessoft.wordpress.com/socrates-ai/pricing
+For enterprises: Contact sales at sales@socrates-ai.com
+For open source: Request free tier at support@socrates-ai.com
+
+Get Started:
+
+Download Socrates at https://github.com/Nireus79/Socrates/releases/latest
+Try a small project first!
+
+Learn More:
+
+Full Documentation at https://github.com/Nireus79/Socrates/blob/master/docs/
+View Examples at https://github.com/Nireus79/Socrates/tree/master/examples
+Join Community at https://discord.gg/socrates
+
+Remember:
+
+Socrates is best for clarifying requirements and creating initial architecture. You bring the domain expertise and business logic!
+
+Last Updated: January 2026
+Version: 1.3.0
