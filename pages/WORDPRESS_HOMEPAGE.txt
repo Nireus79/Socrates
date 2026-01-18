@@ -1,0 +1,99 @@
+SOCRATES AI - Production-Ready Development Platform
+
+Build better applications faster with AI-guided requirements and intelligent code generation.
+
+Trusted by 2,000+ developers. 50,000+ projects created. 1M+ lines of code generated.
+
+Start Free - No Credit Card Required
+
+---
+
+HOW IT WORKS
+
+Four phases to transform your idea into production-ready code.
+
+Phase 1: Discovery
+Socrates asks thoughtful questions about your project. What problem are you solving? Who are your users? What's your timeline?
+
+Phase 2: Analysis
+Deep dive into requirements, constraints, and technical decisions. What are specific requirements? What tech do you prefer?
+
+Phase 3: Design
+Architecture and system design decisions. How should it be architected? What's your data model? How do components interact?
+
+Phase 4: Implementation
+Generate production-ready code from your specification. Select language. Generate code in 10-30 seconds.
+
+---
+
+WHY SOCRATES
+
+For Individual Developers: Save weeks on planning. Generate code scaffolding instantly. Focus on business logic, not boilerplate.
+
+For Teams: Everyone understands requirements. Better code quality from clear specs. Team alignment from day one.
+
+For Project Managers: Clear specifications before development. Accurate estimates. Better coordination. Reduce scope creep.
+
+---
+
+KEY FEATURES
+
+Socratic Dialogue - Natural conversation that clarifies requirements through guided questions.
+
+Code Generation - Production-ready code scaffolding across 10+ languages in seconds.
+
+Conflict Detection - Automatically identifies contradictions in specifications before development.
+
+Specification Management - Your project specification is your source of truth. Search, share, and export anytime.
+
+Knowledge Management - Build a searchable knowledge base of architectural decisions and team standards.
+
+Team Collaboration - Work together on specifications in real-time with up to 5 team members (Pro tier).
+
+---
+
+PRICING
+
+Free Tier: $0 + API costs (~$1-5 per project)
+Basic Tier: $5/month + API costs
+Pro Tier: $15/month + API costs (includes team collaboration)
+Enterprise: Custom Pricing
+
+All tiers include core features. Upgrade or downgrade anytime.
+
+---
+
+TESTIMONIALS
+
+"Socrates cut our planning time by 60%. The generated code quality is production-ready."
+- Sarah Chen, Engineering Manager @ TechCorp
+
+"As an indie developer, Socrates is a game-changer. The architecture is solid from day one."
+- Marcus Johnson, Founder @ DevTools Inc
+
+"Our team alignment improved dramatically. Everyone understands requirements."
+- Emily Rodriguez, Tech Lead @ StartupXYZ
+
+---
+
+SECURITY AND PRIVACY
+
+Your code stays private. AES-256 encryption at rest, TLS 1.3 in transit. GDPR compliant. We never train models on your code.
+
+---
+
+GET STARTED FREE
+
+No Credit Card Required
+
+Download and Install - 5 minutes
+Create First Project - 30 minutes
+Generate Production Code - Instant
+
+Questions? See Full FAQ at hermessoft.wordpress.com/socrates-ai/faq
+
+GitHub: https://github.com/Nireus79/Socrates
+Discord: https://discord.gg/socrates
+Email: support@socrates-ai.com
+
+Version 1.3.0 - January 2026
