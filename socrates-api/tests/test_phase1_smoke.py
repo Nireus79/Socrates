@@ -37,6 +37,7 @@ TEST_USER_2 = {
 }
 
 
+@pytest.mark.integration
 class TestAuthenticationEndpoints:
     """Test authentication endpoints."""
 
@@ -172,6 +173,7 @@ class TestAuthenticationEndpoints:
         assert response.status_code == 401
 
 
+@pytest.mark.integration
 class TestProjectEndpoints:
     """Test project management endpoints."""
 
@@ -382,6 +384,7 @@ class TestProjectEndpoints:
         assert response.status_code == 400
 
 
+@pytest.mark.integration
 class TestAccessControl:
     """Test access control and authorization."""
 
@@ -473,6 +476,7 @@ class TestAccessControl:
         assert response.status_code == 403
 
 
+@pytest.mark.integration
 class TestErrorHandling:
     """Test error handling and edge cases."""
 

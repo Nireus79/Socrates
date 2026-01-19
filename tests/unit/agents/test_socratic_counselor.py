@@ -23,7 +23,12 @@ def mock_orchestrator():
     """Create a mock orchestrator for testing"""
     orchestrator = MagicMock()
     orchestrator.context_analyzer = MagicMock()
+    orchestrator.context_analyzer.get_context_summary = MagicMock(
+        return_value="Test project context"
+    )
     orchestrator.database = MagicMock()
+    orchestrator.database.load_user = MagicMock(return_value=None)
+    orchestrator.database.save_user = MagicMock()
     orchestrator.client = MagicMock()
     orchestrator.conflict_detector = MagicMock()
     orchestrator.conflict_detector.process = MagicMock(
@@ -33,6 +38,14 @@ def mock_orchestrator():
     orchestrator.knowledge_manager.process = MagicMock(
         return_value={"status": "success", "knowledge": []}
     )
+    # Mock claude_client for question generation
+    orchestrator.claude_client = MagicMock()
+    orchestrator.claude_client.generate_socratic_question = MagicMock(
+        return_value="What is your target audience?"
+    )
+    # Mock vector_db for knowledge search
+    orchestrator.vector_db = MagicMock()
+    orchestrator.vector_db.search_similar_adaptive = MagicMock(return_value=[])
     # Mock process_request to return success for all agents
     orchestrator.process_request = MagicMock(
         return_value={"status": "success", "conflicts": [], "knowledge": []}
@@ -64,6 +77,7 @@ def sample_project():
         code_style="documented",
         phase="planning",
         conversation_history=[],
+        pending_questions=[],
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
     )
@@ -102,12 +116,30 @@ class TestSocraticQuestionGeneration:
         """Test generating socratic question with valid project"""
         mock_orchestrator.context_analyzer.get_context_summary.return_value = "Test project context in planning phase"
 
-        request = {"action": "generate_question", "project": sample_project}
+        # Mock a user with pro tier (unlimited questions)
+        from socratic_system.models.user import User
+        mock_user = User(
+            username="testuser",
+            email="test@example.com",
+            passcode_hash="hash",
+            created_at=datetime.datetime.now(),
+            projects=["test_proj_001"],
+            subscription_tier="pro",
+        )
+        mock_orchestrator.database.load_user.return_value = mock_user
+
+        request = {
+            "action": "generate_question",
+            "project": sample_project,
+            "current_user": "testuser",
+        }
         result = socratic_agent.process(request)
 
-        # Question generation should return a result (even if status is error due to missing Claude)
+        # Question generation should return a successful result
         assert isinstance(result, dict)
         assert "status" in result
+        assert result["status"] == "success"
+        assert "question" in result
 
     def test_generate_question_without_project(self, socratic_agent):
         """Test generating question without project context fails appropriately"""
