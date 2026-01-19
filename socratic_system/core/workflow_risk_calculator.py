@@ -285,7 +285,7 @@ class WorkflowRiskCalculator:
             all_categories = set(phase_categories[workflow.phase].keys())
             covered_categories = self._get_covered_categories(path, workflow)
 
-            missing = sorted(list(all_categories - covered_categories))
+            missing = sorted(all_categories - covered_categories)
 
             logger.debug(f"Missing categories: {missing}")
 

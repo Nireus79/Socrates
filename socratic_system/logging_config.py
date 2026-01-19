@@ -190,7 +190,7 @@ class LoggingConfig:
         handler.setLevel(self.log_level)
 
         if self.json_logs:
-            formatter = JsonFormatter()
+            formatter: logging.Formatter = JsonFormatter()
         else:
             formatter = logging.Formatter(
                 "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -203,7 +203,7 @@ class LoggingConfig:
     def _get_file_handler(
         self,
         filename: str,
-        level: int = None,
+        level: Optional[int] = None,
         max_bytes: int = 10485760,  # 10MB default
         backup_count: int = 5,
     ) -> logging.handlers.RotatingFileHandler:
@@ -218,7 +218,7 @@ class LoggingConfig:
         handler.setLevel(level)
 
         if self.json_logs:
-            formatter = JsonFormatter()
+            formatter: logging.Formatter = JsonFormatter()
         else:
             formatter = logging.Formatter(
                 "%(asctime)s - %(name)s - %(levelname)s - %(message)s",

@@ -115,7 +115,7 @@ def get_or_default(
         Value at key, or default if not found
     """
     keys = key.split(".")
-    current = result
+    current: Any = result
 
     for k in keys:
         if isinstance(current, dict):

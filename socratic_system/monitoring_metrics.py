@@ -9,7 +9,7 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 
 @dataclass
@@ -85,7 +85,7 @@ class MetricsCollector:
         """
         self.gauges[name] = value
 
-    def get_metric_stats(self, name: str, minutes: int = 60) -> Optional[Dict[str, float]]:
+    def get_metric_stats(self, name: str, minutes: int = 60) -> Optional[Dict[str, Any]]:
         """
         Get statistics for a metric over time period.
 
@@ -108,7 +108,7 @@ class MetricsCollector:
         values = [m.value for m in recent]
 
         return {
-            "count": len(values),
+            "count": float(len(values)),
             "min": min(values),
             "max": max(values),
             "avg": sum(values) / len(values),
@@ -148,9 +148,9 @@ class HealthChecker:
 
     def __init__(self):
         """Initialize health checker."""
-        self.checks: Dict[str, callable] = {}
+        self.checks: Dict[str, Callable[[], bool]] = {}
 
-    def register_check(self, name: str, check_fn: callable) -> None:
+    def register_check(self, name: str, check_fn: Callable[[], bool]) -> None:
         """
         Register a health check function.
 

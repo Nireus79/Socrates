@@ -6,7 +6,7 @@ ensuring questions target specific categories.
 """
 
 import logging
-from typing import List, Set
+from typing import Any, Dict, List, Optional, Set, Union
 
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.workflow import (
@@ -108,16 +108,17 @@ class QuestionSelector:
         covered = set()
 
         # Check categorized_specs for current phase
-        phase_specs = project.categorized_specs.get(project.phase, {})
+        phase_specs: Union[Dict[str, Any], Any] = project.categorized_specs.get(project.phase, {})
 
-        for category_specs in phase_specs.values():
-            if isinstance(category_specs, (list, dict)):
-                if isinstance(category_specs, list) and category_specs:
-                    # If it's a list with items, category is covered
-                    covered.add(str(list(phase_specs.keys())[0]))
-                elif isinstance(category_specs, dict):
-                    for category in category_specs.keys():
-                        covered.add(category)
+        if isinstance(phase_specs, dict):
+            for category_specs in phase_specs.values():
+                if isinstance(category_specs, (list, dict)):
+                    if isinstance(category_specs, list) and category_specs:
+                        # If it's a list with items, category is covered
+                        covered.add(str(list(phase_specs.keys())[0]))
+                    elif isinstance(category_specs, dict):
+                        for category in category_specs.keys():
+                            covered.add(category)
 
         logger.debug(f"Covered categories: {covered}")
 
@@ -183,7 +184,7 @@ class QuestionSelector:
 
         return questions
 
-    def get_next_node(self, workflow: WorkflowDefinition, execution: WorkflowExecutionState) -> str:
+    def get_next_node(self, workflow: WorkflowDefinition, execution: WorkflowExecutionState) -> Optional[str]:
         """
         Get the next node ID to advance to after current node completes.
 

@@ -13,7 +13,7 @@ import logging
 import tarfile
 import zipfile
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Literal, Optional, Tuple
 
 logger = logging.getLogger("socrates.utils.archive_builder")
 
@@ -159,6 +159,7 @@ class ArchiveBuilder:
 
         try:
             # Determine compression mode
+            mode: Literal["w", "w:gz", "w:bz2", "w:xz"]
             if compression == "gz":
                 mode = "w:gz"
                 ext = ".tar.gz"
@@ -193,7 +194,7 @@ class ArchiveBuilder:
 
                 return tarinfo
 
-            with tarfile.open(output_path, mode) as tar:
+            with tarfile.open(str(output_path), mode) as tar:
                 # Add project directory
                 arcname = project_root.name
                 tar.add(
@@ -280,7 +281,7 @@ class ArchiveBuilder:
             elif ".tar" in str(archive_path):
                 with tarfile.open(archive_path) as tar:
                     # Try to read all members
-                    for member in tar.getmembers():
+                    for _member in tar.getmembers():
                         pass
                     return True, "TAR archive is valid"
 

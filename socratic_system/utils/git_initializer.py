@@ -370,7 +370,7 @@ class GitInitializer:
         if not isinstance(project_root, Path):
             project_root = Path(project_root)
 
-        status = {
+        status: Dict[str, Any] = {
             "is_git_repo": False,
             "branch": None,
             "remotes": [],
@@ -409,8 +409,8 @@ class GitInitializer:
                     timeout=5,
                     text=True,
                 )
-                remotes = [line.split()[0] for line in result.stdout.strip().split("\n") if line]
-                status["remotes"] = list(set(remotes))  # Remove duplicates
+                remote_lines = [line.split()[0] for line in result.stdout.strip().split("\n") if line]
+                status["remotes"] = list(set(remote_lines))  # Remove duplicates
             except subprocess.CalledProcessError:
                 pass
 
@@ -428,7 +428,7 @@ class GitInitializer:
                 if changes:
                     status["uncommitted_changes"] = True
                     # Check for untracked files (lines starting with ??)
-                    untracked = [l for l in changes.split("\n") if l.startswith("??")]
+                    untracked = [line for line in changes.split("\n") if line.startswith("??")]
                     status["untracked_files"] = len(untracked) > 0
             except subprocess.CalledProcessError:
                 pass
