@@ -21,6 +21,7 @@ class CodeGeneratorAgent(Agent):
 
     def __init__(self, orchestrator):
         super().__init__("CodeGenerator", orchestrator)
+        self.current_user = None
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process artifact generation requests"""
