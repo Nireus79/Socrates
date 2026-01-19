@@ -100,7 +100,7 @@ class TestSocraticQuestionGeneration:
         self, socratic_agent, sample_project, mock_orchestrator
     ):
         """Test generating socratic question with valid project"""
-        mock_orchestrator.context_analyzer.get_context_summary.return_value = {"phase": "planning"}
+        mock_orchestrator.context_analyzer.get_context_summary.return_value = "Test project context in planning phase"
 
         request = {"action": "generate_question", "project": sample_project}
         result = socratic_agent.process(request)

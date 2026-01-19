@@ -268,8 +268,9 @@ class SocraticCounselorAgent(Agent):
                 logger.info(
                     f"[KNOWLEDGE DEBUG] Searching for documents in project {project.project_id}"
                 )
+                context_preview = context[:100] if context else 'EMPTY'
                 logger.info(
-                    f"[KNOWLEDGE DEBUG] Query context: {context[:100] if context else 'EMPTY'}..."
+                    f"[KNOWLEDGE DEBUG] Query context: {context_preview}..."
                 )
                 logger.info(f"[KNOWLEDGE DEBUG] Strategy: {strategy}, top_k: {top_k}")
 
