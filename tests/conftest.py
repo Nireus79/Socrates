@@ -346,15 +346,19 @@ def pytest_collection_modifyitems(config, items):
     """Modify collected tests to add markers and skip unavailable tests."""
     import socket
 
-    # Check if API server is available once at the start
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
-        result = sock.connect_ex(("localhost", 8008))
-        sock.close()
-        api_available = result == 0
-    except Exception:
-        api_available = False
+    # Check if API servers are available once at the start
+    def check_port(port):
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
+            result = sock.connect_ex(("localhost", port))
+            sock.close()
+            return result == 0
+        except Exception:
+            return False
+
+    api_8008_available = check_port(8008)
+    api_8000_available = check_port(8000)
 
     for item in items:
         # Add unit marker to tests that don't require external dependencies
@@ -369,12 +373,21 @@ def pytest_collection_modifyitems(config, items):
         ):
             item.add_marker(pytest.mark.integration)
 
-        # Skip API tests if server not available (prevents 4+ second timeouts)
-        if not api_available and "test_api_workflows" in str(item.fspath):
+        # Skip e2e API tests if server not available (prevents 4+ second timeouts on port 8008)
+        if not api_8008_available and "test_api_workflows" in str(item.fspath):
             item.add_marker(
                 pytest.mark.skip(
-                    reason="API server (localhost:8008) is not running. "
+                    reason="E2E API server (localhost:8008) is not running. "
                     "Start the API server to run these tests."
+                )
+            )
+
+        # Skip integration tests if API server not available (prevents connection errors on port 8000)
+        if not api_8000_available and "tests/integration/" in str(item.fspath):
+            item.add_marker(
+                pytest.mark.skip(
+                    reason="Integration API server (localhost:8000) is not running. "
+                    "Start the API server to run integration tests."
                 )
             )
 
