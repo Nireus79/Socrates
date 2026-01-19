@@ -25,6 +25,18 @@ def mock_orchestrator():
     orchestrator.context_analyzer = MagicMock()
     orchestrator.database = MagicMock()
     orchestrator.client = MagicMock()
+    orchestrator.conflict_detector = MagicMock()
+    orchestrator.conflict_detector.process = MagicMock(
+        return_value={"status": "success", "conflicts": []}
+    )
+    orchestrator.knowledge_manager = MagicMock()
+    orchestrator.knowledge_manager.process = MagicMock(
+        return_value={"status": "success", "knowledge": []}
+    )
+    # Mock process_request to return success for all agents
+    orchestrator.process_request = MagicMock(
+        return_value={"status": "success", "conflicts": [], "knowledge": []}
+    )
     return orchestrator
 
 

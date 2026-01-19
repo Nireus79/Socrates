@@ -231,7 +231,7 @@ class TestOrchestratorWithMockedAPI:
     ):
         """Test orchestrator with mocked Anthropic client"""
         with patch(
-            "socratic_system.clients.anthropic.Anthropic", return_value=mock_anthropic_client
+            "anthropic.Anthropic", return_value=mock_anthropic_client
         ):
             orchestrator = AgentOrchestrator(test_config)
 

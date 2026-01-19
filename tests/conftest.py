@@ -144,6 +144,17 @@ def mock_claude_client():
 
 
 @pytest.fixture
+def mock_anthropic_client():
+    """Create a mock Anthropic API client for testing."""
+    client = MagicMock()
+    client.messages = MagicMock()
+    client.messages.create = MagicMock(
+        return_value=MagicMock(content=[MagicMock(text="Mock response")])
+    )
+    return client
+
+
+@pytest.fixture
 def test_config(mock_api_key, tmp_path):
     """
     Create an isolated test configuration object.
