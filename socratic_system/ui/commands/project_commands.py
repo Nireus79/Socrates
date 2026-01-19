@@ -43,20 +43,20 @@ class ProjectCreateCommand(BaseCommand):
             return self.error("Required context not available")
 
         # Create project using orchestrator
-        result = safe_orchestrator_call(
-            orchestrator,
-            "project_manager",
-            {
-                "action": "create_project",
-                "project_name": project_name,
-                "owner": user.username,
-                "project_type": project_type,
-            },
-            operation_name="create_project"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "project_manager",
+                {
+                    "action": "create_project",
+                    "project_name": project_name,
+                    "owner": user.username,
+                    "project_type": project_type,
+                },
+                operation_name="create_project"
+            )
 
-        if result.get("data", {}).get("status") == "success":
-            project = result.get("data", {}).get("project")
+            project = result.get("project")
             app.current_project = project
             app.context_display.set_context(project=project)
 
@@ -70,8 +70,8 @@ class ProjectCreateCommand(BaseCommand):
             print("  • Use /docs import <path> to import documents")
 
             return self.success(data={"project": project})
-        else:
-            return self.error(result.get("message", "Failed to create project"))
+        except ValueError as e:
+            return self.error(str(e))
 
     def _ask_project_type(self) -> str:
         """Ask user to select project type"""
@@ -110,8 +110,9 @@ class ProjectLoadCommand(BaseCommand):
             Flattened list of all projects for selection
         """
         # Separate active and archived
-        active_projects = [p for p in result.get("data", {}).get("projects") if p.get("status") != "archived"]
-        archived_projects = [p for p in result.get("data", {}).get("projects") if p.get("status") == "archived"]
+        projects = result.get("projects", [])
+        active_projects = [p for p in projects if p.get("status") != "archived"]
+        archived_projects = [p for p in projects if p.get("status") == "archived"]
 
         print(f"\n{Fore.CYAN}Your Projects:{Style.RESET_ALL}")
 
@@ -149,18 +150,18 @@ class ProjectLoadCommand(BaseCommand):
         Returns:
             Result dict with project or error
         """
-        project_id = project_info["project_id"]
+        try:
+            project_id = project_info["project_id"]
 
-        # Load project
-        result = safe_orchestrator_call(
-            orchestrator,
-            "project_manager",
-            {"action": "load_project", "project_id": project_id},
-            operation_name="load_project"
-        )
+            # Load project
+            result = safe_orchestrator_call(
+                orchestrator,
+                "project_manager",
+                {"action": "load_project", "project_id": project_id},
+                operation_name="load_project"
+            )
 
-        if result.get("data", {}).get("status") == "success":
-            project = result.get("data", {}).get("project")
+            project = result.get("project")
             app.current_project = project
             app.context_display.set_context(project=project)
 
@@ -173,8 +174,8 @@ class ProjectLoadCommand(BaseCommand):
                 self.print_success(f"Project loaded: {project.name}")
 
             return self.success(data={"project": project})
-        else:
-            return self.error(result.get("message", "Failed to load project"))
+        except ValueError as e:
+            return self.error(str(e))
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute project load command"""
@@ -188,30 +189,33 @@ class ProjectLoadCommand(BaseCommand):
         if not orchestrator or not app or not user:
             return self.error("Required context not available")
 
-        # Get user's projects
-        result = safe_orchestrator_call(
-            orchestrator,
-            "project_manager",
-            {"action": "list_projects", "username": user.username},
-            operation_name="list_projects"
-        )
-
-        if result.get("data", {}).get("status") != "success" or not result.get("projects"):
-            self.print_info("No projects found")
-            return self.success()
-
-        # Display projects and get selection
-        all_projects = self._display_projects(result)
-
         try:
+            # Get user's projects
+            result = safe_orchestrator_call(
+                orchestrator,
+                "project_manager",
+                {"action": "list_projects", "username": user.username},
+                operation_name="list_projects"
+            )
+
+            projects = result.get("projects", [])
+            if not projects:
+                self.print_info("No projects found")
+                return self.success()
+
+            # Display projects and get selection
+            all_projects = self._display_projects(result)
+
             choice = int(input(f"\n{Fore.WHITE}Select project (1-{len(all_projects)}): ")) - 1
             if 0 <= choice < len(all_projects):
                 project_info = all_projects[choice]
                 return self._load_selected_project(project_info, orchestrator, app)
             else:
                 return self.error("Invalid selection")
-        except ValueError:
-            return self.error("Invalid input")
+        except ValueError as e:
+            if "invalid literal" in str(e).lower():
+                return self.error("Invalid input")
+            return self.error(str(e))
 
 
 class ProjectListCommand(BaseCommand):

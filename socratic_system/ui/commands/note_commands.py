@@ -70,30 +70,30 @@ class NoteAddCommand(BaseCommand):
         if not content.strip():
             return self.error("Note content cannot be empty")
 
-        # Add note via orchestrator
-        result = safe_orchestrator_call(
-            orchestrator,
-            "note_manager",
-            {
-                "action": "add_note",
-                "project_id": project.project_id,
-                "note_type": note_type,
-                "title": title,
-                "content": content,
-                "created_by": user.username,
-                "tags": tags,
-            },
-            operation_name="add note"
-        )
+        try:
+            # Add note via orchestrator
+            result = safe_orchestrator_call(
+                orchestrator,
+                "note_manager",
+                {
+                    "action": "add_note",
+                    "project_id": project.project_id,
+                    "note_type": note_type,
+                    "title": title,
+                    "content": content,
+                    "created_by": user.username,
+                    "tags": tags,
+                },
+                operation_name="add note"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             note_data = result.get("note", {})
             self.print_success(f"Note '{title}' added")
             print(f"{Fore.CYAN}Note ID: {note_data.get('note_id', 'unknown')}")
 
             return self.success(data={"note": note_data})
-        else:
-            return self.error(result.get("message", "Failed to add note"))
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class NoteListCommand(BaseCommand):
@@ -126,15 +126,15 @@ class NoteListCommand(BaseCommand):
             if note_type not in valid_types:
                 return self.error(f"Invalid note type. Must be one of: {', '.join(valid_types)}")
 
-        # List notes via orchestrator
-        result = safe_orchestrator_call(
-            orchestrator,
-            "note_manager",
-            {"action": "list_notes", "project_id": project.project_id, "note_type": note_type},
-            operation_name="list notes"
-        )
+        try:
+            # List notes via orchestrator
+            result = safe_orchestrator_call(
+                orchestrator,
+                "note_manager",
+                {"action": "list_notes", "project_id": project.project_id, "note_type": note_type},
+                operation_name="list notes"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             notes = result.get("notes", [])
             count = result.get("count", 0)
 
@@ -167,8 +167,8 @@ class NoteListCommand(BaseCommand):
 
             print(f"Total: {count} note(s)")
             return self.success(data={"notes": notes, "count": count})
-        else:
-            return self.error(result.get("message", "Failed to list notes"))
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class NoteSearchCommand(BaseCommand):
@@ -200,15 +200,15 @@ class NoteSearchCommand(BaseCommand):
         if not orchestrator or not project:
             return self.error("Required context not available")
 
-        # Search notes via orchestrator
-        result = safe_orchestrator_call(
-            orchestrator,
-            "note_manager",
-            {"action": "search_notes", "project_id": project.project_id, "query": query},
-            operation_name="search notes"
-        )
+        try:
+            # Search notes via orchestrator
+            result = safe_orchestrator_call(
+                orchestrator,
+                "note_manager",
+                {"action": "search_notes", "project_id": project.project_id, "query": query},
+                operation_name="search notes"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             results = result.get("results", [])
             count = result.get("count", 0)
 
@@ -236,8 +236,8 @@ class NoteSearchCommand(BaseCommand):
 
             print(f"Found: {count} note(s)")
             return self.success(data={"results": results, "count": count})
-        else:
-            return self.error(result.get("message", "Failed to search notes"))
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class NoteDeleteCommand(BaseCommand):

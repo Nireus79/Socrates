@@ -26,7 +26,10 @@ class MigrationRunner:
             db_path: Path to SQLite database file
         """
         self.db_path = db_path
-        self.migration_dir = Path(__file__).parent.parent.parent / "migration_scripts"
+        # Try archive directory first (preferred location), fall back to root migration_scripts
+        archive_dir = Path(__file__).parent.parent.parent / "archive" / "migration_scripts"
+        root_dir = Path(__file__).parent.parent.parent / "migration_scripts"
+        self.migration_dir = archive_dir if archive_dir.exists() else root_dir
         self.logger = logging.getLogger("socrates.database.migrations")
 
     def apply_migration(self, migration_file: str) -> Tuple[bool, str]:
