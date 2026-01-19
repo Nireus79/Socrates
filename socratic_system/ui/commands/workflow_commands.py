@@ -44,19 +44,18 @@ class WorkflowApprovalsCommand(BaseCommand):
             return self.error("Orchestrator not available")
 
         # Get pending approvals
-        result = safe_orchestrator_call(
-            orchestrator,
-            "quality_controller",
-            {
-                "action": "get_pending_approvals",
-                "project_id": project.project_id,
-            },
-            operation_name="get pending approvals",
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "quality_controller",
+                {
+                    "action": "get_pending_approvals",
+                    "project_id": project.project_id,
+                },
+                operation_name="get pending approvals",
+            )
 
-        status = result.get("data", {}).get("status") if "data" in result else result.get("status")
-        if status == "success":
-            pending_approvals = result.get("data", {}).get("pending_approvals", []) if "data" in result else result.get("pending_approvals", [])
+            pending_approvals = result.get("pending_approvals", [])
 
             if not pending_approvals:
                 return self.success("No pending workflow approvals")
@@ -64,12 +63,8 @@ class WorkflowApprovalsCommand(BaseCommand):
             # Display approvals in table format
             self._display_pending_approvals(pending_approvals)
             return self.success()
-
-        return self.error(
-            result.get("data", {}).get("message", "Failed to retrieve pending approvals")
-            if "data" in result
-            else result.get("message", "Failed to retrieve pending approvals")
-        )
+        except ValueError as e:
+            return self.error(str(e))
 
     def _display_pending_approvals(self, approvals: List[Dict[str, Any]]) -> None:
         """Display pending approvals in table format"""
@@ -165,31 +160,26 @@ class WorkflowApproveCommand(BaseCommand):
         path_id = args[1]
 
         # Approve workflow
-        result = safe_orchestrator_call(
-            orchestrator,
-            "quality_controller",
-            {
-                "action": "approve_workflow",
-                "request_id": request_id,
-                "approved_path_id": path_id,
-            },
-            operation_name="approve workflow",
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "quality_controller",
+                {
+                    "action": "approve_workflow",
+                    "request_id": request_id,
+                    "approved_path_id": path_id,
+                },
+                operation_name="approve workflow",
+            )
 
-        status = result.get("data", {}).get("status") if "data" in result else result.get("status")
-        if status == "success":
             print(
                 f"\n{Fore.GREEN}✓ Workflow approved!{Style.RESET_ALL}"
             )
             print(f"  Path ID: {path_id}")
             print(f"  Execution will resume with this path\n")
             return self.success()
-
-        return self.error(
-            result.get("data", {}).get("message", "Failed to approve workflow")
-            if "data" in result
-            else result.get("message", "Failed to approve workflow")
-        )
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class WorkflowRejectCommand(BaseCommand):
@@ -227,29 +217,24 @@ class WorkflowRejectCommand(BaseCommand):
         reason = " ".join(args[1:]) if len(args) > 1 else "User rejection"
 
         # Reject workflow
-        result = safe_orchestrator_call(
-            orchestrator,
-            "quality_controller",
-            {
-                "action": "reject_workflow",
-                "request_id": request_id,
-                "reason": reason,
-            },
-            operation_name="reject workflow",
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "quality_controller",
+                {
+                    "action": "reject_workflow",
+                    "request_id": request_id,
+                    "reason": reason,
+                },
+                operation_name="reject workflow",
+            )
 
-        status = result.get("data", {}).get("status") if "data" in result else result.get("status")
-        if status == "success":
             print(f"\n{Fore.YELLOW}⚠ Workflow rejected{Style.RESET_ALL}")
             print(f"  Reason: {reason}")
             print(f"  Alternative workflows may be requested\n")
             return self.success()
-
-        return self.error(
-            result.get("data", {}).get("message", "Failed to reject workflow")
-            if "data" in result
-            else result.get("message", "Failed to reject workflow")
-        )
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class WorkflowInfoCommand(BaseCommand):
@@ -296,9 +281,8 @@ class WorkflowInfoCommand(BaseCommand):
             operation_name="get pending approvals",
         )
 
-        status = result.get("data", {}).get("status") if "data" in result else result.get("status")
-        if status == "success":
-            pending_approvals = result.get("data", {}).get("pending_approvals", []) if "data" in result else result.get("pending_approvals", [])
+        try:
+            pending_approvals = result.get("pending_approvals", [])
 
             # Find matching approval
             approval = next(
@@ -311,12 +295,8 @@ class WorkflowInfoCommand(BaseCommand):
 
             self._display_detailed_approval(approval)
             return self.success()
-
-        return self.error(
-            result.get("data", {}).get("message", "Failed to retrieve approvals")
-            if "data" in result
-            else result.get("message", "Failed to retrieve approvals")
-        )
+        except ValueError as e:
+            return self.error(str(e))
 
     def _display_detailed_approval(self, approval: Dict[str, Any]) -> None:
         """Display detailed approval information"""

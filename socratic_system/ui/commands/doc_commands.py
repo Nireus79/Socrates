@@ -111,14 +111,14 @@ class DocImportCommand(BaseCommand):
 
         print(f"{Fore.YELLOW}Processing file...{Style.RESET_ALL}")
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "document_agent",
-            {"action": "import_file", "file_path": file_path, "project_id": project_id},
-            operation_name="import file"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "document_agent",
+                {"action": "import_file", "file_path": file_path, "project_id": project_id},
+                operation_name="import file"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             file_name = result.get("file_name", "file")
             words = result.get("words_extracted", 0)
             chunks = result.get("chunks_created", 0)
@@ -160,8 +160,8 @@ class DocImportCommand(BaseCommand):
                     "entries_added": entries,
                 }
             )
-        else:
-            return self.error(result.get("message", "Failed to import file"))
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class DocImportDirCommand(BaseCommand):
@@ -208,19 +208,19 @@ class DocImportDirCommand(BaseCommand):
 
         print(f"{Fore.YELLOW}Processing directory...{Style.RESET_ALL}")
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "document_agent",
-            {
-                "action": "import_directory",
-                "directory_path": directory_path,
-                "project_id": project_id,
-                "recursive": recursive,
-            },
-            operation_name="import directory"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "document_agent",
+                {
+                    "action": "import_directory",
+                    "directory_path": directory_path,
+                    "project_id": project_id,
+                    "recursive": recursive,
+                },
+                operation_name="import directory"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             successful = result.get("files_processed", 0)
             failed = result.get("files_failed", 0)
             total_words = result.get("total_words_extracted", 0)
@@ -267,8 +267,8 @@ class DocImportDirCommand(BaseCommand):
                     "total_entries_stored": total_entries,
                 }
             )
-        else:
-            return self.error(result.get("message", "Failed to import directory"))
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class DocPasteCommand(BaseCommand):
@@ -304,13 +304,13 @@ class DocPasteCommand(BaseCommand):
         project_id = self._get_project_association(project)
 
         # Process text content
-        result = self._process_text_import(orchestrator, text_content, title, project_id)
+        try:
+            result = self._process_text_import(orchestrator, text_content, title, project_id)
 
-        # Handle result
-        if result.get("data", {}).get("status") == "success":
+            # Handle result
             return self._handle_import_success(result, title, project_id, context, orchestrator)
-        else:
-            return self.error(result.get("message", "Failed to import text"))
+        except ValueError as e:
+            return self.error(str(e))
 
     def _get_title_from_input(self, args: List[str]) -> str:
         """Get document title from args or user input"""
@@ -474,18 +474,18 @@ class DocImportUrlCommand(BaseCommand):
 
         print(f"{Fore.YELLOW}Fetching URL content...{Style.RESET_ALL}")
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "document_agent",
-            {
-                "action": "import_url",
-                "url": url,
-                "project_id": project_id,
-            },
-            operation_name="import URL"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "document_agent",
+                {
+                    "action": "import_url",
+                    "url": url,
+                    "project_id": project_id,
+                },
+                operation_name="import URL"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             file_name = result.get("file_name", "webpage")
             words = result.get("words_extracted", 0)
             chunks = result.get("chunks_created", 0)
@@ -529,8 +529,8 @@ class DocImportUrlCommand(BaseCommand):
                     "entries_added": entries,
                 }
             )
-        else:
-            return self.error(result.get("message", "Failed to import URL"))
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class DocListCommand(BaseCommand):
@@ -559,14 +559,14 @@ class DocListCommand(BaseCommand):
         else:
             return self.error("No project specified and no project loaded")
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "document_agent",
-            {"action": "list_documents", "project_id": project_id},
-            operation_name="list documents"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "document_agent",
+                {"action": "list_documents", "project_id": project_id},
+                operation_name="list documents"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             documents = result.get("documents", [])
 
             if not documents:
@@ -585,5 +585,5 @@ class DocListCommand(BaseCommand):
 
             print()
             return self.success(data={"documents": documents})
-        else:
-            return self.error(result.get("message", "Failed to list documents"))
+        except ValueError as e:
+            return self.error(str(e))

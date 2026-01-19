@@ -47,31 +47,31 @@ class GithubImportCommand(BaseCommand):
 
         print(f"{Fore.YELLOW}Importing from GitHub...{Style.RESET_ALL}")
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "project_manager",
-            {
-                "action": "create_from_github",
-                "github_url": github_url,
-                "project_name": project_name,
-                "owner": user.username,
-            },
-            operation_name="import GitHub repository"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "project_manager",
+                {
+                    "action": "create_from_github",
+                    "github_url": github_url,
+                    "project_name": project_name,
+                    "owner": user.username,
+                },
+                operation_name="import GitHub repository"
+            )
 
-        if result.get("data", {}).get("status") != "success":
-            return self.error(result.get("message", "Failed to import repository"))
+            project = result.get("project")
+            app.current_project = project
+            app.context_display.set_context(project=project)
 
-        project = result.get("data", {}).get("project")
-        app.current_project = project
-        app.context_display.set_context(project=project)
+            self.print_success(f"Repository imported as project '{project.name}'!")
+            self._show_import_metadata(result)
+            self._show_import_validation(result)
+            self._print_import_next_steps()
 
-        self.print_success(f"Repository imported as project '{project.name}'!")
-        self._show_import_metadata(result)
-        self._show_import_validation(result)
-        self._print_import_next_steps()
-
-        return self.success(data={"project": project})
+            return self.success(data={"project": project})
+        except ValueError as e:
+            return self.error(str(e))
 
     def _get_github_url(self, args: List[str]) -> str:
         """Get GitHub URL from args or user input"""
@@ -234,10 +234,10 @@ class GithubPullCommand(BaseCommand):
     ) -> Dict[str, Any]:
         """Handle complete pull workflow with conflict detection"""
         print(f"{Fore.CYAN}Pulling updates...{Style.RESET_ALL}")
-        pull_result = git_manager.pull_repository(temp_path)
-
-        if pull_result.get("data", {}).get("status") != "success":
-            return self.error(f"Pull failed: {pull_result.get('message', 'Unknown error')}")
+        try:
+            pull_result = git_manager.pull_repository(temp_path)
+        except ValueError as e:
+            return self.error(f"Pull failed: {str(e)}")
 
         self.print_success("Successfully pulled latest changes!")
         self._show_pull_output(pull_result)
@@ -337,10 +337,7 @@ class GithubPullCommand(BaseCommand):
 
     def _show_change_summary(self, sync_result: Dict[str, Any]) -> None:
         """Show summary of file changes"""
-        if sync_result.get("data", {}).get("status") != "success":
-            return
-
-        summary = sync_result.get("data", {}).get("summary")
+        summary = sync_result.get("summary", {})
         added_count = len(summary.get("added", []))
         modified_count = len(summary.get("modified", []))
         deleted_count = len(summary.get("deleted", []))
@@ -654,22 +651,22 @@ class GithubPushCommand(BaseCommand):
 
     def _handle_push_result(self, push_result: Dict[str, Any]) -> Dict[str, Any]:
         """Handle push result and return appropriate response"""
-        if push_result.get("data", {}).get("status") == "success":
+        try:
             self.print_success("Successfully pushed changes to GitHub!")
             if push_result.get("message"):
                 print(f"\n{Fore.CYAN}Push Output:{Style.RESET_ALL}")
-                print(push_result.get("data", {}).get("message")[:500])
+                print(push_result.get("message")[:500])
 
             print(f"\n{Fore.GREEN}[OK] Push completed successfully{Style.RESET_ALL}")
             return self.success(data={"push_result": push_result})
-
-        error_msg = push_result.get("message", "Unknown error")
-        if "auth" in error_msg.lower() or "permission" in error_msg.lower():
-            return self.error(
-                f"Authentication failed: {error_msg}\n"
-                "Make sure GITHUB_TOKEN environment variable is set with proper permissions"
-            )
-        return self.error(f"Push failed: {error_msg}")
+        except ValueError as e:
+            error_msg = push_result.get("message", "Unknown error")
+            if "auth" in error_msg.lower() or "permission" in error_msg.lower():
+                return self.error(
+                    f"Authentication failed: {error_msg}\n"
+                    "Make sure GITHUB_TOKEN environment variable is set with proper permissions"
+                )
+            return self.error(f"Push failed: {error_msg}")
 
 
 class GithubSyncCommand(BaseCommand):
@@ -700,10 +697,10 @@ class GithubSyncCommand(BaseCommand):
 
         # Step 1: Pull latest changes
         print(f"\n{Fore.CYAN}Step 1: Pulling latest changes from GitHub{Style.RESET_ALL}")
-        pull_command = GithubPullCommand()
-        pull_result = pull_command.execute([], context)
-
-        if pull_result.get("data", {}).get("status") != "success":
+        try:
+            pull_command = GithubPullCommand()
+            pull_result = pull_command.execute([], context)
+        except ValueError as e:
             print(f"{Fore.YELLOW}Pull operation had issues, but continuing...{Style.RESET_ALL}")
 
         # Step 2: Push changes
@@ -711,10 +708,10 @@ class GithubSyncCommand(BaseCommand):
 
         # Pass commit message args to push if provided
         push_args = args if len(args) > 0 else []
-        push_command = GithubPushCommand()
-        push_result = push_command.execute(push_args, context)
+        try:
+            push_command = GithubPushCommand()
+            push_result = push_command.execute(push_args, context)
 
-        if push_result.get("data", {}).get("status") == "success":
             self.print_success("Sync completed successfully!")
             print(f"\n{Fore.CYAN}Summary:{Style.RESET_ALL}")
             print("  • Pulled latest changes from GitHub")
@@ -725,9 +722,9 @@ class GithubSyncCommand(BaseCommand):
                     "push_result": push_result.get("data", {}),
                 }
             )
-        else:
+        except ValueError as e:
             # Pull succeeded, but push failed
             self.print_error("Sync partially failed")
             print(f"{Fore.YELLOW}Pull succeeded, but push encountered an issue:{Style.RESET_ALL}")
-            print(f"  {push_result.get('message', 'Unknown error')}")
-            return push_result
+            print(f"  {str(e)}")
+            return self.error(str(e))

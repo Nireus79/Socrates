@@ -89,69 +89,69 @@ class LLMCommand(BaseCommand):
         """List all available providers"""
         print(f"\n{Fore.CYAN}Available LLM Providers{Style.RESET_ALL}\n")
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "multi_llm",
-            {"action": "list_providers"},
-            operation_name="list providers"
-        )
-
-        if result.get("data", {}).get("status") != "success":
-            return self.error(result.get("message", "Failed to list providers"))
-
-        providers = result.get("providers", [])
-
-        for provider in providers:
-            available = (
-                Fore.GREEN + "Available" + Style.RESET_ALL
-                if provider.get("available")
-                else Fore.RED + "Unavailable" + Style.RESET_ALL
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "multi_llm",
+                {"action": "list_providers"},
+                operation_name="list providers"
             )
-            requires_key = "API Key Required" if provider.get("requires_api_key") else "No API Key"
-            models_count = len(provider.get("models", []))
 
-            print(f"{Fore.WHITE}{provider['display_name']:<30}{Style.RESET_ALL}")
-            print(
-                f"  Provider: {Fore.CYAN}{provider['provider']:<20}{Style.RESET_ALL} Status: {available}"
-            )
-            print(f"  Models: {models_count:<20} {requires_key}")
-            print(
-                f"  Cost: ${provider.get('cost_per_1k_input_tokens', 0):.6f}/1K input, ${provider.get('cost_per_1k_output_tokens', 0):.6f}/1K output"
-            )
-            print()
+            providers = result.get("providers", [])
 
-        return self.success(data={"providers_count": len(providers)})
+            for provider in providers:
+                available = (
+                    Fore.GREEN + "Available" + Style.RESET_ALL
+                    if provider.get("available")
+                    else Fore.RED + "Unavailable" + Style.RESET_ALL
+                )
+                requires_key = "API Key Required" if provider.get("requires_api_key") else "No API Key"
+                models_count = len(provider.get("models", []))
+
+                print(f"{Fore.WHITE}{provider['display_name']:<30}{Style.RESET_ALL}")
+                print(
+                    f"  Provider: {Fore.CYAN}{provider['provider']:<20}{Style.RESET_ALL} Status: {available}"
+                )
+                print(f"  Models: {models_count:<20} {requires_key}")
+                print(
+                    f"  Cost: ${provider.get('cost_per_1k_input_tokens', 0):.6f}/1K input, ${provider.get('cost_per_1k_output_tokens', 0):.6f}/1K output"
+                )
+                print()
+
+            return self.success(data={"providers_count": len(providers)})
+        except ValueError as e:
+            return self.error(str(e))
 
     def _show_config(self, orchestrator, user) -> Dict[str, Any]:
         """Show user's provider configuration"""
         print(f"\n{Fore.CYAN}Your LLM Provider Configuration{Style.RESET_ALL}\n")
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "multi_llm",
-            {"action": "get_provider_config", "user_id": user.username},
-            operation_name="get provider config"
-        )
-
-        if result.get("data", {}).get("status") != "success":
-            return self.error(result.get("message", "Failed to get configuration"))
-
-        default_provider = result.get("default_provider", "claude")
-        providers = result.get("providers", [])
-
-        print(f"Default Provider: {Fore.GREEN}{default_provider}{Style.RESET_ALL}\n")
-        print(f"{Fore.WHITE}Configured Providers:{Style.RESET_ALL}")
-
-        for provider in providers:
-            is_default = " (default)" if provider.get("is_default") else ""
-            enabled = "Enabled" if provider.get("enabled") else "Disabled"
-            model = provider.get("settings", {}).get("model", "N/A")
-
-            print(
-                f"  {Fore.CYAN}{provider['provider'].upper():<15}{Style.RESET_ALL} {enabled:<10} Model: {model}{Fore.GREEN}{is_default}{Style.RESET_ALL}"
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "multi_llm",
+                {"action": "get_provider_config", "user_id": user.username},
+                operation_name="get provider config"
             )
 
-        return self.success(data={"default_provider": default_provider})
+            default_provider = result.get("default_provider", "claude")
+            providers = result.get("providers", [])
+
+            print(f"Default Provider: {Fore.GREEN}{default_provider}{Style.RESET_ALL}\n")
+            print(f"{Fore.WHITE}Configured Providers:{Style.RESET_ALL}")
+
+            for provider in providers:
+                is_default = " (default)" if provider.get("is_default") else ""
+                enabled = "Enabled" if provider.get("enabled") else "Disabled"
+                model = provider.get("settings", {}).get("model", "N/A")
+
+                print(
+                    f"  {Fore.CYAN}{provider['provider'].upper():<15}{Style.RESET_ALL} {enabled:<10} Model: {model}{Fore.GREEN}{is_default}{Style.RESET_ALL}"
+                )
+
+            return self.success(data={"default_provider": default_provider})
+        except ValueError as e:
+            return self.error(str(e))
 
     def _set_default(self, args: List[str], orchestrator, user) -> Dict[str, Any]:
         """Set default provider"""
@@ -160,18 +160,18 @@ class LLMCommand(BaseCommand):
 
         provider = args[0].lower()
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "multi_llm",
-            {"action": "set_default_provider", "user_id": user.username, "provider": provider},
-            operation_name="set default provider"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "multi_llm",
+                {"action": "set_default_provider", "user_id": user.username, "provider": provider},
+                operation_name="set default provider"
+            )
 
-        if result.get("data", {}).get("status") != "success":
-            return self.error(result.get("message", "Failed to set default provider"))
-
-        print(f"\n{Fore.GREEN}✓ Default provider set to {provider}{Style.RESET_ALL}\n")
-        return self.success(message=f"Default provider set to {provider}")
+            print(f"\n{Fore.GREEN}✓ Default provider set to {provider}{Style.RESET_ALL}\n")
+            return self.success(message=f"Default provider set to {provider}")
+        except ValueError as e:
+            return self.error(str(e))
 
     def _set_model(self, args: List[str], orchestrator, user) -> Dict[str, Any]:
         """Set model for a provider"""
@@ -183,23 +183,23 @@ class LLMCommand(BaseCommand):
         provider = args[0].lower()
         model = " ".join(args[1:])  # Allow model names with spaces
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "multi_llm",
-            {
-                "action": "set_provider_model",
-                "user_id": user.username,
-                "provider": provider,
-                "model": model,
-            },
-            operation_name="set provider model"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "multi_llm",
+                {
+                    "action": "set_provider_model",
+                    "user_id": user.username,
+                    "provider": provider,
+                    "model": model,
+                },
+                operation_name="set provider model"
+            )
 
-        if result.get("data", {}).get("status") != "success":
-            return self.error(result.get("message", "Failed to set model"))
-
-        print(f"\n{Fore.GREEN}✓ Model set to {model} for {provider}{Style.RESET_ALL}\n")
-        return self.success(message=f"Model set to {model} for {provider}")
+            print(f"\n{Fore.GREEN}✓ Model set to {model} for {provider}{Style.RESET_ALL}\n")
+            return self.success(message=f"Model set to {model} for {provider}")
+        except ValueError as e:
+            return self.error(str(e))
 
     def _show_models(self, args: List[str], orchestrator) -> Dict[str, Any]:
         """Show available models for a provider"""
@@ -208,38 +208,38 @@ class LLMCommand(BaseCommand):
 
         provider = args[0].lower()
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "multi_llm",
-            {"action": "get_provider_models", "provider": provider},
-            operation_name="get provider models"
-        )
-
-        if result.get("data", {}).get("status") != "success":
-            return self.error(result.get("message", f"Unknown provider: {provider}"))
-
-        print(f"\n{Fore.CYAN}Models for {provider.upper()}{Style.RESET_ALL}\n")
-
-        models = result.get("models", [])
-        default_model = result.get("default_model", "")
-        context_window = result.get("context_window", "N/A")
-
-        print(f"Context Window: {Fore.GREEN}{context_window:,} tokens{Style.RESET_ALL}")
-        print(
-            f"Streaming: {Fore.GREEN}Yes{Style.RESET_ALL if result.get('supports_streaming') else Fore.RED + 'No' + Style.RESET_ALL}"
-        )
-        print(
-            f"Vision: {Fore.GREEN}Yes{Style.RESET_ALL if result.get('supports_vision') else Fore.RED + 'No' + Style.RESET_ALL}\n"
-        )
-
-        print(f"{Fore.WHITE}Available Models:{Style.RESET_ALL}")
-        for model in models:
-            is_default = (
-                f" {Fore.GREEN}(default){Style.RESET_ALL}" if model == default_model else ""
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "multi_llm",
+                {"action": "get_provider_models", "provider": provider},
+                operation_name="get provider models"
             )
-            print(f"  • {model}{is_default}")
 
-        return self.success(data={"models": models, "context_window": context_window})
+            print(f"\n{Fore.CYAN}Models for {provider.upper()}{Style.RESET_ALL}\n")
+
+            models = result.get("models", [])
+            default_model = result.get("default_model", "")
+            context_window = result.get("context_window", "N/A")
+
+            print(f"Context Window: {Fore.GREEN}{context_window:,} tokens{Style.RESET_ALL}")
+            print(
+                f"Streaming: {Fore.GREEN}Yes{Style.RESET_ALL if result.get('supports_streaming') else Fore.RED + 'No' + Style.RESET_ALL}"
+            )
+            print(
+                f"Vision: {Fore.GREEN}Yes{Style.RESET_ALL if result.get('supports_vision') else Fore.RED + 'No' + Style.RESET_ALL}\n"
+            )
+
+            print(f"{Fore.WHITE}Available Models:{Style.RESET_ALL}")
+            for model in models:
+                is_default = (
+                    f" {Fore.GREEN}(default){Style.RESET_ALL}" if model == default_model else ""
+                )
+                print(f"  • {model}{is_default}")
+
+            return self.success(data={"models": models, "context_window": context_window})
+        except ValueError as e:
+            return self.error(str(e))
 
     def _manage_key(self, args: List[str], orchestrator, user) -> Dict[str, Any]:
         """Manage API keys"""
@@ -255,23 +255,23 @@ class LLMCommand(BaseCommand):
             provider = args[1].lower()
             api_key = args[2]
 
-            result = safe_orchestrator_call(
-                orchestrator,
-                "multi_llm",
-                {
-                    "action": "add_api_key",
-                    "user_id": user.username,
-                    "provider": provider,
-                    "api_key": api_key,
-                },
-                operation_name="add API key"
-            )
+            try:
+                result = safe_orchestrator_call(
+                    orchestrator,
+                    "multi_llm",
+                    {
+                        "action": "add_api_key",
+                        "user_id": user.username,
+                        "provider": provider,
+                        "api_key": api_key,
+                    },
+                    operation_name="add API key"
+                )
 
-            if result.get("data", {}).get("status") != "success":
-                return self.error(result.get("message", "Failed to add API key"))
-
-            print(f"\n{Fore.GREEN}✓ API key added for {provider}{Style.RESET_ALL}\n")
-            return self.success(message=f"API key added for {provider}")
+                print(f"\n{Fore.GREEN}✓ API key added for {provider}{Style.RESET_ALL}\n")
+                return self.success(message=f"API key added for {provider}")
+            except ValueError as e:
+                return self.error(str(e))
 
         elif action == "remove":
             if len(args) < 2:
@@ -279,18 +279,18 @@ class LLMCommand(BaseCommand):
 
             provider = args[1].lower()
 
-            result = safe_orchestrator_call(
-                orchestrator,
-                "multi_llm",
-                {"action": "remove_api_key", "user_id": user.username, "provider": provider},
-                operation_name="remove API key"
-            )
+            try:
+                result = safe_orchestrator_call(
+                    orchestrator,
+                    "multi_llm",
+                    {"action": "remove_api_key", "user_id": user.username, "provider": provider},
+                    operation_name="remove API key"
+                )
 
-            if result.get("data", {}).get("status") != "success":
-                return self.error(result.get("message", "Failed to remove API key"))
-
-            print(f"\n{Fore.GREEN}✓ API key removed for {provider}{Style.RESET_ALL}\n")
-            return self.success(message=f"API key removed for {provider}")
+                print(f"\n{Fore.GREEN}✓ API key removed for {provider}{Style.RESET_ALL}\n")
+                return self.success(message=f"API key removed for {provider}")
+            except ValueError as e:
+                return self.error(str(e))
 
         else:
             return self.error(f"Unknown key action: {action}")
@@ -300,56 +300,56 @@ class LLMCommand(BaseCommand):
         provider = args[0].lower() if args else None
         days = int(args[1]) if len(args) > 1 else 30
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "multi_llm",
-            {
-                "action": "get_usage_stats",
-                "user_id": user.username,
-                "provider": provider,
-                "days": days,
-            },
-            operation_name="get usage stats"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "multi_llm",
+                {
+                    "action": "get_usage_stats",
+                    "user_id": user.username,
+                    "provider": provider,
+                    "days": days,
+                },
+                operation_name="get usage stats"
+            )
 
-        if result.get("data", {}).get("status") != "success":
-            return self.error(result.get("message", "Failed to get usage stats"))
+            print(f"\n{Fore.CYAN}LLM Usage Statistics (Last {days} Days){Style.RESET_ALL}\n")
 
-        print(f"\n{Fore.CYAN}LLM Usage Statistics (Last {days} Days){Style.RESET_ALL}\n")
+            total_tokens = result.get("total_tokens", 0)
+            total_cost = result.get("total_cost", 0.0)
+            daily_average = result.get("daily_average", 0)
+            success_count = result.get("success_count", 0)
+            error_count = result.get("error_count", 0)
+            avg_latency = result.get("avg_latency_ms", 0)
 
-        total_tokens = result.get("total_tokens", 0)
-        total_cost = result.get("total_cost", 0.0)
-        daily_average = result.get("daily_average", 0)
-        success_count = result.get("success_count", 0)
-        error_count = result.get("error_count", 0)
-        avg_latency = result.get("avg_latency_ms", 0)
+            print(f"Total Tokens: {Fore.GREEN}{total_tokens:,}{Style.RESET_ALL}")
+            print(f"Total Cost: {Fore.GREEN}${total_cost:.4f}{Style.RESET_ALL}")
+            print(f"Daily Average: {Fore.GREEN}{daily_average:,} tokens{Style.RESET_ALL}")
+            print(
+                f"Success Rate: {Fore.GREEN}{success_count}{Style.RESET_ALL} / {success_count + error_count} requests"
+            )
+            print(f"Avg Latency: {Fore.GREEN}{avg_latency:.0f}ms{Style.RESET_ALL}\n")
 
-        print(f"Total Tokens: {Fore.GREEN}{total_tokens:,}{Style.RESET_ALL}")
-        print(f"Total Cost: {Fore.GREEN}${total_cost:.4f}{Style.RESET_ALL}")
-        print(f"Daily Average: {Fore.GREEN}{daily_average:,} tokens{Style.RESET_ALL}")
-        print(
-            f"Success Rate: {Fore.GREEN}{success_count}{Style.RESET_ALL} / {success_count + error_count} requests"
-        )
-        print(f"Avg Latency: {Fore.GREEN}{avg_latency:.0f}ms{Style.RESET_ALL}\n")
+            by_provider = result.get("by_provider", {})
+            if by_provider:
+                print(f"{Fore.WHITE}By Provider:{Style.RESET_ALL}")
+                for prov, stats in by_provider.items():
+                    tokens = stats.get("tokens", 0)
+                    cost = stats.get("cost", 0.0)
+                    requests = stats.get("requests", 0)
+                    print(
+                        f"  {prov.upper():<10} {tokens:>10,} tokens  ${cost:>8.4f}  ({requests} requests)"
+                    )
 
-        by_provider = result.get("by_provider", {})
-        if by_provider:
-            print(f"{Fore.WHITE}By Provider:{Style.RESET_ALL}")
-            for prov, stats in by_provider.items():
-                tokens = stats.get("tokens", 0)
-                cost = stats.get("cost", 0.0)
-                requests = stats.get("requests", 0)
-                print(
-                    f"  {prov.upper():<10} {tokens:>10,} tokens  ${cost:>8.4f}  ({requests} requests)"
-                )
-
-        return self.success(
-            data={
-                "total_tokens": total_tokens,
-                "total_cost": total_cost,
-                "by_provider": by_provider,
-            }
-        )
+            return self.success(
+                data={
+                    "total_tokens": total_tokens,
+                    "total_cost": total_cost,
+                    "by_provider": by_provider,
+                }
+            )
+        except ValueError as e:
+            return self.error(str(e))
 
     def _set_auth_method(self, args: List[str], orchestrator, user) -> Dict[str, Any]:
         """Set Claude authentication method (api_key or subscription)"""

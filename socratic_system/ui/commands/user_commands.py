@@ -181,15 +181,15 @@ class UserArchiveCommand(BaseCommand):
             self.print_info("Archiving cancelled")
             return self.success()
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "user_manager",
-            {"action": "archive_user", "username": user.username, "requester": user.username},
-            operation_name="archive user"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "user_manager",
+                {"action": "archive_user", "username": user.username, "requester": user.username},
+                operation_name="archive user"
+            )
 
-        if result.get("data", {}).get("status") == "success":
-            self.print_success(result.get("data", {}).get("message"))
+            self.print_success(result.get("message"))
             self.print_info("You will be logged out now")
 
             app.current_user = None
@@ -199,8 +199,8 @@ class UserArchiveCommand(BaseCommand):
             input("Press Enter to continue...")
 
             return self.success()
-        else:
-            return self.error(result.get("message", "Failed to archive account"))
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class UserDeleteCommand(BaseCommand):
@@ -243,20 +243,20 @@ class UserDeleteCommand(BaseCommand):
             self.print_info("Deletion cancelled")
             return self.success()
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "user_manager",
-            {
-                "action": "delete_user_permanently",
-                "username": user.username,
-                "requester": user.username,
-                "confirmation": "DELETE",
-            },
-            operation_name="delete user permanently"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "user_manager",
+                {
+                    "action": "delete_user_permanently",
+                    "username": user.username,
+                    "requester": user.username,
+                    "confirmation": "DELETE",
+                },
+                operation_name="delete user permanently"
+            )
 
-        if result.get("data", {}).get("status") == "success":
-            self.print_success(result.get("data", {}).get("message"))
+            self.print_success(result.get("message"))
             print("Account has been permanently deleted.")
             print("Goodbye.")
 
@@ -265,8 +265,8 @@ class UserDeleteCommand(BaseCommand):
             app.context_display.set_context(user=None, project=None)
 
             return {"status": "exit", "message": "Account deleted"}
-        else:
-            return self.error(result.get("message", "Failed to delete account"))
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class UserRestoreCommand(BaseCommand):
@@ -316,18 +316,18 @@ class UserRestoreCommand(BaseCommand):
             self.print_info("Restoration cancelled")
             return self.success()
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "user_manager",
-            {"action": "restore_user", "username": username},
-            operation_name="restore user"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "user_manager",
+                {"action": "restore_user", "username": username},
+                operation_name="restore user"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             self.print_success(f"Account '{username}' restored successfully!")
             return self.success()
-        else:
-            return self.error(result.get("message", "Failed to restore account"))
+        except ValueError as e:
+            return self.error(str(e))
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute user restore command"""
@@ -336,18 +336,21 @@ class UserRestoreCommand(BaseCommand):
         if not orchestrator:
             return self.error("Orchestrator not available")
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "user_manager",
-            {"action": "get_archived_users"},
-            operation_name="get archived users"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "user_manager",
+                {"action": "get_archived_users"},
+                operation_name="get archived users"
+            )
 
-        if result.get("data", {}).get("status") != "success" or not result.get("archived_users"):
+            archived_users = result.get("archived_users", [])
+            if not archived_users:
+                self.print_info("No archived accounts found")
+                return self.success()
+        except ValueError as e:
             self.print_info("No archived accounts found")
             return self.success()
-
-        archived_users = result.get("data", {}).get("archived_users")
         self._display_archived_users(archived_users)
 
         try:

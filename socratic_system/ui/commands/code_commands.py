@@ -34,30 +34,30 @@ class CodeGenerateCommand(BaseCommand):
         print(f"\n{Fore.CYAN}Generating Code...{Style.RESET_ALL}")
 
         # Generate code
-        result = safe_orchestrator_call(
-            orchestrator,
-            "code_generator",
-            {"action": "generate_script", "project": project},
-            operation_name="generate code script"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "code_generator",
+                {"action": "generate_script", "project": project},
+                operation_name="generate code script"
+            )
 
-        if result.get("data", {}).get("status") != "success":
-            return self.error(result.get("message", "Failed to generate code"))
+            script = result.get("script")
+            save_path = result.get("save_path")
+            is_multi_file = result.get("is_multi_file", False)
 
-        script = result.get("data", {}).get("script")
-        save_path = result.get("data", {}).get("save_path")
-        is_multi_file = result.get("is_multi_file", False)
+            self.print_success("Code Generated Successfully!")
 
-        self.print_success("Code Generated Successfully!")
+            # Display generated code
+            self._display_generated_code(script, save_path, is_multi_file)
 
-        # Display generated code
-        self._display_generated_code(script, save_path, is_multi_file)
+            # Ask if user wants documentation
+            if self._prompt_for_documentation():
+                self._generate_and_display_documentation(orchestrator, project, script, save_path)
 
-        # Ask if user wants documentation
-        if self._prompt_for_documentation():
-            self._generate_and_display_documentation(orchestrator, project, script, save_path)
-
-        return self.success(data={"script": script, "save_path": save_path})
+            return self.success(data={"script": script, "save_path": save_path})
+        except ValueError as e:
+            return self.error(str(e))
 
     def _validate_code_context(self, context: Dict[str, Any]) -> Dict:
         """Validate required context for code generation"""
@@ -114,28 +114,27 @@ class CodeGenerateCommand(BaseCommand):
         self, orchestrator, project, script: str, save_path: str
     ) -> None:
         """Generate and display documentation"""
-        doc_result = safe_orchestrator_call(
-            orchestrator,
-            "code_generator",
-            {"action": "generate_documentation", "project": project, "script": script},
-            operation_name="generate code documentation"
-        )
-
-        if doc_result.get("data", {}).get("status") != "success":
-            self.print_warning("Failed to generate documentation")
-            return
-
-        doc_save_path = doc_result.get("data", {}).get("save_path")
-
-        self.print_success("Documentation Generated!")
-        print(f"\n{Fore.YELLOW}{'=' * 60}")
-        print(f"{Fore.WHITE}{doc_result['documentation']}")
-        print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}")
-
-        if doc_save_path:
-            self._display_save_location(
-                doc_save_path, "Documentation save path returned but file not found"
+        try:
+            doc_result = safe_orchestrator_call(
+                orchestrator,
+                "code_generator",
+                {"action": "generate_documentation", "project": project, "script": script},
+                operation_name="generate code documentation"
             )
+
+            doc_save_path = doc_result.get("save_path")
+
+            self.print_success("Documentation Generated!")
+            print(f"\n{Fore.YELLOW}{'=' * 60}")
+            print(f"{Fore.WHITE}{doc_result['documentation']}")
+            print(f"{Fore.YELLOW}{'=' * 60}{Style.RESET_ALL}")
+
+            if doc_save_path:
+                self._display_save_location(
+                    doc_save_path, "Documentation save path returned but file not found"
+                )
+        except ValueError as e:
+            self.print_warning("Failed to generate documentation")
 
 
 class CodeDocsCommand(BaseCommand):
@@ -162,26 +161,26 @@ class CodeDocsCommand(BaseCommand):
         print(f"\n{Fore.CYAN}Generating Documentation...{Style.RESET_ALL}")
 
         # First generate code if not done yet
-        result = safe_orchestrator_call(
-            orchestrator,
-            "code_generator",
-            {"action": "generate_script", "project": project},
-            operation_name="generate code script"
-        )
-
-        if result.get("data", {}).get("status") == "success":
-            script = result.get("data", {}).get("script")
-
-            # Generate documentation
-            doc_result = safe_orchestrator_call(
+        try:
+            result = safe_orchestrator_call(
                 orchestrator,
                 "code_generator",
-                {"action": "generate_documentation", "project": project, "script": script},
-                operation_name="generate code documentation"
+                {"action": "generate_script", "project": project},
+                operation_name="generate code script"
             )
 
-            if doc_result.get("data", {}).get("status") == "success":
-                doc_save_path = doc_result.get("data", {}).get("save_path")
+            script = result.get("script")
+
+            # Generate documentation
+            try:
+                doc_result = safe_orchestrator_call(
+                    orchestrator,
+                    "code_generator",
+                    {"action": "generate_documentation", "project": project, "script": script},
+                    operation_name="generate code documentation"
+                )
+
+                doc_save_path = doc_result.get("save_path")
 
                 self.print_success("Documentation Generated Successfully!")
                 print(f"\n{Fore.YELLOW}{'=' * 60}")
@@ -193,9 +192,9 @@ class CodeDocsCommand(BaseCommand):
                     print(ArtifactSaver.get_save_location_message(doc_save_path))
 
                 return self.success(
-                    data={"documentation": doc_result.get("data", {}).get("documentation"), "save_path": doc_save_path}
+                    data={"documentation": doc_result.get("documentation"), "save_path": doc_save_path}
                 )
-            else:
-                return self.error(doc_result.get("message", "Failed to generate documentation"))
-        else:
-            return self.error(result.get("message", "Failed to generate code"))
+            except ValueError as e:
+                return self.error(str(e))
+        except ValueError as e:
+            return self.error(str(e))

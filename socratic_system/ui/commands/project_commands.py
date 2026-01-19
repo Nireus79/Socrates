@@ -294,25 +294,25 @@ class ProjectArchiveCommand(BaseCommand):
             self.print_info("Archiving cancelled")
             return self.success()
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "project_manager",
-            {
-                "action": "archive_project",
-                "project_id": project.project_id,
-                "requester": user.username,
-            },
-            operation_name="archive_project"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "project_manager",
+                {
+                    "action": "archive_project",
+                    "project_id": project.project_id,
+                    "requester": user.username,
+                },
+                operation_name="archive_project"
+            )
 
-        if result.get("data", {}).get("status") == "success":
-            self.print_success(result.get("data", {}).get("message"))
+            self.print_success(result.get("message", "Project archived successfully"))
             app.current_project = None
             app.context_display.set_context(project=None)
 
             return self.success()
-        else:
-            return self.error(result.get("message", "Failed to archive project"))
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class ProjectRestoreCommand(BaseCommand):

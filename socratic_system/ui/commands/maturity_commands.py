@@ -59,19 +59,19 @@ class MaturityCommand(BaseCommand):
             phase = project.phase
 
         # Calculate maturity
-        result = safe_orchestrator_call(
-            orchestrator,
-            "quality_controller",
-            {"action": "calculate_maturity", "project": project, "phase": phase},
-            operation_name="calculate maturity"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "quality_controller",
+                {"action": "calculate_maturity", "project": project, "phase": phase},
+                operation_name="calculate maturity"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             maturity = result.get("maturity", {})
             MaturityDisplay.display_detailed_maturity(maturity)
             return self.success()
-
-        return self.error(result.get("message", "Failed to calculate maturity"))
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class MaturitySummaryCommand(BaseCommand):
@@ -100,19 +100,19 @@ class MaturitySummaryCommand(BaseCommand):
             return self.error("Orchestrator not available")
 
         # Get maturity summary
-        result = safe_orchestrator_call(
-            orchestrator,
-            "quality_controller",
-            {"action": "get_maturity_summary", "project": project},
-            operation_name="get maturity summary"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "quality_controller",
+                {"action": "get_maturity_summary", "project": project},
+                operation_name="get maturity summary"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             summary = result.get("summary", {})
             MaturityDisplay.display_maturity_summary_all_phases(summary)
             return self.success()
-
-        return self.error(result.get("message", "Failed to get maturity summary"))
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class MaturityHistoryCommand(BaseCommand):
@@ -141,14 +141,14 @@ class MaturityHistoryCommand(BaseCommand):
             return self.error("Orchestrator not available")
 
         # Get maturity history
-        result = safe_orchestrator_call(
-            orchestrator,
-            "quality_controller",
-            {"action": "get_history", "project": project},
-            operation_name="get maturity history"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "quality_controller",
+                {"action": "get_history", "project": project},
+                operation_name="get maturity history"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             history = result.get("history", [])
             total_events = result.get("total_events", 0)
 
@@ -159,8 +159,8 @@ class MaturityHistoryCommand(BaseCommand):
                 print(f"Total maturity events: {total_events}\n")
 
             return self.success()
-
-        return self.error(result.get("message", "Failed to get maturity history"))
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class MaturityStatusCommand(BaseCommand):

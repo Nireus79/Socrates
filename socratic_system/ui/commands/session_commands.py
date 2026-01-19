@@ -192,17 +192,17 @@ Focus on the connection between the user's statement and these insights."""
             self.print_info("Finishing session")
             return True, False  # handled, end session
         elif response.lower() == "advance":
-            result = safe_orchestrator_call(
-                orchestrator,
-                "socratic_counselor",
-                {"action": "advance_phase", "project": project},
-                operation_name="advance phase"
-            )
-            if result.get("data", {}).get("status") == "success":
-                project.phase = result.get("data", {}).get("new_phase")
+            try:
+                result = safe_orchestrator_call(
+                    orchestrator,
+                    "socratic_counselor",
+                    {"action": "advance_phase", "project": project},
+                    operation_name="advance phase"
+                )
+                project.phase = result.get("new_phase")
                 self.print_success(f"Advanced to {result['new_phase']} phase!")
-            else:
-                self.print_error(result.get("message", "Could not advance phase"))
+            except ValueError as e:
+                self.print_error(str(e))
             return True, True  # handled, continue session
         elif response.lower() in ["help", "suggestions", "hint"]:
             return True, True  # handled by caller, continue session
@@ -247,27 +247,30 @@ Focus on the connection between the user's statement and these insights."""
 
     def _handle_direct_mode_insights(self, response: str, orchestrator, project):
         """Extract and confirm insights in direct mode. Returns confirmed insights or None."""
-        extraction_result = safe_orchestrator_call(
-            orchestrator,
-            "socratic_counselor",
-            {
-                "action": "extract_insights_only",
-                "project": project,
-                "response": response,
-            },
-            operation_name="extract insights"
-        )
+        try:
+            extraction_result = safe_orchestrator_call(
+                orchestrator,
+                "socratic_counselor",
+                {
+                    "action": "extract_insights_only",
+                    "project": project,
+                    "response": response,
+                },
+                operation_name="extract insights"
+            )
 
-        if extraction_result.get("data", {}).get("status") != "success" or not extraction_result.get("insights"):
+            insights = extraction_result.get("insights")
+            if not insights:
+                return None
+
+            pre_extracted_insights = self._confirm_insights_interactive(insights, orchestrator)
+
+            if pre_extracted_insights is None:
+                print(f"{Fore.MAGENTA}All insights discarded.{Style.RESET_ALL}")
+
+            return pre_extracted_insights
+        except ValueError as e:
             return None
-
-        insights = extraction_result.get("data", {}).get("insights")
-        pre_extracted_insights = self._confirm_insights_interactive(insights, orchestrator)
-
-        if pre_extracted_insights is None:
-            print(f"{Fore.MAGENTA}All insights discarded.{Style.RESET_ALL}")
-
-        return pre_extracted_insights
 
     def _process_and_save_response(
         self, response: str, orchestrator, project, user, pre_extracted_insights
@@ -283,30 +286,31 @@ Focus on the connection between the user's statement and these insights."""
         if pre_extracted_insights is not None:
             request_data["pre_extracted_insights"] = pre_extracted_insights
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "socratic_counselor",
-            request_data,
-            operation_name="process response"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "socratic_counselor",
+                request_data,
+                operation_name="process response"
+            )
 
-        if result.get("data", {}).get("status") != "success":
-            self.print_error(result.get("message", "Error processing response"))
+            if result.get("conflicts_pending"):
+                self.print_warning("Some specifications were not added due to conflicts")
+            elif result.get("insights"):
+                self.print_success("Insights captured and integrated!")
+
+            try:
+                save_result = safe_orchestrator_call(
+                    orchestrator,
+                    "project_manager",
+                    {"action": "save_project", "project": project},
+                    operation_name="save project"
+                )
+            except ValueError as e:
+                self.print_error("Failed to save project")
+        except ValueError as e:
+            self.print_error(str(e))
             return
-
-        if result.get("conflicts_pending"):
-            self.print_warning("Some specifications were not added due to conflicts")
-        elif result.get("insights"):
-            self.print_success("Insights captured and integrated!")
-
-        save_result = safe_orchestrator_call(
-            orchestrator,
-            "project_manager",
-            {"action": "save_project", "project": project},
-            operation_name="save project"
-        )
-        if save_result.get("data", {}).get("status") != "success":
-            self.print_error("Failed to save project")
 
     def _generate_direct_answer(self, question: str, orchestrator, project) -> str:
         """Generate a direct answer to user's question with vector DB search"""
@@ -393,22 +397,22 @@ If you don't have enough information, say so."""
 
     def _handle_socratic_mode_turn(self, orchestrator, project, user, context) -> bool:
         """Handle one turn of Socratic mode (system asks, user answers)"""
-        question_result = safe_orchestrator_call(
-            orchestrator,
-            "socratic_counselor",
-            {
-                "action": "generate_question",
-                "project": project,
-                "current_user": user.username,
-            },
-            operation_name="generate question"
-        )
+        try:
+            question_result = safe_orchestrator_call(
+                orchestrator,
+                "socratic_counselor",
+                {
+                    "action": "generate_question",
+                    "project": project,
+                    "current_user": user.username,
+                },
+                operation_name="generate question"
+            )
 
-        if question_result.get("data", {}).get("status") != "success":
-            self.print_error(question_result.get("message", "Unknown error"))
+            question = question_result.get("question")
+        except ValueError as e:
+            self.print_error(str(e))
             return False
-
-        question = question_result.get("data", {}).get("question")
 
         # Inner loop: keep asking the same question until answered or session command
         while True:
@@ -503,11 +507,11 @@ If you don't have enough information, say so."""
             # Load files into knowledge base
             self.print_info("Loading project code files into knowledge base...")
 
-            result = loader.load_project_files(
-                project=project, strategy="priority", max_files=50, show_progress=True
-            )
+            try:
+                result = loader.load_project_files(
+                    project=project, strategy="priority", max_files=50, show_progress=True
+                )
 
-            if result.get("data", {}).get("status") == "success":
                 files_loaded = result.get("files_loaded", 0)
                 chunks = result.get("total_chunks", 0)
                 if files_loaded > 0:
@@ -516,10 +520,8 @@ If you don't have enough information, say so."""
                     )
                 else:
                     self.print_info("Files were already loaded in knowledge base")
-            else:
-                self.print_warning(
-                    f"Could not load project files: {result.get('message', 'Unknown error')}"
-                )
+            except ValueError as e:
+                self.print_warning(f"Could not load project files: {str(e)}")
 
         except Exception as e:
             self.print_warning(f"Error auto-loading project files: {str(e)}")
@@ -565,15 +567,15 @@ class AdvanceCommand(BaseCommand):
         if not orchestrator or not project:
             return self.error("Required context not available")
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "socratic_counselor",
-            {"action": "advance_phase", "project": project},
-            operation_name="advance phase"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "socratic_counselor",
+                {"action": "advance_phase", "project": project},
+                operation_name="advance phase"
+            )
 
-        if result.get("data", {}).get("status") == "success":
-            project.phase = result.get("data", {}).get("new_phase")
+            project.phase = result.get("new_phase")
             self.print_success(f"Advanced to {result['new_phase']} phase!")
 
             # Save project
@@ -584,9 +586,9 @@ class AdvanceCommand(BaseCommand):
                 operation_name="save project"
             )
 
-            return self.success(data={"new_phase": result.get("data", {}).get("new_phase")})
-        else:
-            return self.error(result.get("message", "Could not advance phase"))
+            return self.success(data={"new_phase": result.get("new_phase")})
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class RollbackCommand(BaseCommand):
@@ -662,18 +664,18 @@ class ModeCommand(BaseCommand):
         project.chat_mode = args[0]
 
         # Save to database
-        save_result = safe_orchestrator_call(
-            orchestrator,
-            "project_manager",
-            {"action": "save_project", "project": project},
-            operation_name="save project"
-        )
+        try:
+            save_result = safe_orchestrator_call(
+                orchestrator,
+                "project_manager",
+                {"action": "save_project", "project": project},
+                operation_name="save project"
+            )
 
-        if save_result.get("data", {}).get("status") == "success":
             self.print_success(f"Mode switched to: {args[0]}")
             return self.success(data={"mode": args[0]})
-        else:
-            return self.error("Failed to save mode change")
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class HintCommand(BaseCommand):
@@ -699,21 +701,21 @@ class HintCommand(BaseCommand):
             return self.error("Required context not available")
 
         # Get the last question
-        question_result = safe_orchestrator_call(
-            orchestrator,
-            "socratic_counselor",
-            {
-                "action": "generate_question",
-                "project": project,
-                "current_user": user.username if user else None,
-            },
-            operation_name="generate question"
-        )
+        try:
+            question_result = safe_orchestrator_call(
+                orchestrator,
+                "socratic_counselor",
+                {
+                    "action": "generate_question",
+                    "project": project,
+                    "current_user": user.username if user else None,
+                },
+                operation_name="generate question"
+            )
 
-        if question_result.get("data", {}).get("status") != "success":
-            return self.error("Could not generate question")
-
-        question = question_result.get("data", {}).get("question")
+            question = question_result.get("question")
+        except ValueError as e:
+            return self.error(str(e))
 
         # Generate suggestions
         suggestions = orchestrator.claude_client.generate_suggestions(question, project)

@@ -43,14 +43,14 @@ class CollabAddCommand(BaseCommand):
         if not is_valid:
             return self.error(error_msg)
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "project_manager",
-            {"action": "add_collaborator", "project": project, "username": username, "role": role},
-            operation_name="add collaborator"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "project_manager",
+                {"action": "add_collaborator", "project": project, "username": username, "role": role},
+                operation_name="add collaborator"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             self.print_success(f"Added '{username}' as {role}!")
             safe_orchestrator_call(
                 orchestrator,
@@ -59,8 +59,8 @@ class CollabAddCommand(BaseCommand):
                 operation_name="save project"
             )
             return self.success(data={"collaborator": username, "role": role})
-        else:
-            return self.error(result.get("message", "Failed to add collaborator"))
+        except ValueError as e:
+            return self.error(str(e))
 
     def _get_collaborator_inputs(self, args: List[str]) -> tuple:
         """Get username and role from args or interactive input"""
@@ -149,19 +149,19 @@ class CollabRemoveCommand(BaseCommand):
             self.print_info("Removal cancelled")
             return self.success()
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "project_manager",
-            {
-                "action": "remove_collaborator",
-                "project": project,
-                "username": username,
-                "requester": user.username,
-            },
-            operation_name="remove collaborator"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "project_manager",
+                {
+                    "action": "remove_collaborator",
+                    "project": project,
+                    "username": username,
+                    "requester": user.username,
+                },
+                operation_name="remove collaborator"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             self.print_success(f"Removed '{username}' from project!")
             # Only remove from local list if still present
             if username in project.collaborators:
@@ -176,8 +176,8 @@ class CollabRemoveCommand(BaseCommand):
                 )
 
             return self.success(data={"removed_user": username})
-        else:
-            return self.error(result.get("message", "Failed to remove collaborator"))
+        except ValueError as e:
+            return self.error(str(e))
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute collab remove command"""
@@ -236,14 +236,14 @@ class CollabListCommand(BaseCommand):
             return self.error("Required context not available")
 
         # Get collaborators
-        result = safe_orchestrator_call(
-            orchestrator,
-            "project_manager",
-            {"action": "list_collaborators", "project": project},
-            operation_name="list collaborators"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "project_manager",
+                {"action": "list_collaborators", "project": project},
+                operation_name="list collaborators"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             print(f"\n{Fore.CYAN}Team Members for '{project.name}':{Style.RESET_ALL}\n")
 
             members = result.get("collaborators", [])
@@ -279,8 +279,8 @@ class CollabListCommand(BaseCommand):
 
             print()
             return self.success(data={"collaborators": members})
-        else:
-            return self.error(result.get("message", "Failed to list collaborators"))
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class CollabRoleCommand(BaseCommand):
@@ -320,19 +320,19 @@ class CollabRoleCommand(BaseCommand):
         if member_error:
             return self.error(member_error)
 
-        result = safe_orchestrator_call(
-            orchestrator,
-            "project_manager",
-            {
-                "action": "update_member_role",
-                "project": project,
-                "username": username,
-                "role": new_role,
-            },
-            operation_name="update member role"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "project_manager",
+                {
+                    "action": "update_member_role",
+                    "project": project,
+                    "username": username,
+                    "role": new_role,
+                },
+                operation_name="update member role"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             self.print_success(f"Updated '{username}' role to {new_role}!")
             safe_orchestrator_call(
                 orchestrator,
@@ -341,8 +341,8 @@ class CollabRoleCommand(BaseCommand):
                 operation_name="save project"
             )
             return self.success(data={"username": username, "new_role": new_role})
-        else:
-            return self.error(result.get("message", "Failed to update role"))
+        except ValueError as e:
+            return self.error(str(e))
 
     def _get_username_and_role(self, args: List[str]) -> tuple:
         """Get username and role from args or interactive input"""

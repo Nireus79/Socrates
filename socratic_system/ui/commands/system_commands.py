@@ -115,14 +115,14 @@ class StatusCommand(BaseCommand):
             return self.error("Orchestrator not available")
 
         # Get system stats
-        result = safe_orchestrator_call(
-            orchestrator,
-            "system_monitor",
-            {"action": "get_stats"},
-            operation_name="get system stats"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "system_monitor",
+                {"action": "get_stats"},
+                operation_name="get system stats"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             self.print_header("System Status")
 
             stats = result
@@ -133,20 +133,25 @@ class StatusCommand(BaseCommand):
                 f"Connection Status:     {'✓ Active' if stats.get('connection_status') else '✗ Inactive'}"
             )
             print()
+        except ValueError as e:
+            self.print_error(str(e))
 
         # Check for warnings
-        result = safe_orchestrator_call(
-            orchestrator,
-            "system_monitor",
-            {"action": "check_limits"},
-            operation_name="check system limits"
-        )
+        try:
+            result = safe_orchestrator_call(
+                orchestrator,
+                "system_monitor",
+                {"action": "check_limits"},
+                operation_name="check system limits"
+            )
 
-        if result.get("data", {}).get("status") == "success" and result.get("warnings"):
-            print(f"{Fore.YELLOW}Warnings:{Style.RESET_ALL}")
-            for warning in result["warnings"]:
-                print(f"  ⚠ {warning}")
-            print()
+            if result.get("warnings"):
+                print(f"{Fore.YELLOW}Warnings:{Style.RESET_ALL}")
+                for warning in result["warnings"]:
+                    print(f"  ⚠ {warning}")
+                print()
+        except ValueError as e:
+            self.print_warning(str(e))
 
         return self.success()
 
