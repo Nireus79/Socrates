@@ -51,14 +51,10 @@ class WorkflowRiskCalculator:
                 - rework_probability: Likelihood of rework percentage
                 - missing_categories: List of uncovered categories
         """
-        logger.debug(
-            f"Calculating risk for path {path.path_id} in project {project.project_id}"
-        )
+        logger.debug(f"Calculating risk for path {path.path_id} in project {project.project_id}")
 
         # 1. Calculate incompleteness risk (missing categories)
-        incompleteness_risk = self._calculate_incompleteness_risk(
-            path, workflow, project
-        )
+        incompleteness_risk = self._calculate_incompleteness_risk(path, workflow, project)
 
         # 2. Calculate complexity risk (question depth)
         complexity_risk = self._calculate_complexity_risk(path, workflow)
@@ -144,9 +140,7 @@ class WorkflowRiskCalculator:
             logger.error(f"Error calculating incompleteness risk: {e}")
             return 50.0  # Default to moderate risk on error
 
-    def _calculate_complexity_risk(
-        self, path: WorkflowPath, workflow: WorkflowDefinition
-    ) -> float:
+    def _calculate_complexity_risk(self, path: WorkflowPath, workflow: WorkflowDefinition) -> float:
         """
         Calculate complexity risk (technical difficulty).
 
@@ -233,9 +227,7 @@ class WorkflowRiskCalculator:
 
         return rework_probability
 
-    def _get_covered_categories(
-        self, path: WorkflowPath, workflow: WorkflowDefinition
-    ) -> set:
+    def _get_covered_categories(self, path: WorkflowPath, workflow: WorkflowDefinition) -> set:
         """
         Identify which categories are covered by this path.
 
@@ -261,9 +253,7 @@ class WorkflowRiskCalculator:
             # Question set nodes implicitly cover what they ask about
             if node.node_type.value == "question_set":
                 # Questions typically cover goals, requirements, tech_stack, constraints
-                covered.update(
-                    ["goals", "requirements", "tech_stack", "constraints"]
-                )
+                covered.update(["goals", "requirements", "tech_stack", "constraints"])
 
         logger.debug(f"Covered categories: {covered}")
 

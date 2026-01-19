@@ -133,8 +133,8 @@ class ClaudeClient:
 
         # No key available - raise error with helpful message
         raise APIError(
-            f"No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
-            error_type="MISSING_API_KEY"
+            "No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+            error_type="MISSING_API_KEY",
         )
 
     def _decrypt_api_key_from_db(self, encrypted_key: str) -> str:
@@ -152,13 +152,20 @@ class ClaudeClient:
         import base64
         import hashlib
         import os
+
         from cryptography.fernet import Fernet
 
         # Get encryption key from environment or use default
-        encryption_key_base = os.getenv("SOCRATES_ENCRYPTION_KEY", "default-insecure-key-change-in-production")
+        encryption_key_base = os.getenv(
+            "SOCRATES_ENCRYPTION_KEY", "default-insecure-key-change-in-production"
+        )
 
         # Log which key is being used (without revealing the actual key)
-        key_source = "SOCRATES_ENCRYPTION_KEY env var" if os.getenv("SOCRATES_ENCRYPTION_KEY") else "default insecure key"
+        key_source = (
+            "SOCRATES_ENCRYPTION_KEY env var"
+            if os.getenv("SOCRATES_ENCRYPTION_KEY")
+            else "default insecure key"
+        )
         self.logger.info(f"Decrypting API key using: {key_source}")
 
         # Method 1: Try SHA256-based Fernet decryption (simple, reliable, doesn't require PBKDF2)
@@ -174,9 +181,9 @@ class ClaudeClient:
 
         # Method 2: Try PBKDF2-based Fernet decryption (for older keys encrypted with PBKDF2)
         try:
+            from cryptography.hazmat.backends import default_backend
             from cryptography.hazmat.primitives import hashes
             from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-            from cryptography.hazmat.backends import default_backend
 
             salt = b"socrates-salt"
             kdf = PBKDF2HMAC(
@@ -206,8 +213,10 @@ class ClaudeClient:
             self.logger.debug(f"Base64 decoding failed: {e}")
 
         # All methods failed
-        self.logger.error(f"All decryption methods failed for API key")
-        self.logger.error(f"If key was encrypted with custom SOCRATES_ENCRYPTION_KEY, ensure it's set.")
+        self.logger.error("All decryption methods failed for API key")
+        self.logger.error(
+            "If key was encrypted with custom SOCRATES_ENCRYPTION_KEY, ensure it's set."
+        )
         return None
 
     def _get_client(self, user_auth_method: str = "api_key", user_id: str = None):
@@ -238,23 +247,23 @@ class ClaudeClient:
             elif api_key and api_key.startswith("placeholder"):
                 # Placeholder key detected - user hasn't set their API key yet
                 raise APIError(
-                    f"No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
-                    error_type="MISSING_API_KEY"
+                    "No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                    error_type="MISSING_API_KEY",
                 )
         except APIError:
             raise
         except Exception as e:
             self.logger.warning(f"Error getting user API key: {e}")
             raise APIError(
-                f"No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
-                error_type="MISSING_API_KEY"
+                "No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                error_type="MISSING_API_KEY",
             )
 
         # Default client should not be used if it has placeholder key
         if self.api_key and self.api_key.startswith("placeholder"):
             raise APIError(
-                f"No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
-                error_type="MISSING_API_KEY"
+                "No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                error_type="MISSING_API_KEY",
             )
 
         # Fallback to default client if it has a real key
@@ -288,29 +297,35 @@ class ClaudeClient:
             elif api_key and api_key.startswith("placeholder"):
                 # Placeholder key detected - user hasn't set their API key yet
                 raise APIError(
-                    f"No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
-                    error_type="MISSING_API_KEY"
+                    "No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                    error_type="MISSING_API_KEY",
                 )
         except APIError:
             raise
         except Exception as e:
             self.logger.warning(f"Error getting user API key: {e}")
             raise APIError(
-                f"No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
-                error_type="MISSING_API_KEY"
+                "No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                error_type="MISSING_API_KEY",
             )
 
         # Default client should not be used if it has placeholder key
         if self.api_key and self.api_key.startswith("placeholder"):
             raise APIError(
-                f"No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
-                error_type="MISSING_API_KEY"
+                "No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                error_type="MISSING_API_KEY",
             )
 
         # Fallback to default async client if it has a real key
         return self.async_client
 
-    def extract_insights(self, user_response: str, project: ProjectContext, user_auth_method: str = "api_key", user_id: str = None) -> Dict:
+    def extract_insights(
+        self,
+        user_response: str,
+        project: ProjectContext,
+        user_auth_method: str = "api_key",
+        user_id: str = None,
+    ) -> Dict:
         """
         Extract insights from user response using Claude (synchronous) with caching.
 
@@ -397,7 +412,9 @@ class ClaudeClient:
             )
             return {}
 
-    async def extract_insights_async(self, user_response: str, project: ProjectContext, user_auth_method: str = "api_key") -> Dict:
+    async def extract_insights_async(
+        self, user_response: str, project: ProjectContext, user_auth_method: str = "api_key"
+    ) -> Dict:
         """
         Extract insights from user response asynchronously with caching.
 
@@ -474,7 +491,11 @@ class ClaudeClient:
             return {}
 
     def generate_conflict_resolution_suggestions(
-        self, conflict: ConflictInfo, project: ProjectContext, user_auth_method: str = "api_key", user_id: str = None
+        self,
+        conflict: ConflictInfo,
+        project: ProjectContext,
+        user_auth_method: str = "api_key",
+        user_id: str = None,
     ) -> str:
         """Generate suggestions for resolving a specific conflict"""
         context_summary = self.orchestrator.context_analyzer.get_context_summary(project)
@@ -512,7 +533,13 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating suggestions: {e}"
 
-    def generate_artifact(self, context: str, project_type: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
+    def generate_artifact(
+        self,
+        context: str,
+        project_type: str,
+        user_auth_method: str = "api_key",
+        user_id: str = None,
+    ) -> str:
         """Generate project-type-appropriate artifact"""
         if project_type == "software":
             return self.generate_code(context, user_auth_method, user_id)
@@ -529,7 +556,9 @@ class ClaudeClient:
         else:
             return self.generate_code(context, user_auth_method, user_id)  # Default to code
 
-    def generate_code(self, context: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
+    def generate_code(
+        self, context: str, user_auth_method: str = "api_key", user_id: str = None
+    ) -> str:
         """Generate code based on project context"""
         prompt = f"""
         Generate a complete, functional script based on this project context:
@@ -572,7 +601,9 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating code: {e}"
 
-    def generate_business_plan(self, context: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
+    def generate_business_plan(
+        self, context: str, user_auth_method: str = "api_key", user_id: str = None
+    ) -> str:
         """Generate business plan document"""
         prompt = f"""
         Generate a comprehensive business plan based on this context:
@@ -620,7 +651,9 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating business plan: {e}"
 
-    def generate_research_protocol(self, context: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
+    def generate_research_protocol(
+        self, context: str, user_auth_method: str = "api_key", user_id: str = None
+    ) -> str:
         """Generate research protocol and methodology document"""
         prompt = f"""
         Generate a detailed research protocol and methodology document based on this context:
@@ -668,7 +701,9 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating research protocol: {e}"
 
-    def generate_creative_brief(self, context: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
+    def generate_creative_brief(
+        self, context: str, user_auth_method: str = "api_key", user_id: str = None
+    ) -> str:
         """Generate creative/design brief document"""
         prompt = f"""
         Generate a comprehensive creative brief and design specifications based on this context:
@@ -716,7 +751,9 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating creative brief: {e}"
 
-    def generate_marketing_plan(self, context: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
+    def generate_marketing_plan(
+        self, context: str, user_auth_method: str = "api_key", user_id: str = None
+    ) -> str:
         """Generate marketing campaign plan document"""
         prompt = f"""
         Generate a comprehensive marketing campaign plan based on this context:
@@ -764,7 +801,9 @@ class ClaudeClient:
         except Exception as e:
             return f"Error generating marketing plan: {e}"
 
-    def generate_curriculum(self, context: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
+    def generate_curriculum(
+        self, context: str, user_auth_method: str = "api_key", user_id: str = None
+    ) -> str:
         """Generate educational curriculum document"""
         prompt = f"""
         Generate a comprehensive curriculum design document based on this context:
@@ -813,7 +852,12 @@ class ClaudeClient:
             return f"Error generating curriculum: {e}"
 
     def generate_documentation(
-        self, project: ProjectContext, artifact: str, artifact_type: str = "code", user_auth_method: str = "api_key", user_id: str = None
+        self,
+        project: ProjectContext,
+        artifact: str,
+        artifact_type: str = "code",
+        user_auth_method: str = "api_key",
+        user_id: str = None,
     ) -> str:
         """Generate documentation for any artifact type"""
         doc_instructions = {
@@ -1032,7 +1076,13 @@ class ClaudeClient:
             )
             return {}
 
-    def generate_socratic_question(self, prompt: str, cache_key: str = None, user_auth_method: str = "api_key", user_id: str = None) -> str:
+    def generate_socratic_question(
+        self,
+        prompt: str,
+        cache_key: str = None,
+        user_auth_method: str = "api_key",
+        user_id: str = None,
+    ) -> str:
         """
         Generate a Socratic question using Claude with optional caching.
 
@@ -1079,7 +1129,9 @@ class ClaudeClient:
                 f"Error generating Socratic question: {e}", error_type="GENERATION_ERROR"
             ) from e
 
-    def generate_suggestions(self, current_question: str, project: ProjectContext, user_auth_method: str = "api_key") -> str:
+    def generate_suggestions(
+        self, current_question: str, project: ProjectContext, user_auth_method: str = "api_key"
+    ) -> str:
         """Generate helpful suggestions when user can't answer a question"""
 
         # Get recent conversation for context
@@ -1187,7 +1239,12 @@ class ClaudeClient:
             )
 
     def generate_response(
-        self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7, user_auth_method: str = "api_key", user_id: str = None
+        self,
+        prompt: str,
+        max_tokens: int = 2000,
+        temperature: float = 0.7,
+        user_auth_method: str = "api_key",
+        user_id: str = None,
     ) -> str:
         """
         Generate a general response from Claude for any prompt.
@@ -1228,7 +1285,12 @@ class ClaudeClient:
             raise APIError(f"Error generating response: {e}", error_type="GENERATION_ERROR") from e
 
     async def generate_response_async(
-        self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7, user_auth_method: str = "api_key", user_id: str = None
+        self,
+        prompt: str,
+        max_tokens: int = 2000,
+        temperature: float = 0.7,
+        user_auth_method: str = "api_key",
+        user_id: str = None,
     ) -> str:
         """
         Generate a general response from Claude asynchronously.
@@ -1269,7 +1331,9 @@ class ClaudeClient:
     # PHASE 2: ADDITIONAL ASYNC METHODS FOR HIGH-TRAFFIC OPERATIONS
     # =====================================================================
 
-    async def generate_code_async(self, context: str, user_auth_method: str = "api_key", user_id: str = None) -> str:
+    async def generate_code_async(
+        self, context: str, user_auth_method: str = "api_key", user_id: str = None
+    ) -> str:
         """Generate code asynchronously (high-traffic for code_generator agent)."""
         prompt = f"""
         Generate a complete, functional script based on this project context:
@@ -1303,7 +1367,13 @@ class ClaudeClient:
             self.logger.error(f"Error generating code (async): {e}")
             return f"Error generating code: {e}"
 
-    async def generate_socratic_question_async(self, prompt: str, cache_key: str = None, user_auth_method: str = "api_key", user_id: str = None) -> str:
+    async def generate_socratic_question_async(
+        self,
+        prompt: str,
+        cache_key: str = None,
+        user_auth_method: str = "api_key",
+        user_id: str = None,
+    ) -> str:
         """
         Generate socratic question asynchronously (high-frequency operation).
 
@@ -1340,7 +1410,9 @@ class ClaudeClient:
             self.logger.error(f"Error generating socratic question (async): {e}")
             return "I'd like to understand your thinking better. Can you elaborate?"
 
-    async def detect_conflicts_async(self, requirements: list, user_auth_method: str = "api_key") -> list:
+    async def detect_conflicts_async(
+        self, requirements: list, user_auth_method: str = "api_key"
+    ) -> list:
         """
         Detect conflicts in requirements asynchronously.
 
@@ -1384,7 +1456,9 @@ class ClaudeClient:
             self.logger.error(f"Error detecting conflicts (async): {e}")
             return []
 
-    async def analyze_context_async(self, project: ProjectContext, user_auth_method: str = "api_key") -> str:
+    async def analyze_context_async(
+        self, project: ProjectContext, user_auth_method: str = "api_key"
+    ) -> str:
         """
         Analyze project context asynchronously.
 
@@ -1428,7 +1502,9 @@ class ClaudeClient:
             self.logger.error(f"Error analyzing context (async): {e}")
             return ""
 
-    async def generate_business_plan_async(self, context: str, user_auth_method: str = "api_key") -> str:
+    async def generate_business_plan_async(
+        self, context: str, user_auth_method: str = "api_key"
+    ) -> str:
         """Generate business plan asynchronously."""
         prompt = f"""
         Generate a comprehensive business plan based on this context:
@@ -1467,7 +1543,9 @@ class ClaudeClient:
             self.logger.error(f"Error generating business plan (async): {e}")
             return f"Error generating business plan: {e}"
 
-    async def generate_documentation_async(self, context: str, doc_type: str = "technical", user_auth_method: str = "api_key") -> str:
+    async def generate_documentation_async(
+        self, context: str, doc_type: str = "technical", user_auth_method: str = "api_key"
+    ) -> str:
         """
         Generate documentation asynchronously.
 

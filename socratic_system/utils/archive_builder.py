@@ -66,9 +66,7 @@ class ArchiveBuilder:
             logger.info(f"Creating ZIP archive: {output_path}")
             logger.info(f"Archiving directory: {project_root}")
 
-            with zipfile.ZipFile(
-                output_path, "w", zipfile.ZIP_DEFLATED, compresslevel=9
-            ) as zipf:
+            with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zipf:
                 # Walk through all files in project
                 for file_path in project_root.rglob("*"):
                     # Skip directories

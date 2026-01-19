@@ -15,7 +15,7 @@ Options:
 import argparse
 import logging
 import sys
-from typing import List, Optional
+from typing import Optional
 
 # Configure logging
 logging.basicConfig(
@@ -61,9 +61,7 @@ def enable_workflow_optimization_for_project(
         database.save_project(project)
 
         action = "enabled" if enable else "disabled"
-        logger.info(
-            f"Workflow optimization {action} for project: {project.name} ({project_id})"
-        )
+        logger.info(f"Workflow optimization {action} for project: {project.name} ({project_id})")
         logger.debug(f"  Previous status: {old_status}, New status: {enable}")
 
         return True
@@ -102,9 +100,7 @@ def enable_workflow_optimization_for_all_projects(
         failed = 0
 
         for project in all_projects:
-            if enable_workflow_optimization_for_project(
-                database, project.project_id, enable
-            ):
+            if enable_workflow_optimization_for_project(database, project.project_id, enable):
                 successful += 1
             else:
                 failed += 1
@@ -164,9 +160,7 @@ def show_optimization_status(database, project_id: Optional[str] = None) -> None
                 else:
                     disabled_count += 1
 
-            logger.info(
-                f"\nSummary: {enabled_count} enabled, {disabled_count} disabled"
-            )
+            logger.info(f"\nSummary: {enabled_count} enabled, {disabled_count} disabled")
 
     except Exception as e:
         logger.error(f"Error showing status: {e}")
@@ -243,9 +237,7 @@ Examples:
         elif args.project_id:
             # Update specific project
             enable = not args.disable
-            if enable_workflow_optimization_for_project(
-                database, args.project_id, enable
-            ):
+            if enable_workflow_optimization_for_project(database, args.project_id, enable):
                 logger.info("✓ Successfully updated project")
                 return 0
             else:
@@ -263,9 +255,7 @@ Examples:
                 logger.info(f"✓ Successfully updated all {total} projects")
                 return 0
             else:
-                logger.warning(
-                    f"⚠ Partial update: {successful} succeeded, {failed} failed"
-                )
+                logger.warning(f"⚠ Partial update: {successful} succeeded, {failed} failed")
                 return 1
 
     except ImportError as e:

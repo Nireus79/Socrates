@@ -285,7 +285,9 @@ class MaturityCalculator:
         # Try Claude categorization first if available
         if self.categorizer:
             logger.debug("Using Claude-based intelligent categorization")
-            categorized = self.categorizer.categorize_insights(insights, phase, self.project_type, user_id=user_id)
+            categorized = self.categorizer.categorize_insights(
+                insights, phase, self.project_type, user_id=user_id
+            )
             logger.info(f"Claude categorization produced {len(categorized)} specs")
             return categorized
 

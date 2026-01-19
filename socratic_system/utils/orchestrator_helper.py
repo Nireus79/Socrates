@@ -9,15 +9,13 @@ This module provides wrappers around orchestrator calls to ensure:
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 
 
 def validate_orchestrator_result(
-    result: Dict[str, Any],
-    operation: str,
-    log_errors: bool = True
+    result: Dict[str, Any], operation: str, log_errors: bool = True
 ) -> Dict[str, Any]:
     """
     Validate orchestrator request result.
@@ -55,7 +53,7 @@ def safe_orchestrator_call(
     agent: str,
     request_data: Dict[str, Any],
     operation_name: str,
-    async_mode: bool = False
+    async_mode: bool = False,
 ) -> Dict[str, Any]:
     """
     Execute orchestrator call with validation and error handling.
@@ -102,10 +100,7 @@ def safe_orchestrator_call(
 
 
 def get_or_default(
-    result: Dict[str, Any],
-    key: str,
-    default: Any = None,
-    log_missing: bool = True
+    result: Dict[str, Any], key: str, default: Any = None, log_missing: bool = True
 ) -> Any:
     """
     Safely extract value from orchestrator result with logging.

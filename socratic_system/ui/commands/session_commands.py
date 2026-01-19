@@ -1,5 +1,6 @@
 """
-NOTE: Responses now use APIResponse format with data wrapped in "data" field.Socratic session commands (conversation, phases, etc.)"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Socratic session commands (conversation, phases, etc.)
+"""
 
 from typing import Any, Dict, List
 
@@ -197,7 +198,7 @@ Focus on the connection between the user's statement and these insights."""
                     orchestrator,
                     "socratic_counselor",
                     {"action": "advance_phase", "project": project},
-                    operation_name="advance phase"
+                    operation_name="advance phase",
                 )
                 project.phase = result.get("new_phase")
                 self.print_success(f"Advanced to {result['new_phase']} phase!")
@@ -256,7 +257,7 @@ Focus on the connection between the user's statement and these insights."""
                     "project": project,
                     "response": response,
                 },
-                operation_name="extract insights"
+                operation_name="extract insights",
             )
 
             insights = extraction_result.get("insights")
@@ -269,7 +270,7 @@ Focus on the connection between the user's statement and these insights."""
                 print(f"{Fore.MAGENTA}All insights discarded.{Style.RESET_ALL}")
 
             return pre_extracted_insights
-        except ValueError as e:
+        except ValueError:
             return None
 
     def _process_and_save_response(
@@ -288,10 +289,7 @@ Focus on the connection between the user's statement and these insights."""
 
         try:
             result = safe_orchestrator_call(
-                orchestrator,
-                "socratic_counselor",
-                request_data,
-                operation_name="process response"
+                orchestrator, "socratic_counselor", request_data, operation_name="process response"
             )
 
             if result.get("conflicts_pending"):
@@ -304,9 +302,9 @@ Focus on the connection between the user's statement and these insights."""
                     orchestrator,
                     "project_manager",
                     {"action": "save_project", "project": project},
-                    operation_name="save project"
+                    operation_name="save project",
                 )
-            except ValueError as e:
+            except ValueError:
                 self.print_error("Failed to save project")
         except ValueError as e:
             self.print_error(str(e))
@@ -406,7 +404,7 @@ If you don't have enough information, say so."""
                     "project": project,
                     "current_user": user.username,
                 },
-                operation_name="generate question"
+                operation_name="generate question",
             )
 
             question = question_result.get("question")
@@ -572,7 +570,7 @@ class AdvanceCommand(BaseCommand):
                 orchestrator,
                 "socratic_counselor",
                 {"action": "advance_phase", "project": project},
-                operation_name="advance phase"
+                operation_name="advance phase",
             )
 
             project.phase = result.get("new_phase")
@@ -583,7 +581,7 @@ class AdvanceCommand(BaseCommand):
                 orchestrator,
                 "project_manager",
                 {"action": "save_project", "project": project},
-                operation_name="save project"
+                operation_name="save project",
             )
 
             return self.success(data={"new_phase": result.get("new_phase")})
@@ -598,7 +596,7 @@ class RollbackCommand(BaseCommand):
         super().__init__(
             name="rollback",
             description="Roll back current project to the previous phase",
-            usage="rollback"
+            usage="rollback",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -616,7 +614,7 @@ class RollbackCommand(BaseCommand):
             orchestrator,
             "socratic_counselor",
             {"action": "rollback_phase", "project": project},
-            operation_name="rollback phase"
+            operation_name="rollback phase",
         )
 
         if result.get("status") == "success":
@@ -629,7 +627,7 @@ class RollbackCommand(BaseCommand):
                 orchestrator,
                 "project_manager",
                 {"action": "save_project", "project": project},
-                operation_name="save project"
+                operation_name="save project",
             )
 
             return self.success(data={"new_phase": new_phase})
@@ -669,7 +667,7 @@ class ModeCommand(BaseCommand):
                 orchestrator,
                 "project_manager",
                 {"action": "save_project", "project": project},
-                operation_name="save project"
+                operation_name="save project",
             )
 
             self.print_success(f"Mode switched to: {args[0]}")
@@ -710,7 +708,7 @@ class HintCommand(BaseCommand):
                     "project": project,
                     "current_user": user.username if user else None,
                 },
-                operation_name="generate question"
+                operation_name="generate question",
             )
 
             question = question_result.get("question")
@@ -750,9 +748,9 @@ class SkippedCommand(BaseCommand):
 
         # Reload project from database to get latest changes
         try:
-            if hasattr(orchestrator, 'database'):
+            if hasattr(orchestrator, "database"):
                 db = orchestrator.database
-            elif hasattr(orchestrator, 'db'):
+            elif hasattr(orchestrator, "db"):
                 db = orchestrator.db
             else:
                 db = None
@@ -770,16 +768,19 @@ class SkippedCommand(BaseCommand):
         # Get skipped questions
         try:
             skipped_questions = [
-                q for q in (project.pending_questions or [])
-                if q.get("status") == "skipped"
+                q for q in (project.pending_questions or []) if q.get("status") == "skipped"
             ]
 
             if not skipped_questions:
-                print(f"\n{Fore.GREEN}✓ No skipped questions - all questions have been answered!{Style.RESET_ALL}\n")
+                print(
+                    f"\n{Fore.GREEN}✓ No skipped questions - all questions have been answered!{Style.RESET_ALL}\n"
+                )
                 return self.success(data={"skipped_count": 0})
 
             # Show skipped questions
-            print(f"\n{Fore.CYAN}Skipped Questions ({len(skipped_questions)} total):{Style.RESET_ALL}\n")
+            print(
+                f"\n{Fore.CYAN}Skipped Questions ({len(skipped_questions)} total):{Style.RESET_ALL}\n"
+            )
             for i, q in enumerate(skipped_questions, 1):
                 question_id = q.get("id", f"Q{i}")
                 question_text = q.get("question", "[No text]")
@@ -792,7 +793,9 @@ class SkippedCommand(BaseCommand):
             # Handle reopen action
             if args and args[0].lower() == "reopen":
                 if len(args) < 2:
-                    return self.error("Please specify which question to reopen: /skipped reopen <question_id_or_number>")
+                    return self.error(
+                        "Please specify which question to reopen: /skipped reopen <question_id_or_number>"
+                    )
 
                 question_ref = args[1]
 
@@ -806,8 +809,7 @@ class SkippedCommand(BaseCommand):
                 except ValueError:
                     # Try as question ID
                     question_to_reopen = next(
-                        (q for q in skipped_questions if q.get("id") == question_ref),
-                        None
+                        (q for q in skipped_questions if q.get("id") == question_ref), None
                     )
 
                 if not question_to_reopen:
@@ -825,7 +827,9 @@ class SkippedCommand(BaseCommand):
                 print(f"\n{Fore.GREEN}✓ Question reopened:{Style.RESET_ALL}")
                 print(f"  {question_text}\n")
 
-                return self.success(data={"reopened": True, "question_id": question_to_reopen.get("id")})
+                return self.success(
+                    data={"reopened": True, "question_id": question_to_reopen.get("id")}
+                )
 
             return self.success(data={"skipped_count": len(skipped_questions)})
 

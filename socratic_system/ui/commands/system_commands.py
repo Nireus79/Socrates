@@ -1,5 +1,6 @@
 """
-NOTE: Responses now use APIResponse format with data wrapped in "data" field.System commands for CLI control and information"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.System commands for CLI control and information
+"""
 
 import os
 import subprocess
@@ -120,7 +121,7 @@ class StatusCommand(BaseCommand):
                 orchestrator,
                 "system_monitor",
                 {"action": "get_stats"},
-                operation_name="get system stats"
+                operation_name="get system stats",
             )
 
             self.print_header("System Status")
@@ -142,7 +143,7 @@ class StatusCommand(BaseCommand):
                 orchestrator,
                 "system_monitor",
                 {"action": "check_limits"},
-                operation_name="check system limits"
+                operation_name="check system limits",
             )
 
             if result.get("warnings"):

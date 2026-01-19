@@ -34,9 +34,7 @@ def verify_github_signature(payload: bytes, signature: str) -> bool:
         return False
 
     # Calculate expected signature
-    expected_hash = hmac.new(
-        secret, msg=payload, digestmod=hashlib.sha256
-    ).hexdigest()
+    expected_hash = hmac.new(secret, msg=payload, digestmod=hashlib.sha256).hexdigest()
     expected_signature = f"sha256={expected_hash}"
 
     # Use constant-time comparison to prevent timing attacks

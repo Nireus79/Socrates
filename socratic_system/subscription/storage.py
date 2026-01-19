@@ -1,8 +1,9 @@
 """Storage quota management and tracking."""
 
 from typing import Optional, Tuple
-from socratic_system.subscription.tiers import get_tier_limits
+
 from socratic_system.models.user import User
+from socratic_system.subscription.tiers import get_tier_limits
 
 
 class StorageQuotaManager:
@@ -27,12 +28,12 @@ class StorageQuotaManager:
     @staticmethod
     def bytes_to_gb(bytes_size: int) -> float:
         """Convert bytes to gigabytes."""
-        return bytes_size / (1024 ** 3)
+        return bytes_size / (1024**3)
 
     @staticmethod
     def gb_to_bytes(gb_size: float) -> int:
         """Convert gigabytes to bytes."""
-        return int(gb_size * (1024 ** 3))
+        return int(gb_size * (1024**3))
 
     @staticmethod
     def can_upload_document(
@@ -149,9 +150,7 @@ class StorageQuotaManager:
 
             tier = user.subscription_tier.lower()
             limit_gb = StorageQuotaManager.get_storage_limit_gb(tier)
-            used_bytes = StorageQuotaManager.calculate_user_storage_usage(
-                username, database
-            )
+            used_bytes = StorageQuotaManager.calculate_user_storage_usage(username, database)
             used_gb = StorageQuotaManager.bytes_to_gb(used_bytes)
 
             report = {
@@ -167,9 +166,7 @@ class StorageQuotaManager:
             }
 
             if limit_gb:
-                report["storage_percentage_used"] = round(
-                    (used_gb / limit_gb) * 100, 2
-                )
+                report["storage_percentage_used"] = round((used_gb / limit_gb) * 100, 2)
                 report["storage_remaining_gb"] = round(max(0, limit_gb - used_gb), 2)
             else:
                 report["storage_percentage_used"] = 0

@@ -1,5 +1,6 @@
 """
-NOTE: Responses now use APIResponse format with data wrapped in "data" field.Project statistics and progress commands"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Project statistics and progress commands
+"""
 
 from typing import Any, Dict, List
 
@@ -36,7 +37,7 @@ class ProjectStatsCommand(BaseCommand):
                 orchestrator,
                 "context_analyzer",
                 {"action": "get_statistics", "project": project},
-                operation_name="get statistics"
+                operation_name="get statistics",
             )
 
             stats = result.get("statistics")
@@ -143,7 +144,7 @@ class ProjectProgressCommand(BaseCommand):
                     orchestrator,
                     "project_manager",
                     {"action": "save_project", "project": project},
-                    operation_name="save project"
+                    operation_name="save project",
                 )
 
                 print(f"{Fore.GREEN}Progress bar:{Style.RESET_ALL}")
@@ -211,7 +212,7 @@ class ProjectStatusCommand(BaseCommand):
                     orchestrator,
                     "project_manager",
                     {"action": "save_project", "project": project},
-                    operation_name="save project"
+                    operation_name="save project",
                 )
 
                 self.print_success(f"Project status updated to '{status}'")

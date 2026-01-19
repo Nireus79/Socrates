@@ -48,9 +48,7 @@ class WorkflowBuilder:
         self.strategy = "balanced"
         self.metadata: Dict = {}
 
-        logger.debug(
-            f"WorkflowBuilder initialized: {self.workflow_id} ({name}, {phase})"
-        )
+        logger.debug(f"WorkflowBuilder initialized: {self.workflow_id} ({name}, {phase})")
 
     def add_node(
         self,

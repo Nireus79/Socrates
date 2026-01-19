@@ -3,7 +3,6 @@ Quality Controller Agent - Orchestrates maturity tracking and prevents greedy al
 """
 
 import logging
-import uuid
 from dataclasses import asdict
 from datetime import datetime
 from typing import Any, Dict, Optional
@@ -198,14 +197,18 @@ class QualityControllerAgent(Agent):
         insights = request.get("insights")
         current_user = request.get("current_user")
 
-        logging.debug(f"Processing response with {len(insights)} insight fields for user {current_user}")
+        logging.debug(
+            f"Processing response with {len(insights)} insight fields for user {current_user}"
+        )
 
         # Capture score BEFORE adding new specs
         score_before = project.phase_maturity_scores.get(project.phase, 0.0)
 
         # Use calculator to categorize the new insights (pass user_id for API key lookup)
         logging.debug("Categorizing insights")
-        categorized = self.calculator.categorize_insights(insights, project.phase, user_id=current_user)
+        categorized = self.calculator.categorize_insights(
+            insights, project.phase, user_id=current_user
+        )
         logging.info(f"Insights categorized into {len(categorized)} specs")
 
         if not categorized:
@@ -549,9 +552,7 @@ class QualityControllerAgent(Agent):
             logging.error(f"ValueError in workflow approval request: {e}")
             return {"status": "error", "message": str(e)}
         except Exception as e:
-            logging.error(
-                f"Unexpected error in workflow approval request: {type(e).__name__}: {e}"
-            )
+            logging.error(f"Unexpected error in workflow approval request: {type(e).__name__}: {e}")
             return {"status": "error", "message": str(e)}
 
     def _approve_workflow(self, request: Dict) -> Dict:
@@ -591,8 +592,7 @@ class QualityControllerAgent(Agent):
                 return {"status": "error", "message": "Approval request not found"}
 
             logging.info(
-                f"Approving workflow request: {request_id}, "
-                f"approved path: {approved_path_id}"
+                f"Approving workflow request: {request_id}, " f"approved path: {approved_path_id}"
             )
 
             # Mark as approved
@@ -602,7 +602,7 @@ class QualityControllerAgent(Agent):
 
             # Remove from pending
             del self.pending_approvals[request_id]
-            logging.debug(f"Removed request from pending_approvals")
+            logging.debug("Removed request from pending_approvals")
 
             # Emit approval event
             logging.debug("Emitting WORKFLOW_APPROVED event")
@@ -615,7 +615,7 @@ class QualityControllerAgent(Agent):
                 },
             )
 
-            logging.info(f"Workflow approval completed successfully")
+            logging.info("Workflow approval completed successfully")
 
             return {
                 "status": "success",
@@ -625,9 +625,7 @@ class QualityControllerAgent(Agent):
             }
 
         except Exception as e:
-            logging.error(
-                f"Unexpected error approving workflow: {type(e).__name__}: {e}"
-            )
+            logging.error(f"Unexpected error approving workflow: {type(e).__name__}: {e}")
             return {"status": "error", "message": str(e)}
 
     def _reject_workflow(self, request: Dict) -> Dict:
@@ -662,9 +660,7 @@ class QualityControllerAgent(Agent):
                 logging.error(f"Approval request not found: {request_id}")
                 return {"status": "error", "message": "Approval request not found"}
 
-            logging.info(
-                f"Rejecting workflow request: {request_id}, reason: {reason}"
-            )
+            logging.info(f"Rejecting workflow request: {request_id}, reason: {reason}")
 
             # Mark as rejected
             approval_request.status = "rejected"
@@ -672,7 +668,7 @@ class QualityControllerAgent(Agent):
 
             # Remove from pending
             del self.pending_approvals[request_id]
-            logging.debug(f"Removed request from pending_approvals")
+            logging.debug("Removed request from pending_approvals")
 
             # Emit rejection event
             logging.debug("Emitting WORKFLOW_REJECTED event")
@@ -685,7 +681,7 @@ class QualityControllerAgent(Agent):
                 },
             )
 
-            logging.info(f"Workflow rejection completed successfully")
+            logging.info("Workflow rejection completed successfully")
 
             return {
                 "status": "success",
@@ -695,9 +691,7 @@ class QualityControllerAgent(Agent):
             }
 
         except Exception as e:
-            logging.error(
-                f"Unexpected error rejecting workflow: {type(e).__name__}: {e}"
-            )
+            logging.error(f"Unexpected error rejecting workflow: {type(e).__name__}: {e}")
             return {"status": "error", "message": str(e)}
 
     def _get_pending_approvals(self, request: Dict) -> Dict:
@@ -738,7 +732,5 @@ class QualityControllerAgent(Agent):
             }
 
         except Exception as e:
-            logging.error(
-                f"Unexpected error retrieving pending approvals: {type(e).__name__}: {e}"
-            )
+            logging.error(f"Unexpected error retrieving pending approvals: {type(e).__name__}: {e}")
             return {"status": "error", "message": str(e)}

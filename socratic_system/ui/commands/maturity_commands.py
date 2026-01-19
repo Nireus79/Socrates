@@ -11,9 +11,9 @@ Commands:
 from typing import Any, Dict
 
 from socratic_system.ui.maturity_display import MaturityDisplay
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 from .base import BaseCommand
-from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class MaturityCommand(BaseCommand):
@@ -64,7 +64,7 @@ class MaturityCommand(BaseCommand):
                 orchestrator,
                 "quality_controller",
                 {"action": "calculate_maturity", "project": project, "phase": phase},
-                operation_name="calculate maturity"
+                operation_name="calculate maturity",
             )
 
             maturity = result.get("maturity", {})
@@ -105,7 +105,7 @@ class MaturitySummaryCommand(BaseCommand):
                 orchestrator,
                 "quality_controller",
                 {"action": "get_maturity_summary", "project": project},
-                operation_name="get maturity summary"
+                operation_name="get maturity summary",
             )
 
             summary = result.get("summary", {})
@@ -146,7 +146,7 @@ class MaturityHistoryCommand(BaseCommand):
                 orchestrator,
                 "quality_controller",
                 {"action": "get_history", "project": project},
-                operation_name="get maturity history"
+                operation_name="get maturity history",
             )
 
             history = result.get("history", [])

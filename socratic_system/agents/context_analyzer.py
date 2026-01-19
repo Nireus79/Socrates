@@ -169,7 +169,7 @@ Provide a concise, focused summary."""
             user_auth_method = "api_key"
             if self.current_user:
                 user_obj = self.orchestrator.database.load_user(self.current_user)
-                if user_obj and hasattr(user_obj, 'claude_auth_method'):
+                if user_obj and hasattr(user_obj, "claude_auth_method"):
                     user_auth_method = user_obj.claude_auth_method or "api_key"
             summary = self.orchestrator.claude_client.generate_response(
                 prompt, user_auth_method=user_auth_method, user_id=self.current_user

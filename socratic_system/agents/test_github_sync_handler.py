@@ -9,22 +9,22 @@ Tests cover:
 5. Permission errors and access revocation
 """
 
-import unittest
-from unittest.mock import Mock, patch, MagicMock, call
-import subprocess
 import os
-import tempfile
 import shutil
+import tempfile
+import unittest
 from datetime import datetime, timedelta, timezone
+from unittest.mock import Mock, patch
+
 from github_sync_handler import (
-    GitHubSyncHandler,
-    create_github_sync_handler,
     ConflictResolutionError,
-    TokenExpiredError,
+    FileSizeExceededError,
+    GitHubSyncHandler,
+    NetworkSyncFailedError,
     PermissionDeniedError,
     RepositoryNotFoundError,
-    NetworkSyncFailedError,
-    FileSizeExceededError,
+    TokenExpiredError,
+    create_github_sync_handler,
 )
 
 
@@ -92,9 +92,7 @@ class TestConflictDetectionAndResolution(unittest.TestCase):
         mock_result.stderr = ""
         mock_run.return_value = mock_result
 
-        result = self.handler.resolve_merge_conflict(
-            self.temp_repo, "conflict.py", strategy="ours"
-        )
+        result = self.handler.resolve_merge_conflict(self.temp_repo, "conflict.py", strategy="ours")
 
         self.assertTrue(result)
         # Should call git checkout --ours and git add
@@ -134,24 +132,18 @@ class TestConflictDetectionAndResolution(unittest.TestCase):
         mock_result.stderr = "error: path conflict.py not found"
         mock_run.return_value = mock_result
 
-        result = self.handler.resolve_merge_conflict(
-            self.temp_repo, "conflict.py", strategy="ours"
-        )
+        result = self.handler.resolve_merge_conflict(self.temp_repo, "conflict.py", strategy="ours")
 
         self.assertFalse(result)
 
     @patch.object(GitHubSyncHandler, "detect_merge_conflicts")
     @patch.object(GitHubSyncHandler, "resolve_merge_conflict")
-    def test_handle_merge_conflicts_full_workflow(
-        self, mock_resolve, mock_detect
-    ):
+    def test_handle_merge_conflicts_full_workflow(self, mock_resolve, mock_detect):
         """Test full conflict handling workflow"""
         mock_detect.return_value = ["file1.py", "file2.py"]
         mock_resolve.return_value = True
 
-        result = self.handler.handle_merge_conflicts(
-            self.temp_repo, {}, default_strategy="ours"
-        )
+        result = self.handler.handle_merge_conflicts(self.temp_repo, {}, default_strategy="ours")
 
         self.assertEqual(result["status"], "success")
         self.assertEqual(result["conflicts_found"], 2)
@@ -160,16 +152,12 @@ class TestConflictDetectionAndResolution(unittest.TestCase):
 
     @patch.object(GitHubSyncHandler, "detect_merge_conflicts")
     @patch.object(GitHubSyncHandler, "resolve_merge_conflict")
-    def test_handle_merge_conflicts_partial_resolution(
-        self, mock_resolve, mock_detect
-    ):
+    def test_handle_merge_conflicts_partial_resolution(self, mock_resolve, mock_detect):
         """Test when only some conflicts are resolved"""
         mock_detect.return_value = ["file1.py", "file2.py"]
         mock_resolve.side_effect = [True, False]
 
-        result = self.handler.handle_merge_conflicts(
-            self.temp_repo, {}, default_strategy="ours"
-        )
+        result = self.handler.handle_merge_conflicts(self.temp_repo, {}, default_strategy="ours")
 
         self.assertEqual(result["status"], "partial")
         self.assertEqual(len(result["resolved"]), 1)
@@ -209,9 +197,7 @@ class TestLargeFileHandling(unittest.TestCase):
                 f.write("x" * (10 * 1024 * 1024))  # 10MB
             test_files.append(file_path)
 
-        all_valid, invalid_files, size_report = self.handler.validate_file_sizes(
-            test_files
-        )
+        all_valid, invalid_files, size_report = self.handler.validate_file_sizes(test_files)
 
         self.assertTrue(all_valid)
         self.assertEqual(len(invalid_files), 0)
@@ -226,9 +212,7 @@ class TestLargeFileHandling(unittest.TestCase):
         with open(large_file, "wb") as f:
             f.write(b"x" * (150 * 1024 * 1024))  # 150MB
 
-        all_valid, invalid_files, size_report = self.handler.validate_file_sizes(
-            [large_file]
-        )
+        all_valid, invalid_files, size_report = self.handler.validate_file_sizes([large_file])
 
         self.assertFalse(all_valid)
         self.assertIn(large_file, invalid_files)
@@ -254,9 +238,7 @@ class TestLargeFileHandling(unittest.TestCase):
         with open(large_file, "wb") as f:
             f.write(b"x" * (150 * 1024 * 1024))  # 150MB
 
-        result = self.handler.handle_large_files(
-            [small_file, large_file], strategy="exclude"
-        )
+        result = self.handler.handle_large_files([small_file, large_file], strategy="exclude")
 
         self.assertEqual(result["status"], "partial")
         self.assertIn(large_file, result["excluded_files"])
@@ -280,9 +262,7 @@ class TestLargeFileHandling(unittest.TestCase):
         with open(large_file, "wb") as f:
             f.write(b"x" * (150 * 1024 * 1024))  # 150MB
 
-        result = self.handler.handle_large_files(
-            [large_file], strategy="unknown"
-        )
+        result = self.handler.handle_large_files([large_file], strategy="unknown")
 
         self.assertEqual(result["status"], "error")
 
@@ -338,9 +318,7 @@ class TestTokenExpiryHandling(unittest.TestCase):
         expired_time = datetime.now(timezone.utc) - timedelta(hours=1)
 
         with self.assertRaises(TokenExpiredError):
-            self.handler.check_token_validity(
-                self.valid_token, token_expiry=expired_time
-            )
+            self.handler.check_token_validity(self.valid_token, token_expiry=expired_time)
 
     def test_check_token_validity_future_expiration(self):
         """Test token validation with future expiration time"""
@@ -351,9 +329,7 @@ class TestTokenExpiryHandling(unittest.TestCase):
             mock_response.status_code = 200
             mock_get.return_value = mock_response
 
-            is_valid = self.handler.check_token_validity(
-                self.valid_token, token_expiry=future_time
-            )
+            is_valid = self.handler.check_token_validity(self.valid_token, token_expiry=future_time)
 
             self.assertTrue(is_valid)
 
@@ -435,9 +411,7 @@ class TestNetworkRetryAndResume(unittest.TestCase):
         """Test successful sync on first attempt"""
         sync_func = Mock(return_value={"status": "synced"})
 
-        result = self.handler.sync_with_retry_and_resume(
-            self.repo_url, sync_func, max_retries=3
-        )
+        result = self.handler.sync_with_retry_and_resume(self.repo_url, sync_func, max_retries=3)
 
         self.assertEqual(result["status"], "success")
         self.assertEqual(result["attempt"], 1)
@@ -453,9 +427,7 @@ class TestNetworkRetryAndResume(unittest.TestCase):
             {"status": "synced"},
         ]
 
-        result = self.handler.sync_with_retry_and_resume(
-            self.repo_url, sync_func, max_retries=3
-        )
+        result = self.handler.sync_with_retry_and_resume(self.repo_url, sync_func, max_retries=3)
 
         self.assertEqual(result["status"], "success")
         self.assertEqual(result["attempt"], 3)
@@ -468,9 +440,7 @@ class TestNetworkRetryAndResume(unittest.TestCase):
         sync_func = Mock(side_effect=ConnectionError("Connection lost"))
 
         with self.assertRaises(NetworkSyncFailedError):
-            self.handler.sync_with_retry_and_resume(
-                self.repo_url, sync_func, max_retries=3
-            )
+            self.handler.sync_with_retry_and_resume(self.repo_url, sync_func, max_retries=3)
 
         self.assertEqual(sync_func.call_count, 3)
 
@@ -485,9 +455,7 @@ class TestNetworkRetryAndResume(unittest.TestCase):
         ]
 
         with self.assertRaises(NetworkSyncFailedError):
-            self.handler.sync_with_retry_and_resume(
-                self.repo_url, sync_func, max_retries=3
-            )
+            self.handler.sync_with_retry_and_resume(self.repo_url, sync_func, max_retries=3)
 
         # Check sleep was called with exponential backoff values
         sleep_calls = [c[0][0] for c in mock_sleep.call_args_list]
@@ -498,12 +466,10 @@ class TestNetworkRetryAndResume(unittest.TestCase):
     @patch("time.sleep")
     def test_sync_with_retry_max_backoff_cap(self, mock_sleep):
         """Test that backoff is capped at MAX_BACKOFF"""
-        sync_func = Mock(side_effect=IOError("IO Error"))
+        sync_func = Mock(side_effect=OSError("IO Error"))
 
         with self.assertRaises(NetworkSyncFailedError):
-            self.handler.sync_with_retry_and_resume(
-                self.repo_url, sync_func, max_retries=6
-            )
+            self.handler.sync_with_retry_and_resume(self.repo_url, sync_func, max_retries=6)
 
         # Check sleep calls don't exceed MAX_BACKOFF (32s)
         sleep_calls = [c[0][0] for c in mock_sleep.call_args_list]
@@ -535,9 +501,7 @@ class TestPermissionErrorHandling(unittest.TestCase):
         mock_response.status_code = 200
         mock_get.return_value = mock_response
 
-        has_access, reason = self.handler.check_repo_access(
-            self.repo_url, self.token
-        )
+        has_access, reason = self.handler.check_repo_access(self.repo_url, self.token)
 
         self.assertTrue(has_access)
         self.assertEqual(reason, "Access granted")
@@ -583,9 +547,7 @@ class TestPermissionErrorHandling(unittest.TestCase):
         mock_check.return_value = (True, "Access granted")
         sync_func = Mock(return_value={"status": "synced"})
 
-        result = self.handler.sync_with_permission_check(
-            self.repo_url, self.token, sync_func
-        )
+        result = self.handler.sync_with_permission_check(self.repo_url, self.token, sync_func)
 
         self.assertEqual(result["status"], "success")
         self.assertTrue(result["access_verified"])
@@ -596,9 +558,7 @@ class TestPermissionErrorHandling(unittest.TestCase):
         """Test sync with permission denied"""
         mock_check.side_effect = PermissionDeniedError("Access denied")
 
-        result = self.handler.sync_with_permission_check(
-            self.repo_url, self.token, Mock()
-        )
+        result = self.handler.sync_with_permission_check(self.repo_url, self.token, Mock())
 
         self.assertEqual(result["status"], "error")
         self.assertEqual(result["error_type"], "permission_denied")
@@ -609,9 +569,7 @@ class TestPermissionErrorHandling(unittest.TestCase):
         """Test sync with repository not found"""
         mock_check.side_effect = RepositoryNotFoundError("Repo not found")
 
-        result = self.handler.sync_with_permission_check(
-            self.repo_url, self.token, Mock()
-        )
+        result = self.handler.sync_with_permission_check(self.repo_url, self.token, Mock())
 
         self.assertEqual(result["status"], "error")
         self.assertEqual(result["error_type"], "repository_not_found")
@@ -622,9 +580,7 @@ class TestPermissionErrorHandling(unittest.TestCase):
         """Test sync when access check returns False but no exception"""
         mock_check.return_value = (False, "Unexpected response: 500")
 
-        result = self.handler.sync_with_permission_check(
-            self.repo_url, self.token, Mock()
-        )
+        result = self.handler.sync_with_permission_check(self.repo_url, self.token, Mock())
 
         self.assertEqual(result["status"], "error")
         self.assertFalse(result["access_verified"])

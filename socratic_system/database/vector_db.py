@@ -582,22 +582,23 @@ class VectorDatabase:
             # First, try to count with project_id filter if provided
             if project_id:
                 where_filter = {
-                    "$and": [
-                        {"source": {"$eq": source}},
-                        {"project_id": {"$eq": project_id}}
-                    ]
+                    "$and": [{"source": {"$eq": source}}, {"project_id": {"$eq": project_id}}]
                 }
                 results = self.collection.get(where=where_filter)
                 chunk_count = len(results.get("ids", []))
 
                 # If found, return the count
                 if chunk_count > 0:
-                    self.logger.debug(f"Counted {chunk_count} chunks for source '{source}' (project_id={project_id})")
+                    self.logger.debug(
+                        f"Counted {chunk_count} chunks for source '{source}' (project_id={project_id})"
+                    )
                     return chunk_count
 
                 # If not found with project filter, try without project filter
                 # This handles legacy documents imported before project_id tracking
-                self.logger.debug(f"No chunks found for source '{source}' with project_id={project_id}, trying without project filter...")
+                self.logger.debug(
+                    f"No chunks found for source '{source}' with project_id={project_id}, trying without project filter..."
+                )
 
             # Query without project filter (fallback for legacy documents)
             where_filter = {"source": {"$eq": source}}
@@ -605,7 +606,9 @@ class VectorDatabase:
             chunk_count = len(results.get("ids", []))
 
             if chunk_count > 0:
-                self.logger.debug(f"Counted {chunk_count} chunks for source '{source}' (without project_id filter - legacy)")
+                self.logger.debug(
+                    f"Counted {chunk_count} chunks for source '{source}' (without project_id filter - legacy)"
+                )
 
             return chunk_count
         except Exception as e:
@@ -626,8 +629,16 @@ class VectorDatabase:
             for i, chunk_id in enumerate(results.get("ids", [])):
                 chunk = {
                     "id": chunk_id,
-                    "metadata": results.get("metadatas", [{}])[i] if i < len(results.get("metadatas", [])) else {},
-                    "content_preview": (results.get("documents", [""])[i][:100] + "...") if i < len(results.get("documents", [])) else "",
+                    "metadata": (
+                        results.get("metadatas", [{}])[i]
+                        if i < len(results.get("metadatas", []))
+                        else {}
+                    ),
+                    "content_preview": (
+                        (results.get("documents", [""])[i][:100] + "...")
+                        if i < len(results.get("documents", []))
+                        else ""
+                    ),
                 }
                 chunks.append(chunk)
 

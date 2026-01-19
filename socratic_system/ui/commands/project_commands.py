@@ -1,5 +1,6 @@
 """
-NOTE: Responses now use APIResponse format with data wrapped in "data" field.Project management commands"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Project management commands
+"""
 
 import datetime
 from typing import Any, Dict, List
@@ -53,7 +54,7 @@ class ProjectCreateCommand(BaseCommand):
                     "owner": user.username,
                     "project_type": project_type,
                 },
-                operation_name="create_project"
+                operation_name="create_project",
             )
 
             project = result.get("project")
@@ -158,7 +159,7 @@ class ProjectLoadCommand(BaseCommand):
                 orchestrator,
                 "project_manager",
                 {"action": "load_project", "project_id": project_id},
-                operation_name="load_project"
+                operation_name="load_project",
             )
 
             project = result.get("project")
@@ -195,7 +196,7 @@ class ProjectLoadCommand(BaseCommand):
                 orchestrator,
                 "project_manager",
                 {"action": "list_projects", "username": user.username},
-                operation_name="list_projects"
+                operation_name="list_projects",
             )
 
             projects = result.get("projects", [])
@@ -241,7 +242,7 @@ class ProjectListCommand(BaseCommand):
             orchestrator,
             "project_manager",
             {"action": "list_projects", "username": user.username},
-            operation_name="list_projects"
+            operation_name="list_projects",
         )
 
         if result.get("data", {}).get("status") != "success" or not result.get("projects"):
@@ -303,7 +304,7 @@ class ProjectArchiveCommand(BaseCommand):
                     "project_id": project.project_id,
                     "requester": user.username,
                 },
-                operation_name="archive_project"
+                operation_name="archive_project",
             )
 
             self.print_success(result.get("message", "Project archived successfully"))
@@ -379,7 +380,7 @@ class ProjectRestoreCommand(BaseCommand):
                 "project_id": project["project_id"],
                 "requester": user.username,
             },
-            operation_name="restore_project"
+            operation_name="restore_project",
         )
 
         if result.get("data", {}).get("status") == "success":
@@ -403,7 +404,7 @@ class ProjectRestoreCommand(BaseCommand):
             orchestrator,
             "project_manager",
             {"action": "get_archived_projects"},
-            operation_name="get_archived_projects"
+            operation_name="get_archived_projects",
         )
 
         if result.get("data", {}).get("status") != "success" or not result.get("archived_projects"):
@@ -542,7 +543,7 @@ class ProjectDeleteCommand(BaseCommand):
                 "requester": user.username,
                 "confirmation": "DELETE",
             },
-            operation_name="delete_project_permanently"
+            operation_name="delete_project_permanently",
         )
 
         if result.get("data", {}).get("status") == "success":
@@ -574,7 +575,7 @@ class ProjectDeleteCommand(BaseCommand):
             orchestrator,
             "project_manager",
             {"action": "list_projects", "username": user.username},
-            operation_name="list_projects"
+            operation_name="list_projects",
         )
 
         if result.get("data", {}).get("status") != "success" or not result.get("projects"):
@@ -769,7 +770,7 @@ class ProjectAnalyzeCommand(BaseCommand):
                 "project_path": project_path,
                 "timeout": 300,
             },
-            operation_name="validate_project"
+            operation_name="validate_project",
         )
 
     def _display_analyze_results(
@@ -916,7 +917,7 @@ class ProjectTestCommand(BaseCommand):
                 "project_path": project_path,
                 "timeout": 300,
             },
-            operation_name="run_tests"
+            operation_name="run_tests",
         )
 
     def _display_test_results(self, results: Dict[str, Any]) -> None:
@@ -992,7 +993,7 @@ class ProjectFixCommand(BaseCommand):
                         "project_path": temp_path,
                         "timeout": 300,
                     },
-                    operation_name="validate_project"
+                    operation_name="validate_project",
                 )
 
                 if validation_result.get("data", {}).get("status") != "success":
@@ -1236,7 +1237,7 @@ class ProjectValidateCommand(BaseCommand):
                 "project_path": project_path,
                 "timeout": 300,
             },
-            operation_name="validate_project"
+            operation_name="validate_project",
         )
 
     def _display_validation_results(self, validation_result: Dict[str, Any]) -> None:
@@ -1566,7 +1567,7 @@ class ProjectDiffCommand(BaseCommand):
                 "project_path": project_path,
                 "timeout": 300,
             },
-            operation_name="validate_project"
+            operation_name="validate_project",
         )
 
     def _display_validation_comparison(

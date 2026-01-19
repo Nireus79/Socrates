@@ -1,5 +1,6 @@
 """
-NOTE: Responses now use APIResponse format with data wrapped in "data" field.Project note management commands"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Project note management commands
+"""
 
 from typing import Any, Dict, List
 
@@ -84,7 +85,7 @@ class NoteAddCommand(BaseCommand):
                     "created_by": user.username,
                     "tags": tags,
                 },
-                operation_name="add note"
+                operation_name="add note",
             )
 
             note_data = result.get("note", {})
@@ -132,7 +133,7 @@ class NoteListCommand(BaseCommand):
                 orchestrator,
                 "note_manager",
                 {"action": "list_notes", "project_id": project.project_id, "note_type": note_type},
-                operation_name="list notes"
+                operation_name="list notes",
             )
 
             notes = result.get("notes", [])
@@ -206,7 +207,7 @@ class NoteSearchCommand(BaseCommand):
                 orchestrator,
                 "note_manager",
                 {"action": "search_notes", "project_id": project.project_id, "query": query},
-                operation_name="search notes"
+                operation_name="search notes",
             )
 
             results = result.get("results", [])
@@ -281,7 +282,7 @@ class NoteDeleteCommand(BaseCommand):
                 orchestrator,
                 "note_manager",
                 {"action": "delete_note", "note_id": note_id, "project_id": project.project_id},
-                operation_name="delete note"
+                operation_name="delete note",
             )
 
             self.print_success("Note deleted successfully")

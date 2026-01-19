@@ -1,5 +1,6 @@
 """
-NOTE: Responses now use APIResponse format with data wrapped in "data" field.Finalize project - generate artifacts and documentation for any project type"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Finalize project - generate artifacts and documentation for any project type
+"""
 
 from typing import Any, Dict, List
 
@@ -41,7 +42,7 @@ class FinalizeGenerateCommand(BaseCommand):
                 orchestrator,
                 "code_generator",
                 {"action": "generate_artifact", "project": project},
-                operation_name="generate artifact"
+                operation_name="generate artifact",
             )
 
             artifact = result.get("artifact")
@@ -142,7 +143,7 @@ class FinalizeGenerateCommand(BaseCommand):
                     "project": project,
                     "artifact": artifact,
                 },
-                operation_name="generate documentation"
+                operation_name="generate documentation",
             )
 
             doc_save_path = doc_result.get("save_path")
@@ -156,7 +157,7 @@ class FinalizeGenerateCommand(BaseCommand):
                 self._display_save_location(
                     doc_save_path, "Documentation save path returned but file not found"
                 )
-        except ValueError as e:
+        except ValueError:
             self.print_warning("Failed to generate documentation")
 
 
@@ -200,7 +201,7 @@ class FinalizeDocsCommand(BaseCommand):
                 orchestrator,
                 "code_generator",
                 {"action": "generate_artifact", "project": project},
-                operation_name="generate artifact"
+                operation_name="generate artifact",
             )
 
             artifact = result.get("artifact")
@@ -215,7 +216,7 @@ class FinalizeDocsCommand(BaseCommand):
                         "project": project,
                         "artifact": artifact,
                     },
-                    operation_name="generate documentation"
+                    operation_name="generate documentation",
                 )
 
                 doc_save_path = doc_result.get("save_path")
@@ -237,7 +238,10 @@ class FinalizeDocsCommand(BaseCommand):
                         )
 
                 return self.success(
-                    data={"documentation": doc_result.get("documentation"), "save_path": doc_save_path}
+                    data={
+                        "documentation": doc_result.get("documentation"),
+                        "save_path": doc_save_path,
+                    }
                 )
             except ValueError as e:
                 return self.error(str(e))

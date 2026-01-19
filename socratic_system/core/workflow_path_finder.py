@@ -62,9 +62,7 @@ class WorkflowPathFinder:
             all_paths.extend(paths)
 
         # Convert raw paths to WorkflowPath objects
-        workflow_paths = [
-            self._create_workflow_path(nodes, edges) for nodes, edges in all_paths
-        ]
+        workflow_paths = [self._create_workflow_path(nodes, edges) for nodes, edges in all_paths]
 
         logger.info(
             f"Path enumeration complete: {len(workflow_paths)} total paths found "
@@ -161,9 +159,7 @@ class WorkflowPathFinder:
         logger.debug(f"Built adjacency list with {len(adjacency_list)} nodes")
         return adjacency_list
 
-    def _create_workflow_path(
-        self, nodes: List[str], edges: List[str]
-    ) -> WorkflowPath:
+    def _create_workflow_path(self, nodes: List[str], edges: List[str]) -> WorkflowPath:
         """
         Create a WorkflowPath object from ordered node and edge lists.
 

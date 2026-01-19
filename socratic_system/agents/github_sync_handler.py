@@ -14,7 +14,7 @@ for reliable GitHub sync operations.
 
 import logging
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
@@ -22,31 +22,37 @@ logger = logging.getLogger(__name__)
 
 class ConflictResolutionError(Exception):
     """Raised when merge conflict cannot be resolved"""
+
     pass
 
 
 class TokenExpiredError(Exception):
     """Raised when GitHub authentication token has expired"""
+
     pass
 
 
 class PermissionDeniedError(Exception):
     """Raised when user lacks repository access"""
+
     pass
 
 
 class RepositoryNotFoundError(Exception):
     """Raised when repository no longer exists or is inaccessible"""
+
     pass
 
 
 class NetworkSyncFailedError(Exception):
     """Raised when sync fails after all retry attempts"""
+
     pass
 
 
 class FileSizeExceededError(Exception):
     """Raised when file size exceeds GitHub limits"""
+
     pass
 
 
@@ -98,14 +104,14 @@ class GitHubSyncHandler:
                 cwd=repo_path,
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=30,
             )
 
             if result.returncode != 0:
                 logger.warning(f"Git command failed: {result.stderr}")
                 return []
 
-            conflicted_files = result.stdout.strip().split('\n')
+            conflicted_files = result.stdout.strip().split("\n")
             conflicted_files = [f for f in conflicted_files if f]
 
             logger.info(f"Found {len(conflicted_files)} conflicted files")
@@ -116,10 +122,7 @@ class GitHubSyncHandler:
             raise ConflictResolutionError(f"Failed to detect conflicts: {e}")
 
     def resolve_merge_conflict(
-        self,
-        repo_path: str,
-        file_path: str,
-        strategy: str = "ours"
+        self, repo_path: str, file_path: str, strategy: str = "ours"
     ) -> bool:
         """
         Resolve a specific merge conflict
@@ -147,7 +150,7 @@ class GitHubSyncHandler:
                     cwd=repo_path,
                     capture_output=True,
                     text=True,
-                    timeout=30
+                    timeout=30,
                 )
             elif strategy == "theirs":
                 # Keep their version
@@ -156,7 +159,7 @@ class GitHubSyncHandler:
                     cwd=repo_path,
                     capture_output=True,
                     text=True,
-                    timeout=30
+                    timeout=30,
                 )
             else:
                 logger.warning(f"Manual resolution required for {file_path}")
@@ -168,10 +171,7 @@ class GitHubSyncHandler:
 
             # Stage the resolved file
             subprocess.run(
-                ["git", "add", file_path],
-                cwd=repo_path,
-                capture_output=True,
-                timeout=30
+                ["git", "add", file_path], cwd=repo_path, capture_output=True, timeout=30
             )
 
             logger.info(f"Successfully resolved conflict in {file_path}")
@@ -182,10 +182,7 @@ class GitHubSyncHandler:
             raise ConflictResolutionError(f"Failed to resolve conflict: {e}")
 
     def handle_merge_conflicts(
-        self,
-        repo_path: str,
-        conflict_info: Dict[str, Any],
-        default_strategy: str = "ours"
+        self, repo_path: str, conflict_info: Dict[str, Any], default_strategy: str = "ours"
     ) -> Dict[str, Any]:
         """
         Handle merge conflicts during sync
@@ -212,7 +209,7 @@ class GitHubSyncHandler:
                 self.db.log_sync_error(
                     repo_path,
                     "merge_conflicts_detected",
-                    f"{len(conflicted_files)} files with conflicts"
+                    f"{len(conflicted_files)} files with conflicts",
                 )
 
             # Resolve each conflict
@@ -220,7 +217,7 @@ class GitHubSyncHandler:
                 "status": "partial",
                 "conflicts_found": len(conflicted_files),
                 "resolved": [],
-                "manual_required": []
+                "manual_required": [],
             }
 
             for file_path in conflicted_files:
@@ -247,7 +244,7 @@ class GitHubSyncHandler:
                 "error": str(e),
                 "conflicts_found": 0,
                 "resolved": [],
-                "manual_required": []
+                "manual_required": [],
             }
 
     # ========================================================================
@@ -255,8 +252,7 @@ class GitHubSyncHandler:
     # ========================================================================
 
     def validate_file_sizes(
-        self,
-        files_to_push: List[str]
+        self, files_to_push: List[str]
     ) -> Tuple[bool, List[str], List[Dict[str, Any]]]:
         """
         Validate file sizes before pushing
@@ -289,24 +285,25 @@ class GitHubSyncHandler:
                     logger.warning(f"File {file_path} exceeds limit: {file_size} bytes")
                     invalid_files.append(file_path)
 
-                size_report.append({
-                    "file": file_path,
-                    "size": file_size,
-                    "size_mb": file_size / (1024 * 1024),
-                    "exceeds_limit": file_size > self.MAX_FILE_SIZE
-                })
+                size_report.append(
+                    {
+                        "file": file_path,
+                        "size": file_size,
+                        "size_mb": file_size / (1024 * 1024),
+                        "exceeds_limit": file_size > self.MAX_FILE_SIZE,
+                    }
+                )
 
             # Check total size
-            all_valid = (
-                len(invalid_files) == 0 and
-                total_size <= self.MAX_REPO_SIZE
-            )
+            all_valid = len(invalid_files) == 0 and total_size <= self.MAX_REPO_SIZE
 
             if total_size > self.MAX_REPO_SIZE:
                 logger.warning(f"Total repo size {total_size} exceeds limit")
                 all_valid = False
 
-            logger.info(f"Size validation complete: valid={all_valid}, invalid={len(invalid_files)}")
+            logger.info(
+                f"Size validation complete: valid={all_valid}, invalid={len(invalid_files)}"
+            )
             return all_valid, invalid_files, size_report
 
         except Exception as e:
@@ -314,9 +311,7 @@ class GitHubSyncHandler:
             return False, files_to_push, []
 
     def handle_large_files(
-        self,
-        files_to_push: List[str],
-        strategy: str = "exclude"
+        self, files_to_push: List[str], strategy: str = "exclude"
     ) -> Dict[str, Any]:
         """
         Handle large files during sync
@@ -331,11 +326,7 @@ class GitHubSyncHandler:
         all_valid, invalid_files, size_report = self.validate_file_sizes(files_to_push)
 
         if all_valid:
-            return {
-                "status": "success",
-                "all_files_valid": True,
-                "size_report": size_report
-            }
+            return {"status": "success", "all_files_valid": True, "size_report": size_report}
 
         logger.warning(f"Handling {len(invalid_files)} large files using {strategy} strategy")
 
@@ -347,7 +338,7 @@ class GitHubSyncHandler:
                 "strategy": "exclude",
                 "excluded_files": invalid_files,
                 "valid_files": valid_files,
-                "size_report": size_report
+                "size_report": size_report,
             }
         elif strategy == "lfs":
             logger.info("Using Git LFS for large files")
@@ -357,14 +348,14 @@ class GitHubSyncHandler:
                 "strategy": "lfs",
                 "message": "Git LFS required for large files",
                 "large_files": invalid_files,
-                "size_report": size_report
+                "size_report": size_report,
             }
         else:
             return {
                 "status": "error",
                 "message": f"Unknown strategy: {strategy}",
                 "large_files": invalid_files,
-                "size_report": size_report
+                "size_report": size_report,
             }
 
     # ========================================================================
@@ -372,9 +363,7 @@ class GitHubSyncHandler:
     # ========================================================================
 
     def check_token_validity(
-        self,
-        token: Optional[str] = None,
-        token_expiry: Optional[datetime] = None
+        self, token: Optional[str] = None, token_expiry: Optional[datetime] = None
     ) -> bool:
         """
         Check if GitHub token is still valid
@@ -412,7 +401,7 @@ class GitHubSyncHandler:
             response = requests.get(
                 "https://api.github.com/user",
                 headers={"Authorization": f"token {token}"},
-                timeout=5
+                timeout=5,
             )
 
             if response.status_code == 401:
@@ -436,10 +425,7 @@ class GitHubSyncHandler:
             return False
 
     def sync_with_token_refresh(
-        self,
-        repo_url: str,
-        token: str,
-        refresh_callback: Optional[Any] = None
+        self, repo_url: str, token: str, refresh_callback: Optional[Any] = None
     ) -> Dict[str, Any]:
         """
         Perform sync with automatic token refresh on expiry
@@ -474,11 +460,7 @@ class GitHubSyncHandler:
                     return {"status": "error", "message": "Failed to refresh token"}
 
                 logger.info("Token refreshed successfully")
-                return {
-                    "status": "success",
-                    "synced": True,
-                    "token_refreshed": True
-                }
+                return {"status": "success", "synced": True, "token_refreshed": True}
 
             except Exception as e:
                 logger.error(f"Token refresh failed: {e}")
@@ -493,7 +475,7 @@ class GitHubSyncHandler:
         repo_url: str,
         sync_function: Any,
         max_retries: int = None,
-        timeout_per_attempt: int = 30
+        timeout_per_attempt: int = 30,
     ) -> Dict[str, Any]:
         """
         Perform sync with exponential backoff retry and progress tracking
@@ -520,7 +502,7 @@ class GitHubSyncHandler:
                     "repo_url": repo_url,
                     "attempt": attempt + 1,
                     "started_at": datetime.now(timezone.utc).isoformat(),
-                    "status": "in_progress"
+                    "status": "in_progress",
                 }
 
                 if self.db:
@@ -530,9 +512,7 @@ class GitHubSyncHandler:
 
                 # Call sync function with timeout
                 result = self._call_with_timeout(
-                    sync_function,
-                    args=(repo_url,),
-                    timeout_seconds=timeout_per_attempt
+                    sync_function, args=(repo_url,), timeout_seconds=timeout_per_attempt
                 )
 
                 sync_record["status"] = "success"
@@ -540,13 +520,9 @@ class GitHubSyncHandler:
                     self.db.save_sync_progress(sync_record)
 
                 logger.info(f"Sync successful on attempt {attempt + 1}")
-                return {
-                    "status": "success",
-                    "attempt": attempt + 1,
-                    "result": result
-                }
+                return {"status": "success", "attempt": attempt + 1, "result": result}
 
-            except (TimeoutError, ConnectionError, IOError) as e:
+            except (OSError, TimeoutError, ConnectionError) as e:
                 sync_record["status"] = "failed"
                 sync_record["error"] = str(e)
 
@@ -555,10 +531,7 @@ class GitHubSyncHandler:
 
                 if attempt < max_retries - 1:
                     # Calculate exponential backoff
-                    wait_time = min(
-                        self.INITIAL_BACKOFF * (2 ** attempt),
-                        self.MAX_BACKOFF
-                    )
+                    wait_time = min(self.INITIAL_BACKOFF * (2**attempt), self.MAX_BACKOFF)
                     logger.warning(
                         f"Sync failed: {e}. Retrying in {wait_time}s "
                         f"(attempt {attempt + 2}/{max_retries})"
@@ -566,16 +539,9 @@ class GitHubSyncHandler:
                     time.sleep(wait_time)
                 else:
                     logger.error(f"Sync failed after {max_retries} attempts: {e}")
-                    raise NetworkSyncFailedError(
-                        f"Sync failed after {max_retries} attempts: {e}"
-                    )
+                    raise NetworkSyncFailedError(f"Sync failed after {max_retries} attempts: {e}")
 
-    def _call_with_timeout(
-        self,
-        func: Any,
-        args: tuple = (),
-        timeout_seconds: int = 30
-    ) -> Any:
+    def _call_with_timeout(self, func: Any, args: tuple = (), timeout_seconds: int = 30) -> Any:
         """Call function with timeout"""
         import signal
 
@@ -599,12 +565,7 @@ class GitHubSyncHandler:
     # Edge Case 5: Permission Errors and Access Revocation
     # ========================================================================
 
-    def check_repo_access(
-        self,
-        repo_url: str,
-        token: str,
-        timeout: int = 5
-    ) -> Tuple[bool, str]:
+    def check_repo_access(self, repo_url: str, token: str, timeout: int = 5) -> Tuple[bool, str]:
         """
         Verify user still has access to repository
 
@@ -627,6 +588,7 @@ class GitHubSyncHandler:
 
             # Extract owner/repo from URL
             import re
+
             match = re.search(r"github\.com[:/](.+?)/(.+?)(?:\.git)?$", repo_url)
 
             if not match:
@@ -637,9 +599,7 @@ class GitHubSyncHandler:
             api_url = f"https://api.github.com/repos/{owner}/{repo}"
 
             response = requests.get(
-                api_url,
-                headers={"Authorization": f"token {token}"},
-                timeout=timeout
+                api_url, headers={"Authorization": f"token {token}"}, timeout=timeout
             )
 
             if response.status_code == 403:
@@ -662,10 +622,7 @@ class GitHubSyncHandler:
             raise PermissionDeniedError(f"Failed to verify access: {e}")
 
     def sync_with_permission_check(
-        self,
-        repo_url: str,
-        token: str,
-        sync_function: Any
+        self, repo_url: str, token: str, sync_function: Any
     ) -> Dict[str, Any]:
         """
         Perform sync with pre-sync permission verification
@@ -687,7 +644,7 @@ class GitHubSyncHandler:
                 return {
                     "status": "error",
                     "message": f"Access check failed: {reason}",
-                    "access_verified": False
+                    "access_verified": False,
                 }
 
             logger.info("Access verified, proceeding with sync")
@@ -695,12 +652,7 @@ class GitHubSyncHandler:
             # Proceed with sync
             result = sync_function(repo_url)
 
-            return {
-                "status": "success",
-                "access_verified": True,
-                "synced": True,
-                "result": result
-            }
+            return {"status": "success", "access_verified": True, "synced": True, "result": result}
 
         except PermissionDeniedError as e:
             logger.error(f"Permission denied: {e}")
@@ -714,7 +666,7 @@ class GitHubSyncHandler:
                 "message": str(e),
                 "error_type": "permission_denied",
                 "access_verified": False,
-                "action_required": "Re-authenticate or check repository permissions"
+                "action_required": "Re-authenticate or check repository permissions",
             }
 
         except RepositoryNotFoundError as e:
@@ -729,13 +681,14 @@ class GitHubSyncHandler:
                 "message": str(e),
                 "error_type": "repository_not_found",
                 "access_verified": False,
-                "action_required": "Repository has been deleted or is inaccessible. Re-link project to GitHub."
+                "action_required": "Repository has been deleted or is inaccessible. Re-link project to GitHub.",
             }
 
 
 # ============================================================================
 # Convenience Functions
 # ============================================================================
+
 
 def create_github_sync_handler(db=None) -> GitHubSyncHandler:
     """Factory function to create GitHub sync handler"""

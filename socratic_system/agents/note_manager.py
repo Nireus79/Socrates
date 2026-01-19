@@ -78,7 +78,7 @@ class NoteManagerAgent(Agent):
                 vectorization_result = {
                     "status": "pending",
                     "chunks_created": 0,
-                    "message": "Note vectorization pending"
+                    "message": "Note vectorization pending",
                 }
 
                 try:
@@ -109,16 +109,24 @@ class NoteManagerAgent(Agent):
                                 self.orchestrator.vector_db.add_text(chunk, metadata=metadata)
                                 chunks_added += 1
                             except Exception as e:
-                                self.log(f"Warning: Could not add chunk {i+1} of note: {e}", level="WARNING")
+                                self.log(
+                                    f"Warning: Could not add chunk {i+1} of note: {e}",
+                                    level="WARNING",
+                                )
 
                         vectorization_result["status"] = "success"
                         vectorization_result["chunks_created"] = chunks_added
-                        vectorization_result["message"] = f"Note chunked and vectorized ({chunks_added} chunks)"
-                        self.log(f"Vectorized note {note.note_id} to knowledge base ({chunks_added} chunks)")
+                        vectorization_result["message"] = (
+                            f"Note chunked and vectorized ({chunks_added} chunks)"
+                        )
+                        self.log(
+                            f"Vectorized note {note.note_id} to knowledge base ({chunks_added} chunks)"
+                        )
 
                         # Emit DOCUMENT_IMPORTED event for knowledge base
                         try:
-                            from socratic_system.events import EventEmitter, EventType
+                            from socratic_system.events import EventType
+
                             if self.orchestrator.event_emitter:
                                 self.orchestrator.event_emitter.emit(
                                     EventType.DOCUMENT_IMPORTED,
@@ -129,11 +137,14 @@ class NoteManagerAgent(Agent):
                                         "words_extracted": len(content.split()),
                                         "chunks_created": chunks_added,
                                         "user_id": created_by,
-                                    }
+                                    },
                                 )
                                 self.log(f"Emitted DOCUMENT_IMPORTED event for note {note.note_id}")
                         except Exception as e:
-                            self.log(f"Warning: Could not emit DOCUMENT_IMPORTED event: {e}", level="WARNING")
+                            self.log(
+                                f"Warning: Could not emit DOCUMENT_IMPORTED event: {e}",
+                                level="WARNING",
+                            )
 
                 except Exception as e:
                     self.log(f"Warning: Could not vectorize note: {e}", level="WARNING")

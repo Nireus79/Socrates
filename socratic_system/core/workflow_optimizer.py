@@ -8,7 +8,7 @@ based on the selected strategy.
 import logging
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import List
 
 from socratic_system.core.workflow_cost_calculator import WorkflowCostCalculator
 from socratic_system.core.workflow_path_finder import WorkflowPathFinder
@@ -153,9 +153,7 @@ class WorkflowOptimizer:
             path.total_cost_usd = cost_metrics["total_cost_usd"]
 
             # Calculate risk
-            risk_metrics = self.risk_calculator.calculate_path_risk(
-                path, workflow, project
-            )
+            risk_metrics = self.risk_calculator.calculate_path_risk(path, workflow, project)
             path.risk_score = risk_metrics["risk_score"]
             path.incompleteness_risk = risk_metrics["incompleteness_risk"]
             path.complexity_risk = risk_metrics["complexity_risk"]
@@ -164,9 +162,7 @@ class WorkflowOptimizer:
 
             # Calculate quality and ROI
             path.quality_score = self._calculate_quality_score(path, project)
-            path.expected_maturity_gain = self._calculate_expected_maturity_gain(
-                path, project
-            )
+            path.expected_maturity_gain = self._calculate_expected_maturity_gain(path, project)
             path.roi_score = self._calculate_roi(
                 path, cost_metrics["total_tokens"], path.expected_maturity_gain
             )
@@ -228,9 +224,7 @@ class WorkflowOptimizer:
                 )
 
                 combined_score = (
-                    (normalized_cost * 0.5)
-                    + (normalized_risk * 0.3)
-                    + (normalized_quality * 0.2)
+                    (normalized_cost * 0.5) + (normalized_risk * 0.3) + (normalized_quality * 0.2)
                 )
 
                 scores.append((path, combined_score))
@@ -247,9 +241,7 @@ class WorkflowOptimizer:
         else:  # USER_CHOICE
             return paths[0]
 
-    def _calculate_quality_score(
-        self, path: WorkflowPath, project: ProjectContext
-    ) -> float:
+    def _calculate_quality_score(self, path: WorkflowPath, project: ProjectContext) -> float:
         """
         Calculate quality score for a path.
 
@@ -303,9 +295,7 @@ class WorkflowOptimizer:
 
         return expected_gain
 
-    def _calculate_roi(
-        self, path: WorkflowPath, tokens: int, maturity_gain: float
-    ) -> float:
+    def _calculate_roi(self, path: WorkflowPath, tokens: int, maturity_gain: float) -> float:
         """
         Calculate ROI (return on investment) for a path.
 
@@ -326,9 +316,7 @@ class WorkflowOptimizer:
         return round(roi, 2)
 
     @staticmethod
-    def _normalize_value(
-        value: float, all_values: List[float], invert: bool = False
-    ) -> float:
+    def _normalize_value(value: float, all_values: List[float], invert: bool = False) -> float:
         """
         Normalize a value to 0-1 range based on min/max of all values.
 

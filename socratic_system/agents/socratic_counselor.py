@@ -118,7 +118,11 @@ class SocraticCounselorAgent(Agent):
             unanswered = [q for q in project.pending_questions if q.get("status") == "unanswered"]
             if unanswered:
                 # Return the first unanswered question instead of generating new
-                return {"status": "success", "question": unanswered[0].get("question"), "existing": True}
+                return {
+                    "status": "success",
+                    "question": unanswered[0].get("question"),
+                    "existing": True,
+                }
 
         context = self.orchestrator.context_analyzer.get_context_summary(project)
 
@@ -176,6 +180,7 @@ class SocraticCounselorAgent(Agent):
 
         # HYBRID APPROACH: Also store in pending_questions for unified tracking
         import uuid
+
         project.pending_questions.append(
             {
                 "id": f"q_{uuid.uuid4().hex[:8]}",
@@ -217,7 +222,9 @@ class SocraticCounselorAgent(Agent):
             for msg in project.conversation_history:
                 if msg.get("type") == "assistant" and msg.get("phase") == project.phase:
                     previously_asked_questions.append(msg.get("content", ""))
-            logger.debug(f"Found {len(previously_asked_questions)} previously asked questions in {project.phase} phase")
+            logger.debug(
+                f"Found {len(previously_asked_questions)} previously asked questions in {project.phase} phase"
+            )
 
         # Get relevant knowledge from vector database with adaptive loading strategy
         # OPTIMIZATION: Cache document results per phase to reduce vector DB calls
@@ -240,7 +247,10 @@ class SocraticCounselorAgent(Agent):
                 doc_analyzer = DocumentContextAnalyzer()
 
                 # Convert project context to dict format for analyzer
-                project_context_dict = {"current_phase": project.phase, "goals": project.goals or ""}
+                project_context_dict = {
+                    "current_phase": project.phase,
+                    "goals": project.goals or "",
+                }
 
                 # Determine loading strategy based on conversation context
                 strategy = doc_analyzer.analyze_question_context(
@@ -255,29 +265,41 @@ class SocraticCounselorAgent(Agent):
                 top_k = 5 if strategy == "full" else 3
 
                 # Use adaptive search
-                logger.info(f"[KNOWLEDGE DEBUG] Searching for documents in project {project.project_id}")
-                logger.info(f"[KNOWLEDGE DEBUG] Query context: {context[:100] if context else 'EMPTY'}...")
+                logger.info(
+                    f"[KNOWLEDGE DEBUG] Searching for documents in project {project.project_id}"
+                )
+                logger.info(
+                    f"[KNOWLEDGE DEBUG] Query context: {context[:100] if context else 'EMPTY'}..."
+                )
                 logger.info(f"[KNOWLEDGE DEBUG] Strategy: {strategy}, top_k: {top_k}")
-                
+
                 knowledge_results = self.orchestrator.vector_db.search_similar_adaptive(
                     query=context, strategy=strategy, top_k=top_k, project_id=project.project_id
                 )
-                
-                logger.info(f"[KNOWLEDGE DEBUG] Search returned {len(knowledge_results) if knowledge_results else 0} results")
+
+                logger.info(
+                    f"[KNOWLEDGE DEBUG] Search returned {len(knowledge_results) if knowledge_results else 0} results"
+                )
                 if knowledge_results:
-                    logger.info(f"[KNOWLEDGE DEBUG] Using {len(knowledge_results)} knowledge items for question context")
+                    logger.info(
+                        f"[KNOWLEDGE DEBUG] Using {len(knowledge_results)} knowledge items for question context"
+                    )
                     for i, result in enumerate(knowledge_results[:3]):
-                        logger.info(f"[KNOWLEDGE DEBUG] Result {i+1}: source={result.get('metadata', {}).get('source', 'unknown')}, score={result.get('score', 'N/A')}")
+                        logger.info(
+                            f"[KNOWLEDGE DEBUG] Result {i+1}: source={result.get('metadata', {}).get('source', 'unknown')}, score={result.get('score', 'N/A')}"
+                        )
 
                 # Cache the results for this phase
                 self.phase_docs_cache[phase_key] = {
                     "results": knowledge_results,
-                    "strategy": strategy
+                    "strategy": strategy,
                 }
                 logger.debug(f"Cached document results for {project.phase} phase")
 
             if knowledge_results:
-                logger.info(f"[KNOWLEDGE DEBUG] Using {len(knowledge_results)} knowledge items for question context")
+                logger.info(
+                    f"[KNOWLEDGE DEBUG] Using {len(knowledge_results)} knowledge items for question context"
+                )
                 # Build knowledge context based on strategy
                 if strategy == "full":
                     relevant_knowledge = self._build_full_knowledge_context(knowledge_results)
@@ -315,7 +337,7 @@ class SocraticCounselorAgent(Agent):
             user_auth_method = "api_key"  # default
             if current_user:
                 user = self.orchestrator.database.load_user(current_user)
-                if user and hasattr(user, 'claude_auth_method'):
+                if user and hasattr(user, "claude_auth_method"):
                     user_auth_method = user.claude_auth_method or "api_key"
                     logger.debug(f"Using auth method '{user_auth_method}' for user {current_user}")
 
@@ -430,8 +452,12 @@ Opportunities: {', '.join(opportunities[:2]) if opportunities else 'Explore docu
         # Build section listing previously asked questions to avoid repetition
         previous_questions_section = ""
         if previously_asked_questions:
-            previous_questions_section = "\nPreviously Asked Questions in This Phase (DO NOT REPEAT THESE):"
-            for i, q in enumerate(previously_asked_questions[-5:], 1):  # Show last 5 to avoid overwhelming
+            previous_questions_section = (
+                "\nPreviously Asked Questions in This Phase (DO NOT REPEAT THESE):"
+            )
+            for i, q in enumerate(
+                previously_asked_questions[-5:], 1
+            ):  # Show last 5 to avoid overwhelming
                 # Truncate long questions for readability
                 q_text = q[:120] + "..." if len(q) > 120 else q
                 previous_questions_section += f"\n{i}. {q_text}"
@@ -512,12 +538,15 @@ Return only the question, no additional text or explanation."""
             }
 
             # Get phase-specific fallback questions
-            fallbacks = fallback_questions.get(project.phase, [
-                "What would you like to explore further?",
-                "What aspects are still unclear?",
-                "What questions do you have?",
-                "What should we focus on next?",
-            ])
+            fallbacks = fallback_questions.get(
+                project.phase,
+                [
+                    "What would you like to explore further?",
+                    "What aspects are still unclear?",
+                    "What questions do you have?",
+                    "What should we focus on next?",
+                ],
+            )
 
             # Rotate through fallback questions based on question_count
             if fallbacks:
@@ -543,7 +572,7 @@ Return only the question, no additional text or explanation."""
                     "action": "get_phase_maturity",
                     "project": project,
                 },
-                operation_name="get phase maturity"
+                operation_name="get phase maturity",
             )
 
             if quality_result.get("status") != "success":
@@ -561,13 +590,13 @@ Return only the question, no additional text or explanation."""
                 "discovery": "Discovery",
                 "analysis": "Analysis",
                 "design": "Design",
-                "implementation": "Implementation"
+                "implementation": "Implementation",
             }
             next_phases = {
                 "discovery": "Analysis",
                 "analysis": "Design",
                 "design": "Implementation",
-                "implementation": None
+                "implementation": None,
             }
 
             current_phase_name = phase_names.get(project.phase, project.phase.title())
@@ -597,7 +626,7 @@ What would be most helpful for you?"""
                 "is_complete": True,
                 "message": question,
                 "maturity": current_score,
-                "next_phase": next_phase_name
+                "next_phase": next_phase_name,
             }
 
         except Exception as e:
@@ -717,12 +746,14 @@ What would be most helpful for you?"""
         user_auth_method = "api_key"  # default
         if current_user:
             user = self.orchestrator.database.load_user(current_user)
-            if user and hasattr(user, 'claude_auth_method'):
+            if user and hasattr(user, "claude_auth_method"):
                 user_auth_method = user.claude_auth_method or "api_key"
 
         # Extract insights using Claude
         logger.info("Extracting insights from user response (confirmation mode)...")
-        insights = self.orchestrator.claude_client.extract_insights(user_response, project, user_auth_method=user_auth_method, user_id=current_user)
+        insights = self.orchestrator.claude_client.extract_insights(
+            user_response, project, user_auth_method=user_auth_method, user_id=current_user
+        )
         self._log_extracted_insights(logger, insights)
 
         return {"status": "success", "insights": insights}
@@ -759,7 +790,7 @@ What would be most helpful for you?"""
         user_auth_method = "api_key"  # default
         if current_user:
             user = self.orchestrator.database.load_user(current_user)
-            if user and hasattr(user, 'claude_auth_method'):
+            if user and hasattr(user, "claude_auth_method"):
                 user_auth_method = user.claude_auth_method or "api_key"
                 logger.debug(f"Using auth method '{user_auth_method}' for user {current_user}")
 
@@ -769,7 +800,9 @@ What would be most helpful for you?"""
             insights = pre_extracted_insights
         else:
             logger.info("Extracting insights from user response...")
-            insights = self.orchestrator.claude_client.extract_insights(user_response, project, user_auth_method=user_auth_method, user_id=current_user)
+            insights = self.orchestrator.claude_client.extract_insights(
+                user_response, project, user_auth_method=user_auth_method, user_id=current_user
+            )
             self._log_extracted_insights(logger, insights)
 
         # REAL-TIME CONFLICT DETECTION
@@ -830,7 +863,7 @@ What would be most helpful for you?"""
                 "new_insights": insights,
                 "current_user": current_user,
             },
-            operation_name="detect conflicts in insights"
+            operation_name="detect conflicts in insights",
         )
 
         if not (conflict_result["status"] == "success" and conflict_result["conflicts"]):
@@ -851,15 +884,19 @@ What would be most helpful for you?"""
         user_auth_method = "api_key"
         if current_user:
             user_obj = self.orchestrator.database.load_user(current_user)
-            if user_obj and hasattr(user_obj, 'claude_auth_method'):
+            if user_obj and hasattr(user_obj, "claude_auth_method"):
                 user_auth_method = user_obj.claude_auth_method or "api_key"
-        conflicts_resolved = self._handle_conflicts_realtime(conflict_result["conflicts"], project, insights, user_auth_method)
+        conflicts_resolved = self._handle_conflicts_realtime(
+            conflict_result["conflicts"], project, insights, user_auth_method
+        )
         if not conflicts_resolved:
             logger.info("User chose not to resolve conflicts")
             return {"has_conflicts": True, "conflicts": conflict_result["conflicts"]}
         return {"has_conflicts": False}
 
-    def _update_project_and_maturity(self, project, insights, logger, current_user: str = None) -> None:
+    def _update_project_and_maturity(
+        self, project, insights, logger, current_user: str = None
+    ) -> None:
         """Update project context and phase maturity"""
         logger.info("Updating project context with insights...")
         self._update_project_context(project, insights)
@@ -883,7 +920,7 @@ What would be most helpful for you?"""
                 self.orchestrator,
                 "quality_controller",
                 request_data,
-                operation_name="update phase maturity"
+                operation_name="update phase maturity",
             )
 
             if maturity_result["status"] == "success":
@@ -936,7 +973,7 @@ What would be most helpful for you?"""
                     "specs_extracted": specs_extracted,
                     "answer_quality": 0.5,
                 },
-                operation_name="track question effectiveness"
+                operation_name="track question effectiveness",
             )
         except Exception as e:
             # Logging question effectiveness is a non-critical operation
@@ -1014,7 +1051,11 @@ What would be most helpful for you?"""
         return ""
 
     def _handle_conflicts_realtime(
-        self, conflicts: List[ConflictInfo], project: ProjectContext, insights: Dict = None, user_auth_method: str = "api_key"
+        self,
+        conflicts: List[ConflictInfo],
+        project: ProjectContext,
+        insights: Dict = None,
+        user_auth_method: str = "api_key",
     ) -> bool:
         """Handle conflicts in real-time during conversation
 
@@ -1216,7 +1257,7 @@ What would be most helpful for you?"""
                     "project": project,
                     "from_phase": project.phase,
                 },
-                operation_name="verify readiness to advance phase"
+                operation_name="verify readiness to advance phase",
             )
 
             if readiness_result["status"] == "success":
@@ -1235,7 +1276,9 @@ What would be most helpful for you?"""
                         print(f"\n{Fore.RED}Current phase maturity: {maturity_score:.1f}%")
                         print(f"Recommended minimum: 20%{Fore.RESET}")
 
-                        confirm = input(f"\n{Fore.CYAN}Advance anyway? (yes/no): {Fore.RESET}").lower()
+                        confirm = input(
+                            f"\n{Fore.CYAN}Advance anyway? (yes/no): {Fore.RESET}"
+                        ).lower()
                         if confirm not in ["yes", "y"]:
                             return {
                                 "status": "cancelled",
@@ -1269,6 +1312,7 @@ What would be most helpful for you?"""
         self.log(f"Advanced project to {new_phase} phase")
 
         return {"status": "success", "new_phase": new_phase}
+
     def _rollback_phase(self, request: Dict) -> Dict:
         """Roll back project to the previous phase"""
         from socratic_system.utils.logger import get_logger
@@ -1400,7 +1444,9 @@ What would be most helpful for you?"""
                 else:
                     insights[insight_type] = []
 
-    def _update_insights_value(self, old_value: str, new_value: str, insight_type: str, insights: Dict = None):
+    def _update_insights_value(
+        self, old_value: str, new_value: str, insight_type: str, insights: Dict = None
+    ):
         """Update a value in insights after manual conflict resolution.
 
         This method is called when user manually resolves a conflict.
@@ -1477,7 +1523,7 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
             user_auth_method = "api_key"  # default
             if current_user:
                 user = self.orchestrator.database.load_user(current_user)
-                if user and hasattr(user, 'claude_auth_method'):
+                if user and hasattr(user, "claude_auth_method"):
                     user_auth_method = user.claude_auth_method or "api_key"
                     logger.debug(f"Using auth method '{user_auth_method}' for user {current_user}")
 
@@ -1487,7 +1533,7 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
                 max_tokens=500,  # Hints should be concise (1-2 sentences)
                 temperature=0.7,  # Balanced creativity
                 user_auth_method=user_auth_method,
-                user_id=current_user
+                user_id=current_user,
             )
 
             self.log(f"Generated hint for {project.phase} phase")
@@ -1558,7 +1604,6 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
 
     def _reopen_question(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Reopen a skipped question (mark as unanswered)"""
-        import datetime
 
         project = request.get("project")
         question_id = request.get("question_id")
@@ -1587,7 +1632,11 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
         current_question = request.get("current_question")
         current_user = request.get("current_user")
 
-        logger.debug(f"Generating suggestions for question: {current_question[:50]}..." if current_question else "No question provided")
+        logger.debug(
+            f"Generating suggestions for question: {current_question[:50]}..."
+            if current_question
+            else "No question provided"
+        )
         logger.debug(f"Project: {project.name if project else 'None'}, User: {current_user}")
 
         if not project or not current_question:
@@ -1599,7 +1648,7 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
             user_auth_method = "api_key"  # default
             if current_user:
                 user = self.orchestrator.database.load_user(current_user)
-                if user and hasattr(user, 'claude_auth_method'):
+                if user and hasattr(user, "claude_auth_method"):
                     user_auth_method = user.claude_auth_method or "api_key"
 
             # Build prompt for suggestions
@@ -1621,19 +1670,21 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
             logger.info(f"Generating answer suggestions for {project.phase} phase")
 
             # Call Claude to generate suggestions
-            logger.debug(f"Calling Claude API with auth_method={user_auth_method}, user_id={current_user}")
+            logger.debug(
+                f"Calling Claude API with auth_method={user_auth_method}, user_id={current_user}"
+            )
             response = self.orchestrator.claude_client.generate_response(
                 prompt=suggestions_prompt,
                 max_tokens=800,
                 temperature=0.7,
                 user_auth_method=user_auth_method,
-                user_id=current_user
+                user_id=current_user,
             )
             logger.debug(f"Claude response length: {len(response)} chars")
 
             # Parse suggestions from numbered list
             suggestions = []
-            for line in response.split('\n'):
+            for line in response.split("\n"):
                 line = line.strip()
                 if line and any(line.startswith(f"{i}.") for i in range(1, 10)):
                     # Remove numbering and clean up
@@ -1645,13 +1696,17 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
 
             return {
                 "status": "success",
-                "suggestions": suggestions if suggestions else [
-                    "Consider the problem from your target audience's perspective",
-                    "Think about the technical constraints you mentioned",
-                    "Review the project goals and how this relates to them",
-                    "Consider existing solutions and what makes your approach unique",
-                    "Think about potential challenges and how to address them"
-                ]
+                "suggestions": (
+                    suggestions
+                    if suggestions
+                    else [
+                        "Consider the problem from your target audience's perspective",
+                        "Think about the technical constraints you mentioned",
+                        "Review the project goals and how this relates to them",
+                        "Consider existing solutions and what makes your approach unique",
+                        "Think about potential challenges and how to address them",
+                    ]
+                ),
             }
 
         except Exception as e:
@@ -1668,8 +1723,8 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
                     "Think about the technical constraints you mentioned",
                     "Review the project goals and how this relates to them",
                     "Consider existing solutions and what makes your approach unique",
-                    "Think about potential challenges and how to address them"
-                ]
+                    "Think about potential challenges and how to address them",
+                ],
             }
 
     # ========================================================================
@@ -1686,11 +1741,11 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
         Returns:
             True if use_workflow_optimization flag is set in metadata
         """
-        return project.metadata.get("use_workflow_optimization", False) if project.metadata else False
+        return (
+            project.metadata.get("use_workflow_optimization", False) if project.metadata else False
+        )
 
-    def _generate_question_with_workflow(
-        self, project: ProjectContext, current_user: str
-    ) -> Dict:
+    def _generate_question_with_workflow(self, project: ProjectContext, current_user: str) -> Dict:
         """
         Generate question constrained by approved workflow path.
 
@@ -1705,9 +1760,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
         Returns:
             Dict with status and question, or pending_approval status
         """
-        logging.debug(
-            f"Generating question with workflow optimization for project: {project.name}"
-        )
+        logging.debug(f"Generating question with workflow optimization for project: {project.name}")
 
         try:
             # Check for active workflow execution
@@ -1724,9 +1777,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
             workflow = project.workflow_definitions.get(project.phase)
 
             if not workflow:
-                logging.error(
-                    f"Workflow definition not found for phase: {project.phase}"
-                )
+                logging.error(f"Workflow definition not found for phase: {project.phase}")
                 return {
                     "status": "error",
                     "message": f"Workflow definition not found for {project.phase}",
@@ -1746,9 +1797,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
             )
 
             if not questions:
-                logging.info(
-                    f"No more questions in current node, advancing workflow"
-                )
+                logging.info("No more questions in current node, advancing workflow")
                 # No more questions - advance to next node
                 return self._advance_workflow_node(project, execution, workflow)
 
@@ -1790,7 +1839,11 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
 
             logging.debug("Question stored in conversation history and pending questions")
 
-            return {"status": "success", "question": question, "workflow_node": execution.current_node_id}
+            return {
+                "status": "success",
+                "question": question,
+                "workflow_node": execution.current_node_id,
+            }
 
         except Exception as e:
             logging.error(
@@ -1798,9 +1851,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
             )
             return {"status": "error", "message": str(e)}
 
-    def _initiate_workflow_approval(
-        self, project: ProjectContext, current_user: str
-    ) -> Dict:
+    def _initiate_workflow_approval(self, project: ProjectContext, current_user: str) -> Dict:
         """
         Request workflow approval - BLOCKING POINT.
 
@@ -1824,9 +1875,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
             # Create workflow for current phase
             workflow = self._create_workflow_for_phase(project)
 
-            logging.info(
-                f"Created workflow {workflow.workflow_id} for {project.phase} phase"
-            )
+            logging.info(f"Created workflow {workflow.workflow_id} for {project.phase} phase")
 
             # Request approval from QC - BLOCKING call
             logging.debug("Requesting workflow approval from QualityController")
@@ -1842,9 +1891,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
             )
 
             if result.get("status") == "pending_approval":
-                logging.info(
-                    f"Workflow approval pending for request: {result.get('request_id')}"
-                )
+                logging.info(f"Workflow approval pending for request: {result.get('request_id')}")
                 # BLOCKING - execution stops here until approval
                 return result
 
@@ -1853,9 +1900,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
             return result
 
         except Exception as e:
-            logging.error(
-                f"Unexpected error initiating workflow approval: {type(e).__name__}: {e}"
-            )
+            logging.error(f"Unexpected error initiating workflow approval: {type(e).__name__}: {e}")
             return {"status": "error", "message": str(e)}
 
     def _create_workflow_for_phase(self, project: ProjectContext) -> "WorkflowDefinition":
@@ -1889,7 +1934,10 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
             return create_legacy_compatible_workflow(project.phase)
 
     def _advance_workflow_node(
-        self, project: ProjectContext, execution: "WorkflowExecutionState", workflow: "WorkflowDefinition"
+        self,
+        project: ProjectContext,
+        execution: "WorkflowExecutionState",
+        workflow: "WorkflowDefinition",
     ) -> Dict:
         """
         Advance to next node in workflow execution.
@@ -1950,7 +1998,5 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
             return self._generate_question_with_workflow(project, "system")
 
         except Exception as e:
-            logging.error(
-                f"Unexpected error advancing workflow node: {type(e).__name__}: {e}"
-            )
+            logging.error(f"Unexpected error advancing workflow node: {type(e).__name__}: {e}")
             return {"status": "error", "message": str(e)}

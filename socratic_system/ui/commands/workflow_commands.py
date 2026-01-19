@@ -8,8 +8,7 @@ Commands:
   /workflow info <id>      - Show detailed workflow information
 """
 
-from typing import Any, Dict, List, Optional
-from datetime import datetime
+from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
@@ -69,9 +68,7 @@ class WorkflowApprovalsCommand(BaseCommand):
     def _display_pending_approvals(self, approvals: List[Dict[str, Any]]) -> None:
         """Display pending approvals in table format"""
         print(f"\n{Fore.CYAN}{'='*100}{Style.RESET_ALL}")
-        print(
-            f"{Fore.CYAN}PENDING WORKFLOW APPROVALS{Style.RESET_ALL}"
-        )
+        print(f"{Fore.CYAN}PENDING WORKFLOW APPROVALS{Style.RESET_ALL}")
         print(f"{Fore.CYAN}{'='*100}{Style.RESET_ALL}\n")
 
         for approval in approvals:
@@ -101,9 +98,7 @@ class WorkflowApprovalsCommand(BaseCommand):
 
             print(f"\n{Fore.CYAN}{'-'*100}{Style.RESET_ALL}\n")
 
-    def _display_path_info(
-        self, path: Dict[str, Any], is_recommended: bool = False
-    ) -> None:
+    def _display_path_info(self, path: Dict[str, Any], is_recommended: bool = False) -> None:
         """Display detailed path information"""
         path_id = path.get("path_id", "unknown")
         total_cost = path.get("total_cost_tokens", 0)
@@ -116,9 +111,7 @@ class WorkflowApprovalsCommand(BaseCommand):
         marker = ">> " if is_recommended else "   "
         print(f"{marker}Path ID: {path_id}")
         print(f"    Nodes: {node_count} | Cost: {total_cost} tokens (${total_cost_usd:.3f})")
-        print(
-            f"    Risk: {risk_score:.1f}% | Quality: {quality_score:.1f} | ROI: {roi_score:.2f}"
-        )
+        print(f"    Risk: {risk_score:.1f}% | Quality: {quality_score:.1f} | ROI: {roi_score:.2f}")
 
         missing = path.get("missing_categories", [])
         if missing:
@@ -172,11 +165,9 @@ class WorkflowApproveCommand(BaseCommand):
                 operation_name="approve workflow",
             )
 
-            print(
-                f"\n{Fore.GREEN}✓ Workflow approved!{Style.RESET_ALL}"
-            )
+            print(f"\n{Fore.GREEN}✓ Workflow approved!{Style.RESET_ALL}")
             print(f"  Path ID: {path_id}")
-            print(f"  Execution will resume with this path\n")
+            print("  Execution will resume with this path\n")
             return self.success()
         except ValueError as e:
             return self.error(str(e))
@@ -231,7 +222,7 @@ class WorkflowRejectCommand(BaseCommand):
 
             print(f"\n{Fore.YELLOW}⚠ Workflow rejected{Style.RESET_ALL}")
             print(f"  Reason: {reason}")
-            print(f"  Alternative workflows may be requested\n")
+            print("  Alternative workflows may be requested\n")
             return self.success()
         except ValueError as e:
             return self.error(str(e))

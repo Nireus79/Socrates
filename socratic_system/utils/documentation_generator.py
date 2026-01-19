@@ -8,7 +8,6 @@ Generates:
 - SETUP.md with development setup instructions
 """
 
-import re
 from typing import Dict, List, Optional
 
 
@@ -86,7 +85,7 @@ class DocumentationGenerator:
 - CI/CD ready
 """
 
-        readme += f"""
+        readme += """
 ## Requirements
 
 ### System Requirements
@@ -103,7 +102,7 @@ class DocumentationGenerator:
         if "docker" in str(code_structure).lower():
             readme += "- Docker (optional, for containerized deployment)\n"
 
-        readme += f"""
+        readme += """
 ### Technology Stack
 
 """

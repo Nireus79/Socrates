@@ -1,5 +1,6 @@
 """
-NOTE: Responses now use APIResponse format with data wrapped in "data" field.Conversation history management commands"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Conversation history management commands
+"""
 
 from typing import Any, Dict, List
 
@@ -44,7 +45,7 @@ class ConvSearchCommand(BaseCommand):
                 orchestrator,
                 "context_analyzer",
                 {"action": "search_conversations", "project": project, "query": query},
-                operation_name="search conversations"
+                operation_name="search conversations",
             )
 
             results = result.get("results", [])
@@ -121,7 +122,7 @@ class ConvSummaryCommand(BaseCommand):
                 orchestrator,
                 "context_analyzer",
                 {"action": "generate_summary", "project": project, "limit": limit},
-                operation_name="generate conversation summary"
+                operation_name="generate conversation summary",
             )
 
             summary = result.get("summary", "")

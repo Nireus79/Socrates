@@ -151,7 +151,9 @@ class ProjectManagerAgent(Agent):
         # Analyze combined context if anything was provided
         if context_to_analyze:
             try:
-                self.log(f"Analyzing project description and knowledge base for initial specifications...")
+                self.log(
+                    "Analyzing project description and knowledge base for initial specifications..."
+                )
 
                 # Extract insights using same mechanism as conversation analysis
                 # Get user's auth method
@@ -159,7 +161,7 @@ class ProjectManagerAgent(Agent):
                 owner = request.get("owner")
                 if owner:
                     user_obj = self.orchestrator.database.load_user(owner)
-                    if user_obj and hasattr(user_obj, 'claude_auth_method'):
+                    if user_obj and hasattr(user_obj, "claude_auth_method"):
                         user_auth_method = user_obj.claude_auth_method or "api_key"
                 insights = self.orchestrator.claude_client.extract_insights(
                     context_to_analyze, project, user_auth_method=user_auth_method, user_id=owner
@@ -168,7 +170,7 @@ class ProjectManagerAgent(Agent):
                 if insights:
                     # Apply extracted insights to project context
                     self._apply_initial_insights(project, insights)
-                    self.log(f"Initial specifications extracted from context")
+                    self.log("Initial specifications extracted from context")
             except Exception as e:
                 # Non-fatal: continue with empty specs if extraction fails
                 self.log(f"Warning: Could not analyze project context: {e}", level="warning")
@@ -409,7 +411,7 @@ class ProjectManagerAgent(Agent):
                 "project_path": temp_path,
                 "timeout": 300,
             },
-            operation_name="validate project code"
+            operation_name="validate project code",
         )
 
     def _create_project_context(

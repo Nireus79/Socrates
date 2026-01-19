@@ -1,5 +1,6 @@
 """
-NOTE: Responses now use APIResponse format with data wrapped in "data" field.Multi-LLM Provider management commands"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Multi-LLM Provider management commands
+"""
 
 from typing import Any, Dict, List
 
@@ -94,7 +95,7 @@ class LLMCommand(BaseCommand):
                 orchestrator,
                 "multi_llm",
                 {"action": "list_providers"},
-                operation_name="list providers"
+                operation_name="list providers",
             )
 
             providers = result.get("providers", [])
@@ -105,7 +106,9 @@ class LLMCommand(BaseCommand):
                     if provider.get("available")
                     else Fore.RED + "Unavailable" + Style.RESET_ALL
                 )
-                requires_key = "API Key Required" if provider.get("requires_api_key") else "No API Key"
+                requires_key = (
+                    "API Key Required" if provider.get("requires_api_key") else "No API Key"
+                )
                 models_count = len(provider.get("models", []))
 
                 print(f"{Fore.WHITE}{provider['display_name']:<30}{Style.RESET_ALL}")
@@ -131,7 +134,7 @@ class LLMCommand(BaseCommand):
                 orchestrator,
                 "multi_llm",
                 {"action": "get_provider_config", "user_id": user.username},
-                operation_name="get provider config"
+                operation_name="get provider config",
             )
 
             default_provider = result.get("default_provider", "claude")
@@ -165,7 +168,7 @@ class LLMCommand(BaseCommand):
                 orchestrator,
                 "multi_llm",
                 {"action": "set_default_provider", "user_id": user.username, "provider": provider},
-                operation_name="set default provider"
+                operation_name="set default provider",
             )
 
             print(f"\n{Fore.GREEN}✓ Default provider set to {provider}{Style.RESET_ALL}\n")
@@ -193,7 +196,7 @@ class LLMCommand(BaseCommand):
                     "provider": provider,
                     "model": model,
                 },
-                operation_name="set provider model"
+                operation_name="set provider model",
             )
 
             print(f"\n{Fore.GREEN}✓ Model set to {model} for {provider}{Style.RESET_ALL}\n")
@@ -213,7 +216,7 @@ class LLMCommand(BaseCommand):
                 orchestrator,
                 "multi_llm",
                 {"action": "get_provider_models", "provider": provider},
-                operation_name="get provider models"
+                operation_name="get provider models",
             )
 
             print(f"\n{Fore.CYAN}Models for {provider.upper()}{Style.RESET_ALL}\n")
@@ -265,7 +268,7 @@ class LLMCommand(BaseCommand):
                         "provider": provider,
                         "api_key": api_key,
                     },
-                    operation_name="add API key"
+                    operation_name="add API key",
                 )
 
                 print(f"\n{Fore.GREEN}✓ API key added for {provider}{Style.RESET_ALL}\n")
@@ -284,7 +287,7 @@ class LLMCommand(BaseCommand):
                     orchestrator,
                     "multi_llm",
                     {"action": "remove_api_key", "user_id": user.username, "provider": provider},
-                    operation_name="remove API key"
+                    operation_name="remove API key",
                 )
 
                 print(f"\n{Fore.GREEN}✓ API key removed for {provider}{Style.RESET_ALL}\n")
@@ -310,7 +313,7 @@ class LLMCommand(BaseCommand):
                     "provider": provider,
                     "days": days,
                 },
-                operation_name="get usage stats"
+                operation_name="get usage stats",
             )
 
             print(f"\n{Fore.CYAN}LLM Usage Statistics (Last {days} Days){Style.RESET_ALL}\n")

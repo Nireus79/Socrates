@@ -84,8 +84,15 @@ ROLE_FOCUS_AREAS = {
 
 # Valid universal roles that work across all project types
 VALID_ROLES = [
-    "lead", "creator", "specialist", "analyst", "coordinator", "tester",  # Universal roles
-    "owner", "editor", "viewer",  # RBAC roles for permission hierarchy
+    "lead",
+    "creator",
+    "specialist",
+    "analyst",
+    "coordinator",
+    "tester",  # Universal roles
+    "owner",
+    "editor",
+    "viewer",  # RBAC roles for permission hierarchy
 ]
 
 # ============================================================================

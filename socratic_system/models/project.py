@@ -71,10 +71,14 @@ class ProjectContext:
 
     # Workflow optimization fields (NEW)
     workflow_definitions: Dict[str, any] = None  # Workflow definitions by phase
-    workflow_approval_requests: Optional[List[Dict[str, any]]] = None  # History of approval requests
+    workflow_approval_requests: Optional[List[Dict[str, any]]] = (
+        None  # History of approval requests
+    )
     active_workflow_execution: Optional[Dict[str, any]] = None  # Current workflow execution state
     workflow_history: Optional[List[Dict[str, any]]] = None  # Completed workflows with metrics
-    metadata: Optional[Dict[str, any]] = None  # Project metadata (use_workflow_optimization flag, etc.)
+    metadata: Optional[Dict[str, any]] = (
+        None  # Project metadata (use_workflow_optimization flag, etc.)
+    )
 
     # LLM Provider configuration
     llm_configuration: Optional[Dict[str, any]] = (

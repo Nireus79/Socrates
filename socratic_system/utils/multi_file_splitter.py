@@ -432,7 +432,9 @@ class ProjectStructureGenerator:
 
         # ===== Ensure key files exist =====
         if "requirements.txt" not in complete_structure:
-            complete_structure["requirements.txt"] = "\n".join(dependencies) if dependencies else "# Add dependencies here\n"
+            complete_structure["requirements.txt"] = (
+                "\n".join(dependencies) if dependencies else "# Add dependencies here\n"
+            )
 
         if "README.md" not in complete_structure:
             complete_structure["README.md"] = f"# {project_name}\n\nProject description.\n"

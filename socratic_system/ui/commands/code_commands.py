@@ -1,5 +1,6 @@
 """
-NOTE: Responses now use APIResponse format with data wrapped in "data" field.Code generation and documentation commands"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Code generation and documentation commands
+"""
 
 from pathlib import Path
 from typing import Any, Dict, List
@@ -39,7 +40,7 @@ class CodeGenerateCommand(BaseCommand):
                 orchestrator,
                 "code_generator",
                 {"action": "generate_script", "project": project},
-                operation_name="generate code script"
+                operation_name="generate code script",
             )
 
             script = result.get("script")
@@ -119,7 +120,7 @@ class CodeGenerateCommand(BaseCommand):
                 orchestrator,
                 "code_generator",
                 {"action": "generate_documentation", "project": project, "script": script},
-                operation_name="generate code documentation"
+                operation_name="generate code documentation",
             )
 
             doc_save_path = doc_result.get("save_path")
@@ -133,7 +134,7 @@ class CodeGenerateCommand(BaseCommand):
                 self._display_save_location(
                     doc_save_path, "Documentation save path returned but file not found"
                 )
-        except ValueError as e:
+        except ValueError:
             self.print_warning("Failed to generate documentation")
 
 
@@ -166,7 +167,7 @@ class CodeDocsCommand(BaseCommand):
                 orchestrator,
                 "code_generator",
                 {"action": "generate_script", "project": project},
-                operation_name="generate code script"
+                operation_name="generate code script",
             )
 
             script = result.get("script")
@@ -177,7 +178,7 @@ class CodeDocsCommand(BaseCommand):
                     orchestrator,
                     "code_generator",
                     {"action": "generate_documentation", "project": project, "script": script},
-                    operation_name="generate code documentation"
+                    operation_name="generate code documentation",
                 )
 
                 doc_save_path = doc_result.get("save_path")
@@ -192,7 +193,10 @@ class CodeDocsCommand(BaseCommand):
                     print(ArtifactSaver.get_save_location_message(doc_save_path))
 
                 return self.success(
-                    data={"documentation": doc_result.get("documentation"), "save_path": doc_save_path}
+                    data={
+                        "documentation": doc_result.get("documentation"),
+                        "save_path": doc_save_path,
+                    }
                 )
             except ValueError as e:
                 return self.error(str(e))

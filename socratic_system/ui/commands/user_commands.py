@@ -1,5 +1,6 @@
 """
-NOTE: Responses now use APIResponse format with data wrapped in "data" field.User authentication and account management commands"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.User authentication and account management commands
+"""
 
 import datetime
 from typing import Any, Dict, List
@@ -186,7 +187,7 @@ class UserArchiveCommand(BaseCommand):
                 orchestrator,
                 "user_manager",
                 {"action": "archive_user", "username": user.username, "requester": user.username},
-                operation_name="archive user"
+                operation_name="archive user",
             )
 
             self.print_success(result.get("message"))
@@ -253,7 +254,7 @@ class UserDeleteCommand(BaseCommand):
                     "requester": user.username,
                     "confirmation": "DELETE",
                 },
-                operation_name="delete user permanently"
+                operation_name="delete user permanently",
             )
 
             self.print_success(result.get("message"))
@@ -321,7 +322,7 @@ class UserRestoreCommand(BaseCommand):
                 orchestrator,
                 "user_manager",
                 {"action": "restore_user", "username": username},
-                operation_name="restore user"
+                operation_name="restore user",
             )
 
             self.print_success(f"Account '{username}' restored successfully!")
@@ -341,14 +342,14 @@ class UserRestoreCommand(BaseCommand):
                 orchestrator,
                 "user_manager",
                 {"action": "get_archived_users"},
-                operation_name="get archived users"
+                operation_name="get archived users",
             )
 
             archived_users = result.get("archived_users", [])
             if not archived_users:
                 self.print_info("No archived accounts found")
                 return self.success()
-        except ValueError as e:
+        except ValueError:
             self.print_info("No archived accounts found")
             return self.success()
         self._display_archived_users(archived_users)

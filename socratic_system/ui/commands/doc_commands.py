@@ -1,5 +1,6 @@
 """
-NOTE: Responses now use APIResponse format with data wrapped in "data" field.Document and knowledge base management commands"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Document and knowledge base management commands
+"""
 
 import os
 from typing import Any, Dict, List
@@ -116,7 +117,7 @@ class DocImportCommand(BaseCommand):
                 orchestrator,
                 "document_agent",
                 {"action": "import_file", "file_path": file_path, "project_id": project_id},
-                operation_name="import file"
+                operation_name="import file",
             )
 
             file_name = result.get("file_name", "file")
@@ -218,7 +219,7 @@ class DocImportDirCommand(BaseCommand):
                     "project_id": project_id,
                     "recursive": recursive,
                 },
-                operation_name="import directory"
+                operation_name="import directory",
             )
 
             successful = result.get("files_processed", 0)
@@ -376,7 +377,7 @@ class DocPasteCommand(BaseCommand):
                 "title": title,
                 "project_id": project_id,
             },
-            operation_name="import text"
+            operation_name="import text",
         )
 
     def _handle_import_success(
@@ -483,7 +484,7 @@ class DocImportUrlCommand(BaseCommand):
                     "url": url,
                     "project_id": project_id,
                 },
-                operation_name="import URL"
+                operation_name="import URL",
             )
 
             file_name = result.get("file_name", "webpage")
@@ -564,7 +565,7 @@ class DocListCommand(BaseCommand):
                 orchestrator,
                 "document_agent",
                 {"action": "list_documents", "project_id": project_id},
-                operation_name="list documents"
+                operation_name="list documents",
             )
 
             documents = result.get("documents", [])

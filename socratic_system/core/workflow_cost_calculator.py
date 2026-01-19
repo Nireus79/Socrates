@@ -86,9 +86,7 @@ class WorkflowCostCalculator:
             "token_breakdown": token_breakdown,
         }
 
-        logger.info(
-            f"Path {path.path_id} cost: {total_tokens} tokens (${total_cost_usd:.6f})"
-        )
+        logger.info(f"Path {path.path_id} cost: {total_tokens} tokens (${total_cost_usd:.6f})")
 
         return result
 

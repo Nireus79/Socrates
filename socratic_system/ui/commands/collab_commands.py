@@ -1,5 +1,6 @@
 """
-NOTE: Responses now use APIResponse format with data wrapped in "data" field.Collaboration and team management commands"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.Collaboration and team management commands
+"""
 
 from typing import Any, Dict, List
 
@@ -47,8 +48,13 @@ class CollabAddCommand(BaseCommand):
             result = safe_orchestrator_call(
                 orchestrator,
                 "project_manager",
-                {"action": "add_collaborator", "project": project, "username": username, "role": role},
-                operation_name="add collaborator"
+                {
+                    "action": "add_collaborator",
+                    "project": project,
+                    "username": username,
+                    "role": role,
+                },
+                operation_name="add collaborator",
             )
 
             self.print_success(f"Added '{username}' as {role}!")
@@ -56,7 +62,7 @@ class CollabAddCommand(BaseCommand):
                 orchestrator,
                 "project_manager",
                 {"action": "save_project", "project": project},
-                operation_name="save project"
+                operation_name="save project",
             )
             return self.success(data={"collaborator": username, "role": role})
         except ValueError as e:
@@ -159,7 +165,7 @@ class CollabRemoveCommand(BaseCommand):
                     "username": username,
                     "requester": user.username,
                 },
-                operation_name="remove collaborator"
+                operation_name="remove collaborator",
             )
 
             self.print_success(f"Removed '{username}' from project!")
@@ -172,7 +178,7 @@ class CollabRemoveCommand(BaseCommand):
                     orchestrator,
                     "project_manager",
                     {"action": "save_project", "project": project},
-                    operation_name="save project"
+                    operation_name="save project",
                 )
 
             return self.success(data={"removed_user": username})
@@ -241,7 +247,7 @@ class CollabListCommand(BaseCommand):
                 orchestrator,
                 "project_manager",
                 {"action": "list_collaborators", "project": project},
-                operation_name="list collaborators"
+                operation_name="list collaborators",
             )
 
             print(f"\n{Fore.CYAN}Team Members for '{project.name}':{Style.RESET_ALL}\n")
@@ -330,7 +336,7 @@ class CollabRoleCommand(BaseCommand):
                     "username": username,
                     "role": new_role,
                 },
-                operation_name="update member role"
+                operation_name="update member role",
             )
 
             self.print_success(f"Updated '{username}' role to {new_role}!")
@@ -338,7 +344,7 @@ class CollabRoleCommand(BaseCommand):
                 orchestrator,
                 "project_manager",
                 {"action": "save_project", "project": project},
-                operation_name="save project"
+                operation_name="save project",
             )
             return self.success(data={"username": username, "new_role": new_role})
         except ValueError as e:

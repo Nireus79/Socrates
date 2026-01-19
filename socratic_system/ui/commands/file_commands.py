@@ -14,7 +14,7 @@ class FileDeleteCommand(BaseCommand):
         super().__init__(
             name="file delete",
             description="Delete a file from the current project",
-            usage="file delete <file_name>"
+            usage="file delete <file_name>",
         )
 
     def execute(self, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
@@ -44,9 +44,13 @@ class FileDeleteCommand(BaseCommand):
             return self.error("Required context not available")
 
         # Confirm deletion
-        confirm = input(
-            f"{Fore.YELLOW}Are you sure you want to delete '{file_name}'? This cannot be undone. (yes/no): {Style.RESET_ALL}"
-        ).strip().lower()
+        confirm = (
+            input(
+                f"{Fore.YELLOW}Are you sure you want to delete '{file_name}'? This cannot be undone. (yes/no): {Style.RESET_ALL}"
+            )
+            .strip()
+            .lower()
+        )
 
         if confirm != "yes":
             return self.info("Deletion cancelled")
@@ -60,10 +64,7 @@ class FileDeleteCommand(BaseCommand):
 
             if success:
                 self.print_success(f"File '{file_name}' deleted successfully!")
-                return self.success(data={
-                    "file_name": file_name,
-                    "project_id": project.project_id
-                })
+                return self.success(data={"file_name": file_name, "project_id": project.project_id})
             else:
                 # Parse the error message to provide better feedback
                 if "not found" in message.lower():

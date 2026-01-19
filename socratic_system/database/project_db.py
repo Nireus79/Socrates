@@ -443,7 +443,7 @@ class ProjectDatabase:
                             (project_id, phase, category, spec_data, sort_order)
                             VALUES (?, ?, ?, ?, ?)
                             """,
-                            (project.project_id, phase, category, spec_json, global_order)
+                            (project.project_id, phase, category, spec_json, global_order),
                         )
                         global_order += 1
 
@@ -820,8 +820,11 @@ class ProjectDatabase:
                 # Support both "type" and "role" field names
                 message_type = msg.get("type") or msg.get("role", "user")
                 # Preserve all metadata fields except the main ones
-                metadata = {k: v for k, v in msg.items()
-                           if k not in ["type", "role", "content", "timestamp"]}
+                metadata = {
+                    k: v
+                    for k, v in msg.items()
+                    if k not in ["type", "role", "content", "timestamp"]
+                }
                 cursor.execute(
                     """
                     INSERT INTO conversation_history (project_id, message_type, content, timestamp, metadata)
@@ -863,7 +866,9 @@ class ProjectDatabase:
             # Insert new pending questions in order
             for i, question in enumerate(questions):
                 # Ensure question data is properly serialized
-                question_data = json.dumps(question) if isinstance(question, dict) else str(question)
+                question_data = (
+                    json.dumps(question) if isinstance(question, dict) else str(question)
+                )
                 cursor.execute(
                     """
                     INSERT INTO pending_questions (project_id, question_data, sort_order)
@@ -1599,8 +1604,12 @@ class ProjectDatabase:
                 )
             except sqlite3.OperationalError as col_err:
                 # If file_path/file_size columns don't exist, insert without them
-                if "no column named file_path" in str(col_err) or "no column named file_size" in str(col_err):
-                    self.logger.debug(f"file_path/file_size columns not found, inserting without them: {col_err}")
+                if "no column named file_path" in str(
+                    col_err
+                ) or "no column named file_size" in str(col_err):
+                    self.logger.debug(
+                        f"file_path/file_size columns not found, inserting without them: {col_err}"
+                    )
                     cursor.execute(
                         """
                         INSERT OR REPLACE INTO knowledge_documents
@@ -2729,7 +2738,7 @@ class ProjectDatabase:
                 WHERE project_id = ?
                 ORDER BY sort_order
                 """,
-                (project_id,)
+                (project_id,),
             )
 
             rows = cursor.fetchall()
@@ -3882,7 +3891,10 @@ class ProjectDatabase:
 
         try:
             # Get current sponsorship
-            cursor.execute("SELECT * FROM sponsorships WHERE username = ? AND sponsorship_status = 'active'", (username,))
+            cursor.execute(
+                "SELECT * FROM sponsorships WHERE username = ? AND sponsorship_status = 'active'",
+                (username,),
+            )
             sponsorship = dict(cursor.fetchone() or {})
 
             # Get payment stats
@@ -3927,7 +3939,8 @@ class ProjectDatabase:
                 "payments": payment_stats,
                 "refunds": refund_stats,
                 "tier_changes": tier_changes,
-                "net_revenue": (payment_stats.get("total_successful", 0) or 0) - (refund_stats.get("total_refunded", 0) or 0),
+                "net_revenue": (payment_stats.get("total_successful", 0) or 0)
+                - (refund_stats.get("total_refunded", 0) or 0),
             }
 
         except Exception as e:

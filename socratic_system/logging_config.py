@@ -5,14 +5,13 @@ Provides structured logging, performance monitoring, and observability.
 Supports multiple log handlers (file, console, syslog) and log rotation.
 """
 
+import json
 import logging
 import logging.handlers
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
-
-import json
 
 
 class JsonFormatter(logging.Formatter):
@@ -154,9 +153,7 @@ class LoggingConfig:
         logger.setLevel(self.log_level)
 
         # Database operations file handler
-        db_handler = self._get_file_handler(
-            "database.log", level=logging.INFO, max_bytes=10485760
-        )
+        db_handler = self._get_file_handler("database.log", level=logging.INFO, max_bytes=10485760)
         db_formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - [%(funcName)s] - %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
@@ -231,9 +228,7 @@ class LoggingConfig:
         handler.setFormatter(formatter)
         return handler
 
-    def setup_syslog_handler(
-        self, logger_name: str, address: str = "/dev/log"
-    ) -> None:
+    def setup_syslog_handler(self, logger_name: str, address: str = "/dev/log") -> None:
         """
         Add syslog handler for production deployments.
 
@@ -245,9 +240,7 @@ class LoggingConfig:
 
         try:
             handler = logging.handlers.SysLogHandler(address=address)
-            formatter = logging.Formatter(
-                "socrates - %(name)s - %(levelname)s - %(message)s"
-            )
+            formatter = logging.Formatter("socrates - %(name)s - %(levelname)s - %(message)s")
             handler.setFormatter(formatter)
             logger.addHandler(handler)
         except Exception as e:
@@ -287,9 +280,7 @@ class PerformanceMonitor:
         else:
             self.logger.info(message, extra={"extra_data": metrics})
 
-    def log_api_request(
-        self, method: str, path: str, status_code: int, duration_ms: float
-    ) -> None:
+    def log_api_request(self, method: str, path: str, status_code: int, duration_ms: float) -> None:
         """
         Log API request metrics.
 
@@ -364,7 +355,5 @@ def initialize_logging(
 def get_logging_config() -> LoggingConfig:
     """Get global logging configuration instance."""
     if _logging_config is None:
-        raise RuntimeError(
-            "Logging not initialized. Call initialize_logging() first."
-        )
+        raise RuntimeError("Logging not initialized. Call initialize_logging() first.")
     return _logging_config

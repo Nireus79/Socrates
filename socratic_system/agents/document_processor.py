@@ -449,11 +449,15 @@ class DocumentProcessorAgent(Agent):
                                 page_text = page.extract_text()
                                 if page_text:
                                     content += page_text + "\n"
-                                    self.logger.debug(f"Extracted {len(page_text)} chars from page {page_num}")
+                                    self.logger.debug(
+                                        f"Extracted {len(page_text)} chars from page {page_num}"
+                                    )
                                 else:
                                     self.logger.warning(f"No text extracted from page {page_num}")
                             except Exception as page_error:
-                                self.logger.warning(f"Error extracting text from page {page_num}: {page_error}")
+                                self.logger.warning(
+                                    f"Error extracting text from page {page_num}: {page_error}"
+                                )
 
                         if not content or content.strip() == "":
                             self.logger.error(f"PDF {file_path} contains no extractable text")

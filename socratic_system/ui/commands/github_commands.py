@@ -1,20 +1,21 @@
 """
-NOTE: Responses now use APIResponse format with data wrapped in "data" field.GitHub integration commands for importing and syncing repositories"""
+NOTE: Responses now use APIResponse format with data wrapped in "data" field.GitHub integration commands for importing and syncing repositories
+"""
 
 from typing import Any, Dict, List
 
 from colorama import Fore, Style
 
-from socratic_system.ui.commands.base import BaseCommand
-from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 from socratic_system.agents.github_sync_handler import (
-    create_github_sync_handler,
-    NetworkSyncFailedError,
     ConflictResolutionError,
-    TokenExpiredError,
+    NetworkSyncFailedError,
     PermissionDeniedError,
     RepositoryNotFoundError,
+    TokenExpiredError,
+    create_github_sync_handler,
 )
+from socratic_system.ui.commands.base import BaseCommand
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 
 
 class GithubImportCommand(BaseCommand):
@@ -57,7 +58,7 @@ class GithubImportCommand(BaseCommand):
                     "project_name": project_name,
                     "owner": user.username,
                 },
-                operation_name="import GitHub repository"
+                operation_name="import GitHub repository",
             )
 
             project = result.get("project")
@@ -174,7 +175,9 @@ class GithubPullCommand(BaseCommand):
 
             temp_path = clone_result.get("data", {}).get("path")
             try:
-                return self._handle_pull_workflow(git_manager, temp_path, project, orchestrator, handler)
+                return self._handle_pull_workflow(
+                    git_manager, temp_path, project, orchestrator, handler
+                )
             finally:
                 git_manager.cleanup(temp_path)
 
@@ -254,9 +257,7 @@ class GithubPullCommand(BaseCommand):
                     # Auto-resolve with "ours" strategy
                     print(f"\n{Fore.CYAN}Attempting automatic resolution...{Style.RESET_ALL}")
                     resolution = handler.handle_merge_conflicts(
-                        temp_path,
-                        {},
-                        default_strategy="ours"
+                        temp_path, {}, default_strategy="ours"
                     )
 
                     if resolution.get("manual_required"):
@@ -571,39 +572,44 @@ class GithubPushCommand(BaseCommand):
         if handler:
             try:
                 import subprocess
+
                 result = subprocess.run(
                     ["git", "diff", "--name-only", "HEAD"],
                     cwd=temp_path,
                     capture_output=True,
                     text=True,
-                    timeout=30
+                    timeout=30,
                 )
 
                 if result.returncode == 0:
                     import os
+
                     modified_files = [
-                        os.path.join(temp_path, f)
-                        for f in result.stdout.strip().split('\n')
-                        if f
+                        os.path.join(temp_path, f) for f in result.stdout.strip().split("\n") if f
                     ]
 
                     if modified_files:
                         file_report = handler.handle_large_files(
-                            files_to_push=modified_files,
-                            strategy="exclude"
+                            files_to_push=modified_files, strategy="exclude"
                         )
 
                         if file_report.get("status") == "error":
-                            self.print_error(f"File size validation failed: {file_report.get('message')}")
-                            return self.error(f"File size validation failed")
+                            self.print_error(
+                                f"File size validation failed: {file_report.get('message')}"
+                            )
+                            return self.error("File size validation failed")
 
                         if file_report.get("status") == "partial":
                             excluded_count = len(file_report.get("excluded_files", []))
-                            print(f"\n{Fore.YELLOW}Warning: {excluded_count} large files will be excluded from push{Style.RESET_ALL}")
+                            print(
+                                f"\n{Fore.YELLOW}Warning: {excluded_count} large files will be excluded from push{Style.RESET_ALL}"
+                            )
                             for file in file_report.get("excluded_files", [])[:5]:
                                 print(f"  {Fore.RED}excluded:{Style.RESET_ALL} {file}")
                             if excluded_count > 5:
-                                print(f"  {Fore.YELLOW}... and {excluded_count - 5} more{Style.RESET_ALL}")
+                                print(
+                                    f"  {Fore.YELLOW}... and {excluded_count - 5} more{Style.RESET_ALL}"
+                                )
 
             except Exception as e:
                 self.logger.warning(f"Error validating file sizes: {str(e)}")
@@ -659,7 +665,7 @@ class GithubPushCommand(BaseCommand):
 
             print(f"\n{Fore.GREEN}[OK] Push completed successfully{Style.RESET_ALL}")
             return self.success(data={"push_result": push_result})
-        except ValueError as e:
+        except ValueError:
             error_msg = push_result.get("message", "Unknown error")
             if "auth" in error_msg.lower() or "permission" in error_msg.lower():
                 return self.error(
@@ -700,7 +706,7 @@ class GithubSyncCommand(BaseCommand):
         try:
             pull_command = GithubPullCommand()
             pull_result = pull_command.execute([], context)
-        except ValueError as e:
+        except ValueError:
             print(f"{Fore.YELLOW}Pull operation had issues, but continuing...{Style.RESET_ALL}")
 
         # Step 2: Push changes

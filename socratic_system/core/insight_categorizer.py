@@ -350,7 +350,9 @@ Rules:
                         )
                         spec_count += 1
                 if spec_count > 0:
-                    logger.debug(f"Created {spec_count} fallback specs for field '{field}' (confidence={confidence:.2f})")
+                    logger.debug(
+                        f"Created {spec_count} fallback specs for field '{field}' (confidence={confidence:.2f})"
+                    )
             else:
                 if values:
                     categorized.append(
@@ -363,7 +365,9 @@ Rules:
                             "timestamp": datetime.now().isoformat(),
                         }
                     )
-                    logger.debug(f"Created 1 fallback spec for field '{field}' (confidence={confidence:.2f})")
+                    logger.debug(
+                        f"Created 1 fallback spec for field '{field}' (confidence={confidence:.2f})"
+                    )
 
         logger.info(f"Fallback categorization complete: {len(categorized)} specs created")
         return categorized

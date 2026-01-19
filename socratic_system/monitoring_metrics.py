@@ -6,11 +6,10 @@ Provides real-time metrics and historical trends.
 """
 
 import time
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
-
-from collections import defaultdict
 
 
 @dataclass
@@ -48,9 +47,7 @@ class MetricsCollector:
         self.gauges: Dict[str, float] = {}
         self.last_cleanup = datetime.now()
 
-    def record_metric(
-        self, name: str, value: float, tags: Optional[Dict[str, str]] = None
-    ) -> None:
+    def record_metric(self, name: str, value: float, tags: Optional[Dict[str, str]] = None) -> None:
         """
         Record a metric value.
 
@@ -88,9 +85,7 @@ class MetricsCollector:
         """
         self.gauges[name] = value
 
-    def get_metric_stats(
-        self, name: str, minutes: int = 60
-    ) -> Optional[Dict[str, float]]:
+    def get_metric_stats(self, name: str, minutes: int = 60) -> Optional[Dict[str, float]]:
         """
         Get statistics for a metric over time period.
 
@@ -141,9 +136,7 @@ class MetricsCollector:
         cutoff = datetime.now() - timedelta(hours=self.retention_hours)
 
         for name in list(self.metrics.keys()):
-            self.metrics[name] = [
-                m for m in self.metrics[name] if m.timestamp >= cutoff
-            ]
+            self.metrics[name] = [m for m in self.metrics[name] if m.timestamp >= cutoff]
             if not self.metrics[name]:
                 del self.metrics[name]
 

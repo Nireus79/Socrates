@@ -6,7 +6,7 @@ ensuring questions target specific categories.
 """
 
 import logging
-from typing import Dict, List, Set
+from typing import List, Set
 
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.workflow import (
@@ -57,9 +57,7 @@ class QuestionSelector:
         current_node = workflow.nodes.get(execution.current_node_id)
 
         if not current_node:
-            logger.error(
-                f"Current node {execution.current_node_id} not found in workflow"
-            )
+            logger.error(f"Current node {execution.current_node_id} not found in workflow")
             return []
 
         # Only question set nodes generate questions
@@ -93,9 +91,7 @@ class QuestionSelector:
             project, uncovered, current_node, max_questions
         )
 
-        logger.info(
-            f"Generated {len(questions)} questions for node {execution.current_node_id}"
-        )
+        logger.info(f"Generated {len(questions)} questions for node {execution.current_node_id}")
 
         return questions
 
@@ -187,9 +183,7 @@ class QuestionSelector:
 
         return questions
 
-    def get_next_node(
-        self, workflow: WorkflowDefinition, execution: WorkflowExecutionState
-    ) -> str:
+    def get_next_node(self, workflow: WorkflowDefinition, execution: WorkflowExecutionState) -> str:
         """
         Get the next node ID to advance to after current node completes.
 
@@ -206,11 +200,7 @@ class QuestionSelector:
         current_node = execution.current_node_id
 
         # Find edges from current node
-        next_nodes = [
-            edge.to_node
-            for edge in workflow.edges
-            if edge.from_node == current_node
-        ]
+        next_nodes = [edge.to_node for edge in workflow.edges if edge.from_node == current_node]
 
         if not next_nodes:
             logger.debug(f"No edges from node {current_node}")
