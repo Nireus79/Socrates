@@ -666,7 +666,7 @@ async def publish_to_github(
                 user_obj = db.load_user(current_user)
                 if user_obj and hasattr(user_obj, "github_token"):
                     github_token = user_obj.github_token
-            except:
+            except Exception:
                 pass
 
         if not github_token:

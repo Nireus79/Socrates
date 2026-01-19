@@ -66,11 +66,11 @@ def _chunk_code_content(content: str, chunk_size: int = 300, overlap: int = 30) 
             # Create overlap: keep last few lines
             overlap_words = 0
             overlap_lines = []
-            for l in reversed(current_chunk):
-                l_words = len(l.split())
-                if overlap_words + l_words <= overlap:
-                    overlap_lines.insert(0, l)
-                    overlap_words += l_words
+            for line in reversed(current_chunk):
+                line_words = len(line.split())
+                if overlap_words + line_words <= overlap:
+                    overlap_lines.insert(0, line)
+                    overlap_words += line_words
                 else:
                     break
 

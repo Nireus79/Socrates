@@ -335,12 +335,15 @@ async def create_project(
             try:
                 logger.info("Analyzing project description and knowledge base for initial specifications...")
                 # Use the same approach as ProjectManagerAgent
-                insights = await apiClient.claude_client.extract_insights(context_to_analyze, project)
+                from socrates_api.main import app_state
+                orchestrator = app_state.get("orchestrator")
+                if orchestrator and hasattr(orchestrator, "claude_client"):
+                    insights = await orchestrator.claude_client.extract_insights(context_to_analyze, project)
 
-                if insights:
-                    # Apply extracted insights to project (goals, requirements, tech_stack, constraints)
-                    _apply_initial_insights_to_project(project, insights)
-                    logger.info("Initial specifications extracted and applied to project")
+                    if insights:
+                        # Apply extracted insights to project (goals, requirements, tech_stack, constraints)
+                        _apply_initial_insights_to_project(project, insights)
+                        logger.info("Initial specifications extracted and applied to project")
             except Exception as e:
                 logger.warning(f"Could not analyze project context: {str(e)}")
                 # Continue without analysis - non-fatal

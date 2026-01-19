@@ -468,7 +468,7 @@ class ClaudeClient:
 
         try:
             # Get the appropriate async client based on user's auth method
-            async_client = self._get_async_client(user_auth_method, user_id)
+            async_client = self._get_async_client(user_auth_method, user_id=None)
             response = await async_client.messages.create(
                 model=self.model,
                 max_tokens=1000,
@@ -1180,7 +1180,7 @@ class ClaudeClient:
     """
 
         try:
-            client = self._get_client(user_auth_method, user_id)
+            client = self._get_client(user_auth_method, user_id=None)
 
             response = client.messages.create(
                 model=self.model,

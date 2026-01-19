@@ -17,6 +17,7 @@ from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
 from .base import Agent
 
 if TYPE_CHECKING:
+    from socratic_system.models.workflow import WorkflowDefinition, WorkflowExecutionState
     from socratic_system.orchestration import AgentOrchestrator
 
 

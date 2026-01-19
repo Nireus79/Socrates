@@ -202,7 +202,7 @@ class CodeGeneratorAgent(Agent):
 
         try:
             documentation = self.orchestrator.claude_client.generate_documentation(
-                project, artifact, artifact_type, user_auth_method=user_auth_method
+                project, artifact, artifact_type
             )
 
             self.log(f"Generated documentation for {artifact_type}")

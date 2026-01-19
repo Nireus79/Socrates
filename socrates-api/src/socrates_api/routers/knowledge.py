@@ -585,15 +585,15 @@ async def import_file(
                             pdf_reader = PdfReader(io.BytesIO(file_content))
                             for page in pdf_reader.pages:
                                 extracted_content += page.extract_text() + "\n"
-                        except:
+                        except Exception:
                             extracted_content = "[PDF content not extractable]"
                     else:
                         # For text files, try to decode
                         try:
                             extracted_content = file_content.decode("utf-8", errors="ignore")
-                        except:
+                        except Exception:
                             extracted_content = "[File content not readable]"
-                except:
+                except Exception:
                     extracted_content = "[Could not read file for preview]"
 
             # Limit content preview to first 5000 characters
