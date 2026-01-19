@@ -298,7 +298,7 @@ Focus on the connection between the user's statement and these insights."""
                 self.print_success("Insights captured and integrated!")
 
             try:
-                save_result = safe_orchestrator_call(
+                safe_orchestrator_call(
                     orchestrator,
                     "project_manager",
                     {"action": "save_project", "project": project},
@@ -663,7 +663,7 @@ class ModeCommand(BaseCommand):
 
         # Save to database
         try:
-            save_result = safe_orchestrator_call(
+            safe_orchestrator_call(
                 orchestrator,
                 "project_manager",
                 {"action": "save_project", "project": project},
@@ -741,7 +741,7 @@ class SkippedCommand(BaseCommand):
 
         orchestrator = context.get("orchestrator")
         project = context.get("project")
-        user = context.get("user")
+        context.get("user")
 
         if not orchestrator or not project:
             return self.error("Required context not available")

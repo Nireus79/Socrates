@@ -182,7 +182,7 @@ def track_db_query(query_type: str):
                 latency_ms = (time.time() - start_time) * 1000
                 MetricsCollector.record_db_query(query_type, latency_ms)
                 return result
-            except Exception as e:
+            except Exception:
                 latency_ms = (time.time() - start_time) * 1000
                 MetricsCollector.record_db_query(f"{query_type}_error", latency_ms)
                 raise

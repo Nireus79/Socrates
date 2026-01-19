@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from socrates_api.auth import get_current_user
 from socrates_api.auth.project_access import check_project_access
 from socrates_api.database import get_database
-from socrates_api.models import APIResponse, ErrorResponse, SuccessResponse
+from socrates_api.models import APIResponse, ErrorResponse
 from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)

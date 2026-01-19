@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socrates_api.models import APIResponse, SuccessResponse
+from socrates_api.models import APIResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/query", tags=["query"])

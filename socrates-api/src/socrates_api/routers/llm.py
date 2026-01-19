@@ -5,7 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 
 from socrates_api.auth import get_current_user
-from socrates_api.models import APIResponse, SuccessResponse
+from socrates_api.models import APIResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/llm", tags=["llm"])

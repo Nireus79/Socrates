@@ -13,7 +13,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from socrates_api.auth import get_current_user
@@ -608,7 +608,7 @@ async def send_message(
 
         if chat_mode == "direct":
             # Direct mode: Generate a direct answer without Socratic questioning
-            logger.info(f"Processing message in DIRECT mode")
+            logger.info("Processing message in DIRECT mode")
 
             # Build context from project
             context_parts = []
@@ -665,7 +665,7 @@ Provide a helpful, direct answer."""
             )
         else:
             # Socratic mode: Use the existing Socratic questioning approach
-            logger.info(f"Processing message in SOCRATIC mode")
+            logger.info("Processing message in SOCRATIC mode")
 
             # Call socratic_counselor to process response
             # Pre-extracted insights caching and async processing happen internally

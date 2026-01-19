@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socrates_api.models import APIResponse, SuccessResponse
+from socrates_api.models import APIResponse
 from socratic_system.utils.logger import set_debug_mode, is_debug_mode
 
 logger = logging.getLogger(__name__)
@@ -618,7 +618,7 @@ async def toggle_debug_mode(
         print(f"[ENDPOINT] Calling set_debug_mode({new_state})", file=sys.stderr)
         # Apply debug mode change to the logger
         set_debug_mode(new_state)
-        print(f"[ENDPOINT] set_debug_mode completed", file=sys.stderr)
+        print("[ENDPOINT] set_debug_mode completed", file=sys.stderr)
 
         logger.info(f"Debug mode {('ENABLED' if new_state else 'DISABLED')} by {current_user}")
 

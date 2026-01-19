@@ -154,7 +154,7 @@ class WorkflowApproveCommand(BaseCommand):
 
         # Approve workflow
         try:
-            result = safe_orchestrator_call(
+            safe_orchestrator_call(
                 orchestrator,
                 "quality_controller",
                 {
@@ -209,7 +209,7 @@ class WorkflowRejectCommand(BaseCommand):
 
         # Reject workflow
         try:
-            result = safe_orchestrator_call(
+            safe_orchestrator_call(
                 orchestrator,
                 "quality_controller",
                 {

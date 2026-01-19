@@ -164,7 +164,7 @@ class LLMCommand(BaseCommand):
         provider = args[0].lower()
 
         try:
-            result = safe_orchestrator_call(
+            safe_orchestrator_call(
                 orchestrator,
                 "multi_llm",
                 {"action": "set_default_provider", "user_id": user.username, "provider": provider},
@@ -187,7 +187,7 @@ class LLMCommand(BaseCommand):
         model = " ".join(args[1:])  # Allow model names with spaces
 
         try:
-            result = safe_orchestrator_call(
+            safe_orchestrator_call(
                 orchestrator,
                 "multi_llm",
                 {
@@ -259,7 +259,7 @@ class LLMCommand(BaseCommand):
             api_key = args[2]
 
             try:
-                result = safe_orchestrator_call(
+                safe_orchestrator_call(
                     orchestrator,
                     "multi_llm",
                     {
@@ -283,7 +283,7 @@ class LLMCommand(BaseCommand):
             provider = args[1].lower()
 
             try:
-                result = safe_orchestrator_call(
+                safe_orchestrator_call(
                     orchestrator,
                     "multi_llm",
                     {"action": "remove_api_key", "user_id": user.username, "provider": provider},

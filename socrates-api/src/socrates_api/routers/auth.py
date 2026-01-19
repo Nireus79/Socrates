@@ -31,7 +31,6 @@ from socrates_api.models import (
     LoginRequest,
     RefreshTokenRequest,
     RegisterRequest,
-    SuccessResponse,
     TokenResponse,
     UserResponse,
 )

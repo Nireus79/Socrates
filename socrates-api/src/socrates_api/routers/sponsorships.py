@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
 from socrates_api.models import APIResponse
-from socratic_system.sponsorships.tiers import get_tier_from_sponsorship_amount
 from socratic_system.sponsorships.webhook import (
     handle_sponsorship_webhook,
     verify_github_signature,
@@ -122,7 +121,7 @@ async def github_sponsors_webhook(
                                 "payment_date": datetime.now().isoformat(),
                                 "payment_method_id": None,  # GitHub doesn't provide method details in webhook
                                 "reference_id": event_data.get("zen", ""),
-                                "notes": f"GitHub Sponsors webhook payment for tier upgrade",
+                                "notes": "GitHub Sponsors webhook payment for tier upgrade",
                             }
                         )
                         logger.info(f"Recorded payment {payment_id} for user {github_username}")

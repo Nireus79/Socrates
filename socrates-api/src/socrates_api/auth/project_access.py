@@ -6,7 +6,7 @@ for project endpoints. Handles authorization for Owner, Editor, and Viewer roles
 """
 
 import logging
-from typing import Optional, Tuple
+from typing import Optional
 
 from fastapi import Depends, HTTPException, status
 from socrates_api.database import get_database

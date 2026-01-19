@@ -140,7 +140,7 @@ class ProjectProgressCommand(BaseCommand):
         orchestrator = context.get("orchestrator")
         if orchestrator:
             try:
-                result = safe_orchestrator_call(
+                safe_orchestrator_call(
                     orchestrator,
                     "project_manager",
                     {"action": "save_project", "project": project},
@@ -208,7 +208,7 @@ class ProjectStatusCommand(BaseCommand):
         orchestrator = context.get("orchestrator")
         if orchestrator:
             try:
-                result = safe_orchestrator_call(
+                safe_orchestrator_call(
                     orchestrator,
                     "project_manager",
                     {"action": "save_project", "project": project},

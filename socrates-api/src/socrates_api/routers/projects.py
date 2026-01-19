@@ -29,7 +29,7 @@ import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 if TYPE_CHECKING:
     import socrates
@@ -37,9 +37,6 @@ if TYPE_CHECKING:
 from socrates_api.auth import get_current_user, get_current_user_object, get_current_user_object_optional
 from socrates_api.auth.project_access import (
     check_project_access,
-    require_editor_or_owner,
-    require_owner,
-    require_viewer_or_better,
 )
 from socrates_api.database import get_database
 from socrates_api.middleware import SubscriptionChecker
@@ -47,10 +44,8 @@ from socrates_api.models import (
     APIResponse,
     CreateProjectRequest,
     ErrorResponse,
-    ListProjectsResponse,
     ProjectAnalyticsData,
     ProjectResponse,
-    SuccessResponse,
     UpdateProjectRequest,
 )
 from socratic_system.database import ProjectDatabase
@@ -1061,7 +1056,7 @@ def _generate_recommendations(weak_categories, missing_categories, phase_score):
         weakest = sorted(weak_categories, key=lambda x: x["percentage"])[:2]
         recommendations.append({
             "priority": "high",
-            "title": f"Strengthen Weak Areas",
+            "title": "Strengthen Weak Areas",
             "description": f"Focus on {', '.join([cat['name'] for cat in weakest])} categories to improve overall maturity.",
             "focus_areas": [cat["name"] for cat in weakest]
         })
@@ -1070,7 +1065,7 @@ def _generate_recommendations(weak_categories, missing_categories, phase_score):
     if missing_categories:
         recommendations.append({
             "priority": "high",
-            "title": f"Complete Missing Categories",
+            "title": "Complete Missing Categories",
             "description": f"Start coverage in: {', '.join([cat['name'] for cat in missing_categories[:3]])}",
             "focus_areas": [cat["name"] for cat in missing_categories[:3]]
         })

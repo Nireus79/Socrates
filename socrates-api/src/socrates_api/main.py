@@ -9,7 +9,6 @@ import os
 import socket
 import time
 from contextlib import asynccontextmanager
-from pathlib import Path
 from typing import Optional
 
 import uvicorn
@@ -36,7 +35,6 @@ from .models import (
     CodeGenerationResponse,
     ErrorResponse,
     GenerateCodeRequest,
-    GenerateCodeForProjectRequest,
     InitializeRequest,
     ProcessResponseRequest,
     ProcessResponseResponse,

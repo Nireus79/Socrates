@@ -318,7 +318,7 @@ class UserRestoreCommand(BaseCommand):
             return self.success()
 
         try:
-            result = safe_orchestrator_call(
+            safe_orchestrator_call(
                 orchestrator,
                 "user_manager",
                 {"action": "restore_user", "username": username},

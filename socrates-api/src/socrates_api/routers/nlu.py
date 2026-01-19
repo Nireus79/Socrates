@@ -18,8 +18,8 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from socrates_api.auth import get_current_user, get_current_user_optional
-from socrates_api.models import APIResponse, SuccessResponse
+from socrates_api.auth import get_current_user_optional
+from socrates_api.models import APIResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/nlu", tags=["nlu"])

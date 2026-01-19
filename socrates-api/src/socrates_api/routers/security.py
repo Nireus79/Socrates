@@ -14,7 +14,7 @@ import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from socrates_api.auth import get_current_user
-from socrates_api.models import APIResponse, ErrorResponse, SuccessResponse
+from socrates_api.models import APIResponse, ErrorResponse
 from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)

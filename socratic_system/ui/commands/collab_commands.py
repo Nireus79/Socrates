@@ -45,7 +45,7 @@ class CollabAddCommand(BaseCommand):
             return self.error(error_msg)
 
         try:
-            result = safe_orchestrator_call(
+            safe_orchestrator_call(
                 orchestrator,
                 "project_manager",
                 {
@@ -156,7 +156,7 @@ class CollabRemoveCommand(BaseCommand):
             return self.success()
 
         try:
-            result = safe_orchestrator_call(
+            safe_orchestrator_call(
                 orchestrator,
                 "project_manager",
                 {
@@ -327,7 +327,7 @@ class CollabRoleCommand(BaseCommand):
             return self.error(member_error)
 
         try:
-            result = safe_orchestrator_call(
+            safe_orchestrator_call(
                 orchestrator,
                 "project_manager",
                 {

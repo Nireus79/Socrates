@@ -230,7 +230,6 @@ async def generate_code(
                 token_usage = 0
 
             # Record event
-            import os
             from pathlib import Path
 
             generation_id = f"gen_{int(__import__('time').time() * 1000)}"
@@ -707,7 +706,6 @@ async def refactor_code(
         try:
             from socrates_api.main import get_orchestrator
             from socrates_api.routers.events import record_event
-            import os
             from pathlib import Path
 
             orchestrator = get_orchestrator()
@@ -735,7 +733,7 @@ async def refactor_code(
             if not refactored_code:
                 logger.info(f"Refactoring failed, returning original code for {language}")
                 refactored_code = code
-                explanation = f"Refactoring request could not be completed. Original code returned."
+                explanation = "Refactoring request could not be completed. Original code returned."
                 changes = []
 
             # Generate ID for this refactoring

@@ -16,7 +16,6 @@ from socrates_api.models import (
     APIResponse,
     ErrorResponse,
     GitHubImportRequest,
-    SuccessResponse,
 )
 from socratic_system.database import ProjectDatabase
 from socrates_api.auth.project_access import check_project_access
@@ -46,7 +45,6 @@ def _chunk_code_content(content: str, chunk_size: int = 300, overlap: int = 30) 
     Returns:
         List of text chunks
     """
-    import re
 
     # Split into lines to maintain code structure
     lines = content.split('\n')
@@ -560,7 +558,7 @@ async def pull_changes(
                 logger.error(f"Failed to resolve conflicts: {e}")
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Merge conflicts detected and could not be automatically resolved",
+                    detail="Merge conflicts detected and could not be automatically resolved",
                 )
 
         # Return success response
@@ -1025,7 +1023,7 @@ async def sync_project(
                 "attempt": sync_result.get("attempt", 1),
                 "pull": {
                     "status": "success",
-                    "message": f"Pulled changes from GitHub",
+                    "message": "Pulled changes from GitHub",
                 },
                 "push": {
                     "status": "success",

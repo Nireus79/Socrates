@@ -21,16 +21,10 @@ from socrates_api.middleware.subscription import SubscriptionChecker
 from socrates_api.testing_mode import TestingModeChecker
 from socrates_api.models import (
     APIResponse,
-    ActiveCollaboratorData,
-    ActiveSessionsData,
     CollaborationInvitationResponse,
     CollaborationInviteRequest,
-    CollaborationSyncData,
-    CollaborationTokenData,
     CollaboratorListData,
     ErrorResponse,
-    PresenceData,
-    SuccessResponse,
 )
 from socrates_api.websocket import get_connection_manager
 from socratic_system.database import ProjectDatabase

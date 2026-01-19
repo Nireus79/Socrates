@@ -32,7 +32,7 @@ def get_phase_readiness_status(project, maturity_calculator: MaturityCalculator)
     """
     phase_maturity_scores = getattr(project, "phase_maturity_scores", {}) or {}
     all_phases = maturity_calculator.get_all_phases()
-    current_phase = getattr(project, "current_phase", "discovery") or "discovery"
+    getattr(project, "current_phase", "discovery") or "discovery"
 
     readiness_status = {}
     for phase in all_phases:
@@ -267,7 +267,7 @@ async def get_project_analytics(
         # Calculate metrics from conversation history
         conversation = project.conversation_history or []
         total_questions = len([m for m in conversation if m.get("type") == "user"])
-        total_answers = len([m for m in conversation if m.get("type") == "assistant"])
+        len([m for m in conversation if m.get("type") == "assistant"])
 
         # Calculate project completion percentage from all phase maturity scores
         # This represents overall project progress across all phases
@@ -1260,7 +1260,7 @@ async def get_dashboard_analytics(
                     if pr.get("is_ready_to_advance", False)
                 ],
                 "recommendation": (
-                    f"Ready to advance! Current maturity is sufficient to move forward."
+                    "Ready to advance! Current maturity is sufficient to move forward."
                     if any(
                         phase_readiness[ph].get("is_ready_to_advance", False)
                         for ph in phase_readiness

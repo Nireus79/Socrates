@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse
 
 from socrates_api.auth import get_current_user
 from socrates_api.database import get_database
-from socrates_api.models import APIResponse, BulkImportData, ErrorResponse, SuccessResponse
+from socrates_api.models import APIResponse, BulkImportData, ErrorResponse
 from socratic_system.database import ProjectDatabase
 
 logger = logging.getLogger(__name__)
@@ -193,7 +193,7 @@ async def get_all_knowledge_sources(
         import asyncio
 
         # Run async RBAC check synchronously
-        loop = asyncio.get_event_loop()
+        asyncio.get_event_loop()
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
         project = db.load_project(project_id)
