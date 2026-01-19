@@ -275,16 +275,16 @@ class NoteDeleteCommand(BaseCommand):
             self.print_info("Deletion cancelled")
             return self.success()
 
-        # Delete note via orchestrator
-        result = safe_orchestrator_call(
-            orchestrator,
-            "note_manager",
-            {"action": "delete_note", "note_id": note_id, "project_id": project.project_id},
-            operation_name="delete note"
-        )
+        try:
+            # Delete note via orchestrator
+            result = safe_orchestrator_call(
+                orchestrator,
+                "note_manager",
+                {"action": "delete_note", "note_id": note_id, "project_id": project.project_id},
+                operation_name="delete note"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             self.print_success("Note deleted successfully")
             return self.success(data={"deleted_note_id": note_id})
-        else:
-            return self.error(result.get("message", "Failed to delete note"))
+        except ValueError as e:
+            return self.error(str(e))

@@ -38,15 +38,15 @@ class ConvSearchCommand(BaseCommand):
         if not orchestrator or not project:
             return self.error("Required context not available")
 
-        # Search conversations
-        result = safe_orchestrator_call(
-            orchestrator,
-            "context_analyzer",
-            {"action": "search_conversations", "project": project, "query": query},
-            operation_name="search conversations"
-        )
+        try:
+            # Search conversations
+            result = safe_orchestrator_call(
+                orchestrator,
+                "context_analyzer",
+                {"action": "search_conversations", "project": project, "query": query},
+                operation_name="search conversations"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             results = result.get("results", [])
             count = result.get("count", 0)
 
@@ -76,8 +76,8 @@ class ConvSearchCommand(BaseCommand):
                 print()
 
             return self.success(data={"results": results, "count": count})
-        else:
-            return self.error(result.get("message", "Failed to search conversations"))
+        except ValueError as e:
+            return self.error(str(e))
 
 
 class ConvSummaryCommand(BaseCommand):
@@ -115,20 +115,20 @@ class ConvSummaryCommand(BaseCommand):
             f"\n{Fore.YELLOW}Generating conversation summary (last {limit} messages)...{Style.RESET_ALL}"
         )
 
-        # Generate summary
-        result = safe_orchestrator_call(
-            orchestrator,
-            "context_analyzer",
-            {"action": "generate_summary", "project": project, "limit": limit},
-            operation_name="generate conversation summary"
-        )
+        try:
+            # Generate summary
+            result = safe_orchestrator_call(
+                orchestrator,
+                "context_analyzer",
+                {"action": "generate_summary", "project": project, "limit": limit},
+                operation_name="generate conversation summary"
+            )
 
-        if result.get("data", {}).get("status") == "success":
             summary = result.get("summary", "")
 
             self.print_header("Conversation Summary")
             print(f"{Fore.WHITE}{summary}{Style.RESET_ALL}\n")
 
             return self.success(data={"summary": summary})
-        else:
-            return self.error(result.get("message", "Failed to generate summary"))
+        except ValueError as e:
+            return self.error(str(e))

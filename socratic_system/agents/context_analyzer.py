@@ -15,6 +15,7 @@ class ContextAnalyzerAgent(Agent):
 
     def __init__(self, orchestrator):
         super().__init__("ContextAnalyzer", orchestrator)
+        self.current_user = None
 
     def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process context analysis requests"""

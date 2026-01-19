@@ -30,16 +30,16 @@ class ProjectStatsCommand(BaseCommand):
         if not orchestrator or not project:
             return self.error("Required context not available")
 
-        # Get statistics
-        result = safe_orchestrator_call(
-            orchestrator,
-            "context_analyzer",
-            {"action": "get_statistics", "project": project},
-            operation_name="get statistics"
-        )
+        try:
+            # Get statistics
+            result = safe_orchestrator_call(
+                orchestrator,
+                "context_analyzer",
+                {"action": "get_statistics", "project": project},
+                operation_name="get statistics"
+            )
 
-        if result.get("data", {}).get("status") == "success":
-            stats = result.get("data", {}).get("statistics")
+            stats = result.get("statistics")
 
             self.print_header(f"Project Statistics: {stats['project_name']}")
 
@@ -85,8 +85,8 @@ class ProjectStatsCommand(BaseCommand):
             print()
 
             return self.success(data={"statistics": stats})
-        else:
-            return self.error(result.get("message", "Failed to get statistics"))
+        except ValueError as e:
+            return self.error(str(e))
 
     @staticmethod
     def _get_progress_bar(progress: int, width: int = 20) -> str:
@@ -138,22 +138,22 @@ class ProjectProgressCommand(BaseCommand):
         # Save project
         orchestrator = context.get("orchestrator")
         if orchestrator:
-            result = safe_orchestrator_call(
-                orchestrator,
-                "project_manager",
-                {"action": "save_project", "project": project},
-                operation_name="save project"
-            )
+            try:
+                result = safe_orchestrator_call(
+                    orchestrator,
+                    "project_manager",
+                    {"action": "save_project", "project": project},
+                    operation_name="save project"
+                )
 
-            if result.get("data", {}).get("status") == "success":
                 print(f"{Fore.GREEN}Progress bar:{Style.RESET_ALL}")
                 filled = int(20 * progress / 100)
                 bar = "█" * filled + "░" * (20 - filled)
                 print(f"  {Fore.GREEN}{bar}{Style.RESET_ALL} {progress}%")
                 self.print_success(f"Project progress updated to {progress}%")
                 return self.success(data={"progress": progress})
-            else:
-                return self.error("Failed to save project progress")
+            except ValueError as e:
+                return self.error(str(e))
         else:
             return self.error("Orchestrator not available")
 
@@ -206,17 +206,17 @@ class ProjectStatusCommand(BaseCommand):
         # Save project
         orchestrator = context.get("orchestrator")
         if orchestrator:
-            result = safe_orchestrator_call(
-                orchestrator,
-                "project_manager",
-                {"action": "save_project", "project": project},
-                operation_name="save project"
-            )
+            try:
+                result = safe_orchestrator_call(
+                    orchestrator,
+                    "project_manager",
+                    {"action": "save_project", "project": project},
+                    operation_name="save project"
+                )
 
-            if result.get("data", {}).get("status") == "success":
                 self.print_success(f"Project status updated to '{status}'")
                 return self.success(data={"status": status})
-            else:
-                return self.error("Failed to save project status")
+            except ValueError as e:
+                return self.error(str(e))
         else:
             return self.error("Orchestrator not available")
