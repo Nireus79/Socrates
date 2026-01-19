@@ -343,7 +343,19 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    """Modify collected tests to add markers based on naming."""
+    """Modify collected tests to add markers and skip unavailable tests."""
+    import socket
+
+    # Check if API server is available once at the start
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        result = sock.connect_ex(("localhost", 8008))
+        sock.close()
+        api_available = result == 0
+    except Exception:
+        api_available = False
+
     for item in items:
         # Add unit marker to tests that don't require external dependencies
         if "test_" in item.nodeid and not any(
@@ -356,6 +368,15 @@ def pytest_collection_modifyitems(config, items):
             marker.name == "integration" for marker in item.iter_markers()
         ):
             item.add_marker(pytest.mark.integration)
+
+        # Skip API tests if server not available (prevents 4+ second timeouts)
+        if not api_available and "test_api_workflows" in str(item.fspath):
+            item.add_marker(
+                pytest.mark.skip(
+                    reason="API server (localhost:8008) is not running. "
+                    "Start the API server to run these tests."
+                )
+            )
 
 
 @pytest.fixture(autouse=True)
@@ -395,3 +416,23 @@ def cleanup_embedding_models():
     # After all tests complete, force garbage collection to release
     # any remaining file handles or resources held by embedding models
     gc.collect()
+
+
+@pytest.fixture(scope="session")
+def api_server_available():
+    """
+    Check if API server is available at localhost:8008.
+
+    Returns True if server responds, False otherwise.
+    """
+    import socket
+
+    # Quick check without making a full request - just check TCP connection
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)  # 1 second timeout
+        result = sock.connect_ex(("localhost", 8008))
+        sock.close()
+        return result == 0
+    except Exception:
+        return False
