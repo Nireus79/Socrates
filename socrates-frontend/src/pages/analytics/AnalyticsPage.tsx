@@ -112,9 +112,9 @@ export const AnalyticsPage: React.FC = () => {
         format
       }) as any;
 
-      if (result?.data?.filename) {
+      if (result?.filename) {
         // Step 2: Download the generated report file
-        const downloadUrl = `/analytics/export/${result.data.filename}`;
+        const downloadUrl = `/analytics/export/${result.filename}`;
         const response = await fetch(downloadUrl);
 
         if (!response.ok) {
@@ -126,13 +126,13 @@ export const AnalyticsPage: React.FC = () => {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = result.data.filename || `analytics-${selectedProjectId}.${format}`;
+        link.download = result.filename || `analytics-${selectedProjectId}.${format}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
 
-        console.log('Export successful:', result.data.filename);
+        console.log('Export successful:', result.filename);
       } else {
         throw new Error('No filename in export response');
       }
