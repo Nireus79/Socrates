@@ -119,7 +119,7 @@ export const PhaseActionModal: React.FC<PhaseActionModalProps> = ({
             variant="primary"
             onClick={handleAdvance}
             disabled={isLoading}
-            loading={isLoading}
+            {...(isLoading && { loading: true })}
           >
             {isLoading ? 'Advancing...' : `Advance to ${nextPhaseName}`}
           </Button>
