@@ -823,6 +823,8 @@ async def export_analytics(
         logger.info(f"Successfully generated {format_type} report: {filepath}")
 
         return APIResponse(
+            success=True,
+            status="success",
             message=f"Analytics report exported as {format_type}",
             data={
                 "project_id": project_id,
