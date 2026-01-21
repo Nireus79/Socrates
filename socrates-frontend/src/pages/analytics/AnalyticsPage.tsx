@@ -106,24 +106,39 @@ export const AnalyticsPage: React.FC = () => {
   const handleExportAnalytics = async (format: 'csv' | 'pdf' = 'pdf') => {
     if (!selectedProjectId) return;
     try {
+      // Step 1: Call export endpoint to generate the report
       const result = await apiClient.post(`/analytics/export`, {
         project_id: selectedProjectId,
         format
       }) as any;
-      if (result?.data) {
-        const blob = new Blob([result.data], { type: 'text/plain' });
+
+      if (result?.data?.filename) {
+        // Step 2: Download the generated report file
+        const downloadUrl = `/analytics/export/${result.data.filename}`;
+        const response = await fetch(downloadUrl);
+
+        if (!response.ok) {
+          throw new Error(`Failed to download file: ${response.statusText}`);
+        }
+
+        // Step 3: Create blob and trigger download
+        const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = result.filename || `analytics-${projectId}.${format}`;
+        link.download = result.data.filename || `analytics-${selectedProjectId}.${format}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
+
+        console.log('Export successful:', result.data.filename);
+      } else {
+        throw new Error('No filename in export response');
       }
     } catch (err) {
       console.error('Export failed:', err);
-      setError('Failed to export analytics');
+      setError(err instanceof Error ? err.message : 'Failed to export analytics');
     }
   };
 

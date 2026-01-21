@@ -8,6 +8,8 @@ Provides PDF and CSV report generation for project analytics, using:
 
 import csv
 import logging
+import os
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
@@ -47,15 +49,21 @@ except ImportError:
 class ReportGenerator:
     """Generate PDF and CSV analytics reports."""
 
-    def __init__(self, output_dir: str = "/tmp/reports"):
+    def __init__(self, output_dir: Optional[str] = None):
         """
         Initialize report generator.
 
         Args:
-            output_dir: Directory to store generated reports
+            output_dir: Directory to store generated reports (defaults to system temp)
         """
+        if output_dir is None:
+            # Use .socrates directory for reports, with temp as fallback
+            socrates_dir = Path.home() / ".socrates" / "reports"
+            output_dir = str(socrates_dir)
+
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Report output directory: {self.output_dir}")
 
     def generate_project_report(
         self,
