@@ -36,6 +36,9 @@ interface ChatState {
   currentProjectId: string | null;
   conflicts: Conflict[] | null;
   pendingConflicts: boolean;
+  phaseComplete: boolean;
+  currentPhase: string | null;
+  nextPhase: string | null;
 
   // Actions
   getQuestion: (projectId: string) => Promise<string>;
@@ -52,6 +55,7 @@ interface ChatState {
   clearConflicts: () => void;
   clearSearch: () => void;
   clearError: () => void;
+  clearPhaseCompletion: () => void;
   reset: () => void;
 }
 
@@ -66,6 +70,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   currentProjectId: null,
   conflicts: null,
   pendingConflicts: false,
+  phaseComplete: false,
+  currentPhase: null,
+  nextPhase: null,
 
   // Get next question
   getQuestion: async (projectId: string) => {
@@ -149,7 +156,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
           timestamp: new Date().toISOString(),
         });
         logger.info('Phase completion message added to chat');
-        set({ isLoading: false });
+        set({
+          isLoading: false,
+          phaseComplete: true,
+          currentPhase: response.current_phase || state.mode,
+          nextPhase: response.next_phase,
+        });
         return;
       }
 
@@ -375,6 +387,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   // Clear conflicts
   clearConflicts: () => set({ conflicts: null, pendingConflicts: false }),
 
+  // Clear phase completion
+  clearPhaseCompletion: () =>
+    set({ phaseComplete: false, currentPhase: null, nextPhase: null }),
+
   // Clear search results
   clearSearch: () => set({ searchResults: [] }),
 
@@ -393,6 +409,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       currentProjectId: null,
       conflicts: null,
       pendingConflicts: false,
+      phaseComplete: false,
+      currentPhase: null,
+      nextPhase: null,
     });
   },
 

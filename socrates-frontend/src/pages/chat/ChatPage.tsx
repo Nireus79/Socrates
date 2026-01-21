@@ -17,6 +17,7 @@ import {
   ConflictResolutionModal,
   SkippedQuestionsPanel,
   AnswerSuggestionsModal,
+  PhaseActionModal,
   NLUInput,
 } from '../../components/chat';
 import { Card, LoadingSpinner, Alert, Button, Input } from '../../components/common';
@@ -41,6 +42,9 @@ export const ChatPage: React.FC = () => {
     error: chatError,
     conflicts,
     pendingConflicts,
+    phaseComplete,
+    currentPhase,
+    nextPhase,
     loadHistory,
     switchMode,
     sendMessage,
@@ -52,6 +56,7 @@ export const ChatPage: React.FC = () => {
     getQuestion,
     resolveConflict,
     clearConflicts,
+    clearPhaseCompletion,
     clearError,
     clearSearch,
     reset: resetChat,
@@ -1198,6 +1203,16 @@ User: ${currentProject?.owner || 'N/A'}`;
     }
   };
 
+  const handlePhaseAdvance = async () => {
+    if (!selectedProjectId) return;
+    await handleAdvanceCommand(selectedProjectId);
+    clearPhaseCompletion();
+  };
+
+  const handlePhaseEnrich = () => {
+    clearPhaseCompletion();
+  };
+
   const handleDoneCommand = async (id: string) => {
     try {
       await apiClient.post(`/projects/${id}/chat/done`);
@@ -1995,6 +2010,16 @@ User: ${currentProject?.owner || 'N/A'}`;
         question={suggestionsQuestion}
         phase={selectedProjectId ? 'current' : 'discovery'}
         onSelectSuggestion={(suggestion) => setResponse(suggestion)}
+      />
+
+      {/* Phase Action Modal */}
+      <PhaseActionModal
+        isOpen={phaseComplete}
+        onClose={() => clearPhaseCompletion()}
+        currentPhase={currentPhase || 'discovery'}
+        nextPhase={nextPhase || 'analysis'}
+        onAdvance={handlePhaseAdvance}
+        onEnrich={handlePhaseEnrich}
       />
 
       {/* Skipped Questions Panel */}
