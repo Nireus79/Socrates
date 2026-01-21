@@ -157,9 +157,16 @@ class MigrationRunner:
         # Check for claude_auth_method column in users table
         users_column_exists = self._column_exists("users", "claude_auth_method")
 
+        # Check for file_path and file_size columns in knowledge_documents table
+        knowledge_columns_exist = (
+            self._column_exists("knowledge_documents", "file_path")
+            and self._column_exists("knowledge_documents", "file_size")
+        )
+
         status = {
             "github_import_tables": github_tables_exist,
             "users_claude_auth_method": users_column_exists,
+            "knowledge_documents_columns": knowledge_columns_exist,
         }
 
         return status
@@ -201,6 +208,7 @@ class MigrationRunner:
         Applies migrations in order:
         1. GitHub import tables (project_files, repository_metadata, code_validation_results)
         2. Claude auth method column (users.claude_auth_method)
+        3. Knowledge documents file tracking columns (knowledge_documents.file_path, knowledge_documents.file_size)
 
         Returns:
             Tuple of (success: bool, message: str)
@@ -217,6 +225,7 @@ class MigrationRunner:
         migrations_to_apply = [
             ("add_github_import_tables.sql", "GitHub import tables"),
             ("add_claude_auth_method_column.sql", "Claude auth method column"),
+            ("add_knowledge_documents_columns.sql", "Knowledge documents file tracking columns"),
         ]
 
         all_migrations_successful = True
@@ -232,6 +241,12 @@ class MigrationRunner:
                 continue
             elif migration_file == "add_claude_auth_method_column.sql" and status.get(
                 "users_claude_auth_method"
+            ):
+                self.logger.info(f"{migration_name} already applied, skipping")
+                messages.append(f"{migration_name}: already applied")
+                continue
+            elif migration_file == "add_knowledge_documents_columns.sql" and status.get(
+                "knowledge_documents_columns"
             ):
                 self.logger.info(f"{migration_name} already applied, skipping")
                 messages.append(f"{migration_name}: already applied")

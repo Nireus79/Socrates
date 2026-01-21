@@ -141,13 +141,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       // If phase is complete, show Socratic question about advancing
       if (response.phase_complete && response.phase_completion_message) {
-        logger.info('Phase complete! Asking about advancement...');
+        logger.info('Phase complete! Message received:', response.phase_completion_message);
         get().addMessage({
           id: `phase_complete_${Date.now()}`,
           role: 'assistant',
           content: response.phase_completion_message,
           timestamp: new Date().toISOString(),
         });
+        logger.info('Phase completion message added to chat');
         set({ isLoading: false });
         return;
       }

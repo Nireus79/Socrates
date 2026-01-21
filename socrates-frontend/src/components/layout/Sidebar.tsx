@@ -72,7 +72,7 @@ const navItems: NavItem[] = [
     path: '/files',
   },
   {
-    label: 'Analysis',
+    label: 'Project Assessment',
     icon: <CheckSquare size={20} />,
     path: '/analysis',
   },

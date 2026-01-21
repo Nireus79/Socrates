@@ -38,7 +38,7 @@ export const AnswerSuggestionsModal: React.FC<AnswerSuggestionsModalProps> = ({
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">
             Suggested answer starters:
           </p>
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
             {suggestions.map((suggestion, index) => (
               <div
                 key={index}

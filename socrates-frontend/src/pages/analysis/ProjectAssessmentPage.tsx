@@ -1,13 +1,13 @@
 /**
- * Analysis & Testing Control Panel
+ * Project Assessment Control Panel
  *
  * Allows users to:
- * - Run code validation (syntax, dependencies)
- * - Execute tests (pytest, jest, mocha)
- * - Analyze code structure and quality
+ * - Run project validation
+ * - Execute tests
+ * - Analyze project structure and quality
  * - Auto-fix issues
- * - Assess code maturity
- * - View analysis results and recommendations
+ * - Assess project maturity
+ * - View assessment results and recommendations
  */
 
 import React, { useState, useEffect } from 'react';
@@ -49,7 +49,7 @@ interface ErrorState {
   report: string | null;
 }
 
-export const AnalysisPage: React.FC = () => {
+export const ProjectAssessmentPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const { currentProject, projects, getProject, listProjects } = useProjectStore();
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId || '');
@@ -122,7 +122,7 @@ export const AnalysisPage: React.FC = () => {
       const result = await analysisAPI.validateCode(effectiveProjectId);
       setResults((prev) => ({ ...prev, validation: result }));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to validate code';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to validate project';
       setErrors((prev) => ({ ...prev, validation: errorMessage }));
     } finally {
       setLoading((prev) => ({ ...prev, validation: false }));
@@ -160,7 +160,7 @@ export const AnalysisPage: React.FC = () => {
       const result = await analysisAPI.reviewCode(effectiveProjectId);
       setResults((prev) => ({ ...prev, review: result }));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to review code';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to review project';
       setErrors((prev) => ({ ...prev, review: errorMessage }));
     } finally {
       setLoading((prev) => ({ ...prev, review: false }));
@@ -272,15 +272,15 @@ export const AnalysisPage: React.FC = () => {
 
       {/* Page Header */}
       <PageHeader
-        title="Code Analysis & Testing"
-        description="Validate, analyze, test, and improve your project code"
+        title="Project Assessment"
+        description="Validate, analyze, test, and improve your project"
       />
 
       <div className="max-w-6xl lg:max-w-7xl mx-auto px-4 py-8">
         {/* No Project Selected */}
         {!effectiveProjectId && (
           <Alert type="info" title="No Project Selected">
-            Please select a project from the dropdown above to begin analysis.
+            Please select a project from the dropdown above to begin assessment.
           </Alert>
         )}
 
@@ -304,7 +304,7 @@ export const AnalysisPage: React.FC = () => {
               {/* Code Validation Results */}
               {activeResult === 'validation' && (
                 <AnalysisResultsDisplay
-                  title="Code Validation"
+                  title="Validation Results"
                   result={results.validation}
                   isLoading={loading.validation}
                   error={errors.validation || undefined}
@@ -334,7 +334,7 @@ export const AnalysisPage: React.FC = () => {
               {/* Code Review Results */}
               {activeResult === 'review' && (
                 <AnalysisResultsDisplay
-                  title="Code Review"
+                  title="Project Review"
                   result={results.review}
                   isLoading={loading.review}
                   error={errors.review || undefined}
@@ -364,7 +364,7 @@ export const AnalysisPage: React.FC = () => {
               {/* Analysis Report Results */}
               {activeResult === 'report' && (
                 <AnalysisResultsDisplay
-                  title="Analysis Report"
+                  title="Assessment Report"
                   result={results.report}
                   isLoading={loading.report}
                   error={errors.report || undefined}
@@ -375,7 +375,7 @@ export const AnalysisPage: React.FC = () => {
               {!activeResult && (
                 <Card className="p-8 text-center bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                   <p className="text-gray-600 dark:text-gray-400">
-                    Click an action button above to start analyzing your project.
+                    Click an action button above to start assessing your project.
                   </p>
                 </Card>
               )}
@@ -387,4 +387,4 @@ export const AnalysisPage: React.FC = () => {
   );
 };
 
-export default AnalysisPage;
+export default ProjectAssessmentPage;

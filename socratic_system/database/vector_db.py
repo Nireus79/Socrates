@@ -74,11 +74,22 @@ class VectorDatabase:
         if self._embedding_model_instance is None:
             self.logger.info(f"Loading embedding model on first use: {self.embedding_model_name}")
             try:
-                self._embedding_model_instance = SentenceTransformer(self.embedding_model_name)
-                self.logger.info("Embedding model loaded successfully")
+                import torch
+
+                # Determine the best device to use
+                device = "cuda" if torch.cuda.is_available() else "cpu"
+                self.logger.debug(f"Using device: {device}")
+
+                # Load model with device specification to avoid meta tensor issues
+                self._embedding_model_instance = SentenceTransformer(
+                    self.embedding_model_name,
+                    device=device
+                )
+                self.logger.info(f"Embedding model loaded successfully on {device}")
             except Exception as e:
                 self.logger.error(
-                    f"Failed to load embedding model {self.embedding_model_name}: {e}"
+                    f"Failed to load embedding model {self.embedding_model_name}: {e}",
+                    exc_info=True
                 )
                 raise RuntimeError(
                     f"Failed to load embedding model '{self.embedding_model_name}'. "

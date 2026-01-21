@@ -55,7 +55,7 @@ export const FilesPage: React.FC = () => {
     <MainLayout>
       {/* Project Selector */}
       {projects.length > 0 && (
-        <div className="max-w-6xl mx-auto px-4 py-4">
+        <div className="max-w-6xl lg:max-w-7xl mx-auto px-4 py-4">
           <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 dark:from-blue-900 dark:to-indigo-900 dark:border-blue-800">
             <div className="flex items-center gap-3">
               <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
@@ -84,7 +84,7 @@ export const FilesPage: React.FC = () => {
         description="Browse and view generated code files with syntax highlighting"
       />
 
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-6xl lg:max-w-7xl mx-auto px-4 py-8 space-y-6">
         {/* Error Alert */}
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start gap-3">

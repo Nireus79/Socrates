@@ -53,7 +53,7 @@ export const SearchPage: React.FC = () => {
 
       {/* Project Selector */}
       {projects.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-6xl lg:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 dark:from-blue-900 dark:to-indigo-900 dark:border-blue-800">
             <div className="flex items-center gap-3">
               <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
@@ -77,7 +77,7 @@ export const SearchPage: React.FC = () => {
       )}
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl lg:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search Bar */}
         <div className="mb-6">
           <SearchBar

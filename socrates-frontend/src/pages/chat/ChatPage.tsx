@@ -1658,7 +1658,7 @@ User: ${currentProject?.owner || 'N/A'}`;
 
   return (
     <MainLayout>
-      <div className="flex flex-col h-[calc(100vh-4rem)] max-w-5xl mx-auto w-full">
+      <div className="flex flex-col h-[calc(100vh-4rem)] max-w-6xl lg:max-w-7xl mx-auto">
         {/* Project Selector Dropdown */}
         <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 dark:from-blue-900 dark:to-indigo-900 dark:border-blue-800">
           <div className="flex items-center gap-3">

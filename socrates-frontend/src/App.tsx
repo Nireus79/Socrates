@@ -19,7 +19,7 @@ import { SettingsPage } from './pages/settings/SettingsPage';
 import { KnowledgeBasePage } from './pages/knowledge/KnowledgeBasePage';
 import { DocumentationPage } from './pages/documentation/DocumentationPage';
 import { FilesPage } from './pages/files/FilesPage';
-import { AnalysisPage as CodeAnalysisPage } from './pages/analysis/AnalysisPage';
+import { ProjectAssessmentPage } from './pages/analysis/ProjectAssessmentPage';
 import { NotesPage } from './pages/notes/NotesPage';
 import { ProjectAnalysisPage } from './pages/projects/ProjectAnalysisPage';
 import { SearchPage } from './pages/search/SearchPage';
@@ -240,7 +240,7 @@ function App() {
             path="/analysis"
             element={
               <ProtectedRoute>
-                <CodeAnalysisPage />
+                <ProjectAssessmentPage />
               </ProtectedRoute>
             }
           />
@@ -248,7 +248,7 @@ function App() {
             path="/projects/:projectId/analysis"
             element={
               <ProtectedRoute>
-                <CodeAnalysisPage />
+                <ProjectAssessmentPage />
               </ProtectedRoute>
             }
           />

@@ -50,7 +50,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
       className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 ${isFaded ? 'opacity-60' : ''} transition-opacity`}
     >
       <div
-        className={`max-w-xs lg:max-w-md xl:max-w-lg ${roleColors[role]} ${roleBorders[role]} border rounded-lg p-3`}
+        className={`max-w-sm md:max-w-xl lg:max-w-2xl xl:max-w-3xl ${roleColors[role]} ${roleBorders[role]} border rounded-lg p-3`}
       >
         <div className={`text-sm ${textColors[role]} whitespace-pre-wrap break-words`}>
           {content}

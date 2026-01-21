@@ -745,10 +745,17 @@ Provide a helpful, direct answer."""
                 response_data = {}
 
             # Check if phase is complete and add recommendation
-            if result.get("phase_complete"):
-                response_data["phase_complete"] = True
-                response_data["phase_completion_message"] = result.get("phase_completion_message")
-                response_data["next_phase"] = result.get("phase_completion_message", {}).get("next_phase")
+            try:
+                if result.get("phase_complete"):
+                    logger.info(f"Phase {project.phase} is complete for project {project_id}")
+                    response_data["phase_complete"] = True
+                    response_data["phase_completion_message"] = result.get("phase_completion_message")
+                    response_data["next_phase"] = result.get("next_phase")
+                    logger.debug(f"Phase completion data: {response_data.get('phase_completion_message', '')[:100]}...")
+            except Exception as phase_error:
+                logger.error(f"Error handling phase completion: {str(phase_error)}", exc_info=True)
+                # Don't fail the entire response if phase completion handling fails
+                # User's message was already processed successfully
 
             return APIResponse(
                 success=True,
