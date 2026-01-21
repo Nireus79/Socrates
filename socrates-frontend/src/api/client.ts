@@ -34,30 +34,29 @@ const tryPort = async (port: number): Promise<boolean> => {
 
 // Load server config if available
 const loadServerConfig = async () => {
-  // Strategy 1: Try to load from API's /port-config endpoint on common ports
-  console.log('[APIClient] Attempting to discover API port from /port-config endpoint...');
-  for (let port = 8008; port <= 8020; port++) {
+  // Strategy 1: Try to load from API's /health endpoint on common ports
+  console.log('[APIClient] Attempting to discover API port from /health endpoint...');
+  const commonPorts = [8000, 8008, 8009, 8010, 8015, 8020];
+  for (const port of commonPorts) {
     try {
-      const response = await fetch(`http://127.0.0.1:${port}/port-config`, {
+      const response = await fetch(`http://127.0.0.1:${port}/health`, {
         method: 'GET',
         signal: AbortSignal.timeout(1000),
       });
       if (response.ok) {
-        const config = await response.json();
-        if (config.api && config.api.url) {
-          API_BASE_URL = config.api.url;
-          console.log('[APIClient] Discovered API from /port-config endpoint:', API_BASE_URL);
-          if (onConfigLoaded) {
-            onConfigLoaded(API_BASE_URL);
-          }
-          return;
+        const apiUrl = `http://127.0.0.1:${port}`;
+        API_BASE_URL = apiUrl;
+        console.log('[APIClient] Discovered API at port', port, ':', API_BASE_URL);
+        if (onConfigLoaded) {
+          onConfigLoaded(API_BASE_URL);
         }
+        return;
       }
     } catch {
       // Continue to next port
     }
   }
-  console.log('[APIClient] Could not discover API from /port-config endpoint');
+  console.log('[APIClient] Could not discover API from /health endpoint');
 
   // Strategy 2: Try to load from port-config.json in current directory
   try {
