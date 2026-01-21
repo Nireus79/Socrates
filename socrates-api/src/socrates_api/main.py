@@ -4,8 +4,10 @@ Socrates API - FastAPI application for Socrates AI tutoring system
 Provides REST endpoints for project management, Socratic questioning, and code generation.
 """
 
+import asyncio
 import logging
 import os
+import signal
 import socket
 import time
 from contextlib import asynccontextmanager
@@ -150,6 +152,44 @@ def _setup_event_listeners(orchestrator: AgentOrchestrator):
     logger.info("Event listeners registered")
 
 
+async def _monitor_shutdown():
+    """Background task to monitor and execute scheduled shutdown
+
+    When running in full-stack mode (python socrates.py --full), the API runs
+    as a subprocess. This task sends signals to the parent process to ensure
+    coordinated shutdown of all components (API, frontend, parent).
+
+    Currently handles:
+    - Browser-close detection: 1-minute delay before shutdown
+    """
+    from socrates_api.middleware.activity_tracker import should_shutdown_now
+
+    while True:
+        try:
+            await asyncio.sleep(5)  # Check every 5 seconds
+
+            # Check if browser-close shutdown is due (scheduled by client)
+            if should_shutdown_now():
+                logger.info("Executing scheduled shutdown...")
+                # Send SIGTERM to parent process (for full-stack mode)
+                # If running standalone, this will shutdown this process
+                parent_pid = os.getppid()
+                if parent_pid > 1:  # Not init process
+                    logger.info(f"Sending SIGTERM to parent process {parent_pid}")
+                    os.kill(parent_pid, signal.SIGTERM)
+                else:
+                    # Running standalone, shutdown self
+                    logger.info("No parent process, shutting down self")
+                    os.kill(os.getpid(), signal.SIGTERM)
+                break
+
+        except asyncio.CancelledError:
+            logger.info("Shutdown monitor task cancelled")
+            break
+        except Exception as e:
+            logger.error(f"Error in shutdown monitor: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -221,10 +261,22 @@ async def lifespan(app: FastAPI):
 
         logger.error(f"Traceback: {traceback.format_exc()}")
 
+    # Start shutdown monitor background task
+    logger.info("Starting shutdown monitor background task...")
+    shutdown_monitor_task = asyncio.create_task(_monitor_shutdown())
+
     yield  # App is running
 
     # Shutdown
     logger.info("Shutting down Socrates API server...")
+
+    # Cancel shutdown monitor task
+    shutdown_monitor_task.cancel()
+    try:
+        await shutdown_monitor_task
+    except asyncio.CancelledError:
+        logger.info("Shutdown monitor task cancelled")
+
     # Close database connection
     from socrates_api.database import close_database
 
@@ -261,6 +313,11 @@ add_security_headers_middleware(app, environment=environment)
 
 # Add metrics middleware
 add_metrics_middleware(app)
+
+# Add activity tracking middleware
+from socrates_api.middleware.activity_tracker import ActivityTrackerMiddleware
+
+app.add_middleware(ActivityTrackerMiddleware)
 
 # Configure CORS based on environment
 if environment == "production":

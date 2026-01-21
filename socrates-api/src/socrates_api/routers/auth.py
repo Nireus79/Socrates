@@ -166,12 +166,20 @@ async def register(request: RegisterRequest, db: ProjectDatabase = Depends(get_d
         # Store refresh token in database
         _store_refresh_token(db, request.username, refresh_token)
 
+        # New users won't have an API key configured yet - show message after registration
+        api_key_message = (
+            "Welcome! To start using AI features, please save your API key "
+            "in Settings > LLM > Anthropic."
+        )
+
         return AuthResponse(
             user=_user_to_response(user),
             access_token=access_token,
             refresh_token=refresh_token,
             token_type="bearer",
             expires_in=900,
+            api_key_configured=False,
+            api_key_message=api_key_message,
         )
 
     except HTTPException:
@@ -253,12 +261,31 @@ async def login(request: LoginRequest, db: ProjectDatabase = Depends(get_databas
         # Store refresh token in database
         _store_refresh_token(db, request.username, refresh_token)
 
+        # Check if user has API key configured (check all providers)
+        api_key_configured = True
+        api_key_message = None
+        try:
+            # Check for API keys from any provider (claude, openai, etc.)
+            stored_api_key = db.get_api_key(request.username, "claude")
+            if not stored_api_key:
+                api_key_configured = False
+                api_key_message = (
+                    "No API key configured. "
+                    "Please save your API key in Settings > LLM > Anthropic to use AI features."
+                )
+                logger.info(f"User {request.username} has no API key configured")
+        except Exception as e:
+            logger.warning(f"Error checking API key for user {request.username}: {e}")
+            # Don't fail login, just proceed with warning
+
         return AuthResponse(
             user=_user_to_response(user),
             access_token=access_token,
             refresh_token=refresh_token,
             token_type="bearer",
             expires_in=900,
+            api_key_configured=api_key_configured,
+            api_key_message=api_key_message,
         )
 
     except HTTPException:
@@ -478,6 +505,11 @@ async def logout(
     try:
         # Revoke all refresh tokens for this user
         _revoke_refresh_token(db, current_user)
+
+        # Clear activity tracking on logout
+        from socrates_api.middleware.activity_tracker import clear_activity
+
+        clear_activity(current_user)
 
         logger.info(f"User logged out and tokens revoked: {current_user}")
         return APIResponse(

@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../../stores';
 import { showError, showSuccess } from '../../stores';
+import { ServerControls } from '../../components/common/ServerControls';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -46,6 +47,11 @@ export function LoginPage() {
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Socrates</h1>
           <p className="text-gray-600 dark:text-gray-400">AI-Powered Learning Through Socratic Dialogue</p>
           <p className="text-sm text-gray-500 dark:text-gray-400 italic mt-3">τῷ Ἀσκληπιῷ ὀφείλομεν ἀλεκτρυόνα, ἀπόδοτε καὶ μὴ ἀμελήσετε.</p>
+        </div>
+
+        {/* Server Controls */}
+        <div className="mb-6">
+          <ServerControls className="justify-center" />
         </div>
 
         {/* Login Card */}
@@ -113,13 +119,6 @@ export function LoginPage() {
               </p>
             </div>
           </form>
-        </div>
-
-        {/* Demo Credentials */}
-        <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <p className="text-sm text-blue-900 dark:text-blue-300 font-semibold mb-2">Demo Credentials:</p>
-          <p className="text-sm text-blue-800 dark:text-blue-400">Username: <code className="bg-white dark:bg-gray-800 px-2 py-1 rounded font-mono">testuser</code></p>
-          <p className="text-sm text-blue-800 dark:text-blue-400">Password: <code className="bg-white dark:bg-gray-800 px-2 py-1 rounded font-mono">TestPassword123!</code></p>
         </div>
       </div>
     </div>

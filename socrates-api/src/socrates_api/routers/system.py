@@ -659,3 +659,128 @@ async def get_debug_status(
         message="Debug mode status retrieved",
         data={"debug_enabled": is_debug_mode()},
     )
+
+
+@router.post(
+    "/shutdown",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Schedule server shutdown",
+)
+async def schedule_server_shutdown(
+    delay_seconds: int = 60,
+):
+    """
+    Schedule server shutdown after a delay.
+
+    This endpoint schedules the server to shutdown after the specified delay.
+    The delay allows time for graceful cleanup and client preparation.
+
+    Args:
+        delay_seconds: Delay before shutdown in seconds (default: 60)
+
+    Returns:
+        SuccessResponse with shutdown schedule information
+    """
+    try:
+        from socrates_api.middleware.activity_tracker import (
+            schedule_shutdown,
+            get_shutdown_time_remaining,
+        )
+
+        logger.info(f"Server shutdown scheduled with {delay_seconds}s delay")
+        schedule_shutdown(delay_seconds)
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message=f"Server shutdown scheduled in {delay_seconds} seconds",
+            data={
+                "scheduled": True,
+                "delay_seconds": delay_seconds,
+                "remaining_seconds": get_shutdown_time_remaining(),
+            },
+        )
+
+    except Exception as e:
+        logger.error(f"Error scheduling server shutdown: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to schedule shutdown: {str(e)}",
+        )
+
+
+@router.post(
+    "/shutdown/cancel",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Cancel scheduled shutdown",
+)
+async def cancel_server_shutdown():
+    """
+    Cancel a previously scheduled server shutdown.
+
+    Returns:
+        SuccessResponse with cancellation confirmation
+    """
+    try:
+        from socrates_api.middleware.activity_tracker import cancel_shutdown
+
+        logger.info("Server shutdown cancelled")
+        cancel_shutdown()
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Server shutdown cancelled",
+            data={"scheduled": False},
+        )
+
+    except Exception as e:
+        logger.error(f"Error cancelling server shutdown: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to cancel shutdown: {str(e)}",
+        )
+
+
+@router.get(
+    "/shutdown/status",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get shutdown status",
+)
+async def get_shutdown_status():
+    """
+    Get the current shutdown schedule status.
+
+    Returns whether shutdown is scheduled and how many seconds remain.
+
+    Returns:
+        SuccessResponse with shutdown status
+    """
+    try:
+        from socrates_api.middleware.activity_tracker import (
+            is_shutdown_scheduled,
+            get_shutdown_time_remaining,
+        )
+
+        scheduled = is_shutdown_scheduled()
+        remaining = get_shutdown_time_remaining()
+
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Shutdown status retrieved",
+            data={
+                "scheduled": scheduled,
+                "remaining_seconds": remaining,
+            },
+        )
+
+    except Exception as e:
+        logger.error(f"Error retrieving shutdown status: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve shutdown status: {str(e)}",
+        )
