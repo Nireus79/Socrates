@@ -1713,7 +1713,12 @@ Project Context:
 - Tech Stack: {', '.join(project.tech_stack) if project.tech_stack else 'Not specified'}
 - Requirements: {', '.join(project.requirements) if project.requirements else 'Not specified'}
 
-Provide 3-5 specific, actionable answer suggestions or starting points. Each suggestion should be a complete sentence that the user could use as a basis for their answer.
+Provide 3-5 DIVERSE and SPECIFIC answer suggestions or starting points. Each suggestion should be:
+- A complete sentence the user could use as a basis for their answer
+- Different in approach or focus from the other suggestions
+- Focused on different aspects of the answer (methodology, perspective, scope, depth)
+
+Make sure each suggestion explores a different angle or approach to answering this question.
 
 Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no additional text."""
 
@@ -1726,7 +1731,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
             response = self.orchestrator.claude_client.generate_response(
                 prompt=suggestions_prompt,
                 max_tokens=800,
-                temperature=0.7,
+                temperature=1.0,
                 user_auth_method=user_auth_method,
                 user_id=current_user,
             )
