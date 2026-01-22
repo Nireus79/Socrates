@@ -661,17 +661,19 @@ Provide a helpful, direct answer."""
             if project.conversation_history:
                 db.save_conversation_history(project_id, project.conversation_history)
 
-            # Extract specs from user message (NEW)
+            # Extract specs from both user message and assistant answer
             insights = None
             insights_message = None
             try:
-                # Extract potential specs from the user's question in direct mode
+                # Extract potential specs from both the user's question and the assistant's answer
+                # Combine both for more comprehensive spec extraction
+                combined_text = f"User Input:\n{request.message}\n\nAssistant Answer:\n{answer}"
                 insights = orchestrator.claude_client.extract_insights(
-                    request.message,
+                    combined_text,
                     user_auth_method=user_auth_method,
                     user_id=current_user
                 )
-                logger.debug(f"Extracted insights in direct mode: {insights}")
+                logger.debug(f"Extracted insights from user input and assistant answer: {insights}")
 
                 # If there are any extracted specs and debug mode is on, format insights message
                 if insights and is_debug_mode():

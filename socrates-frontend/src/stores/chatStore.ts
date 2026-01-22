@@ -155,17 +155,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
           pendingExtractedSpecs: true,
           isLoading: false,
         });
-        const specsText = ['Goals', 'Requirements', 'Tech Stack', 'Constraints']
-          .map((type, idx) => {
-            const key = ['goals', 'requirements', 'tech_stack', 'constraints'][idx] as keyof ExtractedSpecs;
-            const items = response.extracted_specs![key];
-            return items && items.length > 0 ? `${type}: ${items.join(', ')}` : null;
-          })
-          .filter(Boolean)
-          .join('\n');
-        get().addSystemMessage(
-          `📊 Detected Specifications:\n${specsText}\n\nWould you like to save these to your project?`
-        );
         return;
       }
 

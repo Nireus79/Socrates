@@ -18,3 +18,4 @@ export { ConflictResolutionModal } from './ConflictResolutionModal';
 export { SkippedQuestionsPanel } from './SkippedQuestionsPanel';
 export { AnswerSuggestionsModal } from './AnswerSuggestionsModal';
 export { PhaseActionModal } from './PhaseActionModal';
+export { SpecsConfirmationModal } from './SpecsConfirmationModal';

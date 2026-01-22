@@ -18,6 +18,7 @@ import {
   SkippedQuestionsPanel,
   AnswerSuggestionsModal,
   PhaseActionModal,
+  SpecsConfirmationModal,
   NLUInput,
 } from '../../components/chat';
 import { Card, LoadingSpinner, Alert, Button, Input } from '../../components/common';
@@ -45,6 +46,8 @@ export const ChatPage: React.FC = () => {
     phaseComplete,
     currentPhase,
     nextPhase,
+    extractedSpecs,
+    pendingExtractedSpecs,
     loadHistory,
     switchMode,
     sendMessage,
@@ -56,6 +59,8 @@ export const ChatPage: React.FC = () => {
     getQuestion,
     resolveConflict,
     clearConflicts,
+    saveExtractedSpecs,
+    clearExtractedSpecs,
     clearPhaseCompletion,
     clearError,
     clearSearch,
@@ -85,6 +90,7 @@ export const ChatPage: React.FC = () => {
   const [debugInfo, setDebugInfo] = React.useState<{ debugEnabled: boolean; timestamp: string } | null>(null);
   const [showTestingModeModal, setShowTestingModeModal] = React.useState(false);
   const [testingModeStatus, setTestingModeStatus] = React.useState<{ enabled: boolean; message: string } | null>(null);
+  const [showSpecsModal, setShowSpecsModal] = React.useState(false);
   const [selectedProjectId, setSelectedProjectId] = React.useState(projectId || '');
   const [isSwitchingProject, setIsSwitchingProject] = React.useState(false);
   const [sessionStartTime, setSessionStartTime] = React.useState<Date | null>(null);
@@ -105,6 +111,13 @@ export const ChatPage: React.FC = () => {
   // Track if we've already loaded initial question for this project
   const initialQuestionLoadedRef = React.useRef<string | null>(null);
   const isLoadingHistoryRef = React.useRef<boolean>(false);
+
+  // Show specs confirmation modal when specs are extracted
+  React.useEffect(() => {
+    if (pendingExtractedSpecs && extractedSpecs) {
+      setShowSpecsModal(true);
+    }
+  }, [pendingExtractedSpecs, extractedSpecs]);
 
   // Load projects list on mount
   React.useEffect(() => {
@@ -2027,6 +2040,23 @@ User: ${currentProject?.owner || 'N/A'}`;
         onAdvance={handlePhaseAdvance}
         onEnrich={handlePhaseEnrich}
       />
+
+      {/* Specs Confirmation Modal */}
+      {extractedSpecs && (
+        <SpecsConfirmationModal
+          isOpen={showSpecsModal}
+          onClose={() => setShowSpecsModal(false)}
+          specs={extractedSpecs}
+          onConfirm={async (specs) => {
+            if (selectedProjectId) {
+              await saveExtractedSpecs(selectedProjectId, specs);
+            }
+          }}
+          onDecline={() => {
+            clearExtractedSpecs();
+          }}
+        />
+      )}
 
       {/* Skipped Questions Panel */}
       {selectedProjectId && <SkippedQuestionsPanel projectId={selectedProjectId} />}
