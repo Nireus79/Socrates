@@ -173,8 +173,10 @@ export const chatAPI = {
    */
   async interpretNLU(projectId: string, input: string): Promise<any> {
     return apiClient.post('/nlu/interpret', {
-      text: input,
-      project_id: projectId,
+      input,
+      context: {
+        project_id: projectId,
+      },
     });
   },
 
