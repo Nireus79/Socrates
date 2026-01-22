@@ -24,7 +24,7 @@ class SocratesConfig:
     Socrates configuration with sensible defaults and flexible customization.
 
     Attributes:
-        api_key: Claude API key (required)
+        api_key: Claude API key (optional for API server mode - uses per-user database keys)
         claude_model: Claude model to use
         data_dir: Directory for storing projects and databases
         projects_db_path: Path to projects database
@@ -42,7 +42,7 @@ class SocratesConfig:
     """
 
     # API Configuration
-    api_key: str
+    api_key: Optional[str] = None  # Optional for API server mode (uses per-user database keys)
     subscription_token: Optional[str] = (
         None  # Alternative: use Claude subscription instead of API key
     )
@@ -81,9 +81,16 @@ class SocratesConfig:
         self._create_directories()
 
     def _validate_api_key(self) -> None:
-        """Validate that API key is provided and non-empty"""
-        if not self.api_key or not self.api_key.strip():
-            raise ValueError("api_key is required and cannot be empty")
+        """
+        Validate API key configuration.
+
+        For API server mode: allows placeholder keys or None (uses per-user database keys)
+        For direct mode: API key will be checked at runtime when needed
+        """
+        # API key is optional in API server mode
+        # In that case, individual users will provide their own keys via database
+        # No validation needed - will be validated at runtime when API calls are made
+        pass
 
     def _ensure_data_dir_is_path(self) -> None:
         """Ensure data_dir is a Path object"""
@@ -147,7 +154,7 @@ class SocratesConfig:
         Create configuration from environment variables.
 
         Environment variables:
-            ANTHROPIC_API_KEY or API_KEY_CLAUDE: Claude API key (required)
+            ANTHROPIC_API_KEY or API_KEY_CLAUDE: Claude API key (optional - users can provide per-user keys via database)
             ANTHROPIC_SUBSCRIPTION_TOKEN: Optional - Claude subscription token for subscription-based auth
             CLAUDE_MODEL: Model name
             SOCRATES_DATA_DIR: Data directory
@@ -159,13 +166,10 @@ class SocratesConfig:
 
         Returns:
             Configured SocratesConfig instance
-
-        Raises:
-            ValueError: If required API key is not found
         """
         config_dict = {
             "api_key": overrides.get("api_key")
-            or os.getenv("ANTHROPIC_API_KEY", os.getenv("API_KEY_CLAUDE")),
+            or os.getenv("ANTHROPIC_API_KEY") or os.getenv("API_KEY_CLAUDE"),
             "claude_model": overrides.get("claude_model")
             or os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001"),
             "data_dir": overrides.get("data_dir")
@@ -173,11 +177,9 @@ class SocratesConfig:
             "log_level": overrides.get("log_level") or os.getenv("SOCRATES_LOG_LEVEL", "INFO"),
         }
 
-        # Check api_key after considering overrides
-        if not config_dict["api_key"]:
-            raise ValueError(
-                "API key required. Set ANTHROPIC_API_KEY or API_KEY_CLAUDE environment variable"
-            )
+        # API key is now optional - it will be checked at runtime
+        # For API server mode, users provide per-user keys from database
+        # For direct mode, the API key will be needed when making API calls
 
         # Optional subscription token (alternative auth method)
         subscription_token = overrides.get("subscription_token") or os.getenv(

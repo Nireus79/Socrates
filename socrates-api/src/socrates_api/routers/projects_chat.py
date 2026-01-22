@@ -530,6 +530,8 @@ async def get_question(
                 "action": "generate_question",
                 "project": project,
                 "current_user": current_user,
+                "user_id": current_user,
+                "force_refresh": True,  # Always generate new question, don't use cache
             },
         )
 
@@ -1041,6 +1043,7 @@ async def get_summary(
             {
                 "action": "generate_summary",
                 "project": project,
+                "user_id": current_user,
             },
         )
 

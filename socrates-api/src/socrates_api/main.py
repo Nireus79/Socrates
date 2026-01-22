@@ -160,7 +160,7 @@ async def _monitor_shutdown():
     coordinated shutdown of all components (API, frontend, parent).
 
     Currently handles:
-    - Browser-close detection: 1-minute delay before shutdown
+    - Browser-close detection: 5-minute delay before shutdown
     """
     from socrates_api.middleware.activity_tracker import should_shutdown_now
 

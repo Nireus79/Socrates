@@ -1182,6 +1182,8 @@ User: ${currentProject?.owner || 'N/A'}`;
       // Refresh the project to update the UI with new phase
       if (selectedProjectId) {
         await getProject(selectedProjectId);
+        // Generate a new Socratic question for the new phase
+        await getQuestion(selectedProjectId);
       }
     } catch (error) {
       addSystemMessage('Could not advance phase');
@@ -1197,6 +1199,8 @@ User: ${currentProject?.owner || 'N/A'}`;
       // Refresh the project to update the UI with new phase
       if (selectedProjectId) {
         await getProject(selectedProjectId);
+        // Generate a new Socratic question for the new phase
+        await getQuestion(selectedProjectId);
       }
     } catch (error) {
       addSystemMessage('Could not roll back phase');

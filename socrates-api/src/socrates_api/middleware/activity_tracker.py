@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 # In-memory activity tracking (per-user last activity timestamp)
 _user_activity: Dict[str, float] = {}
 _shutdown_scheduled_at: Optional[float] = None
-_shutdown_delay_seconds: int = 60  # 1 minute for browser-close
+_shutdown_delay_seconds: int = 300  # 5 minutes for browser-close
 
 
 class ActivityTrackerMiddleware(BaseHTTPMiddleware):

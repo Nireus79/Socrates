@@ -40,6 +40,7 @@ class CodeGeneratorAgent(Agent):
     def _generate_artifact(self, request: Dict) -> Dict:
         """Generate project-type-appropriate artifact"""
         project = request.get("project")
+        current_user = request.get("current_user")  # Extract current_user from request
 
         # Build comprehensive context
         context = self._build_generation_context(project)
@@ -47,12 +48,12 @@ class CodeGeneratorAgent(Agent):
         # Generate artifact based on project type
         # Get user's auth method
         user_auth_method = "api_key"
-        if self.current_user:
-            user_obj = self.orchestrator.database.load_user(self.current_user)
+        if current_user:
+            user_obj = self.orchestrator.database.load_user(current_user)
             if user_obj and hasattr(user_obj, "claude_auth_method"):
                 user_auth_method = user_obj.claude_auth_method or "api_key"
         artifact = self.orchestrator.claude_client.generate_artifact(
-            context, project.project_type, user_auth_method, user_id=self.current_user
+            context, project.project_type, user_auth_method, user_id=current_user
         )
 
         # Determine artifact type for documentation
@@ -181,6 +182,7 @@ class CodeGeneratorAgent(Agent):
         """Generate documentation for project artifact"""
         project = request.get("project")
         artifact = request.get("artifact") or request.get("script")  # Support both
+        current_user = request.get("current_user")  # Extract current_user from request
 
         if not project:
             return {"status": "error", "message": "Project is required"}
@@ -200,9 +202,16 @@ class CodeGeneratorAgent(Agent):
         if not artifact:
             self.log(f"WARNING: Generating {artifact_type} documentation without artifact")
 
+        # Get user's auth method
+        user_auth_method = "api_key"
+        if current_user:
+            user_obj = self.orchestrator.database.load_user(current_user)
+            if user_obj and hasattr(user_obj, "claude_auth_method"):
+                user_auth_method = user_obj.claude_auth_method or "api_key"
+
         try:
             documentation = self.orchestrator.claude_client.generate_documentation(
-                project, artifact, artifact_type
+                project, artifact, artifact_type, user_auth_method=user_auth_method, user_id=current_user
             )
 
             self.log(f"Generated documentation for {artifact_type}")

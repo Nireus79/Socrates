@@ -30,34 +30,46 @@ class ClaudeClient:
     """
 
     def __init__(
-        self, api_key: str, orchestrator: "AgentOrchestrator", subscription_token: str = None
+        self, api_key: str = None, orchestrator: "AgentOrchestrator" = None, subscription_token: str = None
     ):
         """
         Initialize Claude client.
 
         Args:
-            api_key: Anthropic API key (required fallback)
+            api_key: Anthropic API key (optional - can be None for API server mode using database keys)
             orchestrator: Reference to AgentOrchestrator for event emission and token tracking
             subscription_token: Optional - Claude subscription token for subscription-based auth
         """
         self.api_key = api_key
         self.subscription_token = subscription_token
         self.orchestrator = orchestrator
-        self.model = orchestrator.config.claude_model
+        self.model = orchestrator.config.claude_model if orchestrator else "claude-haiku-4-5-20251001"
         self.logger = logging.getLogger("socrates.clients.claude")
 
         # Initialize clients for both authentication methods
-        # API key based clients
-        self.client = anthropic.Anthropic(api_key=api_key)
-        self.async_client = anthropic.AsyncAnthropic(api_key=api_key)
-
-        # Subscription token based clients (if available)
+        # Lazy initialization - only create if api_key is valid
+        self.client = None
+        self.async_client = None
         self.subscription_client = None
         self.subscription_async_client = None
+
+        # Initialize default clients only if we have a non-placeholder API key
+        if api_key and not api_key.startswith("placeholder"):
+            try:
+                self.client = anthropic.Anthropic(api_key=api_key)
+                self.async_client = anthropic.AsyncAnthropic(api_key=api_key)
+                self.logger.info("Default API key clients initialized")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize default API key clients: {e}")
+
+        # Subscription token based clients (if available)
         if subscription_token:
-            self.subscription_client = anthropic.Anthropic(api_key=subscription_token)
-            self.subscription_async_client = anthropic.AsyncAnthropic(api_key=subscription_token)
-            self.logger.info("Subscription-based clients initialized")
+            try:
+                self.subscription_client = anthropic.Anthropic(api_key=subscription_token)
+                self.subscription_async_client = anthropic.AsyncAnthropic(api_key=subscription_token)
+                self.logger.info("Subscription-based clients initialized")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize subscription clients: {e}")
 
         # Cache for insights extraction to avoid redundant Claude API calls
         # Maps message hash -> extracted insights
@@ -141,13 +153,20 @@ class ClaudeClient:
         """
         Decrypt an API key stored in the database.
 
-        Supports multiple encryption methods for compatibility.
+        Supports multiple encryption methods for compatibility:
+        1. SHA256-Fernet (current default)
+        2. PBKDF2-Fernet (for legacy keys)
+        3. Base64 (for simple encoding)
 
         Args:
             encrypted_key: The encrypted API key from database
 
         Returns:
             Decrypted API key string, or None if decryption fails
+
+        Note:
+            For production, set SOCRATES_ENCRYPTION_KEY environment variable
+            to a secure key. Currently using: default-insecure-key-change-in-production
         """
         import base64
         import hashlib
@@ -162,9 +181,9 @@ class ClaudeClient:
 
         # Log which key is being used (without revealing the actual key)
         key_source = (
-            "SOCRATES_ENCRYPTION_KEY env var"
+            "SOCRATES_ENCRYPTION_KEY env var (SECURE)"
             if os.getenv("SOCRATES_ENCRYPTION_KEY")
-            else "default insecure key"
+            else "default insecure key (CHANGE IN PRODUCTION)"
         )
         self.logger.info(f"Decrypting API key using: {key_source}")
 
@@ -223,6 +242,11 @@ class ClaudeClient:
         """
         Get the appropriate sync client based on user's auth method and user-specific API key.
 
+        Priority order:
+        1. User-specific API key from database
+        2. Default API key from config/environment (if valid and not placeholder)
+        3. Raise error if no valid key available
+
         Args:
             user_auth_method: User's preferred auth method (only 'api_key' is supported)
             user_id: Optional user ID to fetch user-specific API key
@@ -231,47 +255,44 @@ class ClaudeClient:
             Anthropic sync client instance
 
         Raises:
-            APIError: If auth method requires API key but none is available
+            APIError: If no valid API key is available
         """
         # Subscription mode is not supported - always use api_key
         if user_auth_method == "subscription":
             self.logger.warning("Subscription mode is not supported. Defaulting to api_key")
             user_auth_method = "api_key"
 
-        # Use api_key authentication with user-specific or default key
+        # Try to get user-specific or default API key
         try:
-            api_key, _ = self._get_user_api_key(user_id)
+            api_key, is_user_specific = self._get_user_api_key(user_id)
             if api_key and not api_key.startswith("placeholder"):
-                # Create a new client with the user's API key
+                # Create a new client with the API key
+                key_source = "user-specific" if is_user_specific else "default"
+                self.logger.debug(f"Creating client with {key_source} API key")
                 return anthropic.Anthropic(api_key=api_key)
-            elif api_key and api_key.startswith("placeholder"):
-                # Placeholder key detected - user hasn't set their API key yet
+            else:
+                # No valid key found
                 raise APIError(
-                    "No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                    "No API key configured. Please set your API key in Settings > LLM > Anthropic",
                     error_type="MISSING_API_KEY",
                 )
         except APIError:
             raise
         except Exception as e:
-            self.logger.warning(f"Error getting user API key: {e}")
+            self.logger.error(f"Error getting API key: {e}")
             raise APIError(
-                "No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                "No API key configured. Please set your API key in Settings > LLM > Anthropic",
                 error_type="MISSING_API_KEY",
             )
-
-        # Default client should not be used if it has placeholder key
-        if self.api_key and self.api_key.startswith("placeholder"):
-            raise APIError(
-                "No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
-                error_type="MISSING_API_KEY",
-            )
-
-        # Fallback to default client if it has a real key
-        return self.client
 
     def _get_async_client(self, user_auth_method: str = "api_key", user_id: str = None):
         """
         Get the appropriate async client based on user's auth method and user-specific API key.
+
+        Priority order:
+        1. User-specific API key from database
+        2. Default API key from config/environment (if valid and not placeholder)
+        3. Raise error if no valid key available
 
         Args:
             user_auth_method: User's preferred auth method (only 'api_key' is supported)
@@ -281,43 +302,35 @@ class ClaudeClient:
             Anthropic async client instance
 
         Raises:
-            APIError: If auth method requires API key but none is available
+            APIError: If no valid API key is available
         """
         # Subscription mode is not supported - always use api_key
         if user_auth_method == "subscription":
             self.logger.warning("Subscription mode is not supported. Defaulting to api_key")
             user_auth_method = "api_key"
 
-        # Use api_key authentication with user-specific or default key
+        # Try to get user-specific or default API key
         try:
-            api_key, _ = self._get_user_api_key(user_id)
+            api_key, is_user_specific = self._get_user_api_key(user_id)
             if api_key and not api_key.startswith("placeholder"):
-                # Create a new async client with the user's API key
+                # Create a new async client with the API key
+                key_source = "user-specific" if is_user_specific else "default"
+                self.logger.debug(f"Creating async client with {key_source} API key")
                 return anthropic.AsyncAnthropic(api_key=api_key)
-            elif api_key and api_key.startswith("placeholder"):
-                # Placeholder key detected - user hasn't set their API key yet
+            else:
+                # No valid key found
                 raise APIError(
-                    "No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                    "No API key configured. Please set your API key in Settings > LLM > Anthropic",
                     error_type="MISSING_API_KEY",
                 )
         except APIError:
             raise
         except Exception as e:
-            self.logger.warning(f"Error getting user API key: {e}")
+            self.logger.error(f"Error getting API key: {e}")
             raise APIError(
-                "No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
+                "No API key configured. Please set your API key in Settings > LLM > Anthropic",
                 error_type="MISSING_API_KEY",
             )
-
-        # Default client should not be used if it has placeholder key
-        if self.api_key and self.api_key.startswith("placeholder"):
-            raise APIError(
-                "No API key configured. Please set your API key in Settings > LLM > Anthropic or set ANTHROPIC_API_KEY environment variable.",
-                error_type="MISSING_API_KEY",
-            )
-
-        # Fallback to default async client if it has a real key
-        return self.async_client
 
     def extract_insights(
         self,
@@ -968,7 +981,8 @@ class ClaudeClient:
     def test_connection(self, user_auth_method: str = "api_key") -> bool:
         """Test connection to Claude API"""
         try:
-            self.client.messages.create(
+            client = self._get_client(user_auth_method)
+            client.messages.create(
                 model=self.model,
                 max_tokens=10,
                 temperature=0,
@@ -976,6 +990,9 @@ class ClaudeClient:
             )
             self.logger.info("Claude API connection test successful")
             return True
+        except APIError:
+            self.logger.warning("Claude API connection test skipped - no valid API key configured")
+            return False
         except Exception as e:
             self.logger.error(f"Claude API connection test failed: {e}")
             raise APIError(

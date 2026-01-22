@@ -452,6 +452,8 @@ class AuthResponse(BaseModel):
                 "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 "token_type": "bearer",
                 "expires_in": 900,
+                "api_key_configured": False,
+                "api_key_message": "No API key configured. Please save your API key in Settings > LLM > Anthropic to use AI features.",
             }
         }
     )
@@ -461,6 +463,13 @@ class AuthResponse(BaseModel):
     refresh_token: str = Field(..., description="Long-lived refresh token")
     token_type: str = Field(default="bearer", description="Token type")
     expires_in: int = Field(default=900, description="Access token expiry in seconds")
+    api_key_configured: bool = Field(
+        default=True, description="Whether user has configured an API key"
+    )
+    api_key_message: Optional[str] = Field(
+        default=None,
+        description="Message to display if no API key is configured. Only shown after login, not on login page.",
+    )
 
 
 class RefreshTokenRequest(BaseModel):

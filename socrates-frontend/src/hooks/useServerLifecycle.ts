@@ -15,7 +15,7 @@ interface UseServerLifecycleOptions {
 }
 
 export function useServerLifecycle(options: UseServerLifecycleOptions = {}) {
-  const { enabled = true, shutdownDelay = 60000 } = options; // 60 seconds default
+  const { enabled = true, shutdownDelay = 300000 } = options; // 300 seconds (5 minutes) default
   const shutdownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isScheduledRef = useRef(false);
 

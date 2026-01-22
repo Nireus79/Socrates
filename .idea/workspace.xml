@@ -5,8 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="Before new QC">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/middleware/activity_tracker.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/middleware/activity_tracker.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects_chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-api/src/socrates_api/routers/projects_chat.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/components/chat/PhaseActionModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/components/chat/PhaseActionModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/hooks/useServerLifecycle.ts" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/hooks/useServerLifecycle.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socrates-frontend/src/pages/chat/ChatPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/socrates-frontend/src/pages/chat/ChatPage.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/conftest.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/conftest.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/context_analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/context_analyzer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/socratic_counselor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/clients/claude_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/clients/claude_client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_system/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/config.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

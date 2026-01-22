@@ -99,6 +99,7 @@ class SocraticCounselorAgent(Agent):
         """Generate the next Socratic question with usage tracking and workflow optimization"""
         project = request.get("project")
         current_user = request.get("current_user")  # NEW: Accept current user for role context
+        force_refresh = request.get("force_refresh", False)  # Force generation of new question after conflict resolution
 
         # Validate that project exists
         if not project:
@@ -114,8 +115,8 @@ class SocraticCounselorAgent(Agent):
             return self._generate_question_with_workflow(project, current_user)
 
         # HYBRID APPROACH: Check for existing unanswered question before generating new one
-        # This prevents double question generation
-        if project.pending_questions:
+        # This prevents double question generation (unless force_refresh is set)
+        if not force_refresh and project.pending_questions:
             unanswered = [q for q in project.pending_questions if q.get("status") == "unanswered"]
             if unanswered:
                 # Return the first unanswered question instead of generating new
@@ -889,7 +890,7 @@ What would be most helpful for you?"""
             if user_obj and hasattr(user_obj, "claude_auth_method"):
                 user_auth_method = user_obj.claude_auth_method or "api_key"
         conflicts_resolved = self._handle_conflicts_realtime(
-            conflict_result["conflicts"], project, insights, user_auth_method
+            conflict_result["conflicts"], project, insights, user_auth_method, current_user
         )
         if not conflicts_resolved:
             logger.info("User chose not to resolve conflicts")
@@ -1058,6 +1059,7 @@ What would be most helpful for you?"""
         project: ProjectContext,
         insights: Dict = None,
         user_auth_method: str = "api_key",
+        current_user: str = None,
     ) -> bool:
         """Handle conflicts in real-time during conversation
 
@@ -1065,6 +1067,8 @@ What would be most helpful for you?"""
             conflicts: List of detected conflicts
             project: Current project context
             insights: Mutable insights dict that will be modified based on resolution
+            user_auth_method: User's preferred auth method for API calls
+            current_user: Current user ID for fetching user-specific API keys
         """
         for conflict in conflicts:
             print(f"\n{Fore.RED}[WARNING]  CONFLICT DETECTED!")
@@ -1075,7 +1079,7 @@ What would be most helpful for you?"""
 
             # Get AI-generated suggestions
             suggestions = self.orchestrator.claude_client.generate_conflict_resolution_suggestions(
-                conflict, project, user_auth_method
+                conflict, project, user_auth_method, user_id=current_user
             )
             print(f"\n{Fore.MAGENTA}{suggestions}")
 
