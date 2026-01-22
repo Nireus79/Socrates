@@ -91,21 +91,35 @@ export const useChatStore = create<ChatState>((set, get) => ({
   getQuestion: async (projectId: string) => {
     set({ isLoading: true, error: null, currentProjectId: projectId });
     try {
+      logger.info(`Fetching question for project: ${projectId}`);
       const response = await chatAPI.getQuestion(projectId);
 
+      logger.debug(`Question response:`, response);
+
+      if (!response || !response.question) {
+        const errorMsg = `Invalid question response: ${JSON.stringify(response)}`;
+        logger.error(errorMsg);
+        throw new Error(errorMsg);
+      }
+
       // Add question as assistant message
-      get().addMessage({
+      const questionMessage = {
         id: `q_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        role: 'assistant',
+        role: 'assistant' as const,
         content: response.question,
         timestamp: new Date().toISOString(),
-      });
+      };
+      logger.info(`Adding question message:`, questionMessage);
+      get().addMessage(questionMessage);
 
       set({ isLoading: false });
+      logger.info(`Question added successfully. Total messages: ${get().messages.length}`);
       return response.question;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get question';
+      logger.error(`Error in getQuestion:`, error);
       set({
-        error: error instanceof Error ? error.message : 'Failed to get question',
+        error: errorMessage,
         isLoading: false,
       });
       throw error;
@@ -190,14 +204,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
       }
 
       // Get the next question after response is processed (in Socratic mode)
-      if (state.mode === 'socratic') {
+      const currentState = get();
+      logger.info(`Current mode: ${currentState.mode}, Project: ${currentState.currentProjectId}`);
+      if (currentState.mode === 'socratic' && currentState.currentProjectId) {
         try {
           logger.info('Response processed. Generating next question...');
-          await get().getQuestion(state.currentProjectId);
+          await get().getQuestion(currentState.currentProjectId);
         } catch (error) {
-          logger.warn(`Failed to get next question: ${error}`);
+          logger.error(`Failed to get next question:`, error);
+          get().addSystemMessage(`⚠️ Could not generate next question. Error: ${error}`);
           // Don't fail the entire response if question generation fails
         }
+      } else {
+        logger.debug(`Skipping question generation - mode: ${currentState.mode}, hasProjectId: ${!!currentState.currentProjectId}`);
       }
 
       set({ isLoading: false });
