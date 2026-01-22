@@ -261,19 +261,35 @@ async def generate_code(
 
             # Save to code history
             project.code_history = project.code_history or []
-            project.code_history.append(
-                {
-                    "id": generation_id,
-                    "code": generated_code,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "language": language,
-                    "explanation": explanation,
-                    "lines": len(generated_code.splitlines()),
-                    "file_path": str(file_path),
-                    "filename": filename,
-                }
+            code_entry = {
+                "id": generation_id,
+                "code": generated_code,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "language": language,
+                "explanation": explanation,
+                "lines": len(generated_code.splitlines()),
+                "file_path": str(file_path),
+                "filename": filename,
+            }
+            project.code_history.append(code_entry)
+            logger.info(
+                f"Added code to history for project {project_id}: "
+                f"id={generation_id}, language={language}, lines={len(generated_code.splitlines())}"
             )
-            db.save_project(project)
+
+            # Save project with code history
+            try:
+                db.save_project(project)
+                logger.info(
+                    f"Successfully saved project {project_id} with code history "
+                    f"(total entries: {len(project.code_history)})"
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to save project {project_id} to database: {str(e)}",
+                    exc_info=True,
+                )
+                raise
 
             record_event(
                 "code_generated",
@@ -766,21 +782,37 @@ async def refactor_code(
 
             # Save to code history
             project.code_history = project.code_history or []
-            project.code_history.append(
-                {
-                    "id": generation_id,
-                    "code": refactored_code,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "language": language,
-                    "explanation": explanation,
-                    "refactor_type": refactor_type,
-                    "changes": changes,
-                    "lines": len(refactored_code.splitlines()),
-                    "file_path": str(file_path),
-                    "filename": filename,
-                }
+            refactor_entry = {
+                "id": generation_id,
+                "code": refactored_code,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "language": language,
+                "explanation": explanation,
+                "refactor_type": refactor_type,
+                "changes": changes,
+                "lines": len(refactored_code.splitlines()),
+                "file_path": str(file_path),
+                "filename": filename,
+            }
+            project.code_history.append(refactor_entry)
+            logger.info(
+                f"Added refactored code to history for project {project_id}: "
+                f"id={generation_id}, type={refactor_type}, language={language}, lines={len(refactored_code.splitlines())}"
             )
-            db.save_project(project)
+
+            # Save project with refactored code history
+            try:
+                db.save_project(project)
+                logger.info(
+                    f"Successfully saved refactored code to project {project_id} "
+                    f"(total entries: {len(project.code_history)})"
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to save refactored code to database for project {project_id}: {str(e)}",
+                    exc_info=True,
+                )
+                raise
 
             record_event(
                 "code_refactored",
@@ -877,59 +909,95 @@ async def generate_documentation(
                 detail="Access denied",
             )
 
-        # Generate documentation
-        # Build documentation from project metadata
-        doc_sections = []
+        # Generate documentation using Claude AI
+        try:
+            from socrates_api.main import get_orchestrator
 
-        # Title and introduction
-        doc_sections.append(f"# {project.name}")
-        if project.description:
-            doc_sections.append(f"\n{project.description}\n")
+            orchestrator = get_orchestrator()
 
-        # Project metadata
-        doc_sections.append("## Project Information")
-        doc_sections.append(f"- **Type**: {project.project_type}")
-        doc_sections.append(f"- **Phase**: {project.phase}")
-        doc_sections.append(f"- **Language**: {project.language_preferences}")
-        doc_sections.append(f"- **Deployment**: {project.deployment_target}")
+            # Gather the most recent code artifact for documentation context
+            latest_artifact = ""
+            if project.code_history:
+                # Get the most recently generated code
+                latest_code = project.code_history[-1]
+                latest_artifact = latest_code.get("code", "")
 
-        # Goals and requirements
-        if project.goals:
-            doc_sections.append("\n## Goals")
-            doc_sections.append(project.goals)
+            # Determine artifact type based on project type
+            artifact_type_map = {
+                "software": "code",
+                "business": "business_plan",
+                "research": "research_protocol",
+                "creative": "creative_brief",
+                "marketing": "marketing_plan",
+                "educational": "curriculum",
+            }
+            artifact_type = artifact_type_map.get(project.project_type, "code")
 
-        if project.requirements:
-            doc_sections.append("\n## Requirements")
-            for req in project.requirements:
-                doc_sections.append(f"- {req}")
+            # Get user's auth method
+            user_obj = db.load_user(current_user)
+            user_auth_method = "api_key"
+            if user_obj and hasattr(user_obj, "claude_auth_method"):
+                user_auth_method = user_obj.claude_auth_method or "api_key"
 
-        # Tech stack
-        if project.tech_stack:
-            doc_sections.append("\n## Technology Stack")
-            for tech in project.tech_stack:
-                doc_sections.append(f"- {tech}")
+            logger.info(f"Generating {artifact_type} documentation using Claude AI")
 
-        # Code examples if requested
-        if include_examples and project.code_history:
-            doc_sections.append("\n## Code Examples")
-            for code_item in project.code_history[:3]:  # Limit to first 3
-                language = code_item.get("language", "text")
-                code = code_item.get("code", "")
-                doc_sections.append(
-                    f"\n### Example: {code_item.get('explanation', 'Generated code')}"
-                )
-                doc_sections.append(f"```{language}")
-                doc_sections.append(code[:500])  # Limit code preview
-                doc_sections.append("```")
+            # Use Claude client to generate comprehensive documentation
+            documentation = orchestrator.claude_client.generate_documentation(
+                project=project,
+                artifact=latest_artifact,
+                artifact_type=artifact_type,
+                user_auth_method=user_auth_method,
+                user_id=current_user
+            )
 
-        # Conversation insights
-        if project.conversation_history:
-            doc_sections.append("\n## Key Insights from Conversations")
-            doc_sections.append(f"- {len(project.conversation_history)} conversations recorded")
-            doc_sections.append(f"- Current maturity level: {int(project.overall_maturity)}%")
+            logger.info(f"Documentation generated successfully ({len(documentation)} characters)")
 
-        # Compile documentation
-        documentation = "\n".join(doc_sections)
+        except Exception as e:
+            logger.error(f"Error generating documentation with Claude AI: {e}")
+            # Fallback to manual documentation building if Claude fails
+            logger.info("Falling back to manual documentation generation")
+            doc_sections = []
+
+            # Title and introduction
+            doc_sections.append(f"# {project.name}")
+            if project.goals:
+                doc_sections.append(f"\n{project.goals}\n")
+
+            # Project metadata
+            doc_sections.append("## Project Information")
+            doc_sections.append(f"- **Type**: {project.project_type}")
+            doc_sections.append(f"- **Phase**: {project.phase}")
+            if project.language_preferences:
+                doc_sections.append(f"- **Language**: {', '.join(project.language_preferences)}")
+            doc_sections.append(f"- **Deployment**: {project.deployment_target}")
+
+            # Requirements
+            if project.requirements:
+                doc_sections.append("\n## Requirements")
+                for req in project.requirements:
+                    doc_sections.append(f"- {req}")
+
+            # Tech stack
+            if project.tech_stack:
+                doc_sections.append("\n## Technology Stack")
+                for tech in project.tech_stack:
+                    doc_sections.append(f"- {tech}")
+
+            # Code examples if requested
+            if include_examples and project.code_history:
+                doc_sections.append("\n## Code Examples")
+                for code_item in project.code_history[:3]:  # Limit to first 3
+                    language = code_item.get("language", "text")
+                    code = code_item.get("code", "")
+                    doc_sections.append(
+                        f"\n### {code_item.get('explanation', 'Generated code')}"
+                    )
+                    doc_sections.append(f"```{language}")
+                    doc_sections.append(code[:500])  # Limit code preview
+                    doc_sections.append("```")
+
+            # Compile documentation
+            documentation = "\n".join(doc_sections)
 
         # Convert to requested format
         if format == "markdown":
