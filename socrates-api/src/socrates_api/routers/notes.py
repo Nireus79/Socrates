@@ -30,6 +30,12 @@ class NoteRequest(BaseModel):
     tags: Optional[list] = None
 
 
+class SearchNotesRequest(BaseModel):
+    """Request body for searching notes"""
+
+    query: str
+
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects", tags=["notes"])
 
@@ -182,7 +188,7 @@ async def list_notes(
 )
 async def search_notes(
     project_id: str,
-    query: str,
+    request: SearchNotesRequest,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -211,7 +217,7 @@ async def search_notes(
 
         # Search in notes
         notes = project.notes or []
-        query_lower = query.lower()
+        query_lower = request.query.lower()
         results = [
             n
             for n in notes
@@ -226,7 +232,7 @@ async def search_notes(
             data={
                 "results": results,
                 "total_matches": len(results),
-                "query": query,
+                "query": request.query,
             },
         )
 

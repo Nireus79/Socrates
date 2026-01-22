@@ -39,6 +39,13 @@ export const NotesPage: React.FC = () => {
     listProjects();
   }, [listProjects]);
 
+  // Fetch notes when project is selected
+  React.useEffect(() => {
+    if (selectedProjectId) {
+      fetchNotes(selectedProjectId);
+    }
+  }, [selectedProjectId, fetchNotes]);
+
   // Handle search
   const handleSearch = React.useCallback(async () => {
     if (!selectedProjectId || !localSearchQuery.trim()) {
@@ -71,31 +78,31 @@ export const NotesPage: React.FC = () => {
   };
 
   // Handle project change
-  const handleProjectChange = (projectId: string) => {
+  const handleProjectChange = React.useCallback((projectId: string) => {
     setSelectedProject(projectId);
     clearSearch();
     setLocalSearchQuery('');
     setActiveTab('all');
-  };
+  }, [setSelectedProject, clearSearch]);
 
   // Handle create note
-  const handleCreateNote = async (title: string, content: string, tags: string[]) => {
+  const handleCreateNote = React.useCallback(async (title: string, content: string, tags: string[]) => {
     if (!selectedProjectId) {
       alert('Please select a project first');
       return;
     }
 
     await createNote(selectedProjectId, title, content, tags);
-  };
+  }, [selectedProjectId, createNote]);
 
   // Handle delete note
-  const handleDeleteNote = async (noteId: string) => {
+  const handleDeleteNote = React.useCallback(async (noteId: string) => {
     if (!selectedProjectId) return;
 
     if (window.confirm('Are you sure you want to delete this note?')) {
       await deleteNote(selectedProjectId, noteId);
     }
-  };
+  }, [selectedProjectId, deleteNote]);
 
   // Clear errors on unmount
   React.useEffect(() => {
