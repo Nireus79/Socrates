@@ -297,6 +297,7 @@ Focus on the connection between the user's statement and these insights."""
             elif result.get("insights"):
                 self.print_success("Insights captured and integrated!")
 
+            # Save project and show detailed feedback
             try:
                 safe_orchestrator_call(
                     orchestrator,
@@ -304,11 +305,37 @@ Focus on the connection between the user's statement and these insights."""
                     {"action": "save_project", "project": project},
                     operation_name="save project",
                 )
-            except ValueError:
-                self.print_error("Failed to save project")
+
+                # Show what was saved
+                self._display_saved_specs(project)
+            except ValueError as e:
+                self.print_error(f"Failed to save project: {str(e)}")
         except ValueError as e:
             self.print_error(str(e))
             return
+
+    def _display_saved_specs(self, project) -> None:
+        """Display what specifications were saved to the database"""
+        if not (project.goals or project.requirements or project.tech_stack or project.constraints):
+            return
+
+        print(f"\n{Fore.CYAN}Specifications saved to database:{Style.RESET_ALL}")
+
+        if project.goals:
+            goals_text = project.goals if isinstance(project.goals, str) else ", ".join(project.goals)
+            print(f"  {Fore.GREEN}✓ Goals:{Style.RESET_ALL} {goals_text[:60]}...")
+
+        if project.requirements:
+            req_count = len(project.requirements) if isinstance(project.requirements, list) else 1
+            print(f"  {Fore.GREEN}✓ Requirements:{Style.RESET_ALL} {req_count} item(s)")
+
+        if project.tech_stack:
+            stack_count = len(project.tech_stack) if isinstance(project.tech_stack, list) else 1
+            print(f"  {Fore.GREEN}✓ Tech Stack:{Style.RESET_ALL} {stack_count} technology(ies)")
+
+        if project.constraints:
+            const_count = len(project.constraints) if isinstance(project.constraints, list) else 1
+            print(f"  {Fore.GREEN}✓ Constraints:{Style.RESET_ALL} {const_count} constraint(s)")
 
     def _generate_direct_answer(self, question: str, orchestrator, project) -> str:
         """Generate a direct answer to user's question with vector DB search"""

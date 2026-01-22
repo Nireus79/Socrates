@@ -13,10 +13,11 @@ Features:
 
 import json
 import logging
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from socrates_api.auth import get_current_user_optional
 from socrates_api.models import APIResponse
@@ -37,8 +38,8 @@ class CommandSuggestionResponse(BaseModel):
 class NLUInterpretRequest(BaseModel):
     """Request to interpret natural language input"""
 
-    input: str
-    context: Optional[dict] = None
+    input: str = Field(..., min_length=1, description="Natural language input to interpret")
+    context: Optional[dict] = Field(None, description="Optional context dict")
 
 
 class NLUInterpretResponse(BaseModel):
@@ -207,7 +208,7 @@ async def interpret_input(
 
     This endpoint provides AI-powered intent recognition, entity extraction, and
     context-aware command suggestions. It uses Claude for semantic understanding
-    beyond simple keyword matching.
+    beyond simple keyword matching. Also saves dialogue as project notes if project_id provided.
 
     Args:
         request: NLUInterpretRequest with input string and optional context
@@ -229,6 +230,26 @@ async def interpret_input(
                     "intent": None,
                 },
             )
+
+        # Save NLU dialogue as project note if project_id provided
+        project_id = request.context.get("project_id") if request.context else None
+        if project_id and current_user:
+            try:
+                from socrates_api.database import get_database
+
+                db = get_database()
+                project = db.load_project(project_id)
+                if project:
+                    # Create note from NLU input
+                    note_content = f"[NLU] {request.input}"
+                    if not project.notes:
+                        project.notes = []
+                    project.notes.append({"timestamp": str(datetime.now()), "content": note_content})
+                    db.save_project(project)
+                    logger.debug(f"Saved NLU dialogue as note for project {project_id}")
+            except Exception as e:
+                logger.debug(f"Could not save NLU dialogue as note: {str(e)}")
+                # Don't fail the request if note saving fails
 
         user_input = request.input.strip()
         user_input_lower = user_input.lower()
@@ -403,10 +424,11 @@ async def interpret_input(
         return APIResponse(
             success=False,
             status="error",
-            message="Error processing your request. Please try again.",
+            message=f"Error processing your request: {str(e)}",
+            error_code="nlu_processing_error",
             data={
                 "status": "error",
-                "message": "Error processing your request. Please try again.",
+                "message": f"Error processing your request: {str(e)}",
                 "entities": None,
                 "intent": None,
             },
