@@ -1168,7 +1168,9 @@ User: ${currentProject?.owner || 'N/A'}`;
         addSystemMessage('Usage: /note [add|list|search|delete]');
       }
     } catch (error) {
-      addSystemMessage('Note command failed');
+      const errorMsg = error instanceof Error ? error.message : 'Note command failed';
+      console.error('Note command error:', error);
+      addSystemMessage(`Note command failed: ${errorMsg}`);
     }
   };
 
@@ -1825,7 +1827,7 @@ User: ${currentProject?.owner || 'N/A'}`;
                   </div>
                 </div>
               ) : (
-                messages.map((msg) => {
+                messages.map((msg, idx) => {
                   const messageTime = msg.timestamp ? new Date(msg.timestamp) : new Date();
                   const isPrevious = sessionStartTime ? messageTime < sessionStartTime : false;
 
@@ -1836,7 +1838,7 @@ User: ${currentProject?.owner || 'N/A'}`;
 
                   return (
                     <ChatMessage
-                      key={msg.id || `msg-${msg.role}-${msg.timestamp}`}
+                      key={msg.id || `msg-${idx}`}
                       role={msg.role}
                       content={msg.content}
                       timestamp={messageTime}

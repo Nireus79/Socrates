@@ -25,6 +25,13 @@ interface Conflict {
   suggestions: string[];
 }
 
+interface ExtractedSpecs {
+  goals?: string[];
+  requirements?: string[];
+  tech_stack?: string[];
+  constraints?: string[];
+}
+
 interface ChatState {
   // State
   messages: ChatMessage[];
@@ -39,6 +46,8 @@ interface ChatState {
   phaseComplete: boolean;
   currentPhase: string | null;
   nextPhase: string | null;
+  extractedSpecs: ExtractedSpecs | null;
+  pendingExtractedSpecs: boolean;
 
   // Actions
   getQuestion: (projectId: string) => Promise<string>;
@@ -52,7 +61,9 @@ interface ChatState {
   getSummary: (projectId: string) => Promise<{ summary: string; key_points: string[] }>;
   searchConversations: (projectId: string, query: string) => Promise<void>;
   resolveConflict: (projectId: string, resolution: any) => Promise<void>;
+  saveExtractedSpecs: (projectId: string, specs: ExtractedSpecs) => Promise<void>;
   clearConflicts: () => void;
+  clearExtractedSpecs: () => void;
   clearSearch: () => void;
   clearError: () => void;
   clearPhaseCompletion: () => void;
@@ -73,6 +84,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   phaseComplete: false,
   currentPhase: null,
   nextPhase: null,
+  extractedSpecs: null,
+  pendingExtractedSpecs: false,
 
   // Get next question
   getQuestion: async (projectId: string) => {
@@ -82,7 +95,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       // Add question as assistant message
       get().addMessage({
-        id: `q_${Date.now()}`,
+        id: `q_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         role: 'assistant',
         content: response.question,
         timestamp: new Date().toISOString(),
@@ -132,6 +145,28 @@ export const useChatStore = create<ChatState>((set, get) => ({
           content: response.message.content,
           timestamp: response.message.timestamp,
         });
+      }
+
+      // If extracted specs were detected (direct mode), store them and notify user
+      if (response.extracted_specs && response.extracted_specs_count && response.extracted_specs_count > 0) {
+        logger.info(`Extracted specs detected: ${response.extracted_specs_count} spec(s)`);
+        set({
+          extractedSpecs: response.extracted_specs,
+          pendingExtractedSpecs: true,
+          isLoading: false,
+        });
+        const specsText = ['Goals', 'Requirements', 'Tech Stack', 'Constraints']
+          .map((type, idx) => {
+            const key = ['goals', 'requirements', 'tech_stack', 'constraints'][idx] as keyof ExtractedSpecs;
+            const items = response.extracted_specs![key];
+            return items && items.length > 0 ? `${type}: ${items.join(', ')}` : null;
+          })
+          .filter(Boolean)
+          .join('\n');
+        get().addSystemMessage(
+          `📊 Detected Specifications:\n${specsText}\n\nWould you like to save these to your project?`
+        );
+        return;
       }
 
       // If conflicts were detected, store them and notify user
@@ -263,8 +298,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ isLoading: true, error: null, currentProjectId: projectId });
     try {
       const history = await chatAPI.getHistory(projectId);
-      // Set messages from API (API returns complete history)
-      set({ messages: history.messages, isLoading: false });
+      // Ensure all messages have IDs for React rendering
+      const messagesWithIds = history.messages.map((msg: any, idx: number) => ({
+        ...msg,
+        id: msg.id || `msg_${Date.now()}_${idx}`,
+        role: msg.type || msg.role,
+      }));
+      set({ messages: messagesWithIds, isLoading: false });
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to load history',
@@ -384,6 +424,43 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
+  // Save extracted specs
+  saveExtractedSpecs: async (projectId: string, specs: ExtractedSpecs) => {
+    set({ isLoading: true, error: null });
+    try {
+      const result = await chatAPI.saveExtractedSpecs(projectId, specs);
+      logger.info('Specs saved successfully', result);
+
+      set({ extractedSpecs: null, pendingExtractedSpecs: false, isLoading: false });
+
+      const savedCount = Object.values(result.specs_saved)
+        .reduce((total, items) => total + (Array.isArray(items) ? items.length : 0), 0);
+      get().addSystemMessage(
+        `✅ Specifications saved! (${savedCount} item${savedCount !== 1 ? 's' : ''} added to project)`
+      );
+
+      // Continue with next question in Socratic mode
+      if (get().mode === 'socratic') {
+        try {
+          await get().getQuestion(projectId);
+        } catch (questionError) {
+          logger.warn(`Failed to get next question: ${questionError}`);
+        }
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save specs';
+      logger.error('Error saving specs:', error);
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  // Clear extracted specs
+  clearExtractedSpecs: () => set({ extractedSpecs: null, pendingExtractedSpecs: false }),
+
   // Clear conflicts
   clearConflicts: () => set({ conflicts: null, pendingConflicts: false }),
 
@@ -412,6 +489,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       phaseComplete: false,
       currentPhase: null,
       nextPhase: null,
+      extractedSpecs: null,
+      pendingExtractedSpecs: false,
     });
   },
 

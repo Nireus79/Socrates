@@ -28,10 +28,52 @@ export const chatAPI = {
   async sendMessage(
     projectId: string,
     request: SendChatMessageRequest
-  ): Promise<{ message: ChatMessage; conflicts_pending?: boolean; conflicts?: any[] }> {
-    return apiClient.post<{ message: ChatMessage; conflicts_pending?: boolean; conflicts?: any[] }>(
+  ): Promise<{
+    message: ChatMessage;
+    conflicts_pending?: boolean;
+    conflicts?: any[];
+    extracted_specs?: {
+      goals?: string[];
+      requirements?: string[];
+      tech_stack?: string[];
+      constraints?: string[];
+    };
+    extracted_specs_count?: number;
+    mode?: string;
+  }> {
+    return apiClient.post<{
+      message: ChatMessage;
+      conflicts_pending?: boolean;
+      conflicts?: any[];
+      extracted_specs?: {
+        goals?: string[];
+        requirements?: string[];
+        tech_stack?: string[];
+        constraints?: string[];
+      };
+      extracted_specs_count?: number;
+      mode?: string;
+    }>(
       `/projects/${projectId}/chat/message`,
       request
+    );
+  },
+
+  /**
+   * Save extracted specs from direct dialogue
+   */
+  async saveExtractedSpecs(
+    projectId: string,
+    specs: {
+      goals?: string[];
+      requirements?: string[];
+      tech_stack?: string[];
+      constraints?: string[];
+    }
+  ): Promise<{ specs_saved: Record<string, string[]>; project_state: any }> {
+    return apiClient.post<{ specs_saved: Record<string, string[]>; project_state: any }>(
+      `/projects/${projectId}/chat/save-extracted-specs`,
+      specs
     );
   },
 
@@ -194,24 +236,6 @@ export const chatAPI = {
     return apiClient.get<{ suggestions: any[] }>('/nlu/suggestions', {
       params: { project_id: projectId, phase },
     });
-  },
-
-  /**
-   * Save extracted specs from direct dialogue after user confirmation
-   */
-  async saveExtractedSpecs(
-    projectId: string,
-    specs: {
-      goals?: string[];
-      requirements?: string[];
-      tech_stack?: string[];
-      constraints?: string[];
-    }
-  ): Promise<{ specs_saved: Record<string, string[]>; project_state: any }> {
-    return apiClient.post<{ specs_saved: Record<string, string[]>; project_state: any }>(
-      `/projects/${projectId}/chat/save-extracted-specs`,
-      specs
-    );
   },
 
 };
