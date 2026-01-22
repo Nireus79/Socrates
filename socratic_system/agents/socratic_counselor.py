@@ -610,7 +610,7 @@ Return only the question, no additional text or explanation."""
                 question = f"""Excellent work on the {current_phase_name} phase! You've thoroughly explored the project specifications.
 
 You now have the option to:
-1. **Advance to the {next_phase_name} phase** - Move forward with implementing your ideas
+1. **Advance to next phase** - Move forward with implementing your ideas
 2. **Enrich the {current_phase_name} phase further** - Deepen your understanding and fill in any remaining gaps
 
 Which would you prefer? Would you like to advance to the next phase, or would you like to explore the {current_phase_name} phase more deeply?"""

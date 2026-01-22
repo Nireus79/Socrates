@@ -81,7 +81,7 @@ export const PhaseActionModal: React.FC<PhaseActionModalProps> = ({
               <div>
                 <p className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                   <ChevronRight className="w-4 h-4" />
-                  Advance to {nextPhaseName} Phase
+                  Advance to next phase
                 </p>
                 <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
                   Move forward with implementing your ideas
@@ -120,7 +120,7 @@ export const PhaseActionModal: React.FC<PhaseActionModalProps> = ({
             onClick={handleAdvance}
             disabled={isLoading}
           >
-            {isLoading ? 'Advancing...' : `Advance to ${nextPhaseName}`}
+            {isLoading ? 'Advancing...' : 'Advance to next phase'}
           </Button>
         </div>
       </div>
