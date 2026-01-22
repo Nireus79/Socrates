@@ -573,19 +573,52 @@ class ClaudeClient:
         self, context: str, user_auth_method: str = "api_key", user_id: str = None
     ) -> str:
         """Generate code based on project context"""
+        # Enhanced prompt engineering: extract and emphasize key project details
         prompt = f"""
-        Generate a complete, functional script based on this project context:
+You are a software architect generating code for a specific project phase.
 
-        {context}
+PROJECT CONTEXT:
+{context}
 
-        Please create:
-        1. A well-structured, documented script
-        2. Include proper error handling
-        3. Follow best practices for the chosen technology
-        4. Add helpful comments explaining key functionality
-        5. Include basic testing or validation
+CODE GENERATION GUIDELINES:
 
-        Make it production-ready and maintainable.
+1. UNDERSTAND THE PROJECT:
+   - Identify the core problem to solve in this phase
+   - Determine if this integrates with existing systems
+   - Check for architectural constraints and dependencies
+   - Note any partner systems, APIs, or data models that must be integrated with
+
+2. ARCHITECTURE & INTEGRATION:
+   - If this is part of a larger system, design it as a MODULE/COMPONENT, not standalone
+   - Identify integration points with existing systems
+   - Use existing data models and database schemas, don't reimplements them
+   - Follow the project's established patterns and conventions
+   - Design REST/gRPC endpoints where appropriate
+
+3. IMPLEMENTATION REQUIREMENTS:
+   - Include DETAILED docstrings explaining module purpose and usage
+   - Implement proper error handling and logging
+   - Add type hints for all function parameters and returns
+   - Write defensive code that validates inputs
+   - Include configuration management for settings
+
+4. CODE STRUCTURE:
+   - Organize into logical modules/classes
+   - Keep functions/methods focused and single-purpose
+   - Use appropriate design patterns for the problem domain
+   - Make the code testable and mockable
+
+5. DOCUMENTATION:
+   - Add module-level docstring with purpose
+   - Document key classes and functions with examples
+   - Include setup/installation instructions if needed
+   - Add comments for non-obvious logic
+
+REQUIREMENTS:
+- Generate COMPLETE, WORKING code (not just templates or placeholders)
+- Make it production-ready for this phase
+- Ensure it integrates properly with existing systems
+- Include all necessary imports and dependencies
         """
 
         try:
@@ -619,23 +652,105 @@ class ClaudeClient:
     ) -> str:
         """Generate business plan document"""
         prompt = f"""
-        Generate a comprehensive business plan based on this context:
+You are a business strategist creating a comprehensive business plan for a specific venture.
 
-        {context}
+PROJECT CONTEXT:
+{context}
 
-        Please create a professional business plan including:
-        1. Executive Summary - Brief overview of the business opportunity
-        2. Market Analysis & Opportunity - Market size, trends, competitive landscape
-        3. Business Model & Revenue Streams - How the business generates revenue
-        4. Value Proposition - Unique advantages and customer benefits
-        5. Go-to-Market Strategy - Launch and acquisition plan
-        6. Financial Projections - Revenue forecasts, profitability timeline
-        7. Competitive Advantage - Key differentiators
-        8. Risk Analysis & Mitigation - Key risks and mitigation strategies
-        9. Implementation Timeline - Phase-by-phase roadmap
-        10. Resource Requirements - Team, funding, and operational needs
+BUSINESS PLAN REQUIREMENTS:
 
-        Format as a professional business plan document with clear sections and bullet points.
+1. UNDERSTAND THE OPPORTUNITY:
+   - Identify the core business problem being solved
+   - Understand the target market and customer segments
+   - Evaluate competitive landscape and positioning
+   - Assess market size and growth potential
+
+2. STRUCTURE & CLARITY:
+   - Create a professional, actionable document
+   - Use clear sections with compelling headers
+   - Include data-driven insights where applicable
+   - Provide realistic financial projections
+   - Make assumptions explicit and justify them
+
+3. CONTENT SECTIONS:
+   1. Executive Summary
+      - One-page overview of the business opportunity
+      - Key financial metrics and timeline
+      - Why this business will succeed
+
+   2. Market Analysis & Opportunity
+      - Total addressable market (TAM) size
+      - Market trends and growth drivers
+      - Customer segments and personas
+      - Competitive landscape analysis
+      - Market entry barriers and opportunities
+
+   3. Business Model & Revenue Streams
+      - How the business generates revenue
+      - Pricing strategy and justification
+      - Unit economics
+      - Revenue projections by stream
+
+   4. Value Proposition
+      - Unique advantages and differentiators
+      - Customer benefits and outcomes
+      - Why customers will choose this solution
+      - Competitive positioning
+
+   5. Go-to-Market Strategy
+      - Launch plan and timeline
+      - Customer acquisition strategy
+      - Sales and marketing approach
+      - Channel strategy
+      - Key partnerships and relationships
+
+   6. Operations & Execution
+      - Operational workflows
+      - Key processes and systems
+      - Scaling strategy
+      - Quality assurance and risk management
+
+   7. Financial Projections
+      - 3-5 year revenue forecasts
+      - Cost structure and burn rate
+      - Profitability timeline
+      - Break-even analysis
+      - Sensitivity analysis for key assumptions
+
+   8. Competitive Advantage
+      - Sustainable competitive moats
+      - Key differentiators
+      - Technology or IP advantages
+      - Team and organizational advantages
+
+   9. Risk Analysis & Mitigation
+      - Key business risks
+      - Market and competitive risks
+      - Operational and execution risks
+      - Financial and funding risks
+      - Mitigation strategies for each
+
+   10. Implementation Timeline
+       - Phase-by-phase roadmap
+       - Key milestones and deliverables
+       - Funding milestones and requirements
+       - Success metrics per phase
+
+   11. Resource Requirements
+       - Team structure and roles needed
+       - Funding requirements and use of funds
+       - Equipment, technology, and facilities
+       - Key talent and hiring priorities
+
+4. QUALITY STANDARDS:
+   - Use professional business language
+   - Include realistic, data-driven projections
+   - Make financial models transparent
+   - Address potential objections proactively
+   - Provide supporting evidence for claims
+   - Include appendices with detailed data if needed
+
+Create a business plan that is compelling to investors, realistic in projections, and actionable for execution.
         """
 
         try:
@@ -669,23 +784,106 @@ class ClaudeClient:
     ) -> str:
         """Generate research protocol and methodology document"""
         prompt = f"""
-        Generate a detailed research protocol and methodology document based on this context:
+You are a research methodologist creating a rigorous, IRB-compliant research protocol.
 
-        {context}
+PROJECT CONTEXT:
+{context}
 
-        Please create a comprehensive research protocol including:
-        1. Research Question & Hypothesis - Clear statement of inquiry
-        2. Literature Review Summary - Current state of knowledge
-        3. Research Gap - What is unknown and why it matters
-        4. Methodology & Research Design - Approach and justification
-        5. Data Collection Plan - Methods, instruments, and timeline
-        6. Analysis Approach - Statistical or qualitative analysis strategy
-        7. Ethical Considerations - IRB requirements, informed consent, data protection
-        8. Quality Assurance & Validation - Reliability and validity measures
-        9. Timeline & Resources - Detailed project schedule and required resources
-        10. Expected Outcomes - Anticipated findings and impact
+RESEARCH PROTOCOL REQUIREMENTS:
 
-        Format as a formal research protocol document suitable for academic or professional review.
+1. ESTABLISH THE RESEARCH FOUNDATION:
+   - Clearly articulate the research question and hypothesis
+   - Justify why this research matters and is timely
+   - Define key constructs and variables
+   - Identify the research gap in existing literature
+   - Establish theoretical framework
+
+2. METHODOLOGY RIGOR:
+   - Design an approach that properly addresses the research question
+   - Justify all methodological choices
+   - Ensure reproducibility and transparency
+   - Address potential biases and limitations
+   - Plan for peer review and validation
+
+3. PROTOCOL SECTIONS:
+
+   1. Research Question & Hypothesis
+      - Specific, measurable research questions
+      - Directional or non-directional hypotheses
+      - Primary and secondary research objectives
+      - Variable definitions and operationalization
+
+   2. Literature Review & Background
+      - State of current knowledge
+      - Relevant prior findings
+      - Theoretical frameworks
+      - Identified gaps in research
+      - How this study will advance knowledge
+
+   3. Research Design & Methodology
+      - Study design type (RCT, observational, qualitative, mixed-methods, etc.)
+      - Participant population and sampling strategy
+      - Sample size and power analysis
+      - Inclusion/exclusion criteria
+      - Treatment or intervention protocols
+      - Control conditions (if applicable)
+      - Justification for design choices
+
+   4. Data Collection Plan
+      - Data collection methods and instruments
+      - Measurement tools, scales, surveys
+      - Interview or focus group protocols
+      - Data collection timeline and procedures
+      - Quality control and standardization
+      - Privacy and data security measures
+
+   5. Data Analysis Approach
+      - Statistical or qualitative analysis strategy
+      - Software and analytical tools
+      - Pre-planned analyses and decision trees
+      - Handling missing data
+      - Sensitivity analyses
+      - Subgroup analyses (if applicable)
+
+   6. Quality Assurance & Validation
+      - Reliability and validity measures
+      - Inter-rater reliability if applicable
+      - Triangulation methods
+      - Pilot testing procedures
+      - Contingency protocols
+
+   7. Ethical Considerations
+      - IRB/ethics committee requirements
+      - Informed consent procedures
+      - Data protection and confidentiality
+      - Risk assessment and mitigation
+      - Participant recruitment safeguards
+      - Conflict of interest declarations
+
+   8. Study Timeline & Milestones
+      - Detailed project schedule
+      - Key milestones and deliverables
+      - Resource allocation
+      - Personnel roles and qualifications
+      - Required funding and budget
+
+   9. Expected Outcomes & Impact
+      - Anticipated findings and their implications
+      - Significance for the field
+      - Plans for dissemination and publication
+      - Potential limitations and generalizability
+      - Future research directions
+
+4. QUALITY STANDARDS:
+   - Use precise scientific language
+   - Provide sufficient detail for reproducibility
+   - Justify all methodological decisions
+   - Address potential threats to validity
+   - Anticipate and plan for implementation challenges
+   - Ensure compliance with ethical standards
+   - Make the protocol suitable for IRB submission
+
+Create a research protocol that is scientifically rigorous, ethically sound, and ready for peer review.
         """
 
         try:
@@ -719,23 +917,98 @@ class ClaudeClient:
     ) -> str:
         """Generate creative/design brief document"""
         prompt = f"""
-        Generate a comprehensive creative brief and design specifications based on this context:
+You are a creative director developing a comprehensive design brief for a creative project.
 
-        {context}
+PROJECT CONTEXT:
+{context}
 
-        Please create a professional creative brief including:
-        1. Project Overview - Purpose and vision
-        2. Target Audience - Demographics, psychographics, preferences
-        3. Brand Identity - Core values, personality, positioning
-        4. Design Principles - Aesthetic direction and guidelines
-        5. Visual Style - Color palette, typography, imagery style
-        6. Content Strategy - Messaging, tone, key communication points
-        7. Brand Guidelines - Logo usage, consistency requirements
-        8. Deliverables - Specific outputs and formats needed
-        9. Success Metrics - How to measure creative effectiveness
-        10. Timeline & Resources - Project schedule and team requirements
+CREATIVE BRIEF REQUIREMENTS:
 
-        Format as a professional creative brief document with visual style descriptions and clear guidelines.
+1. UNDERSTAND THE CREATIVE CHALLENGE:
+   - Identify the creative problem to solve
+   - Understand the target audience and their preferences
+   - Determine the competitive landscape
+   - Define what success looks like for this project
+   - Note any brand constraints, guidelines, or visual systems to follow
+
+2. CREATIVE STRATEGY & VISION:
+   - Develop a clear creative vision that aligns with project goals
+   - Define the unique value proposition and differentiation
+   - Establish the tone, voice, and personality
+   - Create a memorable concept that resonates with the target audience
+
+3. BRIEF SECTIONS:
+
+   1. Project Overview & Vision
+      - What is the creative challenge?
+      - What does success look like?
+      - What is the core creative concept?
+
+   2. Target Audience Deep-Dive
+      - Demographics and psychographics
+      - Values, desires, pain points
+      - How they consume content and make decisions
+      - What resonates with them emotionally
+
+   3. Brand Identity & Positioning
+      - Brand personality and voice
+      - Core values and mission
+      - Visual identity and aesthetic
+      - Competitive positioning
+
+   4. Creative Direction & Vision
+      - Overall aesthetic direction
+      - Visual style and mood
+      - Design philosophy and approach
+      - What feelings/reactions should this evoke?
+
+   5. Visual Specifications
+      - Color palette with specific hex codes/Pantone references
+      - Typography guidelines (font families, sizes, weights)
+      - Imagery style (photography, illustration, abstract, etc.)
+      - Design elements and visual patterns
+      - Layout and composition principles
+
+   6. Brand & Design Guidelines
+      - Logo usage and sizing rules
+      - Visual hierarchy guidelines
+      - Spacing, margins, and grid systems
+      - Do's and don'ts for visual consistency
+      - Accessibility and inclusivity requirements
+
+   7. Content & Messaging Strategy
+      - Key messages to communicate
+      - Tone and language style
+      - How to adapt messaging across channels
+      - Content formats and priorities
+
+   8. Asset Specifications & Deliverables
+      - Specific assets to create (logos, patterns, templates, etc.)
+      - File formats and dimensions for each
+      - Quality standards and file naming conventions
+      - Version control and file organization
+
+   9. Workflow & Production Guidelines
+      - Ideation and concept development process
+      - Review and approval workflows
+      - Revision procedures and feedback loops
+      - Tools and software to use
+      - Timeline for production and delivery
+
+   10. Success Metrics & Evaluation
+      - How will creative effectiveness be measured?
+      - KPIs for design and branding impact
+      - User testing and feedback procedures
+      - Optimization and iteration plan
+
+4. QUALITY STANDARDS:
+   - Use concrete, specific language and examples
+   - Include visual descriptions that are actionable
+   - Provide reference images or mood boards when helpful
+   - Ensure guidelines are comprehensive but not restrictive
+   - Make it a brief that empowers creative teams to create excellent work
+
+Create a professional creative brief that inspires creative work while providing clear strategic direction and practical guidelines.
         """
 
         try:
@@ -769,23 +1042,111 @@ class ClaudeClient:
     ) -> str:
         """Generate marketing campaign plan document"""
         prompt = f"""
-        Generate a comprehensive marketing campaign plan based on this context:
+You are a marketing strategist developing a comprehensive marketing and campaign plan.
 
-        {context}
+PROJECT CONTEXT:
+{context}
 
-        Please create a detailed marketing plan including:
-        1. Campaign Overview - Objectives and success criteria
-        2. Target Market Analysis - Audience segments, needs, behaviors
-        3. Market Positioning - Competitive advantages and differentiation
-        4. Campaign Strategy - Key messages and tactical approach
-        5. Channel Strategy - Marketing channels and media mix
-        6. Content Plan - Content types, themes, and distribution
-        7. Campaign Timeline - Launch date, duration, key milestones
-        8. Budget Allocation - Resource distribution across channels
-        9. Performance Metrics - KPIs and measurement approach
-        10. Risk Mitigation - Contingency plans for common challenges
+MARKETING PLAN REQUIREMENTS:
 
-        Format as a professional marketing campaign plan with clear sections and actionable recommendations.
+1. UNDERSTAND THE MARKETING CHALLENGE:
+   - Identify the target market and audience segments
+   - Understand customer pain points and motivations
+   - Determine the competitive landscape and positioning opportunities
+   - Define marketing objectives and success metrics
+   - Note any market constraints, regulations, or strategic requirements
+
+2. MARKETING STRATEGY DEVELOPMENT:
+   - Develop a clear go-to-market strategy
+   - Define unique value proposition and differentiation
+   - Identify customer journey and touchpoints
+   - Plan channel strategy and marketing mix
+   - Create financial projections for marketing ROI
+
+3. PLAN SECTIONS:
+
+   1. Executive Summary & Campaign Overview
+      - Campaign objectives and KPIs
+      - Target audience definition
+      - Key messages and value proposition
+      - Expected outcomes and success metrics
+      - Budget overview and timeline
+
+   2. Market Analysis & Segmentation
+      - Target market size and growth potential
+      - Customer segments with specific characteristics
+      - Customer needs, pain points, and behaviors
+      - Market trends and opportunities
+      - Competitive analysis and positioning
+
+   3. Campaign Strategy & Messaging
+      - Core campaign message and theme
+      - Value proposition for each segment
+      - Key marketing messages and talking points
+      - Tone and brand voice
+      - Customer journey and touchpoints
+
+   4. Channel Strategy & Media Plan
+      - Marketing channels to use (digital, traditional, social, etc.)
+      - Media mix and allocation rationale
+      - Channel-specific tactics and approaches
+      - Integration across channels
+      - Channel performance benchmarks
+
+   5. Content Plan & Calendar
+      - Content types and formats (blog, video, social, email, etc.)
+      - Content themes aligned with campaign
+      - Content calendar with publishing schedule
+      - Asset requirements and production timelines
+      - Content distribution and promotion strategy
+
+   6. Customer Acquisition & Conversion
+      - Acquisition channels and tactics
+      - Lead generation strategy
+      - Conversion funnel and optimization points
+      - Sales enablement materials
+      - Customer retention and advocacy strategies
+
+   7. Campaign Timeline & Execution
+      - Campaign phases and launch strategy
+      - Key milestones and deliverables
+      - Staffing and team responsibilities
+      - External vendor coordination
+      - Dependencies and critical path items
+
+   8. Budget & Financial Planning
+      - Total budget allocation
+      - Spend by channel and tactic
+      - Cost per acquisition (CPA) targets
+      - Expected revenue impact and ROI
+      - Budget contingency reserve
+      - Payment terms and vendor agreements
+
+   9. Performance Measurement & Analytics
+      - KPIs and metrics for each channel
+      - Data collection and tracking methods
+      - Reporting cadence and dashboard design
+      - Analysis frequency and decision-making processes
+      - Attribution model for multi-touch campaigns
+      - A/B testing and optimization plan
+
+   10. Risk Management & Contingency
+      - Market risks and mitigation strategies
+      - Execution risks and contingency plans
+      - Performance shortfall responses
+      - Competitor response scenarios
+      - Communication and escalation procedures
+
+4. QUALITY STANDARDS:
+   - Provide specific, actionable tactics with clear ownership
+   - Include realistic budget estimates with assumptions
+   - Ensure financial projections are grounded in market data
+   - Make metrics trackable and reportable
+   - Create a plan that can be executed within resource constraints
+   - Consider market dynamics and competitive responses
+   - Design for flexibility and optimization as market conditions change
+
+Create a professional marketing plan that drives customer acquisition, builds brand awareness, and achieves measurable business results.
         """
 
         try:
@@ -819,23 +1180,135 @@ class ClaudeClient:
     ) -> str:
         """Generate educational curriculum document"""
         prompt = f"""
-        Generate a comprehensive curriculum design document based on this context:
+You are a curriculum designer and instructional specialist developing comprehensive educational curriculum.
 
-        {context}
+PROJECT CONTEXT:
+{context}
 
-        Please create a detailed curriculum including:
-        1. Course Overview - Learning objectives and target audience
-        2. Curriculum Philosophy - Teaching approach and pedagogical foundation
-        3. Learning Outcomes - Specific competencies students will achieve
-        4. Content Structure - Topics, units, and learning progression
-        5. Module Design - Detailed breakdown of each module or unit
-        6. Assessment Strategy - Formative and summative assessment methods
-        7. Learning Activities - Instructional activities and engagement strategies
-        8. Resources & Materials - Required textbooks, tools, and multimedia
-        9. Lesson Plan Template - Framework for individual lessons
-        10. Evaluation Plan - How to measure curriculum effectiveness and student progress
+CURRICULUM DESIGN REQUIREMENTS:
 
-        Format as a professional curriculum document suitable for educators and training programs.
+1. UNDERSTAND THE EDUCATIONAL CHALLENGE:
+   - Identify the learning domain and target student population
+   - Understand student prior knowledge, skills, and learning styles
+   - Determine learning goals and aspirations for students
+   - Identify constraints (time, resources, infrastructure)
+   - Note any standards or accreditation requirements
+   - Understand the educational context and environment
+
+2. CURRICULUM STRATEGY & PEDAGOGY:
+   - Develop a coherent pedagogical philosophy
+   - Align instruction with learning science principles
+   - Plan for inclusive and differentiated instruction
+   - Design for engagement and student motivation
+   - Create pathways for skill development and mastery
+
+3. CURRICULUM SECTIONS:
+
+   1. Course Overview & Context
+      - Course title, code, and level
+      - Target audience and prerequisites
+      - Course duration and instructional hours
+      - Learning context and delivery method
+      - Connection to larger program or pathway
+
+   2. Curriculum Philosophy & Approach
+      - Pedagogical philosophy and teaching approach
+      - Core values and beliefs about learning
+      - How students will learn best in this content area
+      - Connection to real-world applications
+      - Inclusivity and accessibility principles
+
+   3. Learning Goals & Outcomes
+      - Overall learning goals for the course
+      - Specific, measurable learning outcomes (by level: course, unit, lesson)
+      - Competencies and skills to develop
+      - Alignment with standards or frameworks
+      - Success criteria for student learning
+
+   4. Content Structure & Progression
+      - Major topics and units with scope
+      - Logical sequence and learning progression
+      - Prerequisite relationships between units
+      - Spiral curriculum design (if appropriate)
+      - Content boundaries and depth expectations
+      - Integration across disciplines (if applicable)
+
+   5. Unit & Module Design
+      - Detailed breakdown of each major unit
+      - Learning outcomes for each unit
+      - Key concepts and essential questions
+      - Estimated duration and pacing
+      - Assessment and performance indicators
+      - Connections to other units and curriculum
+
+   6. Instructional Strategies & Activities
+      - Active learning strategies and pedagogies
+      - Variety of instructional approaches
+      - Engagement tactics and student motivation
+      - Collaborative and individual learning opportunities
+      - Technology integration (if applicable)
+      - Accommodations for diverse learners
+
+   7. Assessment & Evaluation Strategy
+      - Formative assessment methods (ongoing)
+      - Summative assessment methods (final)
+      - Performance tasks and authentic assessments
+      - Rubrics and scoring criteria
+      - How feedback will be provided
+      - Grade determination and weighting
+      - Alignment of assessments with learning outcomes
+
+   8. Materials, Resources & Technologies
+      - Required textbooks and readings
+      - Digital resources and online platforms
+      - Instructional materials and media
+      - Laboratory or hands-on resources
+      - Technology tools and software
+      - Open educational resources (OER)
+      - Where to obtain materials and budget
+
+   9. Differentiation & Accessibility
+      - Strategies for diverse learning needs
+      - Scaffolding and support levels
+      - Enrichment opportunities for advanced learners
+      - English language learner (ELL) support
+      - Students with disabilities accommodations
+      - Culturally responsive teaching strategies
+
+   10. Lesson Plan Framework & Pacing
+      - Standard lesson structure and components
+      - Pacing guide and unit timeline
+      - Sample detailed lesson plan
+      - Time allocation by topic
+      - Flexibility and contingency planning
+
+   11. Teacher Resources & Support
+      - Teacher's guide or manual
+      - Background content knowledge and resources
+      - Common student misconceptions and how to address them
+      - Answer keys and assessment solutions
+      - Professional development resources
+      - Troubleshooting guide for common challenges
+
+   12. Evaluation & Improvement
+      - How curriculum effectiveness will be measured
+      - Student learning data collection methods
+      - Curriculum review and revision cycle
+      - Feedback mechanisms (student, parent, peer)
+      - Continuous improvement process
+
+4. QUALITY STANDARDS:
+   - Ensure learning outcomes are clear, specific, and measurable
+   - Align all assessments directly with learning outcomes
+   - Provide sufficient detail for teachers to implement effectively
+   - Include diverse instructional strategies and learning modalities
+   - Design for student engagement and motivation
+   - Address equity and accessibility throughout
+   - Ground design in learning science and research
+   - Create curriculum that is practical and implementable
+   - Prepare students for success beyond the course
+
+Create a comprehensive, well-structured curriculum that guides learning, supports student success, and can be effectively implemented by educators.
         """
 
         try:
@@ -872,61 +1345,203 @@ class ClaudeClient:
         user_auth_method: str = "api_key",
         user_id: str = None,
     ) -> str:
-        """Generate documentation for any artifact type"""
+        """Generate comprehensive documentation for any artifact type"""
         doc_instructions = {
             "code": """
-        Please include:
-        1. Project overview and purpose
-        2. Installation instructions
-        3. Usage examples
-        4. API documentation (if applicable)
-        5. Configuration options
-        6. Troubleshooting section
+DOCUMENTATION STRUCTURE FOR CODE:
+1. Project Overview & Purpose
+   - What problem does this solve
+   - Key features and capabilities
+   - Architecture overview
+
+2. Installation & Setup
+   - Prerequisites and dependencies
+   - Step-by-step installation
+   - Configuration and environment setup
+
+3. Usage Guide
+   - Quick start guide
+   - Common use cases with examples
+   - API/Function reference
+
+4. Integration Points
+   - How this integrates with other systems
+   - Required data models and schemas
+   - External dependencies and APIs
+
+5. Configuration & Customization
+   - All available configuration options
+   - Environment variables
+   - Performance tuning
+
+6. Troubleshooting & FAQ
+   - Common issues and solutions
+   - Debugging tips
+   - Performance optimization
+
+7. Contributing & Development
+   - Development setup
+   - Code style and conventions
+   - Testing procedures
         """,
             "business_plan": """
-        Please include:
-        1. Implementation roadmap and phases
-        2. Resource allocation and team structure
-        3. Success metrics and KPIs
-        4. Contingency plans
-        5. Key stakeholder roles and responsibilities
-        6. Quick reference guides for each section
+DOCUMENTATION STRUCTURE FOR BUSINESS PLAN:
+1. Executive Summary Expansion
+   - Key assumptions and dependencies
+   - Critical success factors
+
+2. Detailed Implementation Roadmap
+   - Phase-by-phase execution plan
+   - Milestones and success metrics
+   - Resource requirements per phase
+
+3. Operational Procedures
+   - Daily/weekly operational workflows
+   - Decision-making processes
+   - Communication protocols
+
+4. Financial Management
+   - Budget tracking procedures
+   - Cash flow management
+   - Financial reporting schedule
+
+5. Risk Management
+   - Risk register with mitigation strategies
+   - Contingency budgets
+   - Escalation procedures
+
+6. Performance Monitoring
+   - KPI dashboard definitions
+   - Reporting cadence and structure
+   - Review and adjustment processes
         """,
             "research_protocol": """
-        Please include:
-        1. Supplementary technical guidance for researchers
-        2. Data management best practices
-        3. Analysis procedure details and decision trees
-        4. Troubleshooting guide for common issues
-        5. References and additional resources
-        6. Appendices with templates and forms
+DOCUMENTATION STRUCTURE FOR RESEARCH:
+1. Methodology Deep Dive
+   - Detailed step-by-step procedures
+   - Decision trees for complex processes
+   - Statistical analysis specifications
+
+2. Data Management Procedures
+   - Data collection workflows
+   - Quality assurance and validation
+   - Storage, backup, and security
+
+3. Research Personnel
+   - Role descriptions and qualifications
+   - Training requirements
+   - Responsibility matrix
+
+4. Compliance & Ethics
+   - IRB requirements and documentation
+   - Informed consent procedures
+   - Data protection and privacy
+
+5. Troubleshooting Guide
+   - Common methodological challenges
+   - Solutions and workarounds
+   - When to escalate issues
+
+6. Resource Library
+   - Templates and forms
+   - Software and tool guides
+   - Reference materials and literature
         """,
             "creative_brief": """
-        Please include:
-        1. Creative process and workflow
-        2. Production guidelines and specifications
-        3. Asset organization and file structure
-        4. Revision and approval process
-        5. Quick reference guides for key assets
-        6. Common variations and use cases
+DOCUMENTATION STRUCTURE FOR CREATIVE:
+1. Creative Vision & Strategy
+   - Brand voice and tone guidelines
+   - Visual style specifications
+   - Target audience deep-dive
+
+2. Production Standards
+   - Format specifications and sizes
+   - Quality standards and review process
+   - File naming and organization
+
+3. Asset Management
+   - File structure and hierarchy
+   - Version control procedures
+   - Archive and retention policy
+
+4. Workflow & Processes
+   - Ideation to delivery pipeline
+   - Stakeholder approval process
+   - Revision and feedback procedures
+
+5. Guidelines & Examples
+   - Design specifications with examples
+   - Copy guidelines with samples
+   - Do's and don'ts
+
+6. Tools & Resources
+   - Required software and plugins
+   - Template libraries
+   - Design asset repositories
         """,
             "marketing_plan": """
-        Please include:
-        1. Campaign execution roadmap
-        2. Content calendar and publishing schedule
-        3. Team roles and communication plan
-        4. Campaign monitoring and analytics setup
-        5. Budget tracking and optimization
-        6. Contingency tactics and pivot strategies
+DOCUMENTATION STRUCTURE FOR MARKETING:
+1. Campaign Strategy Detail
+   - Campaign timeline with key dates
+   - Success metrics and KPIs
+   - Audience segmentation
+
+2. Content Calendar
+   - Publishing schedule
+   - Content ownership matrix
+   - Platform-specific guidelines
+
+3. Execution Procedures
+   - Content creation workflow
+   - Review and approval process
+   - Publishing and distribution steps
+
+4. Performance Tracking
+   - Analytics and measurement setup
+   - Reporting frequency and format
+   - Performance thresholds and alerts
+
+5. Budget Management
+   - Budget allocation by channel
+   - Spend tracking procedures
+   - ROI calculation methodology
+
+6. Contingency & Optimization
+   - Pivot strategies if targets not met
+   - A/B testing procedures
+   - Optimization decision-making
         """,
             "curriculum": """
-        Please include:
-        1. Instructor preparation guidelines
-        2. Day-by-day lesson delivery tips
-        3. Student assessment rubrics
-        4. Resource links and supplementary materials
-        5. Troubleshooting common student challenges
-        6. Accommodation and differentiation strategies
+DOCUMENTATION STRUCTURE FOR CURRICULUM:
+1. Learning Objectives Detail
+   - Learning outcomes per module
+   - Assessment criteria
+   - Skill progression mapping
+
+2. Instructional Materials
+   - Lesson plans with timing
+   - Lecture notes and slides
+   - Student handouts and worksheets
+
+3. Assessment & Evaluation
+   - Assessment rubrics
+   - Grading procedures
+   - Student feedback mechanisms
+
+4. Differentiation Strategies
+   - Modifications for different learning styles
+   - Support for struggling students
+   - Extensions for advanced learners
+
+5. Resources & References
+   - Recommended readings
+   - Multimedia resources
+   - Supplementary materials
+
+6. Instructor Support
+   - Common student misconceptions
+   - Frequently asked questions
+   - Troubleshooting difficult concepts
         """,
         }
 
@@ -939,17 +1554,40 @@ class ClaudeClient:
             else "(No artifact generated yet)"
         )
 
+        # Build detailed context for documentation
+        project_context = f"""
+PROJECT CONTEXT:
+- Name: {project.name}
+- Type: {project.project_type}
+- Current Phase: {project.phase}
+- Goals: {project.goals if project.goals else 'Not specified'}
+- Tech Stack: {', '.join(project.tech_stack) if project.tech_stack else 'Not specified'}
+- Target Deployment: {project.deployment_target if project.deployment_target else 'Not specified'}
+- Code Style: {project.code_style if project.code_style else 'Not specified'}
+"""
+
         prompt = f"""
-        Create comprehensive implementation documentation for this {artifact_type} project:
+You are creating professional, comprehensive documentation for a {artifact_type} artifact.
 
-        Project: {project.name}
-        Goals: {project.goals}
-        Phase: {project.phase}
+{project_context}
 
-        {artifact_type.replace('_', ' ').title()}:
-        {artifact_preview}
+THE ARTIFACT TO DOCUMENT:
+{artifact_type.replace('_', ' ').title()}:
+{artifact_preview}
 
-        {doc_section}
+DOCUMENTATION REQUIREMENTS:
+- Create clear, well-organized documentation
+- Use professional language suitable for the audience
+- Include concrete examples and code samples where applicable
+- Make procedures step-by-step and easy to follow
+- Anticipate user questions and common issues
+- Provide enough detail for someone unfamiliar with the project to understand it
+- Include references to relevant sections
+- Add table of contents for longer documents
+
+{doc_section}
+
+Create documentation that will enable others to successfully understand, implement, and maintain this work.
         """
 
         try:
