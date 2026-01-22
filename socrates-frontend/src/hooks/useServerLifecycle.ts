@@ -49,28 +49,6 @@ export function useServerLifecycle(options: UseServerLifecycleOptions = {}) {
     };
 
     /**
-     * Cancel shutdown when browser becomes visible again
-     */
-    const cancelShutdown = () => {
-      if (!isScheduledRef.current) return;
-
-      console.log('[ServerLifecycle] Cancelling scheduled shutdown');
-
-      // Clear local timer
-      if (shutdownTimerRef.current) {
-        clearTimeout(shutdownTimerRef.current);
-        shutdownTimerRef.current = null;
-      }
-
-      // Call API to cancel server-side shutdown
-      apiClient.post('/system/shutdown/cancel').catch((err) => {
-        console.warn('[ServerLifecycle] Failed to cancel shutdown:', err);
-      });
-
-      isScheduledRef.current = false;
-    };
-
-    /**
      * Execute immediate shutdown
      */
     const executeShutdown = () => {
@@ -85,44 +63,39 @@ export function useServerLifecycle(options: UseServerLifecycleOptions = {}) {
     };
 
     /**
-     * Handle visibility change (tab switch, minimize, etc.)
-     */
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // Page hidden
-        scheduleShutdown();
-      } else {
-        // Page visible again
-        cancelShutdown();
-      }
-    };
-
-    /**
-     * Handle beforeunload (browser close/refresh)
-     */
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      scheduleShutdown();
-      // Note: Can't reliably make async API calls in beforeunload
-      // Relying on visibilitychange as primary trigger
-    };
-
-    /**
-     * Handle page hide (most reliable)
+     * Handle page hide (most reliable indicator of actual browser close)
+     * Triggers when:
+     * - Browser window is closed
+     * - Browser tab is closed
+     * - Browser application is terminated
+     *
+     * Does NOT trigger when:
+     * - User switches to another tab (visibilitychange only)
+     * - User minimizes window (visibilitychange only)
      */
     const handlePageHide = () => {
+      console.log('[ServerLifecycle] Page hide detected - scheduling shutdown');
       scheduleShutdown();
     };
 
-    // Register event listeners
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    /**
+     * Handle beforeunload as fallback for browser close detection
+     */
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      console.log('[ServerLifecycle] Before unload detected - scheduling shutdown');
+      scheduleShutdown();
+    };
+
+    // Register event listeners for ACTUAL browser close only
+    // NOTE: Deliberately NOT using visibilitychange to avoid shutdown when user
+    // just switches tabs or minimizes window
     window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     // Cleanup
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
 
       if (shutdownTimerRef.current) {
         clearTimeout(shutdownTimerRef.current);

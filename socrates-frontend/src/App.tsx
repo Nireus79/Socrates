@@ -77,7 +77,7 @@ function ServerLifecycleManager() {
   // Enable server lifecycle management when user is authenticated
   useServerLifecycle({
     enabled: isAuthenticated,
-    shutdownDelay: 60000, // 1 minute
+    shutdownDelay: 1800000, // 30 minutes - gives user time to return
   });
 
   return null;
