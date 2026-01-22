@@ -119,10 +119,10 @@ class SocraticCounselorAgent(Agent):
         if not force_refresh and project.pending_questions:
             unanswered = [q for q in project.pending_questions if q.get("status") == "unanswered"]
             if unanswered:
-                # Return the LAST unanswered question instead of generating new (most recent)
+                # Return the first unanswered question instead of generating new
                 return {
                     "status": "success",
-                    "question": unanswered[-1].get("question"),
+                    "question": unanswered[0].get("question"),
                     "existing": True,
                 }
 
@@ -200,9 +200,6 @@ class SocraticCounselorAgent(Agent):
         user.increment_question_usage()
         self.orchestrator.database.save_user(user)
 
-        # Save project with new question added to conversation history and pending questions
-        self.database.save_project(project)
-
         return {"status": "success", "question": question}
 
     def _generate_dynamic_question(
@@ -212,7 +209,6 @@ class SocraticCounselorAgent(Agent):
         from socratic_system.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
-        logger.debug(f"[API_KEY_DEBUG] Generating dynamic question for user: {current_user}")
 
         # Get conversation history for context
         recent_conversation = ""
@@ -352,7 +348,6 @@ class SocraticCounselorAgent(Agent):
             # Cache key includes project ID, phase, and question number to ensure variety
             cache_key = f"{project.project_id}:{project.phase}:{question_count}"
 
-            logger.debug(f"[API_KEY_DEBUG] Calling generate_socratic_question with user_id={current_user}, auth_method={user_auth_method}")
             question = self.orchestrator.claude_client.generate_socratic_question(
                 prompt, cache_key=cache_key, user_auth_method=user_auth_method, user_id=current_user
             )
@@ -847,9 +842,6 @@ What would be most helpful for you?"""
         if phase_completion["is_complete"]:
             result["phase_complete"] = True
             result["phase_completion_message"] = phase_completion["message"]
-
-        # Save project to persist question status updates
-        self.database.save_project(project)
 
         return result
 
