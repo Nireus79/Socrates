@@ -2,9 +2,42 @@
 
 Comprehensive guide to configuring Socrates AI for different use cases.
 
+## API Key Configuration
+
+### Two Modes of Operation
+
+Socrates supports two modes of operation with different API key requirements:
+
+#### 1. **CLI/Terminal Mode** (Standalone)
+When running Socrates from the terminal/CLI, you **MUST** set the `ANTHROPIC_API_KEY` environment variable:
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+python socrates.py
+```
+
+This mode uses a shared API key for all CLI operations and doesn't have a database backend.
+
+#### 2. **API Server Mode** (Web/REST API)
+When running Socrates as an API server, the `ANTHROPIC_API_KEY` environment variable is **optional**:
+
+```bash
+# Option A: With environment API key (shared for all users)
+export ANTHROPIC_API_KEY="sk-ant-..."
+python -m socrates_api.main
+
+# Option B: Without environment API key (users provide their own)
+# Users save their API keys via: Settings > LLM > Anthropic
+python -m socrates_api.main
+```
+
+In API server mode, users can save their own Anthropic API keys in the database, and these per-user keys will be used for all Claude API calls. If a user doesn't have a saved API key, the system falls back to the `ANTHROPIC_API_KEY` environment variable.
+
+---
+
 ## Quick Configuration
 
-### Minimal Configuration
+### Minimal Configuration (CLI Mode)
 
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-..."
@@ -13,13 +46,16 @@ python socrates.py
 
 Uses all defaults. Everything works locally.
 
-### Recommended Configuration
+### Recommended Configuration (API Server Mode)
 
 ```bash
+# Optional: Set a fallback API key for users who haven't configured their own
 export ANTHROPIC_API_KEY="sk-ant-..."
 export SOCRATES_LOG_LEVEL="INFO"
 export SOCRATES_DATA_DIR="~/.socrates"
-python socrates.py
+
+# Start API server
+python -m socrates_api.main
 ```
 
 ---
@@ -28,13 +64,19 @@ python socrates.py
 
 All configuration via environment:
 
-| Variable | Description | Default | Example |
-|----------|-------------|---------|---------|
-| `ANTHROPIC_API_KEY` | Claude API key (required) | None | `sk-ant-...` |
+| Variable | Description | CLI Mode | API Server Mode | Example |
+|----------|-------------|----------|-----------------|---------|
+| `ANTHROPIC_API_KEY` | Claude API key | **Required** | Optional* | `sk-ant-...` |
 | `CLAUDE_MODEL` | Claude model to use | `claude-haiku-4-5-20251001` | `claude-opus-4-5-20251101` |
 | `SOCRATES_DATA_DIR` | Data storage location | `~/.socrates` | `/data/socrates` |
 | `SOCRATES_LOG_LEVEL` | Logging level | `INFO` | `DEBUG` / `WARNING` / `ERROR` |
 | `SOCRATES_LOG_FILE` | Log file path | `{DATA_DIR}/logs/socratic.log` | `/var/log/socratic.log` |
+
+***Optional in API Server Mode**: Required only if:
+- No per-user API keys are configured in the database, OR
+- You want to provide a fallback API key for all users
+
+Users can configure their own API keys via the web interface: **Settings > LLM > Anthropic**
 
 ### Setting Environment Variables
 
