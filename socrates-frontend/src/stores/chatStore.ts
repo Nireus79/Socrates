@@ -116,10 +116,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
       logger.info(`Question added successfully. Total messages: ${get().messages.length}`);
       return response.question;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to get question';
-      logger.error(`Error in getQuestion:`, error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const fullError = {
+        message: errorMessage,
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        error: error,
+        stack: error instanceof Error ? error.stack : undefined,
+      };
+      logger.error(`Error in getQuestion:`, fullError);
+      console.error('Full error object:', fullError);
+      console.error('Raw error:', error);
       set({
-        error: errorMessage,
+        error: `Question generation failed: ${errorMessage}`,
         isLoading: false,
       });
       throw error;
@@ -211,8 +219,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
           logger.info('Response processed. Generating next question...');
           await get().getQuestion(currentState.currentProjectId);
         } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error);
           logger.error(`Failed to get next question:`, error);
-          get().addSystemMessage(`⚠️ Could not generate next question. Error: ${error}`);
+          console.error('Question generation error details:', {
+            message: errorMsg,
+            errorType: error instanceof Error ? error.constructor.name : typeof error,
+            fullError: error,
+          });
+          get().addSystemMessage(`⚠️ Could not generate next question: ${errorMsg}`);
           // Don't fail the entire response if question generation fails
         }
       } else {
