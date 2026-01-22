@@ -196,4 +196,22 @@ export const chatAPI = {
     });
   },
 
+  /**
+   * Save extracted specs from direct dialogue after user confirmation
+   */
+  async saveExtractedSpecs(
+    projectId: string,
+    specs: {
+      goals?: string[];
+      requirements?: string[];
+      tech_stack?: string[];
+      constraints?: string[];
+    }
+  ): Promise<{ specs_saved: Record<string, string[]>; project_state: any }> {
+    return apiClient.post<{ specs_saved: Record<string, string[]>; project_state: any }>(
+      `/projects/${projectId}/chat/save-extracted-specs`,
+      specs
+    );
+  },
+
 };

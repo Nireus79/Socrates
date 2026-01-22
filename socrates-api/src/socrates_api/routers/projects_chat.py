@@ -54,6 +54,15 @@ class ConflictResolution(BaseModel):
     manual_value: Optional[str] = None
 
 
+class SaveExtractedSpecsRequest(BaseModel):
+    """Request to save extracted specs from dialogue"""
+
+    goals: Optional[list] = None
+    requirements: Optional[list] = None
+    tech_stack: Optional[list] = None
+    constraints: Optional[list] = None
+
+
 class ConflictResolutionRequest(BaseModel):
     """Request body for resolving conflicts"""
 
@@ -699,9 +708,16 @@ Provide a helpful, direct answer."""
                         "role": "assistant",
                         "content": answer + (insights_message if insights_message else ""),
                         "timestamp": datetime.now(timezone.utc).isoformat(),
-                        "insights": insights if is_debug_mode() else None,  # Include raw insights in debug mode
                     },
                     "mode": "direct",
+                    # Include extracted specs for user confirmation (not auto-saved)
+                    "extracted_specs": insights,
+                    "extracted_specs_count": sum([
+                        len(insights.get("goals", [])) if insights else 0,
+                        len(insights.get("requirements", [])) if insights else 0,
+                        len(insights.get("tech_stack", [])) if insights else 0,
+                        len(insights.get("constraints", [])) if insights else 0,
+                    ]),
                 },
             )
         else:
@@ -1726,6 +1742,130 @@ async def get_answer_suggestions(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get suggestions: {str(e)}",
+        )
+
+
+# ============================================================================
+# SAVE EXTRACTED SPECS (from Direct Dialogue)
+# ============================================================================
+
+
+@router.post(
+    "/{project_id}/chat/save-extracted-specs",
+    response_model=APIResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Save specs extracted from dialogue to project",
+)
+async def save_extracted_specs(
+    project_id: str,
+    request: SaveExtractedSpecsRequest,
+    current_user: str = Depends(get_current_user),
+    db: ProjectDatabase = Depends(get_database),
+):
+    """
+    Save extracted specs from direct dialogue after user confirmation.
+
+    This endpoint receives extracted specs from dialogue and saves them to the project
+    only after explicit user confirmation (not auto-saved).
+
+    Args:
+        project_id: The project ID
+        request: Extracted specs to save (goals, requirements, tech_stack, constraints)
+
+    Returns:
+        APIResponse with saved specs summary
+    """
+    try:
+        # Load project
+        project = db.load_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # Check access
+        if project.owner != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        logger.info(f"User {current_user} is saving extracted specs to project {project_id}")
+
+        # Track what was saved for reporting
+        specs_saved = {
+            "goals": [],
+            "requirements": [],
+            "tech_stack": [],
+            "constraints": [],
+        }
+
+        # Save goals
+        if request.goals:
+            # If goals is a list, take first item or join
+            if isinstance(request.goals, list):
+                project.goals = request.goals[0] if len(request.goals) == 1 else ", ".join(str(g) for g in request.goals)
+            else:
+                project.goals = str(request.goals)
+            specs_saved["goals"] = [project.goals]
+            logger.info(f"Saved goals: {project.goals}")
+
+        # Save requirements
+        if request.requirements:
+            if isinstance(request.requirements, list):
+                for req in request.requirements:
+                    if req not in (project.requirements or []):
+                        if not project.requirements:
+                            project.requirements = []
+                        project.requirements.append(str(req))
+                        specs_saved["requirements"].append(str(req))
+            logger.info(f"Saved requirements: {specs_saved['requirements']}")
+
+        # Save tech stack
+        if request.tech_stack:
+            if isinstance(request.tech_stack, list):
+                for tech in request.tech_stack:
+                    if tech not in (project.tech_stack or []):
+                        if not project.tech_stack:
+                            project.tech_stack = []
+                        project.tech_stack.append(str(tech))
+                        specs_saved["tech_stack"].append(str(tech))
+            logger.info(f"Saved tech stack: {specs_saved['tech_stack']}")
+
+        # Save constraints
+        if request.constraints:
+            if isinstance(request.constraints, list):
+                for constraint in request.constraints:
+                    if constraint not in (project.constraints or []):
+                        if not project.constraints:
+                            project.constraints = []
+                        project.constraints.append(str(constraint))
+                        specs_saved["constraints"].append(str(constraint))
+            logger.info(f"Saved constraints: {specs_saved['constraints']}")
+
+        # Persist to database
+        db.save_project(project)
+        logger.info(f"Saved extracted specs to project {project_id} after user confirmation")
+
+        # Return summary of what was saved
+        return APIResponse(
+            success=True,
+            status="success",
+            message="Extracted specs saved to project",
+            data={
+                "project_id": project_id,
+                "specs_saved": specs_saved,
+                "project_state": {
+                    "goals": project.goals,
+                    "requirements": project.requirements or [],
+                    "tech_stack": project.tech_stack or [],
+                    "constraints": project.constraints or [],
+                },
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error saving extracted specs: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to save specs: {str(e)}",
         )
 
 
