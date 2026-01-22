@@ -259,6 +259,13 @@ class ProjectDatabase:
                 f"({len(project.conversation_history)} messages)"
             )
 
+        # Save notes separately
+        if project.notes:
+            self._save_project_notes(project.project_id, project.notes)
+            self.logger.debug(
+                f"Saved {len(project.notes)} notes for project {project.project_id}"
+            )
+
     def _save_main_project_record(self, cursor, project: ProjectContext, now: datetime) -> None:
         """Save main project record"""
         cursor.execute(
@@ -267,8 +274,8 @@ class ProjectDatabase:
                 project_id, name, owner, phase, project_type,
                 team_structure, language_preferences, deployment_target,
                 code_style, chat_mode, goals, status, progress,
-                is_archived, created_at, updated_at, archived_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                is_archived, created_at, updated_at, archived_at, code_history
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 project.project_id,
@@ -316,6 +323,7 @@ class ProjectDatabase:
                 serialize_datetime(project.created_at),
                 serialize_datetime(now),
                 serialize_datetime(project.archived_at) if project.archived_at else None,  # type: ignore
+                json.dumps(project.code_history) if project.code_history else None,
             ),
         )
 
@@ -492,6 +500,7 @@ class ProjectDatabase:
             analytics = self._load_analytics_metrics(cursor, project_id)
             conversation_history = self.get_conversation_history(project_id)
             pending_questions = self._load_pending_questions(project_id)
+            notes = self._load_project_notes(project_id)
 
             # Deserialize JSON fields (only if they're actually JSON)
             def try_json_load(value):
@@ -507,6 +516,14 @@ class ProjectDatabase:
             team_structure = try_json_load(row["team_structure"])
             language_preferences = try_json_load(row["language_preferences"])
             code_style = try_json_load(row["code_style"])
+
+            # Load code_history if column exists (handles backward compatibility)
+            code_history = None
+            try:
+                code_history = try_json_load(row["code_history"])
+            except (IndexError, KeyError):
+                # Column doesn't exist yet (migration not applied)
+                code_history = None
 
             # Construct ProjectContext
             project = ProjectContext(
@@ -539,6 +556,8 @@ class ProjectDatabase:
                 analytics_metrics=analytics,
                 conversation_history=conversation_history,
                 pending_questions=pending_questions,
+                notes=notes,
+                code_history=code_history,
             )
 
             self.logger.debug(f"Loaded project {project_id}")
@@ -848,6 +867,50 @@ class ProjectDatabase:
         finally:
             conn.close()
 
+    def _save_project_notes(self, project_id: str, notes: list[dict]) -> None:
+        """
+        Save project notes to database
+
+        Args:
+            project_id: ID of project
+            notes: List of note dicts
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            # Delete existing notes for this project
+            cursor.execute("DELETE FROM project_notes WHERE project_id = ?", (project_id,))
+
+            # Insert new notes
+            import json
+            for note in notes:
+                cursor.execute(
+                    """
+                    INSERT INTO project_notes (
+                        note_id, project_id, title, content, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        note.get("id"),
+                        project_id,
+                        note.get("title", "Untitled"),
+                        note.get("content", ""),
+                        note.get("created_at"),
+                        note.get("created_at"),  # Use created_at for updated_at on first save
+                    ),
+                )
+
+            conn.commit()
+            self.logger.debug(f"Saved {len(notes)} notes for project {project_id}")
+
+        except Exception as e:
+            conn.rollback()
+            self.logger.error(f"Error saving notes for project {project_id}: {e}")
+            raise
+        finally:
+            conn.close()
+
     def _save_pending_questions(self, project_id: str, questions: list[dict]) -> None:
         """
         Save pending questions for a project
@@ -884,6 +947,49 @@ class ProjectDatabase:
             conn.rollback()
             self.logger.error(f"Error saving pending questions for project {project_id}: {e}")
             raise
+        finally:
+            conn.close()
+
+    def _load_project_notes(self, project_id: str) -> list[dict]:
+        """
+        Load project notes from database
+
+        Args:
+            project_id: ID of project
+
+        Returns:
+            List of note dicts
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                """
+                SELECT note_id as id, title, content, created_at, created_by
+                FROM project_notes
+                WHERE project_id = ?
+                ORDER BY created_at DESC
+                """,
+                (project_id,),
+            )
+
+            notes = []
+            for row in cursor.fetchall():
+                note = {
+                    "id": row[0],
+                    "title": row[1] or "Untitled",
+                    "content": row[2] or "",
+                    "created_at": row[3],
+                    "created_by": row[4],
+                }
+                notes.append(note)
+
+            return notes
+
+        except Exception as e:
+            self.logger.error(f"Error loading notes for project {project_id}: {e}")
+            return []
         finally:
             conn.close()
 

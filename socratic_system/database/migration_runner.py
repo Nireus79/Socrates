@@ -163,10 +163,14 @@ class MigrationRunner:
             and self._column_exists("knowledge_documents", "file_size")
         )
 
+        # Check for code_history column in projects table
+        code_history_exists = self._column_exists("projects", "code_history")
+
         status = {
             "github_import_tables": github_tables_exist,
             "users_claude_auth_method": users_column_exists,
             "knowledge_documents_columns": knowledge_columns_exist,
+            "code_history_column": code_history_exists,
         }
 
         return status
@@ -209,6 +213,7 @@ class MigrationRunner:
         1. GitHub import tables (project_files, repository_metadata, code_validation_results)
         2. Claude auth method column (users.claude_auth_method)
         3. Knowledge documents file tracking columns (knowledge_documents.file_path, knowledge_documents.file_size)
+        4. Code history column (projects.code_history)
 
         Returns:
             Tuple of (success: bool, message: str)
@@ -226,6 +231,7 @@ class MigrationRunner:
             ("add_github_import_tables.sql", "GitHub import tables"),
             ("add_claude_auth_method_column.sql", "Claude auth method column"),
             ("add_knowledge_documents_columns.sql", "Knowledge documents file tracking columns"),
+            ("add_code_history_column.sql", "Code history column"),
         ]
 
         all_migrations_successful = True
@@ -247,6 +253,12 @@ class MigrationRunner:
                 continue
             elif migration_file == "add_knowledge_documents_columns.sql" and status.get(
                 "knowledge_documents_columns"
+            ):
+                self.logger.info(f"{migration_name} already applied, skipping")
+                messages.append(f"{migration_name}: already applied")
+                continue
+            elif migration_file == "add_code_history_column.sql" and status.get(
+                "code_history_column"
             ):
                 self.logger.info(f"{migration_name} already applied, skipping")
                 messages.append(f"{migration_name}: already applied")
