@@ -7,9 +7,10 @@ import type { ChatMessage, ChatMode } from '../types/models';
 import { chatAPI } from '../api';
 
 const logger = {
-  info: (msg: string) => console.log('[ChatStore]', msg),
-  warn: (msg: string) => console.warn('[ChatStore]', msg),
-  error: (msg: string) => console.error('[ChatStore]', msg),
+  debug: (msg: string, data?: any) => console.debug('[ChatStore]', msg, data),
+  info: (msg: string, data?: any) => console.log('[ChatStore]', msg, data),
+  warn: (msg: string, data?: any) => console.warn('[ChatStore]', msg, data),
+  error: (msg: string, data?: any) => console.error('[ChatStore]', msg, data),
 };
 
 interface Conflict {
