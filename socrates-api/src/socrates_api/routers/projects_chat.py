@@ -531,7 +531,7 @@ async def get_question(
                 "project": project,
                 "current_user": current_user,
                 "user_id": current_user,
-                "force_refresh": True,  # Always generate new question, don't use cache
+                "force_refresh": False,  # Reuse unanswered questions to prevent accumulation
             },
         )
 
@@ -652,6 +652,44 @@ Provide a helpful, direct answer."""
             if project.conversation_history:
                 db.save_conversation_history(project_id, project.conversation_history)
 
+            # Extract specs from user message (NEW)
+            insights = None
+            insights_message = None
+            try:
+                # Extract potential specs from the user's question in direct mode
+                insights = orchestrator.claude_client.extract_insights(
+                    request.message,
+                    user_auth_method=user_auth_method,
+                    user_id=current_user
+                )
+                logger.debug(f"Extracted insights in direct mode: {insights}")
+
+                # If there are any extracted specs and debug mode is on, format insights message
+                if insights and is_debug_mode():
+                    specs_count = sum([
+                        len(insights.get("goals", [])),
+                        len(insights.get("requirements", [])),
+                        len(insights.get("tech_stack", [])),
+                        len(insights.get("constraints", [])),
+                    ])
+
+                    if specs_count > 0:
+                        insights_message = f"\n\n📊 **Detected Specs** (Debug Mode):\n"
+                        if insights.get("goals"):
+                            insights_message += f"- Goals: {', '.join(insights['goals'])}\n"
+                        if insights.get("requirements"):
+                            insights_message += f"- Requirements: {', '.join(insights['requirements'])}\n"
+                        if insights.get("tech_stack"):
+                            insights_message += f"- Tech Stack: {', '.join(insights['tech_stack'])}\n"
+                        if insights.get("constraints"):
+                            insights_message += f"- Constraints: {', '.join(insights['constraints'])}\n"
+                        insights_message += "\n*Would you like to save these specs to your project?*"
+                        logger.info(f"Debug mode: showing {specs_count} extracted specs to user")
+
+            except Exception as e:
+                logger.warning(f"Failed to extract insights in direct mode: {str(e)}")
+                # Continue without insights if extraction fails
+
             return APIResponse(
                 success=True,
                 status="success",
@@ -659,8 +697,9 @@ Provide a helpful, direct answer."""
                     "message": {
                         "id": f"msg_{id(answer)}",
                         "role": "assistant",
-                        "content": answer,
+                        "content": answer + (insights_message if insights_message else ""),
                         "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "insights": insights if is_debug_mode() else None,  # Include raw insights in debug mode
                     },
                     "mode": "direct",
                 },
@@ -1496,11 +1535,12 @@ async def skip_question(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Find the current unanswered question and mark it as skipped
+        # Find the LAST (most recent) unanswered question and mark it as skipped
         skipped_count = 0
         if project.pending_questions:
             logger.info(f"Total questions in project: {len(project.pending_questions)}")
-            for question in project.pending_questions:
+            # Iterate in reverse to find the LAST unanswered question
+            for question in reversed(project.pending_questions):
                 # Check if question is unanswered (default to unanswered if status missing)
                 current_status = question.get("status", "unanswered")
                 logger.info(f"Question {question.get('id')} status: {current_status}")
@@ -1556,12 +1596,12 @@ async def get_answer_suggestions(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # Find current question from pending_questions
+        # Find current question from pending_questions (use LAST unanswered, not first)
         current_question = None
         if project.pending_questions:
             unanswered = [q for q in project.pending_questions if q.get("status") == "unanswered"]
             if unanswered:
-                current_question = unanswered[0].get("question")
+                current_question = unanswered[-1].get("question")
 
         if not current_question:
             # Generate phase-aware fallback suggestions
