@@ -133,6 +133,7 @@ class ContextAnalyzerAgent(Agent):
         try:
             project = request.get("project")
             limit = request.get("limit", 10)
+            user_id = request.get("user_id")  # Extract user_id from request
 
             if not project:
                 return {"status": "error", "message": "project required"}
@@ -167,12 +168,12 @@ Provide a concise, focused summary."""
 
             # Get user's auth method
             user_auth_method = "api_key"
-            if self.current_user:
-                user_obj = self.orchestrator.database.load_user(self.current_user)
+            if user_id:
+                user_obj = self.orchestrator.database.load_user(user_id)
                 if user_obj and hasattr(user_obj, "claude_auth_method"):
                     user_auth_method = user_obj.claude_auth_method or "api_key"
             summary = self.orchestrator.claude_client.generate_response(
-                prompt, user_auth_method=user_auth_method, user_id=self.current_user
+                prompt, user_auth_method=user_auth_method, user_id=user_id
             )
 
             self.log(f"Generated summary for project {project.name}")
