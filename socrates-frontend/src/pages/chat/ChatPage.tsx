@@ -2021,7 +2021,7 @@ User: ${currentProject?.owner || 'N/A'}`;
         isOpen={phaseComplete}
         onClose={() => clearPhaseCompletion()}
         currentPhase={currentPhase || 'discovery'}
-        nextPhase={nextPhase || 'analysis'}
+        nextPhase={nextPhase || ''}
         onAdvance={handlePhaseAdvance}
         onEnrich={handlePhaseEnrich}
       />
