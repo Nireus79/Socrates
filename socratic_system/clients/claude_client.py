@@ -126,14 +126,18 @@ class ClaudeClient:
         """
         # Try to get user's stored API key from database
         if user_id:
+            self.logger.debug(f"Looking up API key for user_id: {user_id}")
             try:
                 stored_key = self.orchestrator.database.get_api_key(user_id, "claude")
+                self.logger.debug(f"Database lookup for user {user_id}: key found={bool(stored_key)}")
                 if stored_key:
                     # Decrypt the stored key
                     decrypted_key = self._decrypt_api_key_from_db(stored_key)
                     if decrypted_key:
                         self.logger.info(f"Using user-specific API key for user {user_id}")
                         return decrypted_key, True
+                else:
+                    self.logger.debug(f"No API key found in database for user {user_id}")
             except Exception as e:
                 self.logger.warning(f"Error fetching user API key for {user_id}: {e}")
 
