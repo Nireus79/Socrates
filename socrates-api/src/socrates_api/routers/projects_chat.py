@@ -1564,17 +1564,44 @@ async def get_answer_suggestions(
                 current_question = unanswered[0].get("question")
 
         if not current_question:
+            # Generate phase-aware fallback suggestions
+            phase_suggestions = {
+                "discovery": [
+                    "Review your project goals and requirements",
+                    "Describe your target audience and their needs",
+                    "What problem does this solve?",
+                    "What alternatives have you considered?",
+                    "What would success look like?"
+                ],
+                "analysis": [
+                    "Break down your requirements into components",
+                    "What are the key constraints and limitations?",
+                    "How would you prioritize these requirements?",
+                    "What dependencies exist?",
+                    "What trade-offs are necessary?"
+                ],
+                "design": [
+                    "Sketch the high-level system architecture",
+                    "What design patterns apply here?",
+                    "How would you organize the components?",
+                    "What are the critical design decisions?",
+                    "How would this handle edge cases?"
+                ],
+                "implementation": [
+                    "What's the first feature to implement?",
+                    "Which technologies would you use?",
+                    "How would you test this?",
+                    "What's your deployment strategy?",
+                    "How would you measure success?"
+                ],
+            }
+            suggestions = phase_suggestions.get(project.phase, phase_suggestions["discovery"])
+
             return APIResponse(
                 success=True,
                 status="success",
                 data={
-                    "suggestions": [
-                        "Review your project goals and requirements",
-                        "Consider the next logical step in your plan",
-                        "Think about potential challenges and solutions",
-                        "Reflect on your target audience or users",
-                        "Consider how this relates to your tech stack"
-                    ],
+                    "suggestions": suggestions,
                     "question": "No active question",
                     "phase": project.phase,
                 },
@@ -1596,18 +1623,44 @@ async def get_answer_suggestions(
             error_message = result.get("message", "Unknown error")
             logger.warning(f"Suggestion generation failed: {error_message}")
 
-            # Return generic suggestions if generation failed
+            # Return phase-aware fallback suggestions
+            phase_suggestions = {
+                "discovery": [
+                    "Describe the problem you're trying to solve",
+                    "Who are your target users?",
+                    "What are the key challenges?",
+                    "What existing solutions exist?",
+                    "What would success look like?"
+                ],
+                "analysis": [
+                    "Break down the requirements into components",
+                    "What are the technical constraints?",
+                    "How would you prioritize requirements?",
+                    "What dependencies exist?",
+                    "What trade-offs are needed?"
+                ],
+                "design": [
+                    "Sketch the high-level architecture",
+                    "What design patterns apply?",
+                    "How would you organize components?",
+                    "What are the key decisions?",
+                    "How would this handle edge cases?"
+                ],
+                "implementation": [
+                    "What feature would you implement first?",
+                    "Which technologies would you use?",
+                    "How would you test this?",
+                    "What's the deployment strategy?",
+                    "How would you measure success?"
+                ],
+            }
+            suggestions = phase_suggestions.get(project.phase, phase_suggestions["discovery"])
+
             return APIResponse(
                 success=True,
                 status="success",
                 data={
-                    "suggestions": [
-                        "Consider the problem from your target audience's perspective",
-                        "Think about the technical constraints you mentioned",
-                        "Review the project goals and how this relates to them",
-                        "Consider existing solutions and what makes your approach unique",
-                        "Think about potential challenges and how to address them"
-                    ],
+                    "suggestions": suggestions,
                     "question": current_question,
                     "phase": project.phase,
                     "generated": False,

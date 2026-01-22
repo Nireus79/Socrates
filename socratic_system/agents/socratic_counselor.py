@@ -1629,6 +1629,50 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
 
         return {"status": "error", "message": "Question not found"}
 
+    def _get_fallback_suggestions(self, project, current_question: str) -> List[str]:
+        """Generate context-aware fallback suggestions based on phase and question"""
+        from socratic_system.utils.logger import get_logger
+
+        logger = get_logger("socratic_counselor")
+
+        # Create phase-specific suggestions that vary based on question content
+        phase_suggestions = {
+            "discovery": [
+                "Describe the problem you're trying to solve in detail",
+                "Who are your target users or stakeholders?",
+                "What are the key challenges you're facing?",
+                "What existing solutions have you considered?",
+                "What would success look like for this project?",
+            ],
+            "analysis": [
+                "Break down the requirements into smaller components",
+                "What are the technical constraints you need to consider?",
+                "How would you prioritize these requirements?",
+                "What dependencies exist between different parts?",
+                "What trade-offs do you need to make?",
+            ],
+            "design": [
+                "Sketch out the high-level architecture or flow",
+                "What design patterns would be appropriate here?",
+                "How would you organize the system components?",
+                "What are the key decisions in the design?",
+                "How would this design handle edge cases?",
+            ],
+            "implementation": [
+                "What's the first feature or module you'd implement?",
+                "What technologies would you use for this?",
+                "How would you test this implementation?",
+                "What's the deployment strategy?",
+                "How would you measure if it's working correctly?",
+            ],
+        }
+
+        phase = project.phase if hasattr(project, 'phase') else 'discovery'
+        suggestions = phase_suggestions.get(phase, phase_suggestions["discovery"])
+
+        logger.debug(f"Using {len(suggestions)} fallback suggestions for {phase} phase")
+        return suggestions
+
     def _generate_answer_suggestions(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Generate answer suggestions for the current question"""
         from socratic_system.utils.logger import get_logger
@@ -1705,13 +1749,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
                 "suggestions": (
                     suggestions
                     if suggestions
-                    else [
-                        "Consider the problem from your target audience's perspective",
-                        "Think about the technical constraints you mentioned",
-                        "Review the project goals and how this relates to them",
-                        "Consider existing solutions and what makes your approach unique",
-                        "Think about potential challenges and how to address them",
-                    ]
+                    else self._get_fallback_suggestions(project, current_question)
                 ),
             }
 
@@ -1720,17 +1758,11 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
             logger.error(f"Failed to generate answer suggestions: {error_details}")
             self.log(f"Failed to generate answer suggestions: {error_details}", "ERROR")
 
-            # Return error status so API can log and track this
+            # Return fallback suggestions based on phase
             return {
                 "status": "error",
                 "message": f"Suggestion generation failed: {str(e)}",
-                "suggestions": [
-                    "Consider the problem from your target audience's perspective",
-                    "Think about the technical constraints you mentioned",
-                    "Review the project goals and how this relates to them",
-                    "Consider existing solutions and what makes your approach unique",
-                    "Think about potential challenges and how to address them",
-                ],
+                "suggestions": self._get_fallback_suggestions(project, current_question),
             }
 
     # ========================================================================
