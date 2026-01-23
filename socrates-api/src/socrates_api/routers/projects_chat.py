@@ -1824,6 +1824,41 @@ async def save_extracted_specs(
         db.save_project(project)
         logger.info(f"Saved extracted specs to project {project_id} after user confirmation")
 
+        # Update maturity score for the project based on saved specs
+        try:
+            from socrates_api.main import get_orchestrator
+            orchestrator = get_orchestrator()
+
+            # Convert specs_saved to insights format for maturity calculation
+            insights = {
+                "goals": specs_saved.get("goals", []),
+                "requirements": specs_saved.get("requirements", []),
+                "tech_stack": specs_saved.get("tech_stack", []),
+                "constraints": specs_saved.get("constraints", []),
+            }
+
+            # Only update maturity if specs were actually saved
+            if any(specs_saved.values()):
+                maturity_result = orchestrator.process_request(
+                    "quality_controller",
+                    {
+                        "action": "update_after_response",
+                        "project": project,
+                        "insights": insights,
+                        "current_user": current_user,
+                    },
+                )
+
+                if maturity_result.get("status") == "success":
+                    maturity = maturity_result.get("maturity", {})
+                    score = maturity.get("overall_score", 0.0)
+                    logger.info(f"Maturity updated after specs save: {score:.1f}%")
+                    # Re-save project with updated maturity
+                    db.save_project(project)
+        except Exception as e:
+            logger.warning(f"Failed to update maturity after saving specs: {str(e)}")
+            # Don't fail the spec save if maturity update fails
+
         # Return summary of what was saved
         return APIResponse(
             success=True,
