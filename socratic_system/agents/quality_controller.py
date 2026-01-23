@@ -237,7 +237,7 @@ class QualityControllerAgent(Agent):
 
         # Instead of recalculating entire maturity, ADD this answer's score
         # This prevents previous answers' scores from being affected by new specs' confidence
-        score_after = score_before + answer_score
+        score_after = min(100.0, score_before + answer_score)
         project.phase_maturity_scores[project.phase] = score_after
 
         # Calculate and update overall maturity
@@ -245,6 +245,17 @@ class QualityControllerAgent(Agent):
 
         # Auto-update progress to match overall maturity
         project.progress = int(project.overall_maturity)
+
+        # Notify user if phase just reached 100% completion
+        if score_before < self.COMPLETE_THRESHOLD and score_after >= self.COMPLETE_THRESHOLD:
+            logging.info(f"Phase {project.phase} reached 100% completion during response processing!")
+            self.emit_event(
+                EventType.PHASE_READY_TO_ADVANCE,
+                {
+                    "phase": project.phase,
+                    "message": f"{project.phase.capitalize()} phase is 100% complete! You can advance or continue enriching.",
+                },
+            )
 
         # Record in history with before/after scores
         logging.debug("Recording maturity event in history")
