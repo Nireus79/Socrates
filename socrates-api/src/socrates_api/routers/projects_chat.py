@@ -57,10 +57,10 @@ class ConflictResolution(BaseModel):
 class SaveExtractedSpecsRequest(BaseModel):
     """Request to save extracted specs from dialogue"""
 
-    goals: Optional[list] = None
-    requirements: Optional[list] = None
-    tech_stack: Optional[list] = None
-    constraints: Optional[list] = None
+    goals: Optional[list | str] = None
+    requirements: Optional[list | str] = None
+    tech_stack: Optional[list | str] = None
+    constraints: Optional[list | str] = None
 
 
 class ConflictResolutionRequest(BaseModel):

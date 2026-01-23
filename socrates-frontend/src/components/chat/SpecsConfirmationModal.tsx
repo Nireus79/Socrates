@@ -57,11 +57,10 @@ export const SpecsConfirmationModal: React.FC<SpecsConfirmationModalProps> = ({
       title="Save Detected Specifications"
       size="lg"
     >
-      <div className="space-y-6">
+      <div className="flex flex-col h-full">
         {/* Info message */}
-        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 flex-shrink-0">
           <div className="flex items-start gap-3">
-            <div className="text-2xl">📊</div>
             <div>
               <p className="font-semibold text-slate-800 dark:text-slate-100">
                 {specsCount} specification{specsCount !== 1 ? 's' : ''} detected
@@ -73,9 +72,9 @@ export const SpecsConfirmationModal: React.FC<SpecsConfirmationModalProps> = ({
           </div>
         </div>
 
-        {/* Detected specs list */}
+        {/* Detected specs list - scrollable */}
         {specsCount > 0 && (
-          <div className="space-y-3 bg-slate-50 dark:bg-slate-900/30 p-4 rounded-lg">
+          <div className="overflow-y-auto flex-grow my-4 space-y-3 bg-slate-50 dark:bg-slate-900/30 p-4 rounded-lg">
             {Array.isArray(specs.goals) && specs.goals.length > 0 && (
               <div>
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
@@ -142,8 +141,8 @@ export const SpecsConfirmationModal: React.FC<SpecsConfirmationModalProps> = ({
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex gap-2 pt-4 border-t border-slate-200 dark:border-slate-700">
+        {/* Action Buttons - Fixed at bottom */}
+        <div className="flex gap-2 pt-4 border-t border-slate-200 dark:border-slate-700 flex-shrink-0">
           <button
             onClick={handleConfirm}
             disabled={isLoading}
