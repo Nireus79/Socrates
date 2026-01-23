@@ -670,13 +670,14 @@ Provide a helpful, direct answer."""
                 combined_text = f"User Input:\n{request.message}\n\nAssistant Answer:\n{answer}"
                 insights = orchestrator.claude_client.extract_insights(
                     combined_text,
+                    project,  # Required parameter: ProjectContext
                     user_auth_method=user_auth_method,
                     user_id=current_user
                 )
                 logger.debug(f"Extracted insights from user input and assistant answer: {insights}")
 
-                # If there are any extracted specs and debug mode is on, format insights message
-                if insights and is_debug_mode():
+                # If there are any extracted specs, format debug message and prepare for modal
+                if insights:
                     specs_count = sum([
                         len(insights.get("goals", [])),
                         len(insights.get("requirements", [])),
@@ -685,7 +686,8 @@ Provide a helpful, direct answer."""
                     ])
 
                     if specs_count > 0:
-                        insights_message = f"\n\n📊 **Detected Specs** (Debug Mode):\n"
+                        # Always show debug message if specs found (not just in debug mode)
+                        insights_message = f"\n\n📊 **Detected Specs**:\n"
                         if insights.get("goals"):
                             insights_message += f"- Goals: {', '.join(insights['goals'])}\n"
                         if insights.get("requirements"):
@@ -695,11 +697,12 @@ Provide a helpful, direct answer."""
                         if insights.get("constraints"):
                             insights_message += f"- Constraints: {', '.join(insights['constraints'])}\n"
                         insights_message += "\n*Would you like to save these specs to your project?*"
-                        logger.info(f"Debug mode: showing {specs_count} extracted specs to user")
+                        logger.info(f"Detected {specs_count} specs in direct mode dialogue - modal will be shown to user")
 
             except Exception as e:
                 logger.warning(f"Failed to extract insights in direct mode: {str(e)}")
                 # Continue without insights if extraction fails
+                insights = None
 
             return APIResponse(
                 success=True,
