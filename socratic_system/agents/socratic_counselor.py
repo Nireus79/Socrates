@@ -811,12 +811,25 @@ What would be most helpful for you?"""
             )
             self._log_extracted_insights(logger, insights)
 
+        # Mark the last unanswered question as answered BEFORE conflict detection
+        # This ensures the question is marked answered even if conflicts are found
+        # (conflicts don't prevent progress - they just need to be resolved)
+        if project.pending_questions:
+            for q in reversed(project.pending_questions):
+                if q.get("status") == "unanswered":
+                    q["status"] = "answered"
+                    q["answered_at"] = datetime.datetime.now().isoformat()
+                    logger.debug(f"Marked question as answered: {q.get('question', '')[:50]}...")
+                    break
+
         # REAL-TIME CONFLICT DETECTION
         if insights:
             conflict_result = self._handle_conflict_detection(
                 insights, project, current_user, logger, is_api_mode
             )
             if conflict_result.get("has_conflicts"):
+                # Save project even when conflicts detected (question is already marked answered above)
+                self.database.save_project(project)
                 return {
                     "status": "success",
                     "insights": insights,
@@ -829,15 +842,6 @@ What would be most helpful for you?"""
 
         # Track question effectiveness for learning
         self._track_question_effectiveness(project, insights, user_response, current_user, logger)
-
-        # Mark the last unanswered question as answered to prevent repetition
-        if project.pending_questions:
-            for q in reversed(project.pending_questions):
-                if q.get("status") == "unanswered":
-                    q["status"] = "answered"
-                    q["answered_at"] = datetime.datetime.now().isoformat()
-                    logger.debug(f"Marked question as answered: {q.get('question', '')[:50]}...")
-                    break
 
         # Check if phase is now complete and offer advancement option
         result = {"status": "success", "insights": insights}
