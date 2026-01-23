@@ -53,8 +53,12 @@ class MultiFileCodeSplitter:
             logger.error(f"Syntax error splitting code: {e}")
 
             # Check if the code appears to be in markdown format
-            from socratic_system.utils.code_extractor import CodeExtractor
-            if CodeExtractor.is_markdown_format(self.code):
+            from socratic_system.utils.extractors.registry import LanguageExtractorRegistry
+
+            # Get Python extractor from registry
+            extractor = LanguageExtractorRegistry.get_extractor("python")
+
+            if extractor and extractor.is_markdown_format(self.code):
                 logger.error(
                     "Generated code appears to be in markdown format instead of raw Python. "
                     "Code extraction should have been triggered but failed. "

@@ -654,24 +654,25 @@ OUTPUT FORMAT - CRITICAL:
 
             # Extract code from markdown if needed (defensive measure)
             raw_content = response.content[0].text
-            from socratic_system.utils.code_extractor import CodeExtractor
+            from socratic_system.utils.extractors.registry import LanguageExtractorRegistry
 
-            extractor = CodeExtractor()
-            if extractor.is_markdown_format(raw_content):
+            # Get Python extractor from registry
+            extractor = LanguageExtractorRegistry.get_extractor("python")
+            if extractor and extractor.is_markdown_format(raw_content):
                 logger.warning(
                     "Received markdown-formatted response from Claude, extracting Python code"
                 )
-                extracted_code = extractor.extract_from_markdown(raw_content)
 
-                # Validate extracted code
-                is_valid, error = extractor.validate_python_syntax(extracted_code)
-                if not is_valid:
-                    logger.error(f"Extracted code has syntax errors: {error}")
+                # Extract and validate in one call using new registry API
+                extraction_result = extractor.extract_and_validate(raw_content)
+
+                if extraction_result.is_valid:
+                    logger.info("Successfully extracted and validated Python code from markdown")
+                    return extraction_result.extracted_code
+                else:
+                    logger.error(f"Extracted code has syntax errors: {extraction_result.validation_error}")
                     logger.error("Returning original response - may contain markdown")
                     return raw_content
-
-                logger.info("Successfully extracted and validated Python code from markdown")
-                return extracted_code
 
             return raw_content
 

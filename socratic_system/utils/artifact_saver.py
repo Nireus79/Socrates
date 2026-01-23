@@ -133,11 +133,13 @@ class ArtifactSaver:
             # Validate content if it's supposed to be code
             actual_artifact_type = artifact_type
             if artifact_type == "code":
-                from socratic_system.utils.code_extractor import CodeExtractor
-                extractor = CodeExtractor()
+                from socratic_system.utils.extractors.registry import LanguageExtractorRegistry
+
+                # Get Python extractor from registry
+                extractor = LanguageExtractorRegistry.get_extractor("python")
 
                 # Check if markdown format slipped through
-                if extractor.is_markdown_format(artifact):
+                if extractor and extractor.is_markdown_format(artifact):
                     logger.warning(
                         "Detected markdown format in code artifact. "
                         "Code extraction did not trigger or failed. "
@@ -145,16 +147,17 @@ class ArtifactSaver:
                     )
                     actual_artifact_type = "documentation"
 
-                    # Try to extract anyway for better content
-                    extracted = extractor.extract_from_markdown(artifact)
-                    is_valid, error = extractor.validate_python_syntax(extracted)
+                    # Try to extract and validate using registry API
+                    extraction_result = extractor.extract_and_validate(artifact)
 
-                    if is_valid:
+                    if extraction_result.is_valid:
                         logger.info("Extracted code is valid, saving extracted version")
-                        artifact = extracted
+                        artifact = extraction_result.extracted_code
                         actual_artifact_type = "code"  # Override back to code
                     else:
-                        logger.warning(f"Extracted code invalid: {error}, saving as markdown")
+                        logger.warning(
+                            f"Extracted code invalid: {extraction_result.validation_error}, saving as markdown"
+                        )
                         actual_artifact_type = "documentation"
 
             # Determine file extension
