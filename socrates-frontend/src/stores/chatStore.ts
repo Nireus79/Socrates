@@ -218,7 +218,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
       if (currentState.mode === 'socratic' && currentState.currentProjectId) {
         try {
           logger.info('Response processed. Generating next question...');
-          await get().getQuestion(currentState.currentProjectId);
+          const questionResult = await get().getQuestion(currentState.currentProjectId);
+          if (!questionResult) {
+            logger.warn('getQuestion() returned empty result - no new question available');
+            get().addSystemMessage('✓ Processing complete. Phase may be complete.');
+          }
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : String(error);
           logger.error(`Failed to get next question:`, error);

@@ -770,41 +770,16 @@ Provide a helpful, direct answer."""
                     },
                 )
 
-            # Format insights for response (only if debug mode is enabled)
+            # In Socratic mode: Specs/insights are automatically saved but NOT shown to user
+            # They are silently extracted and stored in the project without dialogue interference
             insights = result.get("insights", {})
-            if insights and is_debug_mode():
-                # DEBUG MODE: Format insights as a readable string for the frontend
-                logger.debug("Debug mode enabled - including insights in response")
-                content_parts = []
-                if insights.get("goals"):
-                    content_parts.append(f"Goals: {insights.get('goals')}")
-                if insights.get("requirements"):
-                    content_parts.append(f"Requirements: {', '.join(insights.get('requirements', []))}")
-                if insights.get("tech_stack"):
-                    content_parts.append(f"Tech Stack: {', '.join(insights.get('tech_stack', []))}")
-                if insights.get("constraints"):
-                    content_parts.append(f"Constraints: {', '.join(insights.get('constraints', []))}")
-                if insights.get("team_structure"):
-                    content_parts.append(f"Team: {insights.get('team_structure')}")
-                if insights.get("note"):
-                    content_parts.append(f"Note: {insights.get('note')}")
-                content = "\n".join(content_parts) if content_parts else "Insights recorded."
+            if insights:
+                logger.debug("Insights extracted and saved to project (hidden from Socratic dialogue)")
 
-                # Return insights message
-                response_data = {
-                    "message": {
-                        "id": f"msg_{id(result)}",
-                        "role": "assistant",
-                        "content": content,
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                    }
-                }
-            else:
-                # No insights or debug mode off - don't return a message, just return empty data
-                # Frontend will handle moving to next question without adding extra message
-                if insights and not is_debug_mode():
-                    logger.debug("Debug mode disabled - insights hidden from response")
-                response_data = {}
+            # In Socratic mode, don't return insights as a message to the frontend
+            # The frontend will proceed directly to generate the next question
+            # This keeps the Socratic dialogue clean and uninterrupted
+            response_data = {}
 
             # Check if phase is complete and add recommendation
             try:
