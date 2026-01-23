@@ -200,6 +200,9 @@ class SocraticCounselorAgent(Agent):
         user.increment_question_usage()
         self.orchestrator.database.save_user(user)
 
+        # Save project with new question added to conversation history and pending questions
+        self.database.save_project(project)
+
         return {"status": "success", "question": question}
 
     def _generate_dynamic_question(
@@ -842,6 +845,9 @@ What would be most helpful for you?"""
         if phase_completion["is_complete"]:
             result["phase_complete"] = True
             result["phase_completion_message"] = phase_completion["message"]
+
+        # Save project to persist question status updates and conversation history changes
+        self.database.save_project(project)
 
         return result
 
