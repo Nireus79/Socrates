@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socrates-ai"
-version = "1.3.1"
+version = "1.3.2"
 description = "Production-ready collaborative development platform with GitHub-ready project generation, Socratic AI guidance, multi-agent orchestration, real-time collaboration, and RAG knowledge management"
 readme = "README.md"
 license = {text = "MIT"}
