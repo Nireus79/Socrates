@@ -1837,23 +1837,24 @@ User: ${currentProject?.owner || 'N/A'}`;
                   );
                 })
               )}
+
+              {/* Specs Confirmation - Inline (Direct mode only) - scrolls with dialogue */}
+              {extractedSpecs && pendingExtractedSpecs && mode === 'direct' && (
+                <SpecsConfirmationInline
+                  specs={extractedSpecs}
+                  onConfirm={async (specs) => {
+                    if (selectedProjectId) {
+                      await saveExtractedSpecs(selectedProjectId, specs);
+                    }
+                  }}
+                  onDecline={() => {
+                    clearExtractedSpecs();
+                  }}
+                />
+              )}
+
               <div ref={messagesEndRef} />
             </div>
-
-            {/* Specs Confirmation - Inline (Direct mode only) */}
-            {extractedSpecs && pendingExtractedSpecs && mode === 'direct' && (
-              <SpecsConfirmationInline
-                specs={extractedSpecs}
-                onConfirm={async (specs) => {
-                  if (selectedProjectId) {
-                    await saveExtractedSpecs(selectedProjectId, specs);
-                  }
-                }}
-                onDecline={() => {
-                  clearExtractedSpecs();
-                }}
-              />
-            )}
 
             {/* Input Area - Fixed at Bottom */}
             <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 p-4 space-y-3">
