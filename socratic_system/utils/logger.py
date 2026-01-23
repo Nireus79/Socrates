@@ -176,11 +176,8 @@ class DebugLogger:
         # not our DebugLogger singleton
         root_logger = logging.getLogger()
 
-        # Set root logger level to DEBUG when enabling, so messages can pass through handlers
-        if enabled:
-            root_logger.setLevel(logging.DEBUG)
-        else:
-            root_logger.setLevel(logging.WARNING)
+        # Keep root logger at DEBUG level always - filter at handler level only
+        root_logger.setLevel(logging.DEBUG)
 
         # Update all handlers attached to root logger
         new_level = logging.DEBUG if enabled else logging.ERROR
@@ -191,12 +188,12 @@ class DebugLogger:
                 handler.setLevel(new_level)
 
         # Update all existing loggers (both with and without handlers)
-        # Most loggers propagate to root logger, so they need the right level too
+        # Keep all loggers at DEBUG level - filter only at handler level
         for logger_name in logging.Logger.manager.loggerDict:
             logger_obj = logging.getLogger(logger_name)
             if logger_obj:
-                # Set logger level to DEBUG when debug enabled, WARNING otherwise
-                logger_obj.setLevel(logging.DEBUG if enabled else logging.WARNING)
+                # Keep all loggers at DEBUG level for consistent filtering
+                logger_obj.setLevel(logging.DEBUG)
 
                 # Update handlers if they exist
                 if hasattr(logger_obj, "handlers"):
@@ -206,9 +203,10 @@ class DebugLogger:
                         ):
                             handler.setLevel(new_level)
 
-        # Also update the main socratic_rag logger level
+        # Keep the main socratic_rag logger at DEBUG level always
+        # We filter at the handler level, not the logger level
         if cls._logger:
-            cls._logger.setLevel(logging.DEBUG if enabled else logging.WARNING)
+            cls._logger.setLevel(logging.DEBUG)
 
     @classmethod
     def is_debug_mode(cls) -> bool:
