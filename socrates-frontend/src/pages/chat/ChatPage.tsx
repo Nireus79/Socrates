@@ -1838,8 +1838,8 @@ User: ${currentProject?.owner || 'N/A'}`;
                 })
               )}
 
-              {/* Specs Confirmation - Inline (Direct mode only) - scrolls with dialogue */}
-              {extractedSpecs && pendingExtractedSpecs && mode === 'direct' && (
+              {/* Specs Confirmation - Inline (Direct mode always, Socratic mode when debug enabled) - scrolls with dialogue */}
+              {extractedSpecs && pendingExtractedSpecs && (mode === 'direct' || debugInfo?.debugEnabled) && (
                 <SpecsConfirmationInline
                   specs={extractedSpecs}
                   onConfirm={async (specs) => {
