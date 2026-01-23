@@ -18,7 +18,7 @@ import {
   SkippedQuestionsPanel,
   AnswerSuggestionsModal,
   PhaseActionModal,
-  SpecsConfirmationModal,
+  SpecsConfirmationInline,
   NLUInput,
 } from '../../components/chat';
 import { Card, LoadingSpinner, Alert, Button, Input } from '../../components/common';
@@ -90,7 +90,6 @@ export const ChatPage: React.FC = () => {
   const [debugInfo, setDebugInfo] = React.useState<{ debugEnabled: boolean; timestamp: string } | null>(null);
   const [showTestingModeModal, setShowTestingModeModal] = React.useState(false);
   const [testingModeStatus, setTestingModeStatus] = React.useState<{ enabled: boolean; message: string } | null>(null);
-  const [showSpecsModal, setShowSpecsModal] = React.useState(false);
   const [selectedProjectId, setSelectedProjectId] = React.useState(projectId || '');
   const [isSwitchingProject, setIsSwitchingProject] = React.useState(false);
   const [sessionStartTime, setSessionStartTime] = React.useState<Date | null>(null);
@@ -111,13 +110,6 @@ export const ChatPage: React.FC = () => {
   // Track if we've already loaded initial question for this project
   const initialQuestionLoadedRef = React.useRef<string | null>(null);
   const isLoadingHistoryRef = React.useRef<boolean>(false);
-
-  // Show specs confirmation modal when specs are extracted
-  React.useEffect(() => {
-    if (pendingExtractedSpecs && extractedSpecs) {
-      setShowSpecsModal(true);
-    }
-  }, [pendingExtractedSpecs, extractedSpecs]);
 
   // Load projects list on mount
   React.useEffect(() => {
@@ -1848,6 +1840,21 @@ User: ${currentProject?.owner || 'N/A'}`;
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Specs Confirmation - Inline */}
+            {extractedSpecs && pendingExtractedSpecs && (
+              <SpecsConfirmationInline
+                specs={extractedSpecs}
+                onConfirm={async (specs) => {
+                  if (selectedProjectId) {
+                    await saveExtractedSpecs(selectedProjectId, specs);
+                  }
+                }}
+                onDecline={() => {
+                  clearExtractedSpecs();
+                }}
+              />
+            )}
+
             {/* Input Area - Fixed at Bottom */}
             <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 p-4 space-y-3">
               {/* NLU Mode Toggle */}
@@ -2026,22 +2033,6 @@ User: ${currentProject?.owner || 'N/A'}`;
         onEnrich={handlePhaseEnrich}
       />
 
-      {/* Specs Confirmation Modal */}
-      {extractedSpecs && (
-        <SpecsConfirmationModal
-          isOpen={showSpecsModal}
-          onClose={() => setShowSpecsModal(false)}
-          specs={extractedSpecs}
-          onConfirm={async (specs) => {
-            if (selectedProjectId) {
-              await saveExtractedSpecs(selectedProjectId, specs);
-            }
-          }}
-          onDecline={() => {
-            clearExtractedSpecs();
-          }}
-        />
-      )}
 
       {/* Skipped Questions Panel */}
       {selectedProjectId && <SkippedQuestionsPanel projectId={selectedProjectId} />}
