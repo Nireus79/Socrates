@@ -465,6 +465,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // Continue with next question in Socratic mode
       if (get().mode === 'socratic') {
         try {
+          logger.info('Saved specs in Socratic mode, fetching next question');
+          // Note: getQuestion will check for unanswered questions from previous session
+          // If the current question was just answered (from the same response that extracted these specs),
+          // it should be marked as answered and not returned here
           await get().getQuestion(projectId);
         } catch (questionError) {
           logger.warn(`Failed to get next question: ${questionError}`);
