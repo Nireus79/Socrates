@@ -785,7 +785,10 @@ Provide a helpful, direct answer."""
             if is_debug_mode() and insights:
                 logger.debug(f"Debug mode enabled - returning insights to frontend: {insights}")
                 response_data["extracted_insights"] = insights
-                response_data["debug_message"] = f"Extracted {len([v for v in insights.values() if v])} insight categories"
+                response_data["extracted_specs"] = insights
+                response_data["extracted_specs_count"] = len([v for v in insights.values() if v])
+                response_data["debug_message"] = f"Extracted {response_data['extracted_specs_count']} insight categories"
+                logger.debug(f"Returning {response_data['extracted_specs_count']} insight categories to frontend")
 
             # In Socratic mode, don't return insights as a message to the frontend (unless debug mode)
             # The frontend will proceed directly to generate the next question
