@@ -39,6 +39,13 @@ export const chatAPI = {
       constraints?: string[];
     };
     extracted_specs_count?: number;
+    extracted_insights?: {
+      goals?: string | string[];
+      requirements?: string[];
+      tech_stack?: string[];
+      constraints?: string[];
+    };
+    debug_message?: string;
     mode?: string;
   }> {
     return apiClient.post<{
@@ -52,6 +59,13 @@ export const chatAPI = {
         constraints?: string[];
       };
       extracted_specs_count?: number;
+      extracted_insights?: {
+        goals?: string | string[];
+        requirements?: string[];
+        tech_stack?: string[];
+        constraints?: string[];
+      };
+      debug_message?: string;
       mode?: string;
     }>(
       `/projects/${projectId}/chat/message`,

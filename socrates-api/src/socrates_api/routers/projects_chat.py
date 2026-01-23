@@ -778,10 +778,18 @@ Provide a helpful, direct answer."""
             if insights:
                 logger.debug("Insights extracted and saved to project (hidden from Socratic dialogue)")
 
-            # In Socratic mode, don't return insights as a message to the frontend
+            # Check if debug mode is enabled - if so, return insights for debugging
+            from socratic_system.utils.logger import is_debug_mode
+            response_data = {}
+
+            if is_debug_mode() and insights:
+                logger.debug(f"Debug mode enabled - returning insights to frontend: {insights}")
+                response_data["extracted_insights"] = insights
+                response_data["debug_message"] = f"Extracted {len([v for v in insights.values() if v])} insight categories"
+
+            # In Socratic mode, don't return insights as a message to the frontend (unless debug mode)
             # The frontend will proceed directly to generate the next question
             # This keeps the Socratic dialogue clean and uninterrupted
-            response_data = {}
 
             # Check if phase is complete and add recommendation
             try:

@@ -181,6 +181,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
         return;
       }
 
+      // If extracted insights were detected in debug mode (Socratic mode), show them
+      if (response.extracted_insights && Object.keys(response.extracted_insights).length > 0) {
+        logger.info(`Debug: Extracted insights detected: ${response.debug_message}`);
+        set({
+          extractedSpecs: response.extracted_insights,
+          pendingExtractedSpecs: true,
+          isLoading: false,
+        });
+        return;
+      }
+
       // If conflicts were detected, store them and notify user
       if (response.conflicts_pending && response.conflicts) {
         logger.warn(`Conflicts detected: ${response.conflicts.length} conflict(s)`);
