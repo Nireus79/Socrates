@@ -619,6 +619,16 @@ REQUIREMENTS:
 - Make it production-ready for this phase
 - Ensure it integrates properly with existing systems
 - Include all necessary imports and dependencies
+
+OUTPUT FORMAT - CRITICAL:
+- Return ONLY raw, executable Python code
+- Do NOT include markdown formatting (##, ###, `, etc.)
+- Do NOT include code fences (```python ```)
+- Do NOT include explanatory text outside of docstrings
+- Do NOT include installation instructions or comments about the code
+- Do NOT include any text before or after the code
+- The response must be valid Python that can be directly parsed by ast.parse()
+- If you have explanations, put them ONLY in docstrings
         """
 
         try:
@@ -642,7 +652,28 @@ REQUIREMENTS:
                 }
             )
 
-            return response.content[0].text
+            # Extract code from markdown if needed (defensive measure)
+            raw_content = response.content[0].text
+            from socratic_system.utils.code_extractor import CodeExtractor
+
+            extractor = CodeExtractor()
+            if extractor.is_markdown_format(raw_content):
+                logger.warning(
+                    "Received markdown-formatted response from Claude, extracting Python code"
+                )
+                extracted_code = extractor.extract_from_markdown(raw_content)
+
+                # Validate extracted code
+                is_valid, error = extractor.validate_python_syntax(extracted_code)
+                if not is_valid:
+                    logger.error(f"Extracted code has syntax errors: {error}")
+                    logger.error("Returning original response - may contain markdown")
+                    return raw_content
+
+                logger.info("Successfully extracted and validated Python code from markdown")
+                return extracted_code
+
+            return raw_content
 
         except Exception as e:
             return f"Error generating code: {e}"

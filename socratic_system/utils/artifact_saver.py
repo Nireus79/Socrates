@@ -130,8 +130,35 @@ class ArtifactSaver:
             save_dir = ArtifactSaver.get_generated_content_dir(project_id, data_dir)
             save_dir.mkdir(parents=True, exist_ok=True)
 
+            # Validate content if it's supposed to be code
+            actual_artifact_type = artifact_type
+            if artifact_type == "code":
+                from socratic_system.utils.code_extractor import CodeExtractor
+                extractor = CodeExtractor()
+
+                # Check if markdown format slipped through
+                if extractor.is_markdown_format(artifact):
+                    logger.warning(
+                        "Detected markdown format in code artifact. "
+                        "Code extraction did not trigger or failed. "
+                        "Saving as documentation instead of code."
+                    )
+                    actual_artifact_type = "documentation"
+
+                    # Try to extract anyway for better content
+                    extracted = extractor.extract_from_markdown(artifact)
+                    is_valid, error = extractor.validate_python_syntax(extracted)
+
+                    if is_valid:
+                        logger.info("Extracted code is valid, saving extracted version")
+                        artifact = extracted
+                        actual_artifact_type = "code"  # Override back to code
+                    else:
+                        logger.warning(f"Extracted code invalid: {error}, saving as markdown")
+                        actual_artifact_type = "documentation"
+
             # Determine file extension
-            extension = ArtifactSaver.EXTENSION_MAP.get(artifact_type, ".txt")
+            extension = ArtifactSaver.EXTENSION_MAP.get(actual_artifact_type, ".txt")
 
             # Create filename
             clean_name = project_name.replace(" ", "_").replace("/", "_").lower()[:30]

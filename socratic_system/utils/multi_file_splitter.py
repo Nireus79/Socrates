@@ -51,6 +51,33 @@ class MultiFileCodeSplitter:
             tree = ast.parse(self.code)
         except SyntaxError as e:
             logger.error(f"Syntax error splitting code: {e}")
+
+            # Check if the code appears to be in markdown format
+            from socratic_system.utils.code_extractor import CodeExtractor
+            if CodeExtractor.is_markdown_format(self.code):
+                logger.error(
+                    "Generated code appears to be in markdown format instead of raw Python. "
+                    "Code extraction should have been triggered but failed. "
+                    "Saving raw markdown as main.py with warning file."
+                )
+                return {
+                    "main.py": self.code,
+                    "README_GENERATION_ERROR.md": (
+                        "# Code Generation Error\n\n"
+                        "The code generation produced markdown-formatted output instead of "
+                        "executable Python code.\n\n"
+                        "This may indicate:\n"
+                        "1. Claude returned markdown instead of raw code\n"
+                        "2. Code extraction failed to parse the response\n"
+                        "3. The extraction logic did not activate properly\n\n"
+                        "**Action Required:**\n"
+                        "- Review the content in `main.py`\n"
+                        "- Extract the actual Python code from the markdown\n"
+                        "- Re-save as proper Python modules\n"
+                    )
+                }
+
+            # Not markdown - regular syntax error
             return {"main.py": self.code}
 
         # Categorize code into different modules
