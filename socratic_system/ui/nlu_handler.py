@@ -230,16 +230,33 @@ class NLUHandler:
                     "message": f"{Fore.YELLOW}I couldn't find a matching command. Type '/help' to see available commands.{Style.RESET_ALL}",
                 }
 
-            # Convert to CommandSuggestion objects
-            suggestions = [
-                CommandSuggestion(
-                    command=interp["command"],
-                    confidence=interp["confidence"],
-                    reasoning=interp["reasoning"],
-                    args=interp.get("args", []),
-                )
-                for interp in interpretations[:3]  # Limit to top 3
-            ]
+            # Convert to CommandSuggestion objects, filtering for valid commands
+            suggestions = []
+            for interp in interpretations[:3]:  # Limit to top 3
+                command = interp["command"]
+                # Validate that command exists in command handler
+                # Try full command name first, then first word if it's a multi-word command
+                command_name = command.lstrip("/")
+                if not self.command_handler.get_command(command_name):
+                    # If full command doesn't exist, try first word (for aliases)
+                    command_name = command_name.split()[0]
+
+                if self.command_handler.get_command(command_name):
+                    suggestions.append(
+                        CommandSuggestion(
+                            command=command,
+                            confidence=interp["confidence"],
+                            reasoning=interp["reasoning"],
+                            args=interp.get("args", []),
+                        )
+                    )
+
+            # If no valid commands found after filtering, return no_match
+            if not suggestions:
+                return {
+                    "status": "no_match",
+                    "message": f"{Fore.YELLOW}I couldn't find a matching command. Type '/help' to see available commands.{Style.RESET_ALL}",
+                }
 
             # Determine if we should execute directly or show suggestions
             top_suggestion = suggestions[0]

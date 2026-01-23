@@ -612,6 +612,61 @@ class TestCommandMetadata:
         assert metadata1 == metadata2
 
 
+class TestCommandValidation:
+    """Test that NLU validates commands exist before suggesting them"""
+
+    def test_reject_nonexistent_command(self, nlu_handler, mock_context):
+        """Test that NLU rejects commands that don't exist in command handler"""
+        mock_response = json.dumps(
+            {
+                "interpretations": [
+                    {
+                        "command": "/nonexistent_command",
+                        "confidence": 0.95,
+                        "reasoning": "This command doesn't exist",
+                        "args": [],
+                    }
+                ]
+            }
+        )
+
+        nlu_handler.claude_client.generate_response = MagicMock(return_value=mock_response)
+
+        result = nlu_handler.interpret("use a fake command", mock_context)
+
+        assert result["status"] == "no_match"
+        assert "couldn't find a matching command" in result["message"].lower()
+
+    def test_filter_invalid_commands_from_suggestions(self, nlu_handler, mock_context):
+        """Test that NLU filters out invalid commands when multiple suggestions are returned"""
+        mock_response = json.dumps(
+            {
+                "interpretations": [
+                    {
+                        "command": "/nonexistent",
+                        "confidence": 0.95,
+                        "reasoning": "Fake command",
+                        "args": [],
+                    },
+                    {
+                        "command": "/help",
+                        "confidence": 0.90,
+                        "reasoning": "Real command",
+                        "args": [],
+                    }
+                ]
+            }
+        )
+
+        nlu_handler.claude_client.generate_response = MagicMock(return_value=mock_response)
+
+        result = nlu_handler.interpret("mixed commands", mock_context)
+
+        # Should succeed with the valid /help command
+        assert result["status"] == "success"
+        assert "/help" in result["command"]
+
+
 class TestIntegrationWithContext:
     """Test NLU integration with application context"""
 
@@ -628,7 +683,7 @@ class TestIntegrationWithContext:
             {
                 "interpretations": [
                     {
-                        "command": "/project status",
+                        "command": "/status",
                         "confidence": 0.85,
                         "reasoning": "Asking about project status",
                         "args": [],
@@ -642,7 +697,7 @@ class TestIntegrationWithContext:
         result = nlu_handler.interpret("how is my project going", context)
 
         assert result["status"] == "success"
-        assert "/project" in result["command"]
+        assert "/status" in result["command"]
 
 
 if __name__ == "__main__":

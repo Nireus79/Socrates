@@ -224,7 +224,7 @@ async def interpret_input(
                 status="error",
                 message="Please enter a command or question.",
                 data={
-                    "status": "no_match",
+                    "status": "error",
                     "message": "Please enter a command or question.",
                     "entities": None,
                     "intent": None,
