@@ -76,10 +76,10 @@ export const SpecsConfirmationModal: React.FC<SpecsConfirmationModalProps> = ({
         {/* Detected specs list */}
         {specsCount > 0 && (
           <div className="space-y-3 bg-slate-50 dark:bg-slate-900/30 p-4 rounded-lg">
-            {specs.goals && specs.goals.length > 0 && (
+            {Array.isArray(specs.goals) && specs.goals.length > 0 && (
               <div>
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                  🎯 Goals
+                  Goals
                 </p>
                 <ul className="space-y-1">
                   {specs.goals.map((goal, idx) => (
@@ -92,10 +92,10 @@ export const SpecsConfirmationModal: React.FC<SpecsConfirmationModalProps> = ({
               </div>
             )}
 
-            {specs.requirements && specs.requirements.length > 0 && (
+            {Array.isArray(specs.requirements) && specs.requirements.length > 0 && (
               <div>
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                  ✅ Requirements
+                  Requirements
                 </p>
                 <ul className="space-y-1">
                   {specs.requirements.map((req, idx) => (
@@ -108,10 +108,10 @@ export const SpecsConfirmationModal: React.FC<SpecsConfirmationModalProps> = ({
               </div>
             )}
 
-            {specs.tech_stack && specs.tech_stack.length > 0 && (
+            {Array.isArray(specs.tech_stack) && specs.tech_stack.length > 0 && (
               <div>
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                  🔧 Tech Stack
+                  Tech Stack
                 </p>
                 <ul className="space-y-1">
                   {specs.tech_stack.map((tech, idx) => (
@@ -124,10 +124,10 @@ export const SpecsConfirmationModal: React.FC<SpecsConfirmationModalProps> = ({
               </div>
             )}
 
-            {specs.constraints && specs.constraints.length > 0 && (
+            {Array.isArray(specs.constraints) && specs.constraints.length > 0 && (
               <div>
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                  ⚠️ Constraints
+                  Constraints
                 </p>
                 <ul className="space-y-1">
                   {specs.constraints.map((constraint, idx) => (
