@@ -613,9 +613,11 @@ async def send_message(
         if user_obj and hasattr(user_obj, 'claude_auth_method'):
             user_auth_method = user_obj.claude_auth_method or "api_key"
 
-        # Determine chat mode and handle accordingly
-        chat_mode = getattr(project, "chat_mode", "socratic")
+        # Determine chat mode: prioritize request.mode if provided, else use project setting
+        # This allows dynamic mode switching without updating the project
+        chat_mode = request.mode if hasattr(request, 'mode') and request.mode else getattr(project, "chat_mode", "socratic")
         orchestrator = get_orchestrator()
+        logger.info(f"Chat mode resolved to: {chat_mode} (request.mode: {getattr(request, 'mode', 'not provided')}, project.chat_mode: {getattr(project, 'chat_mode', 'not set')})")
 
         if chat_mode == "direct":
             # Direct mode: Generate a direct answer without Socratic questioning
