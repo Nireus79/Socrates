@@ -1840,8 +1840,8 @@ User: ${currentProject?.owner || 'N/A'}`;
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Specs Confirmation - Inline */}
-            {extractedSpecs && pendingExtractedSpecs && (
+            {/* Specs Confirmation - Inline (Direct mode only) */}
+            {extractedSpecs && pendingExtractedSpecs && mode === 'direct' && (
               <SpecsConfirmationInline
                 specs={extractedSpecs}
                 onConfirm={async (specs) => {
