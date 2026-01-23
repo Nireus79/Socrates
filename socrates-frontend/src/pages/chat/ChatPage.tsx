@@ -165,26 +165,11 @@ export const ChatPage: React.FC = () => {
       }
 
       if (currentMode === 'socratic') {
-        // Check if there's an unanswered question (last assistant message with no user answer after)
-        let hasUnansweredQuestion = false;
-        if (currentMessages.length > 0) {
-          // Find the last assistant message
-          for (let i = currentMessages.length - 1; i >= 0; i--) {
-            if (currentMessages[i].role === 'assistant') {
-              // Check if there's a user message after this assistant message
-              const hasAnswerAfter = currentMessages.slice(i + 1).some(m => m.role === 'user');
-              if (!hasAnswerAfter) {
-                hasUnansweredQuestion = true;
-              }
-              break;
-            }
-          }
-        }
-
-        // Only generate new question if there's no unanswered question
-        if (!hasUnansweredQuestion) {
-          storeGetQuestion(selectedProjectId);
-        }
+        // Always fetch question on page load - backend handles logic of:
+        // 1. Returning existing unanswered question from pending_questions
+        // 2. Generating new question if none exist
+        // Frontend doesn't need to duplicate this logic
+        storeGetQuestion(selectedProjectId);
       }
     }).catch(error => {
       console.error('Failed to load history:', error);
