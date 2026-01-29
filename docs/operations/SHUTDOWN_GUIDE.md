@@ -1,0 +1,217 @@
+# Socrates AI - Shutdown & Closure Guide
+
+When you're done using Socrates, follow these steps to properly shut down the application and prevent any data loss.
+
+## What You See When Running Socrates
+
+Two windows will be open:
+
+1. **CONSOLE WINDOW** (black terminal window)
+   - Shows: `[INFO] API server starting on http://localhost:8000`
+   - Shows: `[INFO] Frontend starting on http://localhost:5173`
+   - Shows: `[INFO] Press Ctrl+C to shutdown`
+   - Shows: Server logs and activity
+
+2. **BROWSER WINDOW** (white UI window)
+   - Contains: Socrates AI interface and application
+
+## Proper Shutdown Procedure (Recommended)
+
+### Step 1: Switch to Console Window
+- Click on the console (terminal) window
+- It may be in front or behind the browser
+
+### Step 2: Press Ctrl+C
+- Hold Ctrl and press C
+- Look for shutdown message in console:
+  ```
+  [INFO] Shutting down Socrates...
+  ✓ Gracefully terminated
+  ```
+
+### Step 3: Wait for Cleanup
+- Console will show shutdown progress (5-10 seconds)
+- Both windows will close automatically
+- The process is now complete
+
+## What Not To Do ❌
+
+### DO NOT - Close only the browser window:
+```
+❌ Browser closes
+✗ API server keeps running in background
+✗ Console window stays open
+→ RESULT: Orphaned process (memory leak, resource waste)
+```
+
+### DO NOT - Click X to close the console window:
+```
+❌ Closes console without signal
+✗ API server doesn't shut down cleanly
+✗ Database transactions may be interrupted
+→ RESULT: Potential data loss or corruption
+```
+
+### DO NOT - Force close from Task Manager:
+```
+❌ Kills process immediately
+✗ No graceful shutdown
+✗ Database/cache operations halted
+→ RESULT: Data loss, file corruption
+```
+
+## Step-by-Step Visual Guide
+
+### STEP 1 - See Both Windows Running
+```
+┌─────────────────────────────────────────────┐
+│ Console Window                              │
+│ [INFO] API server starting...               │
+│ [INFO] Frontend starting...                 │
+│ [INFO] Press Ctrl+C to shutdown             │
+│ [API] Application startup complete          │
+│ [API] GET /health 200                       │
+│ _                           ← Cursor here   │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│ Browser Window                              │
+│ ┌─────────────────────────────────────────┐ │
+│ │ Socrates AI Interface                   │ │
+│ │ [Dashboard] [Settings] [Projects]  [AI] │ │
+│ └─────────────────────────────────────────┘ │
+└─────────────────────────────────────────────┘
+```
+
+### STEP 2 - Click Console Window
+- Click in the black console area
+- Console gains focus (ready for input)
+- Cursor is now in the console
+
+### STEP 3 - Press Ctrl+C
+- Hold down Ctrl key
+- Press and release C key
+- Release Ctrl key
+- Console shows shutdown messages
+
+### STEP 4 - Wait for Shutdown
+```
+[INFO] Shutting down Socrates...
+[INFO] Terminating API server...
+[INFO] Terminating frontend server...
+✓ Socrates has been shut down
+_
+
+Both windows will close
+Process complete!
+```
+
+## Emergency Stop (IF Ctrl+C Doesn't Work)
+
+If for some reason Ctrl+C doesn't work:
+
+### Step 1: Open Task Manager
+- Press `Ctrl+Shift+Esc` (shortcut)
+- OR right-click taskbar → Task Manager
+- OR press `Ctrl+Alt+Delete` → Task Manager
+
+### Step 2: Find Socrates Process
+- Look for: `socrates.exe`
+- Look for: `python.exe` (if running from command)
+- Look for: `npm` or `node.exe` (frontend)
+
+### Step 3: Select and End Task
+- Click to select the process
+- Click "End Task" button
+- Repeat for all related processes
+
+**⚠️  WARNING:** Use this only if normal Ctrl+C doesn't work!
+This is a force shutdown and may cause data loss.
+
+## How To Tell If Socrates Is Running
+
+### Option 1: Look for Windows
+- Open visible console/browser windows
+
+### Option 2: Check Task Manager
+- `Ctrl+Shift+Esc`
+- Search for "socrates.exe"
+- If listed → Still running
+- If not listed → Shut down
+
+### Option 3: Try to Open New Instance
+- Run socrates.exe again
+- If port error → Still running in background
+- If opens normally → Previous instance closed
+
+### Option 4: Check Browser
+- Try to access: `http://localhost:8000`
+- If page loads → Still running
+- If connection refused → Shut down
+
+## Minimize Instead Of Close
+
+If you want to temporarily hide the windows but keep Socrates running:
+
+### For Console Window:
+- Click minimize button (— button)
+- Console window collapses to taskbar
+- Process keeps running
+
+### For Browser Window:
+- Click minimize button (— button)
+- Browser window collapses to taskbar
+- Process keeps running
+
+### To restore:
+- Click the window name in taskbar
+- Windows appear again
+- Everything continues running
+
+## Common Questions
+
+**Q: Do I have to close the console window?**
+A: Yes, the console controls the application. When you close it properly (via Ctrl+C), the entire Socrates process shuts down.
+
+**Q: What if I just close the browser?**
+A: The API server keeps running in the background. You'll need to use Ctrl+C in the console or Task Manager to stop it.
+
+**Q: Can I minimize the console and just use the browser?**
+A: Yes! You can minimize the console to the taskbar, but keep it running. Just don't close it without Ctrl+C.
+
+**Q: How long does shutdown take?**
+A: 5-10 seconds typically. Socrates needs time to:
+   - Flush databases
+   - Close connections
+   - Terminate subprocesses
+   - Clean up resources
+
+**Q: Is data safe if I force close?**
+A: No! Always use Ctrl+C for graceful shutdown. Force closing may cause:
+   - Database corruption
+   - Lost unsaved work
+   - Resource leaks
+
+**Q: What if Ctrl+C doesn't work?**
+A: Use Task Manager (`Ctrl+Shift+Esc`) to force close only as a last resort. Report the issue if Ctrl+C regularly fails.
+
+## Summary Checklist
+
+### ✓ DO:
+- ✓ Press Ctrl+C in console window to shut down
+- ✓ Wait for shutdown messages (5-10 seconds)
+- ✓ Both windows close automatically
+- ✓ Minimize console if you prefer hidden windows
+- ✓ Use this process every time before closing
+
+### ✗ DON'T:
+- ✗ Close only the browser window
+- ✗ Force close the console window
+- ✗ Use Task Manager unless Ctrl+C fails
+- ✗ Close windows while work is being saved
+
+---
+
+Thank you for using Socrates AI!
+
+For more help, see: INSTALL_WINDOWS.md
