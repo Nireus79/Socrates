@@ -1,5 +1,7 @@
 # Socrates AI - Collaborative Development Platform
 
+Nireus79 Available for freelance work. Please contact me.
+
 A complete project management and vibe coding RAG system.
 Comprehensive AI-powered platform for collaborative software project development, with real-time collaboration,
 multi-agent orchestration, and production-grade infrastructure.
