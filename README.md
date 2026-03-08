@@ -2,6 +2,14 @@
 
 Nireus79 Available for freelance work. Please contact me.
 
+Socrates AI
+Self-hosted AI agent platform with RAG, tools and collaboration.
+
+• Python API
+• CLI
+• Web UI
+• Docker deployment
+
 A complete project management and vibe coding RAG system.
 Comprehensive AI-powered platform for collaborative software project development, with real-time collaboration,
 multi-agent orchestration, and production-grade infrastructure.
