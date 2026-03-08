@@ -17,6 +17,9 @@ multi-agent orchestration, and production-grade infrastructure.
 > **Status**: Production Ready (v1.1.0)
 > **License**: MIT
 > **Architecture**: FastAPI Backend + React Frontend + PostgreSQL + Redis + ChromaDB
+>
+> <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/075353f2-6871-4b03-93d0-d319b97d3efd" />
+
 
 ## Key Features
 
