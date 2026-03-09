@@ -84,21 +84,37 @@ TOTAL ENTRY POINTS: 3 × 3 = 9 WAYS TO USE SOCRATES
 
 ## Phase 1.5: Concurrent Integrations (Months 1-3)
 
-Build these SIMULTANEOUSLY with marketing for Nexus:
+Add integrations to socrates-nexus repo SIMULTANEOUSLY with marketing for Nexus:
 
-### socrates-nexus-openclaw
+### Openclaw Integration (Built-in)
 
-**What it is**: Openclaw "Skill" that replaces single-provider LLM with Socrates Nexus
+**What it is**: Openclaw "Skill" included in socrates-nexus with optional dependency
+
+```bash
+# Installation with Openclaw support
+pip install socrates-nexus[openclaw]
+```
 
 ```python
-# Installation
-pip install socrates-nexus-openclaw
-
 # Usage in Openclaw
-from socrates_nexus_openclaw import NexusLLMSkill
+from socrates_nexus.integrations.openclaw import NexusLLMSkill
 
 skill = NexusLLMSkill(provider="anthropic", model="claude-opus")
 # Use in Openclaw like any other skill
+```
+
+**Location in repo**:
+```
+socrates-nexus/
+├── src/socrates_nexus/
+│   ├── __init__.py
+│   ├── client.py
+│   ├── models.py
+│   ├── integrations/
+│   │   └── openclaw/
+│   │       ├── __init__.py (NexusLLMSkill export)
+│   │       └── skill.py (implementation)
+│   └── ...
 ```
 
 **Features**:
@@ -118,21 +134,23 @@ skill = NexusLLMSkill(provider="anthropic", model="claude-opus")
 
 **Revenue path**:
 1. Openclaw users discover Socrates through skill
-2. Install socrates-nexus for the skill
+2. Install socrates-nexus[openclaw] for the skill
 3. Consulting: "Help me optimize my Openclaw setup" → $500-1K
 
 ---
 
-### socrates-nexus-langchain
+### LangChain Integration (Built-in)
 
-**What it is**: LangChain LLM provider that uses Socrates Nexus
+**What it is**: LangChain LLM provider included in socrates-nexus with optional dependency
+
+```bash
+# Installation with LangChain support
+pip install socrates-nexus[langchain]
+```
 
 ```python
-# Installation
-pip install socrates-nexus-langchain
-
 # Usage in LangChain chains
-from socrates_nexus_langchain import SocratesNexusLLM
+from socrates_nexus.integrations.langchain import SocratesNexusLLM
 from langchain.chains import LLMChain
 
 llm = SocratesNexusLLM(provider="openai", model="gpt-4")
@@ -142,6 +160,17 @@ result = chain.run(input="...")
 # Easy provider switching
 llm2 = SocratesNexusLLM(provider="google", model="gemini-pro")
 # Same chain, different provider!
+```
+
+**Location in repo**:
+```
+socrates-nexus/
+├── src/socrates_nexus/
+│   ├── integrations/
+│   │   └── langchain/
+│   │       ├── __init__.py (SocratesNexusLLM export)
+│   │       └── llm.py (implementation)
+│   └── ...
 ```
 
 **Features**:
@@ -164,6 +193,34 @@ llm2 = SocratesNexusLLM(provider="google", model="gemini-pro")
 2. Use in production → pull in socrates-nexus as dependency
 3. Consulting: "Migrate my LangChain app to multi-provider" → $1-2K
 4. Future: "Multi-provider RAG with Socratic RAG" → $2-5K projects
+
+---
+
+### Installation Options (Single Repo)
+
+```bash
+# Just core LLM client
+pip install socrates-nexus
+
+# With Openclaw integration
+pip install socrates-nexus[openclaw]
+
+# With LangChain integration
+pip install socrates-nexus[langchain]
+
+# Everything
+pip install socrates-nexus[all]
+```
+
+**pyproject.toml**:
+```toml
+[project.optional-dependencies]
+openclaw = []  # No extra deps needed (thin wrapper)
+langchain = ["langchain>=0.1.0"]
+all = ["langchain>=0.1.0"]
+```
+
+Users only install what they need. No bloat.
 
 ---
 
@@ -275,46 +332,84 @@ llm2 = SocratesNexusLLM(provider="google", model="gemini-pro")
 
 ---
 
-## Repository Structure
+## Repository Structure (Single-Repo Approach)
 
 ```
 GitHub (Nireus79):
 
-socrates-nexus/
-├── Phase 1 (DONE) ✅
-├── v0.1.0 released
-└── Ready for integrations
-
-socrates-nexus-openclaw/                NEW - Phase 1.5
-├── socrates_nexus_openclaw/
-│   ├── __init__.py (NexusLLMSkill)
-│   ├── config.py
-│   └── components/
-├── tests/ (20+ tests)
+socrates-nexus/                          (ONE REPO)
+├── src/socrates_nexus/
+│   ├── __init__.py
+│   ├── client.py
+│   ├── async_client.py
+│   ├── models.py
+│   ├── exceptions.py
+│   ├── retry.py
+│   ├── streaming.py
+│   ├── providers/
+│   │   ├── base.py
+│   │   ├── anthropic.py
+│   │   ├── openai.py
+│   │   ├── google.py
+│   │   └── ollama.py
+│   ├── utils/
+│   │   └── cache.py
+│   └── integrations/          ← NEW (optional dependencies)
+│       ├── __init__.py
+│       ├── openclaw/
+│       │   ├── __init__.py (NexusLLMSkill)
+│       │   └── skill.py
+│       └── langchain/
+│           ├── __init__.py (SocratesNexusLLM)
+│           └── llm.py
+├── tests/
+│   ├── test_core/
+│   ├── test_integrations_openclaw/
+│   └── test_integrations_langchain/
 ├── examples/
-└── docs/
+├── docs/
+└── pyproject.toml
+    [project.optional-dependencies]
+    openclaw = []
+    langchain = ["langchain>=0.1.0"]
+    all = ["langchain>=0.1.0"]
 
-socrates-nexus-langchain/               NEW - Phase 1.5
-├── socrates_nexus_langchain/
-│   ├── __init__.py (SocratesNexusLLM)
-│   ├── llm.py
-│   └── chains/
-├── tests/ (25+ tests)
-├── examples/
-└── docs/
-
-socratic-rag/                            Phase 2
-├── socratic_rag/
+socratic-rag/                            (NEW REPO - Phase 2)
+├── src/socratic_rag/
+│   ├── __init__.py
+│   ├── pipeline.py
+│   └── integrations/          ← Optional integrations
+│       ├── openclaw/
+│       └── langchain/
 ├── tests/
 ├── examples/
-└── docs/
+├── docs/
+└── pyproject.toml
+    dependencies:
+    - socrates-nexus
+    optional:
+    - openclaw = []
+    - langchain = ["langchain>=0.1.0"]
 
-socratic-rag-openclaw/                   Phase 2
-socratic-rag-langchain/                  Phase 2
+socratic-analyzer/                       (NEW REPO - Phase 3)
+├── src/socratic_analyzer/
+│   ├── __init__.py
+│   ├── analyzer.py
+│   └── integrations/          ← Optional integrations
+│       ├── openclaw/
+│       └── langchain/
+├── tests/
+├── examples/
+├── docs/
+└── pyproject.toml
+    dependencies:
+    - socrates-nexus
+    optional:
+    - openclaw = []
+    - langchain = ["langchain>=0.1.0"]
 
-socratic-analyzer/                       Phase 3
-socratic-analyzer-openclaw/              Phase 3
-socratic-analyzer-langchain/             Phase 3
+TOTAL: 3 REPOS with optional integrations
+(Not 9 repos - much simpler!)
 ```
 
 ---
@@ -400,78 +495,80 @@ Month 7-9 (Analyzer Phase + Established)
 
 ---
 
-## Concurrent Development Checklist
+## Concurrent Development Checklist (Single-Repo Approach)
 
 ### Month 1-3: Nexus Phase 1.5
 
-**socrates-nexus-openclaw**:
-- [ ] Create GitHub repo
-- [ ] Implement NexusLLMSkill wrapper
-- [ ] Write 20+ tests
-- [ ] Create 2+ examples
-- [ ] Document integration
+**socrates-nexus integrations** (same repo, v0.2.0):
+- [ ] Create `src/socrates_nexus/integrations/` directory
+- [ ] Implement `integrations/openclaw/` with NexusLLMSkill
+- [ ] Implement `integrations/langchain/` with SocratesNexusLLM
+- [ ] Write 20+ tests for Openclaw integration
+- [ ] Write 25+ tests for LangChain integration
+- [ ] Create 2+ Openclaw examples
+- [ ] Create 3+ LangChain examples
+- [ ] Document both integrations in docs/
 - [ ] Beta test with Openclaw users
-- [ ] Release v0.1.0
-- [ ] Announce in Openclaw community
-
-**socrates-nexus-langchain**:
-- [ ] Create GitHub repo
-- [ ] Implement SocratesNexusLLM adapter
-- [ ] Write 25+ tests
-- [ ] Create 3+ examples
-- [ ] Document integration
 - [ ] Beta test with LangChain users
-- [ ] Release v0.1.0
-- [ ] Announce in LangChain community
+- [ ] Update pyproject.toml with optional dependencies
+- [ ] Release v0.2.0 (includes integrations)
+- [ ] Announce in both communities
 
 **Marketing**:
-- [ ] Blog: Openclaw integration
-- [ ] Blog: LangChain integration
-- [ ] Video: Multi-provider setup
-- [ ] Social: Twitter threads
-- [ ] Community: Reddit posts
+- [ ] Blog: "Socrates Nexus v0.2 - Multi-Provider LLM for Openclaw & LangChain"
+- [ ] Video: "Multi-provider LLM setup with Socrates"
+- [ ] Social: Twitter threads on multi-provider strategies
+- [ ] Community: Openclaw skill announcement
+- [ ] Community: LangChain integration announcement
+- [ ] Community: Reddit posts on r/langchain, r/Python
 - [ ] Community: Discord engagement
 
 ---
 
 ### Month 4-6: RAG Phase 2
 
-**socratic-rag** (core):
+**socratic-rag** (new repo, v0.1.0):
+- [ ] Create `socratic-rag` GitHub repo
 - [ ] Extract RAG code from Socrates
-- [ ] Build on Socrates Nexus dependency
+- [ ] Build on socrates-nexus dependency
+- [ ] Create `src/socratic_rag/integrations/` directory
+- [ ] Implement `integrations/openclaw/` with RAG skill
+- [ ] Implement `integrations/langchain/` with retriever
 - [ ] Write 50+ tests
 - [ ] Create 5+ examples
-- [ ] Complete documentation
-- [ ] Release v0.1.0
+- [ ] Document integrations
+- [ ] Update pyproject.toml with optional dependencies
+- [ ] Release v0.1.0 (includes integrations)
+- [ ] Announce in both communities
 
-**socratic-rag-openclaw**:
-- [ ] Create GitHub repo
-- [ ] Implement as Openclaw skill
-- [ ] Write 20+ tests
-- [ ] Release v0.1.0
-
-**socratic-rag-langchain**:
-- [ ] Create GitHub repo
-- [ ] Implement as LangChain retriever
-- [ ] Write 25+ tests
-- [ ] Release v0.1.0
+**Marketing**:
+- [ ] Blog: "Socratic RAG - Retrieval with Multi-Provider LLMs"
+- [ ] Video: "Build RAG systems with Socratic"
+- [ ] Announce Openclaw RAG skill
+- [ ] Announce LangChain retriever integration
 
 ---
 
 ### Month 7-9: Analyzer Phase 3
 
-**socratic-analyzer** (core):
-- [ ] Extract analyzer code
-- [ ] Build on Socrates Nexus dependency
+**socratic-analyzer** (new repo, v0.1.0):
+- [ ] Create `socratic-analyzer` GitHub repo
+- [ ] Extract analyzer code from Socrates
+- [ ] Build on socrates-nexus dependency
+- [ ] Create `src/socratic_analyzer/integrations/` directory
+- [ ] Implement `integrations/openclaw/` with analyzer skill
+- [ ] Implement `integrations/langchain/` with tool
 - [ ] Write 50+ tests
 - [ ] Create 5+ examples
-- [ ] Complete documentation
-- [ ] Release v0.1.0
+- [ ] Document integrations
+- [ ] Update pyproject.toml with optional dependencies
+- [ ] Release v0.1.0 (includes integrations)
+- [ ] Announce in both communities
 
-**socratic-analyzer-openclaw** & **socratic-analyzer-langchain**:
-- [ ] Create both integrations
-- [ ] Write tests, examples
-- [ ] Release v0.1.0 for both
+**Marketing**:
+- [ ] Blog: "Socratic Analyzer - Automated Code Insights"
+- [ ] Video: "Analyze projects with Socratic"
+- [ ] Community announcements
 
 ---
 
@@ -560,38 +657,48 @@ Month 7-9 (Analyzer Phase + Established)
 
 1. **Dual Distribution**: 2 large communities instead of building 1 from zero
 2. **9 Entry Points**: 3 packages × 3 channels = multiple ways to adopt
-3. **Lower Risk**: If LangChain adoption is slow, Openclaw is backup
-4. **Higher Revenue**: Consulting gigs from both communities = 2x projects
-5. **Clearer Value**: "Better provider support for X" beats "choose us"
-6. **Network Effect**: Both communities drive each other
-7. **Sustainable**: Month 6+ revenue is $1-2K not $500-1K
-8. **Future-Proof**: Foundation for all future Socrates products
+3. **Single-Repo Simplicity**: 3 repos total, not 9 (Nexus, RAG, Analyzer each with built-in integrations)
+4. **Optional Dependencies**: Users only install what they need (no bloat)
+5. **Lower Maintenance**: 1 CI/CD pipeline per package instead of 3
+6. **Lower Risk**: If LangChain adoption is slow, Openclaw is backup
+7. **Higher Revenue**: Consulting gigs from both communities = 2x projects
+8. **Clearer Value**: "Better provider support for X" beats "choose us"
+9. **Network Effect**: Both communities drive each other
+10. **Sustainable**: Month 6+ revenue is $1-2K not $500-1K
+11. **Future-Proof**: Foundation for all future Socrates products
 
 ---
 
 ## Next Steps (When Ready)
 
 ### This Week
-1. [ ] Approve concurrent development approach
-2. [ ] Create `socrates-nexus-openclaw` repo
-3. [ ] Create `socrates-nexus-langchain` repo
-4. [ ] Assign developers to both tracks
+1. [ ] Approve single-repo approach for integrations
+2. [ ] Create `src/socrates_nexus/integrations/` directory structure
+3. [ ] Plan OpenClaw & LangChain integration APIs
+4. [ ] Identify dependencies needed in pyproject.toml
 
 ### Week 1-2
-1. [ ] Implement Openclaw skill
-2. [ ] Implement LangChain adapter
-3. [ ] Write tests for both
+1. [ ] Implement `integrations/openclaw/` with NexusLLMSkill
+2. [ ] Implement `integrations/langchain/` with SocratesNexusLLM
+3. [ ] Write tests for both integrations
+4. [ ] Create examples for both
 
 ### Week 3-4
-1. [ ] Beta testing
-2. [ ] Polish & documentation
-3. [ ] Prepare announcements
+1. [ ] Beta testing with Openclaw users
+2. [ ] Beta testing with LangChain users
+3. [ ] Polish & documentation
+4. [ ] Update pyproject.toml with optional dependencies
 
-### Week 5+
-1. [ ] Launch both integrations
-2. [ ] Community engagement
-3. [ ] Content creation
-4. [ ] Consulting pipeline
+### Week 5
+1. [ ] Release socrates-nexus v0.2.0 (with integrations)
+2. [ ] Announce in both communities
+3. [ ] Create blog posts & tutorials
+4. [ ] Launch consulting inquiry pipeline
+
+### Month 2-3+
+1. [ ] Start Phase 2: Extract & build socratic-rag
+2. [ ] Add same integration pattern to RAG
+3. [ ] Continue marketing & consulting
 
 ---
 
