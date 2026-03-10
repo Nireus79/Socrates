@@ -796,9 +796,12 @@ LONG-TERM (MONTH 18+) - Mature Ecosystem
 
 ### 📊 GitHub Project Tracking
 
-All ecosystem work is now tracked in: **[Socrates Ecosystem Roadmap (GitHub Project)](https://github.com/users/Nireus79/projects)**
+All ecosystem work is now tracked in: **[Socrates Ecosystem Roadmap (GitHub Project)](https://github.com/users/Nireus79/projects/3)**
 
-Setup guide: See [GITHUB_PROJECT_SETUP.md](Socrates-nexus/GITHUB_PROJECT_SETUP.md)
+**Project Setup**:
+- View Project: https://github.com/users/Nireus79/projects/3
+- Issues Template: See [PROJECT_ISSUES.md](Socrates-nexus/PROJECT_ISSUES.md) in Socrates-nexus
+- Setup Guide: See [GITHUB_PROJECT_SETUP.md](Socrates-nexus/GITHUB_PROJECT_SETUP.md)
 
 ### 🚀 NEXT PRIORITY: Phase 1.5 - Nexus Integrations
 
