@@ -147,7 +147,6 @@ socrates-nexus/
 # Installation with LangChain support
 pip install socrates-nexus[langchain]
 ```
-
 ```python
 # Usage in LangChain chains
 from socrates_nexus.integrations.langchain import SocratesNexusLLM
