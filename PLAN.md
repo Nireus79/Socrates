@@ -803,14 +803,18 @@ All ecosystem work is now tracked in: **[Socrates Ecosystem Roadmap (GitHub Proj
 - Issues Template: See [PROJECT_ISSUES.md](Socrates-nexus/PROJECT_ISSUES.md) in Socrates-nexus
 - Setup Guide: See [GITHUB_PROJECT_SETUP.md](Socrates-nexus/GITHUB_PROJECT_SETUP.md)
 
-### 🚀 NEXT PRIORITY: Phase 1.5 - Nexus Integrations
+### ✅ Phase 1.5 - Nexus Integrations (COMPLETE)
 
-**Focus**: Add integrations to socrates-nexus (v0.2.0)
-- [ ] Openclaw skill in socrates-nexus
-- [ ] LangChain LLM provider in socrates-nexus
-- [ ] Marketing launch (both communities)
-- [ ] Consulting setup (GitHub Sponsors + inquiry form)
-- [ ] GitHub Project setup and initial issues
+**Status**: COMPLETE - socrates-nexus v0.3.0 released with integrations
+
+**What was delivered**:
+- [x] Openclaw skill in socrates-nexus (src/socrates_nexus/integrations/openclaw/skill.py)
+- [x] LangChain LLM provider in socrates-nexus (src/socrates_nexus/integrations/langchain/llm.py)
+- [x] Both integrations published to PyPI as optional dependencies
+- [x] Full test coverage for integrations
+- [x] Documentation in README with examples
+
+**Next Phase**: Phase 4a - Socratic Agents (v0.1.0) - Extract from monolith, release to PyPI with integrations
 
 ---
 
