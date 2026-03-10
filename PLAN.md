@@ -926,8 +926,209 @@ twine upload dist/* --username __token__ --password $PYPI_API_KEY
 
 ---
 
+## Part 14: Skill Generator Agent (Future Enhancement for Phase 4a+)
+
+### Overview
+
+A new agent planned for addition to `socratic-agents` package that generates adaptive behavioral skills for other agents based on:
+- Project maturity levels (from Maturity System)
+- User learning patterns (from Learning Engine)
+- Project context and progress
+
+**Status**: 📋 Approved for Implementation | **Target**: Q2 2026 (Weeks 1-6 after Phase 4a stabilization)
+
+### Key Characteristics
+
+- ✅ **Standalone**: Works independently, can be used in any project
+- ✅ **Pure Design**: Transforms data (maturity → skills), no side effects
+- ✅ **Reusable**: Works with Openclaw, LangChain, Django, Flask, custom projects
+- ✅ **Low Risk**: Can be implemented incrementally without breaking changes
+- ✅ **High Value**: Makes agents adaptive without code changes
+
+### Documentation
+
+Complete analysis available in three documents:
+
+1. **SKILL_GENERATOR_AGENT_OVERVIEW.md** (START HERE)
+   - Quick summary and implementation guide
+   - Architecture overview and integration points
+   - Roadmap and success metrics
+   - Q&A and next steps
+
+2. **SKILL_GENERATOR_AGENT_ANALYSIS.md** (DETAILED ANALYSIS)
+   - Feasibility assessment (✅ YES - technically possible)
+   - Current systems deep-dive (Maturity, Learning, Skills)
+   - Three implementation options with tradeoffs
+   - Integration with other agents
+   - Risk analysis and implementation roadmap
+   - **Read for**: Technical understanding, design options, risk assessment
+
+3. **SKILL_GENERATOR_STANDALONE_ANALYSIS.md** (REUSABILITY & ARCHITECTURE)
+   - Standalone vs. integrated design patterns
+   - Real-world usage examples (Django, Flask, LangChain, Research)
+   - Pure design principles
+   - How to architect for maximum reusability
+   - **Read for**: Architectural decisions, external project usage
+
+### Problem It Solves
+
+**Without SkillGenerator**:
+```
+Project maturity at 35% (Discovery phase)
+Weak category: "problem_definition" (5%)
+↓
+Agent continues with default behavior
+↓
+Project takes longer, user doesn't get targeted help
+```
+
+**With SkillGenerator**:
+```
+Weak area detected
+↓
+Skill generated: "problem_definition_focus"
+↓
+SocraticCounselor receives skill, adjusts behavior
+↓
+User gets targeted help
+↓
+Weak area improves 20% faster
+```
+
+### Implementation Roadmap
+
+#### Phase 1: Foundation (Weeks 1-2) - ~600 LOC
+- Create SkillGeneratorAgent class (inherits from BaseAgent)
+- Define AgentSkill data models
+- Implement 12 hardcoded skills (3 per maturity phase)
+- Unit tests for skill generation logic
+- Pure standalone functionality working
+- **Status**: 📋 Pending | **Priority**: P1
+
+#### Phase 2: Integration (Weeks 3-4) - ~400 LOC
+- Hook into QualityControllerAgent (detects weak areas)
+- Hook into UserLearningAgent (personalizes skills)
+- Implement skill application mechanism
+- Effectiveness tracking system
+- Integration tests with other agents
+- **Status**: 📋 Pending | **Priority**: P1 (after Phase 1)
+
+#### Phase 3: Learning & Feedback (Weeks 5-6) - ~300 LOC
+- Track which skills actually helped
+- Adjust future skill generation based on effectiveness
+- SkillGenerator learns from patterns
+- Metrics, logging, and analytics
+- **Status**: 📋 Pending | **Priority**: P2
+
+#### Phase 4+: Advanced Features (Future)
+- LLM-powered skill generation
+- Multi-agent workflow skills
+- Skill versioning and compatibility
+- Skill marketplace / sharing
+- **Status**: 🚀 Future | **Priority**: P3
+
+### Architecture Design
+
+**Pure Data Transformation Pattern**:
+```
+Input:  Dict[maturity_data, learning_data, context]
+        ↓
+    SkillGeneratorAgent.process()
+        ↓
+Output: Dict[skills: List[AgentSkill], recommendations, confidence]
+```
+
+**Key Design Principles**:
+1. No dependencies on other agents (only BaseAgent)
+2. Returns data, not modified objects (pure functions)
+3. Configuration external (skill templates as parameter)
+4. LLM optional (works without it)
+5. Works standalone OR integrated
+
+### Integration Points
+
+**With Existing Socratic Systems**:
+- Maturity System: Triggers skill generation on phase changes/weak areas
+- Learning Engine: Personalizes skills based on user patterns
+- Agent Architecture: Other agents receive skills as data
+
+**With External Systems**:
+- Can be imported and used without other Socratic components
+- Accepts data from any source (database, API, custom system)
+- Returns standardized skill data format (JSON-compatible)
+
+### Expected Benefits
+
+| Benefit | Metric |
+|---------|--------|
+| Adaptive Behavior | Agents adjust to context without code changes |
+| Faster Learning | Project completion 15-20% faster with targeted skills |
+| Self-Improving | Skills evaluated for effectiveness, system learns |
+| Reusable Component | Works in Django, Flask, LangChain, research projects |
+| No Breaking Changes | Can be added to existing code without modifications |
+
+### Estimated Effort
+
+| Phase | Duration | Team Size | Effort |
+|-------|----------|-----------|--------|
+| 1: Foundation | 2 weeks | 1 engineer | ~80 hours |
+| 2: Integration | 2 weeks | 2 engineers | ~80 hours |
+| 3: Learning | 2 weeks | 1-2 engineers | ~60 hours |
+| **Total MVP** | **6 weeks** | **1-2 people** | **~220 hours** |
+
+### Success Criteria
+
+**Phase 1 Completion**:
+- ✅ SkillGeneratorAgent class implemented
+- ✅ 12 skills defined for 4 maturity phases
+- ✅ 100% unit test coverage
+- ✅ Can use standalone in any project
+
+**Phase 2 Completion**:
+- ✅ Successfully integrated with QualityController & LearningAgent
+- ✅ Agents receive and apply skills
+- ✅ All integration tests passing
+- ✅ Examples showing Socratic-Agents ecosystem usage
+
+**Phase 3 Completion**:
+- ✅ Effectiveness tracking working
+- ✅ Average skill effectiveness > 70%
+- ✅ Metrics showing positive impact on project velocity
+- ✅ SkillGenerator learning and improving recommendations
+
+### Decision Points
+
+**Design Decision 1: Skill Granularity**
+- Recommendation: Start coarse (3-4 skills per phase)
+- Review after effectiveness data collected
+- Expand to fine-grained only if metrics justify it
+
+**Design Decision 2: Skill Persistence**
+- Recommendation: Start ephemeral (generate per request)
+- Add persistence once patterns identified
+- Learn what works before storing
+
+**Design Decision 3: LLM Integration**
+- Recommendation: Start rule-based (no LLM cost)
+- Add LLM for complex decisions in Phase 4+
+- Deterministic foundation before complexity
+
+### Communication Plan
+
+**For Stakeholders**:
+- "AI agents that improve themselves based on project context"
+- "Adaptive skills make agents smarter without code changes"
+- "15-20% faster project completion with targeted assistance"
+
+**For Developers**:
+- "Pure, standalone agent that transforms maturity/learning data into skills"
+- "Low-risk addition - can be implemented incrementally"
+- "Reusable in any Python project, not just Socratic"
+
+---
+
 **Last Updated**: March 10, 2026
 **Next Review**: Before Phase 4b Implementation
 **Maintainers**: @Nireus79
 
-**Status**: ✅ Phase 1-4a Complete | 🚀 Phase 4b-4e In Planning
+**Status**: ✅ Phase 1-4a Complete | 📋 SkillGenerator Planned | 🚀 Phase 4b-4e In Planning
