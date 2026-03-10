@@ -794,6 +794,12 @@ LONG-TERM (MONTH 18+) - Mature Ecosystem
    - [x] Python 3.9+ compatibility fixed ✅
    - [x] CI/CD test matrix aligned ✅
 
+### 📊 GitHub Project Tracking
+
+All ecosystem work is now tracked in: **[Socrates Ecosystem Roadmap (GitHub Project)](https://github.com/users/Nireus79/projects)**
+
+Setup guide: See [GITHUB_PROJECT_SETUP.md](Socrates-nexus/GITHUB_PROJECT_SETUP.md)
+
 ### 🚀 NEXT PRIORITY: Phase 1.5 - Nexus Integrations
 
 **Focus**: Add integrations to socrates-nexus (v0.2.0)
@@ -801,6 +807,7 @@ LONG-TERM (MONTH 18+) - Mature Ecosystem
 - [ ] LangChain LLM provider in socrates-nexus
 - [ ] Marketing launch (both communities)
 - [ ] Consulting setup (GitHub Sponsors + inquiry form)
+- [ ] GitHub Project setup and initial issues
 
 ---
 
