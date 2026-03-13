@@ -9,16 +9,17 @@
 
 The **Socrates Ecosystem** is a production-grade AI package collection extracted from the Socrates monolith. Using an **integration-first strategy**, we're building 8 complementary packages designed to work together and integrate with Openclaw and LangChain.
 
-**Current Status** (Verified March 12, 2026):
+**Current Status** (Verified March 13, 2026):
 - ✅ **Phase 1-4a Complete**: 4 core packages released to PyPI
   - Socrates Nexus v0.3.0 (382+ tests, 4 providers)
   - Socratic RAG v0.1.0 (122+ tests, 4 vector stores)
   - Socratic Analyzer v0.1.0 (164+ tests, 8 analyzers)
   - Socratic Agents v0.1.2 (377 tests, 19 agents + 7 LLM wrappers) ✨
 - ✅ **Phase 4b Complete**: Socratic Workflow v0.1.0 published (188+ tests, cost tracking, DAG)
-- ✅ **All 5 Projects Verified**: 1,233+ tests passing across 61+ test files
-- 🚀 **Phase 4c-4e Planned**: 3 advanced packages to follow (Knowledge, Learning, Conflict)
-- **Total Distribution**: 5 published packages × 3 channels = 15 active entry points (plus 9 planned)
+- ✅ **Phase 4c Started**: Socratic Knowledge v0.1.1 published ✨ (179 tests, multi-tenancy, RBAC, versioning)
+- ✅ **All 6 Projects Verified**: 1,412+ tests passing across 73+ test files
+- 🚀 **Phase 4d-4e Planned**: 2 advanced packages to follow (Learning, Conflict)
+- **Total Distribution**: 6 published packages × 3 channels = 18 active entry points (plus 6 planned)
 
 **Revenue Model**: PyPI packages + Openclaw skills + LangChain components + consulting services
 
@@ -253,25 +254,29 @@ pip install socratic-agents[all]              # Everything
 
 ### 1.2 Detailed Feature Matrix: What's Actually Built
 
-| Feature | Nexus | RAG | Analyzer | Agents | **Workflow** |
-|---------|-------|-----|----------|--------|-----------|
-| **Published to PyPI** | ✅ v0.3.0 | ✅ v0.1.0 | ✅ v0.1.0 | ✅ **v0.1.2** | ✅ **v0.1.0** |
-| **Tests Collected** | 382+ (18 files) | 122+ (12 files) | 164+ (20 files) | **377 (verified)** | **188 (verified)** |
-| **GitHub Actions CI/CD** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Black Formatting** | ✅ | ✅ | ✅ | ✅ **100%** | ✅ **100%** |
-| **Ruff Linting** | ✅ | ✅ | ✅ | ✅ **0 issues** | ✅ **0 issues** |
-| **MyPy Type Checking** | ✅ | ✅ | ✅ | ✅ **0 errors** | ✅ **0 errors** |
-| **Async Support** | ✅ | ✅ | ✅ | ✅ **Full (3 examples)** | ✅ **Full async** |
-| **Openclaw Skill** | ✅ Built-in | ✅ Built-in | ✅ Built-in | ✅ **Built-in** | ✅ **Built-in** |
-| **LangChain Integration** | ✅ Built-in | ✅ Built-in | ✅ Built-in | ✅ **Built-in** | ✅ **Built-in** |
-| **LLM Wrappers** | - | - | - | **7 classes** | - |
-| **Benchmarks** | - | - | - | **pytest-benchmark** | - |
-| **Core Features** | 4 providers | 4 vector stores, 4 processors | 8 analyzers | **19 agents** | Workflow engine |
-| **Cost Tracking** | Token counting | Semantic search | - | - | ✅ **16+ models** |
-| **Parallel Execution** | - | - | - | - | ✅ **DAG-based** |
-| **Error Recovery** | Retry logic | - | - | - | ✅ **Exponential backoff** |
-| **Documentation** | ✅ Complete | ✅ Complete | ✅ Complete | ✅ **Complete** | ✅ **Complete** |
-| **Production Status** | ✅ Stable | ✅ Stable | ✅ Stable | ✅ **Enhanced v0.1.2** | ✅ **Ready** |
+| Feature | Nexus | RAG | Analyzer | Agents | Workflow | **Knowledge** |
+|---------|-------|-----|----------|--------|----------|-----------|
+| **Published to PyPI** | ✅ v0.3.0 | ✅ v0.1.0 | ✅ v0.1.0 | ✅ v0.1.2 | ✅ v0.1.0 | ✅ **v0.1.1** |
+| **Tests Collected** | 382+ (18 files) | 122+ (12 files) | 164+ (20 files) | 377 | 188 | **179** |
+| **GitHub Actions CI/CD** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ **Enhanced** |
+| **Black Formatting** | ✅ | ✅ | ✅ | ✅ 100% | ✅ 100% | ✅ **100%** |
+| **Ruff Linting** | ✅ | ✅ | ✅ | ✅ 0 issues | ✅ 0 issues | ✅ **0 issues (fixed 45)** |
+| **MyPy Type Checking** | ✅ | ✅ | ✅ | ✅ 0 errors | ✅ 0 errors | ✅ **0 errors (fixed 8)** |
+| **Async Support** | ✅ | ✅ | ✅ | ✅ Full (3 examples) | ✅ Full async | ✅ **Full support** |
+| **Openclaw Skill** | ✅ Built-in | ✅ Built-in | ✅ Built-in | ✅ Built-in | ✅ Built-in | ✅ **Built-in** |
+| **LangChain Integration** | ✅ Built-in | ✅ Built-in | ✅ Built-in | ✅ Built-in | ✅ Built-in | ✅ **Built-in** |
+| **LLM Wrappers** | - | - | - | 7 classes | - | - |
+| **Benchmarks** | - | - | - | pytest-benchmark | - | - |
+| **Core Features** | 4 providers | 4 vector stores, 4 processors | 8 analyzers | 19 agents | Workflow engine | **Multi-tenant, RBAC, Versioning** |
+| **Multi-Tenancy** | - | - | - | - | - | ✅ **Complete** |
+| **Access Control** | - | - | - | - | - | ✅ **RBAC** |
+| **Versioning** | - | - | - | - | - | ✅ **Full history** |
+| **RAG Integration** | - | Via Nexus | - | - | - | ✅ **Semantic search** |
+| **Cost Tracking** | Token counting | Semantic search | - | - | 16+ models | - |
+| **Parallel Execution** | - | - | - | - | DAG-based | - |
+| **Error Recovery** | Retry logic | - | - | - | Exponential backoff | - |
+| **Documentation** | ✅ Complete | ✅ Complete | ✅ Complete | ✅ Complete | ✅ Complete | ✅ **Complete** |
+| **Production Status** | ✅ Stable | ✅ Stable | ✅ Stable | ✅ Enhanced v0.1.2 | ✅ Ready | ✅ **v0.1.1 Ready** |
 
 ---
 
@@ -479,45 +484,48 @@ pip install socratic-workflow[all]                # Everything
 
 ## Part 3: Distribution Strategy & Markets
 
-### 3.1 The 24 Entry Points (Current: 15/24 Active) ✅
+### 3.1 The 24 Entry Points (Current: 18/24 Active) ✅
 
 ```
 8 PACKAGES × 3 DISTRIBUTION CHANNELS = 24 ENTRY POINTS
 
-CHANNEL 1: STANDALONE (pip install) ✅ 5/5 Active (+ 3 planned)
+CHANNEL 1: STANDALONE (pip install) ✅ 6/6 Active (+ 2 planned)
 ├── socrates-nexus (v0.3.0) ✅
 ├── socratic-rag (v0.1.0) ✅
 ├── socratic-analyzer (v0.1.0) ✅
 ├── socratic-agents (v0.1.2) ✅ UPGRADED
 ├── socratic-workflow (v0.1.0) ✅ NEW
-└── (Future: Knowledge, Learning, Conflict)
+├── socratic-knowledge (v0.1.1) ✅ NEW ✨
+└── (Future: Learning, Conflict)
 
-CHANNEL 2: OPENCLAW SKILLS ✅ 5/5 Active (+ 3 planned)
+CHANNEL 2: OPENCLAW SKILLS ✅ 6/6 Active (+ 2 planned)
 ├── NexusLLMSkill ✅
 ├── SocraticRAGSkill ✅
 ├── SocraticAnalyzerSkill ✅
 ├── SocraticAgentsSkill ✅
 ├── SocraticWorkflowSkill ✅ NEW
-└── (Future: Knowledge, Learning, Conflict)
+├── SocraticKnowledgeSkill ✅ NEW ✨
+└── (Future: Learning, Conflict)
 
-CHANNEL 3: LANGCHAIN COMPONENTS ✅ 5/5 Active (+ 3 planned)
+CHANNEL 3: LANGCHAIN COMPONENTS ✅ 6/6 Active (+ 2 planned)
 ├── SocratesNexusLLM ✅
 ├── SocraticRAGRetriever ✅
 ├── SocraticAnalyzerTool ✅
 ├── SocraticAgentsTool ✅
 ├── SocraticWorkflowTool ✅ NEW
-└── (Future: Knowledge, Learning, Conflict)
+├── KnowledgeManagerTool ✅ NEW ✨
+└── (Future: Learning, Conflict)
 ```
 
-**Current Active Entry Points**: 15/24 (63%)
-- ✅ 5 packages published (Nexus v0.3.0, RAG v0.1.0, Analyzer v0.1.0, Agents v0.1.2, Workflow v0.1.0)
-- ✅ 5 Openclaw skills built-in
-- ✅ 5 LangChain integrations built-in
+**Current Active Entry Points**: 18/24 (75%)
+- ✅ 6 packages published (Nexus v0.3.0, RAG v0.1.0, Analyzer v0.1.0, Agents v0.1.2, Workflow v0.1.0, Knowledge v0.1.1)
+- ✅ 6 Openclaw skills built-in
+- ✅ 6 LangChain integrations built-in
 
-**Future Entry Points**: 9/24 (to be activated)
-- 🚀 3 packages planned (Knowledge, Learning, Conflict)
-- 🚀 3 Openclaw skills planned
-- 🚀 3 LangChain integrations planned
+**Future Entry Points**: 6/24 (to be activated)
+- 🚀 2 packages planned (Learning, Conflict)
+- 🚀 2 Openclaw skills planned
+- 🚀 2 LangChain integrations planned
 
 ---
 
@@ -619,9 +627,10 @@ Agents:     [████████████████████] 100% 
 | socrates-nexus | 18 files | 382+ tests | ✅ Passing | ✅ v0.3.0 |
 | socratic-rag | 12 files | 122+ tests | ✅ Passing | ✅ v0.1.0 |
 | socratic-analyzer | 20 files | 164+ tests | ✅ Passing | ✅ v0.1.0 |
-| socratic-agents | Multiple | **377 tests** | ✅ Passing | ✅ **v0.1.2** |
+| socratic-agents | Multiple | 377 tests | ✅ Passing | ✅ v0.1.2 |
 | socratic-workflow | 11 files | 188+ tests | ✅ Passing | ✅ v0.1.0 |
-| **TOTAL** | **61+ files** | **1,233+ tests** | ✅ **All Passing** | **5/5 published** |
+| socratic-knowledge | 13 files | **179 tests** | ✅ Passing | ✅ **v0.1.1** |
+| **TOTAL** | **73+ files** | **1,412+ tests** | ✅ **All Passing** | **6/6 published** |
 
 ### 5.2 Test Categories
 
@@ -907,14 +916,14 @@ PyPI PACKAGES:
 
 ## Part 12: Summary Table - Implementation Status (Verified ✅)
 
-| Component | Status | Version | PyPI | Tests | Agents/Features | Openclaw | LangChain | Docs |
-|-----------|--------|---------|------|-------|-----------------|----------|-----------|------|
+| Component | Status | Version | PyPI | Tests | Core Features | Openclaw | LangChain | Docs |
+|-----------|--------|---------|------|-------|---|----------|-----------|------|
 | **Nexus** | ✅ Complete | 0.3.0 | ✅ | 382+ | 4 providers | ✅ Built-in | ✅ Built-in | ✅ Full |
 | **RAG** | ✅ Complete | 0.1.0 | ✅ | 122+ | 4 vector stores, 4 processors | ✅ Built-in | ✅ Built-in | ✅ Full |
 | **Analyzer** | ✅ Complete | 0.1.0 | ✅ | 164+ | 8 analyzers | ✅ Built-in | ✅ Built-in | ✅ Full |
-| **Agents** | ✅ **Enhanced** | **0.1.2** | ✅ | **377** | **19 agents + 7 LLM wrappers** | ✅ Built-in | ✅ Built-in | ✅ Full |
-| **Workflow** | ✅ Complete | **0.1.0** | ✅ | **188** | Cost tracking, DAG, async | ✅ Built-in | ✅ Built-in | ✅ Full |
-| **Knowledge** | 🚀 Planned | 0.1.0 | ❌ | TBD | TBD | 🔲 TBD | 🔲 TBD | 🔲 TBD |
+| **Agents** | ✅ Enhanced | 0.1.2 | ✅ | 377 | 19 agents + 7 LLM wrappers | ✅ Built-in | ✅ Built-in | ✅ Full |
+| **Workflow** | ✅ Complete | 0.1.0 | ✅ | 188 | Cost tracking, DAG, async | ✅ Built-in | ✅ Built-in | ✅ Full |
+| **Knowledge** | ✅ **Complete** | **0.1.1** | ✅ | **179** | **Multi-tenant, RBAC, Versioning** | ✅ **Built-in** | ✅ **Built-in** | ✅ **Full** |
 | **Learning** | 🚀 Planned | 0.1.0 | ❌ | TBD | TBD | 🔲 TBD | 🔲 TBD | 🔲 TBD |
 | **Conflict** | 🚀 Planned | 0.1.0 | ❌ | TBD | TBD | 🔲 TBD | 🔲 TBD | 🔲 TBD |
 
@@ -1316,15 +1325,144 @@ pip install socratic-agents[all]==0.1.2
 
 ---
 
-**Last Updated**: March 12, 2026
-**Next Review**: Before Phase 4b Implementation
+**Last Updated**: March 13, 2026 (Morning)
+**Next Review**: Before Phase 4c Implementation
 **Maintainers**: @Nireus79
 
-**Status**: ✅ Phase 1-4a Complete | ✅ Phase 4b Complete | ✨ v0.1.2 Released | 🚀 Phase 4c-4e Planned
+**Status**: ✅ Phase 1-4a Complete | ✅ Phase 4b Complete | ✨ Socratic Agents v0.1.2 Released | ✨ **Socratic Knowledge v0.1.1 Released** | 🚀 Phase 4c-4e Planned
 
 ---
 
-## APPENDIX B: Ecosystem Implementation Verification (March 12, 2026)
+## Part 16: Socratic Knowledge v0.1.1 Release (March 13, 2026) ✨
+
+### What's Included in v0.1.1
+
+**Enterprise Knowledge Management System** - Complete MVP with quality improvements:
+
+#### Core Features Delivered:
+- ✅ Multi-tenant knowledge management (complete isolation)
+- ✅ Hierarchical collection organization
+- ✅ Role-based access control (RBAC)
+- ✅ Full versioning system with rollback
+- ✅ RAG integration for semantic search
+- ✅ SQLite backend with FTS5 full-text search
+- ✅ Audit logging system
+- ✅ Multi-user collaboration support
+- ✅ Openclaw skill integration
+- ✅ LangChain tool integration
+- ✅ 179 comprehensive unit tests
+
+#### Quality Improvements (All Fixed):
+1. **Test Handling**
+   - Fixed RAG integration test imports
+   - Added HAS_RAG skipif marker for optional dependencies
+   - All tests pass on all platforms (Windows, macOS, Linux)
+
+2. **Code Quality**
+   - Fixed 45 Ruff linting errors
+   - Fixed 8 MyPy type checking errors
+   - Applied Black formatting consistently
+   - 100% code quality compliance
+
+3. **CI/CD Improvements**
+   - Enhanced GitHub Actions workflows
+   - Proper line ending handling via .gitattributes
+   - Updated checkout@v4 for better cross-platform support
+   - Explicit git configuration for line ending normalization
+
+4. **Cross-Platform Support**
+   - Added .gitattributes for LF line endings
+   - Windows, macOS, Linux all use consistent formatting
+   - Resolved Black formatting check issues on GitHub Actions
+
+#### Package Structure:
+```
+socratic-knowledge/
+├── core/
+│   ├── knowledge_item.py      # Main entity
+│   ├── collection.py          # Hierarchical folders
+│   ├── tenant.py              # Multi-tenancy
+│   └── version.py             # Version snapshots
+├── storage/
+│   ├── base.py                # Abstract interface
+│   └── sqlite_store.py        # Production SQLite (FTS5)
+├── access/
+│   ├── rbac.py                # Role-based control
+│   └── permissions.py         # Permission checking
+├── versioning/
+│   ├── version.py             # Version models
+│   └── history.py             # Version tracking
+├── retrieval/
+│   └── rag_integration.py     # Socratic RAG integration
+├── audit/
+│   └── logger.py              # Audit logging
+├── collaboration/
+│   └── locks.py               # Optimistic locking
+└── integrations/
+    ├── openclaw/              # Openclaw skill
+    └── langchain/             # LangChain tools
+```
+
+#### Code Quality Metrics:
+- ✅ **Black Formatting**: 49 files 100% compliant
+- ✅ **Ruff Linting**: 0 issues (fixed 45)
+- ✅ **MyPy Type Checking**: 0 errors (fixed 8)
+- ✅ **Test Coverage**: 179 tests passing
+- ✅ **Python Versions**: 3.9-3.12 supported
+
+#### Installation:
+```bash
+# Core knowledge management
+pip install socratic-knowledge
+
+# With RAG integration
+pip install socratic-knowledge[rag]
+
+# With Openclaw
+pip install socratic-knowledge[openclaw]
+
+# With LangChain
+pip install socratic-knowledge[langchain]
+
+# Everything
+pip install socratic-knowledge[all]
+```
+
+#### Key Integration Points:
+- **Openclaw**: `SocraticKnowledgeSkill` - Full knowledge management
+- **LangChain**: `KnowledgeManagerTool` - Integration with chains
+- **Socratic RAG**: Automatic semantic search indexing
+
+#### PyPI Status:
+- ✅ Published: https://pypi.org/project/socratic-knowledge/0.1.1/
+- ✅ Available: pip install socratic-knowledge==0.1.1
+- ✅ Source: https://github.com/Nireus79/Socratic-knowledge
+
+#### Files Modified in v0.1.1:
+- `pyproject.toml`: Version bump to 0.1.1
+- `src/socratic_knowledge/retrieval/rag_integration.py`: HAS_RAG flag handling
+- `tests/unit/test_rag_integration.py`: Skipif decorator for optional deps
+- `.github/workflows/quality.yml`: Updated Black config + debug output
+- `.github/workflows/tests.yml`: Git config for line endings
+- `.gitattributes`: New file for LF normalization
+
+#### Commits:
+- `1d5a7b3`: Bump version to 0.1.1
+- `db67d60`: Add Black auto-fix debugging
+- `eeca54a`: Add detailed debugging to GitHub Actions
+- `fe8a7c3`: Add explicit Black configuration
+- `3d00af1`: Update GitHub Actions workflows for line endings
+- `e54a5fc`: Add .gitattributes to normalize line endings
+- `c4ca03b`: Fix Ruff linting issues
+- `89d1bf0`: Fix MyPy type checking errors
+- Plus 7+ commits for quality improvements
+
+#### Status:
+✅ **PUBLISHED TO PYPI** | **PRODUCTION READY** | **ALL QUALITY GATES PASSING**
+
+---
+
+## APPENDIX B: Ecosystem Implementation Verification (March 13, 2026)
 
 ### B.1 Detailed Implementation Status Findings
 
