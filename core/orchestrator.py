@@ -53,6 +53,11 @@ class ServiceOrchestrator:
             service: Service instance to register
         """
         self._services[service.service_name] = service
+
+        # Inject event bus into service if it has the set_event_bus method
+        if hasattr(service, "set_event_bus"):
+            service.set_event_bus(self.event_bus)
+
         self.logger.debug(f"Registered service: {service.service_name}")
 
     async def start_all_services(self) -> None:

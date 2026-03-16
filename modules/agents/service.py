@@ -6,11 +6,13 @@ Provides unified interface for:
 - Task execution
 - Skill management
 - Interaction tracking
+- Event publishing for agent execution
 """
 
 import logging
 from typing import Any, Dict, List, Optional
 from core.base_service import BaseService
+from core.event_bus import EventBus
 from modules.agents.base import Agent
 
 
@@ -22,6 +24,7 @@ class AgentsService(BaseService):
         super().__init__("agents", config)
         self.agents: Dict[str, Agent] = {}
         self.execution_history: List[Dict] = []
+        self.event_bus: Optional[EventBus] = None
         self.logger = logging.getLogger(f"socrates.{self.service_name}")
 
     async def initialize(self) -> None:
@@ -42,6 +45,11 @@ class AgentsService(BaseService):
             self.logger.info("AgentsService shutdown complete")
         except Exception as e:
             self.logger.error(f"Error during agents shutdown: {e}")
+
+    def set_event_bus(self, event_bus: EventBus) -> None:
+        """Set the event bus for publishing events."""
+        self.event_bus = event_bus
+        self.logger.debug("Event bus set for agents service")
 
     async def health_check(self) -> Dict[str, Any]:
         """Check service health."""
@@ -90,6 +98,22 @@ class AgentsService(BaseService):
                 "status": "success"
             }
             self.execution_history.append(execution_record)
+
+            # Publish agent_executed event
+            if self.event_bus:
+                try:
+                    await self.event_bus.publish(
+                        "agent_executed",
+                        self.service_name,
+                        {
+                            "agent": agent_name,
+                            "task": task,
+                            "execution_id": execution_id,
+                            "status": "success",
+                        }
+                    )
+                except Exception as e:
+                    self.logger.error(f"Error publishing agent_executed event: {e}")
 
             self.logger.info(f"Executed agent {agent_name} for task: {task}")
             return execution_record

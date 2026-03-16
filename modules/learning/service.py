@@ -5,11 +5,13 @@ Includes:
 - Learning engine for tracking agent interactions
 - Skill generation using SkillGeneratorAgent
 - Recommendation generation
+- Event publishing for skill generation and interactions
 """
 
 import logging
 from typing import Any, Dict, List, Optional
 from core.base_service import BaseService
+from core.event_bus import EventBus
 
 
 class LearningService(BaseService):
@@ -21,6 +23,7 @@ class LearningService(BaseService):
         self.learning_engine = None
         self.interaction_history: Dict[str, List[Dict]] = {}
         self.agent_metrics: Dict[str, Dict] = {}
+        self.event_bus: Optional[EventBus] = None
         self.logger = logging.getLogger(f"socrates.{self.service_name}")
 
     async def initialize(self) -> None:
@@ -42,6 +45,11 @@ class LearningService(BaseService):
             self.logger.info("Learning service shutdown complete")
         except Exception as e:
             self.logger.error(f"Error during learning shutdown: {e}")
+
+    def set_event_bus(self, event_bus: EventBus) -> None:
+        """Set the event bus for publishing events."""
+        self.event_bus = event_bus
+        self.logger.debug("Event bus set for learning service")
 
     async def health_check(self) -> Dict[str, Any]:
         """Check service health."""
@@ -130,6 +138,21 @@ class LearningService(BaseService):
                     "effectiveness": 0.75,
                     "description": f"Agent {agent_name} has specialized through extensive practice"
                 })
+
+            # Publish skill_generated event
+            if self.event_bus and len(skills) > 0:
+                try:
+                    await self.event_bus.publish(
+                        "skill_generated",
+                        self.service_name,
+                        {
+                            "agent": agent_name,
+                            "skills_count": len(skills),
+                            "skills": skills,
+                        }
+                    )
+                except Exception as e:
+                    self.logger.error(f"Error publishing skill_generated event: {e}")
 
             self.logger.info(f"Generated {len(skills)} skills for {agent_name}")
             return {

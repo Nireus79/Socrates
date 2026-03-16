@@ -1,8 +1,17 @@
-"""KnowledgeService - Service for knowledge management."""
+"""
+KnowledgeService - Service for knowledge management.
+
+Includes:
+- Knowledge base management
+- Semantic search
+- CRUD operations
+- Event publishing for knowledge updates
+"""
 
 import logging
 from typing import Any, Dict, Optional
 from core.base_service import BaseService
+from core.event_bus import EventBus
 
 
 class KnowledgeService(BaseService):
@@ -13,6 +22,7 @@ class KnowledgeService(BaseService):
         super().__init__("knowledge", config)
         self.vector_db = None
         self.knowledge_index: Dict[str, str] = {}
+        self.event_bus: Optional[EventBus] = None
         self.logger = logging.getLogger(f"socrates.{self.service_name}")
 
     async def initialize(self) -> None:
@@ -32,6 +42,11 @@ class KnowledgeService(BaseService):
         except Exception as e:
             self.logger.error(f"Error during shutdown: {e}")
 
+    def set_event_bus(self, event_bus: EventBus) -> None:
+        """Set the event bus for publishing events."""
+        self.event_bus = event_bus
+        self.logger.debug("Event bus set for knowledge service")
+
     async def health_check(self) -> Dict[str, Any]:
         """Check service health."""
         return {"vector_db": "healthy", "knowledge_items": len(self.knowledge_index)}
@@ -45,6 +60,22 @@ class KnowledgeService(BaseService):
         """Add knowledge to the base."""
         doc_id = f"doc_{len(self.knowledge_index)}"
         self.knowledge_index[doc_id] = content
+
+        # Publish knowledge_added event
+        if self.event_bus:
+            try:
+                await self.event_bus.publish(
+                    "knowledge_added",
+                    self.service_name,
+                    {
+                        "doc_id": doc_id,
+                        "content_length": len(content),
+                        "metadata": metadata or {},
+                    }
+                )
+            except Exception as e:
+                self.logger.error(f"Error publishing knowledge_added event: {e}")
+
         return doc_id
 
     async def update_knowledge(self, knowledge_id: str, content: str) -> bool:

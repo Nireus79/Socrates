@@ -6,11 +6,13 @@ Includes:
 - Database service (project and vector database)
 - Connection pooling
 - Caching
+- Event bus support
 """
 
 import logging
 from typing import Any, Dict, Optional
 from core.base_service import BaseService
+from core.event_bus import EventBus
 
 
 class FoundationService(BaseService):
@@ -22,6 +24,7 @@ class FoundationService(BaseService):
         self.llm_service = None
         self.database_service = None
         self.cache_service = None
+        self.event_bus: Optional[EventBus] = None
         self.logger = logging.getLogger(f"socrates.{self.service_name}")
 
     async def initialize(self) -> None:
@@ -62,6 +65,11 @@ class FoundationService(BaseService):
             self.logger.info("Foundation service shutdown complete")
         except Exception as e:
             self.logger.error(f"Error during foundation shutdown: {e}")
+
+    def set_event_bus(self, event_bus: EventBus) -> None:
+        """Set the event bus for publishing events."""
+        self.event_bus = event_bus
+        self.logger.debug("Event bus set for foundation service")
 
     async def health_check(self) -> Dict[str, Any]:
         """Check service health."""

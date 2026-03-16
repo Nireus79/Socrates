@@ -1,8 +1,17 @@
-"""WorkflowService - Service for workflow orchestration."""
+"""
+WorkflowService - Service for workflow orchestration.
+
+Includes:
+- Workflow creation and execution
+- Status tracking
+- Optimization
+- Event publishing for workflow lifecycle
+"""
 
 import logging
 from typing import Any, Dict, Optional
 from core.base_service import BaseService
+from core.event_bus import EventBus
 
 
 class WorkflowService(BaseService):
@@ -13,6 +22,7 @@ class WorkflowService(BaseService):
         super().__init__("workflow", config)
         self.workflows: Dict[str, Dict] = {}
         self.workflow_counter = 0
+        self.event_bus: Optional[EventBus] = None
         self.logger = logging.getLogger(f"socrates.{self.service_name}")
 
     async def initialize(self) -> None:
@@ -31,6 +41,11 @@ class WorkflowService(BaseService):
         except Exception as e:
             self.logger.error(f"Error during shutdown: {e}")
 
+    def set_event_bus(self, event_bus: EventBus) -> None:
+        """Set the event bus for publishing events."""
+        self.event_bus = event_bus
+        self.logger.debug("Event bus set for workflow service")
+
     async def health_check(self) -> Dict[str, Any]:
         """Check service health."""
         return {"workflows_loaded": len(self.workflows), "status": "healthy"}
@@ -47,17 +62,41 @@ class WorkflowService(BaseService):
             self.logger.error(f"Error creating: {e}")
             raise
 
+    async def _publish_workflow_event(self, event_type: str, workflow_id: str, data: Dict = None) -> None:
+        """Publish a workflow event."""
+        if self.event_bus:
+            try:
+                event_data = {"workflow_id": workflow_id}
+                if data:
+                    event_data.update(data)
+                await self.event_bus.publish(event_type, self.service_name, event_data)
+            except Exception as e:
+                self.logger.error(f"Error publishing {event_type} event: {e}")
+
     async def execute_workflow(self, workflow_id: str) -> Dict[str, Any]:
         """Execute a workflow."""
         try:
             if workflow_id not in self.workflows:
                 return {"status": "error", "workflow_id": workflow_id}
+
+            # Publish workflow_started event
+            await self._publish_workflow_event("workflow_started", workflow_id)
+
             workflow = self.workflows[workflow_id]
             workflow["status"] = "executing"
             workflow["executions"] += 1
+
+            # Publish workflow_completed event
+            await self._publish_workflow_event(
+                "workflow_completed",
+                workflow_id,
+                {"executions": workflow["executions"], "status": "success"}
+            )
+
             return {"workflow_id": workflow_id, "status": "executed", "executions": workflow["executions"]}
         except Exception as e:
             self.logger.error(f"Execution error: {e}")
+            await self._publish_workflow_event("workflow_completed", workflow_id, {"status": "failed", "error": str(e)})
             return {"status": "error", "error": str(e)}
 
     async def get_workflow_status(self, workflow_id: str) -> Dict[str, Any]:
