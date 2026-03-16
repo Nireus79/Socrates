@@ -73,7 +73,7 @@ class AgentsService(BaseService):
         task: str,
         context: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
-        """Execute an agent task."""
+        """Execute an agent task with skill support."""
         try:
             agent = self.agents.get(agent_name)
             if not agent:
@@ -86,8 +86,18 @@ class AgentsService(BaseService):
             context = context or {}
             execution_id = f"{agent_name}_{len(self.execution_history)}"
 
-            # Execute agent
+            # Get available skills for this agent
+            available_skills = await self.get_agent_skills(agent_name)
+            context["available_skills"] = available_skills
+            context["skills_available_count"] = len(available_skills)
+
+            # Execute agent with skills in context
             result = await agent.process_async({"task": task, **context})
+
+            # Track skill usage from result
+            skills_used = result.get("skills_used", [])
+            for skill_id in skills_used:
+                await self.apply_skill_usage(agent_name, skill_id)
 
             # Record execution
             execution_record = {
@@ -95,6 +105,8 @@ class AgentsService(BaseService):
                 "agent": agent_name,
                 "task": task,
                 "result": result,
+                "skills_available": len(available_skills),
+                "skills_used": len(skills_used),
                 "status": "success"
             }
             self.execution_history.append(execution_record)
@@ -104,7 +116,8 @@ class AgentsService(BaseService):
                 "execution_id": execution_id,
                 "task": task,
                 "result": result,
-                "status": "success"
+                "status": "success",
+                "skills_used": skills_used
             }
             await self.call_learning_service(agent_name, interaction_data)
 
@@ -119,12 +132,14 @@ class AgentsService(BaseService):
                             "task": task,
                             "execution_id": execution_id,
                             "status": "success",
+                            "skills_available": len(available_skills),
+                            "skills_used": len(skills_used),
                         }
                     )
                 except Exception as e:
                     self.logger.error(f"Error publishing agent_executed event: {e}")
 
-            self.logger.info(f"Executed agent {agent_name} for task: {task}")
+            self.logger.info(f"Executed agent {agent_name} for task: {task} (skills: {len(available_skills)} available, {len(skills_used)} used)")
             return execution_record
         except Exception as e:
             self.logger.error(f"Error executing agent {agent_name}: {e}")
@@ -161,6 +176,52 @@ class AgentsService(BaseService):
         if agent_name:
             history = [e for e in history if e.get("agent") == agent_name]
         return history[-limit:]
+
+    async def get_agent_skills(self, agent_name: str) -> List[Dict[str, Any]]:
+        """
+        Get available skills for an agent from SkillService.
+
+        Returns:
+            List of skill dictionaries, empty list if no skills or service unavailable
+        """
+        if not self.orchestrator:
+            self.logger.warning("Orchestrator not set, cannot get skills")
+            return []
+
+        try:
+            skills = await self.orchestrator.call_service(
+                "skills",
+                "get_agent_skills",
+                agent_name
+            )
+            self.logger.debug(f"Retrieved {len(skills)} skills for {agent_name}")
+            return skills if isinstance(skills, list) else []
+        except Exception as e:
+            self.logger.debug(f"Could not get skills for {agent_name}: {e}")
+            return []
+
+    async def apply_skill_usage(self, agent_name: str, skill_id: str) -> bool:
+        """
+        Apply a skill (record usage) for an agent.
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.orchestrator:
+            self.logger.warning("Orchestrator not set, cannot apply skill")
+            return False
+
+        try:
+            result = await self.orchestrator.call_service(
+                "skills",
+                "apply_skill",
+                skill_id
+            )
+            self.logger.debug(f"Applied skill {skill_id} for {agent_name}")
+            return result if isinstance(result, bool) else False
+        except Exception as e:
+            self.logger.warning(f"Error applying skill {skill_id}: {e}")
+            return False
 
     async def call_learning_service(self, agent_name: str, interaction_data: Dict[str, Any]) -> bool:
         """
