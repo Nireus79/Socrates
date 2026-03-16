@@ -112,3 +112,51 @@ class WorkflowService(BaseService):
         except Exception as e:
             self.logger.error(f"Optimization error: {e}")
             return {"status": "error"}
+
+    async def call_agents_service(self, agent_name: str, task: str) -> Optional[Dict[str, Any]]:
+        """
+        Call agents service to execute an agent as part of workflow.
+
+        Returns:
+            Execution result if successful, None otherwise
+        """
+        if not self.orchestrator:
+            self.logger.warning("Orchestrator not set, cannot call agents service")
+            return None
+
+        try:
+            result = await self.orchestrator.call_service(
+                "agents",
+                "execute_agent",
+                agent_name,
+                task
+            )
+            self.logger.debug(f"Called agents service for {agent_name}")
+            return result
+        except Exception as e:
+            self.logger.error(f"Error calling agents service: {e}")
+            return None
+
+    async def call_analytics_service(self, metric_name: str, value: Any) -> bool:
+        """
+        Call analytics service to record workflow metric.
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.orchestrator:
+            self.logger.warning("Orchestrator not set, cannot call analytics service")
+            return False
+
+        try:
+            await self.orchestrator.call_service(
+                "analytics",
+                "record_metric",
+                metric_name,
+                value
+            )
+            self.logger.debug(f"Called analytics service for {metric_name}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error calling analytics service: {e}")
+            return False

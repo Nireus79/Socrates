@@ -26,6 +26,7 @@ class BaseService(ABC):
         self.is_ready = False
         self.created_at = datetime.utcnow()
         self.last_health_check = None
+        self.orchestrator = None  # Injected by ServiceOrchestrator
 
     @abstractmethod
     async def initialize(self) -> None:
@@ -56,6 +57,15 @@ class BaseService(ABC):
         """Stop the service."""
         self.is_ready = False
         await self.shutdown()
+
+    def set_orchestrator(self, orchestrator: Any) -> None:
+        """
+        Set the orchestrator for inter-service communication.
+
+        Args:
+            orchestrator: ServiceOrchestrator instance
+        """
+        self.orchestrator = orchestrator
 
     def get_status(self) -> Dict[str, Any]:
         """Get current service status."""

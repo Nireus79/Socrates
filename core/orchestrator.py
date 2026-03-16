@@ -54,6 +54,9 @@ class ServiceOrchestrator:
         """
         self._services[service.service_name] = service
 
+        # Inject orchestrator for inter-service communication
+        service.set_orchestrator(self)
+
         # Inject event bus into service if it has the set_event_bus method
         if hasattr(service, "set_event_bus"):
             service.set_event_bus(self.event_bus)

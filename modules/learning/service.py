@@ -244,3 +244,51 @@ class LearningService(BaseService):
     async def get_agent_metrics(self, agent_name: str) -> Dict[str, Any]:
         """Get learning metrics for an agent."""
         return self.agent_metrics.get(agent_name, {})
+
+    async def call_agents_service(self, agent_name: str) -> Optional[List[Dict]]:
+        """
+        Call agents service to get execution history.
+
+        Returns:
+            Execution history if successful, None otherwise
+        """
+        if not self.orchestrator:
+            self.logger.warning("Orchestrator not set, cannot call agents service")
+            return None
+
+        try:
+            history = await self.orchestrator.call_service(
+                "agents",
+                "get_execution_history",
+                agent_name,
+                100
+            )
+            self.logger.debug(f"Called agents service for {agent_name}")
+            return history
+        except Exception as e:
+            self.logger.error(f"Error calling agents service: {e}")
+            return None
+
+    async def call_knowledge_service(self, content: str) -> Optional[str]:
+        """
+        Call knowledge service to store learning insights.
+
+        Returns:
+            Document ID if successful, None otherwise
+        """
+        if not self.orchestrator:
+            self.logger.warning("Orchestrator not set, cannot call knowledge service")
+            return None
+
+        try:
+            doc_id = await self.orchestrator.call_service(
+                "knowledge",
+                "add_knowledge",
+                content,
+                {"type": "learning_insight"}
+            )
+            self.logger.debug(f"Called knowledge service, doc_id: {doc_id}")
+            return doc_id
+        except Exception as e:
+            self.logger.error(f"Error calling knowledge service: {e}")
+            return None

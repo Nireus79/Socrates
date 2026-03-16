@@ -99,6 +99,15 @@ class AgentsService(BaseService):
             }
             self.execution_history.append(execution_record)
 
+            # Call learning service to track interaction
+            interaction_data = {
+                "execution_id": execution_id,
+                "task": task,
+                "result": result,
+                "status": "success"
+            }
+            await self.call_learning_service(agent_name, interaction_data)
+
             # Publish agent_executed event
             if self.event_bus:
                 try:
@@ -152,3 +161,27 @@ class AgentsService(BaseService):
         if agent_name:
             history = [e for e in history if e.get("agent") == agent_name]
         return history[-limit:]
+
+    async def call_learning_service(self, agent_name: str, interaction_data: Dict[str, Any]) -> bool:
+        """
+        Call learning service to track agent interaction.
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.orchestrator:
+            self.logger.warning("Orchestrator not set, cannot call learning service")
+            return False
+
+        try:
+            await self.orchestrator.call_service(
+                "learning",
+                "track_interaction",
+                agent_name,
+                interaction_data
+            )
+            self.logger.debug(f"Called learning service for {agent_name}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error calling learning service: {e}")
+            return False
