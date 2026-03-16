@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="tools">
+    <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="ecosystem">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PLAN.md" beforeDir="false" afterPath="$PROJECT_DIR$/PLAN.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/socratic_logs/socratic.log" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_logs/socratic.log" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -160,7 +160,31 @@
       <option name="project" value="LOCAL" />
       <updated>1773309748344</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="tools">
+      <option name="closed" value="true" />
+      <created>1773642157026</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1773642157026</updated>
+    </task>
+    <task id="LOCAL-00008" summary="tools">
+      <option name="closed" value="true" />
+      <created>1773643519521</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1773643519521</updated>
+    </task>
+    <task id="LOCAL-00009" summary="ecosystem">
+      <option name="closed" value="true" />
+      <created>1773643901381</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1773643901381</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -170,6 +194,7 @@
     <MESSAGE value="0.6.6" />
     <MESSAGE value="Before new QC" />
     <MESSAGE value="tools" />
-    <option name="LAST_COMMIT_MESSAGE" value="tools" />
+    <MESSAGE value="ecosystem" />
+    <option name="LAST_COMMIT_MESSAGE" value="ecosystem" />
   </component>
 </project>
