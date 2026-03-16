@@ -4,38 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="ecosystem">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/code_generator.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/code_generator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/code_validation_agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/code_validation_agent.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/conflict_detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/conflict_detector.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/context_analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/context_analyzer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/document_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/document_processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/knowledge_analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/knowledge_analysis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/knowledge_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/knowledge_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/learning_agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/learning_agent.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/multi_llm_agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/multi_llm_agent.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/note_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/note_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/project_file_loader.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/project_file_loader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/project_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/project_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/quality_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/quality_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/question_queue_agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/question_queue_agent.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/socratic_counselor.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/socratic_counselor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/system_monitor.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/system_monitor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/agents/user_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/agents/user_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/agents/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/agents/base.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/analytics/calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/analytics/calculator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/foundation/database_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/foundation/database_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/foundation/llm_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/foundation/llm_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/knowledge/knowledge_base.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/knowledge/knowledge_base.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/knowledge/vector_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/knowledge/vector_db.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/learning/learning_agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/learning/learning_agent.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/workflow/builder.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/workflow/builder.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/workflow/cost_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/workflow/cost_calculator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/workflow/optimizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/workflow/optimizer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/workflow/path_finder.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/workflow/path_finder.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/modules/workflow/risk_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/workflow/risk_calculator.py" afterDir="false" />
-    </list>
+    <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="ecosystem" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
