@@ -932,7 +932,7 @@ PyPI PACKAGES:
 | **Agents** | ✅ Enhanced | 0.1.2 | ✅ | 377 | 19 agents + 7 LLM wrappers | ✅ Built-in | ✅ Built-in | ✅ Full |
 | **Workflow** | ✅ Complete | 0.1.0 | ✅ | 188 | Cost tracking, DAG, async | ✅ Built-in | ✅ Built-in | ✅ Full |
 | **Knowledge** | ✅ **Complete** | **0.1.1** | ✅ | **179** | **Multi-tenant, RBAC, Versioning** | ✅ **Built-in** | ✅ **Built-in** | ✅ **Full** |
-| **Learning** | 🚀 Planned | 0.1.0 | ❌ | TBD | TBD | 🔲 TBD | 🔲 TBD | 🔲 TBD |
+| **Learning** | ✅ **Complete** | **0.1.0** | ✅ | **132** | **Pattern detection, Recommendations, Fine-tuning export** | ✅ **Built-in** | ✅ **Built-in** | ✅ **Full** |
 | **Conflict** | 🚀 Planned | 0.1.0 | ❌ | TBD | TBD | 🔲 TBD | 🔲 TBD | 🔲 TBD |
 
 ---
