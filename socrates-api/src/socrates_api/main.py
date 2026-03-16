@@ -32,6 +32,13 @@ from socratic_system.events import EventType
 from socratic_system.exceptions import SocratesError
 from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
+# Phase 4 Service Integration
+from core.orchestrator import ServiceOrchestrator
+from modules.marketplace.service import SkillMarketplace
+from modules.distribution.service import SkillDistributionService
+from modules.composition.service import SkillComposer
+from modules.analytics.service import SkillAnalytics
+
 from .models import (
     AskQuestionRequest,
     CodeGenerationResponse,
@@ -69,6 +76,10 @@ from .routers import (
     sponsorships_router,
     subscription_router,
     system_router,
+    skills_analytics,
+    skills_composition,
+    skills_distribution,
+    skills_marketplace,
 )
 
 # Configure logging
@@ -95,6 +106,16 @@ def get_orchestrator() -> AgentOrchestrator:
     if app_state["orchestrator"] is None:
         raise RuntimeError("Orchestrator not initialized. Call /initialize first.")
     return app_state["orchestrator"]
+
+
+def get_service_orchestrator() -> ServiceOrchestrator:
+    """Dependency injection for Phase 4 service orchestrator"""
+    if app_state.get("service_orchestrator") is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Phase 4 services not initialized"
+        )
+    return app_state["service_orchestrator"]
 
 
 def get_rate_limiter_for_app():
@@ -261,6 +282,31 @@ async def lifespan(app: FastAPI):
 
         logger.error(f"Traceback: {traceback.format_exc()}")
 
+    # Initialize Phase 4 Service Orchestrator
+    try:
+        logger.info("Initializing Phase 4 Service Orchestrator...")
+        service_orchestrator = ServiceOrchestrator()
+
+        # Register Phase 4 services
+        logger.info("Registering Phase 4 services...")
+        service_orchestrator.register_service(SkillMarketplace())
+        service_orchestrator.register_service(SkillDistributionService())
+        service_orchestrator.register_service(SkillComposer())
+        service_orchestrator.register_service(SkillAnalytics())
+
+        # Start all services
+        logger.info("Starting Phase 4 services...")
+        await service_orchestrator.start_all_services()
+
+        # Store in app_state
+        app_state["service_orchestrator"] = service_orchestrator
+        logger.info("Phase 4 Service Orchestrator initialized successfully")
+
+    except Exception as e:
+        logger.error(f"Failed to initialize Phase 4 Service Orchestrator: {type(e).__name__}: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+
     # Start shutdown monitor background task
     logger.info("Starting shutdown monitor background task...")
     shutdown_monitor_task = asyncio.create_task(_monitor_shutdown())
@@ -269,6 +315,15 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down Socrates API server...")
+
+    # Shutdown Phase 4 Service Orchestrator
+    if app_state.get("service_orchestrator"):
+        try:
+            logger.info("Shutting down Phase 4 services...")
+            await app_state["service_orchestrator"].stop_all_services()
+            logger.info("Phase 4 services shut down successfully")
+        except Exception as e:
+            logger.error(f"Error shutting down Phase 4 services: {type(e).__name__}: {e}")
 
     # Cancel shutdown monitor task
     shutdown_monitor_task.cancel()
@@ -393,6 +448,28 @@ app.include_router(system_router)
 app.include_router(nlu_router)
 app.include_router(free_session_router)
 app.include_router(chat_sessions_router)
+
+# Phase 4: Skills Ecosystem Routers
+app.include_router(
+    skills_marketplace.router,
+    prefix="/api/skills/marketplace",
+    tags=["Skills Marketplace"]
+)
+app.include_router(
+    skills_analytics.router,
+    prefix="/api/skills/analytics",
+    tags=["Skills Analytics"]
+)
+app.include_router(
+    skills_distribution.router,
+    prefix="/api/skills/distribution",
+    tags=["Skills Distribution"]
+)
+app.include_router(
+    skills_composition.router,
+    prefix="/api/skills/composition",
+    tags=["Skills Composition"]
+)
 
 
 @app.get("/")
