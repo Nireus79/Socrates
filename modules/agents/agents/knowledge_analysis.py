@@ -12,11 +12,11 @@ import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict
 
-from socratic_system.agents.base import Agent
-from socratic_system.events import EventType
+from modules.agents import Agent
+from modules.foundation.events import EventType
 
 if TYPE_CHECKING:
-    from socratic_system.orchestration.orchestrator import AgentOrchestrator
+    from modules.foundation.orchestrator import AgentOrchestrator
 
 
 class KnowledgeAnalysisAgent(Agent):

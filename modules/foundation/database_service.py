@@ -24,13 +24,13 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from socratic_system.database.migration_runner import MigrationRunner
-from socratic_system.models.learning import QuestionEffectiveness, UserBehaviorPattern
-from socratic_system.models.llm_provider import LLMUsageRecord
-from socratic_system.models.note import ProjectNote
-from socratic_system.models.project import ProjectContext
-from socratic_system.models.user import User
-from socratic_system.utils.datetime_helpers import deserialize_datetime, serialize_datetime
+from modules.foundation.database.migration_runner import MigrationRunner
+from modules.foundation.models.learning import QuestionEffectiveness, UserBehaviorPattern
+from modules.foundation.models.llm_provider import LLMUsageRecord
+from modules.foundation.models.note import ProjectNote
+from modules.foundation.models.project import ProjectContext
+from modules.foundation.models.user import User
+from modules.foundation.utils.datetime_helpers import deserialize_datetime, serialize_datetime
 
 logger = logging.getLogger("socrates.database")
 
@@ -2749,7 +2749,7 @@ class ProjectDatabase:
 
     def _load_team_members(self, cursor: sqlite3.Cursor, project_id: str):
         """Load team members"""
-        from socratic_system.models.role import TeamMemberRole
+        from modules.foundation.models.role import TeamMemberRole
 
         cursor.execute(
             """

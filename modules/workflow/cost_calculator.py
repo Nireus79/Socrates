@@ -8,7 +8,7 @@ and edge transitions, with currency conversion.
 import logging
 from typing import Any, Dict
 
-from socratic_system.models.workflow import WorkflowDefinition, WorkflowPath
+from modules.foundation.models.workflow import WorkflowDefinition, WorkflowPath
 
 logger = logging.getLogger(__name__)
 

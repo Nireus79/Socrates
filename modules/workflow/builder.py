@@ -9,8 +9,8 @@ import logging
 import uuid
 from typing import Dict, List, Optional
 
-from socratic_system.models.project import ProjectContext
-from socratic_system.models.workflow import (
+from modules.foundation.models.project import ProjectContext
+from modules.foundation.models.workflow import (
     PathDecisionStrategy,
     WorkflowDefinition,
     WorkflowEdge,

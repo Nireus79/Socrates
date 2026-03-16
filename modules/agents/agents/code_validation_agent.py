@@ -11,9 +11,9 @@ Orchestrates comprehensive code validation pipeline:
 import logging
 from typing import Any, Dict, List
 
-from socratic_system.agents.base import Agent
-from socratic_system.events import EventType
-from socratic_system.utils.validators import (
+from modules.agents import Agent
+from modules.foundation.events import EventType
+from modules.foundation.utils.validators import (
     DependencyValidator,
     SyntaxValidator,
     TestExecutor,

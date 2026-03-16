@@ -8,8 +8,8 @@ actionable recommendations for improvement.
 import logging
 from typing import Dict, List
 
-from socratic_system.core.project_categories import get_phase_categories
-from socratic_system.models import ProjectContext
+from modules.foundation.core.project_categories import get_phase_categories
+from modules.foundation.models import ProjectContext
 
 logger = logging.getLogger(__name__)
 

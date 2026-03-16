@@ -8,9 +8,9 @@ complexity, and rework probability for workflow paths.
 import logging
 from typing import Any, Dict, List
 
-from socratic_system.core.project_categories import get_phase_categories
-from socratic_system.models.project import ProjectContext
-from socratic_system.models.workflow import WorkflowDefinition, WorkflowPath
+from modules.foundation.core.project_categories import get_phase_categories
+from modules.foundation.models.project import ProjectContext
+from modules.foundation.models.workflow import WorkflowDefinition, WorkflowPath
 
 logger = logging.getLogger(__name__)
 

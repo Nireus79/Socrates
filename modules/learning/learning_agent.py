@@ -19,9 +19,9 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, Dict
 
-from socratic_system.agents.base import Agent
-from socratic_system.core.learning_engine import LearningEngine
-from socratic_system.models import KnowledgeBaseDocument, QuestionEffectiveness, UserBehaviorPattern
+from modules.agents import Agent
+from modules.learning.learning_engine import LearningEngine
+from modules.foundation.models import KnowledgeBaseDocument, QuestionEffectiveness, UserBehaviorPattern
 
 
 class UserLearningAgent(Agent):

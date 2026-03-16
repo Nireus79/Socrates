@@ -8,17 +8,17 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from colorama import Fore
 
-from socratic_system.agents.document_context_analyzer import DocumentContextAnalyzer
-from socratic_system.events import EventType
-from socratic_system.models import ROLE_FOCUS_AREAS, ConflictInfo, ProjectContext
-from socratic_system.services import DocumentUnderstandingService
-from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
+from modules.agents.agents.document_context_analyzer import DocumentContextAnalyzer
+from modules.foundation.events import EventType
+from modules.foundation.models import ROLE_FOCUS_AREAS, ConflictInfo, ProjectContext
+from modules.foundation.services import DocumentUnderstandingService
+from modules.foundation.utils.orchestrator_helper import safe_orchestrator_call
 
 from .base import Agent
 
 if TYPE_CHECKING:
-    from socratic_system.models.workflow import WorkflowDefinition, WorkflowExecutionState
-    from socratic_system.orchestration import AgentOrchestrator
+    from modules.foundation.models.workflow import WorkflowDefinition, WorkflowExecutionState
+    from modules.foundation.orchestration import AgentOrchestrator
 
 
 class SocraticCounselorAgent(Agent):
@@ -129,13 +129,13 @@ class SocraticCounselorAgent(Agent):
         context = self.orchestrator.context_analyzer.get_context_summary(project)
 
         # NEW: Check question limit
-        from socratic_system.subscription.checker import SubscriptionChecker
+        from modules.foundation.subscription.checker import SubscriptionChecker
 
         # Get or create user (auto-create for CLI/local users)
         user = self.orchestrator.database.load_user(current_user)
         if user is None:
             # Auto-create user with pro tier for local/CLI use
-            from socratic_system.models.user import User
+            from modules.foundation.models.user import User
 
             user = User(
                 username=current_user,
@@ -209,7 +209,7 @@ class SocraticCounselorAgent(Agent):
         self, project: ProjectContext, context: str, question_count: int, current_user: str = None
     ) -> str:
         """Generate contextual questions using Claude with role-aware context"""
-        from socratic_system.utils.logger import get_logger
+        from modules.foundation.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
 
@@ -738,7 +738,7 @@ What would be most helpful for you?"""
 
     def _extract_insights_only(self, request: Dict) -> Dict:
         """Extract insights from response without processing (for direct mode confirmation)"""
-        from socratic_system.utils.logger import get_logger
+        from modules.foundation.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
 
@@ -766,7 +766,7 @@ What would be most helpful for you?"""
 
     def _process_response(self, request: Dict) -> Dict:
         """Process user response and extract insights"""
-        from socratic_system.utils.logger import get_logger
+        from modules.foundation.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
 
@@ -1138,7 +1138,7 @@ What would be most helpful for you?"""
 
         Generates comprehensive summaries and analysis of documents in the knowledge base.
         """
-        from socratic_system.utils.logger import get_logger
+        from modules.foundation.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
 
@@ -1248,7 +1248,7 @@ What would be most helpful for you?"""
 
     def _advance_phase(self, request: Dict) -> Dict:
         """Advance project to the next phase with maturity verification"""
-        from socratic_system.utils.logger import get_logger
+        from modules.foundation.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
 
@@ -1331,7 +1331,7 @@ What would be most helpful for you?"""
 
     def _rollback_phase(self, request: Dict) -> Dict:
         """Roll back project to the previous phase"""
-        from socratic_system.utils.logger import get_logger
+        from modules.foundation.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
 
@@ -1444,7 +1444,7 @@ What would be most helpful for you?"""
             insight_type: Type of insight (goals, requirements, tech_stack, constraints)
             insights: Mutable insights dict to modify
         """
-        from socratic_system.utils.logger import get_logger
+        from modules.foundation.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
         logger.info(f"Conflict resolution: Rejected {insight_type} - '{value}'")
@@ -1474,7 +1474,7 @@ What would be most helpful for you?"""
             insight_type: Type of insight (goals, requirements, tech_stack, constraints)
             insights: Mutable insights dict to modify
         """
-        from socratic_system.utils.logger import get_logger
+        from modules.foundation.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
         logger.info(
@@ -1498,7 +1498,7 @@ What would be most helpful for you?"""
 
     def _generate_hint(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Generate a context-aware hint for the user based on project state"""
-        from socratic_system.utils.logger import get_logger
+        from modules.foundation.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
         project = request.get("project")
@@ -1641,7 +1641,7 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
 
     def _get_fallback_suggestions(self, project, current_question: str) -> List[str]:
         """Generate context-aware fallback suggestions based on phase and question"""
-        from socratic_system.utils.logger import get_logger
+        from modules.foundation.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
 
@@ -1685,7 +1685,7 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
 
     def _generate_answer_suggestions(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Generate answer suggestions for the current question"""
-        from socratic_system.utils.logger import get_logger
+        from modules.foundation.utils.logger import get_logger
 
         logger = get_logger("socratic_counselor")
         project = request.get("project")
@@ -1842,7 +1842,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
             )
 
             # Import here to avoid circular dependency
-            from socratic_system.core.question_selector import QuestionSelector
+            from modules.foundation.core.question_selector import QuestionSelector
 
             selector = QuestionSelector()
             questions = selector.select_next_questions(
@@ -1969,7 +1969,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
         Returns:
             WorkflowDefinition for current phase
         """
-        from socratic_system.core.workflow_builder import (
+        from modules.workflow.builder import (
             create_discovery_workflow_comprehensive,
             create_legacy_compatible_workflow,
         )
@@ -2005,7 +2005,7 @@ Format as a numbered list (1. 2. 3. etc). Return only the numbered list, no addi
         Returns:
             Dict with next question or completion status
         """
-        from socratic_system.core.question_selector import QuestionSelector
+        from modules.foundation.core.question_selector import QuestionSelector
 
         logging.debug(
             f"Advancing workflow execution {execution.execution_id} from node {execution.current_node_id}"

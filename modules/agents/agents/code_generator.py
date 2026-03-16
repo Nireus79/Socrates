@@ -5,10 +5,10 @@ Code generation agent for Socrates AI
 from pathlib import Path
 from typing import Any, Dict
 
-from socratic_system.models import ProjectContext
-from socratic_system.utils.artifact_saver import ArtifactSaver
-from socratic_system.utils.code_structure_analyzer import CodeStructureAnalyzer
-from socratic_system.utils.multi_file_splitter import (
+from modules.foundation.models import ProjectContext
+from modules.foundation.utils.artifact_saver import ArtifactSaver
+from modules.foundation.utils.code_structure_analyzer import CodeStructureAnalyzer
+from modules.foundation.utils.multi_file_splitter import (
     MultiFileCodeSplitter,
     ProjectStructureGenerator,
 )
@@ -117,7 +117,7 @@ class CodeGeneratorAgent(Agent):
                     # NEW: Also save files to database for knowledge base integration
                     self.log("Saving generated files to database...")
                     try:
-                        from socratic_system.database.project_file_manager import ProjectFileManager
+                        from modules.foundation.database.project_file_manager import ProjectFileManager
 
                         file_manager = ProjectFileManager(self.orchestrator.database.db_path)
 

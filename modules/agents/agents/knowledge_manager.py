@@ -12,12 +12,12 @@ import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List
 
-from socratic_system.agents.base import Agent
-from socratic_system.events import EventType
-from socratic_system.models.knowledge import KnowledgeEntry
+from modules.agents import Agent
+from modules.foundation.events import EventType
+from modules.foundation.models.knowledge import KnowledgeEntry
 
 if TYPE_CHECKING:
-    from socratic_system.orchestration.orchestrator import AgentOrchestrator
+    from modules.foundation.orchestrator import AgentOrchestrator
 
 
 class KnowledgeManagerAgent(Agent):

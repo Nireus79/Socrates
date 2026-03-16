@@ -10,9 +10,9 @@ from typing import Dict, List, Optional
 import chromadb
 from sentence_transformers import SentenceTransformer
 
-from socratic_system.database.embedding_cache import EmbeddingCache
-from socratic_system.database.search_cache import SearchResultCache
-from socratic_system.models import KnowledgeEntry
+from modules.foundation.database.embedding_cache import EmbeddingCache
+from modules.foundation.database.search_cache import SearchResultCache
+from modules.foundation.models import KnowledgeEntry
 
 
 class VectorDatabase:

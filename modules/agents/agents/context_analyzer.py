@@ -5,7 +5,7 @@ Context analysis agent for Socrates AI
 import datetime
 from typing import Any, Dict, List
 
-from socratic_system.models import ProjectContext
+from modules.foundation.models import ProjectContext
 
 from .base import Agent
 

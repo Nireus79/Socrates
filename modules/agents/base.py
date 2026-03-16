@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 from modules.foundation.events import EventType
 
 if TYPE_CHECKING:
-    from socratic_system.orchestration.orchestrator import AgentOrchestrator
+    from modules.foundation.orchestrator import AgentOrchestrator
 
 
 class Agent(ABC):

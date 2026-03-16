@@ -8,7 +8,7 @@ to any end node, handling cycles and multiple possible routes.
 import logging
 from typing import Dict, List, Set, Tuple
 
-from socratic_system.models.workflow import WorkflowDefinition, WorkflowPath
+from modules.foundation.models.workflow import WorkflowDefinition, WorkflowPath
 
 logger = logging.getLogger(__name__)
 

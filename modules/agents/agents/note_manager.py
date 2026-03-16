@@ -2,11 +2,11 @@
 
 from typing import TYPE_CHECKING, Any, Dict
 
-from socratic_system.agents.base import Agent
-from socratic_system.models import ProjectNote
+from modules.agents import Agent
+from modules.foundation.models import ProjectNote
 
 if TYPE_CHECKING:
-    from socratic_system.orchestration.orchestrator import AgentOrchestrator
+    from modules.foundation.orchestrator import AgentOrchestrator
 
 
 class NoteManagerAgent(Agent):
@@ -125,7 +125,7 @@ class NoteManagerAgent(Agent):
 
                         # Emit DOCUMENT_IMPORTED event for knowledge base
                         try:
-                            from socratic_system.events import EventType
+                            from modules.foundation.events import EventType
 
                             if self.orchestrator.event_emitter:
                                 self.orchestrator.event_emitter.emit(

@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: Test Project-app
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DEBUG=True
+    volumes:
+      - .:/app
+    command: python main.py
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - Test Project-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: Test Project-db
+    environment:
+      POSTGRES_DB: Test Project_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - Test Project-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: Test Project-cache
+    ports:
+      - "6379:6379"
+    networks:
+      - Test Project-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  Test Project-network:
+    driver: bridge

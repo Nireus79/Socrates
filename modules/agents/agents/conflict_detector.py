@@ -5,7 +5,7 @@ Conflict detection and resolution agent for Socrates AI
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict
 
-from socratic_system.conflict_resolution import (
+from modules.foundation.conflict_resolution import (
     ConstraintsConflictChecker,
     GoalsConflictChecker,
     RequirementsConflictChecker,
