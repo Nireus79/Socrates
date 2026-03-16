@@ -27,6 +27,8 @@ class SkillService(BaseService):
         self.agent_skills: Dict[str, List[str]] = {}  # agent_name -> [skill_ids]
         self.skill_effectiveness: Dict[str, float] = {}  # skill_id -> effectiveness_score
         self.skill_usage: Dict[str, int] = {}  # skill_id -> usage_count
+        self.skill_performance: Dict[str, List[float]] = {}  # skill_id -> [performance_scores]
+        self.skill_last_applied: Dict[str, str] = {}  # skill_id -> last_applied_timestamp
         self.event_bus: Optional[EventBus] = None
         self.logger = logging.getLogger(f"socrates.{self.service_name}")
 
@@ -54,6 +56,8 @@ class SkillService(BaseService):
             self.agent_skills.clear()
             self.skill_effectiveness.clear()
             self.skill_usage.clear()
+            self.skill_performance.clear()
+            self.skill_last_applied.clear()
             self.logger.info("SkillService shutdown complete")
         except Exception as e:
             self.logger.error(f"Error during skills shutdown: {e}")
@@ -260,6 +264,8 @@ class SkillService(BaseService):
             return {"error": "Skill not found"}
 
         skill = self.skills[skill_id]
+        performance_history = self.skill_performance.get(skill_id, [])
+
         return {
             "skill_id": skill_id,
             "name": skill["name"],
@@ -267,4 +273,247 @@ class SkillService(BaseService):
             "effectiveness": self.skill_effectiveness.get(skill_id, 0),
             "usage_count": self.skill_usage.get(skill_id, 0),
             "created_at": skill["created_at"],
+            "last_applied": self.skill_last_applied.get(skill_id),
+            "performance_history_length": len(performance_history),
+            "performance_trend": self._calculate_trend(performance_history),
         }
+
+    def _calculate_trend(self, performance_history: List[float]) -> str:
+        """Calculate trend from performance history."""
+        if len(performance_history) < 2:
+            return "insufficient_data"
+
+        recent = performance_history[-5:] if len(performance_history) >= 5 else performance_history
+        avg_recent = sum(recent) / len(recent)
+
+        older = performance_history[:-5] if len(performance_history) > 5 else recent
+        avg_older = sum(older) / len(older)
+
+        if avg_recent > avg_older + 0.1:
+            return "improving"
+        elif avg_recent < avg_older - 0.1:
+            return "declining"
+        else:
+            return "stable"
+
+    async def track_skill_execution(
+        self,
+        skill_id: str,
+        execution_result: Dict[str, Any],
+        performance_score: Optional[float] = None,
+    ) -> bool:
+        """
+        Track skill execution and update effectiveness based on result.
+
+        Args:
+            skill_id: ID of skill executed
+            execution_result: Result from agent execution
+            performance_score: Optional explicit performance score (0.0-1.0)
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            if skill_id not in self.skills:
+                self.logger.warning(f"Skill {skill_id} not found for tracking")
+                return False
+
+            # Calculate performance score if not provided
+            if performance_score is None:
+                performance_score = self._calculate_performance_score(execution_result)
+
+            # Track performance history
+            if skill_id not in self.skill_performance:
+                self.skill_performance[skill_id] = []
+            self.skill_performance[skill_id].append(performance_score)
+
+            # Update effectiveness with weighted average
+            current_eff = self.skill_effectiveness.get(skill_id, 0.5)
+            usage_count = self.skill_usage.get(skill_id, 0)
+
+            new_eff = (current_eff * usage_count + performance_score) / (usage_count + 1)
+            self.skill_effectiveness[skill_id] = new_eff
+            self.skills[skill_id]["effectiveness"] = new_eff
+
+            # Update last applied timestamp
+            self.skill_last_applied[skill_id] = datetime.utcnow().isoformat()
+
+            self.logger.debug(
+                f"Tracked skill {skill_id}: score={performance_score:.2f}, "
+                f"effectiveness={new_eff:.2f}, usage={usage_count + 1}"
+            )
+
+            # Publish event
+            if self.event_bus:
+                try:
+                    await self.event_bus.publish(
+                        "skill_executed",
+                        self.service_name,
+                        {
+                            "skill_id": skill_id,
+                            "performance_score": performance_score,
+                            "effectiveness": new_eff,
+                            "usage_count": usage_count + 1,
+                        },
+                    )
+                except Exception as e:
+                    self.logger.error(f"Error publishing skill_executed event: {e}")
+
+            return True
+        except Exception as e:
+            self.logger.error(f"Error tracking skill execution: {e}")
+            return False
+
+    def _calculate_performance_score(self, execution_result: Dict[str, Any]) -> float:
+        """
+        Calculate performance score from execution result.
+
+        Scoring logic:
+        - success: 0.9
+        - partial_success: 0.6
+        - error: 0.1
+        - Custom score if provided: use directly
+        """
+        # Check for explicit performance score in result
+        if "performance_score" in execution_result:
+            score = execution_result["performance_score"]
+            if isinstance(score, (int, float)) and 0 <= score <= 1:
+                return float(score)
+
+        # Infer from execution status
+        status = execution_result.get("status", "unknown")
+        if status == "success":
+            return 0.9
+        elif status == "partial_success":
+            return 0.6
+        elif status == "error":
+            return 0.1
+        else:
+            return 0.5  # Default for unknown status
+
+    async def optimize_skills(self, agent_name: str) -> Dict[str, Any]:
+        """
+        Optimize skills for an agent by analyzing effectiveness.
+
+        Returns:
+            Dictionary with optimization results
+        """
+        try:
+            agent_skills = self.agent_skills.get(agent_name, [])
+            if not agent_skills:
+                return {
+                    "agent": agent_name,
+                    "optimized_skills": [],
+                    "removed_skills": [],
+                    "reason": "no_skills",
+                }
+
+            optimized = []
+            removed = []
+
+            for skill_id in agent_skills:
+                effectiveness = self.skill_effectiveness.get(skill_id, 0.5)
+                usage_count = self.skill_usage.get(skill_id, 0)
+
+                # Remove skills with very low effectiveness and limited usage
+                if effectiveness < 0.3 and usage_count >= 5:
+                    removed.append(skill_id)
+                    self.logger.info(f"Removed ineffective skill {skill_id} for {agent_name}")
+                # Flag skills for improvement
+                elif effectiveness < 0.5:
+                    optimized.append({
+                        "skill_id": skill_id,
+                        "action": "improve",
+                        "current_effectiveness": effectiveness,
+                        "recommendation": "needs_parameters_tuning",
+                    })
+
+            # Update agent skills list
+            self.agent_skills[agent_name] = [
+                s for s in agent_skills if s not in removed
+            ]
+
+            self.logger.info(
+                f"Optimized skills for {agent_name}: "
+                f"{len(optimized)} to improve, {len(removed)} removed"
+            )
+
+            return {
+                "agent": agent_name,
+                "optimized_skills": optimized,
+                "removed_skills": removed,
+                "total_skills": len(self.agent_skills[agent_name]),
+            }
+        except Exception as e:
+            self.logger.error(f"Error optimizing skills: {e}")
+            return {
+                "agent": agent_name,
+                "error": str(e),
+                "optimized_skills": [],
+                "removed_skills": [],
+            }
+
+    async def get_effectiveness_report(
+        self,
+        agent_name: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Get effectiveness report for skills."""
+        try:
+            if agent_name:
+                # Report for specific agent
+                agent_skills = self.agent_skills.get(agent_name, [])
+                skills_report = []
+                for skill_id in agent_skills:
+                    if skill_id in self.skills:
+                        skills_report.append({
+                            "skill_id": skill_id,
+                            "name": self.skills[skill_id]["name"],
+                            "effectiveness": self.skill_effectiveness.get(skill_id, 0),
+                            "usage_count": self.skill_usage.get(skill_id, 0),
+                            "performance_avg": (
+                                sum(self.skill_performance.get(skill_id, [0])) /
+                                len(self.skill_performance.get(skill_id, [1]))
+                            ),
+                        })
+
+                avg_effectiveness = (
+                    sum(s["effectiveness"] for s in skills_report) / len(skills_report)
+                    if skills_report
+                    else 0
+                )
+
+                return {
+                    "agent": agent_name,
+                    "skills": skills_report,
+                    "average_effectiveness": avg_effectiveness,
+                    "total_skills": len(skills_report),
+                }
+            else:
+                # Report for all skills
+                all_skills_report = []
+                for skill_id, skill_data in self.skills.items():
+                    all_skills_report.append({
+                        "skill_id": skill_id,
+                        "name": skill_data["name"],
+                        "agent": skill_data["agent"],
+                        "effectiveness": self.skill_effectiveness.get(skill_id, 0),
+                        "usage_count": self.skill_usage.get(skill_id, 0),
+                    })
+
+                return {
+                    "total_skills": len(all_skills_report),
+                    "skills": all_skills_report,
+                    "avg_system_effectiveness": (
+                        sum(s["effectiveness"] for s in all_skills_report) /
+                        len(all_skills_report)
+                        if all_skills_report
+                        else 0
+                    ),
+                }
+        except Exception as e:
+            self.logger.error(f"Error generating effectiveness report: {e}")
+            return {
+                "error": str(e),
+                "agent": agent_name,
+                "skills": [],
+            }
