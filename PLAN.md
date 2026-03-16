@@ -2011,7 +2011,7 @@ algorithm = MajorityConsensus()
 ❯ what else needs to be done?                                                                                                                                                                                                                                     
 ● Looking at the current state, here's what remains to maximize the Socratic Ecosystem:
 
-  2. Integration Examples
+  1. Integration Examples
 
   Create working examples showing:
   - Openclaw + Socratic Conflict: Multi-agent conflict resolution in workflows
@@ -2019,7 +2019,7 @@ algorithm = MajorityConsensus()
   - Cross-package examples: How Agents + Conflict + Knowledge work together
 
 
-  4. Comprehensive Integration Guide
+  2. Comprehensive Integration Guide
 
   - How to use SocraticConflictSkill in Openclaw workflows
   - How to use ConflictResolutionTool in LangChain chains
@@ -2028,20 +2028,20 @@ algorithm = MajorityConsensus()
 
   Medium Priority (Polish)
 
-  5. Phase 4f Optional Package
+  3. Phase 4f Optional Package
 
   The plan reserves "Phase 4f" - could implement:
   - Socratic Audit - Compliance and audit logging for agent decisions
   - Socratic Feedback - User feedback collection and learning from conflicts
   - Socratic Monitor - Real-time monitoring of agent behavior and conflicts
 
-  6. Release Notes
+  4. Release Notes
 
   - v0.1.0 release notes for entire ecosystem
   - Changelog documenting all 7 packages
   - Migration guides if needed
 
-  7. Skill Enhancement Documentation
+  5. Skill Enhancement Documentation
 
   For each of the 8 Openclaw skills:
   - Configuration options
@@ -2049,7 +2049,7 @@ algorithm = MajorityConsensus()
   - Limitations and constraints
   - Advanced usage patterns
 
-  8. LangChain Agent Templates
+  6. LangChain Agent Templates
 
   - Multi-agent systems using LangChain + Socratic tools
   - Tool calling patterns
@@ -2057,19 +2057,19 @@ algorithm = MajorityConsensus()
 
   Low Priority (Advanced)
 
-  9. GitHub Sponsors / Funding
+  7. GitHub Sponsors / Funding
 
   - Add sponsor links to repositories
   - Document consulting/support options
 
 
-  11. Performance Benchmarks
+  8. Performance Benchmarks
 
   - Document performance of each package
   - Optimization guides
   - Scalability characteristics
 
-  12. Contribution Guidelines
+  9. Contribution Guidelines
 
   - CONTRIBUTING.md for each repo
   - Development setup docs
