@@ -212,7 +212,7 @@ class SkillService(BaseService):
             return False
 
     async def get_skill_recommendations(self, agent_name: str) -> Dict[str, Any]:
-        """Get skill recommendations for an agent."""
+        """Get skill recommendations for an agent (from ecosystem agent)."""
         try:
             if not self.skill_generator:
                 return {
@@ -242,6 +242,197 @@ class SkillService(BaseService):
                 "recommendations": [],
                 "error": str(e),
             }
+
+    async def analyze_agent_performance(self, agent_name: str) -> Dict[str, Any]:
+        """
+        Analyze agent performance to identify skill gaps.
+
+        Returns:
+            Dictionary with performance analysis
+        """
+        try:
+            agent_skills = self.agent_skills.get(agent_name, [])
+
+            # Calculate current skill effectiveness
+            skill_effectiveness = {}
+            for skill_id in agent_skills:
+                eff = self.skill_effectiveness.get(skill_id, 0.5)
+                skill_effectiveness[skill_id] = eff
+
+            # Calculate average effectiveness
+            avg_effectiveness = (
+                sum(skill_effectiveness.values()) / len(skill_effectiveness)
+                if skill_effectiveness else 0
+            )
+
+            # Identify weak areas (skills below average or missing skills)
+            weak_skills = [
+                skill_id for skill_id, eff in skill_effectiveness.items()
+                if eff < 0.6
+            ]
+
+            # Count total skills per agent
+            total_agents = len(self.agent_skills)
+            avg_skills_per_agent = (
+                sum(len(skills) for skills in self.agent_skills.values()) /
+                total_agents if total_agents > 0 else 0
+            )
+
+            skills_gap = max(0, avg_skills_per_agent - len(agent_skills))
+
+            return {
+                "agent": agent_name,
+                "current_skills": len(agent_skills),
+                "average_effectiveness": avg_effectiveness,
+                "weak_skills": weak_skills,
+                "skill_gap": skills_gap,
+                "performance_score": avg_effectiveness * (1 - min(skills_gap / 5, 1.0)),
+            }
+        except Exception as e:
+            self.logger.error(f"Error analyzing agent performance: {e}")
+            return {
+                "agent": agent_name,
+                "error": str(e),
+                "current_skills": 0,
+                "average_effectiveness": 0,
+            }
+
+    async def recommend_skills(
+        self,
+        agent_name: str,
+        max_recommendations: int = 5,
+    ) -> Dict[str, Any]:
+        """
+        Generate personalized skill recommendations for an agent.
+
+        Args:
+            agent_name: Name of agent to recommend for
+            max_recommendations: Maximum number of recommendations to return
+
+        Returns:
+            Dictionary with ranked skill recommendations
+        """
+        try:
+            # Analyze current performance
+            performance = await self.analyze_agent_performance(agent_name)
+
+            agent_skills = set(self.agent_skills.get(agent_name, []))
+            available_skills = [
+                skill_id for skill_id in self.skills.keys()
+                if skill_id not in agent_skills
+            ]
+
+            if not available_skills:
+                return {
+                    "agent": agent_name,
+                    "recommendations": [],
+                    "reason": "all_skills_assigned",
+                }
+
+            recommendations = []
+
+            for skill_id in available_skills:
+                skill = self.skills.get(skill_id, {})
+                skill_eff = self.skill_effectiveness.get(skill_id, 0.5)
+                skill_usage = self.skill_usage.get(skill_id, 0)
+
+                # Calculate recommendation confidence
+                confidence = self._calculate_recommendation_confidence(
+                    skill_eff, skill_usage, performance
+                )
+
+                # Estimate impact
+                estimated_improvement = skill_eff * 0.1  # 10% of skill effectiveness
+
+                recommendations.append({
+                    "skill_id": skill_id,
+                    "name": skill.get("name", "unknown"),
+                    "type": skill.get("type", "unknown"),
+                    "skill_effectiveness": skill_eff,
+                    "confidence": confidence,
+                    "expected_improvement": estimated_improvement,
+                    "reason": self._get_recommendation_reason(skill, performance),
+                })
+
+            # Sort by confidence descending
+            recommendations.sort(key=lambda x: x["confidence"], reverse=True)
+            top_recommendations = recommendations[:max_recommendations]
+
+            self.logger.info(
+                f"Generated {len(top_recommendations)} recommendations for {agent_name}"
+            )
+
+            # Publish event
+            if self.event_bus and top_recommendations:
+                try:
+                    await self.event_bus.publish(
+                        "recommendations_generated",
+                        self.service_name,
+                        {
+                            "agent": agent_name,
+                            "recommendations_count": len(top_recommendations),
+                            "top_skill": top_recommendations[0]["skill_id"],
+                        },
+                    )
+                except Exception as e:
+                    self.logger.error(f"Error publishing recommendations event: {e}")
+
+            return {
+                "agent": agent_name,
+                "recommendations": top_recommendations,
+                "count": len(top_recommendations),
+                "performance_analysis": performance,
+            }
+        except Exception as e:
+            self.logger.error(f"Error generating recommendations: {e}")
+            return {
+                "agent": agent_name,
+                "recommendations": [],
+                "error": str(e),
+            }
+
+    def _calculate_recommendation_confidence(
+        self,
+        skill_effectiveness: float,
+        skill_usage: int,
+        performance: Dict[str, Any],
+    ) -> float:
+        """
+        Calculate confidence score for recommendation (0.0-1.0).
+
+        Confidence based on:
+        - Skill effectiveness (0.5 weight)
+        - Skill proven usage (0.3 weight)
+        - Current performance gap (0.2 weight)
+        """
+        # Effectiveness score (higher is better)
+        eff_score = skill_effectiveness * 0.5
+
+        # Usage maturity (more usage = more proven)
+        usage_score = min(1.0, skill_usage / 10) * 0.3
+
+        # Performance gap score (more gap = more useful)
+        perf_gap = performance.get("skill_gap", 0)
+        gap_score = min(1.0, perf_gap / 5) * 0.2
+
+        confidence = eff_score + usage_score + gap_score
+        return min(1.0, max(0.0, confidence))
+
+    def _get_recommendation_reason(
+        self,
+        skill: Dict[str, Any],
+        performance: Dict[str, Any],
+    ) -> str:
+        """Generate reason for skill recommendation."""
+        skill_type = skill.get("type", "unknown")
+        avg_eff = performance.get("average_effectiveness", 0)
+
+        if avg_eff < 0.5:
+            return f"Low performance area - {skill_type} can help"
+        elif performance.get("skill_gap", 0) > 0:
+            return f"Skill gap identified - {skill_type} recommended"
+        else:
+            return f"Enhancement opportunity - {skill_type} available"
 
     async def list_skills(self, agent_name: Optional[str] = None) -> Dict[str, Any]:
         """List skills, optionally filtered by agent."""
