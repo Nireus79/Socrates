@@ -26,10 +26,10 @@ Usage:
 """
 
 from .base import BaseLanguageExtractor
-from .models import ValidationResult, ExtractionResult
-from .registry import LanguageExtractorRegistry, LanguageExtractorMetadata
-from .python_extractor import PythonExtractor
 from .generic_extractor import GenericExtractor
+from .models import ExtractionResult, ValidationResult
+from .python_extractor import PythonExtractor
+from .registry import LanguageExtractorMetadata, LanguageExtractorRegistry
 
 __all__ = [
     "BaseLanguageExtractor",

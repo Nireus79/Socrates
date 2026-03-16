@@ -22,31 +22,26 @@ Markers:
 - @pytest.mark.requires_api: Tests that need GitHub API access (mocked)
 """
 
-import pytest
-import unittest
-from unittest.mock import Mock, patch, MagicMock, call
 import os
 import tempfile
-from datetime import datetime, timedelta, timezone
+import unittest
+from unittest.mock import Mock, patch
+
+import pytest
 
 # Import the components we're testing
-from socrates_api.routers.github import (
-    sync_project,
-    pull_changes,
-    push_changes,
+from socratic_system.agents.github_sync_handler import (
+    ConflictResolutionError,
+    NetworkSyncFailedError,
+    PermissionDeniedError,
+    RepositoryNotFoundError,
+    TokenExpiredError,
+    create_github_sync_handler,
 )
 from socratic_system.ui.commands.github_commands import (
     GithubPullCommand,
     GithubPushCommand,
     GithubSyncCommand,
-)
-from socratic_system.agents.github_sync_handler import (
-    create_github_sync_handler,
-    TokenExpiredError,
-    PermissionDeniedError,
-    RepositoryNotFoundError,
-    NetworkSyncFailedError,
-    ConflictResolutionError,
 )
 
 
@@ -260,7 +255,7 @@ class TestGithubPullCommand(unittest.TestCase):
         mock_git_manager.return_value = mock_git_instance
 
         # Execute command
-        result = self.command.execute([], self.context)
+        self.command.execute([], self.context)
 
         # Verify handler was created
         mock_handler.assert_called()
@@ -354,7 +349,7 @@ class TestGithubSyncCommand(unittest.TestCase):
         mock_pull.return_value = {"data": {"status": "success"}}
         mock_push.return_value = {"data": {"status": "success"}}
 
-        result = self.command.execute([], self.context)
+        self.command.execute([], self.context)
 
         # Verify both pull and push were called
         mock_pull.assert_called()
@@ -434,29 +429,21 @@ class TestEdgeCaseHandling(unittest.TestCase):
 
     def test_token_expired_workflow(self):
         """Test complete workflow when token expires"""
-        handler = create_github_sync_handler()
-
         # Test that TokenExpiredError is properly defined
         self.assertTrue(issubclass(TokenExpiredError, Exception))
 
     def test_permission_denied_workflow(self):
         """Test complete workflow when permission is denied"""
-        handler = create_github_sync_handler()
-
         # Test that PermissionDeniedError is properly defined
         self.assertTrue(issubclass(PermissionDeniedError, Exception))
 
     def test_conflict_resolution_workflow(self):
         """Test conflict resolution workflow"""
-        handler = create_github_sync_handler()
-
         # Test that ConflictResolutionError is properly defined
         self.assertTrue(issubclass(ConflictResolutionError, Exception))
 
     def test_network_retry_workflow(self):
         """Test network retry workflow"""
-        handler = create_github_sync_handler()
-
         # Test that NetworkSyncFailedError is properly defined
         self.assertTrue(issubclass(NetworkSyncFailedError, Exception))
 

@@ -5,6 +5,7 @@ Tests the DocumentationGenerator for creating comprehensive project documentatio
 """
 
 import pytest
+
 from socratic_system.utils.documentation_generator import DocumentationGenerator
 
 

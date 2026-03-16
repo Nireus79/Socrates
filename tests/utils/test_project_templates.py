@@ -5,6 +5,7 @@ Tests the ProjectTemplateGenerator for creating various project template files.
 """
 
 import pytest
+
 from socratic_system.utils.project_templates import ProjectTemplateGenerator
 
 

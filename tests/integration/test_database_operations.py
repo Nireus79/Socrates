@@ -7,13 +7,14 @@ Tests real database interactions including:
 - Learning records
 """
 
-import pytest
 import tempfile
+from datetime import datetime
 from pathlib import Path
+
+import pytest
 
 from socratic_system.database.project_db import ProjectDatabase
 from socratic_system.models.project import ProjectContext
-from datetime import datetime
 
 
 @pytest.fixture
@@ -29,7 +30,7 @@ def temp_db():
     # Cleanup
     try:
         Path(db_path).unlink()
-    except:
+    except FileNotFoundError:
         pass
 
 

@@ -4,7 +4,6 @@ Unit tests for CodeExtractor utility
 Tests markdown detection, code extraction, and Python validation.
 """
 
-import pytest
 from socratic_system.utils.code_extractor import CodeExtractor
 
 

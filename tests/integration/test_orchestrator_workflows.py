@@ -8,15 +8,15 @@ Tests real workflows through the orchestrator including:
 - Learning progression tracking
 """
 
-import pytest
-import tempfile
 import os
-from pathlib import Path
 import shutil
+import tempfile
+from pathlib import Path
 
-from socratic_system.orchestration.orchestrator import AgentOrchestrator
+import pytest
+
 from socratic_system.config import SocratesConfig
-from socratic_system.models.project import ProjectContext
+from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
 
 @pytest.fixture

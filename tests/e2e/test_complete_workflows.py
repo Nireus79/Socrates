@@ -7,17 +7,18 @@ Tests complete user journeys including:
 - Database operations
 """
 
-import pytest
-import tempfile
-import shutil
-from pathlib import Path
-from datetime import datetime
-
-from socratic_system.orchestration.orchestrator import AgentOrchestrator
-from socratic_system.config import SocratesConfig
-from socratic_system.models.project import ProjectContext
-from socratic_system.database.project_db import ProjectDatabase
 import os
+import shutil
+import tempfile
+from datetime import datetime
+from pathlib import Path
+
+import pytest
+
+from socratic_system.config import SocratesConfig
+from socratic_system.database.project_db import ProjectDatabase
+from socratic_system.models.project import ProjectContext
+from socratic_system.orchestration.orchestrator import AgentOrchestrator
 
 
 @pytest.fixture

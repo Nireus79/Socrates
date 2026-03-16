@@ -4,12 +4,12 @@ Base abstract class for language-specific code extractors
 Defines the interface that all language extractors must implement.
 """
 
-import re
 import logging
+import re
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List
 
-from .models import ValidationResult, ExtractionResult
+from .models import ExtractionResult, ValidationResult
 
 logger = logging.getLogger(__name__)
 
@@ -273,8 +273,8 @@ class BaseLanguageExtractor(ABC):
             Dictionary with line counts and validity
         """
         lines = code.split("\n")
-        code_lines = [l for l in lines if l.strip() and not l.strip().startswith("#")]
-        comment_lines = [l for l in lines if l.strip().startswith("#")]
+        code_lines = [line for line in lines if line.strip() and not line.strip().startswith("#")]
+        comment_lines = [line for line in lines if line.strip().startswith("#")]
 
         validation = self.validate_syntax(code)
 
@@ -283,6 +283,6 @@ class BaseLanguageExtractor(ABC):
             "total_lines": len(lines),
             "code_lines": len(code_lines),
             "comment_lines": len(comment_lines),
-            "blank_lines": len([l for l in lines if not l.strip()]),
+            "blank_lines": len([line for line in lines if not line.strip()]),
             "is_valid": validation.is_valid,
         }

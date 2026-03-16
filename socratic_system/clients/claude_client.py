@@ -659,7 +659,7 @@ OUTPUT FORMAT - CRITICAL:
             # Get Python extractor from registry
             extractor = LanguageExtractorRegistry.get_extractor("python")
             if extractor and extractor.is_markdown_format(raw_content):
-                logger.warning(
+                self.logger.warning(
                     "Received markdown-formatted response from Claude, extracting Python code"
                 )
 
@@ -667,11 +667,11 @@ OUTPUT FORMAT - CRITICAL:
                 extraction_result = extractor.extract_and_validate(raw_content)
 
                 if extraction_result.is_valid:
-                    logger.info("Successfully extracted and validated Python code from markdown")
+                    self.logger.info("Successfully extracted and validated Python code from markdown")
                     return extraction_result.extracted_code
                 else:
-                    logger.error(f"Extracted code has syntax errors: {extraction_result.validation_error}")
-                    logger.error("Returning original response - may contain markdown")
+                    self.logger.error(f"Extracted code has syntax errors: {extraction_result.validation_error}")
+                    self.logger.error("Returning original response - may contain markdown")
                     return raw_content
 
             return raw_content

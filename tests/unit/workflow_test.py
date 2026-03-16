@@ -12,7 +12,6 @@ Tests cover:
 
 import unittest
 from datetime import datetime
-from unittest.mock import Mock, patch
 
 from socratic_system.core.workflow_builder import (
     WorkflowBuilder,
@@ -25,8 +24,6 @@ from socratic_system.core.workflow_risk_calculator import WorkflowRiskCalculator
 from socratic_system.models.project import ProjectContext
 from socratic_system.models.workflow import (
     PathDecisionStrategy,
-    WorkflowEdge,
-    WorkflowNode,
     WorkflowNodeType,
 )
 

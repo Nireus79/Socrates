@@ -27,36 +27,23 @@ Markers:
 - @pytest.mark.requires_token: Tests requiring valid GitHub token
 """
 
-import pytest
-import unittest
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
-import shutil
 import time
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-import subprocess
+import unittest
+from datetime import datetime, timezone
+from unittest.mock import Mock, patch
+
+import pytest
 
 # Import the components we're testing
-from socrates_api.routers.github import (
-    sync_project,
-    pull_changes,
-    push_changes,
-)
-from socratic_system.ui.commands.github_commands import (
-    GithubPullCommand,
-    GithubPushCommand,
-    GithubSyncCommand,
-)
 from socratic_system.agents.github_sync_handler import (
-    create_github_sync_handler,
-    TokenExpiredError,
-    PermissionDeniedError,
-    RepositoryNotFoundError,
     NetworkSyncFailedError,
-    ConflictResolutionError,
+    TokenExpiredError,
+    create_github_sync_handler,
 )
 
 
@@ -303,7 +290,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
                 mock_result.stdout = "conflict_file.txt"
                 mock_run.return_value = mock_result
 
-                conflicts = handler.detect_merge_conflicts(tmpdir)
+                handler.detect_merge_conflicts(tmpdir)
                 # Even with mock, method should work
 
     def test_large_file_exclusion_strategy(self):
@@ -338,7 +325,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
         start = time.time()
         # This will fail with actual token check but we're testing timing
         try:
-            is_valid = handler.check_token_validity("invalid_test_token")
+            handler.check_token_validity("invalid_test_token")
         except Exception:
             pass  # Expected to fail with invalid token
         elapsed = time.time() - start
@@ -397,8 +384,6 @@ class TestGitHubSyncE2EErrorRecovery(unittest.TestCase):
 
     def test_resumable_sync_after_interruption(self):
         """Test that sync can be resumed after interruption"""
-        handler = create_github_sync_handler()
-
         # Track sync state
         sync_state = {
             "started": datetime.now(timezone.utc),
@@ -509,7 +494,6 @@ class TestGitHubSyncE2EPerformance(unittest.TestCase):
             return {"status": "success"}
 
         try:
-            start_time = time.time()
             result = handler.sync_with_retry_and_resume(
                 repo_url="https://github.com/test/repo",
                 sync_function=timed_sync,
@@ -518,7 +502,6 @@ class TestGitHubSyncE2EPerformance(unittest.TestCase):
 
             # With exponential backoff: 1s, 2s, 4s between attempts
             # Total time should be roughly 3-7 seconds (plus overhead)
-            total_time = time.time() - start_time
 
             # Just verify we got success (actual timing depends on implementation)
             self.assertEqual(result["status"], "success")

@@ -8,14 +8,12 @@ Uses mocking for external dependencies (git commands, GitHub API).
 import subprocess
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import pytest
+
 from socratic_system.utils.git_initializer import (
     GitInitializer,
-    GitInitializationError,
-    GitOperationError,
-    GitHubError,
 )
 
 
@@ -91,7 +89,7 @@ class TestGitInitializer:
 
         assert success is True
         # Verify author was configured
-        calls = [call_obj for call_obj in mock_run.call_args_list]
+        calls = list(mock_run.call_args_list)
         config_calls = [c for c in calls if "config" in str(c)]
         assert len(config_calls) > 0
 
@@ -109,7 +107,7 @@ class TestGitInitializer:
 
         assert success is True
         # Verify custom message was used
-        calls = [call_obj for call_obj in mock_run.call_args_list]
+        calls = list(mock_run.call_args_list)
         commit_calls = [c for c in calls if "commit" in str(c)]
         assert any(custom_msg in str(c) for c in commit_calls)
 

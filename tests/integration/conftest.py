@@ -6,8 +6,9 @@ from CI/CD runs with -m "not integration" because CI/CD environments don't
 have a running API server. These tests are designed for local testing only.
 """
 
-import pytest
 import socket
+
+import pytest
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -9,11 +9,11 @@ Tests complete user journeys:
 5. Notes and Chat Management
 """
 
-import json
+import time
+from typing import Tuple
+
 import pytest
 import requests
-from typing import Tuple
-import time
 
 API_URL = "http://localhost:8008"
 

@@ -5,14 +5,11 @@ Tests the /projects/{id}/export and /projects/{id}/publish-to-github endpoints.
 Uses FastAPI TestClient for endpoint testing.
 """
 
-import json
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch, AsyncMock
-from io import BytesIO
+from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi.testclient import TestClient
 
 
 class TestExportEndpoint:
@@ -278,7 +275,7 @@ class TestPublishToGitHubEndpoint:
 
             try:
                 mock_create()
-                assert False, "Should raise exception"
+                raise AssertionError("Should raise exception")
             except Exception as e:
                 assert "Network" in str(e)
 
@@ -424,7 +421,6 @@ class TestEndpointValidation:
     def test_repo_name_validation(self):
         """Test repository name validation"""
         invalid_names = ["INVALID", "invalid repo", "invalid!", ""]
-        valid_names = ["invalid-repo", "invalid_repo", "invalidrepo"]
 
         # Invalid names should be rejected
         for name in invalid_names:
@@ -432,7 +428,6 @@ class TestEndpointValidation:
 
     def test_token_format_validation(self):
         """Test GitHub token format validation"""
-        invalid_tokens = ["", "token123", "gh_invalid"]
         valid_tokens = ["ghp_validtoken123"]
 
         # Valid tokens should start with ghp_
@@ -442,7 +437,6 @@ class TestEndpointValidation:
     def test_format_parameter_validation(self):
         """Test archive format parameter validation"""
         valid_formats = ["zip", "tar", "tar.gz", "tar.bz2"]
-        invalid_formats = ["rar", "7z", "invalid"]
 
         assert "zip" in valid_formats
         assert "rar" not in valid_formats

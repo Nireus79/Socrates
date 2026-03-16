@@ -413,9 +413,6 @@ def protect_production_environment(monkeypatch):
     """
     import os
 
-    # Save original environment variables
-    original_socrates_data_dir = os.environ.get("SOCRATES_DATA_DIR")
-
     # Unset any test-modified environment variables
     if "SOCRATES_DATA_DIR" in os.environ:
         monkeypatch.delenv("SOCRATES_DATA_DIR")

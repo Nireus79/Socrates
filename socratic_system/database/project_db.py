@@ -883,7 +883,6 @@ class ProjectDatabase:
             cursor.execute("DELETE FROM project_notes WHERE project_id = ?", (project_id,))
 
             # Insert new notes
-            import json
             for note in notes:
                 cursor.execute(
                     """

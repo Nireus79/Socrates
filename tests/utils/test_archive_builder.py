@@ -4,12 +4,13 @@ Unit tests for archive_builder.py
 Tests the ArchiveBuilder for creating and managing project archives.
 """
 
+import tarfile
 import tempfile
 import zipfile
-import tarfile
 from pathlib import Path
 
 import pytest
+
 from socratic_system.utils.archive_builder import ArchiveBuilder
 
 
