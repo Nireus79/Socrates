@@ -109,3 +109,21 @@ class AnalyticsService(BaseService):
             self.logger.debug(f"Recorded metric: {metric_name}")
         except Exception as e:
             self.logger.error(f"Error: {e}")
+
+    async def collect_system_health(self) -> Dict[str, Any]:
+        """
+        Collect health metrics from all services.
+
+        Returns:
+            Dictionary with health data from all services
+        """
+        if not self.orchestrator:
+            self.logger.warning("Orchestrator not set, cannot collect system health")
+            return {}
+
+        try:
+            health = await self.orchestrator.health_check_all()
+            return health
+        except Exception as e:
+            self.logger.error(f"Error collecting system health: {e}")
+            return {}

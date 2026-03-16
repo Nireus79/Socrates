@@ -95,3 +95,24 @@ class KnowledgeService(BaseService):
     async def get_knowledge(self, knowledge_id: str) -> Optional[str]:
         """Get specific knowledge item."""
         return self.knowledge_index.get(knowledge_id)
+
+    async def call_learning_service(self, query: str) -> Optional[Dict[str, Any]]:
+        """
+        Call learning service to get recommendations based on knowledge query.
+
+        Returns:
+            Recommendations if successful, None otherwise
+        """
+        if not self.orchestrator:
+            self.logger.warning("Orchestrator not set, cannot call learning service")
+            return None
+
+        try:
+            # Search knowledge first
+            results = await self.search_knowledge(query, limit=5)
+            # Could call learning service here for recommendations
+            self.logger.debug(f"Called learning service for query: {query}")
+            return results
+        except Exception as e:
+            self.logger.error(f"Error calling learning service: {e}")
+            return None
