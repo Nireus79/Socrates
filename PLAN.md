@@ -489,48 +489,51 @@ pip install socratic-workflow[all]                # Everything
 
 ## Part 3: Distribution Strategy & Markets
 
-### 3.1 The 24 Entry Points (Current: 18/24 Active) ✅
+### 3.1 The 24 Entry Points (Current: 21/24 Active) ✅
 
 ```
 8 PACKAGES × 3 DISTRIBUTION CHANNELS = 24 ENTRY POINTS
 
-CHANNEL 1: STANDALONE (pip install) ✅ 6/6 Active (+ 2 planned)
+CHANNEL 1: STANDALONE (pip install) ✅ 7/8 Active (+ 1 planned)
 ├── socrates-nexus (v0.3.0) ✅
 ├── socratic-rag (v0.1.0) ✅
 ├── socratic-analyzer (v0.1.0) ✅
 ├── socratic-agents (v0.1.2) ✅ UPGRADED
 ├── socratic-workflow (v0.1.0) ✅ NEW
 ├── socratic-knowledge (v0.1.1) ✅ NEW ✨
-└── (Future: Learning, Conflict)
+├── socratic-learning (v0.1.0) ✅ NEW 🎓
+└── (Future: Conflict)
 
-CHANNEL 2: OPENCLAW SKILLS ✅ 6/6 Active (+ 2 planned)
+CHANNEL 2: OPENCLAW SKILLS ✅ 7/8 Active (+ 1 planned)
 ├── NexusLLMSkill ✅
 ├── SocraticRAGSkill ✅
 ├── SocraticAnalyzerSkill ✅
 ├── SocraticAgentsSkill ✅
 ├── SocraticWorkflowSkill ✅ NEW
 ├── SocraticKnowledgeSkill ✅ NEW ✨
-└── (Future: Learning, Conflict)
+├── SocraticLearningSkill ✅ NEW 🎓
+└── (Future: Conflict)
 
-CHANNEL 3: LANGCHAIN COMPONENTS ✅ 6/6 Active (+ 2 planned)
+CHANNEL 3: LANGCHAIN COMPONENTS ✅ 7/8 Active (+ 1 planned)
 ├── SocratesNexusLLM ✅
 ├── SocraticRAGRetriever ✅
 ├── SocraticAnalyzerTool ✅
 ├── SocraticAgentsTool ✅
 ├── SocraticWorkflowTool ✅ NEW
 ├── KnowledgeManagerTool ✅ NEW ✨
-└── (Future: Learning, Conflict)
+├── SocraticLearningTool ✅ NEW 🎓
+└── (Future: Conflict)
 ```
 
-**Current Active Entry Points**: 18/24 (75%)
-- ✅ 6 packages published (Nexus v0.3.0, RAG v0.1.0, Analyzer v0.1.0, Agents v0.1.2, Workflow v0.1.0, Knowledge v0.1.1)
-- ✅ 6 Openclaw skills built-in
-- ✅ 6 LangChain integrations built-in
+**Current Active Entry Points**: 21/24 (88%)
+- ✅ 7 packages published (Nexus v0.3.0, RAG v0.1.0, Analyzer v0.1.0, Agents v0.1.2, Workflow v0.1.0, Knowledge v0.1.1, Learning v0.1.0)
+- ✅ 7 Openclaw skills built-in
+- ✅ 7 LangChain integrations built-in
 
-**Future Entry Points**: 6/24 (to be activated)
-- 🚀 2 packages planned (Learning, Conflict)
-- 🚀 2 Openclaw skills planned
-- 🚀 2 LangChain integrations planned
+**Future Entry Points**: 3/24 (to be activated)
+- 🚀 1 package planned (Conflict)
+- 🚀 1 Openclaw skill planned
+- 🚀 1 LangChain integration planned
 
 ---
 
@@ -539,14 +542,14 @@ CHANNEL 3: LANGCHAIN COMPONENTS ✅ 6/6 Active (+ 2 planned)
 **Market 1: Openclaw Community (~5K users)**
 - Distribution: Built-in Openclaw skills
 - Value Prop: "Better multi-provider support + specialized agents"
-- Current Adoption: 4 active skills (Nexus, RAG, Analyzer, Agents)
-- Future: +4 skills with Workflow, Knowledge, Learning, Conflict
+- Current Adoption: 7 active skills (Nexus, RAG, Analyzer, Agents, Workflow, Knowledge, Learning)
+- Future: +1 skill with Conflict
 
 **Market 2: LangChain Community (~20K stars, 2K+ active)**
 - Distribution: LangChain integrations (components in chains)
 - Value Prop: "Production-grade components that work with LangChain"
-- Current Adoption: 4 active integrations
-- Future: +4 integrations with new packages
+- Current Adoption: 7 active integrations
+- Future: +1 integration with Conflict package
 
 **Market 3: PyPI / Standalone Users**
 - Distribution: Direct pip install
