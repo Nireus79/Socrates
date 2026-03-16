@@ -2,12 +2,33 @@
 
 Complete guide to finding documentation for Socrates features and functionality.
 
+## Navigation
+
+### For Developers/Implementers
+- **[Phase 1 Implementation](phase-1/)** - Module restructuring (5-day plan)
+- **[Architecture Docs](architecture/)** - Modular platform design
+- **[API Design](api/)** - REST API specification
+- **[Deployment](deployment/)** - Docker, Kubernetes, production setup
+
+### For Users & Sponsors
+- **[README.md](../README.md)** - Project overview and features
+- **[User Guide](USER_GUIDE.md)** - How to use Socrates
+- **[Sponsorship](SPONSORSHIP.md)** - Support and premium tiers
+
+### For Contributors
+- **[Contributing](CONTRIBUTING.md)** - How to contribute
+- **[Developer Guide](DEVELOPER_GUIDE.md)** - Development workflow
+- **[Project Structure](PROJECT_STRUCTURE.md)** - Codebase overview
+
+---
+
 ## Quick Links
 
-- **Getting Started**: [Quick Start Guide](#getting-started)
-- **Sponsorship & Tiers**: [Premium Features](#sponsorship--premium-tiers)
-- **API Reference**: [API Documentation](#api-reference)
-- **Contributing**: [How to Help](#how-to-help)
+- **🚀 Getting Started**: [README](../README.md)
+- **📋 Current Plan**: [PLAN.md](../PLAN.md)
+- **🔄 Phase 1 Progress**: [PHASE_1_STATUS.md](phase-1/PHASE_1_STATUS.md)
+- **🏗️ Architecture**: [Architecture Docs](architecture/)
+- **📚 API Reference**: [API Design](api/)
 
 ---
 
