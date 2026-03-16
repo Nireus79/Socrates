@@ -1,16 +1,13 @@
 """
-Analytics Module - System analytics and metrics.
+Analytics Module - Skill ecosystem metrics and analysis.
 
 Provides:
-- System performance metrics
-- Agent effectiveness tracking
-- User engagement analytics
-- Learning progress insights
-- Dashboard data generation
+- SkillAnalytics for cross-agent metrics
+- Performance analysis and optimization
 """
 
-from modules.analytics.service import AnalyticsService
+from modules.analytics.service import SkillAnalytics
 
 __all__ = [
-    "AnalyticsService",
+    "SkillAnalytics",
 ]
