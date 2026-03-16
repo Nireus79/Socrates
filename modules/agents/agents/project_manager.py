@@ -1,0 +1,887 @@
+"""
+Project management agent for Socrates AI
+"""
+
+import datetime
+import uuid
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict
+
+from socratic_system.models import VALID_ROLES, ProjectContext, TeamMemberRole
+from socratic_system.utils.id_generator import ProjectIDGenerator
+from socratic_system.utils.orchestrator_helper import safe_orchestrator_call
+
+from .base import Agent
+
+if TYPE_CHECKING:
+    from socratic_system.orchestration import AgentOrchestrator
+
+
+class ProjectManagerAgent(Agent):
+    """Manages project lifecycle including creation, loading, saving, and collaboration"""
+
+    def __init__(self, orchestrator: "AgentOrchestrator") -> None:
+        super().__init__("ProjectManager", orchestrator)
+
+    @staticmethod
+    def _generate_auto_user_email(username: str) -> str:
+        """Generate unique email for auto-created users (no hardcoded domain)"""
+        domain_parts = ["socrates", "local"]
+        domain = ".".join(domain_parts)
+        uuid_suffix = str(uuid.uuid4())[:8]
+        return f"{username}+{uuid_suffix}@{domain}"
+
+    def process(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Process project management requests"""
+        action = request.get("action")
+
+        action_handlers = {
+            "create_project": self._create_project,
+            "create_from_github": self._create_from_github,
+            "load_project": self._load_project,
+            "save_project": self._save_project,
+            "add_collaborator": self._add_collaborator,
+            "update_member_role": self._update_member_role,
+            "list_projects": self._list_projects,
+            "list_collaborators": self._list_collaborators,
+            "remove_collaborator": self._remove_collaborator,
+            "archive_project": self._archive_project,
+            "restore_project": self._restore_project,
+            "delete_project_permanently": self._delete_project_permanently,
+            "get_archived_projects": self._get_archived_projects,
+        }
+
+        handler = action_handlers.get(action)
+        if handler:
+            return handler(request)
+
+        return {"status": "error", "message": "Unknown action"}
+
+    def _create_project(self, request: Dict) -> Dict:
+        """Create a new project with quota checking"""
+        project_name = request.get("project_name")
+        owner = request.get("owner")
+        project_type = request.get("project_type", "software")  # Default to software
+        description = request.get("description", "")  # Optional description
+
+        # Validate required fields
+        if not project_name:
+            return {
+                "status": "error",
+                "message": "project_name is required to create a project",
+            }
+        if not owner:
+            return {
+                "status": "error",
+                "message": "owner is required to create a project",
+            }
+
+        # NEW: Check project limit
+        from socratic_system.subscription.checker import SubscriptionChecker
+
+        user = self.orchestrator.database.load_user(owner)
+
+        # Create user if they don't exist (for automation/testing)
+        if user is None:
+            from socratic_system.models.user import User
+
+            # Generate unique email for auto-created user
+            unique_email = self._generate_auto_user_email(owner)
+
+            user = User(
+                username=owner,
+                email=unique_email,  # UUID-based email for system-created users
+                passcode_hash="",  # Empty hash - will need password reset to use UI
+                created_at=datetime.datetime.now(),
+                projects=[],
+                subscription_tier="free",  # Default to free tier for auto-created users (enforces project limits)
+            )
+            self.orchestrator.database.save_user(user)
+
+        # Count only OWNED projects for tier limit, not collaborated projects
+        all_projects = self.orchestrator.database.get_user_projects(owner)
+        owned_projects = [p for p in all_projects if p.owner == owner and not p.is_archived]
+        active_count = len(owned_projects)
+
+        can_create, error_message = SubscriptionChecker.check_project_limit(user, active_count)
+        if not can_create:
+            return {
+                "status": "error",
+                "message": error_message,
+            }
+
+        # Use unified ProjectIDGenerator for consistent IDs across CLI and API
+        project_id = ProjectIDGenerator.generate(owner)
+        project = ProjectContext(
+            project_id=project_id,
+            name=project_name,
+            owner=owner,
+            description=description,
+            collaborators=[],
+            goals="",
+            requirements=[],
+            tech_stack=[],
+            constraints=[],
+            team_structure="individual",
+            language_preferences="python",
+            deployment_target="local",
+            code_style="documented",
+            phase="discovery",
+            conversation_history=[],
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+            project_type=project_type,
+        )
+
+        # ONCE-ONLY analysis: Extract initial specs from description and knowledge base if provided
+        # This analysis happens only at project creation time
+        context_to_analyze = ""
+
+        if description and description.strip():
+            context_to_analyze = description
+
+        # Also include knowledge_base_content if provided
+        knowledge_base_content = request.get("knowledge_base_content", "")
+        if knowledge_base_content and knowledge_base_content.strip():
+            if context_to_analyze:
+                context_to_analyze += f"\n\nKnowledge Base:\n{knowledge_base_content}"
+            else:
+                context_to_analyze = knowledge_base_content
+
+        # Analyze combined context if anything was provided
+        if context_to_analyze:
+            try:
+                self.log(
+                    "Analyzing project description and knowledge base for initial specifications..."
+                )
+
+                # Extract insights using same mechanism as conversation analysis
+                # Get user's auth method
+                user_auth_method = "api_key"
+                owner = request.get("owner")
+                if owner:
+                    user_obj = self.orchestrator.database.load_user(owner)
+                    if user_obj and hasattr(user_obj, "claude_auth_method"):
+                        user_auth_method = user_obj.claude_auth_method or "api_key"
+                insights = self.orchestrator.claude_client.extract_insights(
+                    context_to_analyze, project, user_auth_method=user_auth_method, user_id=owner
+                )
+
+                if insights:
+                    # Apply extracted insights to project context
+                    self._apply_initial_insights(project, insights)
+                    self.log("Initial specifications extracted from context")
+            except Exception as e:
+                # Non-fatal: continue with empty specs if extraction fails
+                self.log(f"Warning: Could not analyze project context: {e}", level="warning")
+
+        self.orchestrator.database.save_project(project)
+        self.log(f"Created project '{project_name}' (type: {project_type}) with ID {project_id}")
+
+        # Calculate initial maturity based on specs that were extracted from description/KB
+        # Note: Calculate if context was analyzed, regardless of whether requirements were extracted
+        # (description alone can contribute to maturity assessment)
+        if context_to_analyze:
+            try:
+                self.log(f"Calculating initial maturity for project '{project_name}'...")
+                # Use quality controller to calculate initial maturity from specs
+                maturity_result = self.orchestrator.process_request(
+                    "quality_controller",
+                    {
+                        "action": "calculate_maturity",
+                        "project": project,
+                        "current_user": owner,
+                    },
+                )
+                if maturity_result and maturity_result.get("overall_maturity") is not None:
+                    project.overall_maturity = maturity_result["overall_maturity"]
+                    if maturity_result.get("phase_maturity_scores"):
+                        project.phase_maturity_scores = maturity_result["phase_maturity_scores"]
+                    # Save updated project with maturity
+                    self.orchestrator.database.save_project(project)
+                    self.log(f"Initial maturity calculated: {project.overall_maturity:.1f}%")
+            except Exception as e:
+                # Non-fatal: continue without maturity if calculation fails
+                self.log(f"Warning: Could not calculate initial maturity: {e}", level="warning")
+
+        return {"status": "success", "project": project}
+
+    def _apply_initial_insights(self, project: ProjectContext, insights: Dict) -> None:
+        """Apply extracted insights from description/notes to project context.
+
+        This normalizes insights and populates project fields exactly like conversation analysis does.
+
+        Args:
+            project: ProjectContext to update
+            insights: Dict with extracted insights (goals, requirements, tech_stack, constraints)
+        """
+        if not insights or not isinstance(insights, dict):
+            return
+
+        try:
+            # Apply goals
+            if "goals" in insights and insights["goals"]:
+                goals_list = self._normalize_to_list(insights["goals"])
+                if goals_list:
+                    project.goals = " ".join(goals_list)
+
+            # Apply requirements
+            if "requirements" in insights and insights["requirements"]:
+                req_list = self._normalize_to_list(insights["requirements"])
+                self._update_list_field(project.requirements, req_list)
+
+            # Apply tech_stack
+            if "tech_stack" in insights and insights["tech_stack"]:
+                tech_list = self._normalize_to_list(insights["tech_stack"])
+                self._update_list_field(project.tech_stack, tech_list)
+
+            # Apply constraints
+            if "constraints" in insights and insights["constraints"]:
+                constraint_list = self._normalize_to_list(insights["constraints"])
+                self._update_list_field(project.constraints, constraint_list)
+
+        except Exception as e:
+            self.log(f"Error applying insights: {e}", level="warning")
+
+    @staticmethod
+    def _normalize_to_list(value: Any) -> list:
+        """Normalize various input types to a list of strings"""
+        if isinstance(value, list):
+            return [str(v).strip() for v in value if v]
+        elif isinstance(value, dict):
+            return [str(v).strip() for v in value.values() if v]
+        elif isinstance(value, str):
+            # Split by comma if multiple items
+            if "," in value:
+                return [s.strip() for s in value.split(",") if s.strip()]
+            return [value.strip()] if value.strip() else []
+        return []
+
+    @staticmethod
+    def _update_list_field(current_list: list, new_items: list) -> None:
+        """Add new unique items to a list field"""
+        for item in new_items:
+            if item and item not in current_list:
+                current_list.append(item)
+
+    def _create_from_github(self, request: Dict) -> Dict:
+        """Create a new project from a GitHub repository"""
+        # Validate request parameters
+        validation_error = self._validate_github_request(request)
+        if validation_error:
+            return validation_error
+
+        github_url = request.get("github_url")
+        project_name = request.get("project_name")
+        owner = request.get("owner")
+
+        try:
+            from socratic_system.utils.git_repository_manager import GitRepositoryManager
+
+            git_manager = GitRepositoryManager()
+
+            # Validate and clone repository
+            url_error = self._validate_github_url(git_manager, github_url)
+            if url_error:
+                return url_error
+
+            self.log(f"Starting GitHub import for {github_url}")
+
+            clone_error = self._clone_repository(git_manager, github_url)
+            if clone_error:
+                return clone_error
+
+            temp_path = clone_error.get("temp_path")
+
+            try:
+                # Extract metadata and project details
+                metadata = self._extract_repository_metadata(git_manager, temp_path)
+                repo_owner, repo_name = self._parse_repo_info(github_url)
+                final_project_name = project_name or repo_name
+
+                # Validate user and subscription
+                user = self._get_or_create_user(owner)
+                subscription_error = self._validate_subscription(user, owner)
+                if subscription_error:
+                    return subscription_error
+
+                # Run code validation
+                validation_result = self._run_code_validation(temp_path)
+
+                # Create and save project
+                project = self._create_project_context(
+                    github_url, final_project_name, owner, repo_owner, repo_name, metadata
+                )
+                self.orchestrator.database.save_project(project)
+                self.log(f"Created project '{final_project_name}' from GitHub repository")
+
+                # Save project files
+                files_saved_count = self._save_project_files(project.project_id, temp_path)
+
+                return {
+                    "status": "success",
+                    "project": project,
+                    "validation_results": validation_result.get("validation_summary", {}),
+                    "metadata": metadata,
+                    "files_saved": files_saved_count,
+                }
+
+            finally:
+                # Clean up temp directory
+                git_manager.cleanup(temp_path)
+
+        except Exception as e:
+            self.log(f"ERROR: Failed to import GitHub repository: {str(e)}", level="ERROR")
+            return {
+                "status": "error",
+                "message": f"Failed to import GitHub repository: {str(e)}",
+            }
+
+    def _validate_github_request(self, request: Dict) -> Dict:
+        """Validate required fields in GitHub request"""
+        if not request.get("github_url"):
+            return {"status": "error", "message": "github_url is required"}
+        if not request.get("owner"):
+            return {"status": "error", "message": "owner is required"}
+        return None
+
+    def _validate_github_url(self, git_manager, github_url: str) -> Dict:
+        """Validate GitHub URL format"""
+        is_valid, error_msg = git_manager.validate_github_url(github_url)
+        if not is_valid:
+            return {"status": "error", "message": f"Invalid GitHub URL: {error_msg}"}
+        return None
+
+    def _clone_repository(self, git_manager, github_url: str) -> Dict:
+        """Clone repository to temp directory"""
+        clone_result = git_manager.clone_repository(github_url)
+        if not clone_result.get("success"):
+            error = f"Failed to clone repository: {clone_result.get('error', 'Unknown error')}"
+            return {"status": "error", "message": error}
+        return clone_result
+
+    def _extract_repository_metadata(self, git_manager, temp_path: str) -> Dict:
+        """Extract repository metadata"""
+        self.log("Extracting repository metadata...")
+        return git_manager.extract_repository_metadata(temp_path)
+
+    def _parse_repo_info(self, github_url: str) -> tuple:
+        """Extract owner and repo name from GitHub URL"""
+        repo_owner, repo_name = github_url.strip("/").split("/")[-2:]
+        return repo_owner, repo_name
+
+    def _get_or_create_user(self, owner: str):
+        """Get existing user or create new one"""
+        user = self.orchestrator.database.load_user(owner)
+        if user is None:
+            from socratic_system.models.user import User
+
+            user = User(
+                username=owner,
+                email=self._generate_auto_user_email(owner),
+                passcode_hash="",
+                created_at=datetime.datetime.now(),
+                projects=[],
+                subscription_tier="free",  # Default to free tier for auto-created users
+            )
+            self.orchestrator.database.save_user(user)
+        return user
+
+    def _validate_subscription(self, user, owner: str) -> Dict:
+        """Validate user subscription allows project creation"""
+        from socratic_system.subscription.checker import SubscriptionChecker
+
+        # Count only OWNED projects for tier limit, not collaborated projects
+        all_projects = self.orchestrator.database.get_user_projects(owner)
+        owned_projects = [p for p in all_projects if p.owner == owner and not p.is_archived]
+        active_count = len(owned_projects)
+        can_create, error_message = SubscriptionChecker.check_project_limit(user, active_count)
+        if not can_create:
+            return {"status": "error", "message": error_message}
+        return None
+
+    def _run_code_validation(self, temp_path: str) -> Dict:
+        """Run code validation on project"""
+        self.log("Running code validation...")
+        return safe_orchestrator_call(
+            self.orchestrator,
+            "code_validation",
+            {
+                "action": "validate_project",
+                "project_path": temp_path,
+                "timeout": 300,
+            },
+            operation_name="validate project code",
+        )
+
+    def _create_project_context(
+        self,
+        github_url: str,
+        name: str,
+        owner: str,
+        repo_owner: str,
+        repo_name: str,
+        metadata: Dict,
+    ):
+        """Create ProjectContext object with repository metadata"""
+        project_id = str(uuid.uuid4())
+        return ProjectContext(
+            project_id=project_id,
+            name=name,
+            owner=owner,
+            collaborators=[],
+            goals=metadata.get("description", ""),
+            requirements=[],
+            tech_stack=metadata.get("languages", []),
+            constraints=[],
+            team_structure="individual",
+            language_preferences="python",
+            deployment_target="local",
+            code_style="documented",
+            phase="imported",
+            conversation_history=[],
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+            project_type="github_import",
+            repository_url=github_url,
+            repository_owner=repo_owner,
+            repository_name=repo_name,
+            repository_description=metadata.get("description", ""),
+            repository_language=metadata.get("language", "unknown"),
+            repository_imported_at=datetime.datetime.now(),
+            repository_file_count=metadata.get("file_count", 0),
+            repository_has_tests=metadata.get("has_tests", False),
+        )
+
+    def _save_project_files(self, project_id: str, temp_path: str) -> int:
+        """Save project files to database"""
+        self.log("Saving project files to database...")
+        try:
+            from socratic_system.database.project_file_manager import ProjectFileManager
+
+            file_manager = ProjectFileManager(self.orchestrator.database.db_path)
+            files_to_save = self._collect_files_to_save(temp_path)
+
+            if files_to_save:
+                files_saved, save_msg = file_manager.save_files_batch(project_id, files_to_save)
+                self.log(save_msg)
+            else:
+                self.log("No files to save (all filtered out)")
+
+            return len(files_to_save)
+        except Exception as e:
+            self.log(f"Warning: Failed to save project files: {str(e)}", level="WARNING")
+            return 0
+
+    def _collect_files_to_save(self, temp_path: str) -> list:
+        """Collect files from repository that should be saved"""
+        files_to_save = []
+        for file_path in Path(temp_path).rglob("*"):
+            if file_path.is_file() and self._should_save_file(file_path, temp_path):
+                try:
+                    content = file_path.read_text(encoding="utf-8", errors="ignore")
+                    language = self._detect_language(str(file_path))
+                    rel_path = file_path.relative_to(temp_path).as_posix()
+                    files_to_save.append(
+                        {
+                            "path": rel_path,
+                            "content": content,
+                            "language": language,
+                            "size": len(content.encode("utf-8")),
+                        }
+                    )
+                except Exception as e:
+                    self.log(
+                        f"Warning: Could not read file {file_path}: {str(e)}",
+                        level="WARNING",
+                    )
+                    continue
+        return files_to_save
+
+    def _load_project(self, request: Dict) -> Dict:
+        """Load a project by ID"""
+        project_id = request.get("project_id")
+        project = self.orchestrator.database.load_project(project_id)
+
+        if project:
+            self.log(f"Loaded project '{project.name}'")
+            return {"status": "success", "project": project}
+        else:
+            return {"status": "error", "message": "Project not found"}
+
+    def _save_project(self, request: Dict) -> Dict:
+        """Save a project"""
+        project = request.get("project")
+        project.updated_at = datetime.datetime.now()
+        self.orchestrator.database.save_project(project)
+        self.log(f"Saved project '{project.name}'")
+        return {"status": "success"}
+
+    def _add_collaborator(self, request: Dict) -> Dict:
+        """Add a collaborator to a project with team size checking"""
+        project = request.get("project")
+        username = request.get("username")
+        role = request.get("role", "creator")  # Default to creator role
+
+        # Validate role
+        if role not in VALID_ROLES:
+            return {
+                "status": "error",
+                "message": f"Invalid role: {role}. Valid roles: {', '.join(VALID_ROLES)}",
+            }
+
+        # NEW: Check team member limit
+        from socratic_system.subscription.checker import SubscriptionChecker
+
+        user = self.orchestrator.database.load_user(project.owner)
+        current_team_size = len(project.team_members or [])
+
+        can_add, error_message = SubscriptionChecker.check_team_member_limit(
+            user, current_team_size
+        )
+        if not can_add:
+            return {
+                "status": "error",
+                "message": error_message,
+            }
+
+        # Check if user already in team_members
+        for member in project.team_members or []:
+            if member.username == username:
+                return {"status": "error", "message": "User already a team member"}
+
+        # Create new team member
+        new_member = TeamMemberRole(
+            username=username, role=role, skills=[], joined_at=datetime.datetime.now()
+        )
+
+        # Add to team_members
+        if project.team_members is None:
+            project.team_members = []
+        project.team_members.append(new_member)
+
+        # Update deprecated collaborators list for backward compatibility
+        if project.collaborators is None:
+            project.collaborators = []
+        if username not in project.collaborators:
+            project.collaborators.append(username)
+
+        self.orchestrator.database.save_project(project)
+        self.log(f"Added '{username}' as {role} to project '{project.name}'")
+
+        return {
+            "status": "success",
+            "message": f"Added {username} as {role}",
+            "member": new_member.to_dict(),
+        }
+
+    def _update_member_role(self, request: Dict) -> Dict:
+        """Update a team member's role"""
+        project = request.get("project")
+        username = request.get("username")
+        new_role = request.get("role")
+
+        # Validate role
+        if new_role not in VALID_ROLES:
+            return {
+                "status": "error",
+                "message": f"Invalid role: {new_role}. Valid roles: {', '.join(VALID_ROLES)}",
+            }
+
+        # Find and update member
+        member_found = False
+        old_role = None
+        for member in project.team_members or []:
+            if member.username == username:
+                old_role = member.role
+                member.role = new_role
+                member_found = True
+                break
+
+        if not member_found:
+            return {"status": "error", "message": f"User {username} not in project"}
+
+        self.orchestrator.database.save_project(project)
+        self.log(
+            f"Updated {username} role from {old_role} to {new_role} in project '{project.name}'"
+        )
+
+        return {
+            "status": "success",
+            "message": f"Updated {username} role from {old_role} to {new_role}",
+        }
+
+    def _list_projects(self, request: Dict) -> Dict:
+        """List projects for a user"""
+        username = request.get("username")
+        projects = self.orchestrator.database.get_user_projects(username)
+
+        # Convert ProjectContext objects to dictionaries for JSON serialization
+        projects_dict = []
+        for project in projects:
+            projects_dict.append(
+                {
+                    "project_id": project.project_id,
+                    "name": project.name,
+                    "owner": project.owner,
+                    "phase": project.phase,
+                    "status": project.status,
+                    "updated_at": (
+                        project.updated_at.isoformat()
+                        if hasattr(project.updated_at, "isoformat")
+                        else str(project.updated_at)
+                    ),
+                }
+            )
+
+        return {"status": "success", "projects": projects_dict}
+
+    def _list_collaborators(self, request: Dict) -> Dict:
+        """List all team members for a project with their roles"""
+        project = request.get("project")
+
+        collaborators_info = []
+
+        # Use team_members if available
+        if project.team_members:
+            for member in project.team_members:
+                collaborators_info.append(
+                    {
+                        "username": member.username,
+                        "role": member.role,
+                        "joined_at": member.joined_at.isoformat(),
+                        "is_owner": member.username == project.owner,
+                        "skills": member.skills,
+                    }
+                )
+        else:
+            # Fallback to old collaborators list for backward compatibility
+            collaborators_info.append({"username": project.owner, "role": "lead", "is_owner": True})
+            for collaborator in project.collaborators or []:
+                collaborators_info.append(
+                    {"username": collaborator, "role": "creator", "is_owner": False}
+                )
+
+        return {
+            "status": "success",
+            "collaborators": collaborators_info,
+            "total_count": len(collaborators_info),
+        }
+
+    def _remove_collaborator(self, request: Dict) -> Dict:
+        """Remove a collaborator from project"""
+        project = request.get("project")
+        username = request.get("username")
+        requester = request.get("requester")
+
+        # Only owner can remove collaborators
+        if requester != project.owner:
+            return {"status": "error", "message": "Only project owner can remove collaborators"}
+
+        # Cannot remove owner
+        if username == project.owner:
+            return {"status": "error", "message": "Cannot remove project owner"}
+
+        if username in project.collaborators:
+            project.collaborators.remove(username)
+            self.orchestrator.database.save_project(project)
+            self.log(f"Removed collaborator '{username}' from project '{project.name}'")
+            return {"status": "success"}
+        else:
+            return {"status": "error", "message": "User is not a collaborator"}
+
+    def _archive_project(self, request: Dict) -> Dict:
+        """Archive a project"""
+        project_id = request.get("project_id")
+        requester = request.get("requester")
+
+        # Load project to check ownership
+        project = self.orchestrator.database.load_project(project_id)
+        if not project:
+            return {"status": "error", "message": "Project not found"}
+
+        # Only owner can archive
+        if requester != project.owner:
+            return {"status": "error", "message": "Only project owner can archive project"}
+
+        success = self.orchestrator.database.archive_project(project_id)
+        if success:
+            self.log(f"Archived project '{project.name}' (ID: {project_id})")
+            return {"status": "success", "message": "Project archived successfully"}
+        else:
+            return {"status": "error", "message": "Failed to archive project"}
+
+    def _restore_project(self, request: Dict) -> Dict:
+        """Restore an archived project"""
+        project_id = request.get("project_id")
+        requester = request.get("requester")
+
+        # Load project to check ownership
+        project = self.orchestrator.database.load_project(project_id)
+        if not project:
+            return {"status": "error", "message": "Project not found"}
+
+        # Only owner can restore
+        if requester != project.owner:
+            return {"status": "error", "message": "Only project owner can restore project"}
+
+        success = self.orchestrator.database.restore_project(project_id)
+        if success:
+            self.log(f"Restored project '{project.name}' (ID: {project_id})")
+            return {"status": "success", "message": "Project restored successfully"}
+        else:
+            return {"status": "error", "message": "Failed to restore project"}
+
+    def _delete_project_permanently(self, request: Dict) -> Dict:
+        """Permanently delete a project"""
+        project_id = request.get("project_id")
+        requester = request.get("requester")
+        confirmation = request.get("confirmation", "")
+
+        # Load project to check ownership
+        project = self.orchestrator.database.load_project(project_id)
+        if not project:
+            return {"status": "error", "message": "Project not found"}
+
+        # Only owner can delete
+        if requester != project.owner:
+            return {"status": "error", "message": "Only project owner can delete project"}
+
+        # Require confirmation
+        if confirmation != "DELETE":
+            return {
+                "status": "error",
+                "message": 'Must type "DELETE" to confirm permanent deletion',
+            }
+
+        success = self.orchestrator.database.permanently_delete_project(project_id)
+        if success:
+            self.log(f"PERMANENTLY DELETED project '{project.name}' (ID: {project_id})")
+            return {"status": "success", "message": "Project permanently deleted"}
+        else:
+            return {"status": "error", "message": "Failed to delete project"}
+
+    def _get_archived_projects(self, request: Dict) -> Dict:
+        """Get archived projects"""
+        archived = self.orchestrator.database.get_archived_items("projects")
+        return {"status": "success", "archived_projects": archived}
+
+    def _should_save_file(self, file_path: Path, repo_root: str) -> bool:
+        """
+        Filter out binaries, large files, and generated code that shouldn't be stored.
+
+        Args:
+            file_path: Path object to the file
+            repo_root: Root directory of repository
+
+        Returns:
+            True if file should be saved, False if it should be skipped
+        """
+        # Skip certain extensions (binaries, media, archives)
+        SKIP_EXTENSIONS = {
+            ".pyc",
+            ".pyo",
+            ".so",
+            ".exe",
+            ".dll",
+            ".bin",
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
+            ".svg",
+            ".ico",
+            ".mp3",
+            ".mp4",
+            ".avi",
+            ".mov",
+            ".zip",
+            ".tar",
+            ".gz",
+            ".7z",
+            ".rar",
+        }
+
+        # Skip certain directories
+        SKIP_DIRS = {
+            "node_modules",
+            ".git",
+            "__pycache__",
+            ".venv",
+            ".env",
+            "dist",
+            "build",
+            ".egg-info",
+            ".pytest_cache",
+            ".tox",
+            ".coverage",
+            "htmlcov",
+        }
+
+        # Check if file is in a skipped directory
+        for part in file_path.parts:
+            if part in SKIP_DIRS:
+                return False
+
+        # Check file extension
+        if file_path.suffix.lower() in SKIP_EXTENSIONS:
+            return False
+
+        # Check file size (skip files > 5MB)
+        try:
+            size = file_path.stat().st_size
+            if size > 5 * 1024 * 1024:  # 5MB limit
+                return False
+        except Exception:
+            return False
+
+        return True
+
+    def _detect_language(self, file_path: str) -> str:
+        """
+        Detect programming language from file extension.
+
+        Args:
+            file_path: Path to the file as string
+
+        Returns:
+            Language name or 'Unknown' if not recognized
+        """
+        ext_to_lang = {
+            ".py": "Python",
+            ".js": "JavaScript",
+            ".ts": "TypeScript",
+            ".jsx": "JSX",
+            ".tsx": "TSX",
+            ".java": "Java",
+            ".cpp": "C++",
+            ".c": "C",
+            ".cs": "C#",
+            ".rb": "Ruby",
+            ".go": "Go",
+            ".rs": "Rust",
+            ".php": "PHP",
+            ".swift": "Swift",
+            ".kt": "Kotlin",
+            ".scala": "Scala",
+            ".sh": "Shell",
+            ".bash": "Bash",
+            ".sql": "SQL",
+            ".html": "HTML",
+            ".css": "CSS",
+            ".scss": "SCSS",
+            ".less": "Less",
+            ".json": "JSON",
+            ".yaml": "YAML",
+            ".yml": "YAML",
+            ".xml": "XML",
+            ".md": "Markdown",
+            ".rst": "ReStructuredText",
+            ".txt": "Text",
+            ".toml": "TOML",
+            ".ini": "INI",
+            ".cfg": "Config",
+        }
+
+        file_ext = Path(file_path).suffix.lower()
+        return ext_to_lang.get(file_ext, "Unknown")
