@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="ecosystem">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/orchestrator.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/orchestrator.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -65,11 +64,11 @@
       <recent name="C:\Users\themi\PycharmProjects\Socrates\docs\future" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\themi\PycharmProjects\Socrates\docs\marketing" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\docs" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\.archive" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\archive" />
       <recent name="C:\Users\themi\PycharmProjects\Socrates\tests" />
-      <recent name="C:\Users\themi\PycharmProjects\Socrates\docs\future" />
     </key>
   </component>
   <component name="RunManager">
@@ -184,7 +183,15 @@
       <option name="project" value="LOCAL" />
       <updated>1773643901381</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="ecosystem">
+      <option name="closed" value="true" />
+      <created>1773678463564</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1773678463564</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
