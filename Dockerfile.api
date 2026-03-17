@@ -1,0 +1,61 @@
+# API multi-stage build
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install dependencies
+COPY pyproject.toml README.md ./
+RUN pip install --user --no-cache-dir -e .
+
+# Production stage
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Python dependencies from builder
+COPY --from=builder /root/.local /root/.local
+
+# Set PATH to use local Python packages
+ENV PATH=/root/.local/bin:$PATH \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Copy application code
+COPY socratic_system ./socratic_system
+COPY socrates-api ./socrates-api
+COPY socrates-cli ./socrates-cli
+
+# Build metadata
+ARG VERSION=latest
+ARG BUILD_DATE
+ARG VCS_REF
+
+LABEL org.opencontainers.image.created=$BUILD_DATE \
+      org.opencontainers.image.authors="Socrates AI Contributors" \
+      org.opencontainers.image.url="https://github.com/Nireus79/Socrates" \
+      org.opencontainers.image.source="https://github.com/Nireus79/Socrates" \
+      org.opencontainers.image.version=$VERSION \
+      org.opencontainers.image.revision=$VCS_REF \
+      org.opencontainers.image.vendor="Socrates AI" \
+      org.opencontainers.image.title="Socrates API" \
+      org.opencontainers.image.description="Production-ready REST API for Socrates AI"
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+# Run API
+CMD ["uvicorn", "socrates_ai.main:app", "--host", "0.0.0.0", "--port", "8000"]
