@@ -5,12 +5,20 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
+    build-essential \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install dependencies
+# Upgrade pip
+RUN pip install --upgrade pip setuptools wheel
+
+# Copy project files
 COPY pyproject.toml README.md ./
-RUN pip install --user --no-cache-dir -e .
+COPY socratic_system ./socratic_system
+COPY archive ./archive
+
+# Install package and dependencies
+RUN pip install --no-cache-dir -e .
 
 # Production stage
 FROM python:3.11-slim
@@ -23,17 +31,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python dependencies from builder
-COPY --from=builder /root/.local /root/.local
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Set PATH to use local Python packages
-ENV PATH=/root/.local/bin:$PATH \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
-
-# Copy application code
-COPY socratic_system ./socratic_system
-COPY socrates-api ./socrates-api
-COPY socrates-cli ./socrates-cli
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app
 
 # Build metadata
 ARG VERSION=latest
@@ -57,5 +61,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:8000/health || exit 1
 
-# Run API
-CMD ["uvicorn", "socrates_ai.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run API (check which main app exists and use it)
+CMD ["uvicorn", "socratic_system.ui.main_app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

@@ -221,6 +221,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
         self.assertFalse(has_access)
 
     @pytest.mark.skipif(sys.platform == "win32", reason="SIGALRM not available on Windows")
+    @pytest.mark.skipif(not os.getenv("GITHUB_TEST_TOKEN"), reason="GITHUB_TEST_TOKEN not configured")
     def test_network_retry_workflow(self):
         """Test network retry with exponential backoff"""
         handler = create_github_sync_handler()
