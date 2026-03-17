@@ -272,7 +272,7 @@ Become a sponsor to unlock premium features and support active development. **Yo
 3. Start using premium features immediately
 4. View payment history and tier details in Socrates Settings
 
-👉 **[Full Sponsorship Guide](SPONSORSHIP.md)** - Learn how to manage your sponsorship and access premium features in Socrates.
+👉 **[Full Sponsorship Guide](SPONSORS.md)** - Learn about sponsorship tiers and benefits for the Socratic Ecosystem.
 
 ### Other Ways to Support
 - **Star the repository** ⭐
@@ -298,7 +298,7 @@ Become a sponsor to unlock premium features and support active development. **Yo
 
 - **Bugs & Issues**: [GitHub Issues](https://github.com/Nireus79/Socrates/issues)
 - **Documentation**: [Docs Directory](./docs)
-- **Sponsorship**: [Sponsorship Guide](SPONSORSHIP.md)
+- **Sponsorship**: [Sponsorship Guide](SPONSORS.md)
 - **GitHub Sponsors**: [Become a Sponsor](https://github.com/sponsors/Nireus79)
 - **Email**: support@socrates-ai.dev
 
