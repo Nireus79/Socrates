@@ -326,6 +326,7 @@ class TestGitHubSyncE2EErrorRecovery(unittest.TestCase):
             shutil.rmtree(self.test_temp_dir)
 
     @pytest.mark.skipif(sys.platform == "win32", reason="SIGALRM not available on Windows")
+    @pytest.mark.skipif(not os.getenv("GITHUB_TEST_TOKEN"), reason="GITHUB_TEST_TOKEN not configured")
     def test_error_recovery_after_network_failure(self):
         """Test recovery after network failure"""
         handler = create_github_sync_handler()
@@ -456,6 +457,7 @@ class TestGitHubSyncE2EPerformance(unittest.TestCase):
         self.assertTrue(all_valid)
 
     @pytest.mark.skipif(sys.platform == "win32", reason="SIGALRM not available on Windows")
+    @pytest.mark.skipif(not os.getenv("GITHUB_TEST_TOKEN"), reason="GITHUB_TEST_TOKEN not configured")
     def test_retry_backoff_exponential_timing(self):
         """Test that retry backoff follows exponential pattern"""
         handler = create_github_sync_handler()

@@ -15,9 +15,9 @@ RUN pip install --upgrade pip setuptools wheel
 # Copy project files
 COPY pyproject.toml README.md ./
 COPY socratic_system ./socratic_system
-COPY archive ./archive
 
 # Install package and dependencies
+# Note: archive/migration_scripts is optional and can be added at runtime
 RUN pip install --no-cache-dir -e .
 
 # Production stage
