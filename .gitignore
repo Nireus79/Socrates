@@ -18,6 +18,10 @@ var/
 wheels/
 *.egg-info/
 .installed.cfg
+
+# Marketing & Implementation (Local Only - Not Shared on GitHub)
+PHASE2_*.md
+docs/marketing/PHASE2_*.md
 *.egg
 MANIFEST
 
@@ -89,3 +93,7 @@ socrates-api/dist/
 
 # Claude Code temporary files
 tmpclaude-*
+
+# Marketing & Implementation (Local Only)
+PHASE2_*.md
+docs/marketing/PHASE2_*.md
