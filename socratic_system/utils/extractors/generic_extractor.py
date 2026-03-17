@@ -58,18 +58,12 @@ class GenericExtractor(BaseLanguageExtractor):
             ValidationResult indicating code is valid (with warning)
         """
         if not code or not code.strip():
-            return ValidationResult(
-                is_valid=False,
-                error_message="Empty code"
-            )
+            return ValidationResult(is_valid=False, error_message="Empty code")
 
         # No validation available - assume code is valid but warn user
         warnings = [f"No syntax validation available for {self.language}"]
 
-        return ValidationResult(
-            is_valid=True,
-            warnings=warnings
-        )
+        return ValidationResult(is_valid=True, warnings=warnings)
 
     def get_import_statements(self, code: str) -> List[str]:
         """
@@ -87,21 +81,21 @@ class GenericExtractor(BaseLanguageExtractor):
         imports = []
 
         # Simple pattern matching for common import styles
-        for line in code.split('\n'):
+        for line in code.split("\n"):
             line = line.strip()
 
             # Match various import styles
-            if line.startswith('import '):  # import x (Java, Go, etc.)
+            if line.startswith("import "):  # import x (Java, Go, etc.)
                 imports.append(line)
-            elif line.startswith('require('):  # require('x') (Node.js)
+            elif line.startswith("require("):  # require('x') (Node.js)
                 imports.append(line)
-            elif line.startswith('use '):  # use x (Perl, Rust)
+            elif line.startswith("use "):  # use x (Perl, Rust)
                 imports.append(line)
-            elif line.startswith('use std::'):  # use std::x (Rust)
+            elif line.startswith("use std::"):  # use std::x (Rust)
                 imports.append(line)
-            elif line.startswith('from '):  # from x import y (Python)
+            elif line.startswith("from "):  # from x import y (Python)
                 imports.append(line)
-            elif line.startswith('#include '):  # #include (C/C++)
+            elif line.startswith("#include "):  # #include (C/C++)
                 imports.append(line)
 
         return imports

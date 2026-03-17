@@ -30,7 +30,10 @@ class ClaudeClient:
     """
 
     def __init__(
-        self, api_key: str = None, orchestrator: "AgentOrchestrator" = None, subscription_token: str = None
+        self,
+        api_key: str = None,
+        orchestrator: "AgentOrchestrator" = None,
+        subscription_token: str = None,
     ):
         """
         Initialize Claude client.
@@ -43,7 +46,9 @@ class ClaudeClient:
         self.api_key = api_key
         self.subscription_token = subscription_token
         self.orchestrator = orchestrator
-        self.model = orchestrator.config.claude_model if orchestrator else "claude-haiku-4-5-20251001"
+        self.model = (
+            orchestrator.config.claude_model if orchestrator else "claude-haiku-4-5-20251001"
+        )
         self.logger = logging.getLogger("socrates.clients.claude")
 
         # Initialize clients for both authentication methods
@@ -66,7 +71,9 @@ class ClaudeClient:
         if subscription_token:
             try:
                 self.subscription_client = anthropic.Anthropic(api_key=subscription_token)
-                self.subscription_async_client = anthropic.AsyncAnthropic(api_key=subscription_token)
+                self.subscription_async_client = anthropic.AsyncAnthropic(
+                    api_key=subscription_token
+                )
                 self.logger.info("Subscription-based clients initialized")
             except Exception as e:
                 self.logger.warning(f"Failed to initialize subscription clients: {e}")
@@ -667,10 +674,14 @@ OUTPUT FORMAT - CRITICAL:
                 extraction_result = extractor.extract_and_validate(raw_content)
 
                 if extraction_result.is_valid:
-                    self.logger.info("Successfully extracted and validated Python code from markdown")
+                    self.logger.info(
+                        "Successfully extracted and validated Python code from markdown"
+                    )
                     return extraction_result.extracted_code
                 else:
-                    self.logger.error(f"Extracted code has syntax errors: {extraction_result.validation_error}")
+                    self.logger.error(
+                        f"Extracted code has syntax errors: {extraction_result.validation_error}"
+                    )
                     self.logger.error("Returning original response - may contain markdown")
                     return raw_content
 

@@ -95,7 +95,7 @@ class TestProjectWorkflow:
             phase="phase1",
             created_at=datetime.now(),
             updated_at=datetime.now(),
-            description="End-to-end test project"
+            description="End-to-end test project",
         )
 
         # Save project
@@ -235,9 +235,9 @@ class TestIntegrationBetweenComponents:
         assert database is not None
 
         # Both should have core functionality
-        assert hasattr(orchestrator, 'database')
-        assert hasattr(database, 'save_project')
-        assert hasattr(database, 'load_project')
+        assert hasattr(orchestrator, "database")
+        assert hasattr(database, "save_project")
+        assert hasattr(database, "load_project")
 
     def test_shared_data_models(self, database):
         """Test shared data models (ProjectContext) work correctly."""

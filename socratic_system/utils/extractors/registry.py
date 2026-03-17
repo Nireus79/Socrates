@@ -220,7 +220,7 @@ def auto_register_extractors() -> None:
                 supports_ast=True,
                 supports_linting=True,
                 available=True,
-                description="Python code extraction and validation using ast module"
+                description="Python code extraction and validation using ast module",
             )
         )
         logger.info("Registered Python extractor")
@@ -244,7 +244,7 @@ def auto_register_extractors() -> None:
                 available=True,
                 description="JavaScript code extraction using esprima parser",
                 requires_external_tool=False,
-                dependencies=["esprima"]
+                dependencies=["esprima"],
             )
         )
         logger.info("Registered JavaScript extractor")
@@ -263,7 +263,7 @@ def auto_register_extractors() -> None:
                 available=False,
                 description="JavaScript extraction (requires: pip install esprima)",
                 requires_external_tool=False,
-                dependencies=["esprima"]
+                dependencies=["esprima"],
             )
         )
         logger.debug("JavaScript extractor not available (esprima not installed)")

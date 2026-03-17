@@ -80,7 +80,9 @@ def orchestrator(temp_data_dir, monkeypatch):
     Uses isolated temporary directory, never affects production.
     """
     # Mock API key for testing
-    with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-test-key", "SOCRATES_DATA_DIR": temp_data_dir}):
+    with patch.dict(
+        os.environ, {"ANTHROPIC_API_KEY": "sk-test-key", "SOCRATES_DATA_DIR": temp_data_dir}
+    ):
         with patch("socratic_system.orchestration.orchestrator.ClaudeClient"):
             with patch("socratic_system.orchestration.orchestrator.VectorDatabase"):
                 try:

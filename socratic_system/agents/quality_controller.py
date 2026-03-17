@@ -248,7 +248,9 @@ class QualityControllerAgent(Agent):
 
         # Notify user if phase just reached 100% completion
         if score_before < self.COMPLETE_THRESHOLD and score_after >= self.COMPLETE_THRESHOLD:
-            logging.info(f"Phase {project.phase} reached 100% completion during response processing!")
+            logging.info(
+                f"Phase {project.phase} reached 100% completion during response processing!"
+            )
             self.emit_event(
                 EventType.PHASE_READY_TO_ADVANCE,
                 {

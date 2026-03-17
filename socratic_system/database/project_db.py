@@ -262,9 +262,7 @@ class ProjectDatabase:
         # Save notes separately
         if project.notes:
             self._save_project_notes(project.project_id, project.notes)
-            self.logger.debug(
-                f"Saved {len(project.notes)} notes for project {project.project_id}"
-            )
+            self.logger.debug(f"Saved {len(project.notes)} notes for project {project.project_id}")
 
     def _save_main_project_record(self, cursor, project: ProjectContext, now: datetime) -> None:
         """Save main project record"""

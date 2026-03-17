@@ -78,7 +78,7 @@ class MultiFileCodeSplitter:
                         "- Review the content in `main.py`\n"
                         "- Extract the actual Python code from the markdown\n"
                         "- Re-save as proper Python modules\n"
-                    )
+                    ),
                 }
 
             # Not markdown - regular syntax error

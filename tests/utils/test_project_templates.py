@@ -15,14 +15,13 @@ class TestProjectTemplateGenerator:
     def test_generate_pyproject_toml_basic(self):
         """Test basic pyproject.toml generation"""
         content = ProjectTemplateGenerator.generate_pyproject_toml(
-            project_name="test-project",
-            description="Test project"
+            project_name="test-project", description="Test project"
         )
 
         # Verify content
         assert "[build-system]" in content
         assert "[project]" in content
-        assert "name = \"test-project\"" in content
+        assert 'name = "test-project"' in content
         assert "Test project" in content
         assert "setuptools" in content
         assert "wheel" in content
@@ -33,9 +32,7 @@ class TestProjectTemplateGenerator:
         dev_deps = ["pytest>=7.0", "black>=22.0"]
 
         content = ProjectTemplateGenerator.generate_pyproject_toml(
-            project_name="data-project",
-            dependencies=deps,
-            dev_dependencies=dev_deps
+            project_name="data-project", dependencies=deps, dev_dependencies=dev_deps
         )
 
         assert "requests>=2.0" in content
@@ -50,19 +47,16 @@ class TestProjectTemplateGenerator:
     def test_generate_pyproject_toml_python_version(self):
         """Test pyproject.toml with specific Python version"""
         content = ProjectTemplateGenerator.generate_pyproject_toml(
-            project_name="legacy-project",
-            python_version="3.8"
+            project_name="legacy-project", python_version="3.8"
         )
 
         assert ">=3.8" in content
-        assert "python_version = \"3.8\"" in content
+        assert 'python_version = "3.8"' in content
 
     def test_generate_setup_py(self):
         """Test setup.py generation"""
         content = ProjectTemplateGenerator.generate_setup_py(
-            project_name="my-package",
-            version="0.2.0",
-            description="My awesome package"
+            project_name="my-package", version="0.2.0", description="My awesome package"
         )
 
         assert "my-package" in content
@@ -152,11 +146,7 @@ class TestProjectTemplateGenerator:
 
     def test_generate_license_with_author_and_year(self):
         """Test license with custom author and year"""
-        content = ProjectTemplateGenerator.generate_license(
-            "MIT",
-            author="John Doe",
-            year="2025"
-        )
+        content = ProjectTemplateGenerator.generate_license("MIT", author="John Doe", year="2025")
 
         assert "Copyright (c) 2025 John Doe" in content
 
@@ -224,7 +214,7 @@ class TestProjectTemplateGenerator:
         """Test docker-compose.yml generation"""
         content = ProjectTemplateGenerator.generate_docker_compose("test-project")
 
-        assert "version: \"3.9\"" in content
+        assert 'version: "3.9"' in content
         assert "services:" in content
         assert "app:" in content
         assert "postgres:" in content

@@ -126,17 +126,11 @@ class TestWorkflowApprovalFlow(unittest.TestCase):
         workflow = create_discovery_workflow_comprehensive(self.project)
 
         # Create multiple approval requests
-        qc_agent._request_workflow_approval(
-            {"project": self.project, "workflow": workflow}
-        )
-        qc_agent._request_workflow_approval(
-            {"project": self.project, "workflow": workflow}
-        )
+        qc_agent._request_workflow_approval({"project": self.project, "workflow": workflow})
+        qc_agent._request_workflow_approval({"project": self.project, "workflow": workflow})
 
         # Get pending approvals
-        result = qc_agent._get_pending_approvals(
-            {"project_id": self.project.project_id}
-        )
+        result = qc_agent._get_pending_approvals({"project_id": self.project.project_id})
 
         self.assertEqual(result["status"], "success")
         self.assertGreaterEqual(result["total_count"], 2)

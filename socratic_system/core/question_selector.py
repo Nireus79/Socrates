@@ -184,7 +184,9 @@ class QuestionSelector:
 
         return questions
 
-    def get_next_node(self, workflow: WorkflowDefinition, execution: WorkflowExecutionState) -> Optional[str]:
+    def get_next_node(
+        self, workflow: WorkflowDefinition, execution: WorkflowExecutionState
+    ) -> Optional[str]:
         """
         Get the next node ID to advance to after current node completes.
 

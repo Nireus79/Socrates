@@ -114,10 +114,13 @@ class TestSocraticQuestionGeneration:
         self, socratic_agent, sample_project, mock_orchestrator
     ):
         """Test generating socratic question with valid project"""
-        mock_orchestrator.context_analyzer.get_context_summary.return_value = "Test project context in planning phase"
+        mock_orchestrator.context_analyzer.get_context_summary.return_value = (
+            "Test project context in planning phase"
+        )
 
         # Mock a user with pro tier (unlimited questions)
         from socratic_system.models.user import User
+
         mock_user = User(
             username="testuser",
             email="test@example.com",

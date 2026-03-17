@@ -42,10 +42,7 @@ class PythonExtractor(BaseLanguageExtractor):
             ValidationResult with validation status and error details
         """
         if not code or not code.strip():
-            return ValidationResult(
-                is_valid=False,
-                error_message="Empty code"
-            )
+            return ValidationResult(is_valid=False, error_message="Empty code")
 
         try:
             ast.parse(code)
@@ -57,27 +54,17 @@ class PythonExtractor(BaseLanguageExtractor):
             if e.text:
                 error_msg += f"\n  {e.text.strip()}"
             logger.error(f"Python code validation failed: {error_msg}")
-            return ValidationResult(
-                is_valid=False,
-                error_message=error_msg,
-                line_number=e.lineno
-            )
+            return ValidationResult(is_valid=False, error_message=error_msg, line_number=e.lineno)
 
         except ValueError as e:
             error_msg = f"ValueError: {str(e)}"
             logger.error(f"Python code validation failed: {error_msg}")
-            return ValidationResult(
-                is_valid=False,
-                error_message=error_msg
-            )
+            return ValidationResult(is_valid=False, error_message=error_msg)
 
         except Exception as e:
             error_msg = f"{type(e).__name__}: {str(e)}"
             logger.error(f"Unexpected error during Python validation: {error_msg}")
-            return ValidationResult(
-                is_valid=False,
-                error_message=error_msg
-            )
+            return ValidationResult(is_valid=False, error_message=error_msg)
 
     def get_import_statements(self, code: str) -> List[str]:
         """
@@ -99,13 +86,13 @@ class PythonExtractor(BaseLanguageExtractor):
                 if isinstance(node, ast.Import):
                     # import x, y, z
                     for alias in node.names:
-                        module_name = alias.name.split('.')[0]
+                        module_name = alias.name.split(".")[0]
                         imports.append(module_name)
 
                 elif isinstance(node, ast.ImportFrom):
                     # from x import y
                     if node.module:
-                        module_name = node.module.split('.')[0]
+                        module_name = node.module.split(".")[0]
                         imports.append(module_name)
 
             # Deduplicate and sort
@@ -135,11 +122,13 @@ class PythonExtractor(BaseLanguageExtractor):
             functions = [node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)]
             imports = self.get_import_statements(code)
 
-            stats.update({
-                "class_count": len(classes),
-                "function_count": len(functions),
-                "import_count": len(imports),
-            })
+            stats.update(
+                {
+                    "class_count": len(classes),
+                    "function_count": len(functions),
+                    "import_count": len(imports),
+                }
+            )
 
         except Exception as e:
             logger.warning(f"Could not parse AST for statistics: {e}")

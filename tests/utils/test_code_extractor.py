@@ -78,9 +78,9 @@ def hello():
 More text.
 """
         extracted = CodeExtractor.extract_from_markdown(content)
-        assert 'def hello():' in extracted
+        assert "def hello():" in extracted
         assert 'return "world"' in extracted
-        assert '# My Module' not in extracted
+        assert "# My Module" not in extracted
 
     def test_extract_multiple_code_blocks(self):
         """Should combine multiple code blocks"""
@@ -97,8 +97,8 @@ def bar():
 ```
 """
         extracted = CodeExtractor.extract_from_markdown(content)
-        assert 'def foo():' in extracted
-        assert 'def bar():' in extracted
+        assert "def foo():" in extracted
+        assert "def bar():" in extracted
 
     def test_extract_python_syntax_variations(self):
         """Should handle ```py and ```python syntax"""
@@ -353,7 +353,9 @@ def get_users(url="/api/v1/users"):
 
     def test_very_long_code_block(self):
         """Should handle very large code blocks"""
-        code_lines = ["def function():" if i == 0 else f"    x = {i}  # line {i}" for i in range(100)]
+        code_lines = [
+            "def function():" if i == 0 else f"    x = {i}  # line {i}" for i in range(100)
+        ]
         code = "\n".join(code_lines)
         content = f"```python\n{code}\n```"
 

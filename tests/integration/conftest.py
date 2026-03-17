@@ -14,6 +14,7 @@ import pytest
 @pytest.fixture(scope="session", autouse=True)
 def skip_integration_if_no_api_server():
     """Skip all integration tests if API server is not running."""
+
     def check_port(port):
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -29,5 +30,5 @@ def skip_integration_if_no_api_server():
         pytest.skip(
             "Integration API server (localhost:8000) is not running. "
             "Integration tests are local-only and require manual API server startup.",
-            allow_module_level=True
+            allow_module_level=True,
         )

@@ -158,10 +158,9 @@ class MigrationRunner:
         users_column_exists = self._column_exists("users", "claude_auth_method")
 
         # Check for file_path and file_size columns in knowledge_documents table
-        knowledge_columns_exist = (
-            self._column_exists("knowledge_documents", "file_path")
-            and self._column_exists("knowledge_documents", "file_size")
-        )
+        knowledge_columns_exist = self._column_exists(
+            "knowledge_documents", "file_path"
+        ) and self._column_exists("knowledge_documents", "file_size")
 
         # Check for code_history column in projects table
         code_history_exists = self._column_exists("projects", "code_history")

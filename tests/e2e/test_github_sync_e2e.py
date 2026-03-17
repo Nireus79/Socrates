@@ -57,8 +57,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
     def setUpClass(cls):
         """Set up test environment for all E2E tests"""
         cls.test_repo_url = os.environ.get(
-            "TEST_GITHUB_REPO",
-            "https://github.com/socrates-test/e2e-test-repo"
+            "TEST_GITHUB_REPO", "https://github.com/socrates-test/e2e-test-repo"
         )
         cls.test_token = os.environ.get("GITHUB_TEST_TOKEN")
         cls.test_temp_dir = tempfile.mkdtemp(prefix="socrates_e2e_")
@@ -72,10 +71,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures"""
         self.handler = create_github_sync_handler()
-        self.test_repo_path = os.path.join(
-            self.test_temp_dir,
-            f"test_repo_{int(time.time())}"
-        )
+        self.test_repo_path = os.path.join(self.test_temp_dir, f"test_repo_{int(time.time())}")
 
     def tearDown(self):
         """Clean up after each test"""
@@ -94,10 +90,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
         self.assertTrue(is_valid, "Token should be valid")
 
         # Step 2: Check repository access
-        has_access, reason = self.handler.check_repo_access(
-            self.test_repo_url,
-            self.test_token
-        )
+        has_access, reason = self.handler.check_repo_access(self.test_repo_url, self.test_token)
         self.assertTrue(has_access, f"Should have access to repo: {reason}")
 
         # Step 3: Clone repository
@@ -106,13 +99,9 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
             ["git", "clone", self.test_repo_url, self.test_repo_path],
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
         )
-        self.assertEqual(
-            result.returncode,
-            0,
-            f"Git clone should succeed: {result.stderr}"
-        )
+        self.assertEqual(result.returncode, 0, f"Git clone should succeed: {result.stderr}")
 
         # Step 4: Detect any existing conflicts
         conflicts = self.handler.detect_merge_conflicts(self.test_repo_path)
@@ -122,7 +111,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
         file_list = []
         for root, dirs, files in os.walk(self.test_repo_path):
             # Skip .git directory
-            dirs[:] = [d for d in dirs if d != '.git']
+            dirs[:] = [d for d in dirs if d != ".git"]
             for file in files:
                 file_list.append(os.path.join(root, file))
 
@@ -142,7 +131,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
             ["git", "clone", self.test_repo_url, self.test_repo_path],
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
         )
         self.assertEqual(result.returncode, 0)
 
@@ -151,7 +140,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
             ["git", "-C", self.test_repo_path, "pull", "origin", "main"],
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
         )
 
         # Check for conflicts in output
@@ -164,9 +153,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
         if has_conflicts or conflicts:
             # Test conflict resolution
             resolution = self.handler.handle_merge_conflicts(
-                self.test_repo_path,
-                {},
-                default_strategy="ours"
+                self.test_repo_path, {}, default_strategy="ours"
             )
             self.assertIn("status", resolution)
             self.assertIn("resolved", resolution)
@@ -184,7 +171,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
             ["git", "clone", self.test_repo_url, self.test_repo_path],
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
         )
         self.assertEqual(result.returncode, 0)
 
@@ -202,10 +189,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
         self.assertEqual(len(invalid_files), 0)
 
         # Test large file handling
-        result = self.handler.handle_large_files(
-            files,
-            strategy="exclude"
-        )
+        result = self.handler.handle_large_files(files, strategy="exclude")
         self.assertIn("status", result)
         self.assertIn("valid_files", result)
 
@@ -225,10 +209,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
         invalid_repo_url = "https://github.com/private-repo/private-project"
 
         # This should fail with PermissionDeniedError or return False
-        has_access, reason = self.handler.check_repo_access(
-            invalid_repo_url,
-            "invalid_token"
-        )
+        has_access, reason = self.handler.check_repo_access(invalid_repo_url, "invalid_token")
         self.assertFalse(has_access)
 
     def test_repository_not_found_workflow(self):
@@ -236,10 +217,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
         nonexistent_repo = "https://github.com/nonexistent-user-12345/nonexistent-repo-98765"
 
         # Should handle gracefully
-        has_access, reason = self.handler.check_repo_access(
-            nonexistent_repo,
-            "any_token"
-        )
+        has_access, reason = self.handler.check_repo_access(nonexistent_repo, "any_token")
         self.assertFalse(has_access)
 
     @pytest.mark.skipif(sys.platform == "win32", reason="SIGALRM not available on Windows")
@@ -262,7 +240,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
                 repo_url="https://github.com/test/repo",
                 sync_function=flaky_sync,
                 max_retries=3,
-                timeout_per_attempt=5
+                timeout_per_attempt=5,
             )
             self.assertEqual(result["status"], "success")
             self.assertGreater(attempt_count[0], 1)
@@ -284,7 +262,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
                 f.write(">>>>>>> branch\n")
 
             # Test conflict detection
-            with patch('subprocess.run') as mock_run:
+            with patch("subprocess.run") as mock_run:
                 mock_result = Mock()
                 mock_result.returncode = 1
                 mock_result.stdout = "conflict_file.txt"
@@ -306,10 +284,7 @@ class TestGitHubSyncE2EWorkflows(unittest.TestCase):
             files = [small_file]
 
             # Test exclusion strategy
-            result = handler.handle_large_files(
-                files,
-                strategy="exclude"
-            )
+            result = handler.handle_large_files(files, strategy="exclude")
 
             self.assertIn("status", result)
             self.assertIn("size_report", result)
@@ -368,7 +343,7 @@ class TestGitHubSyncE2EErrorRecovery(unittest.TestCase):
             result = handler.sync_with_retry_and_resume(
                 repo_url="https://github.com/test/repo",
                 sync_function=network_flaky_sync,
-                max_retries=3
+                max_retries=3,
             )
             self.assertEqual(result["status"], "success")
         except AttributeError as e:
@@ -388,7 +363,7 @@ class TestGitHubSyncE2EErrorRecovery(unittest.TestCase):
         sync_state = {
             "started": datetime.now(timezone.utc),
             "files_processed": 0,
-            "status": "interrupted"
+            "status": "interrupted",
         }
 
         # With proper state tracking, sync should be resumable
@@ -402,9 +377,7 @@ class TestGitHubSyncE2EErrorRecovery(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create unresolvable conflict scenario
             result = handler.handle_merge_conflicts(
-                repo_path=tmpdir,
-                conflict_info={},
-                default_strategy="ours"
+                repo_path=tmpdir, conflict_info={}, default_strategy="ours"
             )
 
             # Should return structured result even on failure
@@ -431,7 +404,7 @@ class TestGitHubSyncE2EPerformance(unittest.TestCase):
         # Note: Real API call would be slower
         start = time.time()
 
-        with patch('requests.get') as mock_get:
+        with patch("requests.get") as mock_get:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_get.return_value = mock_response
@@ -446,7 +419,7 @@ class TestGitHubSyncE2EPerformance(unittest.TestCase):
 
     def test_conflict_detection_performance(self):
         """Test conflict detection on large repository"""
-        with patch('subprocess.run') as mock_run:
+        with patch("subprocess.run") as mock_run:
             mock_result = Mock()
             mock_result.returncode = 0
             mock_result.stdout = ""
@@ -487,6 +460,7 @@ class TestGitHubSyncE2EPerformance(unittest.TestCase):
         handler = create_github_sync_handler()
 
         attempt_times = []
+
         def timed_sync(repo_url):
             attempt_times.append(time.time())
             if len(attempt_times) < 3:
@@ -495,9 +469,7 @@ class TestGitHubSyncE2EPerformance(unittest.TestCase):
 
         try:
             result = handler.sync_with_retry_and_resume(
-                repo_url="https://github.com/test/repo",
-                sync_function=timed_sync,
-                max_retries=3
+                repo_url="https://github.com/test/repo", sync_function=timed_sync, max_retries=3
             )
 
             # With exponential backoff: 1s, 2s, 4s between attempts

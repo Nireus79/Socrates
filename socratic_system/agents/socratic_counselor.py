@@ -99,7 +99,9 @@ class SocraticCounselorAgent(Agent):
         """Generate the next Socratic question with usage tracking and workflow optimization"""
         project = request.get("project")
         current_user = request.get("current_user")  # NEW: Accept current user for role context
-        force_refresh = request.get("force_refresh", False)  # Force generation of new question after conflict resolution
+        force_refresh = request.get(
+            "force_refresh", False
+        )  # Force generation of new question after conflict resolution
 
         # Validate that project exists
         if not project:
@@ -273,10 +275,8 @@ class SocraticCounselorAgent(Agent):
                 logger.info(
                     f"[KNOWLEDGE DEBUG] Searching for documents in project {project.project_id}"
                 )
-                context_preview = context[:100] if context else 'EMPTY'
-                logger.info(
-                    f"[KNOWLEDGE DEBUG] Query context: {context_preview}..."
-                )
+                context_preview = context[:100] if context else "EMPTY"
+                logger.info(f"[KNOWLEDGE DEBUG] Query context: {context_preview}...")
                 logger.info(f"[KNOWLEDGE DEBUG] Strategy: {strategy}, top_k: {top_k}")
 
                 knowledge_results = self.orchestrator.vector_db.search_similar_adaptive(
@@ -1677,7 +1677,7 @@ Provide ONE concise, actionable hint that helps the user move forward in the {pr
             ],
         }
 
-        phase = project.phase if hasattr(project, 'phase') else 'discovery'
+        phase = project.phase if hasattr(project, "phase") else "discovery"
         suggestions = phase_suggestions.get(phase, phase_suggestions["discovery"])
 
         logger.debug(f"Using {len(suggestions)} fallback suggestions for {phase} phase")

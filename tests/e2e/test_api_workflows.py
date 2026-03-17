@@ -34,7 +34,9 @@ class TestAuthenticationWorkflow:
                 "password": "TestPassword123!",
             },
         )
-        assert register_response.status_code == 201, f"Registration failed: {register_response.text}"
+        assert (
+            register_response.status_code == 201
+        ), f"Registration failed: {register_response.text}"
         register_data = register_response.json()
         # Auth endpoints may return AuthResponse or APIResponse format
         assert "access_token" in register_data, f"Missing access_token: {register_data}"
@@ -78,7 +80,9 @@ class TestProjectWorkflow:
             },
             headers=headers,
         )
-        assert create_response.status_code == 200, f"Project creation failed: {create_response.text}"
+        assert (
+            create_response.status_code == 200
+        ), f"Project creation failed: {create_response.text}"
         create_data = create_response.json()
         assert create_data.get("success") is True
         assert "data" in create_data
@@ -175,8 +179,10 @@ class TestErrorHandling:
             f"{API_URL}/projects/{project_id}",
             headers=headers2,
         )
-        assert access_response.status_code in [403, 404], \
-            "User should not access other user's project"
+        assert access_response.status_code in [
+            403,
+            404,
+        ], "User should not access other user's project"
 
     def test_invalid_project_id(self):
         """Test accessing nonexistent project."""

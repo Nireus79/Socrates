@@ -106,9 +106,7 @@ class TestArchiveBuilder:
         exclude_patterns = ["*.db"]
 
         success, message = ArchiveBuilder.create_zip_archive(
-            temp_project_dir,
-            archive_path,
-            exclude_patterns=exclude_patterns
+            temp_project_dir, archive_path, exclude_patterns=exclude_patterns
         )
 
         assert success is True
@@ -135,9 +133,7 @@ class TestArchiveBuilder:
         archive_path = temp_output_dir / "project.tar.gz"
 
         success, message = ArchiveBuilder.create_tarball(
-            temp_project_dir,
-            archive_path,
-            compression="gz"
+            temp_project_dir, archive_path, compression="gz"
         )
 
         assert success is True
@@ -149,9 +145,7 @@ class TestArchiveBuilder:
         archive_path = temp_output_dir / "project.tar.bz2"
 
         success, message = ArchiveBuilder.create_tarball(
-            temp_project_dir,
-            archive_path,
-            compression="bz2"
+            temp_project_dir, archive_path, compression="bz2"
         )
 
         assert success is True
@@ -162,9 +156,7 @@ class TestArchiveBuilder:
         archive_path = temp_output_dir / "project.tar"
 
         success, message = ArchiveBuilder.create_tarball(
-            temp_project_dir,
-            archive_path,
-            compression=""
+            temp_project_dir, archive_path, compression=""
         )
 
         assert success is True
@@ -298,11 +290,7 @@ class TestArchiveBuilder:
         tar_path = temp_output_dir / "project.tar.gz"
 
         zip_success, _ = ArchiveBuilder.create_zip_archive(temp_project_dir, zip_path)
-        tar_success, _ = ArchiveBuilder.create_tarball(
-            temp_project_dir,
-            tar_path,
-            compression="gz"
-        )
+        tar_success, _ = ArchiveBuilder.create_tarball(temp_project_dir, tar_path, compression="gz")
 
         assert zip_success is True
         assert tar_success is True
