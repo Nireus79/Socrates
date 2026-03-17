@@ -1,0 +1,36 @@
+# Enforce Unix line endings (LF) for all text files to prevent CI/CD issues
+# This ensures consistent formatting across Windows, Mac, and Linux environments
+
+# Auto-normalize line endings for all files
+* text=auto
+
+# Explicitly set Unix line endings for source code
+*.py text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.db binary
+*.sqlite binary
+*.egg-info/** binary
+dist/** binary
+build/** binary
+
+# Ensure .gitignore, .gitattributes, and other git files use LF
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
