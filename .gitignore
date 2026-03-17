@@ -89,3 +89,12 @@ socrates-api/dist/
 
 # Claude Code temporary files
 tmpclaude-*
+
+# Marketing & Implementation (Local Only)
+docs/marketing/PHASE2_*.md
+PHASE2_*.md
+docs/marketing/FINAL_CI_FIX_REPORT.md
+docs/marketing/GITHUB_CHECKS_FIX_SUMMARY.md
+docs/marketing/HERMESSOFT_WEBSITE_REDESIGN.md
+docs/marketing/ORGANIZATION_COMPLETION_SUMMARY.md
+docs/marketing/PLAN.md
