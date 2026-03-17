@@ -1,4 +1,4 @@
-﻿"""
+"""
 GitHub Integration API endpoints for Socrates.
 
 Provides GitHub repository import, pull, push, and sync functionality.

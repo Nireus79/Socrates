@@ -1,4 +1,4 @@
-﻿"""
+"""
 Project Finalization API endpoints for Socrates.
 
 Provides REST endpoints for finalizing projects including:

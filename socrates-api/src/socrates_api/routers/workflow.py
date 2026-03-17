@@ -1,4 +1,4 @@
-﻿"""
+"""
 Workflow optimization and approval API endpoints for Socrates.
 
 Provides workflow approval, path selection, and optimization functionality.

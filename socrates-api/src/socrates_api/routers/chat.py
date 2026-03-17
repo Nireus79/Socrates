@@ -1,4 +1,4 @@
-﻿"""
+"""
 Chat and Dialogue API endpoints for Socrates.
 
 Provides REST endpoints for chat operations including:

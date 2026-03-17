@@ -5,11 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1674d66c-bd7a-47ac-925e-e7c00211ae1d" name="Changes" comment="tools">
-      <change beforePath="$PROJECT_DIR$/socratic_system/agents/code_generator.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/code_generator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/agents/quality_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/agents/quality_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/core/question_selector.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/core/question_selector.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/socratic_system/database/migration_runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/socratic_system/database/migration_runner.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

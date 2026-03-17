@@ -1,4 +1,4 @@
-﻿"""
+"""
 Skills Management API endpoints for Socrates.
 
 Provides REST endpoints for tracking and managing project skills including:

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Project Progress Tracking API endpoints for Socrates.
 
 Provides REST endpoints for tracking project progress including:
