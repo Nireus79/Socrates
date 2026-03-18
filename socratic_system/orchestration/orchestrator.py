@@ -89,9 +89,9 @@ class AgentOrchestrator:
 
         # Initialize LLM client (using socrates-nexus for multi-provider support)
         self.llm_client = LLMClient(
-            api_key=self.config.api_key,
+            provider="anthropic",
             model=self.config.claude_model,
-            subscription_token=self.config.subscription_token,
+            api_key=self.config.api_key,
         )
         # Keep claude_client alias for backward compatibility
         self.claude_client = self.llm_client
@@ -248,9 +248,7 @@ class AgentOrchestrator:
         if "knowledge_manager" not in self._agents_cache:
             from socratic_agents import KnowledgeManager
 
-            self._agents_cache["knowledge_manager"] = KnowledgeManager(
-                "knowledge_manager", self
-            )
+            self._agents_cache["knowledge_manager"] = KnowledgeManager(self)
         return self._agents_cache["knowledge_manager"]
 
     @property

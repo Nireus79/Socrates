@@ -31,12 +31,14 @@ def temp_data_dir():
 
 @pytest.fixture
 def orchestrator(temp_data_dir):
-    """Initialize orchestrator with mocked Claude client"""
+    """Initialize orchestrator with mocked LLM client"""
     with patch.dict(os.environ, {"API_KEY_CLAUDE": "test-key"}):
-        with patch("socratic_system.orchestration.orchestrator.ClaudeClient"):
+        with patch("socrates_nexus.LLMClient"):
             orch = AgentOrchestrator("test-key")
-            orch.claude_client = MagicMock()
-            orch.claude_client.generate_response = MagicMock(return_value="Test response")
+            orch.llm_client = MagicMock()
+            orch.llm_client.generate_response = MagicMock(return_value="Test response")
+            # Keep alias for backward compatibility
+            orch.claude_client = orch.llm_client
             orch.database.users = {}
             orch.database.projects = {}
             return orch
