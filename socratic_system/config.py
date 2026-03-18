@@ -84,13 +84,15 @@ class SocratesConfig:
         """
         Validate API key configuration.
 
-        For API server mode: allows placeholder keys or None (uses per-user database keys)
-        For direct mode: API key will be checked at runtime when needed
+        Raises:
+            ValueError: If API key is None or empty string
         """
-        # API key is optional in API server mode
-        # In that case, individual users will provide their own keys via database
-        # No validation needed - will be validated at runtime when API calls are made
-        pass
+        # API key is required
+        if self.api_key is None or (isinstance(self.api_key, str) and not self.api_key.strip()):
+            if not self.subscription_token:
+                raise ValueError(
+                    "Either 'api_key' or 'subscription_token' is required for configuration"
+                )
 
     def _ensure_data_dir_is_path(self) -> None:
         """Ensure data_dir is a Path object"""
@@ -167,25 +169,39 @@ class SocratesConfig:
         Returns:
             Configured SocratesConfig instance
         """
-        config_dict = {
-            "api_key": overrides.get("api_key")
+        api_key = (
+            overrides.get("api_key")
             or os.getenv("ANTHROPIC_API_KEY")
-            or os.getenv("API_KEY_CLAUDE"),
-            "claude_model": overrides.get("claude_model")
-            or os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001"),
-            "data_dir": overrides.get("data_dir")
-            or Path(os.getenv("SOCRATES_DATA_DIR", Path.home() / ".socrates")),
-            "log_level": overrides.get("log_level") or os.getenv("SOCRATES_LOG_LEVEL", "INFO"),
+            or os.getenv("API_KEY_CLAUDE")
+        )
+        subscription_token = (
+            overrides.get("subscription_token")
+            or os.getenv("ANTHROPIC_SUBSCRIPTION_TOKEN")
+        )
+
+        # Require either API key or subscription token
+        if not api_key and not subscription_token:
+            raise ValueError(
+                "No authentication credentials found. "
+                "Set ANTHROPIC_API_KEY, API_KEY_CLAUDE, or ANTHROPIC_SUBSCRIPTION_TOKEN environment variable"
+            )
+
+        config_dict = {
+            "api_key": api_key,
+            "claude_model": (
+                overrides.get("claude_model")
+                or os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
+            ),
+            "data_dir": (
+                overrides.get("data_dir")
+                or Path(os.getenv("SOCRATES_DATA_DIR", Path.home() / ".socrates"))
+            ),
+            "log_level": (
+                overrides.get("log_level")
+                or os.getenv("SOCRATES_LOG_LEVEL", "INFO")
+            ),
         }
 
-        # API key is now optional - it will be checked at runtime
-        # For API server mode, users provide per-user keys from database
-        # For direct mode, the API key will be needed when making API calls
-
-        # Optional subscription token (alternative auth method)
-        subscription_token = overrides.get("subscription_token") or os.getenv(
-            "ANTHROPIC_SUBSCRIPTION_TOKEN"
-        )
         if subscription_token:
             config_dict["subscription_token"] = subscription_token
 

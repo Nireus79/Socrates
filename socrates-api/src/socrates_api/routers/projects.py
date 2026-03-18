@@ -87,7 +87,6 @@ def _project_to_response(project: ProjectContext) -> ProjectResponse:
 
 @router.get(
     "",
-    response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="List user's projects",
     responses={
@@ -107,7 +106,7 @@ async def list_projects(
         db: Database connection
 
     Returns:
-        ListProjectsResponse with user's projects
+        Dict with projects list and total count
     """
     try:
         # Load all projects for authenticated user, or return empty list if not authenticated
@@ -117,12 +116,10 @@ async def list_projects(
 
         project_responses = [_project_to_response(p).dict() if hasattr(_project_to_response(p), 'dict') else _project_to_response(p) for p in projects]
 
-        return APIResponse(
-            success=True,
-            status="success",
-            message="Projects retrieved successfully",
-            data={"projects": project_responses, "total": len(project_responses)},
-        )
+        return {
+            "projects": project_responses,
+            "total": len(project_responses),
+        }
 
     except HTTPException:
         raise
@@ -610,13 +607,11 @@ async def delete_project(
         project = db.load_project(project_id)
 
         if not project:
-            # Project already deleted or never existed - return success (idempotent)
+            # Project not found
             logger.info(f"Delete requested for non-existent project {project_id} by {current_user}")
-            return APIResponse(
-                success=True,
-                status="success",
-                message=f"Project '{project_id}' has been deleted",
-                data={"project_id": project_id, "name": "unknown"},
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project '{project_id}' not found",
             )
 
         if project.owner != current_user:

@@ -188,7 +188,7 @@ async def list_notes(
 )
 async def search_notes(
     project_id: str,
-    request: SearchNotesRequest,
+    query: str,
     current_user: str = Depends(get_current_user),
     db: ProjectDatabase = Depends(get_database),
 ):
@@ -197,7 +197,7 @@ async def search_notes(
 
     Args:
         project_id: Project ID
-        query: Search query
+        query: Search query (as query parameter)
         current_user: Authenticated user
         db: Database connection
 
@@ -208,7 +208,7 @@ async def search_notes(
         # Check project access - requires viewer or better
         await check_project_access(project_id, current_user, db, min_role="viewer")
 
-        logger.info(f"Searching notes for project: {project_id}")
+        logger.info(f"Searching notes for project: {project_id} with query: {query}")
 
         # Load project
         project = db.load_project(project_id)
@@ -217,7 +217,7 @@ async def search_notes(
 
         # Search in notes
         notes = project.notes or []
-        query_lower = request.query.lower()
+        query_lower = query.lower()
         results = [
             n
             for n in notes
@@ -232,7 +232,7 @@ async def search_notes(
             data={
                 "results": results,
                 "total_matches": len(results),
-                "query": request.query,
+                "query": query,
             },
         )
 

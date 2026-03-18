@@ -127,7 +127,7 @@ async def validate_code(
 
 
 @router.post(
-    "/{project_id}/maturity",
+    "/maturity",
     response_model=APIResponse,
     status_code=status.HTTP_200_OK,
     summary="Assess code maturity",
