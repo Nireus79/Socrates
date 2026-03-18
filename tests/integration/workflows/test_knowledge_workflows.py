@@ -7,15 +7,20 @@ Tests verify:
 3. Knowledge analysis generates proper focus areas
 4. Questions are regenerated based on new knowledge
 5. Tester role is available in the system
+
+NOTE: Knowledge Analysis Agent was extracted to socratic-agents library
 """
 
 from unittest.mock import Mock
 
 import pytest
 
-from socratic_system.agents.knowledge_analysis import KnowledgeAnalysisAgent
-from socratic_system.events import EventEmitter, EventType
-from socratic_system.models.role import ROLE_EXAMPLES, ROLE_FOCUS_AREAS, VALID_ROLES
+# Knowledge Analysis Agent extracted to socratic-agents library
+pytestmark = pytest.mark.skip(reason="KnowledgeAnalysisAgent extracted to socratic-agents library")
+
+# from socratic_system.agents.knowledge_analysis import KnowledgeAnalysisAgent
+# from socratic_system.events import EventEmitter, EventType
+# from socratic_system.models.role import ROLE_EXAMPLES, ROLE_FOCUS_AREAS, VALID_ROLES
 
 
 class TestKnowledgeAnalysisAgent:
