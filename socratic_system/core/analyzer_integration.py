@@ -8,7 +8,7 @@ and performance recommendations using socratic-analyzer's AnalyzerClient.
 import logging
 from typing import Any, Dict, List, Optional
 
-from socratic_analyzer import AnalyzerClient, AnalysisConfig, AnalysisType
+from socratic_analyzer import AnalyzerClient, AnalyzerConfig
 
 
 class AnalyzerIntegration:
@@ -20,23 +20,23 @@ class AnalyzerIntegration:
     - Architecture analysis and design pattern detection
     """
 
-    def __init__(self, config: Optional[AnalysisConfig] = None):
+    def __init__(self, config: Optional[AnalyzerConfig] = None):
         """
         Initialize analyzer integration.
 
         Args:
-            config: Optional AnalysisConfig for customization
+            config: Optional AnalyzerConfig for customization
         """
         self.logger = logging.getLogger("socrates.analyzer")
 
         try:
             # Use provided config or create default
             if config is None:
-                config = AnalysisConfig(
-                    enable_security=True,
-                    enable_performance=True,
-                    enable_quality=True,
-                    enable_architecture=True
+                config = AnalyzerConfig(
+                    analyze_security=True,
+                    analyze_performance=True,
+                    analyze_types=True,
+                    analyze_patterns=True
                 )
 
             self.analyzer = AnalyzerClient(config=config)

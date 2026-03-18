@@ -8,7 +8,7 @@ using socratic-workflow's Workflow and Task classes.
 import logging
 from typing import Any, Dict, List, Optional
 
-from socratic_workflow import Workflow, Task, TaskStatus, WorkflowExecutor
+from socratic_workflow import Workflow, WorkflowEngine, Task, SimpleTask
 
 from socratic_system.models.workflow import WorkflowDefinition, WorkflowExecutionState
 
@@ -30,16 +30,12 @@ class WorkflowIntegration:
         """
         self.executor_type = executor_type
         self.logger = logging.getLogger("socrates.workflow")
-        self.executor = None
+        self.engine = None
 
         try:
-            # Initialize workflow executor
-            self.executor = WorkflowExecutor(
-                executor_type=executor_type,
-                enable_logging=True,
-                enable_recovery=True
-            )
-            self.logger.info(f"WorkflowExecutor initialized ({executor_type})")
+            # Initialize workflow engine
+            self.engine = WorkflowEngine()
+            self.logger.info(f"WorkflowEngine initialized ({executor_type})")
 
             self.active_workflows: Dict[str, Workflow] = {}
             self.workflow_tasks: Dict[str, List[Task]] = {}

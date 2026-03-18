@@ -8,7 +8,8 @@ using socratic-learning's InteractionLogger and recommendation engine.
 import logging
 from typing import Any, Dict, List, Optional
 
-from socratic_learning import InteractionLogger, RecommendationEngine
+from socratic_learning import InteractionLogger
+from socratic_learning.recommendations.engine import RecommendationEngine
 
 from socratic_system.models.learning import QuestionEffectiveness, UserBehaviorPattern
 
