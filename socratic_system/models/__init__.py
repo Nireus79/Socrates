@@ -4,11 +4,7 @@ Data models for Socrates AI
 
 from .conflict import ConflictInfo
 from .knowledge import KnowledgeEntry
-from .learning import (
-    KnowledgeBaseDocument,
-    QuestionEffectiveness,
-    UserBehaviorPattern,
-)
+# Learning models moved to modules/foundation/models/learning.py
 from .llm_provider import (
     APIKeyRecord,
     LLMProviderConfig,
@@ -34,9 +30,7 @@ __all__ = [
     "CategoryScore",
     "PhaseMaturity",
     "MaturityEvent",
-    "QuestionEffectiveness",
-    "UserBehaviorPattern",
-    "KnowledgeBaseDocument",
+    # Learning models moved to modules/foundation/models/learning.py
     "LLMProviderConfig",
     "APIKeyRecord",
     "LLMUsageRecord",

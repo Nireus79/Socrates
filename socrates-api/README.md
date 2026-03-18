@@ -1,6 +1,6 @@
-# Socrates API
+# socrates-api
 
-REST API server for the Socrates AI tutoring system. Built with FastAPI, this server provides endpoints for project management, Socratic questioning, code generation, and more.
+REST API server for the Socrates AI platform. Provides a complete API for programmatic access to Socrates functionality.
 
 ## Installation
 

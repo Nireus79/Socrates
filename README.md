@@ -41,34 +41,43 @@ multi-agent orchestration, and production-grade infrastructure.
 
 ## Quick Start
 
-### Docker Compose (Local Development)
+### 1-Minute Setup
 
 ```bash
-git clone https://github.com/Nireus79/Socrates.git
+# Install (choose one)
+pip install socrates-ai              # Everything
+# OR
+pip install socratic-core            # Just framework
+# OR
+pip install socratic-core socrates-cli    # Framework + CLI
+
+# Set API key
+export ANTHROPIC_API_KEY="your-key-here"
+
+# Start API server (optional)
+socrates-api
+
+# In another terminal, use the CLI
+socrates project create --name "My Project" --owner "your-name"
+```
+
+### Full Setup (Docker)
+
+```bash
+git clone https://github.com/themsou/Socrates.git
 cd Socrates
 
 # Create environment
-cp .env.production.example .env.local
+cp .env.example .env
 
-# Start services
+# Start with Docker
 docker-compose up -d
 
-# Access at http://localhost:3000 (Frontend) and http://localhost:8000 (API)
+# Access API: http://localhost:8000
+# API Docs: http://localhost:8000/docs
 ```
 
-### Kubernetes (Production)
-
-```bash
-# Using Helm
-helm install socrates ./helm \
-  --namespace production \
-  --set api.image.tag=latest \
-  --set postgresql.auth.password=$(openssl rand -base64 32)
-
-# Or using kubectl with manifests
-kubectl apply -f kubernetes/namespace.yaml
-kubectl apply -f kubernetes/*.yaml
-```
+See [QUICKSTART.md](QUICKSTART.md) for detailed instructions.
 
 ## API Endpoints
 
@@ -104,71 +113,74 @@ See [API_REFERENCE.md](docs/API_REFERENCE.md) for complete endpoint documentatio
 
 ## Architecture
 
+Socrates has been refactored from a 50,000-line monolith into a modular ecosystem of reusable libraries:
+
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Socrates Platform                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                               │
-│  Frontend (React)          API Server (FastAPI)              │
-│  ┌──────────────┐          ┌──────────────────┐              │
-│  │ React UI     │◄─────────┤ REST Endpoints   │              │
-│  │ WebSocket    │          │ Rate Limiting    │              │
-│  │ Real-time    │          │ Security Headers │              │
-│  └──────────────┘          │ JWT Auth + MFA   │              │
-│                            │ CORS Hardened    │              │
-│                            └──────────────────┘              │
-│                                      │                       │
-│                ┌─────────────────────┼──────────────────┐   │
-│                │                     │                  │   │
-│        ┌───────▼──────┐     ┌────────▼────────┐  ┌─────▼──┐ │
-│        │  PostgreSQL  │     │  Redis Cache    │  │ChromaDB│ │
-│        │  - Projects  │     │  - Sessions     │  │ - RAG  │ │
-│        │  - Users     │     │  - Rate Limits  │  │Vectors │ │
-│        │  - Knowledge │     │  - Embeddings   │  └────────┘ │
-│        └──────────────┘     └─────────────────┘             │
-│                                                               │
-│        ┌──────────────────────────────────────┐             │
-│        │        Multi-Agent Orchestrator      │             │
-│        ├──────────────────────────────────────┤             │
-│        │ - ProjectManager                     │             │
-│        │ - CodeGenerator                      │             │
-│        │ - SocraticCounselor                  │             │
-│        │ - ContextAnalyzer                    │             │
-│        │ - ConflictDetector                   │             │
-│        │ - KnowledgeManager                   │             │
-│        └──────────────────────────────────────┘             │
-│                          │                                   │
-│                  ┌───────▼────────┐                         │
-│                  │  Claude AI API  │                         │
-│                  └────────────────┘                         │
-│                                                               │
-├─────────────────────────────────────────────────────────────┤
-│              Kubernetes Orchestration Layer                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ Pod Scaling  │  │ Load Balancing│  │ Health Checks│      │
-│  │ Auto-Healing │  │ Service Mesh  │  │ Self-Healing│      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-│                                                               │
-├─────────────────────────────────────────────────────────────┤
-│              Monitoring & Observability                     │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ Prometheus   │  │ Grafana       │  │ AlertManager │      │
-│  │ Metrics      │  │ Dashboards    │  │ Notifications│      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
+                    Socrates Nexus (LLM Foundation)
+                            ↓
+        ┌───────────────────────────────────┐
+        │      socratic-core (20 KB)        │
+        │  ─────────────────────────────    │
+        │  • Configuration                  │
+        │  • Events                         │
+        │  • Exceptions                     │
+        │  • Logging                        │
+        │  • Utilities                      │
+        └────────────────────┬──────────────┘
+             ┌───────────────┼───────────────┐
+             │               │               │
+    ┌────────▼────┐  ┌───────▼───────┐  ┌──▼──────────┐
+    │ socratic-rag│  │ socratic-     │  │ socratic-   │
+    │  (8 KB)     │  │ agents        │  │ analyzer    │
+    │             │  │  (15 KB)      │  │  (8 KB)     │
+    │ 1 dep       │  │               │  │             │
+    │ (Nexus)     │  │ 1 dep (Nexus) │  │ 1 dep       │
+    └─────────────┘  └───────────────┘  └─────────────┘
+             │               │               │
+             └───────────────┼───────────────┘
+                      ↓
+        ┌─────────────────────────────┐
+        │ socratic-knowledge (8 KB)   │
+        │ socratic-learning (10 KB)   │
+        │ socratic-workflow (9 KB)    │
+        │ socratic-conflict (8 KB)    │
+        └──────────────┬──────────────┘
+                       │
+        ┌──────────────┼──────────────┐
+        │              │              │
+   ┌────▼─────┐   ┌───▼────┐   ┌────▼───┐
+   │socrates- │   │socrates│   │Socrates│
+   │   cli    │   │  -api  │   │(Main)  │
+   │(50 KB)   │   │(100KB) │   │(200KB) │
+   └──────────┘   └────────┘   └────────┘
 ```
+
+**Key Benefits of Modular Architecture**:
+- Pick components you need (no bloat)
+- 25x smaller core (20 KB vs 500 KB)
+- 10x fewer dependencies (3 vs 30)
+- 100% backward compatible
+- Scales from embedded to enterprise
+
+Learn more: [ARCHITECTURE.md](ARCHITECTURE.md) | [Transformation Story](TRANSFORMATION_STORY.md)
 
 ## Documentation
 
-- [📖 QUICK_START_GUIDE.md](docs/QUICK_START_GUIDE.md) - Get started quickly
-- [🏗️ ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture deep-dive
-- [📚 API_REFERENCE.md](docs/API_REFERENCE.md) - Complete API documentation
-- [🚀 DEPLOYMENT.md](docs/DEPLOYMENT.md) - Production deployment & Docker guide
-- [⚙️ CONFIGURATION.md](docs/CONFIGURATION.md) - Environment configuration
-- [👨‍💻 DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) - Development setup & patterns
-- [🔄 CI_CD.md](docs/CI_CD.md) - GitHub Actions workflows & testing
-- [🐛 TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) - Problem solving guide
-- [📋 INSTALLATION.md](docs/INSTALLATION.md) - Setup and installation instructions
+### Getting Started
+- [📖 QUICKSTART.md](QUICKSTART.md) - Get started in 5 minutes
+- [📋 INSTALL.md](INSTALL.md) - Complete installation guide
+- [🔄 MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - Upgrade from old versions
+
+### Architecture & Design
+- [🏗️ ARCHITECTURE.md](ARCHITECTURE.md) - System architecture and design
+- [📚 TRANSFORMATION_STORY.md](TRANSFORMATION_STORY.md) - How we decomposed the monolith
+- [✨ MODULAR_VS_MONOLITH_COMPARISON.md](MODULAR_VS_MONOLITH_COMPARISON.md) - Before/after comparison
+- [📝 BLOG_POST_MONOLITH_TO_MODULAR.md](BLOG_POST_MONOLITH_TO_MODULAR.md) - Marketing story
+
+### API & CLI Documentation
+- [🌐 socrates-api/README.md](socrates-api/README.md) - REST API server documentation
+- [💻 socrates-cli/README.md](socrates-cli/README.md) - CLI tool documentation
+- [🔧 socratic-core/README.md](socratic-core/README.md) - Core framework documentation
 
 ## Production Features
 

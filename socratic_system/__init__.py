@@ -60,15 +60,21 @@ __version__ = "1.3.3"
 __author__ = "Socrates AI Contributors"
 __license__ = "MIT"
 
-# Core Configuration API
-from .clients import ClaudeClient
-from .config import SocratesConfig
+# ============================================================================
+# RE-EXPORTS FROM socratic-core (NEW: Foundation Library)
+# ============================================================================
+# These components are now provided by the socratic-core library for
+# use by CLI, API, and other components. We re-export them here for
+# backward compatibility with existing code.
 
-# Event System
-from .events import EventEmitter, EventType
+# Core Configuration API (from socratic-core)
+from socratic_core import ConfigBuilder, SocratesConfig
 
-# Custom Exceptions
-from .exceptions import (
+# Event System (from socratic-core)
+from socratic_core import EventEmitter, EventType
+
+# Custom Exceptions (from socratic-core)
+from socratic_core import (
     AgentError,
     APIError,
     AuthenticationError,
@@ -79,6 +85,13 @@ from .exceptions import (
     UserNotFoundError,
     ValidationError,
 )
+
+# ============================================================================
+# INTERNAL IMPORTS (Still from socratic_system)
+# ============================================================================
+
+# Core Configuration API (also import local for any enhancements)
+from .clients import ClaudeClient
 
 # Data Models
 from .models import (
@@ -175,8 +188,9 @@ __all__ = [
     "__version__",
     "__author__",
     "__license__",
-    # Configuration
+    # Configuration (from socratic-core)
     "SocratesConfig",
+    "ConfigBuilder",
     # Core Components
     "AgentOrchestrator",
     "ClaudeClient",

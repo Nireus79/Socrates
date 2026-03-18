@@ -63,6 +63,9 @@ classifiers = [
 requires-python = ">=3.8"
 
 dependencies = [
+    # Core framework (must be first - foundational)
+    "socratic-core>=0.1.0",         # Core framework (config, exceptions, events, logging)
+
     # Core extracted packages (replace internal implementations)
     "socrates-nexus>=0.1.0",        # Universal LLM client (replaces claude_client)
     "socratic-agents>=0.1.0",       # Multi-agent orchestration (replaces agents/)

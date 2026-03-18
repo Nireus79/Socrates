@@ -11,7 +11,8 @@ from typing import Any, Dict, List, Optional
 from socratic_learning import InteractionLogger
 from socratic_learning.recommendations.engine import RecommendationEngine
 
-from socratic_system.models.learning import QuestionEffectiveness, UserBehaviorPattern
+# Import learning models from modules/foundation (moved from socratic_system.models)
+from modules.foundation.models.learning import QuestionEffectiveness, UserBehaviorPattern
 
 
 class LearningIntegration:

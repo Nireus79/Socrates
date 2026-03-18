@@ -1,0 +1,156 @@
+version: '3.8'
+
+services:
+  # Socrates API Server
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: socrates-api
+    ports:
+      - "8000:8000"
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-sk-ant-}
+      SOCRATES_API_HOST: 0.0.0.0
+      SOCRATES_API_PORT: 8000
+      SOCRATES_DATA_DIR: /data
+      SOCRATES_DB_PATH: /data/socrates.db
+      SOCRATES_LOG_LEVEL: ${SOCRATES_LOG_LEVEL:-INFO}
+      SOCRATES_LOG_FILE: /data/socrates.log
+    volumes:
+      - socrates_data:/data
+    depends_on:
+      - postgres
+      - redis
+      - chromadb
+    networks:
+      - socrates_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: socrates-postgres
+    environment:
+      POSTGRES_DB: socrates
+      POSTGRES_USER: socrates
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-socrates_dev}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - socrates_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U socrates"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: socrates-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - socrates_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ChromaDB Vector Database
+  chromadb:
+    image: ghcr.io/chroma-core/chroma:latest
+    container_name: socrates-chromadb
+    ports:
+      - "8001:8000"
+    environment:
+      CHROMA_DB_IMPL: duckdb_parquet
+      PERSIST_DIRECTORY: /chroma/data
+      ANONYMIZED_TELEMETRY: "False"
+    volumes:
+      - chromadb_data:/chroma/data
+    networks:
+      - socrates_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: socrates-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - socrates_network
+    restart: unless-stopped
+    profiles:
+      - dev
+
+  # Optional: Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: socrates-redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8002:8081"
+    depends_on:
+      - redis
+    networks:
+      - socrates_network
+    restart: unless-stopped
+    profiles:
+      - dev
+
+volumes:
+  socrates_data:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  chromadb_data:
+    driver: local
+
+networks:
+  socrates_network:
+    driver: bridge
+
+# Usage:
+#   Development:
+#     docker-compose up
+#
+#   With admin tools:
+#     docker-compose --profile dev up
+#
+#   Background:
+#     docker-compose up -d
+#
+#   Stop:
+#     docker-compose down
+#
+#   View logs:
+#     docker-compose logs -f api
+#
+#   Rebuild:
+#     docker-compose build --no-cache

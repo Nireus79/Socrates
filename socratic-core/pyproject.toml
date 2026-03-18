@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "socratic-core"
+version = "0.1.0"
+description = "Core framework components for Socrates AI ecosystem"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Socrates Team", email = "team@socrates.ai"}
+]
+
+dependencies = [
+    "pydantic>=2.0.0",
+    "colorama>=0.4.6",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+nexus = ["socrates-nexus>=0.3.0"]
+agents = ["socratic-agents>=0.1.0"]
+full = [
+    "socrates-nexus>=0.3.0",
+    "socratic-agents>=0.1.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/socratic_core"]
+
+[project.urls]
+Homepage = "https://github.com/themsou/socrates"
+Documentation = "https://docs.socrates.ai"
+Repository = "https://github.com/themsou/socrates"

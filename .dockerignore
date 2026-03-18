@@ -2,17 +2,6 @@
 .git
 .gitignore
 .gitattributes
-.github
-
-# Virtual environments
-.venv
-venv
-ENV
-env
-.env
-.env.*
-!.env.example
-!.env.production.example
 
 # Python
 __pycache__
@@ -32,26 +21,20 @@ parts/
 sdist/
 var/
 wheels/
-pip-wheel-metadata/
-share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
-*.pyc
+pip-log.txt
+pip-delete-this-directory.txt
 .pytest_cache/
 .coverage
 htmlcov/
 .tox/
-.hypothesis/
-
-# Node/Frontend
-node_modules/
-npm-debug.log
-yarn-error.log
-.npm
-dist/
-build/
+.venv
+env/
+venv/
+ENV/
 
 # IDE
 .vscode
@@ -60,70 +43,50 @@ build/
 *.swo
 *~
 .DS_Store
-.sublime-project
-.sublime-workspace
-*.iml
-*.iws
-*.ipr
 
 # Testing
-tests/
-.pytest_cache/
+.pytest_cache
 .coverage
 htmlcov/
-test_*.py
-*_test.py
-MagicMock/
-coverage.xml
+test-results/
 
 # Documentation
-docs/
-*.md
-!README.md
-!LICENSE
-README.md
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-*.db-journal
-
-# Logs
-logs/
-*.log
-
-# OS
-.DS_Store
-Thumbs.db
-*.bak
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-*.old
-
-# Archive
-archive/
-ARCHIVE/
-deprecated/
-DEPRECATED/
-
-# Development only
-.env.local
-.env.development
-docker-compose.override.yml
-.vscode/
-.editorconfig
+docs/_build
+site/
 
 # CI/CD
-.circleci/
+.github
+.gitlab-ci.yml
 .travis.yml
-.github/workflows/
+.circleci
 
-# Keep only essential files
-!.dockerignore
-!.gitignore
-!README.md
-!LICENSE
+# Development
+.env.local
+.env.development
+.env.test
+local_settings.py
+docker-compose.dev.yml
+
+# Build artifacts
+*.log
+*.pot
+dist/
+build/
+
+# Node (if any frontend)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# Misc
+.DS_Store
+*.zip
